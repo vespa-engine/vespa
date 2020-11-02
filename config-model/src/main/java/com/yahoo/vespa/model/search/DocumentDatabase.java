@@ -20,7 +20,7 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
  *
  * @author geirst
  */
-public class DocumentDatabase extends AbstractConfigProducer implements
+public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> implements
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         AttributesConfig.Producer,
@@ -36,7 +36,7 @@ public class DocumentDatabase extends AbstractConfigProducer implements
     private final String inputDocType;
     private final DerivedConfiguration derivedCfg;
 
-    public DocumentDatabase(AbstractConfigProducer parent, String inputDocType, DerivedConfiguration derivedCfg) {
+    public DocumentDatabase(AbstractConfigProducer<?> parent, String inputDocType, DerivedConfiguration derivedCfg) {
         super(parent, inputDocType);
         this.inputDocType = inputDocType;
         this.derivedCfg = derivedCfg;
@@ -108,4 +108,5 @@ public class DocumentDatabase extends AbstractConfigProducer implements
     public void getConfig(ImportedFieldsConfig.Builder builder) {
         derivedCfg.getImportedFields().getConfig(builder);
     }
+
 }

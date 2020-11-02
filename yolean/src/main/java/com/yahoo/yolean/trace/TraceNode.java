@@ -21,7 +21,7 @@ import java.util.NoSuchElementException;
  * exactly one writer thread. If multiple threads need to mutate a single <code>TraceNode</code>, then the writer threads
  * need to synchronize their access on the <code>TraceNode</code>.</p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author bratseth
  * @since 5.1.15
  */

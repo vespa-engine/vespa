@@ -265,6 +265,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                     // Include status from routing policies
                     var routingPolicies = controller.routing().policies().get(deploymentId);
                     for (var policy : routingPolicies.values()) {
+                        if (policy.endpoints().isEmpty()) continue; // This policy does not apply to a global endpoint
                         if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(RoutingMethod.exclusive)) continue;
                         deploymentStatusToSlime(deploymentsArray.addObject(), new DeploymentId(policy.id().owner(),
                                                                                                policy.id().zone()),

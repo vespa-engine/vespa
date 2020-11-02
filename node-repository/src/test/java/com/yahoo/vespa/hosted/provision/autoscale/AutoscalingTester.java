@@ -265,6 +265,9 @@ class AutoscalingTester {
             return resources.withMemoryGb(resources.memoryGb() + 3);
         }
 
+        @Override
+        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
+
     }
 
     private class MockHostProvisioner implements HostProvisioner {
@@ -276,7 +279,9 @@ class AutoscalingTester {
         }
 
         @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId, Version osVersion) {
+        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
+                                                    ApplicationId applicationId, Version osVersion,
+                                                    HostSharing sharing) {
             Flavor hostFlavor = hostFlavors.stream().filter(f -> matches(f, resources)).findAny()
                                            .orElseThrow(() -> new RuntimeException("No flavor matching " + resources + ". Flavors: " + hostFlavors));
 
@@ -285,6 +290,7 @@ class AutoscalingTester {
                 hosts.add(new ProvisionedHost("host" + index,
                                               "hostname" + index,
                                               hostFlavor,
+                                              Optional.empty(),
                                               "nodename" + index,
                                               resources,
                                               osVersion));

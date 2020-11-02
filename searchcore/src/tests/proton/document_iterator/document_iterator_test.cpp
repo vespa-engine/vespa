@@ -274,20 +274,6 @@ struct PairDR : DocumentRetrieverBaseForTest {
     }
 };
 
-struct Committer : public ICommitable {
-    size_t _commitCount;
-    size_t _commitAndWaitCount;
-    Committer() : _commitCount(0), _commitAndWaitCount(0) { }
-    void commit() override { _commitCount++; }
-    void commitAndWait(ILidCommitState &) override { _commitAndWaitCount++; }
-    void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
-        commitAndWait(tracker);
-    }
-    void commitAndWait(ILidCommitState & tracker, const std::vector<uint32_t> & ) override {
-        commitAndWait(tracker);
-    }
-};
-
 size_t getSize() {
     return sizeof(DocEntry);
 }
@@ -502,23 +488,57 @@ TEST("require that iterator ignoring maxbytes stops at the end, and does not aut
     TEST_DO(verifyIterateIgnoringStopSignal(itr));
 }
 
-void verifyReadConsistency(DocumentIterator & itr, Committer & committer) {
-    PendingLidTracker lidTracker;
+void verifyReadConsistency(DocumentIterator & itr, ILidCommitState & lidCommitState) {
     IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
-    auto commitAndWaitRetriever = std::make_shared<CommitAndWaitDocumentRetriever>(retriever, committer, lidTracker);
+    auto commitAndWaitRetriever = std::make_shared<CommitAndWaitDocumentRetriever>(retriever, lidCommitState);
     itr.add(commitAndWaitRetriever);
 
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
     TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
-    EXPECT_EQUAL(0u, committer._commitCount);
 }
 
+class ILidCommitStateProxy : public ILidCommitState {
+public:
+    explicit ILidCommitStateProxy(ILidCommitState & lidState)
+        : _waitCompleteCount(0),
+          _lidState(lidState)
+    {}
+private:
+    State waitState(State state, uint32_t lid) const override {
+        assert(state == State::COMPLETED);
+        _lidState.waitComplete(lid);
+        _waitCompleteCount++;
+        return state;
+    }
+
+    State waitState(State state, const LidList &lids) const override {
+        assert(state == State::COMPLETED);
+        _lidState.waitComplete(lids);
+        _waitCompleteCount++;
+        return state;
+    }
+
+    State waitState(State state) const override {
+        assert(state == State::COMPLETED);
+        _lidState.waitComplete();
+        _waitCompleteCount++;
+        return state;
+    }
+
+public:
+    mutable size_t _waitCompleteCount;
+private:
+    ILidCommitState & _lidState;
+};
+
 void verifyStrongReadConsistency(DocumentIterator & itr) {
-    Committer committer;
-    TEST_DO(verifyReadConsistency(itr, committer));
-    EXPECT_EQUAL(1u, committer._commitAndWaitCount);
+    PendingLidTracker lidTracker;
+
+    ILidCommitStateProxy lidCommitState(lidTracker);
+    TEST_DO(verifyReadConsistency(itr, lidCommitState));
+    EXPECT_EQUAL(1u, lidCommitState._waitCompleteCount);
 }
 
 TEST("require that default readconsistency does commit") {

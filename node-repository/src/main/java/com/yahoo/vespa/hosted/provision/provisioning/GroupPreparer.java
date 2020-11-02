@@ -9,13 +9,11 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.ListFlag;
-import com.yahoo.vespa.flags.custom.HostCapacity;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,14 +30,12 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
-    private final ListFlag<HostCapacity> preprovisionCapacityFlag;
 
     public GroupPreparer(NodeRepository nodeRepository,
                          Optional<HostProvisioner> hostProvisioner,
                          FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
-        this.preprovisionCapacityFlag = Flags.TARGET_CAPACITY.bindTo(flagSource);
     }
 
     /**
@@ -59,15 +55,13 @@ public class GroupPreparer {
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups) {
-        boolean dynamicProvisioningEnabled = nodeRepository.zone().getCloud().dynamicProvisioning();
-        boolean allocateFully = dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty();
 
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
         // can return nodes previously allocated.
         {
             MutableInteger probePrepareHighestIndex = new MutableInteger(highestIndex.get());
             NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                               probePrepareHighestIndex, wantedGroups, allocateFully, PROBE_LOCK);
+                                                               probePrepareHighestIndex, wantedGroups, PROBE_LOCK);
             if (probeAllocation.fulfilledAndNoChanges()) {
                 List<Node> acceptedNodes = probeAllocation.finalNodes();
                 surplusActiveNodes.removeAll(acceptedNodes);
@@ -80,15 +74,16 @@ public class GroupPreparer {
         try (Mutex lock = nodeRepository.lock(application)) {
             try (Mutex allocationLock = nodeRepository.lockUnallocated()) {
                 NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                        highestIndex, wantedGroups, allocateFully, allocationLock);
+                        highestIndex, wantedGroups, allocationLock);
 
-                if (dynamicProvisioningEnabled) {
+                if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
                     Version osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
                     List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
                             .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
                                                                                  deficit.getFlavor(),
                                                                                  application,
-                                                                                 osVersion))
+                                                                                 osVersion,
+                                                                                 requestedNodes.isExclusive() ? HostSharing.exclusive : HostSharing.any))
                             .orElseGet(List::of);
 
                     // At this point we have started provisioning of the hosts, the first priority is to make sure that
@@ -122,12 +117,12 @@ public class GroupPreparer {
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups,
-                                             boolean allocateFully, Mutex allocationLock) {
+                                             Mutex allocationLock) {
         LockedNodeList allNodes = nodeRepository.list(allocationLock);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
                 highestIndex, nodeRepository);
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
-                application, cluster, requestedNodes, wantedGroups, allocateFully, nodeRepository);
+        NodePrioritizer prioritizer = new NodePrioritizer(
+                allNodes, application, cluster, requestedNodes, wantedGroups, nodeRepository);
         allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
     }

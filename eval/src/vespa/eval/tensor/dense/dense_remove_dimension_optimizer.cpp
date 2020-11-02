@@ -15,10 +15,11 @@ using namespace eval::tensor_function;
 namespace {
 
 bool is_ident_aggr(Aggr aggr) {
-    return ((aggr == Aggr::AVG)  ||
-            (aggr == Aggr::PROD) ||
-            (aggr == Aggr::SUM)  ||
-            (aggr == Aggr::MAX)  ||
+    return ((aggr == Aggr::AVG)    ||
+            (aggr == Aggr::PROD)   ||
+            (aggr == Aggr::SUM)    ||
+            (aggr == Aggr::MAX)    ||
+            (aggr == Aggr::MEDIAN) ||
             (aggr == Aggr::MIN));
 }
 

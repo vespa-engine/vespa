@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
-import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -20,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
@@ -96,8 +94,8 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor platformArray = root.setArray("versions");
-        var versionStatus = controller.versionStatus();
-        var systemVersion = versionStatus.systemVersion().map(VespaVersion::versionNumber).orElse(Vtag.currentVersion);
+        var versionStatus = controller.readVersionStatus();
+        var systemVersion = controller.systemVersion(versionStatus);
         var deploymentStatuses = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()), systemVersion);
         var deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toList()),
                                                                 deploymentStatuses)

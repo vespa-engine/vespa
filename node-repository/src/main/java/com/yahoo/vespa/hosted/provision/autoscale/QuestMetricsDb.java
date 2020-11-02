@@ -49,6 +49,8 @@ public class QuestMetricsDb implements MetricsDb {
     private final String dataDir;
     private final CairoEngine engine;
 
+    private long highestTimestampAdded = 0;
+
     @Inject
     public QuestMetricsDb() {
         this(Defaults.getDefaults().underVespaHome("var/db/vespa/autoscaling"), Clock.systemUTC());
@@ -67,6 +69,7 @@ public class QuestMetricsDb implements MetricsDb {
         // silence Questdb's custom logging system
         IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
         System.setProperty("questdbLog", dataDir + "/quest-log.conf");
+        System.setProperty("org.jooq.no-logo", "true");
 
         CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
         engine = new CairoEngine(configuration);
@@ -77,7 +80,9 @@ public class QuestMetricsDb implements MetricsDb {
     public void add(Collection<Pair<String, MetricSnapshot>> snapshots) {
         try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), tableName)) {
             for (var snapshot : snapshots) {
-                long atMillis = snapshot.getSecond().at().toEpochMilli();
+                long atMillis = adjustIfRecent(snapshot.getSecond().at().toEpochMilli(), highestTimestampAdded);
+                if (atMillis < highestTimestampAdded) continue; // Ignore old data
+                highestTimestampAdded = atMillis;
                 TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
                 row.putStr(0, snapshot.getFirst());
                 row.putFloat(2, (float)snapshot.getSecond().cpu());
@@ -152,6 +157,17 @@ public class QuestMetricsDb implements MetricsDb {
         catch (SqlException e) {
             throw new IllegalStateException("Could not create Quest db table '" + tableName + "'", e);
         }
+    }
+
+    private long adjustIfRecent(long timestamp, long highestTimestampAdded) {
+        if (timestamp >= highestTimestampAdded) return timestamp;
+
+        // We cannot add old data to QuestDb, but we want to use all recent information
+        long oneMinute = 60 * 1000;
+        if (timestamp >= highestTimestampAdded - oneMinute) return highestTimestampAdded;
+
+        // Too old; discard
+        return timestamp;
     }
 
     private ListMap<String, MetricSnapshot> getSnapshots(Instant startTime,

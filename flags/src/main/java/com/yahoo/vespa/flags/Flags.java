@@ -4,6 +4,7 @@ package com.yahoo.vespa.flags;
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.custom.HostCapacity;
+import com.yahoo.vespa.flags.custom.SharedHost;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,6 +15,7 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -62,13 +64,6 @@ public class Flags {
             "Takes effect on next tick.",
             HOSTNAME);
 
-    public static final UnboundLongFlag THIN_POOL_GB = defineLongFlag(
-            "thin-pool-gb", -1,
-            "The size of the disk reserved for the thin pool with dynamic provisioning in AWS, in base-2 GB. " +
-                    "If <0, the default is used (which may depend on the zone and node type).",
-            "Takes effect immediately (but used only during provisioning).",
-            NODE_TYPE);
-
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
             "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
@@ -96,6 +91,12 @@ public class Flags {
             "Otherwise it specifies the total (unallocated or not) capacity.",
             "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
+    public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
+            "shared-host", SharedHost.createDisabled(), SharedHost.class,
+            "Specifies whether shared hosts can be provisioned, and if so, the advertised " +
+            "node resources of the host, the maximum number of containers, etc.",
+            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
+
     public static final UnboundListFlag<String> INACTIVE_MAINTENANCE_JOBS = defineListFlag(
             "inactive-maintenance-jobs", List.of(), String.class,
             "The list of maintenance jobs that are inactive.",
@@ -104,17 +105,6 @@ public class Flags {
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             "Default limit for when to apply termwise query evaluation",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundDoubleFlag DEFAULT_THREADPOOL_SIZE_FACTOR = defineDoubleFlag(
-            "default-threadpool-size-factor", 0.0,
-            "Default multiplication factor when computing maxthreads for main container threadpool based on available cores",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-    public static final UnboundDoubleFlag DEFAULT_QUEUE_SIZE_FACTOR = defineDoubleFlag(
-            "default-queue-size-factor", 0.0,
-            "Default multiplication factor when computing queuesize for burst handling",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -160,33 +150,9 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_CONTENT_NODE_BTREE_DB = defineFeatureFlag(
-            "use-content-node-btree-db", true,
-            "Whether to use the new B-tree bucket database on the content node.",
-            "Takes effect at restart of content node process",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundStringFlag TLS_COMPRESSION_TYPE = defineStringFlag(
-            "tls-compression-type", "NONE",
-            "Selects type of compression, valid values are NONE, NONE_MULTI, LZ4, ZSTD",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag TLS_USE_FSYNC = defineFeatureFlag(
-            "tls-use-fsync", false,
-            "Whether to use fsync when writing to the TLS.",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundDoubleFlag VISIBILITY_DELAY = defineDoubleFlag(
-            "visibility-delay", 0.0,
-            "Default visibility-delay",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -297,11 +263,11 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundBigDecimalFlag TENANT_BUDGET_QUOTA = defineBigDecimalFlag(
-            "tenant-budget-quota", new BigDecimal("5.00"),
-            "The budget in $/hr a tenant is allowed spend per instance, as calculated by NodeResources",
+    public static final UnboundIntFlag TENANT_BUDGET_QUOTA = defineIntFlag(
+            "tenant-budget-quota", -1,
+            "The budget in cents/hr a tenant is allowed spend per instance, as calculated by NodeResources",
             "Only takes effect on next deployment, if set to a value other than the default for flag!",
-            APPLICATION_ID
+            TENANT_ID
     );
 
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
@@ -321,12 +287,6 @@ public class Flags {
             "List of IPs or CIDRs that are blocked for outbound connections",
             "Takes effect on next tick"
     );
-
-    public static final UnboundDoubleFlag FEED_CORE_THREAD_POOL_SIZE_FACTOR = defineDoubleFlag(
-            "feed-core-thread-pool-size-factor", 4.0,
-            "Max threads in threadpool for feeding APIs as a factor of vcpu",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
 
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint",
@@ -404,12 +364,6 @@ public class Flags {
     public static UnboundDoubleFlag defineDoubleFlag(String flagId, double defaultValue, String description,
                                                      String modificationEffect, FetchVector.Dimension... dimensions) {
         return define(UnboundDoubleFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
-    }
-
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
-    public static UnboundBigDecimalFlag defineBigDecimalFlag(String flagId, BigDecimal defaultValue, String description,
-                                                             String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(UnboundBigDecimalFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

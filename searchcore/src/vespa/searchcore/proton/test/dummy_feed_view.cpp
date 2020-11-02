@@ -17,9 +17,4 @@ DummyFeedView::DummyFeedView(std::shared_ptr<const document::DocumentTypeRepo> d
 
 DummyFeedView::~DummyFeedView() = default;
 
-ILidCommitState &
-DummyFeedView::getUncommittedLidsTracker() {
-    assert(false);
-}
-
 }

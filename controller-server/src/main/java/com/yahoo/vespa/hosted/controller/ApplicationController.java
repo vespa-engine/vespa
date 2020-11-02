@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -239,7 +240,7 @@ public class ApplicationController {
                                                                   .map(Node::currentVersion)
                                                                   .filter(version -> ! version.isEmpty()))
                                      .min(naturalOrder())
-                                     .orElse(controller.systemVersion());
+                                     .orElseGet(controller::readSystemVersion);
     }
 
     /**
@@ -368,12 +369,8 @@ public class ApplicationController {
     }
 
     private QuotaUsage deploymentQuotaUsage(ZoneId zoneId, ApplicationId applicationId) {
-        var quotaUsage = configServer.nodeRepository().getApplication(zoneId, applicationId)
-                .clusters().values().stream()
-                .map(Cluster::max)
-                .mapToDouble(max -> max.nodes() * max.nodeResources().cost())
-                .sum();
-        return QuotaUsage.create(quotaUsage);
+        var application = configServer.nodeRepository().getApplication(zoneId, applicationId);
+        return DeploymentQuotaCalculator.calculateQuotaUsage(application);
     }
 
     private ApplicationPackage getApplicationPackage(ApplicationId application, ZoneId zone, ApplicationVersion revision) {
@@ -414,7 +411,7 @@ public class ApplicationController {
                     platformVersion = options.vespaVersion.map(Version::new)
                                                           .orElse(applicationPackage.deploymentSpec().majorVersion()
                                                                                     .flatMap(this::lastCompatibleVersion)
-                                                                                    .orElseGet(controller::systemVersion));
+                                                                                    .orElseGet(controller::readSystemVersion));
                 }
                 else {
                     JobType jobType = JobType.from(controller.system(), zone)
@@ -893,7 +890,7 @@ public class ApplicationController {
 
     /** Returns the latest known version within the given major. */
     public Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
-        return controller.versionStatus().versions().stream()
+        return controller.readVersionStatus().versions().stream()
                          .map(VespaVersion::versionNumber)
                          .filter(version -> version.getMajor() == targetMajorVersion)
                          .max(naturalOrder());

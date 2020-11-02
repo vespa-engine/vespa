@@ -14,8 +14,6 @@ import java.util.Optional;
  */
 public abstract class Tenant {
 
-    public static final String userPrefix = "by-";
-
     private final TenantName name;
     private final Optional<Contact> contact;
 

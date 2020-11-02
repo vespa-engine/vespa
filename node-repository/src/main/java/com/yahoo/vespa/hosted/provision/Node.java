@@ -340,6 +340,11 @@ public final class Node implements Nodelike {
                         allocation, history, type, reports, modelName, Optional.empty(), exclusiveTo, switchHostname);
     }
 
+    public Node withExclusiveTo(ApplicationId exclusiveTo) {
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
+                allocation, history, type, reports, modelName, reservedTo, Optional.ofNullable(exclusiveTo), switchHostname);
+    }
+
     /** Returns a copy of this node with switch hostname set to given value */
     public Node withSwitchHostname(String switchHostname) {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,

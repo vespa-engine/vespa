@@ -232,6 +232,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
     }
 
+    // TODO jonmv: Move curator stuff to ApplicationCuratorDatabase
     private Path applicationPath(ApplicationId id) {
         return applicationsPath.append(id.serializedForm());
     }

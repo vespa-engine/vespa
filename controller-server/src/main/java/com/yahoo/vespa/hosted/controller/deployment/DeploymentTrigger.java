@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
-import java.util.logging.Level;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -31,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.Comparator.comparing;
@@ -189,8 +189,7 @@ public class DeploymentTrigger {
         Instance instance = application.require(applicationId.instance());
         DeploymentStatus status = jobs.deploymentStatus(application);
         JobId job = new JobId(instance.id(), jobType);
-        Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.systemVersion());
-        String reason = "Job triggered manually by " + user;
+        Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
         Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
         if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(versions));

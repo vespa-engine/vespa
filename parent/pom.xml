@@ -348,7 +348,7 @@
                                 <id>generate-javadoc</id>
                                 <phase>package</phase>
                                 <goals>
-                                    <goal>javadoc</goal>
+                                    <goal>javadoc-no-fork</goal>
                                 </goals>
                             </execution>
                             <execution>

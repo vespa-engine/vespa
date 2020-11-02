@@ -34,7 +34,7 @@ public class ContainerDocumentApi {
                 "com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
         cluster.addComponent(handler);
         var executor = new Threadpool(
-                "feedapi-handler", cluster, options.feedApiThreadpoolOptions, options.feedThreadPoolSizeFactor);
+                "feedapi-handler", cluster, options.feedApiThreadpoolOptions);
         handler.inject(executor);
         handler.addComponent(executor);
     }
@@ -48,7 +48,7 @@ public class ContainerDocumentApi {
         String bindingSuffix = "/document/v1/*";
         var oldHandler = newVespaClientHandler(oldHandlerName, options.useNewRestapiHandler ? null : bindingSuffix, options);
         cluster.addComponent(oldHandler);
-        var executor = new Threadpool("restapi-handler", cluster, options.restApiThreadpoolOptions, options.feedThreadPoolSizeFactor);
+        var executor = new Threadpool("restapi-handler", cluster, options.restApiThreadpoolOptions);
         oldHandler.inject(executor);
         oldHandler.addComponent(executor);
 
@@ -85,18 +85,15 @@ public class ContainerDocumentApi {
         private final Collection<String> bindings;
         private final ContainerThreadpool.UserOptions restApiThreadpoolOptions;
         private final ContainerThreadpool.UserOptions feedApiThreadpoolOptions;
-        private final double feedThreadPoolSizeFactor;
         private final boolean useNewRestapiHandler;
 
         public Options(Collection<String> bindings,
                        ContainerThreadpool.UserOptions restApiThreadpoolOptions,
                        ContainerThreadpool.UserOptions feedApiThreadpoolOptions,
-                       double feedThreadPoolSizeFactor,
                        boolean useNewRestapiHandler) {
             this.bindings = Collections.unmodifiableCollection(bindings);
             this.restApiThreadpoolOptions = restApiThreadpoolOptions;
             this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
-            this.feedThreadPoolSizeFactor = feedThreadPoolSizeFactor;
             this.useNewRestapiHandler = useNewRestapiHandler;
         }
     }
@@ -104,15 +101,12 @@ public class ContainerDocumentApi {
     private static class Threadpool extends ContainerThreadpool {
 
         private final ContainerCluster<?> cluster;
-        private final double feedThreadPoolSizeFactor;
 
         Threadpool(String name,
                    ContainerCluster<?> cluster,
-                   ContainerThreadpool.UserOptions threadpoolOptions,
-                   double feedThreadPoolSizeFactor ) {
+                   ContainerThreadpool.UserOptions threadpoolOptions) {
             super(name, threadpoolOptions);
             this.cluster = cluster;
-            this.feedThreadPoolSizeFactor = feedThreadPoolSizeFactor;
         }
 
         @Override
@@ -130,13 +124,13 @@ public class ContainerDocumentApi {
         private int maxPoolSize() {
             double vcpu = cluster.vcpu().orElse(0);
             if (vcpu == 0) return FALLBACK_MAX_POOL_SIZE;
-            return Math.max(2, (int)Math.ceil(vcpu * feedThreadPoolSizeFactor));
+            return Math.max(2, (int)Math.ceil(vcpu * 4.0));
         }
 
         private int minPoolSize() {
             double vcpu = cluster.vcpu().orElse(0);
             if (vcpu == 0) return FALLBACK_CORE_POOL_SIZE;
-            return Math.max(1, (int)Math.ceil(vcpu * feedThreadPoolSizeFactor * 0.5));
+            return Math.max(1, (int)Math.ceil(vcpu * 2.0));
         }
     }
 

@@ -4,6 +4,7 @@ vespa_add_library(storage_filestorpersistence OBJECT
     filestorhandlerimpl.cpp
     filestormanager.cpp
     filestormetrics.cpp
+    has_mask_remapper.cpp
     merge_handler_metrics.cpp
     mergestatus.cpp
     modifiedbucketchecker.cpp

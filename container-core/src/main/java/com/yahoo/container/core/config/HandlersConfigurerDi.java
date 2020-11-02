@@ -21,7 +21,6 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
-import java.util.logging.Level;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.osgi.OsgiWrapper;
 import com.yahoo.statistics.Statistics;
@@ -30,13 +29,13 @@ import org.osgi.framework.wiring.BundleWiring;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Set;
 
 import static com.yahoo.collections.CollectionUtil.first;
-import static com.yahoo.container.util.Util.quote;
 
 
 /**
@@ -108,7 +107,7 @@ public class HandlersConfigurerDi {
             } else {
                 Bundle bundle = getBundle(bundleSpec);
                 if (bundle == null)
-                    throw new RuntimeException("No bundle matching " + quote(bundleSpec));
+                    throw new RuntimeException("No bundle matching '" + bundleSpec + "'");
 
                 return new BundleClasses(bundle, OsgiUtil.getClassEntriesInBundleClassPath(bundle, packagesToScan));
             }

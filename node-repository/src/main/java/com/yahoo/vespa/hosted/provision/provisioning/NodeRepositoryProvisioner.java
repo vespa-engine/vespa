@@ -17,7 +17,6 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -108,7 +107,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             int nodeCount = capacityPolicies.decideSize(target.nodes(), requested, cluster, application);
             groups = Math.min(target.groups(), nodeCount); // cannot have more groups than nodes
             resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested, cluster);
-            boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
+            boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
             nodeSpec = NodeSpec.from(nodeCount, resources, exclusive, requested.canFail());
             logIfDownscaled(target.nodes(), nodeCount, cluster, logger);
         }
@@ -218,7 +217,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    nodeAllocation.membership(),
                                    node.status().vespaVersion(),
                                    nodeAllocation.networkPorts(),
-                                   node.status().dockerImage()));
+                                   node.status().containerImage()));
             if (nodeAllocation.networkPorts().isPresent()) {
                 log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " has port allocations");
             }

@@ -358,6 +358,7 @@ struct TestContext {
         TEST_DO(test_reduce_op(Aggr::PROD, SigmoidF(N())));
         TEST_DO(test_reduce_op(Aggr::SUM, N()));
         TEST_DO(test_reduce_op(Aggr::MAX, N()));
+        TEST_DO(test_reduce_op(Aggr::MEDIAN, N()));
         TEST_DO(test_reduce_op(Aggr::MIN, N()));
     }
 

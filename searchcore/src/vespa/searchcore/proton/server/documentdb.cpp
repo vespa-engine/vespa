@@ -166,7 +166,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _writeFilter(),
       _transient_memory_usage_provider(std::make_shared<TransientMemoryUsageProvider>()),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
-      _visibility(*_feedHandler, _writeService, _feedView),
       _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
               makeSubDBConfig(protonCfg.distribution,
@@ -208,11 +207,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
 
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
-    vespalib::duration visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
-    _visibility.setVisibilityDelay(visibilityDelay);
-    if (_visibility.hasVisibilityDelay()) {
-        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
-    }
 }
 
 void DocumentDB::registerReference()
@@ -444,25 +438,17 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         commit_result = _feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
     }
-    bool hasVisibilityDelayChanged = false;
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         // Flush changes to attributes and memory index, cf. visibilityDelay
         _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1, std::make_shared<search::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
         _writeService.sync();
-        vespalib::duration visibilityDelay = configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
-        hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());
-        _visibility.setVisibilityDelay(visibilityDelay);
     }
     if (_state.getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
         _writeServiceConfig.update(configSnapshot->get_threading_service_config());
     }
-    if (_visibility.hasVisibilityDelay()) {
-        _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
-    } else {
-        _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit(), _writeServiceConfig.defaultTaskLimit());
-    }
-    if (params.shouldSubDbsChange() || hasVisibilityDelayChanged) {
+    _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit(), _writeServiceConfig.defaultTaskLimit());
+    if (params.shouldSubDbsChange()) {
         applySubDBConfig(*configSnapshot, serialNum, params);
         if (serialNum < _feedHandler->getSerialNum()) {
             // Not last entry in tls.  Reprocessing should already be done.
@@ -493,6 +479,15 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     }
 }
 
+
+namespace {
+void
+doNothing(IFeedView::SP)
+{
+    // Called by index executor, delays when feed view is dropped.
+}
+}  // namespace
+
 void
 DocumentDB::performDropFeedView(IFeedView::SP feedView)
 {
@@ -513,21 +508,7 @@ DocumentDB::performDropFeedView2(IFeedView::SP feedView) {
     // Also called by DocumentDB::receive() method to keep feed view alive
     _writeService.indexFieldInverter().sync();
     _writeService.indexFieldWriter().sync();
-    masterExecute([this, feedView]() { performDropFeedView3(feedView, 10); });
-}
-
-void
-DocumentDB::performDropFeedView3(IFeedView::SP feedView, uint32_t numRetries) {
-    // We must keep the feedView allive until all operations are drained.
-    // TODO: This is a very brittle appraoch that we should reconsider.
-    if (feedView && ! feedView->isDrained()) {
-        LOG(warning, "FeedView for document type '%s' has not been drained. Reposting to check again. %d retries left",
-            getName().c_str(), numRetries);
-        if (numRetries > 0) {
-            _writeService.sync();
-            masterExecute([this, feedView, numRetries]() { performDropFeedView3(feedView, numRetries - 1); });
-        }
-    }
+    masterExecute([feedView]() { doNothing(feedView); });
 }
 
 
@@ -569,7 +550,6 @@ DocumentDB::close()
     // Abort any ongoing maintenance
     stopMaintenance();
 
-    _visibility.commit();
     _writeService.sync();
 
     // The attributes in the ready sub db is also the total set of attributes.
@@ -745,7 +725,7 @@ BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
 std::shared_ptr<std::vector<IDocumentRetriever::SP> >
 DocumentDB::getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistency)
 {
-    return _subDBs.getRetrievers(consistency, _visibility);
+    return _subDBs.getRetrievers(consistency);
 }
 
 SerialNum
@@ -915,22 +895,11 @@ DocumentDB::syncFeedView()
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
     _writeService.sync();
-    /*
-     * Don't call commit() on visibility handler during transaction
-     * log replay since the serial number used for the commit will be
-     * too high until the replay is complete. This check can be
-     * removed again when feed handler has improved tracking of serial
-     * numbers during replay.
-     */
-    if (_state.getAllowReconfig()) {
-        _visibility.commit();
-    }
-    _writeService.sync();
 
     _feedView.set(newFeedView);
     _feedHandler->setActiveFeedView(newFeedView.get());
     _subDBs.createRetrievers();
-    _subDBs.maintenanceSync(_maintenanceController, _visibility);
+    _subDBs.maintenanceSync(_maintenanceController);
 
     // Ensure that old feed view is referenced until all index executor tasks
     // depending on it has completed.
@@ -966,7 +935,6 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
             _calc, // IBucketStateCalculator::SP
             _dmUsageForwarder,
             _jobTrackers,
-            _visibility,  // ICommitable
             _subDBs.getReadySubDB()->getAttributeManager(),
             _subDBs.getNotReadySubDB()->getAttributeManager(),
             std::move(attribute_config_inspector),

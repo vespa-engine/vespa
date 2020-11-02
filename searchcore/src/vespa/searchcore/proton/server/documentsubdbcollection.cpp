@@ -128,53 +128,56 @@ DocumentSubDBCollection::createRetrievers()
 
 namespace {
 
-IDocumentRetriever::SP
-wrapRetriever(IDocumentRetriever::SP retriever, ICommitable &commit, ILidCommitState & unCommitedLidsTracker)
+std::shared_ptr<CommitAndWaitDocumentRetriever>
+wrapRetriever(IDocumentRetriever::SP retriever, ILidCommitState & unCommittedLidsTracker)
 {
-    return std::make_shared<CommitAndWaitDocumentRetriever>(std::move(retriever), commit, unCommitedLidsTracker);
+    return std::make_shared<CommitAndWaitDocumentRetriever>(std::move(retriever), unCommittedLidsTracker);
 }
 
 }
 
 DocumentSubDBCollection::RetrieversSP
-DocumentSubDBCollection::getRetrievers(IDocumentRetriever::ReadConsistency consistency, ICommitable & visibilityHandler) {
+DocumentSubDBCollection::getRetrievers(IDocumentRetriever::ReadConsistency consistency) {
     RetrieversSP list = _retrievers.get();
 
     if (consistency == IDocumentRetriever::ReadConsistency::STRONG) {
         auto wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>>();
         wrappedList->reserve(list->size());
         assert(list->size() == 3);
-        wrappedList->push_back(wrapRetriever((*list)[_readySubDbId], visibilityHandler,
-                                             getReadySubDB()->getFeedView()->getUncommittedLidsTracker()));
-        wrappedList->push_back(wrapRetriever((*list)[_remSubDbId], visibilityHandler,
-                                             getRemSubDB()->getFeedView()->getUncommittedLidsTracker()));
-        wrappedList->push_back(wrapRetriever((*list)[_notReadySubDbId], visibilityHandler,
-                                             getNotReadySubDB()->getFeedView()->getUncommittedLidsTracker()));
+        wrappedList->push_back(wrapRetriever((*list)[_readySubDbId],
+                                             getReadySubDB()->getUncommittedLidsTracker()));
+        wrappedList->push_back(wrapRetriever((*list)[_remSubDbId],
+                                             getRemSubDB()->getUncommittedLidsTracker()));
+        wrappedList->push_back(wrapRetriever((*list)[_notReadySubDbId],
+                                             getNotReadySubDB()->getUncommittedLidsTracker()));
         return wrappedList;
     } else {
         return list;
     }
 }
 
-void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc, ICommitable &commit) {
+void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc) {
     RetrieversSP retrievers = _retrievers.get();
     MaintenanceDocumentSubDB readySubDB(getReadySubDB()->getName(),
                                         _readySubDbId,
                                         getReadySubDB()->getDocumentMetaStoreContext().getSP(),
-                                        wrapRetriever((*retrievers)[_readySubDbId], commit,
-                                                      getReadySubDB()->getFeedView()->getUncommittedLidsTracker()),
-                                        getReadySubDB()->getFeedView());
+                                        wrapRetriever((*retrievers)[_readySubDbId],
+                                                      getReadySubDB()->getUncommittedLidsTracker()),
+                                        getReadySubDB()->getFeedView(),
+                                        &getReadySubDB()->getUncommittedLidsTracker());
     MaintenanceDocumentSubDB remSubDB(getRemSubDB()->getName(),
                                       _remSubDbId,
                                       getRemSubDB()->getDocumentMetaStoreContext().getSP(),
-                                      wrapRetriever((*retrievers)[_remSubDbId], commit, getRemSubDB()->getFeedView()->getUncommittedLidsTracker()),
-                                      getRemSubDB()->getFeedView());
+                                      wrapRetriever((*retrievers)[_remSubDbId], getRemSubDB()->getUncommittedLidsTracker()),
+                                      getRemSubDB()->getFeedView(),
+                                      &getRemSubDB()->getUncommittedLidsTracker());
     MaintenanceDocumentSubDB notReadySubDB(getNotReadySubDB()->getName(),
                                            _notReadySubDbId,
                                            getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
-                                           wrapRetriever((*retrievers)[_notReadySubDbId], commit,
-                                                         getNotReadySubDB()->getFeedView()->getUncommittedLidsTracker()),
-                                           getNotReadySubDB()->getFeedView());
+                                           wrapRetriever((*retrievers)[_notReadySubDbId],
+                                                         getNotReadySubDB()->getUncommittedLidsTracker()),
+                                           getNotReadySubDB()->getFeedView(),
+                                           &getNotReadySubDB()->getUncommittedLidsTracker());
     mc.syncSubDBs(readySubDB, remSubDB, notReadySubDB);
 }
 

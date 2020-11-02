@@ -33,9 +33,6 @@ struct DummyFeedView : public IFeedView
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}
     void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
     void forceCommit(search::SerialNum, DoneCallback) override { }
-    ILidCommitState & getUncommittedLidsTracker() override;
-    bool allowEarlyAck() const override { return false; }
-    bool isDrained() const override { return true; }
 };
 
 }

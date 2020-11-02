@@ -202,9 +202,9 @@ public class InternalStepRunnerTest {
 
         // Node is down too long in system test, and no nodes go down in staging.
         tester.runner().run();
-        tester.configServer().setVersion(tester.controller().systemVersion(), app.testerId().id(), JobType.systemTest.zone(system()));
+        tester.configServer().setVersion(tester.controller().readSystemVersion(), app.testerId().id(), JobType.systemTest.zone(system()));
         tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
-        tester.configServer().setVersion(tester.controller().systemVersion(), app.testerId().id(), JobType.stagingTest.zone(system()));
+        tester.configServer().setVersion(tester.controller().readSystemVersion(), app.testerId().id(), JobType.stagingTest.zone(system()));
         tester.configServer().convergeServices(app.testerId().id(), JobType.stagingTest.zone(system()));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));

@@ -73,7 +73,7 @@ public class NodeSerializer {
     private static final String rebootGenerationKey = "rebootGeneration";
     private static final String currentRebootGenerationKey = "currentRebootGeneration";
     private static final String vespaVersionKey = "vespaVersion";
-    private static final String currentDockerImageKey = "currentDockerImage";
+    private static final String currentContainerImageKey = "currentDockerImage";
     private static final String failCountKey = "failCount";
     private static final String nodeTypeKey = "type";
     private static final String wantToRetireKey = "wantToRetire";
@@ -103,7 +103,7 @@ public class NodeSerializer {
     private static final String removableKey = "removable";
     // Saved as part of allocation instead of serviceId, since serviceId serialized form is not easily extendable.
     private static final String wantedVespaVersionKey = "wantedVespaVersion";
-    private static final String wantedDockerImageRepoKey = "wantedDockerImageRepo";
+    private static final String wantedContainerImageRepoKey = "wantedDockerImageRepo";
 
     // History event fields
     private static final String historyEventTypeKey = "type";
@@ -153,7 +153,7 @@ public class NodeSerializer {
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
-        node.status().dockerImage().ifPresent(image -> object.setString(currentDockerImageKey, image.asString()));
+        node.status().containerImage().ifPresent(image -> object.setString(currentContainerImageKey, image.asString()));
         object.setLong(failCountKey, node.status().failCount());
         object.setBool(wantToRetireKey, node.status().wantToRetire());
         object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
@@ -193,7 +193,7 @@ public class NodeSerializer {
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
         object.setBool(removableKey, allocation.isRemovable());
         object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
-        allocation.membership().cluster().dockerImageRepo().ifPresent(repo -> object.setString(wantedDockerImageRepoKey, repo.untagged()));
+        allocation.membership().cluster().dockerImageRepo().ifPresent(repo -> object.setString(wantedContainerImageRepoKey, repo.untagged()));
         allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
     }
 
@@ -251,7 +251,7 @@ public class NodeSerializer {
     private Status statusFromSlime(Inspector object) {
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
-                          dockerImageFromSlime(object.field(currentDockerImageKey)),
+                          containerImageFromSlime(object.field(currentContainerImageKey)),
                           (int) object.field(failCountKey).asLong(),
                           object.field(wantToRetireKey).asBool(),
                           object.field(wantToDeprovisionKey).asBool(),
@@ -319,9 +319,9 @@ public class NodeSerializer {
     }
 
     private ClusterMembership clusterMembershipFromSlime(Inspector object) {
-        return ClusterMembership.from(object.field(serviceIdKey).asString(), 
+        return ClusterMembership.from(object.field(serviceIdKey).asString(),
                                       versionFromSlime(object.field(wantedVespaVersionKey)).get(),
-                                      dockerImageRepoFromSlime(object.field(wantedDockerImageRepoKey)));
+                                      containerImageRepoFromSlime(object.field(wantedContainerImageRepoKey)));
     }
 
     private Optional<Version> versionFromSlime(Inspector object) {
@@ -329,12 +329,12 @@ public class NodeSerializer {
         return Optional.of(Version.fromString(object.asString()));
     }
 
-    private Optional<DockerImage> dockerImageRepoFromSlime(Inspector object) {
+    private Optional<DockerImage> containerImageRepoFromSlime(Inspector object) {
         if ( ! object.valid() || object.asString().isEmpty()) return Optional.empty();
         return Optional.of(DockerImage.fromString(object.asString()));
     }
 
-    private Optional<DockerImage> dockerImageFromSlime(Inspector object) {
+    private Optional<DockerImage> containerImageFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(DockerImage.fromString(object.asString()));
     }

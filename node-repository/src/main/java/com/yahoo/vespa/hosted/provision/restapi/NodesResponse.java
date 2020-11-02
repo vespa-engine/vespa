@@ -219,7 +219,7 @@ class NodesResponse extends HttpResponse {
     // Hack: For non-docker nodes, return current docker image as default prefix + current Vespa version
     // TODO: Remove current + wanted docker image from response for non-docker types
     private Optional<DockerImage> currentDockerImage(Node node) {
-        return node.status().dockerImage()
+        return node.status().containerImage()
                    .or(() -> Optional.of(node)
                                      .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                                      .flatMap(n -> n.status().vespaVersion()

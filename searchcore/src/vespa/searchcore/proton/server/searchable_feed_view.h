@@ -54,7 +54,7 @@ private:
     void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
 
 public:
-    SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,
+    SearchableFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params,
                        const FastAccessFeedView::Context &fastUpdateCtx, Context ctx);
 
     ~SearchableFeedView() override;

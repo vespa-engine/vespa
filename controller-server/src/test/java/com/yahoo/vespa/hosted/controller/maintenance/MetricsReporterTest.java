@@ -13,11 +13,13 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -339,7 +341,7 @@ public class MetricsReporterTest {
             upgradeTo(version, hosts.subList(1, hosts.size()), zone, tester);
             runAll(tester::computeVersionStatus, reporter);
             assertPlatformChangeDuration(Duration.ZERO, hosts);
-            assertEquals(version, tester.controller().systemVersion());
+            assertEquals(version, tester.controller().readSystemVersion());
             assertPlatformNodeCount(hosts.size(), version);
         }
     }
@@ -443,6 +445,39 @@ public class MetricsReporterTest {
                                                     .collect(Collectors.toSet());
             assertTrue("Reports only OS versions", allVersions.containsAll(versionDimensions));
         }
+    }
+
+    @Test
+    public void broken_system_version() {
+        var tester = new DeploymentTester().atMondayMorning();
+        var ctx = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder().upgradePolicy("canary").region("us-west-1").build();
+
+        // Application deploys successfully on current system version
+        ctx.submit(applicationPackage).deploy();
+        tester.controllerTester().computeVersionStatus();
+        var reporter = createReporter(tester.controller());
+        reporter.maintain();
+        assertEquals(VespaVersion.Confidence.high, tester.controller().readVersionStatus().systemVersion().get().confidence());
+        assertEquals(0, metrics.getMetric(MetricsReporter.BROKEN_SYSTEM_VERSION));
+
+        // System upgrades. Canary upgrade fails
+        Version version0 = Version.fromString("6.2");
+        tester.controllerTester().upgradeSystem(version0);
+        tester.upgrader().maintain();
+        assertEquals(Change.of(version0), ctx.instance().change());
+        ctx.failDeployment(stagingTest);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(VespaVersion.Confidence.broken, tester.controller().readVersionStatus().systemVersion().get().confidence());
+        reporter.maintain();
+        assertEquals(1, metrics.getMetric(MetricsReporter.BROKEN_SYSTEM_VERSION));
+
+        // Canary is healed and confidence is raised
+        ctx.deployPlatform(version0);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(VespaVersion.Confidence.high, tester.controller().readVersionStatus().systemVersion().get().confidence());
+        reporter.maintain();
+        assertEquals(0, metrics.getMetric(MetricsReporter.BROKEN_SYSTEM_VERSION));
     }
 
     private void assertNodeCount(String metric, int n, Version version) {

@@ -86,21 +86,27 @@ public:
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 };
 
-class DoubleValue : public Value
+template <typename T>
+class ScalarValue final : public Value
 {
 private:
-    double _value;
+    T _value;
     static ValueType _type;
 public:
-    DoubleValue(double value) : _value(value) {}
-    TypedCells cells() const override { return TypedCells(ConstArrayRef<double>(&_value, 1)); }
-    const Index &index() const override { return TrivialIndex::get(); }
-    MemoryUsage get_memory_usage() const override { return self_memory_usage<DoubleValue>(); }
-    bool is_double() const override { return true; }
-    double as_double() const override { return _value; }
-    const ValueType &type() const override { return _type; }
-    static const ValueType &double_type() { return _type; }
+    ScalarValue(T value) : _value(value) {}
+    TypedCells cells() const final override { return TypedCells(ConstArrayRef<T>(&_value, 1)); }
+    const Index &index() const final override { return TrivialIndex::get(); }
+    MemoryUsage get_memory_usage() const final override { return self_memory_usage<ScalarValue<T>>(); }
+    bool is_double() const final override { return std::is_same_v<T,double>; }
+    double as_double() const final override { return _value; }
+    const ValueType &type() const final override { return _type; }
+    static const ValueType &shared_type() { return _type; }
 };
+
+extern template class ScalarValue<double>;
+extern template class ScalarValue<float>;
+
+using DoubleValue = ScalarValue<double>;
 
 /**
  * A generic value without any mapped dimensions referencing its
@@ -117,7 +123,7 @@ public:
     const ValueType &type() const final override { return _type; }
     TypedCells cells() const final override { return _cells; }
     const Index &index() const final override { return TrivialIndex::get(); }
-    MemoryUsage get_memory_usage() const override { return self_memory_usage<DenseValueView>(); }
+    MemoryUsage get_memory_usage() const final override { return self_memory_usage<DenseValueView>(); }
 };
 
 /**
@@ -135,7 +141,7 @@ public:
     const ValueType &type() const final override { return _type; }
     TypedCells cells() const final override { return _cells; }
     const Index &index() const final override { return _index; }
-    MemoryUsage get_memory_usage() const override { return self_memory_usage<ValueView>(); }
+    MemoryUsage get_memory_usage() const final override { return self_memory_usage<ValueView>(); }
 };
 
 /**
@@ -200,6 +206,7 @@ protected:
 
 }
 
-VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DoubleValue);
+VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::ScalarValue<double>);
+VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::ScalarValue<float>);
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DenseValueView);
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::ValueView);

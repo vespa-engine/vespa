@@ -7,7 +7,6 @@
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
-#include <vespa/searchcore/proton/documentmetastore/lid_reuse_delayer_config.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
@@ -51,7 +50,6 @@ using Configurer = SearchableDocSubDBConfigurer;
 using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
 using SummarySetup = SummaryManager::SummarySetup;
 using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
-using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
 
 const vespalib::string BASE_DIR("baseDir");
 const vespalib::string DOC_TYPE("invalid");
@@ -153,6 +151,7 @@ struct Fixture
     EmptyConstantValueFactory _constantValueFactory;
     ConstantValueRepo _constantValueRepo;
     vespalib::ThreadStackExecutor _summaryExecutor;
+    std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
     ViewSet _views;
     MyDocumentDBReferenceResolver _resolver;
     ConfigurerUP _configurer;
@@ -167,6 +166,7 @@ Fixture::Fixture()
       _constantValueFactory(),
       _constantValueRepo(_constantValueFactory),
       _summaryExecutor(8, 128*1024),
+      _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _views(),
       _resolver(),
       _configurer()
@@ -175,7 +175,7 @@ Fixture::Fixture()
     vespalib::mkdir(BASE_DIR);
     initViewSet(_views);
     _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
-                                     _constantValueRepo, _clock, "test", 0);
+                                               _constantValueRepo, _clock, "test", 0);
 }
 Fixture::~Fixture() = default;
 
@@ -210,20 +210,16 @@ Fixture::initViewSet(ViewSet &views)
                                   std::move(matchView)));
     views.feedView.set(
             make_shared<SearchableFeedView>(StoreOnlyFeedView::Context(summaryAdapter,
-                            schema,
-                            views.searchView.get()->getDocumentMetaStore(),
-                            *views._gidToLidChangeHandler,
-                            views.repo,
-                            views._writeService,
-                            LidReuseDelayerConfig()),
-                            SearchableFeedView::PersistentParams(
-                                    views.serialNum,
-                                    views.serialNum,
-                                    views._docTypeName,
-                                    0u /* subDbId */,
-                                    SubDbType::READY),
-                            FastAccessFeedView::Context(attrWriter, views._docIdLimit),
-                            SearchableFeedView::Context(indexWriter)));
+                                                                       schema,
+                                                                       views.searchView.get()->getDocumentMetaStore(),
+                                                                       views.repo,
+                                                                       _pendingLidsForCommit,
+                                                                       *views._gidToLidChangeHandler,
+                                                                       views._writeService),
+                                            SearchableFeedView::PersistentParams(views.serialNum, views.serialNum,
+                                                                                 views._docTypeName, 0u, SubDbType::READY),
+                                            FastAccessFeedView::Context(attrWriter, views._docIdLimit),
+                                            SearchableFeedView::Context(indexWriter)));
 }
 
 
@@ -238,6 +234,7 @@ struct MyFastAccessFeedView
 
     proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
+    std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
     VarHolder<FastAccessFeedView::SP> _feedView;
 
     explicit MyFastAccessFeedView(IThreadingService &writeService)
@@ -247,6 +244,7 @@ struct MyFastAccessFeedView
           _hwInfo(),
           _dmsc(),
           _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
+          _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
           _feedView()
     {
         init();
@@ -255,18 +253,18 @@ struct MyFastAccessFeedView
     ~MyFastAccessFeedView();
 
     void init() {
-        ISummaryAdapter::SP summaryAdapter(new MySummaryAdapter());
-        Schema::SP schema(new Schema());
+        MySummaryAdapter::SP summaryAdapter = std::make_shared<MySummaryAdapter>();
+        Schema::SP schema = std::make_shared<Schema>();
         _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
         std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
-        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, *_gidToLidChangeHandler, repo,
-                                                _writeService, LidReuseDelayerConfig());
+        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
+                                                _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService);
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
         auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
                                                  _writeService.attributeFieldWriter(), _writeService.shared(), _hwInfo);
         auto writer = std::make_shared<AttributeWriter>(mgr);
         FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
-        _feedView.set(std::make_shared<FastAccessFeedView>(storeOnlyCtx, params, fastUpdateCtx));
+        _feedView.set(std::make_shared<FastAccessFeedView>(std::move(storeOnlyCtx), params, fastUpdateCtx));
     }
 };
 
@@ -446,11 +444,7 @@ TEST_F("require that we can reconfigure index searchable", Fixture)
     }
     { // verify feed view
         FeedViewComparer cmp(o.fv, n.fv);
-        cmp.expect_not_equal();
-        cmp.expect_equal_index_adapter();
-        cmp.expect_equal_attribute_writer();
-        cmp.expect_equal_summary_adapter();
-        cmp.expect_equal_schema();
+        cmp.expect_equal();
     }
 }
 
@@ -604,11 +598,7 @@ TEST_F("require that we can reconfigure matchers", Fixture)
     }
     { // verify feed view
         FeedViewComparer cmp(o.fv, n.fv);
-        cmp.expect_not_equal();
-        cmp.expect_equal_index_adapter();
-        cmp.expect_equal_attribute_writer();
-        cmp.expect_equal_summary_adapter();
-        cmp.expect_equal_schema();
+        cmp.expect_equal();
     }
 }
 

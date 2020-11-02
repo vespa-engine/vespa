@@ -20,6 +20,7 @@ public class DimensionHelper {
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_TYPE, "cluster-type");
         serializedDimensions.put(FetchVector.Dimension.VESPA_VERSION, "vespa-version");
         serializedDimensions.put(FetchVector.Dimension.CONSOLE_USER_EMAIL, "console-user-email");
+        serializedDimensions.put(FetchVector.Dimension.TENANT_ID, "tenant");
 
         if (serializedDimensions.size() != FetchVector.Dimension.values().length) {
             throw new IllegalStateException(FetchVectorHelper.class.getName() + " is not in sync with " +

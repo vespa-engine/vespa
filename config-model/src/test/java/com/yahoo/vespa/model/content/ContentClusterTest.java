@@ -950,22 +950,6 @@ public class ContentClusterTest extends ContentBaseTest {
         verifyTopKProbabilityPropertiesControl();
     }
 
-    private boolean resolveContentNodeBtreeDbConfigWithFeatureFlag(boolean flagEnabledBtreeDb) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseContentNodeBtreeDB(flagEnabledBtreeDb));
-
-        ContentCluster cc = model.getContentClusters().get("storage");
-        var builder = new StorServerConfig.Builder();
-        cc.getStorageNodes().getConfig(builder);
-
-        return (new StorServerConfig(builder)).use_content_node_btree_bucket_db();
-    }
-
-    @Test
-    public void default_content_node_btree_usage_controlled_by_properties() {
-        assertFalse(resolveContentNodeBtreeDbConfigWithFeatureFlag(false));
-        assertTrue(resolveContentNodeBtreeDbConfigWithFeatureFlag(true));
-    }
-
     private boolean resolveThreePhaseUpdateConfigWithFeatureFlag(boolean flagEnableThreePhase) {
         VespaModel model = createEnd2EndOneNode(new TestProperties().setUseThreePhaseUpdates(flagEnableThreePhase));
 

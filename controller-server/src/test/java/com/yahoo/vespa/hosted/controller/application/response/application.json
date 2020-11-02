@@ -1,0 +1,156 @@
+{
+  "url": "...",
+  "id": "vespa.album-recommendation.default",
+  "clusters": {
+    "default": {
+      "min": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 0.0,
+          "memoryGb": 0.0,
+          "diskGb": 0.0,
+          "bandwidthGbps": 0.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "max": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 0.0,
+          "memoryGb": 0.0,
+          "diskGb": 0.0,
+          "bandwidthGbps": 0.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "current": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 0.3,
+          "diskSpeed": "fast",
+          "storageType": "remote"
+        }
+      },
+      "suggested": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 75.0,
+          "bandwidthGbps": 0.3,
+          "diskSpeed": "fast",
+          "storageType": "local"
+        }
+      }
+    },
+    "logserver": {
+      "min": {
+        "nodes": 1,
+        "groups": 1,
+        "resources": {
+          "vcpu": 0.0,
+          "memoryGb": 0.0,
+          "diskGb": 0.0,
+          "bandwidthGbps": 0.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "max": {
+        "nodes": 1,
+        "groups": 1,
+        "resources": {
+          "vcpu": 0.0,
+          "memoryGb": 0.0,
+          "diskGb": 0.0,
+          "bandwidthGbps": 0.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "current": {
+        "nodes": 1,
+        "groups": 1,
+        "resources": {
+          "vcpu": 0.5,
+          "memoryGb": 4.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 0.3,
+          "diskSpeed": "fast",
+          "storageType": "remote"
+        }
+      },
+      "suggested": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 4.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 0.3,
+          "diskSpeed": "fast",
+          "storageType": "local"
+        }
+      }
+    },
+    "music": {
+      "min": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 0.0,
+          "memoryGb": 0.0,
+          "diskGb": 0.0,
+          "bandwidthGbps": 0.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "max": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 0.0,
+          "memoryGb": 0.0,
+          "diskGb": 0.0,
+          "bandwidthGbps": 0.0,
+          "diskSpeed": "fast",
+          "storageType": "any"
+        }
+      },
+      "current": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 8.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 0.3,
+          "diskSpeed": "fast",
+          "storageType": "remote"
+        }
+      },
+      "suggested": {
+        "nodes": 2,
+        "groups": 1,
+        "resources": {
+          "vcpu": 2.0,
+          "memoryGb": 4.0,
+          "diskGb": 50.0,
+          "bandwidthGbps": 0.3,
+          "diskSpeed": "fast",
+          "storageType": "local"
+        }
+      }
+    }
+  }
+}

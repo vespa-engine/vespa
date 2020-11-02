@@ -14,6 +14,7 @@ class MetricDefinitions {
     static final String REQUEST_TYPE_DIMENSION = "requestType";
     static final String CLIENT_IP_DIMENSION = "clientIp";
     static final String CLIENT_AUTHENTICATED_DIMENSION = "clientAuthenticated";
+    static final String REQUEST_SERVER_NAME_DIMENSION = "requestServerName";
 
     static final String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
     static final String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";

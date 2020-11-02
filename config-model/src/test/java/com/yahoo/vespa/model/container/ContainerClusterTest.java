@@ -216,11 +216,7 @@ public class ContainerClusterTest {
 
     @Test
     public void requireThatPoolAndQueueCanNotBeControlledByPropertiesWhenNoFlavor() {
-        DeployState state = new DeployState.Builder().properties(new TestProperties()
-                    .setThreadPoolSizeFactor(8.5)
-                    .setQueueSizeFactor(13.3))
-                .build();
-        MockRoot root = new MockRoot("foo", state);
+        MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
         root.freezeModelTopology();
@@ -262,9 +258,6 @@ public class ContainerClusterTest {
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
-                        .properties(new TestProperties()
-                                .setThreadPoolSizeFactor(4)
-                                .setQueueSizeFactor(20))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
                         .modelHostProvisioner(hostProvisioner)
                         .build());
@@ -276,7 +269,7 @@ public class ContainerClusterTest {
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(16, threadpoolConfig.maxthreads());
+        assertEquals(8, threadpoolConfig.maxthreads());
         assertEquals(320, threadpoolConfig.queueSize());
     }
 

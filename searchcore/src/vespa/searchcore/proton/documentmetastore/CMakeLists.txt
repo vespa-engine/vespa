@@ -12,7 +12,6 @@ vespa_add_library(searchcore_documentmetastore STATIC
     search_context.cpp
     lid_allocator.cpp
     lid_gid_key_comparator.cpp
-    lid_reuse_delayer_config.cpp
     lidreusedelayer.cpp
     lidstatevector.cpp
     lid_hold_list.cpp

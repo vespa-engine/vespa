@@ -24,6 +24,9 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
+        /** A legal value for TenantName, e.g. vespa-team */
+        TENANT_ID,
+
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,
 

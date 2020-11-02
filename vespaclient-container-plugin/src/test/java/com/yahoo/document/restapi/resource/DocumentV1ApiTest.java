@@ -43,12 +43,14 @@ import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
+import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -60,7 +62,11 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -167,7 +173,7 @@ public class DocumentV1ApiTest {
     }
 
     @Test
-    public void testResponses() {
+    public void testResponses() throws ExecutionException, InterruptedException {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
         // GET at non-existent path returns 404 with available paths
         var response = driver.sendRequest("http://localhost/document/v1/not-found");
@@ -193,14 +199,18 @@ public class DocumentV1ApiTest {
             assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
+            assertEquals(1000, parameters.getSessionTimeoutMs());
             // Put some documents in the response
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc1, 0);
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc2, 0);
             ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc3, 0);
-            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "message");
+            VisitorStatistics statistics = new VisitorStatistics();
+            statistics.setBucketsVisited(1);
+            parameters.getControlHandler().onVisitorStatistics(statistics);
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
-                                      "&selection=all%20the%20things&fieldSet=[id]");
+                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1\"," +
                        "  \"documents\": [" +
@@ -269,7 +279,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, null));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go");
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=123");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
                        "  \"id\": \"id:space:music::one\"" +
@@ -312,11 +322,16 @@ public class DocumentV1ApiTest {
             DocumentPut expectedPut = new DocumentPut(doc2);
             expectedPut.setCondition(new TestAndSetCondition("test it"));
             assertEquals(expectedPut, put);
-            assertEquals(parameters(), parameters);
-            parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc2));
+            assertEquals(parameters().withTraceLevel(9), parameters);
+            Trace trace = new Trace(9);
+            trace.trace(7, "Tracy Chapman", false);
+            trace.getRoot().addChild(new TraceNode().setStrict(false)
+                                                    .addChild("Fast Car")
+                                                    .addChild("Baby Can I Hold You"));
+            parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc2, trace));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it", POST,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it&traceLevel=9", POST,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": \"Asa-Chan & Jun-Ray\"" +
@@ -324,7 +339,22 @@ public class DocumentV1ApiTest {
                                       "}");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"id\": \"id:space:music:n=1:two\"" +
+                       "  \"id\": \"id:space:music:n=1:two\"," +
+                       "  \"trace\": [" +
+                       "    {" +
+                       "      \"message\": \"Tracy Chapman\"" +
+                       "    }," +
+                       "    {" +
+                       "      \"fork\": [" +
+                       "        {" +
+                       "          \"message\": \"Fast Car\"" +
+                       "        }," +
+                       "        {" +
+                       "          \"message\": \"Baby Can I Hold You\"" +
+                       "        }" +
+                       "      ]" +
+                       "    }" +
+                       "  ]" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
@@ -338,7 +368,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, true));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true", PUT,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true&timeout=1e1s", PUT,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
@@ -483,6 +513,28 @@ public class DocumentV1ApiTest {
                        "  \"message\": \"error\"" +
                        "}", response2.readAll());
         assertEquals(500, response2.getStatus());
+
+        // Request timeout is dispatched after timeout has passed.
+        CountDownLatch latch = new CountDownLatch(1);
+        var assertions = Executors.newSingleThreadExecutor().submit(() -> {
+            access.session.expect((id, parameters) -> {
+                try {
+                    latch.await();
+                }
+                catch (InterruptedException e) {
+                    fail("Not supposed to be interrupted");
+                }
+                return new Result(Result.ResultType.SUCCESS, null);
+            });
+            var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=1ms");
+            assertSameJson("{" +
+                           "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
+                           "  \"message\": \"Request timeout after 1ms\"" +
+                           "}", response4.readAll());
+            assertEquals(504, response4.getStatus());
+        });
+        latch.countDown();
+        assertions.get();
 
         driver.close();
     }

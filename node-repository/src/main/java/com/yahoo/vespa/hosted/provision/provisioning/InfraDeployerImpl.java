@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -53,7 +54,10 @@ public class InfraDeployerImpl implements InfraDeployer {
 
     @Override
     public void activateAllSupportedInfraApplications(boolean propagateException) {
-        duperModel.getSupportedInfraApplications().forEach(api -> {
+        duperModel.getSupportedInfraApplications().stream()
+                // nodes cannot be activated before their host, so try to activate the host first
+                .sorted(Comparator.comparing(n -> !n.getCapacity().type().isHost()))
+                .forEach(api -> {
             var application = api.getApplicationId();
             var deployment = new InfraDeployment(api);
             try {

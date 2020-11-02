@@ -16,8 +16,6 @@ import org.w3c.dom.Element;
 public class TransactionLogServer extends AbstractService  {
 
     private static final long serialVersionUID = 1L;
-    private final boolean useFSync;
-    private final TranslogserverConfig.Compression.Type.Enum compressionType;
 
     private static TranslogserverConfig.Compression.Type.Enum convertCompressionType(String type) {
         try {
@@ -27,16 +25,15 @@ public class TransactionLogServer extends AbstractService  {
         }
     }
 
-    public TransactionLogServer(AbstractConfigProducer searchNode, String clusterName, ModelContext.Properties featureFlags) {
+    public TransactionLogServer(AbstractConfigProducer searchNode, String clusterName) {
         super(searchNode, "transactionlogserver");
         portsMeta.on(0).tag("tls");
         setProp("clustername", clusterName);
         setProp("clustertype", "search");
-        useFSync = featureFlags.tlsUseFSync();
-        compressionType = convertCompressionType(featureFlags.tlsCompressionType());
     }
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<TransactionLogServer> {
+
         private final String clusterName;
         public Builder(String clusterName) {
             this.clusterName = clusterName;
@@ -44,8 +41,9 @@ public class TransactionLogServer extends AbstractService  {
 
         @Override
         protected TransactionLogServer doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
-            return new TransactionLogServer(ancestor, clusterName, deployState.getProperties());
+            return new TransactionLogServer(ancestor, clusterName);
         }
+
     }
 
     public int getPortCount() {
@@ -78,8 +76,7 @@ public class TransactionLogServer extends AbstractService  {
 
     public void getConfig(TranslogserverConfig.Builder builder) {
         builder.listenport(getTlsPort()).basedir(getTlsDir());
-        builder.usefsync(useFSync);
-        builder.compression.type(compressionType);
+
     }
 
 }

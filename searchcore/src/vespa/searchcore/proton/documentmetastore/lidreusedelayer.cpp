@@ -11,13 +11,9 @@ using searchcorespi::index::IThreadingService;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 
-LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService, IStore &documentMetaStore,
-                                 const LidReuseDelayerConfig & config)
+LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService, IStore &documentMetaStore)
     : _writeService(writeService),
       _documentMetaStore(documentMetaStore),
-      _immediateCommit(config.visibilityDelay() == vespalib::duration::zero()),
-      _allowEarlyAck(config.allowEarlyAck()),
-      _config(config),
       _pendingLids()
 {
 }
@@ -32,15 +28,8 @@ LidReuseDelayer::delayReuse(uint32_t lid)
     assert(_writeService.master().isCurrentThread());
     if ( ! _documentMetaStore.getFreeListActive())
         return false;
-    if ( ! _immediateCommit) {
-        _pendingLids.push_back(lid);
-        return false;
-    }
-    if ( ! _config.hasIndexedOrAttributeFields() ) {
-        _documentMetaStore.removeComplete(lid);
-        return false;
-    }
-    return true;
+    _pendingLids.push_back(lid);
+    return false;
 }
 
 bool
@@ -49,15 +38,8 @@ LidReuseDelayer::delayReuse(const std::vector<uint32_t> &lids)
     assert(_writeService.master().isCurrentThread());
     if ( ! _documentMetaStore.getFreeListActive() || lids.empty())
         return false;
-    if ( ! _immediateCommit) {
-        _pendingLids.insert(_pendingLids.end(), lids.cbegin(), lids.cend());
-        return false;
-    }
-    if ( ! _config.hasIndexedOrAttributeFields()) {
-        _documentMetaStore.removeBatchComplete(lids);
-        return false;
-    }
-    return true;
+    _pendingLids.insert(_pendingLids.end(), lids.cbegin(), lids.cend());
+    return false;
 }
 
 std::vector<uint32_t>

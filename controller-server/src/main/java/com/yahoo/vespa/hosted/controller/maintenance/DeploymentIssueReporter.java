@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -84,10 +85,11 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
         boolean success = true;
         if (controller().system() == SystemName.cd)
             return success;
-        
-        Version systemVersion = controller().systemVersion();
 
-        if ((controller().versionStatus().version(systemVersion).confidence() != broken))
+        VersionStatus versionStatus = controller().readVersionStatus();
+        Version systemVersion = controller().systemVersion(versionStatus);
+
+        if (versionStatus.version(systemVersion).confidence() != broken)
             return success;
 
         DeploymentStatusList statuses = controller().jobController().deploymentStatuses(ApplicationList.from(applications));

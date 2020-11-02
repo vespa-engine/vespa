@@ -20,13 +20,12 @@ public:
 private:
     uint32_t           _indexingThreads;
     uint32_t           _defaultTaskLimit;
-    uint32_t           _semiUnboundTaskLimit;
     OptimizeFor        _optimize;
     uint32_t           _kindOfWatermark;
     vespalib::duration _reactionTime;         // Maximum reaction time to new tasks
 
 private:
-    ThreadingServiceConfig(uint32_t indexingThreads_, uint32_t defaultTaskLimit_, uint32_t semiUnboundTaskLimit_, OptimizeFor optimize, uint32_t kindOfWatermark, vespalib::duration reactionTime);
+    ThreadingServiceConfig(uint32_t indexingThreads_, uint32_t defaultTaskLimit_, OptimizeFor optimize, uint32_t kindOfWatermark, vespalib::duration reactionTime);
 
 public:
     static ThreadingServiceConfig make(const ProtonConfig &cfg, double concurrency, const HwInfo::Cpu &cpuInfo);
@@ -34,7 +33,6 @@ public:
     void update(const ThreadingServiceConfig& cfg);
     uint32_t indexingThreads() const { return _indexingThreads; }
     uint32_t defaultTaskLimit() const { return _defaultTaskLimit; }
-    uint32_t semiUnboundTaskLimit() const { return _semiUnboundTaskLimit; }
     OptimizeFor optimize() const { return _optimize; }
     uint32_t kindOfwatermark() const { return _kindOfWatermark; }
     vespalib::duration reactionTime() const { return _reactionTime; }

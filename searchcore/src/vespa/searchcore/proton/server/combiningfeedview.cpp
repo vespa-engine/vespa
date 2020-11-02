@@ -218,16 +218,6 @@ CombiningFeedView::heartBeat(search::SerialNum serialNum)
     }
 }
 
-bool
-CombiningFeedView::allowEarlyAck() const {
-    for (const auto &view : _views) {
-        if ( ! view->allowEarlyAck() ) {
-            return false;
-        }
-    }
-    return true;
-}
-
 void
 CombiningFeedView::sync()
 {
@@ -241,22 +231,6 @@ CombiningFeedView::forceCommit(search::SerialNum serialNum, DoneCallback onDone)
     for (const auto &view : _views) {
         view->forceCommit(serialNum, onDone);
     }
-}
-
-ILidCommitState &
-CombiningFeedView::getUncommittedLidsTracker() {
-    LOG_ABORT("CombiningFeedView::getUncommittedLidsTracker should never be called.");
-}
-
-bool
-CombiningFeedView::isDrained() const
-{
-    for (const auto &view : _views) {
-        if ( ! view->isDrained()) {
-            return false;
-        }
-    }
-    return true;
 }
 
 void

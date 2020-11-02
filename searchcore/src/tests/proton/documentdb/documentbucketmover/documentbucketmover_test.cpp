@@ -188,7 +188,8 @@ MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::share
       _metaStore(*_metaStoreSP),
       _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),
       _retriever(_realRetriever),
-      _subDb("my_sub_db", subDbId, _metaStoreSP, _retriever, IFeedView::SP()), _docs(),
+      _subDb("my_sub_db", subDbId, _metaStoreSP, _retriever, IFeedView::SP(), nullptr),
+      _docs(),
       _bucketDBHandler(*bucketDB)
 {
     _bucketDBHandler.addDocumentMetaStore(_metaStoreSP.get(), 0);
@@ -222,6 +223,7 @@ struct MoveFixture
     MySubDbTwoBuckets          _source;
     BucketDBOwner              _bucketDb;
     MyMoveHandler              _handler;
+    PendingLidTracker          _pendingLidsForCommit;
     MoveFixture()
         : _builder(),
           _bucketDB(std::make_shared<BucketDBOwner>()),
@@ -239,11 +241,12 @@ struct MoveFixture
                                                   sourceSubDbId,
                                                   _source._subDb.meta_store(),
                                                   _source._subDb.retriever(),
-                                                  _source._subDb.feed_view());
+                                                  _source._subDb.feed_view(),
+                                                  &_pendingLidsForCommit);
         _mover.setupForBucket(bucket, &_source._subDb, targetSubDbId, _handler, _bucketDb);
     }
-    void moveDocuments(size_t maxDocsToMove) {
-        _mover.moveDocuments(maxDocsToMove);
+    bool moveDocuments(size_t maxDocsToMove) {
+        return _mover.moveDocuments(maxDocsToMove);
     }
 };
 
@@ -273,7 +276,24 @@ assertEqual(const BucketId &bucket, const test::Document &doc,
 TEST_F("require that we can move all documents", MoveFixture)
 {
     f.setupForBucket(f._source.bucket(1), 6, 9);
-    f.moveDocuments(5);
+    EXPECT_TRUE(f.moveDocuments(5));
+    EXPECT_TRUE(f._mover.bucketDone());
+    EXPECT_EQUAL(5u, f._handler._moves.size());
+    EXPECT_EQUAL(5u, f._limiter.beginOpCount);
+    for (size_t i = 0; i < 5u; ++i) {
+        assertEqual(f._source.bucket(1), f._source.docs(1)[0], 6, 9, f._handler._moves[0]);
+    }
+}
+
+TEST_F("require that move is stalled if document is pending commit", MoveFixture)
+{
+    f.setupForBucket(f._source.bucket(1), 6, 9);
+    {
+        IPendingLidTracker::Token token = f._pendingLidsForCommit.produce(1);
+        EXPECT_FALSE(f.moveDocuments(5));
+        EXPECT_FALSE(f._mover.bucketDone());
+    }
+    EXPECT_TRUE(f.moveDocuments(5));
     EXPECT_TRUE(f._mover.bucketDone());
     EXPECT_EQUAL(5u, f._handler._moves.size());
     EXPECT_EQUAL(5u, f._limiter.beginOpCount);
@@ -285,7 +305,7 @@ TEST_F("require that we can move all documents", MoveFixture)
 TEST_F("require that bucket is cached when IDocumentMoveHandler handles move operation", MoveFixture)
 {
     f.setupForBucket(f._source.bucket(1), 6, 9);
-    f.moveDocuments(5);
+    EXPECT_TRUE(f.moveDocuments(5));
     EXPECT_TRUE(f._mover.bucketDone());
     EXPECT_EQUAL(5u, f._handler._moves.size());
     EXPECT_EQUAL(5u, f._handler._numCachedBuckets);
@@ -300,16 +320,16 @@ TEST_F("require that we can move documents in several steps", MoveFixture)
     EXPECT_EQUAL(2u, f._handler._moves.size());
     assertEqual(f._source.bucket(1), f._source.docs(1)[0], 6, 9, f._handler._moves[0]);
     assertEqual(f._source.bucket(1), f._source.docs(1)[1], 6, 9, f._handler._moves[1]);
-    f.moveDocuments(2);
+    EXPECT_TRUE(f.moveDocuments(2));
     EXPECT_FALSE(f._mover.bucketDone());
     EXPECT_EQUAL(4u, f._handler._moves.size());
     assertEqual(f._source.bucket(1), f._source.docs(1)[2], 6, 9, f._handler._moves[2]);
     assertEqual(f._source.bucket(1), f._source.docs(1)[3], 6, 9, f._handler._moves[3]);
-    f.moveDocuments(2);
+    EXPECT_TRUE(f.moveDocuments(2));
     EXPECT_TRUE(f._mover.bucketDone());
     EXPECT_EQUAL(5u, f._handler._moves.size());
     assertEqual(f._source.bucket(1), f._source.docs(1)[4], 6, 9, f._handler._moves[4]);
-    f.moveDocuments(2);
+    EXPECT_TRUE(f.moveDocuments(2));
     EXPECT_TRUE(f._mover.bucketDone());
     EXPECT_EQUAL(5u, f._handler._moves.size());
 }

@@ -65,7 +65,6 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
@@ -90,6 +89,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -476,7 +476,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (tenant == null) return false;
 
         TenantApplications tenantApplications = tenant.getApplicationRepo();
-        try (Lock lock = tenantApplications.lock(applicationId)) {
+        NestedTransaction transaction = new NestedTransaction();
+        Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
+                                                                                 .map(lock -> new ApplicationTransaction(lock, transaction));
+        try (var sessionLock = tenantApplications.lock(applicationId)) {
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
@@ -489,7 +492,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
             }
 
-            NestedTransaction transaction = new NestedTransaction();
             Curator curator = tenantRepository.getCurator();
             transaction.add(new ContainerEndpointsCache(tenant.getPath(), curator).delete(applicationId)); // TODO: Not unit tested
             // Delete any application roles
@@ -501,14 +503,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
             transaction.onCommitted(() -> log.log(Level.INFO, "Deleted " + applicationId));
 
-            if (hostProvisioner.isPresent()) {
-                try (var applicationTransaction = new ApplicationTransaction(hostProvisioner.get().lock(applicationId), transaction)) {
-                    hostProvisioner.get().remove(applicationTransaction);
-                }
+            if (applicationTransaction.isPresent()) {
+                hostProvisioner.get().remove(applicationTransaction.get());
             } else {
                 transaction.commit();
             }
             return true;
+        } finally {
+            applicationTransaction.ifPresent(ApplicationTransaction::close); // Commits transaction and releases lock
         }
     }
 
@@ -661,12 +663,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri,
                                                          Duration timeout, Optional<Version> vespaVersion) {
-        return convergeChecker.checkService(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
+        return convergeChecker.getServiceConfigGenerationResponse(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
     }
 
     public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri,
                                                             Duration timeoutPerService, Optional<Version> vespaVersion) {
-        return convergeChecker.servicesToCheck(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
+        return convergeChecker.getServiceConfigGenerationsResponse(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
     }
 
     // ---------------- Logs ----------------------------------------------------------------
@@ -719,20 +721,26 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-    public CompletionWaiter activate(Session session, Session previousActiveSession, ApplicationId applicationId, boolean force) {
-        CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
+    public Activation activate(Session session, ApplicationId applicationId, Tenant tenant, boolean force) {
         NestedTransaction transaction = new NestedTransaction();
-        transaction.add(deactivateCurrentActivateNew(previousActiveSession, session, force));
-        if (hostProvisioner.isPresent()) {
-            try (var applicationTransaction = new ApplicationTransaction(hostProvisioner.get().lock(applicationId), transaction)) {
+        Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
+                                                                                 .map(lock -> new ApplicationTransaction(lock, transaction));
+        try (var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
+            Session activeSession = getActiveSession(applicationId);
+            CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
+
+            transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
+            if (applicationTransaction.isPresent()) {
                 hostProvisioner.get().activate(session.getAllocatedHosts().getHosts(),
                                                new ActivationContext(session.getSessionId()),
-                                               applicationTransaction);
+                                               applicationTransaction.get());
+            } else {
+                transaction.commit();
             }
-        } else {
-            transaction.commit();
+            return new Activation(waiter, activeSession);
+        } finally {
+            applicationTransaction.ifPresent(ApplicationTransaction::close); // Commits transaction and releases lock
         }
-        return waiter;
     }
 
     /**
@@ -1068,6 +1076,29 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                    "tenantName", id.tenant().value(),
                                                    "app", id.application().value() + "." + id.instance().value(),
                                                    "zone", environment + "." + region)));
+        }
+
+    }
+
+    public static class Activation {
+
+        private final CompletionWaiter waiter;
+        private final OptionalLong sourceSessionId;
+
+        public Activation(CompletionWaiter waiter, Session sourceSession) {
+            this.waiter = waiter;
+            this.sourceSessionId = sourceSession == null
+                    ? OptionalLong.empty()
+                    : OptionalLong.of(sourceSession.getSessionId());
+        }
+
+        public void awaitCompletion(Duration timeout) {
+            waiter.awaitCompletion(timeout);
+        }
+
+        /** The session ID this activation was based on, if any */
+        public OptionalLong sourceSessionId() {
+            return sourceSessionId;
         }
 
     }

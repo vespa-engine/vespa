@@ -9,13 +9,14 @@ using namespace vespalib::eval::aggr;
 
 TEST("require that aggregator list returns appropriate entries") {
     auto list = Aggregator::list();
-    ASSERT_EQUAL(list.size(), 6u);
+    ASSERT_EQUAL(list.size(), 7u);
     EXPECT_EQUAL(int(list[0]), int(Aggr::AVG));
     EXPECT_EQUAL(int(list[1]), int(Aggr::COUNT));
     EXPECT_EQUAL(int(list[2]), int(Aggr::PROD));
     EXPECT_EQUAL(int(list[3]), int(Aggr::SUM));
     EXPECT_EQUAL(int(list[4]), int(Aggr::MAX));
-    EXPECT_EQUAL(int(list[5]), int(Aggr::MIN));
+    EXPECT_EQUAL(int(list[5]), int(Aggr::MEDIAN));
+    EXPECT_EQUAL(int(list[6]), int(Aggr::MIN));
 }
 
 TEST("require that AVG aggregator works as expected") {
@@ -73,6 +74,31 @@ TEST("require that MAX aggregator works as expected") {
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 200.0);
 }
 
+TEST("require that MEDIAN aggregator works as expected") {
+    Stash stash;
+    Aggregator &aggr = Aggregator::create(Aggr::MEDIAN, stash);
+    EXPECT_TRUE(std::isnan(aggr.result()));
+    aggr.first(10.0),  EXPECT_EQUAL(aggr.result(), 10.0);
+    aggr.next(20.0),   EXPECT_EQUAL(aggr.result(), 15.0);
+    aggr.next(7.0),   EXPECT_EQUAL(aggr.result(), 10.0);
+    aggr.next(40.0),   EXPECT_EQUAL(aggr.result(), 15.0);
+    aggr.next(16.0),   EXPECT_EQUAL(aggr.result(), 16.0);
+    aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
+    aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 150.0);
+}
+
+TEST("require that MEDIAN aggregator handles NaN values") {
+    Stash stash;
+    Aggregator &aggr = Aggregator::create(Aggr::MEDIAN, stash);
+    double my_nan = std::numeric_limits<double>::quiet_NaN();
+    aggr.first(10.0);
+    EXPECT_EQUAL(aggr.result(), 10.0);
+    aggr.next(my_nan);
+    EXPECT_TRUE(std::isnan(aggr.result()));
+    aggr.next(20.0);
+    EXPECT_TRUE(std::isnan(aggr.result()));
+}
+
 TEST("require that MIN aggregator works as expected") {
     Stash stash;
     Aggregator &aggr = Aggregator::create(Aggr::MIN, stash);
@@ -103,11 +129,17 @@ float aggr_merge(const std::vector<float> &a, const std::vector<float> &b) {
 }
 
 TEST("require that aggregator merge works") {
+    float my_nan = std::numeric_limits<float>::quiet_NaN();
     EXPECT_EQUAL(aggr_merge<Avg>({1,2},{3,4}), 2.5);
     EXPECT_EQUAL(aggr_merge<Count>({1,2},{3,4}), 4.0);
     EXPECT_EQUAL(aggr_merge<Prod>({1,2},{3,4}), 24.0);
     EXPECT_EQUAL(aggr_merge<Sum>({1,2},{3,4}), 10.0);
     EXPECT_EQUAL(aggr_merge<Max>({1,2},{3,4}), 4.0);
+    EXPECT_EQUAL(aggr_merge<Median>({1,2},{3,4}), 2.5);
+    EXPECT_EQUAL(aggr_merge<Median>({1,2},{3,4,5}), 3);
+    EXPECT_EQUAL(aggr_merge<Median>({0,1,2},{3,4}), 2);
+    EXPECT_TRUE(std::isnan(aggr_merge<Median>({1,2,my_nan,3},{4,5})));
+    EXPECT_TRUE(std::isnan(aggr_merge<Median>({1,2,3},{4,my_nan,5})));
     EXPECT_EQUAL(aggr_merge<Min>({1,2},{3,4}), 1.0);
 }
 

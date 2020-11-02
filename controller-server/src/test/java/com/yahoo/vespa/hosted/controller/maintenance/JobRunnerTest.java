@@ -370,7 +370,7 @@ public class JobRunnerTest {
     }
 
     @Test
-    public void jobMetrics() {
+    public void jobMetrics() throws TimeoutException {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);

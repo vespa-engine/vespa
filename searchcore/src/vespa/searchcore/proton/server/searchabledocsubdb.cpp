@@ -6,7 +6,6 @@
 #include "reconfig_params.h"
 #include "i_document_subdb_owner.h"
 #include "ibucketstatecalculator.h"
-#include <vespa/searchcore/proton/common/icommitable.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
@@ -17,7 +16,6 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 
 using vespa::config::search::RankProfilesConfig;
 using proton::matching::MatchingStats;
@@ -242,9 +240,8 @@ SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter,
 /**
  * Handle reconfigure caused by index manager changing state.
  *
- * Flush engine is disabled (for all document dbs) during initial replay and
- * recovery feed modes, the flush engine has not started.  For a resurrected
- * document type, flushing might occur during replay.
+ * Flush engine is disabled (for all document dbs) during initial replay, the
+ * flush engine has not started.
  */
 bool
 SearchableDocSubDB::reconfigure(vespalib::Closure0<bool>::UP closure)
@@ -256,7 +253,6 @@ SearchableDocSubDB::reconfigure(vespalib::Closure0<bool>::UP closure)
     // Everything should be quiet now.
 
     SearchView::SP oldSearchView = _rSearchView.get();
-    IFeedView::SP oldFeedView = _iFeedView.get();
 
     bool ret = true;
 

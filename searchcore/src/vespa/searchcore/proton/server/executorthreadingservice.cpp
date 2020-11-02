@@ -53,8 +53,16 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::SyncableThreadExecu
 ExecutorThreadingService::~ExecutorThreadingService() = default;
 
 vespalib::Syncable &
-ExecutorThreadingService::sync()
-{
+ExecutorThreadingService::sync() {
+    // We have multiple patterns where task A posts to B which post back to A
+    for (size_t i = 0; i < 2; i++) {
+        syncOnce();
+    }
+    return *this;
+}
+
+void
+ExecutorThreadingService::syncOnce() {
     bool isMasterThread = _masterService.isCurrentThread();
     if (!isMasterThread) {
         _masterExecutor.sync();
@@ -67,7 +75,6 @@ ExecutorThreadingService::sync()
     if (!isMasterThread) {
         _masterExecutor.sync();
     }
-    return *this;
 }
 
 void

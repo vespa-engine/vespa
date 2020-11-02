@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/common/transient_memory_usage_provider.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
@@ -354,7 +353,7 @@ struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 };
 
 
-class MaintenanceControllerFixture : public ICommitable
+class MaintenanceControllerFixture
 {
 public:
     MyExecutor                    _executor;
@@ -385,17 +384,9 @@ public:
 
     MaintenanceControllerFixture();
 
-    ~MaintenanceControllerFixture() override;
+    ~MaintenanceControllerFixture();
 
     void syncSubDBs();
-    void commit() override { }
-    void commitAndWait(ILidCommitState & ) override { }
-    void commitAndWait(ILidCommitState & tracker, uint32_t ) override {
-        commitAndWait(tracker);
-    }
-    void commitAndWait(ILidCommitState & tracker, const std::vector<uint32_t> & ) override {
-        commitAndWait(tracker);
-    }
     void performSyncSubDBs();
     void notifyClusterStateChanged();
     void performNotifyClusterStateChanged();
@@ -502,7 +493,7 @@ MyDocumentSubDB::getSubDB()
     return MaintenanceDocumentSubDB("my_sub_db", _subDBId,
                                     _metaStoreSP,
                                     retriever,
-                                    IFeedView::SP());
+                                    IFeedView::SP(), nullptr);
 }
 
 
@@ -880,7 +871,7 @@ MaintenanceControllerFixture::injectMaintenanceJobs()
                                             _fh, _fh, _bmc, _clusterStateHandler, _bucketHandler,
                                             _calc,
                                             _diskMemUsageNotifier,
-                                            _jobTrackers, *this,
+                                            _jobTrackers,
                                             _readyAttributeManager,
                                             _notReadyAttributeManager,
                                             std::make_unique<const AttributeConfigInspector>(AttributesConfigBuilder()),

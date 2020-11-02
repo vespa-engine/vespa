@@ -5,6 +5,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.document.DocumentOperation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -43,7 +44,8 @@ public class Processing {
 
     /** The registry of docproc services. */
     private ComponentRegistry<DocprocService> docprocServiceRegistry = null;
-    private boolean getNumDocsCalled = false;
+
+    private boolean operationsGotten = false;
 
     /**
      * Create a Processing with no documents. Useful with DocprocService.process(Processing).
@@ -264,11 +266,11 @@ public class Processing {
         }
     }
 
-    int getNumDocsToBeProcessed() {
-        if (getNumDocsCalled) {
-            return 0;
-        }
-        getNumDocsCalled = true;
-        return getDocumentOperations().size();
+    List<DocumentOperation> getOnceOperationsToBeProcessed() {
+        if (operationsGotten)
+            return Collections.emptyList();
+
+        operationsGotten = true;
+        return getDocumentOperations();
     }
 }

@@ -35,16 +35,10 @@ public class TestProperties implements ModelContext.Properties {
     private Zone zone;
     private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
-    private boolean useContentNodeBtreeDb = false;
     private boolean useThreePhaseUpdates = false;
     private boolean useDirectStorageApiRpc = false;
     private boolean useFastValueTensorImplementation = false;
-    private boolean tlsUseFSync = false;
-    private String tlsCompressionType = "NONE";
     private double defaultTermwiseLimit = 1.0;
-    private double threadPoolSizeFactor = 0.0;
-    private double queueSizeFactor = 0.0;
-    private double visibilityDelay = 0.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
     private String responseSequencerType = "ADAPTIVE";
@@ -72,13 +66,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-    @Override public double threadPoolSizeFactor() {
-        return threadPoolSizeFactor;
-    }
-    @Override public double queueSizeFactor() {
-        return queueSizeFactor;
-    }
-    @Override public boolean useContentNodeBtreeDb() { return useContentNodeBtreeDb; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
     @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
@@ -90,9 +77,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
     @Override public Quota quota() { return quota; }
-    @Override public double visibilityDelay() { return visibilityDelay; }
-    @Override public boolean tlsUseFSync() { return tlsUseFSync; }
-    @Override public String tlsCompressionType() { return tlsCompressionType; }
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
 
@@ -117,11 +101,6 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
-    public TestProperties setUseContentNodeBtreeDB(boolean useBtreeDb) {
-        useContentNodeBtreeDb = useBtreeDb;
-        return this;
-    }
-
     public TestProperties setUseThreePhaseUpdates(boolean useThreePhaseUpdates) {
         this.useThreePhaseUpdates = useThreePhaseUpdates;
         return this;
@@ -137,16 +116,6 @@ public class TestProperties implements ModelContext.Properties {
         return this;
     }
 
-    public TestProperties setThreadPoolSizeFactor(double threadPoolSizeFactor) {
-        this.threadPoolSizeFactor = threadPoolSizeFactor;
-        return this;
-    }
-
-    public TestProperties setQueueSizeFactor(double queueSizeFactor) {
-        this.queueSizeFactor = queueSizeFactor;
-        return this;
-    }
-
     public TestProperties setJettyThreadpoolSizeFactor(double factor) { this.jettyThreadpoolSizeFactor = factor; return this; }
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
@@ -156,21 +125,6 @@ public class TestProperties implements ModelContext.Properties {
 
     public TestProperties setHostedVespa(boolean hostedVespa) {
         this.hostedVespa = hostedVespa;
-        return this;
-    }
-
-    public TestProperties setTlsUseFSync(boolean useFSync) {
-        this.tlsUseFSync = useFSync;
-        return this;
-    }
-
-    public TestProperties setTlsCompressionType(String type) {
-        this.tlsCompressionType = type;
-        return this;
-    }
-
-    public TestProperties setVisibilityDelay(double visibilityDelay) {
-        this.visibilityDelay = visibilityDelay;
         return this;
     }
 

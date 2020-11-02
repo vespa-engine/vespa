@@ -70,26 +70,30 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         this.stateApiFactory = stateApiFactory;
     }
 
-    /** Check all services in given application. Returns the minimum current generation of all services */
-    public ServiceListResponse servicesToCheck(Application application, URI requestUrl, Duration timeoutPerService) {
-        log.log(Level.FINE, () -> "Finding services to check config convergence for in '" + application);
+    /** Fetches the active config generation for all services in the given application. */
+    public Map<ServiceInfo, Long> getServiceConfigGenerations(Application application, Duration timeoutPerService) {
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
-        Map<ServiceInfo, Long> currentGenerations = getServiceGenerations(servicesToCheck, timeoutPerService);
+        return getServiceGenerations(servicesToCheck, timeoutPerService);
+    }
+
+    /** Check all services in given application. Returns the minimum current generation of all services */
+    public ServiceListResponse getServiceConfigGenerationsResponse(Application application, URI requestUrl, Duration timeoutPerService) {
+        Map<ServiceInfo, Long> currentGenerations = getServiceConfigGenerations(application, timeoutPerService);
         long currentGeneration = currentGenerations.values().stream().mapToLong(Long::longValue).min().orElse(-1);
         return new ServiceListResponse(200, currentGenerations, requestUrl, application.getApplicationGeneration(),
                                        currentGeneration);
     }
 
     /** Check service identified by host and port in given application */
-    public ServiceResponse checkService(Application application, String hostAndPortToCheck, URI requestUrl, Duration timeout) {
+    public ServiceResponse getServiceConfigGenerationResponse(Application application, String hostAndPortToCheck, URI requestUrl, Duration timeout) {
         Long wantedGeneration = application.getApplicationGeneration();
         try {
-            if (! hostInApplication(application, hostAndPortToCheck))
+            if ( ! hostInApplication(application, hostAndPortToCheck))
                 return ServiceResponse.createHostNotFoundInAppResponse(requestUrl, hostAndPortToCheck, wantedGeneration);
 
             long currentGeneration = getServiceGeneration(URI.create("http://" + hostAndPortToCheck), timeout);

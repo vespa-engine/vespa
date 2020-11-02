@@ -1,7 +1,11 @@
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
 import java.util.Objects;
 
+/**
+ * @author smorgrav
+ */
 public class TenantInfoBillingContact {
     private final String name;
     private final String email;
@@ -15,8 +19,8 @@ public class TenantInfoBillingContact {
         this.address = Objects.requireNonNull(address);
     }
 
-    public static TenantInfoBillingContact EmptyBillingContact =
-                new TenantInfoBillingContact("","", "", TenantInfoAddress.EmptyAddress);
+    public static final TenantInfoBillingContact EMPTY =
+                new TenantInfoBillingContact("","", "", TenantInfoAddress.EMPTY);
 
     public String name() {
         return name;
@@ -49,7 +53,7 @@ public class TenantInfoBillingContact {
     }
 
     public boolean isEmpty() {
-        return (name + email + phone).isEmpty() && address.isEmpty();
+        return this.equals(EMPTY);
     }
 
     @Override

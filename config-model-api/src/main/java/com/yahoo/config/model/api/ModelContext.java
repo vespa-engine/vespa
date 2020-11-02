@@ -70,10 +70,10 @@ public interface ModelContext {
         default int defaultNumResponseThreads() { return 2; }
 
         // TODO(bjorncs) Temporary feature flag
-        double threadPoolSizeFactor();
+        default double threadPoolSizeFactor() { return 2.0; }
 
         // TODO(bjorncs) Temporary feature flag
-        double queueSizeFactor();
+        default double queueSizeFactor() { return 40.0; };
 
         /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();
@@ -84,11 +84,13 @@ public interface ModelContext {
         boolean skipCommunicationManagerThread();
         boolean skipMbusRequestThread();
         boolean skipMbusReplyThread();
-        boolean tlsUseFSync();
-        String tlsCompressionType();
-        double visibilityDelay();
+        // TODO(balder) Last used on 7.305
+        default boolean tlsUseFSync() { return true; }
+        default String tlsCompressionType() { return "ZSTD"; }
+        default double visibilityDelay() { return 0.0; }
 
-        boolean useContentNodeBtreeDb();
+        // TODO(balder) Last used on 7.306
+        default boolean useContentNodeBtreeDb() { return true; }
 
         boolean useThreePhaseUpdates();
 

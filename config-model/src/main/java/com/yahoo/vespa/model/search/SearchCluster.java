@@ -29,9 +29,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer {
 
-    private static final long serialVersionUID = 1L;
-
-    protected SearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
+    protected SearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
         super(parent, clusterName, index);
     }
 

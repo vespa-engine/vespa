@@ -964,6 +964,20 @@ public class NodesV2ApiTest {
         tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname), "switchHostname", false);
     }
 
+    @Test
+    public void exclusive_to_patch() throws IOException {
+        String url = "http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com";
+        tester.assertPartialResponse(new Request(url), "exclusiveTo", false); // Initially there is no exclusiveTo
+
+        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": \"t1:a1:i1\"}"), Request.Method.PATCH),
+                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        tester.assertPartialResponse(new Request(url), "exclusiveTo\":\"t1:a1:i1\",", true);
+
+        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": null}"), Request.Method.PATCH),
+                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        tester.assertPartialResponse(new Request(url), "exclusiveTo", false);
+    }
+
     private static String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {
         return asDockerNodeJson(hostname, NodeType.tenant, parentHostname, ipAddress);
     }

@@ -47,6 +47,8 @@ void generate_tensor_reduce(TestBuilder &dst) {
     generate_reduce(Aggr::PROD, SigmoidF(N()), dst);
     generate_reduce(Aggr::SUM, N(), dst);
     generate_reduce(Aggr::MAX, N(), dst);
+    // add MEDIAN cases when supported in Java
+    // generate_reduce(Aggr::MEDIAN, N(), dst);
     generate_reduce(Aggr::MIN, N(), dst);
 }
 

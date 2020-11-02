@@ -16,7 +16,6 @@ namespace vespalib::eval {
 class ValueType
 {
 public:
-    enum class Type { ERROR, DOUBLE, TENSOR };
     enum class CellType : char { FLOAT, DOUBLE };
     struct Dimension {
         using size_type = uint32_t;
@@ -37,15 +36,15 @@ public:
     };
 
 private:
-    Type                   _type;
+    bool                   _error;
     CellType               _cell_type;
     std::vector<Dimension> _dimensions;
 
-    ValueType(Type type_in)
-        : _type(type_in), _cell_type(CellType::DOUBLE), _dimensions() {}
+    ValueType()
+        : _error(true), _cell_type(CellType::DOUBLE), _dimensions() {}
 
-    ValueType(Type type_in, CellType cell_type_in, std::vector<Dimension> &&dimensions_in)
-        : _type(type_in), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
+    ValueType(CellType cell_type_in, std::vector<Dimension> &&dimensions_in)
+        : _error(false), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
 
 public:
     ValueType(ValueType &&) noexcept = default;
@@ -53,13 +52,23 @@ public:
     ValueType &operator=(ValueType &&) noexcept = default;
     ValueType &operator=(const ValueType &) = default;
     ~ValueType();
-    Type type() const { return _type; }
     CellType cell_type() const { return _cell_type; }
-    bool is_error() const { return (_type == Type::ERROR); }
-    bool is_double() const { return (_type == Type::DOUBLE); }
-    bool is_tensor() const { return (_type == Type::TENSOR); }
+    bool is_error() const { return _error; }
+    bool is_scalar() const { return _dimensions.empty(); }
     bool is_sparse() const;
     bool is_dense() const;
+
+    // TODO: remove is_double and is_tensor
+    // is_tensor should no longer be useful
+    // is_double should be replaced with is_scalar where you also
+    //           handle cell type correctly (free float values will
+    //           not be introduced by type-resolving just yet, so
+    //           is_double and is_scalar will be interchangeable in
+    //           most cases for a while)
+
+    bool is_double() const { return (!_error && is_scalar() && (_cell_type == CellType::DOUBLE)); }
+    bool is_tensor() const { return (!_dimensions.empty()); }
+
     size_t count_indexed_dimensions() const;
     size_t count_mapped_dimensions() const;
     size_t dense_subspace_size() const;
@@ -69,7 +78,7 @@ public:
     size_t dimension_index(const vespalib::string &name) const;
     std::vector<vespalib::string> dimension_names() const;
     bool operator==(const ValueType &rhs) const {
-        return ((_type == rhs._type) &&
+        return ((_error == rhs._error) &&
                 (_cell_type == rhs._cell_type) &&
                 (_dimensions == rhs._dimensions));
     }
@@ -79,9 +88,16 @@ public:
     ValueType rename(const std::vector<vespalib::string> &from,
                      const std::vector<vespalib::string> &to) const;
 
-    static ValueType error_type() { return ValueType(Type::ERROR); }
-    static ValueType double_type() { return ValueType(Type::DOUBLE); }
+    static ValueType error_type() { return ValueType(); }
+    static ValueType make_type(CellType cell_type, std::vector<Dimension> dimensions_in);
+
+    // TODO: remove double_type and tensor_type and use make_type
+    // directly. Currently the tensor_type function contains
+    // protection against ending up with scalar float values.
+
+    static ValueType double_type() { return make_type(CellType::DOUBLE, {}); }
     static ValueType tensor_type(std::vector<Dimension> dimensions_in, CellType cell_type = CellType::DOUBLE);
+
     static ValueType from_spec(const vespalib::string &spec);
     static ValueType from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted);
     vespalib::string to_spec() const;

@@ -319,9 +319,7 @@ public class SearchNode extends AbstractService implements
                     periods(point.getIntervalSeconds()).periods(300));
         }
         builder.consumer(
-                new MetricsmanagerConfig.Consumer.Builder().
-                        name("log").
-                        tags("logdefault"));
+                new MetricsmanagerConfig.Consumer.Builder().name("log").tags("logdefault"));
     }
 
     @Override

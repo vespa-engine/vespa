@@ -152,9 +152,9 @@ public class TenantSerializer {
     }
 
     TenantInfo tenantInfoFromSlime(Inspector infoObject) {
-        if (!infoObject.valid()) return TenantInfo.EmptyInfo;
+        if (!infoObject.valid()) return TenantInfo.EMPTY;
 
-        return TenantInfo.EmptyInfo
+        return TenantInfo.EMPTY
                 .withName(infoObject.field("name").asString())
                 .withEmail(infoObject.field("email").asString())
                 .withWebsite(infoObject.field("website").asString())
@@ -166,7 +166,7 @@ public class TenantSerializer {
     }
 
     private TenantInfoAddress tenantInfoAddressFromSlime(Inspector addressObject) {
-        return TenantInfoAddress.EmptyAddress
+        return TenantInfoAddress.EMPTY
                 .withAddressLines(addressObject.field("addressLines").asString())
                 .withPostalCodeOrZip(addressObject.field("postalCodeOrZip").asString())
                 .withCity(addressObject.field("city").asString())
@@ -175,7 +175,7 @@ public class TenantSerializer {
     }
 
     private TenantInfoBillingContact tenantInfoBillingContactFromSlime(Inspector billingObject) {
-        return TenantInfoBillingContact.EmptyBillingContact
+        return TenantInfoBillingContact.EMPTY
                 .withName(billingObject.field("name").asString())
                 .withEmail(billingObject.field("email").asString())
                 .withPhone(billingObject.field("phone").asString())
@@ -279,5 +279,4 @@ public class TenantSerializer {
             default: throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
     }
-
 }

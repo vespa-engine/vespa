@@ -1,7 +1,9 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
@@ -10,7 +12,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
-/** Calculates the quota to allocate to a deployment. */
+/**
+ * Calculates the quota to allocate to a deployment.
+ *
+ * @author ogronnesby
+ * @author andreer
+ */
 public class DeploymentQuotaCalculator {
 
     public static Quota calculate(Quota tenantQuota,
@@ -23,6 +30,23 @@ public class DeploymentQuotaCalculator {
         if (deployingZone.environment().isProduction()) return probablyEnoughForAll(tenantQuota, tenantApps, deployingApp, deploymentSpec);
 
         return getMaximumAllowedQuota(tenantQuota, tenantApps, deployingApp, deployingZone);
+    }
+
+    public static QuotaUsage calculateQuotaUsage(com.yahoo.vespa.hosted.controller.api.integration.configserver.Application application) {
+        // the .max() resources are only specified when the user has specified a max.  to make sure we enforce quotas
+        // correctly we retrieve the maximum of .current() and .max() - otherwise we would keep adding 0s for those
+        // that are not using autoscaling.
+        var quotaUsageRate = application.clusters().values().stream()
+                .map(cluster -> largestQuotaUsage(cluster.current(), cluster.max()))
+                .mapToDouble(resources -> resources.nodes() * resources.nodeResources().cost())
+                .sum();
+        return QuotaUsage.create(quotaUsageRate);
+    }
+
+    private static ClusterResources largestQuotaUsage(ClusterResources a, ClusterResources b) {
+        var usageA = a.nodes() * a.nodeResources().cost();
+        var usageB = b.nodes() * b.nodeResources().cost();
+        return usageA < usageB ? b : a;
     }
 
     /** Just get the maximum quota we are allowed to use. */

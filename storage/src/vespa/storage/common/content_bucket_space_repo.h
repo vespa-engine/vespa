@@ -19,7 +19,7 @@ private:
     BucketSpaceMap _map;
 
 public:
-    explicit ContentBucketSpaceRepo(bool use_btree_db = false);
+    explicit ContentBucketSpaceRepo(const ContentBucketDbOptions&);
     ContentBucketSpace &get(document::BucketSpace bucketSpace) const;
     BucketSpaceMap::const_iterator begin() const { return _map.begin(); }
     BucketSpaceMap::const_iterator end() const { return _map.end(); }

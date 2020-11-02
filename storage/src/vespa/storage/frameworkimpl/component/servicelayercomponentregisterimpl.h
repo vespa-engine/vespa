@@ -26,7 +26,7 @@ class ServiceLayerComponentRegisterImpl
 public:
     typedef std::unique_ptr<ServiceLayerComponentRegisterImpl> UP;
 
-    ServiceLayerComponentRegisterImpl(bool use_btree_db = false);
+    explicit ServiceLayerComponentRegisterImpl(const ContentBucketDbOptions&);
 
     ContentBucketSpaceRepo& getBucketSpaceRepo() { return _bucketSpaceRepo; }
     MinimumUsedBitsTracker& getMinUsedBitsTracker() {

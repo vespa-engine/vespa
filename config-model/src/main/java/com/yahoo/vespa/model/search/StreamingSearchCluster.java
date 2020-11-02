@@ -31,8 +31,8 @@ public class StreamingSearchCluster extends SearchCluster implements
         SummaryConfig.Producer
 {
 
-    private class AttributesProducer extends AbstractConfigProducer implements AttributesConfig.Producer {
-        AttributesProducer(AbstractConfigProducer parent, String docType) {
+    private class AttributesProducer extends AbstractConfigProducer<AttributesProducer> implements AttributesConfig.Producer {
+        AttributesProducer(AbstractConfigProducer<?> parent, String docType) {
             super(parent, docType);
         }
 
@@ -49,7 +49,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     private final String docTypeName;
     private DerivedConfiguration sdConfig = null;
 
-    public StreamingSearchCluster(AbstractConfigProducer parent, String clusterName, int index, String docTypeName, String storageRouteSpec) {
+    public StreamingSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index, String docTypeName, String storageRouteSpec) {
         super(parent, clusterName, index);
         attributesConfig = new AttributesProducer(parent, docTypeName);
         this.docTypeName = docTypeName;

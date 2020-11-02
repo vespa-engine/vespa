@@ -33,7 +33,7 @@ public class CloudTenant extends Tenant {
     public static CloudTenant create(TenantName tenantName, Principal creator) {
         return new CloudTenant(requireName(tenantName),
                                Optional.ofNullable(creator),
-                               ImmutableBiMap.of(), TenantInfo.EmptyInfo);
+                               ImmutableBiMap.of(), TenantInfo.EMPTY);
     }
 
     /** The user that created the tenant */

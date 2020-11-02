@@ -101,6 +101,7 @@ public class DeploymentTester {
 
     public OutstandingChangeDeployer outstandingChangeDeployer() { return outstandingChangeDeployer; }
 
+    /** A tester with clock configured to a time when confidence can freely change */
     public DeploymentTester atMondayMorning() {
         return at(tester.clock().instant().atZone(ZoneOffset.UTC)
                         .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))

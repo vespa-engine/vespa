@@ -1,3 +1,4 @@
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
 import java.util.Objects;
@@ -10,6 +11,8 @@ import java.util.Objects;
  * The address lines can be street address, P.O box, c/o name, apartment, suite, unit, building floor etc etc.
  *
  * All fields are mandatory but can be an empty string (ie. not null)
+ *
+ * @author smorgrav
  */
 public class TenantInfoAddress {
 
@@ -27,7 +30,7 @@ public class TenantInfoAddress {
         this.stateRegionProvince = Objects.requireNonNull(stateRegionProvince);
     }
 
-    public static TenantInfoAddress EmptyAddress = new TenantInfoAddress("","","", "", "");
+    public static final TenantInfoAddress EMPTY = new TenantInfoAddress("","","", "", "");
 
     public String addressLines() {
         return addressLines;
@@ -70,7 +73,7 @@ public class TenantInfoAddress {
     }
 
     public boolean isEmpty() {
-        return (addressLines + postalCodeOrZip + city + country + stateRegionProvince).isEmpty();
+        return this.equals(EMPTY);
     }
 
     @Override

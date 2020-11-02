@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "lid_reuse_delayer_config.h"
 #include <vector>
+#include <cstdint>
 
 namespace searchcorespi::index { struct IThreadingService; }
 
@@ -26,22 +26,14 @@ class LidReuseDelayer
 {
     searchcorespi::index::IThreadingService &_writeService;
     IStore &_documentMetaStore;
-    const bool _immediateCommit;
-    const bool _allowEarlyAck;
-    LidReuseDelayerConfig _config;
     std::vector<uint32_t> _pendingLids; // lids waiting for commit
 
 public:
-    LidReuseDelayer(searchcorespi::index::IThreadingService &writeService, IStore &documentMetaStore,
-                    const LidReuseDelayerConfig & config);
+    LidReuseDelayer(searchcorespi::index::IThreadingService &writeService, IStore &documentMetaStore);
     ~LidReuseDelayer();
     bool delayReuse(uint32_t lid);
     bool delayReuse(const std::vector<uint32_t> &lids);
     std::vector<uint32_t> getReuseLids();
-
-    bool needImmediateCommit() const { return _immediateCommit; }
-    bool allowEarlyAck() const { return _allowEarlyAck; }
-    const LidReuseDelayerConfig & getConfig() const { return _config; }
 };
 
 }

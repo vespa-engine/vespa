@@ -13,7 +13,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author geirst
  */
-public class Tuning extends AbstractConfigProducer implements ProtonConfig.Producer {
+public class Tuning extends AbstractConfigProducer<Tuning> implements ProtonConfig.Producer {
 
     public static class SearchNode implements ProtonConfig.Producer {
 
@@ -397,7 +397,7 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
     public DispatchTuning dispatch = DispatchTuning.empty;
     public SearchNode searchNode;
 
-    public Tuning(AbstractConfigProducer parent) {
+    public Tuning(AbstractConfigProducer<?> parent) {
         super(parent, "tuning");
     }
 

@@ -20,9 +20,9 @@ public class VisitorControlHandler {
         SUCCESS,
         /** Aborted by user. */
         ABORTED,
-        /** Failure */
+        /** Fatal failure. */
         FAILURE,
-        /** Create visitor reply did not return within the specified timeframe. */
+        /** Create visitor reply did not return within the specified timeframe, or the session timed out. */
         TIMEOUT
     };
 

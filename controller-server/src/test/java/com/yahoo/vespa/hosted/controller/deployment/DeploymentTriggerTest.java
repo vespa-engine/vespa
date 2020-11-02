@@ -629,7 +629,7 @@ public class DeploymentTriggerTest {
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
-        Version version1 = tester.controller().versionStatus().systemVersion().get().versionNumber();
+        Version version1 = tester.controller().readSystemVersion();
         var app1 = tester.newDeploymentContext();
 
         // First deployment: An application change

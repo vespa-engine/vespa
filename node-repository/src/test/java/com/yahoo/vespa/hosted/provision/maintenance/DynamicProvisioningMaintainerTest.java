@@ -144,10 +144,10 @@ public class DynamicProvisioningMaintainerTest {
         assertTrue(tester.nodeRepository.getNode(host2.hostname()).isPresent());
     }
 
-    @Ignore // TODO (hakon): Fix or replace with spare-hosts flag
+    @Ignore // TODO (hakon): Enable as test of min-capacity specified in flag
     @Test
     public void provision_exact_capacity() {
-        var tester = new DynamicProvisioningTester(Cloud.builder().dynamicProvisioning(false).build());
+        var tester = new DynamicProvisioningTester(Cloud.builder().dynamicProvisioning(true).build());
         NodeResources resources1 = new NodeResources(24, 64, 100, 1);
         NodeResources resources2 = new NodeResources(16, 24, 100, 1);
         tester.flagSource.withListFlag(Flags.TARGET_CAPACITY.id(), List.of(new HostCapacity(resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(), 1),
@@ -325,7 +325,8 @@ public class DynamicProvisioningMaintainerTest {
         }
 
         @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources, ApplicationId applicationId, Version osVersion) {
+        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
+                                                    ApplicationId applicationId, Version osVersion, HostSharing sharing) {
             Flavor hostFlavor = flavors.getFlavors().stream()
                                        .filter(f -> !f.isDocker())
                                        .filter(f -> f.resources().compatibleWith(resources))
@@ -336,6 +337,7 @@ public class DynamicProvisioningMaintainerTest {
                 hosts.add(new ProvisionedHost("host" + index,
                                               "hostname" + index,
                                               hostFlavor,
+                                              Optional.empty(),
                                               "nodename" + index,
                                               resources,
                                               osVersion));

@@ -391,7 +391,7 @@ TEST("require that if_node works") {
 
 TEST("require that if_node result is mutable only when both children produce mutable results") {
     Stash stash;
-    const TensorFunction &cond = inject(DoubleValue::double_type(), 0, stash);
+    const TensorFunction &cond = inject(DoubleValue::shared_type(), 0, stash);
     const TensorFunction &a = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
     const TensorFunction &b = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
     const TensorFunction &c = inject(ValueType::from_spec("tensor(x[5])"), 0, stash);
@@ -412,7 +412,7 @@ TEST("require that if_node result is mutable only when both children produce mut
 
 TEST("require that if_node gets expected result type") {
     Stash stash;
-    const TensorFunction &a = inject(DoubleValue::double_type(), 0, stash);
+    const TensorFunction &a = inject(DoubleValue::shared_type(), 0, stash);
     const TensorFunction &b = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
     const TensorFunction &c = inject(ValueType::from_spec("tensor(x[3])"), 0, stash);
     const TensorFunction &d = inject(ValueType::from_spec("error"), 0, stash);
@@ -427,8 +427,8 @@ TEST("require that if_node gets expected result type") {
 TEST("require that push_children works") {
     Stash stash;
     std::vector<TensorFunction::Child::CREF> refs;
-    const TensorFunction &a = inject(DoubleValue::double_type(), 0, stash);
-    const TensorFunction &b = inject(DoubleValue::double_type(), 1, stash);
+    const TensorFunction &a = inject(DoubleValue::shared_type(), 0, stash);
+    const TensorFunction &b = inject(DoubleValue::shared_type(), 1, stash);
     const TensorFunction &c = const_value(stash.create<DoubleValue>(1.0), stash);
     a.push_children(refs);
     b.push_children(refs);
