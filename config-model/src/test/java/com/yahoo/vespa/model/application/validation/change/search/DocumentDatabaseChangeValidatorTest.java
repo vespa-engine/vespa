@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newReindexingAction;
+import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newReindexAction;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 
@@ -52,7 +52,7 @@ public class DocumentDatabaseChangeValidatorTest {
                                  "Field 'f1' changed: add attribute aspect"),
                 newRestartAction(ClusterSpec.Id.from("test"),
                                  "Field 'f4.s1' changed: add attribute aspect"),
-                newReindexingAction(ClusterSpec.Id.from("test"),
+                newReindexAction(ClusterSpec.Id.from("test"),
                                 "indexing-change",
                                 ValidationOverrides.empty,
                                 "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +

@@ -37,12 +37,12 @@ public class ConfigChangeTestUtils {
         return VespaRefeedAction.of(id, name, overrides, message, services, documentType, now);
     }
 
-    public static VespaConfigChangeAction newReindexingAction(ClusterSpec.Id id, String name, ValidationOverrides overrides, String message, Instant now) {
+    public static VespaConfigChangeAction newReindexAction(ClusterSpec.Id id, String name, ValidationOverrides overrides, String message, Instant now) {
         return VespaReindexAction.of(id, name, overrides, message, now);
     }
 
-    public static VespaConfigChangeAction newReindexingAction(ClusterSpec.Id id, String name, ValidationOverrides overrides, String message,
-                                                          List<ServiceInfo> services, String documentType, Instant now) {
+    public static VespaConfigChangeAction newReindexAction(ClusterSpec.Id id, String name, ValidationOverrides overrides, String message,
+                                                           List<ServiceInfo> services, String documentType, Instant now) {
         return VespaReindexAction.of(id, name, overrides, message, services, documentType, now);
     }
 
