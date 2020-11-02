@@ -194,14 +194,16 @@ public class EvaluationTestCase {
                                "reduce(tensor0, avg, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:4 }",
                                "reduce(tensor0, count, x, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {}:7 }",
+                               "reduce(tensor0, max, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {}:4 }",
+                               "reduce(tensor0, median, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {}:1 }",
+                               "reduce(tensor0, min, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:105 }",
                                "reduce(tensor0, prod, x, y)",  "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:16 }",
                                "reduce(tensor0, sum, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
-        tester.assertEvaluates("{ {}:7 }",
-                               "reduce(tensor0, max, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
-        tester.assertEvaluates("{ {}:1 }",
-                               "reduce(tensor0, min, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         // -- reduce 2 by specifying no arguments
         tester.assertEvaluates("{ {}:4 }",
                                "reduce(tensor0, avg)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
@@ -223,6 +225,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {}:-5   }", "sum(tensor0)", "-5.0");
         tester.assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:0}:5.5, {d1:1}:7.0 }");
         tester.assertEvaluates("{ {}: 0   }", "sum(tensor0)", "{ {d1:0}:5.0, {d1:1}:7.0, {d1:2}:-12.0}");
+        tester.assertEvaluates("{ {}: 8.0   }", "avg(tensor0)", "{ {d1:0}:5.0, {d1:1}:7.0, {d1:2}:12.0}");
+        tester.assertEvaluates("{ {}: 5.0   }", "median(tensor0)", "{ {d1:0}:5.0, {d1:1}:7.0, {d1:2}:-12.0}");
         tester.assertEvaluates("{ {y:0}:4, {y:1}:12.0 }",
                                "sum(tensor0, x)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {x:0}:6, {x:1}:10.0 }",
