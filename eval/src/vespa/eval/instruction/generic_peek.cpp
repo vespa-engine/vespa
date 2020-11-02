@@ -309,8 +309,8 @@ generic_mixed_peek(const ValueType &res_type,
         while (view->next_result(state.fetch_addr, input_subspace)) {
             auto dst = builder->add_subspace(state.output_addr).begin();
             auto input_offset = input_subspace * dense_plan.in_dense_size;
-            dense_plan.execute(dense_offset,
-                               [&](size_t idx) { *dst++ = input_cells[input_offset + idx]; });
+            dense_plan.execute(dense_offset + input_offset,
+                               [&](size_t idx) { *dst++ = input_cells[idx]; });
             ++filled_subspaces;
         }
     }
