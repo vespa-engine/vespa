@@ -8,6 +8,8 @@ import java.util.Objects;
  * This info is used to capture generic support information and invoiced billing information.
  *
  * All fields are non null but strings can be empty
+ *
+ * @author smorgrav
  */
 public class TenantInfo {
     private final String name;
@@ -31,8 +33,8 @@ public class TenantInfo {
         this.billingContact = Objects.requireNonNull(billingContact);
     }
 
-    public static TenantInfo EmptyInfo = new TenantInfo("","","", "", "", "",
-            TenantInfoAddress.EmptyAddress, TenantInfoBillingContact.EmptyBillingContact);
+    public static final TenantInfo EMPTY = new TenantInfo("","","", "", "", "",
+            TenantInfoAddress.EMPTY, TenantInfoBillingContact.EMPTY);
 
     public String name() {
         return name;
@@ -99,9 +101,7 @@ public class TenantInfo {
     }
 
     public boolean isEmpty() {
-        return (name + email + website + contactEmail + contactName + invoiceEmail).isEmpty()
-                && address.isEmpty()
-                && billingContact.isEmpty();
+        return this.equals(EMPTY);
     }
 
     @Override

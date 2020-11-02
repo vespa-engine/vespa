@@ -11,7 +11,6 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
@@ -70,7 +69,7 @@ public class SignatureFilterTest {
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(),
-                                                     TenantInfo.EmptyInfo));
+                                                     TenantInfo.EMPTY));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
     }
 
@@ -110,7 +109,7 @@ public class SignatureFilterTest {
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(publicKey, () -> "user"),
-                                                     TenantInfo.EmptyInfo));
+                                                     TenantInfo.EMPTY));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                               new SecurityContext(new SimplePrincipal("user"),
                                                   Set.of(Role.reader(id.tenant()),

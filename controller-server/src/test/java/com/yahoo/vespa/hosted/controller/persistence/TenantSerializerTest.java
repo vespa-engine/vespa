@@ -85,7 +85,7 @@ public class TenantSerializerTest {
                                              Optional.of(new SimplePrincipal("foobar-user")),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                                                                otherPublicKey, new SimplePrincipal("jane")),
-                                             TenantInfo.EmptyInfo);
+                                             TenantInfo.EMPTY);
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
@@ -94,8 +94,8 @@ public class TenantSerializerTest {
 
     @Test
     public void cloud_tenant_with_tenant_info_partial() {
-        TenantInfo partialInfo = TenantInfo.EmptyInfo
-                .withAddress(TenantInfoAddress.EmptyAddress.withCity("Hønefoss"));
+        TenantInfo partialInfo = TenantInfo.EMPTY
+                .withAddress(TenantInfoAddress.EMPTY.withCity("Hønefoss"));
 
         Slime slime = new Slime();
         Cursor parentObject = slime.setObject();
@@ -105,24 +105,24 @@ public class TenantSerializerTest {
 
     @Test
     public void cloud_tenant_with_tenant_info_full() {
-        TenantInfo fullInfo = TenantInfo.EmptyInfo
+        TenantInfo fullInfo = TenantInfo.EMPTY
                 .withName("My Company")
                 .withEmail("email@mycomp.any")
                 .withWebsite("http://mycomp.any")
                 .withContactEmail("ceo@mycomp.any")
                 .withContactName("My Name")
                 .withInvoiceEmail("invoice@mycomp.any")
-                .withAddress(TenantInfoAddress.EmptyAddress
+                .withAddress(TenantInfoAddress.EMPTY
                         .withCity("Hønefoss")
                         .withAddressLines("Riperbakken 2")
                         .withCountry("Norway")
                         .withPostalCodeOrZip("3510")
                         .withStateRegionProvince("Viken"))
-                .withBillingContact(TenantInfoBillingContact.EmptyBillingContact
+                .withBillingContact(TenantInfoBillingContact.EMPTY
                         .withEmail("thomas@sodor.com")
                         .withName("Thomas The Tank Engine")
                         .withPhone("NA")
-                        .withAddress(TenantInfoAddress.EmptyAddress
+                        .withAddress(TenantInfoAddress.EMPTY
                                 .withCity("Suddery")
                                 .withCountry("Sodor")
                                 .withAddressLines("Central Station")
