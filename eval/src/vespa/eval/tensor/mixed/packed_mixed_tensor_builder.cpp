@@ -11,10 +11,8 @@ PackedMixedTensorBuilder<T>::add_subspace(ConstArrayRef<vespalib::stringref> add
     std::vector<vespalib::stringref> addr(addr_in.begin(), addr_in.end());
     uint32_t idx = _mappings_builder.add_mapping_for(addr);
     size_t offset = idx * _subspace_size;
-    assert(offset <= _cells.size());
-    if (offset == _cells.size()) {
-        _cells.resize(offset + _subspace_size);
-    }
+    assert(offset == _cells.size());
+    _cells.resize(offset + _subspace_size);
     return ArrayRef<T>(&_cells[offset], _subspace_size);
 }
 
