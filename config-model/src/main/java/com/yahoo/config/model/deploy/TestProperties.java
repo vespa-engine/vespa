@@ -48,7 +48,6 @@ public class TestProperties implements ModelContext.Properties {
     private ApplicationRoles applicationRoles;
     private Quota quota = Quota.unlimited();
     private boolean useAccessControlTlsHandshakeClientAuth;
-    private double jettyThreadpoolSizeFactor = 0.0;
 
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
@@ -78,7 +77,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean skipMbusReplyThread() { return false; }
     @Override public Quota quota() { return quota; }
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
-    @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
@@ -115,8 +113,6 @@ public class TestProperties implements ModelContext.Properties {
         this.useFastValueTensorImplementation = useFastValueTensorImplementation;
         return this;
     }
-
-    public TestProperties setJettyThreadpoolSizeFactor(double factor) { this.jettyThreadpoolSizeFactor = factor; return this; }
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
