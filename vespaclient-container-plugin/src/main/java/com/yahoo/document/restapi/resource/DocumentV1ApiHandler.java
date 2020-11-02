@@ -311,8 +311,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
-            DocumentOperationParameters parameters = parametersFromRequest(request, CLUSTER, FIELD_SET)
-                    .withResponseHandler(response -> {
+            DocumentOperationParameters rawParameters = parametersFromRequest(request, CLUSTER, FIELD_SET);
+            if (rawParameters.fieldSet().isEmpty())
+                rawParameters = rawParameters.withFieldSet(path.documentType().orElseThrow() + ":[document]");
+            DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> {
                 handle(path, handler, response, (document, jsonResponse) -> {
                     if (document != null) {
                         jsonResponse.writeSingleDocument(document);
