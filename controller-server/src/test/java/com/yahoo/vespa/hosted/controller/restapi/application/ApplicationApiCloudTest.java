@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiTest.createApplicationSubmissionData;
 
@@ -44,12 +45,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .withBooleanFlag(Flags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
         deploymentTester = new DeploymentTester(new ControllerTester(tester));
         deploymentTester.controllerTester().computeVersionStatus();
+        setupTenantAndApplication();
     }
 
     @Test
     public void test_missing_security_clients_pem() {
-        setupTenantAndApplication();
-
         var application = prodBuilder().build();
 
         var deployRequest = request("/application/v4/tenant/scoober/application/albums/submit", POST)
@@ -62,6 +62,13 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 400);
     }
 
+    @Test
+    public void get_empty_tenant_info() {
+        var infoRequest =
+                request("/application/v4/tenant/scoober/info", GET)
+                .roles(Set.of(Role.developer(tenantName)));
+        tester.assertResponse(infoRequest, "{}", 200);
+    }
 
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()

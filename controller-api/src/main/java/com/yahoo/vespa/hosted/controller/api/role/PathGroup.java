@@ -51,12 +51,13 @@ enum PathGroup {
     /** Paths used for user management on the tenant level. */
     tenantUsers(Matcher.tenant,
                 PathPrefix.api,
-                "/user/v1/tenant/{tenant}", "/user/v1/tenant/{tenant}/info/"),
+                "/user/v1/tenant/{tenant}"),
 
     /** Paths used by tenant administrators. */
     tenantInfo(Matcher.tenant,
                PathPrefix.api,
                "/application/v4/tenant/{tenant}/application/",
+                "/application/v4/tenant/{tenant}/info/",
                "/routing/v1/status/tenant/{tenant}/{*}"),
 
     tenantKeys(Matcher.tenant,

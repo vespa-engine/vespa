@@ -15,6 +15,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
@@ -66,7 +67,9 @@ import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -75,19 +78,24 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
-import static com.yahoo.vespa.hosted.controller.restapi.application.RequestBuilder.request;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -188,6 +196,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
         updateContactInformation();
         tester.assertResponse(request("/application/v4/tenant/tenant2", GET).userIdentity(USER_ID),
                               new File("tenant-with-contact-info.json"));
+
+        // GET tenant info
+        tester.assertResponse(request("/application/v4/tenant/tenant2", GET).userIdentity(USER_ID),
+                new File("tenant-with-contact-info.json"));
 
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
@@ -1518,18 +1530,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     "}";
     }
 
+    /** Make a request with (athens) user domain1.mytenant */
+    private RequestBuilder request(String path, Request.Method method) {
+        return new RequestBuilder(path, method);
+    }
+
     /**
      * In production this happens outside hosted Vespa, so there is no API for it and we need to reach down into the
      * mock setup to replicate the action.
      */
-    static void createAthenzDomainWithAdmin(AthenzDomain domain, UserId userId, ContainerTester tester) {
+    private void createAthenzDomainWithAdmin(AthenzDomain domain, UserId userId) {
         AthenzDbMock.Domain domainMock = tester.athenzClientFactory().getSetup().getOrCreateDomain(domain);
         domainMock.markAsVespaTenant();
         domainMock.admin(AthenzUser.fromUserId(userId.id()));
-    }
-
-    private void createAthenzDomainWithAdmin(AthenzDomain domain, UserId userId) {
-        createAthenzDomainWithAdmin(domain, userId, tester);
     }
 
     /**
@@ -1643,4 +1656,64 @@ public class ApplicationApiTest extends ControllerContainerTest {
         assertEquals(agent, westPolicy.status().globalRouting().agent());
         assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), westPolicy.status().globalRouting().changedAt());
     }
+
+    private static class RequestBuilder implements Supplier<Request> {
+
+        private final String path;
+        private final Request.Method method;
+        private byte[] data = new byte[0];
+        private AthenzIdentity identity;
+        private OktaIdentityToken oktaIdentityToken;
+        private OktaAccessToken oktaAccessToken;
+        private String contentType = "application/json";
+        private final Map<String, List<String>> headers = new HashMap<>();
+        private final Map<String, String> properties = new HashMap<>();
+
+        private RequestBuilder(String path, Request.Method method) {
+            this.path = path;
+            this.method = method;
+        }
+
+        private RequestBuilder data(byte[] data) { this.data = data; return this; }
+        private RequestBuilder data(String data) { return data(data.getBytes(UTF_8)); }
+        private RequestBuilder data(MultiPartStreamer streamer) {
+            return Exceptions.uncheck(() -> data(streamer.data().readAllBytes()).contentType(streamer.contentType()));
+        }
+
+        private RequestBuilder userIdentity(UserId userId) { this.identity = HostedAthenzIdentities.from(userId); return this; }
+        private RequestBuilder screwdriverIdentity(ScrewdriverId screwdriverId) { this.identity = HostedAthenzIdentities.from(screwdriverId); return this; }
+        private RequestBuilder oktaIdentityToken(OktaIdentityToken oktaIdentityToken) { this.oktaIdentityToken = oktaIdentityToken; return this; }
+        private RequestBuilder oktaAccessToken(OktaAccessToken oktaAccessToken) { this.oktaAccessToken = oktaAccessToken; return this; }
+        private RequestBuilder contentType(String contentType) { this.contentType = contentType; return this; }
+        private RequestBuilder recursive(String recursive) {return properties(Map.of("recursive", recursive)); }
+        private RequestBuilder properties(Map<String, String> properties) { this.properties.putAll(properties); return this; }
+        private RequestBuilder header(String name, String value) {
+            this.headers.putIfAbsent(name, new ArrayList<>());
+            this.headers.get(name).add(value);
+            return this;
+        }
+
+        @Override
+        public Request get() {
+            Request request = new Request("http://localhost:8080" + path +
+                                          properties.entrySet().stream()
+                                                    .map(entry -> encode(entry.getKey(), UTF_8) + "=" + encode(entry.getValue(), UTF_8))
+                                                    .collect(joining("&", "?", "")),
+                                          data, method);
+            request.getHeaders().addAll(headers);
+            request.getHeaders().put("Content-Type", contentType);
+            // user and domain parameters are translated to a Principal by MockAuthorizer as we do not run HTTP filters
+            if (identity != null) {
+                addIdentityToRequest(request, identity);
+            }
+            if (oktaIdentityToken != null) {
+                addOktaIdentityToken(request, oktaIdentityToken);
+            }
+            if (oktaAccessToken != null) {
+                addOktaAccessToken(request, oktaAccessToken);
+            }
+            return request;
+        }
+    }
+
 }
