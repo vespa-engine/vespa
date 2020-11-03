@@ -5,6 +5,7 @@ import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.concurrent.maintenance.JobControlState;
 import com.yahoo.concurrent.maintenance.JobMetrics;
 import com.yahoo.concurrent.maintenance.Maintainer;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
@@ -15,8 +16,12 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A maintainer is some job which runs at a fixed interval to perform some maintenance task in the config server.
@@ -26,6 +31,14 @@ import java.util.Set;
 public abstract class ConfigServerMaintainer extends Maintainer {
 
     protected final ApplicationRepository applicationRepository;
+
+    /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
+    ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
+                           Instant now, Duration interval) {
+        super(null, interval, now, new JobControl(new JobControlFlags(curator, flagSource)),
+              jobMetrics(applicationRepository.metric()), cluster(curator));
+        this.applicationRepository = applicationRepository;
+    }
 
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                            Duration initialDelay, Duration interval) {
@@ -65,5 +78,14 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         }
 
     }
+
+    /** Returns all hosts configured to be part of this ZooKeeper cluster */
+    public static List<String> cluster(Curator curator) {
+        return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
+                     .filter(hostAndPort -> !hostAndPort.isEmpty())
+                     .map(hostAndPort -> hostAndPort.split(":")[0])
+                     .collect(Collectors.toList());
+    }
+
 
 }
