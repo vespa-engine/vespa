@@ -49,11 +49,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toSet;
 
 /**
- * The applications of a tenant, backed by ZooKeeper.
- *
- * Each application is stored under /config/v2/tenants/&lt;tenant&gt;/applications/&lt;application&gt;,
- * the root contains the currently active session, if any. Locks for synchronising writes to these paths, and changes
- * to the config of this application, are found under /config/v2/tenants/&lt;tenant&gt;/locks/&lt;application&gt;.
+ * The applications of a tenant.
  *
  * @author Ulf Lilleengen
  * @author jonmv
@@ -62,9 +58,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     private static final Logger log = Logger.getLogger(TenantApplications.class.getName());
 
-    private final Curator curator;
-    private final Path applicationsPath;
-    private final Path locksPath;
+    private final ApplicationCuratorDatabase database;
     private final Curator.DirectoryCache directoryCache;
     private final Executor zkWatcherExecutor;
     private final Metrics metrics;
@@ -81,12 +75,10 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                               ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
                               ConfigserverConfig configserverConfig, HostRegistry<ApplicationId> hostRegistry,
                               TenantFileSystemDirs tenantFileSystemDirs) {
-        this.curator = curator;
-        this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
-        this.locksPath = TenantRepository.getLocksPath(tenant);
+        this.database = new ApplicationCuratorDatabase(tenant, curator);
         this.tenant = tenant;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
-        this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
+        this.directoryCache = database.createApplicationsPathCache(zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
         this.metrics = metrics;
@@ -110,21 +102,20 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName));
     }
 
+    /** The curator backed ZK storage of this. */
+    public ApplicationCuratorDatabase database() { return database; }
+
     /**
      * List the active applications of a tenant in this config server.
      *
      * @return a list of {@link ApplicationId}s that are active.
      */
     public List<ApplicationId> activeApplications() {
-        return curator.getChildren(applicationsPath).stream()
-                      .sorted()
-                      .map(ApplicationId::fromSerializedForm)
-                      .filter(id -> activeSessionOf(id).isPresent())
-                      .collect(Collectors.toUnmodifiableList());
+        return database().activeApplications();
     }
 
     public boolean exists(ApplicationId id) {
-        return curator.exists(applicationPath(id));
+        return database().exists(id);
     }
 
     /**
@@ -132,10 +123,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      * Returns Optional.empty if application not found or no active session exists.
      */
     public Optional<Long> activeSessionOf(ApplicationId id) {
-        Optional<byte[]> data = curator.getData(applicationPath(id));
-        return (data.isEmpty() || data.get().length == 0)
-                ? Optional.empty()
-                : data.map(bytes -> Long.parseLong(Utf8.toString(bytes)));
+        return database().activeSessionOf(id);
     }
 
     public boolean sessionExistsInFileSystem(long sessionId) {
@@ -149,18 +137,14 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      * @param sessionId Id of the session containing the application package for this id.
      */
     public Transaction createPutTransaction(ApplicationId applicationId, long sessionId) {
-        return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+        return database().createPutTransaction(applicationId, sessionId);
     }
 
     /**
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
-        if (! id.tenant().equals(tenant))
-            throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
-        try (Lock lock = lock(id)) {
-            curator.create(applicationPath(id));
-        }
+        database().createApplication(id);
     }
 
     /**
@@ -179,7 +163,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      * Returns a transaction which deletes this application.
      */
     public CuratorTransaction createDeleteTransaction(ApplicationId applicationId) {
-        return CuratorTransaction.from(CuratorOperations.deleteAll(applicationPath(applicationId).getAbsolute(), curator), curator);
+        return database().createDeleteTransaction(applicationId);
     }
 
     /**
@@ -198,7 +182,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     /** Returns the lock for changing the session status of the given application. */
     public Lock lock(ApplicationId id) {
-        return curator.lock(lockPath(id), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
+        return database().lock(id);
     }
 
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
@@ -230,15 +214,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     private void applicationAdded(ApplicationId applicationId) {
         log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
-    }
-
-    // TODO jonmv: Move curator stuff to ApplicationCuratorDatabase
-    private Path applicationPath(ApplicationId id) {
-        return applicationsPath.append(id.serializedForm());
-    }
-
-    private Path lockPath(ApplicationId id) {
-        return locksPath.append(id.serializedForm());
     }
 
     /**

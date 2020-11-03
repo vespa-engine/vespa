@@ -17,7 +17,7 @@ public class ApplicationCuratorDatabaseTest {
     @Test
     public void testReindexingStatusSerialization() {
         ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(new MockCurator());
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), new MockCurator());
 
         assertEquals(ApplicationReindexing.empty(), db.readReindexingStatus(id));
 
