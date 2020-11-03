@@ -162,7 +162,6 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final Quota quota;
-        private final boolean useNewRestapiHandler;
         private final boolean useAccessControlTlsHandshakeClientAuth;
         private final double jettyThreadpoolSizeFactor;
         private final boolean useAsyncMessageHandlingOnSchedule;
@@ -222,9 +221,6 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
-            this.useNewRestapiHandler = Flags.USE_NEW_RESTAPI_HANDLER.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
-                    .value();
             this.useAccessControlTlsHandshakeClientAuth =
                     Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION.bindTo(flagSource)
                             .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
@@ -314,7 +310,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public Quota quota() { return quota; }
-        @Override public boolean useNewRestapiHandler() { return useNewRestapiHandler; }
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
         @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }

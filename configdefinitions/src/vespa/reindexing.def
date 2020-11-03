@@ -4,4 +4,4 @@
 namespace=vespa.config.content.reindexing
 
 # Epoch millis after which latest reprocessing may begin, per document type
-status{}.readyAtMillis int
+status{}.readyAtMillis long
