@@ -6,7 +6,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.custom.HostCapacity;
 import com.yahoo.vespa.flags.custom.SharedHost;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -302,12 +301,6 @@ public class Flags {
             "Whether PeriodicApplicationMaintainer should skip deployment for an application",
             "Takes effect at next run of maintainer",
             APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_NEW_RESTAPI_HANDLER = defineFeatureFlag(
-            "use-new-restapi-handler",
-            false,
-            "Whether application containers should use the new restapi handler implementation",
-            "Takes effect on next internal redeployment");
 
     public static final UnboundBooleanFlag USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION = defineFeatureFlag(
             "use-access-control-client-authentication",
