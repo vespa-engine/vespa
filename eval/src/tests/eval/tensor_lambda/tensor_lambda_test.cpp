@@ -4,6 +4,8 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_replace_type_function.h>
 #include <vespa/eval/tensor/dense/dense_cell_range_function.h>
@@ -40,6 +42,7 @@ std::ostream &operator<<(std::ostream &os, EvalMode eval_mode)
 }
 
 const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const ValueBuilderFactory &simple_factory = SimpleValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
@@ -59,7 +62,9 @@ template <typename T, typename F>
 void verify_impl(const vespalib::string &expr, const vespalib::string &expect, F &&inspect) {
     EvalFixture fixture(prod_engine, expr, param_repo, true);
     EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
+    EvalFixture simple_factory_fixture(simple_factory, expr, param_repo, false);
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
+    EXPECT_EQUAL(fixture.result(), simple_factory_fixture.result());
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expect, param_repo));
     auto info = fixture.find_all<T>();
