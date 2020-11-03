@@ -335,9 +335,9 @@ public class Flags {
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-    public static final UnboundIntFlag CONETNT_NODE_BUCKET_DB_STRIPE_BITS = defineIntFlag(
+    public static final UnboundIntFlag CONTENT_NODE_BUCKET_DB_STRIPE_BITS = defineIntFlag(
             "content-node-bucket-db-stripe-bits", 0,
-            "Number of bits used for sharing the bucket DB in service layer",
+            "Number of bits used for striping the bucket DB in service layer",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
     public static final UnboundIntFlag MERGE_CHUNK_SIZE = defineIntFlag(

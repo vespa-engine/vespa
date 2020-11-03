@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content.storagecluster;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
@@ -57,16 +56,17 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
             return StorFilestorConfig.Response_sequencer_type.Enum.ADAPTIVE;
         }
     }
-    public FileStorProducer(ModelContext.Properties properties, ContentCluster parent, Integer numThreads) {
+    private static int alignUp2MiB(int value) {
         final int twoMB = 0x200000;
-        final int fourK = 0x1000;
+        return ((value + twoMB - 1)/twoMB) * twoMB;
+    }
+    public FileStorProducer(ModelContext.Properties properties, ContentCluster parent, Integer numThreads) {
         this.numThreads = numThreads;
         this.cluster = parent;
         this.reponseNumThreads = properties.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(properties.responseSequencerType());
         useAsyncMessageHandlingOnSchedule = properties.useAsyncMessageHandlingOnSchedule();
-        mergeChunkSize = ((properties.mergeChunkSize() + (twoMB-1))/twoMB)*twoMB - fourK;
-
+        mergeChunkSize = alignUp2MiB(properties.mergeChunkSize()); // Align up to default huge page size.
     }
 
     @Override
