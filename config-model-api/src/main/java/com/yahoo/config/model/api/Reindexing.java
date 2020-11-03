@@ -5,21 +5,20 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Instants after which reindexing should be triggered, for select document types.
+ * Status of reindexing for the documents of an application.
  *
  * @author jonmv
  */
 public interface Reindexing {
 
-    /** The reindexing status for each document type for which this is known. */
-    default Map<String, ? extends Status> status() { return Map.of(); }
+    /** Reindexing status for a given application, cluster and document type. */
+    default Status status(String cluster, String documentType) { return () -> Instant.MAX; }
 
-
-    /** Reindexing status of a given document type. */
+    /** Reindexing status of a given document type in a given cluster in a given application. */
     interface Status {
 
-        /** The instant at which reindexing of this document type may begin. */
-        default Instant ready() { return Instant.MAX; };
+        /** The instant at which reindexing may begin. */
+        Instant ready();
 
     }
 
