@@ -46,11 +46,6 @@ public class ContainerDocumentApi {
         // The internal legacy test framework requires that the name of the old handler is listed in /ApplicationStatus.
         var oldHandlerDummy = handlerComponentSpecification("com.yahoo.document.restapi.resource.RestApi");
         cluster.addComponent(oldHandlerDummy);
-
-        // TODO(bjorncs,jonmv) Remove threadpool once RestApi handler is reduced to a dummy
-        var executor = new Threadpool("restapi-handler", cluster, /*userOptions*/null);
-        oldHandlerDummy.inject(executor);
-        oldHandlerDummy.addComponent(executor);
     }
 
     private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(
