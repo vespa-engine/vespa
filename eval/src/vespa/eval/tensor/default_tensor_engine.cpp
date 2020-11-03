@@ -277,7 +277,6 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
 {
     using Child = TensorFunction::Child;
     Child root(expr);
-    LOG(debug, "tensor function before optimization:\n%s\n", root.get().as_string().c_str());
     {
         std::vector<Child::CREF> nodes({root});
         for (size_t i = 0; i < nodes.size(); ++i) {
@@ -316,7 +315,6 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
             nodes.pop_back();
         }
     }
-    LOG(debug, "tensor function after optimization:\n%s\n", root.get().as_string().c_str());
     return root.get();
 }
 

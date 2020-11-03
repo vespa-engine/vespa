@@ -38,9 +38,6 @@ struct EvalCtx {
         ictx = std::make_unique<InterpretedFunction::Context>(*ifun);
         return ifun->eval(*ictx, SimpleObjectParams(params));
     }
-    const TensorFunction &compile(const TensorFunction &expr) {
-        return engine.optimize(expr, stash);
-    }
     Value::UP make_double(double value) {
         return engine.from_spec(TensorSpec("double").add({}, value));
     }
@@ -196,8 +193,7 @@ TEST("require that const_value works") {
     const auto &fun = const_value(*my_const, ctx.stash);
     EXPECT_TRUE(!fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that tensor injection works") {
@@ -207,8 +203,7 @@ TEST("require that tensor injection works") {
     const auto &fun = inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash);
     EXPECT_TRUE(!fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that partial tensor reduction works") {
@@ -218,8 +213,7 @@ TEST("require that partial tensor reduction works") {
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {"y"}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that full tensor reduction works") {
@@ -228,8 +222,7 @@ TEST("require that full tensor reduction works") {
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(ValueType::from_spec("double"), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    const Value &result = ctx.eval(prog);
+    const Value &result = ctx.eval(fun);
     EXPECT_TRUE(result.is_double());
     EXPECT_EQUAL(21.0, result.as_double());
 }
@@ -241,8 +234,7 @@ TEST("require that tensor map works") {
     const auto &fun = map(inject(ValueType::from_spec("tensor(x{},y{})"), a_id, ctx.stash), operation::Neg::f, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that tensor join works") {
@@ -255,8 +247,7 @@ TEST("require that tensor join works") {
                            operation::Mul::f, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that tensor merge works") {
@@ -269,8 +260,7 @@ TEST("require that tensor merge works") {
                             operation::Add::f, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that tensor concat works") {
@@ -283,8 +273,7 @@ TEST("require that tensor concat works") {
                              "y", ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that tensor create works") {
@@ -305,8 +294,7 @@ TEST("require that tensor create works") {
                              ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that single value tensor peek works") {
@@ -328,8 +316,7 @@ TEST("require that single value tensor peek works") {
                              ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that tensor subspace tensor peek works") {
@@ -340,8 +327,7 @@ TEST("require that tensor subspace tensor peek works") {
     const auto &fun = peek(t, {{"x", "bar"}}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that automatic string conversion tensor peek works") {
@@ -353,8 +339,7 @@ TEST("require that automatic string conversion tensor peek works") {
     const auto &fun = peek(t, {{"x", a}}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_TRUE(fun.result_type().is_double());
-    const auto &prog = ctx.compile(fun);
-    const Value &result = ctx.eval(prog);
+    const Value &result = ctx.eval(fun);
     EXPECT_TRUE(result.is_double());
     EXPECT_EQUAL(2.0, result.as_double());
 }
@@ -367,8 +352,7 @@ TEST("require that tensor rename works") {
                              {"x"}, {"z"}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
 TEST("require that if_node works") {
@@ -383,10 +367,9 @@ TEST("require that if_node works") {
                               inject(ValueType::from_spec("tensor(x[2])"), c_id, ctx.stash), ctx.stash);
     EXPECT_TRUE(!fun.result_is_mutable());
     EXPECT_EQUAL(expect_true->type(), fun.result_type());
-    const auto &prog = ctx.compile(fun);
-    TEST_DO(verify_equal(*expect_true, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect_true, ctx.eval(fun)));
     ctx.replace_tensor(a_id, ctx.make_false());
-    TEST_DO(verify_equal(*expect_false, ctx.eval(prog)));
+    TEST_DO(verify_equal(*expect_false, ctx.eval(fun)));
 }
 
 TEST("require that if_node result is mutable only when both children produce mutable results") {

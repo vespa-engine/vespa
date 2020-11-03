@@ -6,6 +6,7 @@
 #include "tensor_nodes.h"
 #include "tensor_engine.h"
 #include "make_tensor_function.h"
+#include "optimize_tensor_function.h"
 #include "compile_tensor_function.h"
 #include "simple_tensor_engine.h"
 #include <vespa/vespalib/util/classname.h>
@@ -73,7 +74,7 @@ InterpretedFunction::InterpretedFunction(EngineOrFactory engine, const nodes::No
       _tensor_engine(engine)
 {
     const TensorFunction &plain_fun = make_tensor_function(engine, root, types, _stash);
-    const TensorFunction &optimized = engine.optimize(plain_fun, _stash);
+    const TensorFunction &optimized = optimize_tensor_function(engine, plain_fun, _stash);
     _program = compile_tensor_function(engine, optimized, _stash);
 }
 
