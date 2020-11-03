@@ -33,7 +33,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "--- platform registry.example.com/vespa/vespa:6.1"
+        "message": "--- platform vespa/vespa:6.1"
       },
       {
         "at": 0,
