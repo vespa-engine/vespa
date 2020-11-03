@@ -6,6 +6,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -19,9 +20,9 @@ public class ApplicationCuratorDatabaseTest {
         ApplicationId id = ApplicationId.defaultId();
         ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), new MockCurator());
 
-        assertEquals(ApplicationReindexing.empty(), db.readReindexingStatus(id));
+        assertEquals(Optional.empty(), db.readReindexingStatus(id));
 
-        ApplicationReindexing reindexing = ApplicationReindexing.empty()
+        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.EPOCH)
                                                                 .withReady(Instant.ofEpochMilli(1 << 20))
                                                                 .withPending("one", "a", 10)
                                                                 .withReady("two", "b", Instant.ofEpochMilli(2))
@@ -31,7 +32,7 @@ public class ApplicationCuratorDatabaseTest {
                                                                 .withReady("two", "c", Instant.ofEpochMilli(3));
 
         db.writeReindexingStatus(id, reindexing);
-        assertEquals(reindexing, db.readReindexingStatus(id));
+        assertEquals(reindexing, db.readReindexingStatus(id).orElseThrow());
     }
 
 }

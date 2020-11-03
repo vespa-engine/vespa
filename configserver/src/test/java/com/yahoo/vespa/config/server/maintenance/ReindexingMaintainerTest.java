@@ -5,7 +5,6 @@ import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import org.junit.Test;
 
 import java.time.Instant;
-import java.util.List;
 
 import static com.yahoo.vespa.config.server.maintenance.ReindexingMaintainer.withReady;
 import static org.junit.Assert.assertEquals;
@@ -17,8 +16,7 @@ public class ReindexingMaintainerTest {
 
     @Test
     public void testReadyComputation() {
-        ApplicationReindexing reindexing = ApplicationReindexing.empty()
-                                                                .withReady(Instant.ofEpochMilli(1 << 20))
+        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.ofEpochMilli(1 << 20))
                                                                 .withPending("one", "a", 10)
                                                                 .withReady("two", "b", Instant.ofEpochMilli(2))
                                                                 .withPending("two", "b", 20)

@@ -17,7 +17,7 @@ public class ApplicationReindexingTest {
 
     @Test
     public void test() {
-        ApplicationReindexing reindexing = ApplicationReindexing.empty()
+        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.EPOCH)
                                                                 .withReady(Instant.ofEpochMilli(1 << 20))
                                                                 .withPending("one", "a", 10)
                                                                 .withReady("two", "b", Instant.ofEpochMilli(2))

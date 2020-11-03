@@ -31,9 +31,9 @@ public class ApplicationReindexing implements Reindexing {
         this.clusters = Map.copyOf(clusters);
     }
 
-    /** No reindexing pending or ready. */
-    public static ApplicationReindexing empty() {
-        return empty;
+    /** Reindexing for the whole application ready now. */
+    public static ApplicationReindexing ready(Instant now) {
+        return new ApplicationReindexing(new Status(now), Map.of());
     }
 
     /** Returns a copy of this with common reindexing for the whole application ready at the given instant. */

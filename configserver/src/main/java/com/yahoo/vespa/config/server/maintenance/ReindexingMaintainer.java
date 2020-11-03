@@ -62,7 +62,8 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                          try {
                                              Collection<Long> generations = convergence.getServiceConfigGenerations(application, timeout).values();
                                              try (Lock lock = database.lock(id)) {
-                                                 ApplicationReindexing reindexing = database.readReindexingStatus(id);
+                                                 ApplicationReindexing reindexing = database.readReindexingStatus(id)
+                                                                                            .orElse(ApplicationReindexing.ready(clock.instant()));
                                                  database.writeReindexingStatus(id, withReady(reindexing, lazyGeneration(application), clock.instant()));
                                              }
                                          }
