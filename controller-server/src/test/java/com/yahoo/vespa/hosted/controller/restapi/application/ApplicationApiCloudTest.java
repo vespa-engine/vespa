@@ -66,7 +66,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     public void get_empty_tenant_info() {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)
-                .roles(Set.of(Role.developer(tenantName)));
+                .roles(Set.of(Role.reader(tenantName)));
         tester.assertResponse(infoRequest, "{}", 200);
     }
 
