@@ -48,7 +48,7 @@ public class ContainerDocumentApi {
         String bindingSuffix = "/document/v1/*";
         var oldHandler = newVespaClientHandler(oldHandlerName, options.useNewRestapiHandler ? null : bindingSuffix, options);
         cluster.addComponent(oldHandler);
-        var executor = new Threadpool("restapi-handler", cluster, options.restApiThreadpoolOptions);
+        var executor = new Threadpool("restapi-handler", cluster, /*userOptions*/null);
         oldHandler.inject(executor);
         oldHandler.addComponent(executor);
 
@@ -83,16 +83,13 @@ public class ContainerDocumentApi {
 
     public static final class Options {
         private final Collection<String> bindings;
-        private final ContainerThreadpool.UserOptions restApiThreadpoolOptions;
         private final ContainerThreadpool.UserOptions feedApiThreadpoolOptions;
         private final boolean useNewRestapiHandler;
 
         public Options(Collection<String> bindings,
-                       ContainerThreadpool.UserOptions restApiThreadpoolOptions,
                        ContainerThreadpool.UserOptions feedApiThreadpoolOptions,
                        boolean useNewRestapiHandler) {
             this.bindings = Collections.unmodifiableCollection(bindings);
-            this.restApiThreadpoolOptions = restApiThreadpoolOptions;
             this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
             this.useNewRestapiHandler = useNewRestapiHandler;
         }

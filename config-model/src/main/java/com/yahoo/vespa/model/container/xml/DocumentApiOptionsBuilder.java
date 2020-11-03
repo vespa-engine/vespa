@@ -23,7 +23,6 @@ public class DocumentApiOptionsBuilder {
     public static ContainerDocumentApi.Options build(DeployState deployState, Element spec) {
         return new ContainerDocumentApi.Options(
                 getBindings(spec),
-                threadpoolOptions(spec, "rest-api"),
                 threadpoolOptions(spec, "http-client-api"),
                 deployState.getProperties().useNewRestapiHandler());
     }

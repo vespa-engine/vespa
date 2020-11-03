@@ -219,9 +219,7 @@ DocumentApi = element document-api {
    HttpClientApi?
 }
 
-DocumentRestApi = element rest-api {
-    Threadpool?
-}
+DocumentRestApi = element rest-api { empty }
 
 HttpClientApi = element http-client-api {
     Threadpool?
