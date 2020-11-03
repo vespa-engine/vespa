@@ -108,7 +108,7 @@ ServiceLayerNode::initializeNodeSpecific()
 
     ns.setCapacity(_serverConfig->nodeCapacity);
     ns.setReliability(_serverConfig->nodeReliability);
-    LOG(debug, "Adjusting reported node state to include partition count and states, capacity and reliability: %s",
+    LOG(debug, "Adjusting reported node state to include capacity and reliability: %s",
         ns.toString().c_str());
     _component->getStateUpdater().setReportedNodeState(ns);
 }
