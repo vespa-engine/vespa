@@ -28,7 +28,7 @@ public:
 
     void SetUp() override;
     void TearDown() override;
-    void setupPersistenceThreads(uint32_t diskCount);
+    void setupPersistenceThreads(uint32_t threads);
     void createBucket(const document::BucketId& bid);
     bool bucketExistsInDb(const document::BucketId& bucket) const;
 
