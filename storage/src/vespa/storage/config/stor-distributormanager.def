@@ -250,3 +250,12 @@ enable_metadata_only_fetch_phase_for_inconsistent_updates bool default=false
 ## This is to reduce the amount of CPU spent on ideal state calculations and bucket DB
 ## accesses when the distributor is heavily loaded with feed operations.
 max_consecutively_inhibited_maintenance_ticks int default=20
+
+## If set, pending merges to buckets in the global bucket space will be prioritized
+## higher than merges to buckets in the default bucket space. This ensures that global
+## documents will be kept in sync without being starved by non-global documents.
+## Note that enabling this feature risks starving default bucket space merges if a
+## resource exhaustion case prevents global merges from completing.
+## This is a live config for that reason, i.e. it can be disabled in an emergency
+## situation if needed.
+prioritize_global_bucket_merges bool default=true

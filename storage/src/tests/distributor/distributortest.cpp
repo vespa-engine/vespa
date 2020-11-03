@@ -200,6 +200,12 @@ struct DistributorTest : Test, DistributorTestUtil {
         configureDistributor(builder);
     }
 
+    void configure_prioritize_global_bucket_merges(bool enabled) {
+        ConfigBuilder builder;
+        builder.prioritizeGlobalBucketMerges = enabled;
+        configureDistributor(builder);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
@@ -1169,6 +1175,17 @@ TEST_F(DistributorTest, closing_aborts_gets_started_outside_main_distributor_thr
     _distributor->close();
     ASSERT_EQ(1, _sender.replies().size());
     EXPECT_EQ(api::ReturnCode::ABORTED, _sender.reply(0)->getResult().getResult());
+}
+
+TEST_F(DistributorTest, prioritize_global_bucket_merges_config_is_propagated_to_internal_config) {
+    createLinks();
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_prioritize_global_bucket_merges(true);
+    EXPECT_TRUE(getConfig().prioritize_global_bucket_merges());
+
+    configure_prioritize_global_bucket_merges(false);
+    EXPECT_FALSE(getConfig().prioritize_global_bucket_merges());
 }
 
 }

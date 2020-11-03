@@ -171,6 +171,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         bool _includeMessagePriority {false};
         bool _includeSchedulingPriority {false};
         bool _merge_operations_disabled {false};
+        bool _prioritize_global_bucket_merges {true};
         CheckerParams();
         ~CheckerParams();
 
@@ -210,6 +211,10 @@ struct StateCheckersTest : Test, DistributorTestUtil {
             _merge_operations_disabled = disabled;
             return *this;
         }
+        CheckerParams& prioritize_global_bucket_merges(bool enabled) noexcept {
+            _prioritize_global_bucket_merges = enabled;
+            return *this;
+        }
         CheckerParams& bucket_space(document::BucketSpace bucket_space) noexcept {
             _bucket_space = bucket_space;
             return *this;
@@ -226,6 +231,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         setRedundancy(params._redundancy);
         enableDistributorClusterState(params._clusterState);
         getConfig().set_merge_operations_disabled(params._merge_operations_disabled);
+        getConfig().set_prioritize_global_bucket_merges(params._prioritize_global_bucket_merges);
         if (!params._pending_cluster_state.empty()) {
             auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(params._pending_cluster_state));
             _distributor->onDown(cmd);
@@ -766,7 +772,7 @@ TEST_F(StateCheckersTest, synchronize_and_move) {
             .clusterState("distributor:1 storage:4"));
 }
 
-TEST_F(StateCheckersTest, global_bucket_merges_have_high_priority) {
+TEST_F(StateCheckersTest, global_bucket_merges_have_high_priority_if_prioritization_enabled) {
     runAndVerify<SynchronizeAndMoveStateChecker>(
             CheckerParams().expect(
                             "[Synchronizing buckets with different checksums "
@@ -777,7 +783,23 @@ TEST_F(StateCheckersTest, global_bucket_merges_have_high_priority) {
                     .bucketInfo("0=1,1=2")
                     .bucket_space(document::FixedBucketSpaces::global_space())
                     .includeSchedulingPriority(true)
-                    .includeMessagePriority(true));
+                    .includeMessagePriority(true)
+                    .prioritize_global_bucket_merges(true));
+}
+
+TEST_F(StateCheckersTest, global_bucket_merges_have_normal_priority_if_prioritization_disabled) {
+    runAndVerify<SynchronizeAndMoveStateChecker>(
+            CheckerParams().expect(
+                            "[Synchronizing buckets with different checksums "
+                            "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,active=false,ready=false), "
+                            "node(idx=1,crc=0x2,docs=2/2,bytes=2/2,trusted=false,active=false,ready=false)] "
+                            "(pri 120) "
+                            "(scheduling pri MEDIUM)")
+                    .bucketInfo("0=1,1=2")
+                    .bucket_space(document::FixedBucketSpaces::global_space())
+                    .includeSchedulingPriority(true)
+                    .includeMessagePriority(true)
+                    .prioritize_global_bucket_merges(false));
 }
 
 // Upon entering a cluster state transition edge the distributor will
