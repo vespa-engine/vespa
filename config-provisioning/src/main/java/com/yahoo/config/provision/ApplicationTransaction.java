@@ -31,14 +31,11 @@ public class ApplicationTransaction implements Closeable {
     /** Returns the NestedTransaction of this */
     public NestedTransaction nested() { return transaction; }
 
+    public void commit() { transaction.commit(); }
+
     @Override
     public void close() {
-        try {
-            transaction.commit();
-        }
-        finally {
-            lock.close();
-        }
+        lock.close();
     }
 
 }

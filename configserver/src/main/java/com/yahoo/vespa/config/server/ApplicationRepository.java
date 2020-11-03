@@ -503,14 +503,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));
             transaction.onCommitted(() -> log.log(Level.INFO, "Deleted " + applicationId));
 
-            if (applicationTransaction.isPresent()) {
+            if (applicationTransaction.isPresent())
                 hostProvisioner.get().remove(applicationTransaction.get());
-            } else {
-                transaction.commit();
-            }
+            transaction.commit();
             return true;
         } finally {
-            applicationTransaction.ifPresent(ApplicationTransaction::close); // Commits transaction and releases lock
+            applicationTransaction.ifPresent(ApplicationTransaction::close); // releases lock
         }
     }
 
@@ -734,12 +732,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 hostProvisioner.get().activate(session.getAllocatedHosts().getHosts(),
                                                new ActivationContext(session.getSessionId()),
                                                applicationTransaction.get());
-            } else {
-                transaction.commit();
             }
+            transaction.commit();
             return new Activation(waiter, activeSession);
         } finally {
-            applicationTransaction.ifPresent(ApplicationTransaction::close); // Commits transaction and releases lock
+            applicationTransaction.ifPresent(ApplicationTransaction::close); // releases lock
         }
     }
 
