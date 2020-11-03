@@ -105,6 +105,7 @@ public class ControllerMaintenance extends AbstractComponent {
         rotationStatusUpdater.close();
         resourceTagMaintainer.close();
         systemRoutingPolicyMaintainer.close();
+        applicationMetaDataGarbageCollector.close();
         hostRepairMaintainer.close();
     }
 
