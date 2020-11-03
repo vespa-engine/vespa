@@ -164,6 +164,9 @@ public class ModelContextImpl implements ModelContext {
         private final Quota quota;
         private final boolean useAccessControlTlsHandshakeClientAuth;
         private final double jettyThreadpoolSizeFactor;
+        private final boolean useAsyncMessageHandlingOnSchedule;
+        private final int contentNodeBucketDBStripeBits;
+        private final int mergeChunkSize;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -225,6 +228,12 @@ public class ModelContextImpl implements ModelContext {
             this.jettyThreadpoolSizeFactor = Flags.JETTY_THREADPOOL_SCALE_FACTOR.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
                     .value();
+            useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            contentNodeBucketDBStripeBits = Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            mergeChunkSize = Flags.MERGE_CHUNK_SIZE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override
@@ -296,17 +305,16 @@ public class ModelContextImpl implements ModelContext {
         @Override public String jvmGCOptions() { return jvmGCOPtions; }
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }
-        @Override public int defaultNumResponseThreads() {
-            return numResponseThreads;
-        }
+        @Override public int defaultNumResponseThreads() { return numResponseThreads; }
         @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
         @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public Quota quota() { return quota; }
-
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
-
         @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
+        @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
+        @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
+        @Override public int mergeChunkSize() { return mergeChunkSize; }
     }
 
 }

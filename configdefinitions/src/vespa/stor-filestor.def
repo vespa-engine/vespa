@@ -46,9 +46,8 @@ common_merge_chain_optimalization_minimum_size int default=64 restart
 
 ## Chunksize to use while merging buckets between nodes.
 ##
-## Default is set to 4 MB - 4k. This is to allow for malloc to waste some bytes
-## with tracking info or to align to 512b without passing allocation limit,
-## while still reading 4k blocks from disk.
+## Default is set to 4 MB.
+## Note that this will gradually be increased to reach stor-distributormanager:splitsize which is currently at 32M
 bucket_merge_chunk_size int default=4190208 restart
 
 ## When merging, it is possible to send more metadata than needed in order to

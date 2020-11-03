@@ -323,6 +323,22 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
+            "async-message-handling-on-schedule", false,
+            "Optionally deliver async messages in own thread",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag CONTENT_NODE_BUCKET_DB_STRIPE_BITS = defineIntFlag(
+            "content-node-bucket-db-stripe-bits", 0,
+            "Number of bits used for striping the bucket DB in service layer",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag MERGE_CHUNK_SIZE = defineIntFlag(
+            "merge-chunk-size", 0x400000,
+            "Size of merge buffer in service layer",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag REGIONAL_CONTAINER_REGISTRY = defineFeatureFlag(
             "regional-container-registry",
             false,
