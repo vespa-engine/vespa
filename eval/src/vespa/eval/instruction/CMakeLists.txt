@@ -2,12 +2,13 @@
 
 vespa_add_library(eval_instruction OBJECT
     SOURCES
-    generic_concat
-    generic_create
-    generic_join
-    generic_peek
-    generic_reduce
-    generic_map
-    generic_merge
-    generic_rename
+    generic_concat.cpp
+    generic_create.cpp
+    generic_join.cpp
+    generic_lambda.cpp
+    generic_map.cpp
+    generic_merge.cpp
+    generic_peek.cpp
+    generic_reduce.cpp
+    generic_rename.cpp
 )
