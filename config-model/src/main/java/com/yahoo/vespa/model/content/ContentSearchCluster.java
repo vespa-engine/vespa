@@ -336,6 +336,28 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 .collect(Collectors.toList());
     }
 
+    public List<NewDocumentType> getDocumentTypesWithStreamingCluster() {
+        List<NewDocumentType> streamingDocTypes = new ArrayList<>();
+        for (NewDocumentType type : documentDefinitions.values()) {
+            if (findStreamingCluster(type.getFullName().getName()).isPresent()) {
+                streamingDocTypes.add(type);
+            }
+        }
+        return streamingDocTypes;
+    }
+
+    public List<NewDocumentType> getDocumentTypesWithIndexedCluster() {
+        List<NewDocumentType> indexedDocTypes = new ArrayList<>();
+        for (NewDocumentType type : documentDefinitions.values()) {
+            if (findStreamingCluster(type.getFullName().getName()).isEmpty()
+                    && hasIndexedCluster()
+                    && getIndexed().hasDocumentDB(type.getFullName().getName())) {
+                indexedDocTypes.add(type);
+            }
+        }
+        return indexedDocTypes;
+    }
+
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         builder.feeding.concurrency(0.50); // As if specified 1.0 in services.xml
