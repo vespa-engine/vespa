@@ -304,8 +304,8 @@ public class StorageClusterTest {
 
     @Test
     public void testFeatureFlagControlOfMergeChunkSize() {
-        verifyMergeChunkSize(0x200000 - 0x1000, 13);
-        verifyMergeChunkSize(0x1600000 - 0x1000, 0x1500000);
+        verifyMergeChunkSize(0x200000, 13);
+        verifyMergeChunkSize(0x1600000, 0x1500000);
     }
 
     private void verifyAsyncMessageHandlingOnSchedule(boolean expected, boolean value) {
