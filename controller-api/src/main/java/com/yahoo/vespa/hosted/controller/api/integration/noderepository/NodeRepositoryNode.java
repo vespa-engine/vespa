@@ -418,6 +418,7 @@ public class NodeRepositoryNode {
                ", reports=" + reports +
                ", modelName=" + modelName +
                ", reservedTo=" + reservedTo +
+               ", exclusiveTo=" + exclusiveTo +
                '}';
     }
 }

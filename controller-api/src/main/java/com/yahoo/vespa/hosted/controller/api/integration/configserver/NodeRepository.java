@@ -129,6 +129,7 @@ public interface NodeRepository {
                         node.getWantToRetire(),
                         node.getWantToDeprovision(),
                         Optional.ofNullable(node.getReservedTo()).map(TenantName::from),
+                        Optional.ofNullable(node.getExclusiveTo()).map(ApplicationId::fromSerializedForm),
                         dockerImageFrom(node.getWantedDockerImage()),
                         dockerImageFrom(node.getCurrentDockerImage()),
                         node.getReports());
