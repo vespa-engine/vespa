@@ -126,19 +126,25 @@ public:
         return h;
     }
 
+    // used to add a mapping, but in the unlikely case
+    // of hash collision it works like a lookup instead.
     template <typename T>
-    void add_mapping(ConstArrayRef<T> addr, uint64_t hash) {
+    uint32_t add_mapping(ConstArrayRef<T> addr, uint64_t hash) {
         uint32_t value = _map.size();
-        for (const auto &label: addr) {
-            _labels.emplace_back(label);
+        auto [iter, did_add] = _map.insert(std::make_pair(Key(hash), value));
+        if (__builtin_expect(did_add, true)) {
+            for (const auto &label: addr) {
+                _labels.emplace_back(label);
+            }
+            return value;
         }
-        _map.insert(std::make_pair(Key(hash), value));
+        return iter->second;
     }
 
     // used to add a mapping, but in the unlikely case
-    // of hash collision it works like lookup instead.
+    // of hash collision it works like a lookup instead.
     template <typename T>
-    size_t lookup_or_add_mapping(ConstArrayRef<T> addr) {
+    uint32_t add_mapping(ConstArrayRef<T> addr) {
         uint64_t hash = 0;
         size_t old_labels_size = _labels.size();
         for (const auto &label: addr) {
@@ -147,23 +153,12 @@ public:
         }
         uint32_t value = _map.size();
         auto [iter, did_add] = _map.insert(std::make_pair(Key(hash), value));
-        if (did_add) {
+        if (__builtin_expect(did_add, true)) {
             return value;
         }
         // undo adding to _labels
         _labels.resize(old_labels_size);
         return iter->second;
-    }
-
-    template <typename T>
-    void add_mapping(ConstArrayRef<T> addr) {
-        uint64_t h = 0;
-        uint32_t value = _map.size();
-        for (const auto &label: addr) {
-            _labels.emplace_back(label);
-            h = 31 * h + hash_label(_labels.back());
-        }
-        _map.insert(std::make_pair(Key(h), value));
     }
 
     size_t lookup(uint64_t hash) const {

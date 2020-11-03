@@ -230,8 +230,8 @@ struct FastValue final : Value, ValueBuilder<T> {
     const Value::Index &index() const override { return my_index; }
     TypedCells cells() const override { return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override {
-        size_t idx = my_index.map.lookup_or_add_mapping(addr) * my_subspace_size;
-        if (idx == my_cells.size) {
+        size_t idx = my_index.map.add_mapping(addr) * my_subspace_size;
+        if (__builtin_expect((idx == my_cells.size), true)) {
             return my_cells.add_cells(my_subspace_size);
         } 
         return ArrayRef<T>(my_cells.get(idx), my_subspace_size);
@@ -307,12 +307,16 @@ FastValueIndex::sparse_full_overlap_join(const ValueType &res_type, const Fun &f
                                          ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash)
 {
     auto &result = stash.create<FastValue<OCT>>(res_type, lhs.map.num_dims(), 1, lhs.map.size());
+    auto &result_map = result.my_index.map;
     lhs.map.each_map_entry([&](auto lhs_subspace, auto hash)
                            {
                                auto rhs_subspace = rhs.map.lookup(hash);
                                if (rhs_subspace != FastSparseMap::npos()) {
-                                   result.my_index.map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
-                                   result.my_cells.push_back_fast(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
+                                   auto idx = result_map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
+                                   if (__builtin_expect((idx == result.my_cells.size), true)) {
+                                       auto cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
+                                       result.my_cells.push_back_fast(cell_value);
+                                   }
                                }
                            });
     return result;
@@ -329,20 +333,25 @@ FastValueIndex::sparse_only_merge(const ValueType &res_type, const Fun &fun,
     auto &result = stash.create<FastValue<OCT>>(res_type, lhs.map.num_dims(), 1, lhs.map.size()+rhs.map.size());
     lhs.map.each_map_entry([&](auto lhs_subspace, auto hash)
                            {
-                               auto rhs_subspace = rhs.map.lookup(hash);
-                               result.my_index.map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
-                               if (rhs_subspace != FastSparseMap::npos()) {
-                                   result.my_cells.push_back_fast(fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]));
-                               } else {
-                                   result.my_cells.push_back_fast(lhs_cells[lhs_subspace]);
+                               auto idx = result.my_index.map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
+                               if (__builtin_expect((idx == result.my_cells.size), true)) {
+                                   auto rhs_subspace = rhs.map.lookup(hash);
+                                   if (rhs_subspace != FastSparseMap::npos()) {
+                                       auto cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
+                                       result.my_cells.push_back_fast(cell_value);
+                                   } else {
+                                       result.my_cells.push_back_fast(lhs_cells[lhs_subspace]);
+                                   }
                                }
                            });
     rhs.map.each_map_entry([&](auto rhs_subspace, auto hash)
                            {
                                auto lhs_subspace = lhs.map.lookup(hash);
                                if (lhs_subspace == FastSparseMap::npos()) {
-                                   result.my_index.map.add_mapping(rhs.map.make_addr(rhs_subspace), hash);
-                                   result.my_cells.push_back_fast(rhs_cells[rhs_subspace]);
+                                   auto idx = result.my_index.map.add_mapping(rhs.map.make_addr(rhs_subspace), hash);
+                                   if (__builtin_expect((idx == result.my_cells.size), true)) {
+                                       result.my_cells.push_back_fast(rhs_cells[rhs_subspace]);
+                                   }
                                }
                            });
 
