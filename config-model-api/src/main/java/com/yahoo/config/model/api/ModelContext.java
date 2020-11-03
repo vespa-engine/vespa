@@ -89,6 +89,10 @@ public interface ModelContext {
         default String tlsCompressionType() { return "ZSTD"; }
         default double visibilityDelay() { return 0.0; }
 
+        boolean useAsyncMessageHandlingOnSchedule();
+        int contentNodeBucketDBStripeBits();
+        int mergeChunkSize();
+
         // TODO(balder) Last used on 7.306
         default boolean useContentNodeBtreeDb() { return true; }
 
@@ -121,7 +125,7 @@ public interface ModelContext {
         }
 
         // TODO(bjorncs): Temporary feature flag
-        default boolean useNewRestapiHandler() { return false; }
+        default boolean useNewRestapiHandler() { return true; }
 
         // TODO(mortent): Temporary feature flag
         default boolean useAccessControlTlsHandshakeClientAuth() { return false; }

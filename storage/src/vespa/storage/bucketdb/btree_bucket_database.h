@@ -58,7 +58,7 @@ private:
     class ReadGuardImpl;
     friend class ReadGuardImpl;
 public:
-    std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const override;
+    std::unique_ptr<bucketdb::ReadGuard<Entry, ConstEntryRef>> acquire_read_guard() const override;
 
     vespalib::MemoryUsage memory_usage() const noexcept override;
 };

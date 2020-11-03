@@ -6,7 +6,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.custom.HostCapacity;
 import com.yahoo.vespa.flags.custom.SharedHost;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -303,12 +302,6 @@ public class Flags {
             "Takes effect at next run of maintainer",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_NEW_RESTAPI_HANDLER = defineFeatureFlag(
-            "use-new-restapi-handler",
-            false,
-            "Whether application containers should use the new restapi handler implementation",
-            "Takes effect on next internal redeployment");
-
     public static final UnboundBooleanFlag USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION = defineFeatureFlag(
             "use-access-control-client-authentication",
             false,
@@ -329,6 +322,22 @@ public class Flags {
             "Size of Jetty threadpool as a factor of vcpu",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
+            "async-message-handling-on-schedule", false,
+            "Optionally deliver async messages in own thread",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag CONTENT_NODE_BUCKET_DB_STRIPE_BITS = defineIntFlag(
+            "content-node-bucket-db-stripe-bits", 0,
+            "Number of bits used for striping the bucket DB in service layer",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag MERGE_CHUNK_SIZE = defineIntFlag(
+            "merge-chunk-size", 0x400000,
+            "Size of merge buffer in service layer",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag REGIONAL_CONTAINER_REGISTRY = defineFeatureFlag(
             "regional-container-registry",

@@ -195,7 +195,9 @@ vespalib::MemoryUsage BTreeBucketDatabase::memory_usage() const noexcept {
     return _impl->memory_usage();
 }
 
-class BTreeBucketDatabase::ReadGuardImpl final : public bucketdb::ReadGuard<Entry> {
+class BTreeBucketDatabase::ReadGuardImpl final
+    : public bucketdb::ReadGuard<Entry, ConstEntryRef>
+{
     ImplType::ReadSnapshot _snapshot;
 public:
     explicit ReadGuardImpl(const BTreeBucketDatabase& db);
@@ -204,6 +206,7 @@ public:
     std::vector<Entry> find_parents_and_self(const document::BucketId& bucket) const override;
     std::vector<Entry> find_parents_self_and_children(const document::BucketId& bucket) const override;
     void for_each(std::function<void(uint64_t, const Entry&)> func) const override;
+    std::unique_ptr<bucketdb::ConstIterator<ConstEntryRef>> create_iterator() const override;
     [[nodiscard]] uint64_t generation() const noexcept override;
 };
 
@@ -235,11 +238,17 @@ void BTreeBucketDatabase::ReadGuardImpl::for_each(std::function<void(uint64_t, c
     _snapshot.for_each<ByValue>(std::move(func));
 }
 
+std::unique_ptr<bucketdb::ConstIterator<ConstEntryRef>>
+BTreeBucketDatabase::ReadGuardImpl::create_iterator() const {
+    return _snapshot.create_iterator(); // TODO test
+}
+
 uint64_t BTreeBucketDatabase::ReadGuardImpl::generation() const noexcept {
     return _snapshot.generation();
 }
 
-std::unique_ptr<bucketdb::ReadGuard<Entry>> BTreeBucketDatabase::acquire_read_guard() const {
+std::unique_ptr<bucketdb::ReadGuard<Entry, ConstEntryRef>>
+BTreeBucketDatabase::acquire_read_guard() const {
     return std::make_unique<ReadGuardImpl>(*this);
 }
 

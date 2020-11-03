@@ -3,8 +3,6 @@ package com.yahoo.search.federation.sourceref;
 
 import com.yahoo.component.ComponentSpecification;
 
-import static com.yahoo.container.util.Util.quote;
-
 /**
  * @author Tony Vaagenes
  */
@@ -16,6 +14,6 @@ class UnresolvedSourceRefException extends UnresolvedSearchChainException {
 
 
     static UnresolvedSearchChainException createForMissingSourceRef(ComponentSpecification source) {
-        return new UnresolvedSourceRefException("Could not resolve source ref " + quote(source) + ".");
+        return new UnresolvedSourceRefException("Could not resolve source ref '" + source + "'.");
     }
 }

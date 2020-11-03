@@ -505,12 +505,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
             if (applicationTransaction.isPresent()) {
                 hostProvisioner.get().remove(applicationTransaction.get());
+                applicationTransaction.get().nested().commit();
             } else {
                 transaction.commit();
             }
             return true;
         } finally {
-            applicationTransaction.ifPresent(ApplicationTransaction::close); // Commits transaction and releases lock
+            applicationTransaction.ifPresent(ApplicationTransaction::close);
         }
     }
 
@@ -734,12 +735,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 hostProvisioner.get().activate(session.getAllocatedHosts().getHosts(),
                                                new ActivationContext(session.getSessionId()),
                                                applicationTransaction.get());
+                applicationTransaction.get().nested().commit();
             } else {
                 transaction.commit();
             }
             return new Activation(waiter, activeSession);
         } finally {
-            applicationTransaction.ifPresent(ApplicationTransaction::close); // Commits transaction and releases lock
+            applicationTransaction.ifPresent(ApplicationTransaction::close);
         }
     }
 

@@ -2,6 +2,8 @@
 
 #include "storbucketdb.h"
 #include "btree_lockable_map.h"
+#include "striped_btree_lockable_map.h"
+#include <vespa/storage/common/content_bucket_db_options.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.bucketdb.stor_bucket_db");
@@ -42,12 +44,17 @@ std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_btree_db_impl() {
     return std::make_unique<BTreeLockableMap<StorageBucketInfo>>();
 }
 
+std::unique_ptr<AbstractBucketMap<StorageBucketInfo>> make_striped_btree_db_impl(uint8_t n_stripes) {
+    return std::make_unique<StripedBTreeLockableMap<StorageBucketInfo>>(n_stripes);
+}
+
 }
 
 } // bucketdb
 
-StorBucketDatabase::StorBucketDatabase([[maybe_unused]] bool use_btree_db)
-    : _impl(bucketdb::make_btree_db_impl())
+StorBucketDatabase::StorBucketDatabase(const ContentBucketDbOptions& opts)
+    : _impl((opts.n_stripe_bits > 0) ? bucketdb::make_striped_btree_db_impl(opts.n_stripe_bits)
+                                     : bucketdb::make_btree_db_impl())
 {}
 
 void
@@ -123,11 +130,9 @@ void StorBucketDatabase::for_each_mutable_unordered(
 
 void StorBucketDatabase::for_each(
         std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
-        const char* clientId,
-        const key_type& first,
-        const key_type& last)
+        const char* clientId)
 {
-    _impl->for_each(std::move(func), clientId, first, last);
+    _impl->for_each(std::move(func), clientId);
 }
 
 std::unique_ptr<bucketdb::ReadGuard<StorBucketDatabase::Entry>>

@@ -10,6 +10,8 @@
 
 namespace storage {
 
+struct ContentBucketDbOptions;
+
 class StorBucketDatabase {
     std::unique_ptr<bucketdb::AbstractBucketMap<bucketdb::StorageBucketInfo>> _impl;
 public:
@@ -25,7 +27,7 @@ public:
         CREATE_IF_NONEXISTING = 1
     };
 
-    explicit StorBucketDatabase(bool use_btree_db = false);
+    explicit StorBucketDatabase(const ContentBucketDbOptions&);
 
     void insert(const document::BucketId&, const bucketdb::StorageBucketInfo&,
                 const char* clientId);
@@ -64,9 +66,7 @@ public:
                                     const char* clientId);
 
     void for_each(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
-                  const char* clientId,
-                  const key_type& first = key_type(),
-                  const key_type& last = key_type() - 1);
+                  const char* clientId);
 
     [[nodiscard]] std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const;
 

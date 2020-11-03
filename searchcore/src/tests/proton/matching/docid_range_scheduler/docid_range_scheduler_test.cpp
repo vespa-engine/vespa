@@ -85,10 +85,6 @@ TEST("require that the docid range splitter gives empty ranges if accessed with 
 
 TEST("require that the partition scheduler acts as expected") {
     PartitionDocidRangeScheduler scheduler(4, 16);
-    TEST_DO(verify_range(scheduler.total_span(0), DocidRange(1, 5)));
-    TEST_DO(verify_range(scheduler.total_span(1), DocidRange(5, 9)));
-    TEST_DO(verify_range(scheduler.total_span(2), DocidRange(9, 13)));
-    TEST_DO(verify_range(scheduler.total_span(3), DocidRange(13, 16)));
     EXPECT_EQUAL(scheduler.total_size(0), 4u);
     EXPECT_EQUAL(scheduler.total_size(1), 4u);
     EXPECT_EQUAL(scheduler.total_size(2), 4u);
@@ -106,8 +102,6 @@ TEST("require that the partition scheduler acts as expected") {
 
 TEST("require that the partition scheduler protects against documents underflow") {
     PartitionDocidRangeScheduler scheduler(2, 0);
-    TEST_DO(verify_range(scheduler.total_span(0), DocidRange(1,1)));
-    TEST_DO(verify_range(scheduler.total_span(1), DocidRange(1,1)));
     EXPECT_EQUAL(scheduler.total_size(0), 0u);
     EXPECT_EQUAL(scheduler.total_size(1), 0u);
     EXPECT_EQUAL(scheduler.unassigned_size(), 0u);
@@ -122,8 +116,6 @@ TEST("require that the partition scheduler protects against documents underflow"
 TEST("require that the task scheduler acts as expected") {
     TaskDocidRangeScheduler scheduler(2, 5, 20);
     EXPECT_EQUAL(scheduler.unassigned_size(), 19u);
-    TEST_DO(verify_range(scheduler.total_span(0), DocidRange(1, 20)));
-    TEST_DO(verify_range(scheduler.total_span(1), DocidRange(1, 20)));
     EXPECT_EQUAL(scheduler.total_size(0), 0u);
     EXPECT_EQUAL(scheduler.total_size(1), 0u);
     TEST_DO(verify_range(scheduler.first_range(1), DocidRange(1, 5)));
@@ -141,8 +133,6 @@ TEST("require that the task scheduler acts as expected") {
 
 TEST("require that the task scheduler protects against documents underflow") {
     TaskDocidRangeScheduler scheduler(2, 4, 0);
-    TEST_DO(verify_range(scheduler.total_span(0), DocidRange(1,1)));
-    TEST_DO(verify_range(scheduler.total_span(1), DocidRange(1,1)));
     EXPECT_EQUAL(scheduler.total_size(0), 0u);
     EXPECT_EQUAL(scheduler.total_size(1), 0u);
     EXPECT_EQUAL(scheduler.unassigned_size(), 0u);
@@ -165,13 +155,6 @@ TEST("require that the adaptive scheduler starts by dividing the docid space equ
     TEST_DO(verify_range(scheduler.first_range(1), DocidRange(5, 9)));
     TEST_DO(verify_range(scheduler.first_range(2), DocidRange(9, 13)));
     TEST_DO(verify_range(scheduler.first_range(3), DocidRange(13, 16)));
-}
-
-TEST("require that the adaptive scheduler reports the full span to all threads") {
-    AdaptiveDocidRangeScheduler scheduler(3, 1, 16);
-    TEST_DO(verify_range(scheduler.total_span(0), DocidRange(1,16)));
-    TEST_DO(verify_range(scheduler.total_span(1), DocidRange(1,16)));
-    TEST_DO(verify_range(scheduler.total_span(2), DocidRange(1,16)));
 }
 
 TEST_MT_FF("require that the adaptive scheduler terminates when all workers request more work",

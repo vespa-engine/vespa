@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -20,15 +19,19 @@ public class ApplicationCuratorDatabaseTest {
         ApplicationId id = ApplicationId.defaultId();
         ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(new MockCurator());
 
-        assertEquals(ReindexingStatus.empty(), db.readReindexingStatus(id));
+        assertEquals(ApplicationReindexing.empty(), db.readReindexingStatus(id));
 
-        ReindexingStatus status = ReindexingStatus.empty()
-                                                  .withPending("pending1", 1)
-                                                  .withPending("pending2", 2)
-                                                  .withReady("ready1", Instant.ofEpochMilli(123))
-                                                  .withReady("ready2", Instant.ofEpochMilli(321));
-        db.writeReindexingStatus(id, status);
-        assertEquals(status, db.readReindexingStatus(id));
+        ApplicationReindexing reindexing = ApplicationReindexing.empty()
+                                                                .withReady(Instant.ofEpochMilli(1 << 20))
+                                                                .withPending("one", "a", 10)
+                                                                .withReady("two", "b", Instant.ofEpochMilli(2))
+                                                                .withPending("two", "b", 20)
+                                                                .withReady("two", Instant.ofEpochMilli(2 << 10))
+                                                                .withReady("one", "a", Instant.ofEpochMilli(1))
+                                                                .withReady("two", "c", Instant.ofEpochMilli(3));
+
+        db.writeReindexingStatus(id, reindexing);
+        assertEquals(reindexing, db.readReindexingStatus(id));
     }
 
 }

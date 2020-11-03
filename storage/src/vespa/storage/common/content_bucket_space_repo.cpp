@@ -7,13 +7,13 @@ using document::BucketSpace;
 
 namespace storage {
 
-ContentBucketSpaceRepo::ContentBucketSpaceRepo(bool use_btree_db)
+ContentBucketSpaceRepo::ContentBucketSpaceRepo(const ContentBucketDbOptions& db_opts)
     : _map()
 {
     _map.emplace(document::FixedBucketSpaces::default_space(),
-                 std::make_unique<ContentBucketSpace>(document::FixedBucketSpaces::default_space(), use_btree_db));
+                 std::make_unique<ContentBucketSpace>(document::FixedBucketSpaces::default_space(), db_opts));
     _map.emplace(document::FixedBucketSpaces::global_space(),
-                 std::make_unique<ContentBucketSpace>(document::FixedBucketSpaces::global_space(), use_btree_db));
+                 std::make_unique<ContentBucketSpace>(document::FixedBucketSpaces::global_space(), db_opts));
 }
 
 ContentBucketSpace &

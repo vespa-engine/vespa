@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.storagecluster;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -10,33 +11,42 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
  */
 public class StorServerProducer implements StorServerConfig.Producer {
     public static class Builder {
-        StorServerProducer build(ModelElement element) {
+        StorServerProducer build(ModelContext.Properties properties, ModelElement element) {
             ModelElement tuning = element.child("tuning");
 
-            if (tuning == null) {
-                return new StorServerProducer(ContentCluster.getClusterId(element), null, null);
-            }
+            StorServerProducer producer = new StorServerProducer(ContentCluster.getClusterId(element));
+            producer.setBucketDBStripeBits(properties.contentNodeBucketDBStripeBits());
+            if (tuning == null) return producer;
 
             ModelElement merges = tuning.child("merges");
-            if (merges == null) {
-                return new StorServerProducer(ContentCluster.getClusterId(element), null, null);
-            }
+            if (merges == null) return producer;
 
-            return new StorServerProducer(ContentCluster.getClusterId(element),
-                    merges.integerAttribute("max-per-node"),
-                    merges.integerAttribute("max-queue-size"));
+            producer.setMaxMergesPerNode(merges.integerAttribute("max-per-node"))
+                    .setMaxQueueSize(merges.integerAttribute("max-queue-size"));
+            return producer;
         }
     }
 
-    private final String clusterName;
-    private final Integer maxMergesPerNode;
-    private final Integer queueSize;
+    private String clusterName;
+    private Integer maxMergesPerNode;
+    private Integer queueSize;
+    private Integer bucketDBStripeBits;
 
-    public StorServerProducer(String clusterName, Integer maxMergesPerNode,
-                              Integer queueSize) {
+    private StorServerProducer setMaxMergesPerNode(Integer value) {
+        maxMergesPerNode = value;
+        return this;
+    }
+    private StorServerProducer setMaxQueueSize(Integer value) {
+        queueSize = value;
+        return this;
+    }
+    private StorServerProducer setBucketDBStripeBits(Integer value) {
+        bucketDBStripeBits = value;
+        return this;
+    }
+
+    public StorServerProducer(String clusterName) {
         this.clusterName = clusterName;
-        this.maxMergesPerNode = maxMergesPerNode;
-        this.queueSize = queueSize;
     }
 
     @Override
@@ -52,6 +62,9 @@ public class StorServerProducer implements StorServerConfig.Producer {
         }
         if (queueSize != null) {
             builder.max_merge_queue_size(queueSize);
+        }
+        if (bucketDBStripeBits != null) {
+            builder.content_node_bucket_db_stripe_bits(bucketDBStripeBits);
         }
     }
 }
