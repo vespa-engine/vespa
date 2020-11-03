@@ -20,8 +20,6 @@ namespace {
 
 static constexpr size_t npos = -1;
 
-enum class Source { FROM_CHILD, VERBATIM };
-
 using Spec = GenericPeek::SpecMap;
 
 size_t count_children(const Spec &spec)
@@ -35,22 +33,35 @@ size_t count_children(const Spec &spec)
     return num_children;
 }
 
+struct DimSpec {
+    vespalib::stringref name;
+    GenericPeek::MyLabel child_or_label;
+    bool has_child() const {
+        return std::holds_alternative<size_t>(child_or_label);
+    }
+    bool has_label() const {
+        return std::holds_alternative<TensorSpec::Label>(child_or_label);
+    }
+    size_t get_child_idx() const {
+        return std::get<size_t>(child_or_label);
+    }
+    vespalib::stringref get_label_name() const {
+        auto label = std::get<TensorSpec::Label>(child_or_label);
+        assert(label.is_mapped());
+        return label.name;
+    }
+    size_t get_label_index() const {
+        auto label = std::get<TensorSpec::Label>(child_or_label);
+        assert(label.is_indexed());
+        return label.index;
+    }
+};
+
 struct ExtractedSpecs {
     using Dimension = ValueType::Dimension;
     struct MyComp {
         bool operator() (const Dimension &a, const Spec::value_type &b) { return a.name < b.first; }
         bool operator() (const Spec::value_type &a, const Dimension &b) { return a.first < b.name; }
-    };
-    struct DimSpec {
-        Source source;
-        vespalib::stringref name;
-        GenericPeek::MyLabel child_or_label;
-        size_t get_child_idx() const {
-            return std::get<size_t>(child_or_label);
-        }
-        TensorSpec::Label get_label() const {
-            return std::get<TensorSpec::Label>(child_or_label);
-        }
     };
     std::vector<Dimension> dimensions;
     std::vector<DimSpec> specs;
@@ -73,11 +84,7 @@ struct ExtractedSpecs {
                     dimensions.push_back(a);
                     const auto & [spec_dim_name, child_or_label] = b;
                     assert(a.name == spec_dim_name);
-                    if (std::holds_alternative<size_t>(child_or_label)) {
-                        specs.emplace_back(DimSpec{Source::FROM_CHILD, a.name, child_or_label});
-                    } else {
-                        specs.emplace_back(DimSpec{Source::VERBATIM, a.name, child_or_label});
-                    }
+                    specs.emplace_back(DimSpec{a.name, child_or_label});
                 }
             }
         };
@@ -116,9 +123,12 @@ struct DensePlan {
     std::vector<size_t> loop_cnt;
     std::vector<size_t> in_stride;
     size_t verbatim_offset = 0;
-    std::vector<size_t> children;
-    std::vector<size_t> child_stride;
-    std::vector<size_t> child_limit;
+    struct Child {
+        size_t idx;
+        size_t stride;
+        size_t limit;
+    };
+    std::vector<Child> children;
 
     DensePlan(const ValueType &input_type, const Spec &spec)
     {
@@ -135,18 +145,13 @@ struct DensePlan {
                 out_dense_size *= sizes.size[i];
             } else {
                 assert(dim.name == pos->name);
-                switch(pos->source) {
-                case Source::FROM_CHILD:
-                    child_stride.push_back(sizes.stride[i]);
-                    children.push_back(pos->get_child_idx());
-                    child_limit.push_back(sizes.size[i]);
-                    break;
-                case Source::VERBATIM:
-                    const auto &label = pos->get_label();
-                    assert(label.is_indexed());
-                    assert(label.index < sizes.size[i]);
-                    verbatim_offset += label.index * sizes.stride[i];
-                    break;
+                if (pos->has_child()) {
+                    children.push_back(Child{pos->get_child_idx(), sizes.stride[i], sizes.size[i]});
+                } else {
+                    assert(pos->has_label());
+                    size_t label_index = pos->get_label_index();
+                    assert(label_index < sizes.size[i]);
+                    verbatim_offset += label_index * sizes.stride[i];
                 }
                 ++pos;
             }
@@ -159,9 +164,9 @@ struct DensePlan {
     size_t get_offset(const Getter &get_child_value) const {
         size_t offset = verbatim_offset;
         for (size_t i = 0; i < children.size(); ++i) {
-            size_t from_child = get_child_value(children[i]);
-            if (from_child < child_limit[i]) {
-                offset += from_child * child_stride[i];
+            size_t from_child = get_child_value(children[i].idx);
+            if (from_child < children[i].limit) {
+                offset += from_child * children[i].stride;
             } else {
                 return npos;
             }
@@ -202,39 +207,28 @@ SparseState::~SparseState() = default;
 
 struct SparsePlan {
     size_t out_mapped_dims;
-    std::vector<Source> sources;
-    std::vector<vespalib::string> verbatim;
+    std::vector<DimSpec> lookup_specs;
     std::vector<size_t> view_dims;
-    std::vector<size_t> children;
 
     SparsePlan(const ValueType &input_type,
                const GenericPeek::SpecMap &spec)
-        : out_mapped_dims(0), sources(), verbatim(), view_dims(), children()
+        : out_mapped_dims(0),
+          view_dims()
     {
-        const ExtractedSpecs mine(false, input_type.dimensions(), spec);
-        auto pos = mine.specs.begin();
+        ExtractedSpecs mine(false, input_type.dimensions(), spec);
+        lookup_specs = std::move(mine.specs);
+        auto pos = lookup_specs.begin();
         for (size_t dim_idx = 0; dim_idx < mine.dimensions.size(); ++dim_idx) {
             const auto & dim = mine.dimensions[dim_idx];
-            if ((pos == mine.specs.end()) || (dim.name < pos->name)) {
+            if ((pos == lookup_specs.end()) || (dim.name < pos->name)) {
                 ++out_mapped_dims;
             } else {
                 assert(dim.name == pos->name);
                 view_dims.push_back(dim_idx);
-                sources.push_back(pos->source);
-                switch (pos->source) {
-                case Source::FROM_CHILD:
-                    children.push_back(pos->get_child_idx());
-                    break;
-                case Source::VERBATIM:
-                    const auto &label = pos->get_label();
-                    assert(label.is_mapped());
-                    verbatim.push_back(label.name);
-                    break;
-                }
                 ++pos;
             }
         }
-        assert(pos == mine.specs.end());
+        assert(pos == lookup_specs.end());
     }
 
     ~SparsePlan();
@@ -242,20 +236,14 @@ struct SparsePlan {
     template <typename Getter>
     SparseState make_state(const Getter &get_child_value) const {
         std::vector<vespalib::string> view_addr;
-        auto vpos = verbatim.begin();
-        auto cpos = children.begin();
-        for (auto source : sources) {
-            switch (source) {
-            case Source::VERBATIM:
-                view_addr.push_back(*vpos++);
-                break;
-            case Source::FROM_CHILD:
-                view_addr.push_back(vespalib::make_string("%" PRId64, get_child_value(*cpos++)));
-                break;
+        for (const auto & dim : lookup_specs) {
+            if (dim.has_child()) {
+                int64_t child_value = get_child_value(dim.get_child_idx());
+                view_addr.push_back(vespalib::make_string("%" PRId64, child_value));
+            } else {
+                view_addr.push_back(dim.get_label_name());
             }
         }
-        assert(vpos == verbatim.end());
-        assert(cpos == children.end());
         assert(view_addr.size() == view_dims.size());
         return SparseState(std::move(view_addr), out_mapped_dims);
     }
