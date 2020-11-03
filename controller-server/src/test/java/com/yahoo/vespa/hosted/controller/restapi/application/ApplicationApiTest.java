@@ -67,7 +67,6 @@ import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
@@ -196,10 +195,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         updateContactInformation();
         tester.assertResponse(request("/application/v4/tenant/tenant2", GET).userIdentity(USER_ID),
                               new File("tenant-with-contact-info.json"));
-
-        // GET tenant info
-        tester.assertResponse(request("/application/v4/tenant/tenant2", GET).userIdentity(USER_ID),
-                new File("tenant-with-contact-info.json"));
 
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
