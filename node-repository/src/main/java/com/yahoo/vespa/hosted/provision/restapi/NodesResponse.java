@@ -137,9 +137,8 @@ class NodesResponse extends HttpResponse {
         if ( ! allFields) return;
         object.setString("id", node.hostname());
         object.setString("state", NodeSerializer.toString(node.state()));
-        object.setString("type", node.type().name());
-        object.setString("hostname", node.hostname());
         object.setString("type", NodeSerializer.toString(node.type()));
+        object.setString("hostname", node.hostname());
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }
