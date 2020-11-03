@@ -30,42 +30,34 @@ public class ContainerDocumentApi {
 
     private static void addFeedHandler(ContainerCluster<?> cluster, Options options) {
         String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
-        var handler = newVespaClientHandler(
-                "com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
+        var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
         cluster.addComponent(handler);
-        var executor = new Threadpool(
-                "feedapi-handler", cluster, options.feedApiThreadpoolOptions);
+        var executor = new Threadpool("feedapi-handler", cluster, options.feedApiThreadpoolOptions);
         handler.inject(executor);
         handler.addComponent(executor);
     }
 
 
     private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
-        // TODO(bjorncs,jonmv) Cleanup once old restapi handler is gone
-        // We need to include the old handler implementation even when the new handler is enabled
-        // The internal legacy test framework requires that the name of the old handler is listed in /ApplicationStatus
-        String oldHandlerName = "com.yahoo.document.restapi.resource.RestApi";
-        String bindingSuffix = "/document/v1/*";
-        var oldHandler = newVespaClientHandler(oldHandlerName, options.useNewRestapiHandler ? null : bindingSuffix, options);
-        cluster.addComponent(oldHandler);
-        var executor = new Threadpool("restapi-handler", cluster, /*userOptions*/null);
-        oldHandler.inject(executor);
-        oldHandler.addComponent(executor);
+        var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler", "/document/v1/*", options);
+        cluster.addComponent(handler);
 
-        if (options.useNewRestapiHandler) {
-            String newHandlerName = "com.yahoo.document.restapi.resource.DocumentV1ApiHandler";
-            var newHandler = newVespaClientHandler(newHandlerName, bindingSuffix, options);
-            cluster.addComponent(newHandler);
-        }
+        // We need to include a dummy implementation of the previous restapi handler (using the same class name).
+        // The internal legacy test framework requires that the name of the old handler is listed in /ApplicationStatus.
+        var oldHandlerDummy = handlerComponentSpecification("com.yahoo.document.restapi.resource.RestApi");
+        cluster.addComponent(oldHandlerDummy);
+
+        // TODO(bjorncs,jonmv) Remove threadpool once RestApi handler is reduced to a dummy
+        var executor = new Threadpool("restapi-handler", cluster, /*userOptions*/null);
+        oldHandlerDummy.inject(executor);
+        oldHandlerDummy.addComponent(executor);
     }
 
     private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(
             String componentId,
             String bindingSuffix,
             Options options) {
-        Handler<AbstractConfigProducer<?>> handler = new Handler<>(new ComponentModel(
-                BundleInstantiationSpecification.getFromStrings(componentId, null, "vespaclient-container-plugin"), ""));
-        if (bindingSuffix == null) return handler; // TODO(bjorncs,jonmv) Cleanup once old restapi handler is gone
+        Handler<AbstractConfigProducer<?>> handler = handlerComponentSpecification(componentId);
         if (options.bindings.isEmpty()) {
             handler.addServerBindings(
                     SystemBindingPattern.fromHttpPath(bindingSuffix),
@@ -81,17 +73,18 @@ public class ContainerDocumentApi {
         return handler;
     }
 
+    private static Handler<AbstractConfigProducer<?>> handlerComponentSpecification(String className) {
+        return new Handler<>(new ComponentModel(
+                BundleInstantiationSpecification.getFromStrings(className, null, "vespaclient-container-plugin"), ""));
+    }
+
     public static final class Options {
         private final Collection<String> bindings;
         private final ContainerThreadpool.UserOptions feedApiThreadpoolOptions;
-        private final boolean useNewRestapiHandler;
 
-        public Options(Collection<String> bindings,
-                       ContainerThreadpool.UserOptions feedApiThreadpoolOptions,
-                       boolean useNewRestapiHandler) {
+        public Options(Collection<String> bindings, ContainerThreadpool.UserOptions feedApiThreadpoolOptions) {
             this.bindings = Collections.unmodifiableCollection(bindings);
             this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
-            this.useNewRestapiHandler = useNewRestapiHandler;
         }
     }
 

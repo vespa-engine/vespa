@@ -180,7 +180,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addProcessing(deployState, spec, cluster);
         addSearch(deployState, spec, cluster);
         addDocproc(deployState, spec, cluster);
-        addDocumentApi(deployState, spec, cluster);  // NOTE: Must be done after addSearch
+        addDocumentApi(spec, cluster);  // NOTE: Must be done after addSearch
 
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
@@ -401,8 +401,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.addServlet(new ServletBuilder().build(deployState, cluster, servletElem));
     }
 
-    private void addDocumentApi(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        ContainerDocumentApi containerDocumentApi = buildDocumentApi(deployState, cluster, spec);
+    private void addDocumentApi(Element spec, ApplicationContainerCluster cluster) {
+        ContainerDocumentApi containerDocumentApi = buildDocumentApi(cluster, spec);
         if (containerDocumentApi == null) return;
 
         cluster.setDocumentApi(containerDocumentApi);
@@ -829,11 +829,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return result;
     }
 
-    private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
+    private ContainerDocumentApi buildDocumentApi(ApplicationContainerCluster cluster, Element spec) {
         Element documentApiElement = XML.getChild(spec, "document-api");
         if (documentApiElement == null) return null;
 
-        ContainerDocumentApi.Options documentApiOptions = DocumentApiOptionsBuilder.build(deployState, documentApiElement);
+        ContainerDocumentApi.Options documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         return new ContainerDocumentApi(cluster, documentApiOptions);
     }
 
