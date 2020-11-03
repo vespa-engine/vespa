@@ -1474,10 +1474,6 @@ TEST_F(BucketDBUpdaterTest, pending_cluster_state_send_messages) {
               getSentNodes("distributor:10 storage:2",
                            "distributor:10 .1.s:d storage:2"));
 
-    EXPECT_EQ(getNodeList({1}),
-              getSentNodes("distributor:2 storage:2 .1.s:d",
-                           "distributor:2 storage:2 .1.d:3 .1.d.1.s:d"));
-
     EXPECT_EQ(std::string(""),
               getSentNodes("distributor:2 storage:2",
                            "distributor:3 .2.s:i storage:2"));
