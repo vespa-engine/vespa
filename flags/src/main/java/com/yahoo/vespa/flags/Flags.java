@@ -338,6 +338,13 @@ public class Flags {
             "Whether host-admin should download images from the zone's regional container registry",
             "Takes effect on host-admin restart");
 
+    public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
+            "enable-automatic-reindexing",
+            false,
+            "Whether to automatically trigger reindexing from config change",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {

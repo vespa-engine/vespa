@@ -137,9 +137,13 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
-        public FeatureFlags(FlagSource source, ApplicationId appId) {
+        private final boolean enableAutomaticReindexing;
 
+        public FeatureFlags(FlagSource source, ApplicationId appId) {
+            this.enableAutomaticReindexing = flagValue(source, appId, Flags.ENABLE_AUTOMATIC_REINDEXING);
         }
+
+        @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

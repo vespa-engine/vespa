@@ -50,7 +50,7 @@ public interface ModelContext {
     Version wantedNodeVespaVersion();
 
     interface FeatureFlags {
-
+        @ModelFeatureFlag(owner = "bjorncs") default boolean enableAutomaticReindexing() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
