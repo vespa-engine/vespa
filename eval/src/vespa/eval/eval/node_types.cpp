@@ -307,7 +307,13 @@ struct TypeExporter : public NodeTraverser {
         : parent_type_map(parent_type_map_in),
           exported_type_map(exported_type_map_out),
           missing_cnt(0) {}
-    bool open(const Node &) override { return true; }
+    bool open(const Node &node) override {
+        if (auto lambda = dynamic_cast<const TensorLambda *>(&node)) {
+            lambda->lambda().root().traverse(*this);
+            return false;
+        }
+        return true;
+    }
     void close(const Node &node) override {
         auto pos = parent_type_map.find(&node);
         if (pos != parent_type_map.end()) {
