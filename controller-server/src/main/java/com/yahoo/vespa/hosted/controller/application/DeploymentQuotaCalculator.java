@@ -23,12 +23,11 @@ public class DeploymentQuotaCalculator {
     public static Quota calculate(Quota tenantQuota,
                                   List<Application> tenantApps,
                                   ApplicationId deployingApp, ZoneId deployingZone,
-                                  DeploymentSpec deploymentSpec) {
-
+                                  DeploymentSpec deploymentSpec)
+    {
         if (tenantQuota.budget().isEmpty()) return tenantQuota; // Shortcut if there is no budget limit to care about.
-
+        if (deployingZone.environment().isTest()) return Quota.unlimited();
         if (deployingZone.environment().isProduction()) return probablyEnoughForAll(tenantQuota, tenantApps, deployingApp, deploymentSpec);
-
         return getMaximumAllowedQuota(tenantQuota, tenantApps, deployingApp, deployingZone);
     }
 
