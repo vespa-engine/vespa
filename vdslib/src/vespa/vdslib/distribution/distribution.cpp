@@ -237,48 +237,6 @@ Distribution::getStorageSeed(
     return seed;
 }
 
-uint32_t
-Distribution::getDiskSeed(const document::BucketId& bucket, uint16_t nodeIndex) const
-{
-    switch (_diskDistribution) {
-        case DiskDistribution::MODULO:
-        {
-            uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                    & _distributionBitMasks[16]);
-            return 0xdeadbeef ^ seed;
-        }
-        case DiskDistribution::MODULO_INDEX:
-        {
-            uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                    & _distributionBitMasks[16]);
-            return 0xdeadbeef ^ seed ^ nodeIndex;
-        }
-        case DiskDistribution::MODULO_KNUTH:
-        {
-            uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                    & _distributionBitMasks[16]);
-            return 0xdeadbeef ^ seed ^ (1664525L * nodeIndex + 1013904223L);
-        }
-        case DiskDistribution::MODULO_BID:
-        {
-            uint64_t currentid = bucket.withoutCountBits();
-            char ordered[8];
-            ordered[0] = currentid >> (0*8);
-            ordered[1] = currentid >> (1*8);
-            ordered[2] = currentid >> (2*8);
-            ordered[3] = currentid >> (3*8);
-            ordered[4] = currentid >> (4*8);
-            ordered[5] = currentid >> (5*8);
-            ordered[6] = currentid >> (6*8);
-            ordered[7] = currentid >> (7*8);
-            uint32_t initval = (1664525 * nodeIndex + 0xdeadbeef);
-            return vespalib::BobHash::hash(ordered, 8, initval);
-        }
-    }
-    throw vespalib::IllegalStateException("Unknown disk distribution: "
-            + getDiskDistributionName(_diskDistribution), VESPA_STRLOC);
-}
-
 vespalib::string Distribution::getDiskDistributionName(DiskDistribution dist) {
 
     return DistributionConfig::getDiskDistributionName(toConfig(dist));
@@ -292,57 +250,6 @@ Distribution::getDiskDistribution(vespalib::stringref name)  {
 void
 Distribution::print(std::ostream& out, bool, const std::string&) const {
     out << serialize();
-}
-
-// This function should only depend on disk distribution and node index. It is
-// assumed that any other change, for instance in hierarchical grouping, does
-// not change disk index on disk.
-uint16_t
-Distribution::getIdealDisk(const NodeState& nodeState, uint16_t nodeIndex,
-                           const document::BucketId& bucket,
-                           DISK_MODE flag) const
-{
-        // Catch special cases in a single if statement
-    if (nodeState.getDiskCount() < 2) {
-        if (nodeState.getDiskCount() == 1) return 0;
-        throw vespalib::IllegalArgumentException(
-                "Cannot pick ideal disk without knowing disk count.",
-                VESPA_STRLOC);
-    }
-    RandomGen randomizer(getDiskSeed(bucket, nodeIndex));
-    switch (_diskDistribution) {
-        case DiskDistribution::MODULO_BID:
-        {
-            double maxScore = 0.0;
-            uint16_t idealDisk = 0xffff;
-            for (uint32_t i=0, n=nodeState.getDiskCount(); i<n; ++i) {
-                double score = randomizer.nextDouble();
-                const DiskState& diskState(nodeState.getDiskState(i));
-                if (flag == BEST_AVAILABLE_DISK
-                    && !diskState.getState().oneOf("uis"))
-                {
-                    continue;
-                }
-                if (diskState.getCapacity() != 1.0) {
-                    score = std::pow(score,
-                                     1.0 / diskState.getCapacity().getValue());
-                }
-                if (score > maxScore) {
-                    maxScore = score;
-                    idealDisk = i;
-                }
-            }
-            if (idealDisk == 0xffff) {
-                throw vespalib::IllegalStateException(
-                        "There are no available disks.", VESPA_STRLOC);
-            }
-            return idealDisk;
-        }
-        default:
-        {
-            return randomizer.nextUint32() % nodeState.getDiskCount();
-        }
-    }
 }
 
 namespace {
@@ -579,12 +486,6 @@ Distribution::getIdealNodes(const NodeType& nodeType,
             // seed if the node that is out of order is illegal anyways.
             const NodeState& nodeState(clusterState.getNodeState(Node(nodeType, nodes[j])));
             if (!nodeState.getState().oneOf(upStates)) continue;
-            if (nodeState.isAnyDiskDown()) {
-                uint16_t idealDiskIndex(getIdealDisk(nodeState, nodes[j], bucket, IDEAL_DISK_EVEN_IF_DOWN));
-                if (nodeState.getDiskState(idealDiskIndex).getState() != State::UP) {
-                    continue;
-                }
-            }
             // Get the score from the random number generator. Make sure we
             // pick correct random number. Optimize for the case where we
             // pick in rising order.

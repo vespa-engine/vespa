@@ -4,7 +4,6 @@ vespa_add_library(vdslib_state OBJECT
     nodetype.cpp
     node.cpp
     state.cpp
-    diskstate.cpp
     nodestate.cpp
     clusterstate.cpp
     cluster_state_bundle.cpp

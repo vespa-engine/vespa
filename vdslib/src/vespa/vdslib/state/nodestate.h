@@ -10,8 +10,9 @@
  */
 #pragma once
 
-#include "diskstate.h"
+#include "state.h"
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/vespalib/objects/floatingpointtype.h>
 
 namespace storage::lib {
 
@@ -24,11 +25,7 @@ class NodeState : public document::Printable
     uint16_t _reliability;
     vespalib::Double _initProgress;
     uint32_t _minUsedBits;
-    std::vector<DiskState> _diskStates;
-    bool _anyDiskDown;
     uint64_t _startTimestamp;
-
-    void updateAnyDiskDownFlag();
 
 public:
     typedef std::shared_ptr<const NodeState> CSP;
@@ -55,9 +52,7 @@ public:
      * recreate the nodestate with NodeState(string) function.
      */
     void serialize(vespalib::asciistream & out, vespalib::stringref prefix = "",
-                   bool includeDescription = true,
-                   bool includeDiskDescription = false,
-                   bool useOldFormat = false) const;
+                   bool includeDescription = true) const;
 
     const State& getState() const { return *_state; }
     vespalib::Double getCapacity() const { return _capacity; }
@@ -67,10 +62,6 @@ public:
     const vespalib::string& getDescription() const { return _description; }
     uint64_t getStartTimestamp() const { return _startTimestamp; }
 
-    bool isAnyDiskDown() const { return _anyDiskDown; }
-    uint16_t getDiskCount() const { return _diskStates.size(); }
-    const DiskState& getDiskState(uint16_t index) const;
-
     void setState(const State& state);
     void setCapacity(vespalib::Double capacity);
     void setMinUsedBits(uint32_t usedBits);
@@ -78,9 +69,6 @@ public:
     void setInitProgress(vespalib::Double initProgress);
     void setStartTimestamp(uint64_t startTimestamp);
     void setDescription(vespalib::stringref desc) { _description = desc; }
-
-    void setDiskCount(uint16_t count);
-    void setDiskState(uint16_t index, const DiskState&);
 
     void print(std::ostream& out, bool verbose,
                const std::string& indent) const override;

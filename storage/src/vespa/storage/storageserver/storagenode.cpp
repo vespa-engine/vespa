@@ -60,18 +60,6 @@ namespace {
         }
     }
 
-
-bool
-allDisksDown(const lib::NodeState &nodeState)
-{
-    for (uint32_t i = 0; i < nodeState.getDiskCount(); ++i) {
-        if (nodeState.getDiskState(i).getState() != lib::State::DOWN)
-            return false;
-    }
-    return true;
-}
-
-
 } // End of anonymous namespace
 
 StorageNode::StorageNode(
@@ -597,28 +585,6 @@ StorageNode::requestShutdown(vespalib::stringref reason)
         }
     }
     _attemptedStopped = true;
-}
-
-void
-StorageNode::notifyPartitionDown(int partId, vespalib::stringref reason)
-{
-    if (!_component)
-        return;
-    NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
-    lib::NodeState nodeState(*_component->getStateUpdater().getReportedNodeState());
-    if (partId >= nodeState.getDiskCount())
-        return;
-    lib::DiskState diskState(nodeState.getDiskState(partId));
-    if (diskState.getState() == lib::State::DOWN)
-        return;
-    diskState.setState(lib::State::DOWN);
-    diskState.setDescription(reason);
-    nodeState.setDiskState(partId, diskState);
-    if (allDisksDown(nodeState)) {
-        nodeState.setState(lib::State::DOWN);
-        nodeState.setDescription("All partitions are down");
-    }
-    _component->getStateUpdater().setReportedNodeState(nodeState);
 }
 
 std::unique_ptr<StateManager>

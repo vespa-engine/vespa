@@ -8,19 +8,19 @@ namespace storage {
 namespace lib {
 
 const State State::UNKNOWN("Unknown", "-", 0,
-        false, true,  true,  false, false, false);
+        true,  true,  false, false, false);
 const State State::MAINTENANCE("Maintenance", "m", 1,
-        false, false, false, true,  true,  false);
+        false, false, true,  true,  false);
 const State State::DOWN("Down", "d", 2,
-        true,  false, false, true,  true,  true);
+        false, false, true,  true,  true);
 const State State::STOPPING("Stopping", "s", 3,
-        false, true,  true,  false, false, true);
+        true,  true,  false, false, true);
 const State State::INITIALIZING("Initializing", "i", 4,
-        false, true,  true,  false, false, true);
+        true,  true,  false, false, true);
 const State State::RETIRED("Retired", "r", 5,
-        false, false, false, true, true,  false);
+        false, false, true, true,  false);
 const State State::UP("Up", "u", 6,
-        true,  true,  true,  true,  true,  true);
+        true,  true,  true,  true,  true);
 
 const State&
 State::get(vespalib::stringref serialized)
@@ -40,14 +40,13 @@ State::get(vespalib::stringref serialized)
 }
 
 State::State(vespalib::stringref name, vespalib::stringref serialized,
-             uint8_t rank, bool validDisk,
+             uint8_t rank,
              bool validDistributorReported, bool validStorageReported,
              bool validDistributorWanted, bool validStorageWanted,
              bool validCluster)
     : _name(name),
       _serialized(serialized),
       _rankValue(rank),
-      _validDiskState(validDisk),
       _validReportedNodeState(2),
       _validWantedNodeState(2),
       _validClusterState(validCluster)

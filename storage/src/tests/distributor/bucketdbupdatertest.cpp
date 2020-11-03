@@ -1475,10 +1475,6 @@ TEST_F(BucketDBUpdaterTest, pending_cluster_state_send_messages) {
                            "distributor:10 .1.s:d storage:2"));
 
     EXPECT_EQ(getNodeList({1}),
-              getSentNodes("distributor:2 storage:2",
-                           "distributor:2 storage:2 .1.d:3 .1.d.1.s:d"));
-
-    EXPECT_EQ(getNodeList({1}),
               getSentNodes("distributor:2 storage:2 .1.s:d",
                            "distributor:2 storage:2 .1.d:3 .1.d.1.s:d"));
 
@@ -1723,16 +1719,6 @@ TEST_F(BucketDBUpdaterTest, pending_cluster_state_merge) {
                     "",
                     "0:1,2,4,5|1:2,3,4,6|2:1,3,5,6"));
 
-    // Node came up with fewer buckets (lost disk)
-    EXPECT_EQ(
-            std::string("4:1|2:0,1|6:1,2|1:2,0|5:2|3:2,1|"),
-            mergeBucketLists(
-                    lib::ClusterState("distributor:1 storage:3"),
-                    "0:1,2,4,5|1:2,3,4,6|2:1,3,5,6",
-                    lib::ClusterState("distributor:1 storage:3 .0.d:3 .0.d.1.s:d"),
-                    "0:1,2")
-            );
-
     // New node came up
     EXPECT_EQ(
             std::string("4:0,1|2:0,1|6:1,2,3|1:0,2,3|5:2,0,3|3:2,1,3|"),
@@ -1748,27 +1734,6 @@ TEST_F(BucketDBUpdaterTest, pending_cluster_state_merge) {
             mergeBucketLists(
                     "0:1,2,4,5|1:2,3,4,6|2:1,3,5,6",
                     "0:1,2,6,8"));
-
-    // Node came up with no buckets
-    EXPECT_EQ(
-            std::string("4:1|2:1|6:1,2|1:2|5:2|3:2,1|"),
-            mergeBucketLists(
-                    lib::ClusterState("distributor:1 storage:3"),
-                    "0:1,2,4,5|1:2,3,4,6|2:1,3,5,6",
-                    lib::ClusterState("distributor:1 storage:3 .0.d:3 .0.d.1.s:d"),
-                    "0:")
-            );
-
-    // One node lost a disk, another was just reasked (distributor
-    // change)
-    EXPECT_EQ(
-            std::string("2:0,1|6:1,2|1:2,0|5:2|3:2,1|"),
-            mergeBucketLists(
-                    lib::ClusterState("distributor:1 storage:3"),
-                    "0:1,2,4,5|1:2,3,6|2:1,3,5,6",
-                    lib::ClusterState("distributor:1 storage:3 .0.d:3 .0.d.1.s:d"),
-                    "0:1,2|1:2,3")
-            );
 
     // Bucket info format is "bucketid/checksum/count/size"
     // Node went from initializing to up and invalid bucket went to empty.
@@ -2166,14 +2131,6 @@ TEST_F(BucketDBUpdaterTest, DISABLED_cluster_config_downsize_only_sends_to_avail
     sortSentMessagesByIndex(_sender);
 
     EXPECT_EQ((nodeVec{0, 1, 2}), getSendSet());
-}
-
-TEST_F(BucketDBUpdaterTest, changed_disk_set_triggers_re_fetch) {
-    // Same number of online disks, but the set of disks has changed.
-    EXPECT_EQ(
-            getNodeList({1}),
-            getSentNodes("distributor:2 storage:2 .1.d:3 .1.d.2.s:d",
-                         "distributor:2 storage:2 .1.d:3 .1.d.1.s:d"));
 }
 
 /**

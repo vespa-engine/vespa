@@ -105,20 +105,9 @@ ServiceLayerNode::initializeNodeSpecific()
     // node state.
     NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
     lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
-    ns.setDiskCount(1u);
 
     ns.setCapacity(_serverConfig->nodeCapacity);
     ns.setReliability(_serverConfig->nodeReliability);
-    for (uint16_t i=0; i<_serverConfig->diskCapacity.size(); ++i) {
-        if (i >= ns.getDiskCount()) {
-            LOG(warning, "Capacity configured for partition %zu but only %u partitions found.",
-                _serverConfig->diskCapacity.size(), ns.getDiskCount());
-            continue;
-        }
-        lib::DiskState ds(ns.getDiskState(i));
-        ds.setCapacity(_serverConfig->diskCapacity[i]);
-        ns.setDiskState(i, ds);
-    }
     LOG(debug, "Adjusting reported node state to include partition count and states, capacity and reliability: %s",
         ns.toString().c_str());
     _component->getStateUpdater().setReportedNodeState(ns);
@@ -146,18 +135,6 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
                     oldC.nodeCapacity, newC.nodeCapacity);
                 ASSIGN(nodeCapacity);
                 ns.setCapacity(newC.nodeCapacity);
-            }
-            if (DIFFER(diskCapacity)) {
-                for (uint32_t i=0; i<newC.diskCapacity.size() && i<ns.getDiskCount(); ++i) {
-                    if (newC.diskCapacity[i] != oldC.diskCapacity[i]) {
-                        lib::DiskState ds(ns.getDiskState(i));
-                        ds.setCapacity(newC.diskCapacity[i]);
-                        ns.setDiskState(i, ds);
-                        LOG(info, "Live config update: Disk capacity of disk %u changed from %f to %f.",
-                            i, oldC.diskCapacity[i], newC.diskCapacity[i]);
-                    }
-                }
-                ASSIGN(diskCapacity);
             }
             if (DIFFER(nodeReliability)) {
                 LOG(info, "Live config update: Node reliability changed from %u to %u.",
