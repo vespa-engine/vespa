@@ -42,7 +42,6 @@ public:
     const TensorEngine &engine() const { return *std::get<engine_t>(_value); }
     const ValueBuilderFactory &factory() const { return *std::get<factory_t>(_value); }
     // functions that can be called with either engine or factory
-    const TensorFunction &optimize(const TensorFunction &expr, Stash &stash) const;
     TensorSpec to_spec(const Value &value) const;
     std::unique_ptr<Value> from_spec(const TensorSpec &spec) const;
     void encode(const Value &value, nbostream &output) const;

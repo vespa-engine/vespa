@@ -36,17 +36,6 @@ EngineOrFactory::get_shared(EngineOrFactory hint)
     return shared;
 }
 
-const TensorFunction &
-EngineOrFactory::optimize(const TensorFunction &expr, Stash &stash) const {
-    if (is_engine()) {
-        return engine().optimize(expr, stash);
-    } else if (&factory() == &FastValueBuilderFactory::get()) {
-        return tensor::DefaultTensorEngine::ref().optimize(expr, stash);
-    } else {
-        return expr;
-    }
-}
-
 TensorSpec
 EngineOrFactory::to_spec(const Value &value) const
 {
