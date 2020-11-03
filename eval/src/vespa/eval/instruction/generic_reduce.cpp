@@ -127,16 +127,16 @@ void my_full_reduce_op(State &state, uint64_t) {
 struct SelectGenericReduceOp {
     template <typename ICT, typename OCT, typename AGGR> static auto invoke(const ReduceParam &param) {
         if (param.res_type.is_scalar()) {
-            return my_full_reduce_op<ICT, OCT, typename AGGR::template templ<ICT>>;
+            return my_full_reduce_op<ICT, OCT, typename AGGR::template templ<OCT>>;
         }
-        return my_generic_reduce_op<ICT, OCT, typename AGGR::template templ<ICT>>;
+        return my_generic_reduce_op<ICT, OCT, typename AGGR::template templ<OCT>>;
     }
 };
 
 struct PerformGenericReduce {
     template <typename ICT, typename OCT, typename AGGR>
     static auto invoke(const Value &input, const ReduceParam &param) {
-        return generic_reduce<ICT, OCT, typename AGGR::template templ<ICT>>(input, param);
+        return generic_reduce<ICT, OCT, typename AGGR::template templ<OCT>>(input, param);
     }
 };
 
