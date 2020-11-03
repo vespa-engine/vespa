@@ -134,6 +134,9 @@ public abstract class LockedTenant {
             return new Cloud(name, creator, keys, info);
         }
 
+        public Cloud withInfo(TenantInfo newInfo) {
+            return new Cloud(name, creator, developerKeys, newInfo);
+        }
     }
 
 }
