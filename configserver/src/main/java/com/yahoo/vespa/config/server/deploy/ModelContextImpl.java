@@ -179,7 +179,6 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<ApplicationRoles> applicationRoles;
         private final Quota quota;
         private final boolean useAccessControlTlsHandshakeClientAuth;
-        private final double jettyThreadpoolSizeFactor;
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final int contentNodeBucketDBStripeBits;
         private final int mergeChunkSize;
@@ -242,9 +241,6 @@ public class ModelContextImpl implements ModelContext {
                     Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION.bindTo(flagSource)
                             .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
                             .value();
-            this.jettyThreadpoolSizeFactor = Flags.JETTY_THREADPOOL_SCALE_FACTOR.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
-                    .value();
             useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             contentNodeBucketDBStripeBits = Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS.bindTo(flagSource)
@@ -330,7 +326,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public Quota quota() { return quota; }
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
-        @Override public double jettyThreadpoolSizeFactor() { return jettyThreadpoolSizeFactor; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
         @Override public int mergeChunkSize() { return mergeChunkSize; }
