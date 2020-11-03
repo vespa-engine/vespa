@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.yolean.Exceptions;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -116,10 +114,9 @@ public class ApplicationCuratorDatabase {
                       .collect(Collectors.toUnmodifiableList());
     }
 
-    public ApplicationReindexing readReindexingStatus(ApplicationId id) {
+    public Optional<ApplicationReindexing> readReindexingStatus(ApplicationId id) {
         return curator.getData(reindexingDataPath(id))
-                      .map(data -> ReindexingStatusSerializer.fromBytes(data))
-                      .orElse(ApplicationReindexing.empty());
+                      .map(data -> ReindexingStatusSerializer.fromBytes(data));
     }
 
     public void writeReindexingStatus(ApplicationId id, ApplicationReindexing status) {

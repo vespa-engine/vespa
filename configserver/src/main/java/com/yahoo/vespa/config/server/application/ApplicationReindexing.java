@@ -21,8 +21,6 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class ApplicationReindexing implements Reindexing {
 
-    private static final ApplicationReindexing empty = new ApplicationReindexing(Status.ALWAYS_READY, Map.of());
-
     private final Status common;
     private final Map<String, Cluster> clusters;
 
@@ -31,9 +29,9 @@ public class ApplicationReindexing implements Reindexing {
         this.clusters = Map.copyOf(clusters);
     }
 
-    /** No reindexing pending or ready. */
-    public static ApplicationReindexing empty() {
-        return empty;
+    /** Reindexing for the whole application ready now. */
+    public static ApplicationReindexing ready(Instant now) {
+        return new ApplicationReindexing(new Status(now), Map.of());
     }
 
     /** Returns a copy of this with common reindexing for the whole application ready at the given instant. */
