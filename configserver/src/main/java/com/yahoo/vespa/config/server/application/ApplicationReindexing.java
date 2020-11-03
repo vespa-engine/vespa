@@ -21,8 +21,6 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class ApplicationReindexing implements Reindexing {
 
-    private static final ApplicationReindexing empty = new ApplicationReindexing(Status.ALWAYS_READY, Map.of());
-
     private final Status common;
     private final Map<String, Cluster> clusters;
 
