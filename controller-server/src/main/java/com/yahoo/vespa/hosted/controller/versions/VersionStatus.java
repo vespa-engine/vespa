@@ -75,6 +75,11 @@ public class VersionStatus {
         return versions.stream().filter(v -> v.versionNumber().equals(version)).findFirst().orElse(null);
     }
 
+    /** Returns whether given version is active in this system */
+    public boolean isActive(Version version) {
+        return version(version) != null;
+    }
+
     /** Create the empty version status */
     public static VersionStatus empty() { return new VersionStatus(List.of()); }
 
