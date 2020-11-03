@@ -1,26 +1,22 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.config.server.application.ApplicationReindexing.Status;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author jonmv
  */
-public class ApplicationCuratorDatabaseTest {
+public class ApplicationReindexingTest {
 
     @Test
-    public void testReindexingStatusSerialization() {
-        ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(new MockCurator());
-
-        assertEquals(ApplicationReindexing.empty(), db.readReindexingStatus(id));
-
+    public void test() {
         ApplicationReindexing reindexing = ApplicationReindexing.empty()
                                                                 .withReady(Instant.ofEpochMilli(1 << 20))
                                                                 .withPending("one", "a", 10)
@@ -30,8 +26,29 @@ public class ApplicationCuratorDatabaseTest {
                                                                 .withReady("one", "a", Instant.ofEpochMilli(1))
                                                                 .withReady("two", "c", Instant.ofEpochMilli(3));
 
-        db.writeReindexingStatus(id, reindexing);
-        assertEquals(reindexing, db.readReindexingStatus(id));
+        assertEquals(new Status(Instant.ofEpochMilli(1 << 20)),
+                     reindexing.common());
+
+        assertEquals(Set.of("one", "two"),
+                     reindexing.clusters().keySet());
+
+        assertEquals(new Status(Instant.EPOCH),
+                     reindexing.clusters().get("one").common());
+
+        assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(1))),
+                     reindexing.clusters().get("one").ready());
+
+        assertEquals(Map.of(),
+                     reindexing.clusters().get("one").pending());
+
+        assertEquals(new Status(Instant.ofEpochMilli(2 << 10)),
+                     reindexing.clusters().get("two").common());
+
+        assertEquals(Map.of("c", new Status(Instant.ofEpochMilli(3))),
+                     reindexing.clusters().get("two").ready());
+
+        assertEquals(Map.of("b", 20L),
+                     reindexing.clusters().get("two").pending());
     }
 
 }
