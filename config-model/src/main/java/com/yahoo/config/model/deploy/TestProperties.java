@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * @author hakonhall
  */
-public class TestProperties implements ModelContext.Properties {
+public class TestProperties implements ModelContext.Properties, ModelContext.FeatureFlags {
 
     private boolean multitenant = false;
     private ApplicationId applicationId = ApplicationId.defaultId();
@@ -52,6 +52,7 @@ public class TestProperties implements ModelContext.Properties {
     private int contentNodeBucketDBStripeBits = 0;
     private int mergeChunkSize = 0x400000 - 0x1000; // 4M -4k
 
+    @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
     @Override public ApplicationId applicationId() { return applicationId; }
     @Override public List<ConfigServerSpec> configServerSpecs() { return configServerSpecs; }

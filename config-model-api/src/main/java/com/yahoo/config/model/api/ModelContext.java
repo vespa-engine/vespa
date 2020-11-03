@@ -12,6 +12,10 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
 import java.io.File;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -45,8 +49,13 @@ public interface ModelContext {
     /** The Vespa version we want nodes to become */
     Version wantedNodeVespaVersion();
 
+    interface FeatureFlags {
+        @ModelFeatureFlag(owner = "bjorncs") default boolean enableAutomaticReindexing() { return false; }
+    }
+
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
     interface Properties {
+        FeatureFlags featureFlags();
         boolean multitenant();
         ApplicationId applicationId();
         List<ConfigServerSpec> configServerSpecs();
@@ -133,6 +142,13 @@ public interface ModelContext {
         // TODO(bjorncs): Temporary feature flag
         default double jettyThreadpoolSizeFactor() { return 1.0; }
 
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    @interface ModelFeatureFlag {
+        String owner();
+        String comment() default "";
     }
 
 }

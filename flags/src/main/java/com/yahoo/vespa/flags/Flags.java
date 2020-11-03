@@ -316,13 +316,6 @@ public class Flags {
             "Takes effect on next internal redeploy",
             APPLICATION_ID);
 
-    public static final UnboundDoubleFlag JETTY_THREADPOOL_SCALE_FACTOR = defineDoubleFlag(
-            "jetty-threadpool-size-factor",
-            0.0,
-            "Size of Jetty threadpool as a factor of vcpu",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             "Optionally deliver async messages in own thread",
@@ -344,6 +337,13 @@ public class Flags {
             false,
             "Whether host-admin should download images from the zone's regional container registry",
             "Takes effect on host-admin restart");
+
+    public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
+            "enable-automatic-reindexing",
+            false,
+            "Whether to automatically trigger reindexing from config change",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
