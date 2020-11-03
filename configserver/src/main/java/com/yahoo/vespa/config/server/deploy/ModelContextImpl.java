@@ -23,6 +23,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.UnboundFlag;
 
 import java.io.File;
 import java.net.URI;
@@ -134,8 +135,23 @@ public class ModelContextImpl implements ModelContext {
     @Override
     public Version wantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
+    public static class FeatureFlags implements ModelContext.FeatureFlags {
+
+        public FeatureFlags(FlagSource source, ApplicationId appId) {
+
+        }
+
+        private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
+            return flag.bindTo(source)
+                    .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                    .boxedValue();
+        }
+
+    }
+
     public static class Properties implements ModelContext.Properties {
 
+        private final ModelContext.FeatureFlags featureFlags;
         private final ApplicationId applicationId;
         private final boolean multitenant;
         private final List<ConfigServerSpec> configServerSpecs;
@@ -184,6 +200,7 @@ public class ModelContextImpl implements ModelContext {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> maybeQuota) {
+            this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -235,6 +252,8 @@ public class ModelContextImpl implements ModelContext {
             mergeChunkSize = Flags.MERGE_CHUNK_SIZE.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
+
+        @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
 
         @Override
         public boolean multitenant() { return multitenant; }
