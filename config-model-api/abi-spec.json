@@ -592,7 +592,7 @@
     "methods": [
       "public void <init>(java.util.List)",
       "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
-      "public final boolean allows(java.lang.String, java.time.Instant)",
+      "public boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
       "public java.lang.String xmlForm()",
       "public static java.lang.String toAllowMessage(com.yahoo.config.application.api.ValidationId)",

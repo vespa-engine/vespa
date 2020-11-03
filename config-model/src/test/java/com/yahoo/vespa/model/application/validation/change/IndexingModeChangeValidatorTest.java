@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.api.ConfigChangeRefeedAction;
+import com.yahoo.config.model.api.ConfigChangeReindexAction;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
@@ -29,20 +29,20 @@ public class IndexingModeChangeValidatorTest {
         List<ConfigChangeAction> changeActions =
                 tester.deploy(oldModel, getServices(AbstractSearchCluster.IndexingMode.STREAMING), Environment.prod, validationOverrides).getSecond();
 
-        assertRefeedChange(true, // allowed=true due to validation override
-                           "Cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
+        assertReindexingChange(true, // allowed=true due to validation override
+                           "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
                            changeActions);
     }
 
-    private void assertRefeedChange(boolean allowed, String message, List<ConfigChangeAction> changeActions) {
-        List<ConfigChangeAction> refeedActions = changeActions.stream()
-                                                              .filter(a -> a instanceof ConfigChangeRefeedAction)
+    private void assertReindexingChange(boolean allowed, String message, List<ConfigChangeAction> changeActions) {
+        List<ConfigChangeAction> reindexingActions = changeActions.stream()
+                                                              .filter(a -> a instanceof ConfigChangeReindexAction)
                                                               .collect(Collectors.toList());
-        assertEquals(1, refeedActions.size());
-        assertEquals(allowed, refeedActions.get(0).allowed());
-        assertTrue(refeedActions.get(0) instanceof ConfigChangeRefeedAction);
-        assertEquals("indexing-mode-change", ((ConfigChangeRefeedAction)refeedActions.get(0)).name());
-        assertEquals(message, refeedActions.get(0).getMessage());
+        assertEquals(1, reindexingActions.size());
+        assertEquals(allowed, reindexingActions.get(0).allowed());
+        assertTrue(reindexingActions.get(0) instanceof ConfigChangeReindexAction);
+        assertEquals("indexing-mode-change", ((ConfigChangeReindexAction)reindexingActions.get(0)).name());
+        assertEquals(message, reindexingActions.get(0).getMessage());
     }
 
     private static final String getServices(AbstractSearchCluster.IndexingMode indexingMode) {

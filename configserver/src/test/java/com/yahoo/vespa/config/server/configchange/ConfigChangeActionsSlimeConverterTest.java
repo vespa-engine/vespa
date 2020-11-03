@@ -35,6 +35,8 @@ public class ConfigChangeActionsSlimeConverterTest {
                         "  \"restart\": [\n" +
                         "  ],\n" +
                         "  \"refeed\": [\n" +
+                        "  ],\n" +
+                        "  \"reindex\": [\n" +
                         "  ]\n" +
                         " }\n" +
                         "}\n",
@@ -76,6 +78,8 @@ public class ConfigChangeActionsSlimeConverterTest {
                         "   }\n" +
                         "  ],\n" +
                         "  \"refeed\": [\n" +
+                        "  ],\n" +
+                        "  \"reindex\": [\n" +
                         "  ]\n" +
                         " }\n" +
                         "}\n",
@@ -126,10 +130,47 @@ public class ConfigChangeActionsSlimeConverterTest {
                         "     }\n" +
                         "    ]\n" +
                         "   }\n" +
+                        "  ],\n" +
+                        "  \"reindex\": [\n" +
                         "  ]\n" +
                         " }\n" +
                         "}\n",
-                     toJson(actions));
+                toJson(actions));
+    }
+
+        @Test
+        public void json_representation_of_reindex_actions() throws IOException {
+            ConfigChangeActions actions = new ConfigChangeActionsBuilder().
+                    reindex(CHANGE_ID, true, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_TYPE).build();
+            assertEquals(
+                    "{\n" +
+                            " \"configChangeActions\": {\n" +
+                            "  \"restart\": [\n" +
+                            "  ],\n" +
+                            "  \"refeed\": [\n" +
+                            "  ],\n" +
+                            "  \"reindex\": [\n" +
+                            "   {\n" +
+                            "    \"name\": \"change-id\",\n" +
+                            "    \"allowed\": true,\n" +
+                            "    \"documentType\": \"music\",\n" +
+                            "    \"clusterName\": \"foo\",\n" +
+                            "    \"messages\": [\n" +
+                            "     \"change\"\n" +
+                            "    ],\n" +
+                            "    \"services\": [\n" +
+                            "     {\n" +
+                            "      \"serviceName\": \"searchnode\",\n" +
+                            "      \"serviceType\": \"myservicetype\",\n" +
+                            "      \"configId\": \"myservicetype/searchnode\",\n" +
+                            "      \"hostName\": \"hostname\"\n" +
+                            "     }\n" +
+                            "    ]\n" +
+                            "   }\n" +
+                            "  ]\n" +
+                            " }\n" +
+                            "}\n",
+                    toJson(actions));
     }
 
 }

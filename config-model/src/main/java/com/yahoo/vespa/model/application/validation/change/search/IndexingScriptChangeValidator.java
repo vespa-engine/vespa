@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
@@ -8,10 +10,8 @@ import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
-import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
-import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
+import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ public class IndexingScriptChangeValidator {
             ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
             new IndexingScriptChangeMessageBuilder(currentSearch, currentField, nextSearch, nextField).populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
-            return Optional.of(VespaRefeedAction.of(id, ValidationId.indexingChange.value(), overrides, messageBuilder.build(), now));
+            return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange.value(), overrides, messageBuilder.build(), now));
         }
         return Optional.empty();
     }

@@ -140,7 +140,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
                             hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
 
-                    this.configChangeActions = new ConfigChangeActions(new RestartActions(), configChangeActions.getRefeedActions());
+                    this.configChangeActions = new ConfigChangeActions(
+                            new RestartActions(), configChangeActions.getRefeedActions(), configChangeActions.getReindexActions());
                 }
             }
 

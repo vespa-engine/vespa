@@ -38,6 +38,7 @@ import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
+import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
@@ -1006,6 +1007,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             logger.log(allAllowed ? Level.INFO : Level.WARNING,
                        "Change(s) between active and new application that may require re-feed:\n" +
                                refeedActions.format());
+        }
+        ReindexActions reindexActions = actions.getReindexActions();
+        if ( ! reindexActions.isEmpty()) {
+            boolean allAllowed = reindexActions.getEntries().stream().allMatch(ReindexActions.Entry::allowed);
+            logger.log(allAllowed ? Level.INFO : Level.WARNING,
+                    "Change(s) between active and new application that may require re-index:\n" +
+                            reindexActions.format());
         }
     }
 
