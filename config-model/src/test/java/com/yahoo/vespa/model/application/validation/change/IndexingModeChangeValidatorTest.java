@@ -30,7 +30,7 @@ public class IndexingModeChangeValidatorTest {
                 tester.deploy(oldModel, getServices(AbstractSearchCluster.IndexingMode.STREAMING), Environment.prod, validationOverrides).getSecond();
 
         assertReindexingChange(true, // allowed=true due to validation override
-                           "Cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
+                           "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
                            changeActions);
     }
 
