@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.metrics;
 
-import com.yahoo.document.restapi.OperationHandlerImpl;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 import java.util.Set;
 
@@ -29,7 +29,10 @@ public enum DocumentOperationStatus {
     }
 
     public static DocumentOperationStatus fromMessageBusErrorCodes(Set<Integer> errorCodes) {
-        return fromHttpStatusCode(OperationHandlerImpl.getHTTPStatusCode(errorCodes));
+        if (errorCodes.size() == 1 && errorCodes.contains(DocumentProtocol.ERROR_NO_SPACE))
+            return SERVER_ERROR;
+
+        return REQUEST_ERROR;
     }
 
 }
