@@ -27,13 +27,19 @@ public class ReindexingMaintainerTest {
                                                                 .withReady("two", "c", Instant.ofEpochMilli(3));
 
         assertEquals(reindexing,
-                     withReady(reindexing, List.of(), Instant.EPOCH));
+                     withReady(reindexing, () -> -1L, Instant.EPOCH));
 
         assertEquals(reindexing,
-                     withReady(reindexing, List.of(19L), Instant.EPOCH));
+                     withReady(reindexing, () -> 19L, Instant.EPOCH));
 
-        assertEquals(reindexing.withReady("two", "b", Instant.MAX),
-                     withReady(reindexing, List.of(20L), Instant.MAX));
+        Instant later = Instant.ofEpochMilli(2).plus(ReindexingMaintainer.reindexingInterval);
+        assertEquals(reindexing.withReady("one", later)         // Had EPOCH as previous, so is updated.
+                               .withReady("two", "b", later)    // Got config convergence, so is updated.
+                               .withReady("one", "a", later),   // Had EPOCH + 1 as previous, so is updated.
+                     withReady(reindexing, () -> 20L, later));
+
+        // Verify generation supplier isn't called when no pending document types.
+        withReady(reindexing.withReady("two", "b", later), () -> { throw new AssertionError("not supposed to run"); }, later);
     }
 
 }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -19,6 +20,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,6 +37,8 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
 
     /** Timeout per service when getting config generations. */
     private static final Duration timeout = Duration.ofSeconds(10);
+
+    static final Duration reindexingInterval = Duration.ofDays(30);
 
     private final ConfigConvergenceChecker convergence;
     private final Clock clock;
@@ -57,7 +63,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                              Collection<Long> generations = convergence.getServiceConfigGenerations(application, timeout).values();
                                              try (Lock lock = database.lock(id)) {
                                                  ApplicationReindexing reindexing = database.readReindexingStatus(id);
-                                                 database.writeReindexingStatus(id, withReady(reindexing, generations, clock.instant()));
+                                                 database.writeReindexingStatus(id, withReady(reindexing, lazyGeneration(application), clock.instant()));
                                              }
                                          }
                                          catch (RuntimeException e) {
@@ -69,12 +75,33 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         return success.get();
     }
 
-    static ApplicationReindexing withReady(ApplicationReindexing reindexing, Collection<Long> generations, Instant now) {
-        long oldestGeneration = generations.stream().min(Comparator.naturalOrder()).orElse(-1L);
-        for (var cluster : reindexing.clusters().entrySet())
+    private Supplier<Long> lazyGeneration(Application application) {
+        AtomicLong oldest = new AtomicLong();
+        return () -> {
+            if (oldest.get() == 0)
+                oldest.set(convergence.getServiceConfigGenerations(application, timeout).values().stream()
+                                      .min(Comparator.naturalOrder())
+                                      .orElse(-1L));
+
+            return oldest.get();
+        };
+    }
+
+    static ApplicationReindexing withReady(ApplicationReindexing reindexing, Supplier<Long> oldestGeneration, Instant now) {
+        for (var cluster : reindexing.clusters().entrySet()) {
             for (var pending : cluster.getValue().pending().entrySet())
-                if (pending.getValue() <= oldestGeneration)
+                if (pending.getValue() <= oldestGeneration.get())
                     reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now);
+
+            for (var documentType : cluster.getValue().ready().entrySet())
+                if (documentType.getValue().ready().isBefore(now.minus(reindexingInterval)))
+                    reindexing = reindexing.withReady(cluster.getKey(), documentType.getKey(), now);
+
+            if (cluster.getValue().common().ready().isBefore(now.minus(reindexingInterval)))
+                reindexing = reindexing.withReady(cluster.getKey(), now);
+        }
+        if (reindexing.common().ready().isBefore(now.minus(reindexingInterval)))
+            reindexing = reindexing.withReady(now);
 
         return reindexing;
     }

@@ -26,6 +26,15 @@ public class ApplicationReindexingTest {
                                                                 .withReady("one", "a", Instant.ofEpochMilli(1))
                                                                 .withReady("two", "c", Instant.ofEpochMilli(3));
 
+        assertEquals(Instant.ofEpochMilli(1 << 20),
+                     reindexing.status("one", "a").ready());
+
+        assertEquals(Instant.ofEpochMilli(1 << 20),
+                     reindexing.status("one", "d").ready());
+
+        assertEquals(Instant.ofEpochMilli(1 << 20),
+                     reindexing.status("three", "a").ready());
+
         assertEquals(new Status(Instant.ofEpochMilli(1 << 20)),
                      reindexing.common());
 
