@@ -2,6 +2,7 @@
 
 #include "distributortestutil.h"
 #include <vespa/config-stor-distribution.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
@@ -79,8 +80,8 @@ struct StateCheckersTest : Test, DistributorTestUtil {
                           .getSibling(c.getBucketId());
 
         std::vector<BucketDatabase::Entry> entries;
-        getBucketDatabase().getAll(c.getBucketId(), entries);
-        c.siblingEntry = getBucketDatabase().get(c.siblingBucket);
+        getBucketDatabase(c.getBucketSpace()).getAll(c.getBucketId(), entries);
+        c.siblingEntry = getBucketDatabase(c.getBucketSpace()).get(c.siblingBucket);
 
         c.entries = entries;
         for (uint32_t j = 0; j < entries.size(); ++j) {
@@ -126,7 +127,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
             ost << "NO OPERATIONS GENERATED";
         }
 
-        getBucketDatabase().clear();
+        getBucketDatabase(c.getBucketSpace()).clear();
 
         return ost.str();
     }
@@ -160,6 +161,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         std::string _clusterState {"distributor:1 storage:2"};
         std::string _pending_cluster_state;
         std::string _expect;
+        document::BucketSpace _bucket_space {document::FixedBucketSpaces::default_space()};
         static const PendingMessage NO_OP_BLOCKER;
         const PendingMessage* _blockerMessage {&NO_OP_BLOCKER};
         uint32_t _redundancy {2};
@@ -169,6 +171,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         bool _includeMessagePriority {false};
         bool _includeSchedulingPriority {false};
         bool _merge_operations_disabled {false};
+        bool _prioritize_global_bucket_merges {true};
         CheckerParams();
         ~CheckerParams();
 
@@ -208,6 +211,14 @@ struct StateCheckersTest : Test, DistributorTestUtil {
             _merge_operations_disabled = disabled;
             return *this;
         }
+        CheckerParams& prioritize_global_bucket_merges(bool enabled) noexcept {
+            _prioritize_global_bucket_merges = enabled;
+            return *this;
+        }
+        CheckerParams& bucket_space(document::BucketSpace bucket_space) noexcept {
+            _bucket_space = bucket_space;
+            return *this;
+        }
     };
 
     template <typename CheckerImpl>
@@ -215,18 +226,22 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         CheckerImpl checker;
 
         document::BucketId bid(17, 0);
-        addNodesToBucketDB(bid, params._bucketInfo);
+        document::Bucket bucket(params._bucket_space, bid);
+        addNodesToBucketDB(bucket, params._bucketInfo);
         setRedundancy(params._redundancy);
         enableDistributorClusterState(params._clusterState);
         getConfig().set_merge_operations_disabled(params._merge_operations_disabled);
+        getConfig().set_prioritize_global_bucket_merges(params._prioritize_global_bucket_merges);
         if (!params._pending_cluster_state.empty()) {
             auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(params._pending_cluster_state));
             _distributor->onDown(cmd);
             tick(); // Trigger command processing and pending state setup.
         }
         NodeMaintenanceStatsTracker statsTracker;
-        StateChecker::Context c(
-                getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
+        StateChecker::Context c(getExternalOperationHandler(),
+                                getBucketSpaceRepo().get(params._bucket_space),
+                                statsTracker,
+                                bucket);
         std::string result =  testStateChecker(
                 checker, c, false, *params._blockerMessage,
                 params._includeMessagePriority,
@@ -681,6 +696,36 @@ TEST_F(StateCheckersTest, synchronize_and_move) {
             .expect("NO OPERATIONS GENERATED")
             .bucketInfo("1=0/0/1")
             .clusterState("distributor:1 storage:4"));
+}
+
+TEST_F(StateCheckersTest, global_bucket_merges_have_high_priority_if_prioritization_enabled) {
+    runAndVerify<SynchronizeAndMoveStateChecker>(
+            CheckerParams().expect(
+                            "[Synchronizing buckets with different checksums "
+                            "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,active=false,ready=false), "
+                            "node(idx=1,crc=0x2,docs=2/2,bytes=2/2,trusted=false,active=false,ready=false)] "
+                            "(pri 115) "
+                            "(scheduling pri HIGH)")
+                    .bucketInfo("0=1,1=2")
+                    .bucket_space(document::FixedBucketSpaces::global_space())
+                    .includeSchedulingPriority(true)
+                    .includeMessagePriority(true)
+                    .prioritize_global_bucket_merges(true));
+}
+
+TEST_F(StateCheckersTest, global_bucket_merges_have_normal_priority_if_prioritization_disabled) {
+    runAndVerify<SynchronizeAndMoveStateChecker>(
+            CheckerParams().expect(
+                            "[Synchronizing buckets with different checksums "
+                            "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,active=false,ready=false), "
+                            "node(idx=1,crc=0x2,docs=2/2,bytes=2/2,trusted=false,active=false,ready=false)] "
+                            "(pri 120) "
+                            "(scheduling pri MEDIUM)")
+                    .bucketInfo("0=1,1=2")
+                    .bucket_space(document::FixedBucketSpaces::global_space())
+                    .includeSchedulingPriority(true)
+                    .includeMessagePriority(true)
+                    .prioritize_global_bucket_merges(false));
 }
 
 // Upon entering a cluster state transition edge the distributor will

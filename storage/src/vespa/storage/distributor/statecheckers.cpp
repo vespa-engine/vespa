@@ -2,6 +2,7 @@
 
 #include "statecheckers.h"
 #include "activecopy.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
@@ -861,11 +862,20 @@ SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
         IdealStateOperation::UP op(
                 new MergeOperation(BucketAndNodes(c.getBucket(), result.nodes()),
                                    c.distributorConfig.getMaxNodesPerMerge()));
-        op->setPriority(result.priority());
         op->setDetailedReason(result.reason());
-        MaintenancePriority::Priority schedPri(
-                result.needsMoveOnly() ? MaintenancePriority::LOW
-                                       : MaintenancePriority::MEDIUM);
+        MaintenancePriority::Priority schedPri;
+        if ((c.getBucketSpace() == document::FixedBucketSpaces::default_space())
+            || !c.distributorConfig.prioritize_global_bucket_merges())
+        {
+            schedPri = (result.needsMoveOnly() ? MaintenancePriority::LOW
+                                               : MaintenancePriority::MEDIUM);
+            op->setPriority(result.priority());
+        } else {
+            // Since the default bucket space has a dependency on the global bucket space,
+            // we prioritize scheduling of merges to global buckets over those for default buckets.
+            schedPri = MaintenancePriority::HIGH;
+            op->setPriority(c.distributorConfig.getMaintenancePriorities().mergeGlobalBuckets);
+        }
 
         return Result::createStoredResult(std::move(op), schedPri);
     } else {

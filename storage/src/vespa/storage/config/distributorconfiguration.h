@@ -23,6 +23,7 @@ public:
         uint8_t mergeMoveToIdealNode {120};
         uint8_t mergeOutOfSyncCopies {120};
         uint8_t mergeTooFewCopies {120};
+        uint8_t mergeGlobalBuckets {115};
         uint8_t activateNoExistingActive {100};
         uint8_t activateWithExistingActive {100};
         uint8_t deleteBucketCopy {100};
@@ -246,6 +247,13 @@ public:
         return _max_consecutively_inhibited_maintenance_ticks;
     }
 
+    void set_prioritize_global_bucket_merges(bool prioritize) noexcept {
+        _prioritize_global_bucket_merges = prioritize;
+    }
+    bool prioritize_global_bucket_merges() const noexcept {
+        return _prioritize_global_bucket_merges;
+    }
+
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
@@ -294,6 +302,7 @@ private:
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
+    bool _prioritize_global_bucket_merges;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     
