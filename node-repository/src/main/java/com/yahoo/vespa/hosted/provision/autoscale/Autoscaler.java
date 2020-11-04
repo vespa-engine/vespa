@@ -120,7 +120,7 @@ public class Autoscaler {
 
         return false;
     }
-    
+
     public static class Advice {
 
         private final boolean present;
@@ -131,13 +131,21 @@ public class Autoscaler {
             this.present = present;
         }
 
+        /**
+         * Returns the autoscaling target that should be set by this advice.
+         * This is empty if the advice is to keep the current allocation.
+         */
         public Optional<ClusterResources> target() { return target; }
+
+        /** True if this does not provide any advice */
         public boolean isEmpty() { return ! present; }
+
+        /** True if this provides advice (which may be to keep the current allocation) */
         public boolean isPresent() { return present; }
 
-        public static Advice none() { return new Advice(Optional.empty(), false); }
-        public static Advice dontScale() { return new Advice(Optional.empty(), true); }
-        public static Advice scaleTo(ClusterResources target) { return new Advice(Optional.of(target), true); }
+        private static Advice none() { return new Advice(Optional.empty(), false); }
+        private static Advice dontScale() { return new Advice(Optional.empty(), true); }
+        private static Advice scaleTo(ClusterResources target) { return new Advice(Optional.of(target), true); }
 
     }
 
