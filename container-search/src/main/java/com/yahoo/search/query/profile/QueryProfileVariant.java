@@ -16,13 +16,13 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
 
     private List<QueryProfile> inherited = null;
 
-    private final DimensionValues dimensionValues;
+    private DimensionValues dimensionValues;
 
     private Map<String, Object> values;
 
     private boolean frozen = false;
 
-    private final QueryProfile owner;
+    private QueryProfile owner;
 
     public QueryProfileVariant(DimensionValues dimensionValues, QueryProfile owner) {
         this.dimensionValues = dimensionValues;
@@ -59,16 +59,20 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
         return inherited;
     }
 
-    public Object set(String key, Object newValue) {
+    public void set(String key, Object newValue) {
         if (values == null)
             values = new HashMap<>();
 
         Object oldValue = values.get(key);
 
-        Object combinedOrNull = QueryProfile.combineValues(newValue, oldValue);
-        if (combinedOrNull != null)
-            values.put(key, combinedOrNull);
-        return combinedOrNull;
+        if (oldValue == null) {
+            values.put(key, newValue);
+        } else {
+            Object combinedOrNull = QueryProfile.combineValues(newValue, oldValue);
+            if (combinedOrNull != null) {
+                values.put(key, combinedOrNull);
+            }
+        }
     }
 
     public void inherit(QueryProfile profile) {
@@ -134,7 +138,6 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
         frozen=true;
     }
 
-    @Override
     public QueryProfileVariant clone() {
         if (frozen) return this;
        try {
@@ -153,7 +156,7 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
 
     @Override
     public String toString() {
-        return "query profile variant of " + owner + " for " + dimensionValues;
+        return "query profile variant for " + dimensionValues;
     }
 
 }
