@@ -1426,7 +1426,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             VersionStatus versionStatus = controller.readVersionStatus();
             if (version.equals(Version.emptyVersion))
                 version = controller.systemVersion(versionStatus);
-            if (!versionStatus.isActive(version))
+            if ( versionStatus.version(version) == null)
                 throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
                                                    "Version is not active in this system. " +
                                                    "Active versions: " + versionStatus.versions()
