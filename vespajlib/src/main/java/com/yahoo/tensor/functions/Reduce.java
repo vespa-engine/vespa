@@ -10,6 +10,7 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,7 +28,7 @@ import java.util.Set;
  */
 public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
-    public enum Aggregator { avg, count, prod, sum, max, min; }
+    public enum Aggregator { avg, count, max, median, min, prod, sum ; }
 
     private final TensorFunction<NAMETYPE> argument;
     private final List<String> dimensions;
@@ -53,11 +54,8 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
      * @throws IllegalArgumentException if any of the tensor dimensions are not present in the input tensor
      */
     public Reduce(TensorFunction<NAMETYPE> argument, Aggregator aggregator, List<String> dimensions) {
-        Objects.requireNonNull(argument, "The argument tensor cannot be null");
-        Objects.requireNonNull(aggregator, "The aggregator cannot be null");
-        Objects.requireNonNull(dimensions, "The dimensions cannot be null");
-        this.argument = argument;
-        this.aggregator = aggregator;
+        this.argument = Objects.requireNonNull(argument, "The argument tensor cannot be null");
+        this.aggregator  = Objects.requireNonNull(aggregator, "The aggregator cannot be null");
         this.dimensions = ImmutableList.copyOf(dimensions);
     }
 
@@ -186,10 +184,11 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             switch (aggregator) {
                 case avg : return new AvgAggregator();
                 case count : return new CountAggregator();
+                case max : return new MaxAggregator();
+                case median : return new MedianAggregator();
+                case min : return new MinAggregator();
                 case prod : return new ProdAggregator();
                 case sum : return new SumAggregator();
-                case max : return new MaxAggregator();
-                case min : return new MinAggregator();
                 default: throw new UnsupportedOperationException("Aggregator " + aggregator + " is not implemented");
             }
 
@@ -249,6 +248,82 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         }
     }
 
+    private static class MaxAggregator extends ValueAggregator {
+
+        private double maxValue = Double.MIN_VALUE;
+
+        @Override
+        public void aggregate(double value) {
+            if (value > maxValue)
+                maxValue = value;
+        }
+
+        @Override
+        public double aggregatedValue() {
+            return maxValue;
+        }
+
+        @Override
+        public void reset() {
+            maxValue = Double.MIN_VALUE;
+        }
+    }
+
+    private static class MedianAggregator extends ValueAggregator {
+
+        /** If any NaN is added, the result should be NaN */
+        private boolean isNaN = false;
+
+        private List<Double> values = new ArrayList<>();
+
+        @Override
+        public void aggregate(double value) {
+            if ( Double.isNaN(value))
+                isNaN = true;
+            if ( ! isNaN)
+                values.add(value);
+        }
+
+        @Override
+        public double aggregatedValue() {
+            if (isNaN || values.isEmpty()) return Double.NaN;
+            Collections.sort(values);
+            if (values.size() % 2 == 0) // even: average the two middle values
+                return ( values.get(values.size() / 2 - 1) + values.get(values.size() / 2) ) / 2;
+            else
+                return values.get((values.size() - 1)/ 2);
+        }
+
+        @Override
+        public void reset() {
+            isNaN = false;
+            values = new ArrayList<>();
+        }
+
+    }
+
+    private static class MinAggregator extends ValueAggregator {
+
+        private double minValue = Double.MAX_VALUE;
+
+        @Override
+        public void aggregate(double value) {
+            if (value < minValue)
+                minValue = value;
+        }
+
+        @Override
+        public double aggregatedValue() {
+            return minValue;
+        }
+
+        @Override
+        public void reset() {
+            minValue = Double.MAX_VALUE;
+        }
+
+    }
+
     private static class ProdAggregator extends ValueAggregator {
 
         private double valueProd = 1.0;
@@ -287,49 +362,6 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         public void reset() {
             valueSum = 0.0;
         }
-    }
-
-    private static class MaxAggregator extends ValueAggregator {
-
-        private double maxValue = Double.MIN_VALUE;
-
-        @Override
-        public void aggregate(double value) {
-            if (value > maxValue)
-                maxValue = value;
-        }
-
-        @Override
-        public double aggregatedValue() {
-            return maxValue;
-        }
-
-        @Override
-        public void reset() {
-            maxValue = Double.MIN_VALUE;
-        }
-    }
-
-    private static class MinAggregator extends ValueAggregator {
-
-        private double minValue = Double.MAX_VALUE;
-
-        @Override
-        public void aggregate(double value) {
-            if (value < minValue)
-                minValue = value;
-        }
-
-        @Override
-        public double aggregatedValue() {
-            return minValue;
-        }
-
-        @Override
-        public void reset() {
-            minValue = Double.MAX_VALUE;
-        }
-
     }
 
 }

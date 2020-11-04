@@ -1097,6 +1097,7 @@
       "abstract"
     ],
     "methods": [
+      "public static com.yahoo.tensor.Tensor$Builder of(java.lang.String)",
       "public static com.yahoo.tensor.Tensor$Builder of(com.yahoo.tensor.TensorType)",
       "public static com.yahoo.tensor.Tensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes)",
       "public abstract com.yahoo.tensor.TensorType type()",
@@ -1202,6 +1203,9 @@
       "public com.yahoo.tensor.Tensor max()",
       "public com.yahoo.tensor.Tensor max(java.lang.String)",
       "public com.yahoo.tensor.Tensor max(java.util.List)",
+      "public com.yahoo.tensor.Tensor median()",
+      "public com.yahoo.tensor.Tensor median(java.lang.String)",
+      "public com.yahoo.tensor.Tensor median(java.util.List)",
       "public com.yahoo.tensor.Tensor min()",
       "public com.yahoo.tensor.Tensor min(java.lang.String)",
       "public com.yahoo.tensor.Tensor min(java.util.List)",
@@ -1827,10 +1831,11 @@
     "fields": [
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator avg",
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator count",
-      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator prod",
-      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator sum",
       "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator max",
-      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator min"
+      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator median",
+      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator min",
+      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator prod",
+      "public static final enum com.yahoo.tensor.functions.Reduce$Aggregator sum"
     ]
   },
   "com.yahoo.tensor.functions.Reduce": {

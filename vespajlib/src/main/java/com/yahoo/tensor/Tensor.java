@@ -92,7 +92,7 @@ public interface Tensor {
      */
     default double asDouble() {
         if (type().dimensions().size() > 0)
-            throw new IllegalStateException("This tensor is not dimensionless. Dimensions: " + type().dimensions().size());
+            throw new IllegalStateException("Require a dimensionless tensor but has " + type());
         if (size() == 0) return Double.NaN;
         return valueIterator().next();
     }
@@ -242,6 +242,9 @@ public interface Tensor {
     default Tensor max() { return max(Collections.emptyList()); }
     default Tensor max(String dimension) { return max(Collections.singletonList(dimension)); }
     default Tensor max(List<String> dimensions) { return reduce(Reduce.Aggregator.max, dimensions); }
+    default Tensor median() { return median(Collections.emptyList()); }
+    default Tensor median(String dimension) { return median(Collections.singletonList(dimension)); }
+    default Tensor median(List<String> dimensions) { return reduce(Reduce.Aggregator.median, dimensions); }
     default Tensor min() { return min(Collections.emptyList()); }
     default Tensor min(String dimension) { return min(Collections.singletonList(dimension)); }
     default Tensor min(List<String> dimensions) { return reduce(Reduce.Aggregator.min, dimensions); }
@@ -468,6 +471,11 @@ public interface Tensor {
     }
 
     interface Builder {
+
+        /** Creates a suitable builder for the given type spec */
+        static Builder of(String typeSpec) {
+            return of(TensorType.fromSpec(typeSpec));
+        }
 
         /** Creates a suitable builder for the given type */
         static Builder of(TensorType type) {

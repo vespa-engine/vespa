@@ -144,10 +144,11 @@ TOKEN :
 
     <AVG: "avg" > |
     <COUNT: "count"> |
+    <MAX: "max"> |
+    <MEDIAN: "median"> |
+    <MIN: "min"> |
     <PROD: "prod"> |
     <SUM: "sum"> |
-    <MAX: "max"> |
-    <MIN: "min"> |
 
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
 }
@@ -630,7 +631,7 @@ Reduce.Aggregator tensorReduceAggregator() :
 {
 }
 {
-    ( <AVG> | <COUNT> | <PROD> | <SUM> | <MAX> | <MIN> )
+    ( <AVG> | <COUNT> | <MAX> | <MEDIAN> | <MIN> | <PROD> | <SUM>  )
     { return Reduce.Aggregator.valueOf(token.image); }
 }
 
