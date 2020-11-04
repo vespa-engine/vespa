@@ -143,7 +143,6 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
       _executor(vespalib::SequencedTaskExecutor::create(1))
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
-    ns.setDiskCount(1);
     _nodeStateUpdater.setReportedNodeState(ns);
 }
 
@@ -156,7 +155,6 @@ TestServiceLayerApp::TestServiceLayerApp(NodeIndex index,
       _executor(vespalib::SequencedTaskExecutor::create(1))
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
-    ns.setDiskCount(1);
     _nodeStateUpdater.setReportedNodeState(ns);
 }
 

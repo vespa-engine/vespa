@@ -253,15 +253,6 @@ StateManager::setReportedNodeState(const lib::NodeState& state)
             "grabbed external lock");
         assert(false);
     }
-    if (_nodeState->getDiskCount() != 0 &&
-        state.getDiskCount() != _nodeState->getDiskCount())
-    {
-        std::ostringstream ost;
-        ost << "Illegal to alter disk count after initialization. Tried to "
-            << "alter disk count from " << _nodeState->getDiskCount()
-            << " to " << state.getDiskCount();
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
-    }
     LOG(debug, "Adjusting reported node state to %s -> %s",
         _nodeState->toString().c_str(), state.toString().c_str());
     _nextNodeState = std::make_shared<lib::NodeState>(state);

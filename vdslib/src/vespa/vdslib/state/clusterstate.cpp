@@ -217,8 +217,7 @@ ClusterState::serialize(vespalib::asciistream & out, bool ignoreNewFeatures) con
             vespalib::asciistream prefix;
             prefix << "." << it->first.getIndex() << ".";
             vespalib::asciistream ost;
-            it->second.serialize(ost, prefix.str(), false, false,
-                                 ignoreNewFeatures);
+            it->second.serialize(ost, prefix.str(), false);
             vespalib::stringref content = ost.str();
             if (content.size() > 0) {
                 out << " " << content;
@@ -236,8 +235,7 @@ ClusterState::serialize(vespalib::asciistream & out, bool ignoreNewFeatures) con
             vespalib::asciistream prefix;
             prefix << "." << it->first.getIndex() << ".";
             vespalib::asciistream ost;
-            it->second.serialize(ost, prefix.str(), false, false,
-                                 ignoreNewFeatures);
+            it->second.serialize(ost, prefix.str(), false);
             vespalib::stringref content = ost.str();
             if ( !content.empty()) {
                 out << " " << content;

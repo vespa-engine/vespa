@@ -4,7 +4,7 @@
  *
  * Defines legal states for various uses. Split this into its own class such
  * that we can easily see what states are legal to use in what situations.
- * They double as disk states and node states nodes report they are in, and
+ * They double as node states nodes report they are in, and
  * wanted states set external sources.
  */
 #pragma once
@@ -20,14 +20,13 @@ class State : public vespalib::Printable {
     vespalib::string _name;
     vespalib::string _serialized;
     uint8_t _rankValue;
-    bool _validDiskState;
     std::vector<bool> _validReportedNodeState;
     std::vector<bool> _validWantedNodeState;
     bool _validClusterState;
 
     State(const State&);
     State(vespalib::stringref name, vespalib::stringref serialized,
-          uint8_t rank, bool validDisk,
+          uint8_t rank,
           bool validDistributorReported, bool validStorageReported,
           bool validDistributorWanted, bool validStorageWanted,
           bool validCluster);
@@ -48,7 +47,6 @@ public:
     static const State& get(vespalib::stringref serialized);
     const vespalib::string& serialize() const { return _serialized; }
 
-    bool validDiskState() const { return _validDiskState; }
     bool validReportedNodeState(const NodeType& node) const
         { return _validReportedNodeState[node]; }
     bool validWantedNodeState(const NodeType& node) const

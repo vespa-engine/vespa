@@ -618,15 +618,13 @@ CommunicationManager::sendCommand(
 }
 
 void
-CommunicationManager::serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os,
-                                         bool includeDescription, bool includeDiskDescription, bool useOldFormat) const
+CommunicationManager::serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription) const
 {
     vespalib::asciistream tmp;
     if (gns.hasNodeState()) {
-        gns.getNodeState().serialize(tmp, "", includeDescription, includeDiskDescription, useOldFormat);
+        gns.getNodeState().serialize(tmp, "", includeDescription);
     } else {
-        _component.getStateUpdater().getReportedNodeState()->serialize(tmp, "", includeDescription,
-                                                                       includeDiskDescription, useOldFormat);
+        _component.getStateUpdater().getReportedNodeState()->serialize(tmp, "", includeDescription);
     }
     os << tmp.str();
 }
@@ -643,14 +641,14 @@ CommunicationManager::sendDirectRPCReply(
     } else if (requestName == "getnodestate3") {
         auto& gns(dynamic_cast<api::GetNodeStateReply&>(*reply));
         std::ostringstream ns;
-        serializeNodeState(gns, ns, true, true, false);
+        serializeNodeState(gns, ns, true);
         request.addReturnString(ns.str().c_str());
         request.addReturnString(gns.getNodeInfo().c_str());
         LOGBP(debug, "Sending getnodestate3 reply with host info '%s'.", gns.getNodeInfo().c_str());
     } else if (requestName == "getnodestate2") {
         auto& gns(dynamic_cast<api::GetNodeStateReply&>(*reply));
         std::ostringstream ns;
-        serializeNodeState(gns, ns, true, true, false);
+        serializeNodeState(gns, ns, true);
         request.addReturnString(ns.str().c_str());
         LOGBP(debug, "Sending getnodestate2 reply with no host info.");
     } else if (requestName == "setsystemstate2" || requestName == "setdistributionstates") {
@@ -667,7 +665,7 @@ CommunicationManager::sendDirectRPCReply(
         if (reply->getType() == api::MessageType::GETNODESTATE_REPLY) {
             api::GetNodeStateReply& gns(static_cast<api::GetNodeStateReply&>(*reply));
             std::ostringstream ns;
-            serializeNodeState(gns, ns, false, false, true);
+            serializeNodeState(gns, ns, false);
             request.addReturnString(ns.str().c_str());
             request.addReturnInt(static_cast<int>(gns.getNodeState().getInitProgress().getValue() * 100));
         }
