@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generic_join.h"
+#include "detect_type.h"
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/eval/eval/wrap_param.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <cassert>
-#include <typeindex>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -66,48 +66,6 @@ void my_mixed_join_op(State &state, uint64_t param_in) {
     const Value &result_ref = *(result.get());
     state.pop_pop_push(result_ref);
 };
-
-//-----------------------------------------------------------------------------
-
-/** possible generic utility */
-template<typename T, typename U>
-const T *
-recognize_by_type_index(const U & object)
-{
-    if (std::type_index(typeid(object)) == std::type_index(typeid(T))) {
-        return static_cast<const T *>(&object);
-    }
-    return nullptr;
-}
-
-template<typename T, size_t N>
-class RecognizedValues
-{
-private:
-    std::array<const T *, N> _pointers;
-public:
-    RecognizedValues(std::array<const T *, N> && pointers)
-        : _pointers(std::move(pointers))
-    {}
-    bool all_converted() const {
-        for (auto p : _pointers) {
-            if (p == nullptr) return false;            
-        }
-        return true;
-    }
-    operator bool() const { return all_converted(); }
-    template<size_t idx> const T& get() const {
-        static_assert(idx < N);
-        return *_pointers[idx];
-    }
-};
-
-template<typename T, typename... Args>
-RecognizedValues<T, sizeof...(Args)>
-detect_type(const Args &... args)
-{
-    return RecognizedValues<T, sizeof...(Args)>({(recognize_by_type_index<T>(args))...});
-}
 
 //-----------------------------------------------------------------------------
 
