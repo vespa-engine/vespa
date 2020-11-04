@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
 
-import java.time.Instant;
 import java.util.List;
 
-import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
 
 public class AttributeChangeValidatorTest {
@@ -30,7 +27,7 @@ public class AttributeChangeValidatorTest {
 
         @Override
         public List<VespaConfigChangeAction> validate() {
-            return validator.validate(ValidationOverrides.empty, Instant.now());
+            return validator.validate();
         }
 
     }
@@ -108,33 +105,6 @@ public class AttributeChangeValidatorTest {
         Fixture f = new Fixture("field f1 type string { indexing: index | attribute | summary }",
                 "field f1 type string { indexing: index | summary }");
         f.assertValidation();
-    }
-
-    @Test
-    public void changing_tensor_type_of_tensor_field_requires_refeed() throws Exception {
-        new Fixture(
-                "field f1 type tensor(x[2]) { indexing: attribute }",
-                "field f1 type tensor(x[3]) { indexing: attribute }")
-                .assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
-                                                  "tensor-type-change",
-                                                  ValidationOverrides.empty,
-                                                  "Field 'f1' changed: tensor type: 'tensor(x[2])' -> 'tensor(x[3])'", Instant.now()));
-
-        new Fixture(
-                "field f1 type tensor(x[5]) { indexing: attribute }",
-                "field f1 type tensor(x[3]) { indexing: attribute }")
-                .assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
-                                                  "tensor-type-change",
-                                                  ValidationOverrides.empty,
-                                                  "Field 'f1' changed: tensor type: 'tensor(x[5])' -> 'tensor(x[3])'", Instant.now()));
-    }
-
-    @Test
-    public void not_changing_tensor_type_of_tensor_field_is_ok() throws Exception {
-        new Fixture(
-                "field f1 type tensor(x[2]) { indexing: attribute }",
-                "field f1 type tensor(x[2]) { indexing: attribute }")
-                .assertValidation();
     }
 
     @Test
