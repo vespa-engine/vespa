@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;

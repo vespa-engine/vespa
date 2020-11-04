@@ -2,7 +2,6 @@
 package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
-import com.google.inject.Inject;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.path.Path;
