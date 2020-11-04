@@ -377,38 +377,34 @@ FastValueIndex::sparse_no_overlap_join(const ValueType &res_type, const Fun &fun
     using HashedLabelRef = std::reference_wrapper<const FastSparseMap::HashedLabel>;
     auto &result = stash.create<FastValue<OCT>>(res_type, res_type.count_mapped_dimensions(), 1, lhs.map.size()*rhs.map.size());
     std::vector<HashedLabelRef> output_addr;
-    lhs.map.each_map_entry([&](auto lhs_subspace, auto)
-        {
-            auto l_addr = lhs.map.make_addr(lhs_subspace);
-            rhs.map.each_map_entry([&](auto rhs_subspace, auto)
-                {
-                    auto r_addr = rhs.map.make_addr(rhs_subspace);
-                    output_addr.clear();
-                    size_t l_idx = 0;
-                    size_t r_idx = 0;
-                    for (JoinAddrSource source : addr_sources) {
-                        switch (source) {
-                        case JoinAddrSource::LHS:
-                            output_addr.push_back(l_addr[l_idx++]);
-                            break;
-                        case JoinAddrSource::RHS:
-                            output_addr.push_back(r_addr[r_idx++]);
-                            break;
-                        default:
-                            abort();
-                        }
-                    }
-                    assert(l_idx == l_addr.size());
-                    assert(r_idx == r_addr.size());
-
-                    ConstArrayRef<HashedLabelRef> output_addr_ref(output_addr);
-                    auto idx = result.my_index.map.add_mapping(output_addr_ref);
-                    if (__builtin_expect((idx == result.my_cells.size), true)) {
-                        auto cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
-                        result.my_cells.push_back_fast(cell_value);
-                    }
-                });
-        });
+    for (size_t lhs_subspace = 0; lhs_subspace < lhs.map.size(); ++lhs_subspace) {
+        auto l_addr = lhs.map.make_addr(lhs_subspace);
+        for (size_t rhs_subspace = 0; rhs_subspace < rhs.map.size(); ++rhs_subspace) {
+            auto r_addr = rhs.map.make_addr(rhs_subspace);
+            output_addr.clear();
+            size_t l_idx = 0;
+            size_t r_idx = 0;
+            for (JoinAddrSource source : addr_sources) {
+                switch (source) {
+                case JoinAddrSource::LHS:
+                    output_addr.push_back(l_addr[l_idx++]);
+                    break;
+                case JoinAddrSource::RHS:
+                    output_addr.push_back(r_addr[r_idx++]);
+                    break;
+                default:
+                    abort();
+                }
+            }
+            assert(l_idx == l_addr.size());
+            assert(r_idx == r_addr.size());
+            auto idx = result.my_index.map.add_mapping(ConstArrayRef(output_addr));
+            if (__builtin_expect((idx == result.my_cells.size), true)) {
+                auto cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
+                result.my_cells.push_back_fast(cell_value);
+            }
+        }
+    }
     return result;
 }
 
