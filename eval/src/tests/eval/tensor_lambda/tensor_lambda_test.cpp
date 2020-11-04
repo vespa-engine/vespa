@@ -215,4 +215,16 @@ TEST("require that type resolving also include nodes in the inner tensor lambda 
     EXPECT_EQUAL(types.get_type(*symbol).to_spec(), "double");
 }
 
+TEST("require that type exporting also include nodes in the inner tensor lambda function") {
+    auto fun = Function::parse("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})");
+    NodeTypes types(*fun, {ValueType::from_spec("double")});
+    const auto &root = fun->root();
+    auto lambda = nodes::as<nodes::TensorLambda>(root);
+    ASSERT_TRUE(lambda != nullptr);
+    NodeTypes outer = types.export_types(root);
+    ASSERT_TRUE(outer.errors().empty());
+    NodeTypes inner = outer.export_types(lambda->lambda().root());
+    EXPECT_TRUE(inner.errors().empty());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
