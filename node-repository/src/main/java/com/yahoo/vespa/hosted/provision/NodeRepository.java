@@ -88,7 +88,7 @@ import java.util.stream.Stream;
 // 1) (new) | deprovisioned - > provisioned -> (dirty ->) ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved | parked
 // 3) reserved -> dirty
-// 4) * -> failed | parked -> dirty | active | deprovisioned
+// 4) * -> failed | parked -> (breakfixed) -> dirty | active | deprovisioned
 // 5) deprovisioned -> (forgotten)
 // Nodes have an application assigned when in states reserved, active and inactive.
 // Nodes might have an application assigned in dirty.
