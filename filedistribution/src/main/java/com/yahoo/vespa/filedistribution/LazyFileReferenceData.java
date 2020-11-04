@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
@@ -12,9 +12,11 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 
 public class LazyFileReferenceData extends FileReferenceData {
-    private final File file;
+
+    protected final File file;
     private final ReadableByteChannel channel;
     private final StreamingXXHash64 hasher;
+
     public LazyFileReferenceData(FileReference fileReference, String filename, Type type, File file) throws IOException {
         super(fileReference, filename, type);
         this.file = file;
