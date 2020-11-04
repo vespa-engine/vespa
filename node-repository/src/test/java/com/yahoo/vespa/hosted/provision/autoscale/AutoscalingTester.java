@@ -184,7 +184,7 @@ class AutoscalingTester {
         }
     }
 
-    public Optional<ClusterResources> autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
+    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
                                                   .withCluster(clusterId, false, min, max);
@@ -195,7 +195,7 @@ class AutoscalingTester {
                                     nodeRepository().getNodes(applicationId, Node.State.active));
     }
 
-    public Optional<ClusterResources> suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
+    public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
                                                   .withCluster(clusterId, false, min, max);
