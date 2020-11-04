@@ -366,7 +366,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * @throws IllegalArgumentException if the given name is illegal given the types of this or any nested query profile
      * @throws IllegalStateException if this query profile is frozen
      */
-    public final void set(String name, Object value, DimensionValues dimensionValues, QueryProfileRegistry registry) {
+    public final void set(String name,Object value, DimensionValues dimensionValues, QueryProfileRegistry registry) {
         set(new CompoundName(name), value, DimensionBinding.createFrom(getDimensions(), dimensionValues), registry);
     }
 
@@ -527,6 +527,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
                       QueryProfileVisitor visitor,
                       DimensionBinding dimensionBinding,
                       QueryProfile owner) {
+        //System.out.println("    visiting " + this);
         visitor.onQueryProfile(this, dimensionBinding, owner, null);
         if (visitor.isDone()) return;
 
@@ -540,6 +541,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
         if (visitor.visitInherited())
             visitInherited(allowContent, visitor, dimensionBinding, owner);
+        //System.out.println("    done visiting " + this);
     }
 
     protected void visitVariants(boolean allowContent, QueryProfileVisitor visitor, DimensionBinding dimensionBinding) {
@@ -736,7 +738,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         parent.overridable.put(fieldName.last(), overridable);
     }
 
-    /** Sets a value to a (possibly non-local) node. */
+    /** Sets a value to a (possibly non-local) node. The parent query profile holding the value is returned */
     private void setNode(CompoundName name, Object value, QueryProfileType parentType,
                          DimensionBinding dimensionBinding, QueryProfileRegistry registry) {
         ensureNotFrozen();
@@ -809,18 +811,19 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         validateName(localName);
         value = convertToSubstitutionString(value);
 
-
         if (dimensionBinding.isNull()) {
-            Object combinedValue = value instanceof QueryProfile
-                                   ? combineValues(value, content == null ? null : content.get(localName))
-                                   : combineValues(value, localLookup(localName, dimensionBinding));
-            if (combinedValue != null)
+            Object combinedValue;
+            if (value instanceof QueryProfile)
+                combinedValue = combineValues(value, content == null ? null : content.get(localName));
+            else
+                combinedValue = combineValues(value, localLookup(localName, dimensionBinding));
+
+            if (combinedValue!=null)
                 content.put(localName, combinedValue);
         }
         else {
-            if (variants == null) {
+            if (variants == null)
                 variants = new QueryProfileVariants(dimensionBinding.getDimensions(), this);
-            }
             variants.set(localName, dimensionBinding.getValues(), value);
         }
     }

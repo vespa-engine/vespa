@@ -26,11 +26,12 @@ class OsgiLogManager implements LogService {
         this.configureLogLevel = configureLogLevel;
     }
 
-    public void install(BundleContext osgiContext) {
+    @SuppressWarnings("unchecked")
+    public void install(final BundleContext osgiContext) {
         if (tracker != null) {
             throw new IllegalStateException("OsgiLogManager already installed.");
         }
-        tracker = new ServiceTracker<>(osgiContext, LogService.class, new ServiceTrackerCustomizer<>() {
+        tracker = new ServiceTracker<>(osgiContext, LogService.class, new ServiceTrackerCustomizer<LogService,LogService>() {
 
             @Override
             public LogService addingService(ServiceReference<LogService> reference) {
