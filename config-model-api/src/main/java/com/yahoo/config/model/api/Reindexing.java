@@ -11,8 +11,11 @@ import java.util.Map;
  */
 public interface Reindexing {
 
+    /** No reindexing should be done for this document type and cluster. */
+    Status NO_REINDEXING = () -> Instant.MAX;
+
     /** Reindexing status for a given application, cluster and document type. */
-    default Status status(String cluster, String documentType) { return () -> Instant.MAX; }
+    default Status status(String cluster, String documentType) { return NO_REINDEXING; }
 
     /** Reindexing status of a given document type in a given cluster in a given application. */
     interface Status {
