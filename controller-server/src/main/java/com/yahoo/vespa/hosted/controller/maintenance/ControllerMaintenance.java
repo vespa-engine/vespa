@@ -7,7 +7,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
@@ -56,14 +55,14 @@ public class ControllerMaintenance extends AbstractComponent {
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
-    public ControllerMaintenance(Controller controller, CuratorDb curator, Metric metric) {
+    public ControllerMaintenance(Controller controller, Metric metric) {
         Intervals intervals = new Intervals(controller.system());
         deploymentExpirer = new DeploymentExpirer(controller, intervals.defaultInterval);
         deploymentIssueReporter = new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), intervals.defaultInterval);
         metricsReporter = new MetricsReporter(controller, metric);
         outstandingChangeDeployer = new OutstandingChangeDeployer(controller, intervals.outstandingChangeDeployer);
         versionStatusUpdater = new VersionStatusUpdater(controller, intervals.versionStatusUpdater);
-        upgrader = new Upgrader(controller, intervals.defaultInterval, curator);
+        upgrader = new Upgrader(controller, intervals.defaultInterval);
         readyJobsTrigger = new ReadyJobsTrigger(controller, intervals.readyJobsTrigger);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, intervals.deploymentMetricsMaintainer);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, intervals.applicationOwnershipConfirmer, controller.serviceRegistry().ownershipIssues());

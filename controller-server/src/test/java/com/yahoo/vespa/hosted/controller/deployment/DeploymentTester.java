@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.JobRunnerTest;
 import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -77,10 +75,9 @@ public class DeploymentTester {
         tester = controllerTester;
         jobs = tester.controller().jobController();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
-        var jobControl = new JobControl(new JobControlFlags(tester.controller().curator(), tester.controller().flagSource()));
-        runner = new JobRunner(tester.controller(), Duration.ofDays(1),
-                               JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
-        upgrader = new Upgrader(tester.controller(), maintenanceInterval, tester.curator());
+        runner = new JobRunner(tester.controller(), maintenanceInterval, JobRunnerTest.inThreadExecutor(),
+                               new InternalStepRunner(tester.controller()));
+        upgrader = new Upgrader(tester.controller(), maintenanceInterval);
         upgrader.setUpgradesPerMinute(1); // Anything that makes it at least one for any maintenance period is fine.
         readyJobsTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval);
         outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval);
