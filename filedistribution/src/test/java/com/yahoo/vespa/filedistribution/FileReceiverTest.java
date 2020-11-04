@@ -59,8 +59,9 @@ public class FileReceiverTest {
         writerB.write("2");
         writerB.close();
 
-        byte[] data = CompressedFileReference.compress(dirWithFiles);
-        transferCompressedData(new FileReference("ref"), "a", data);
+        File tempFile = temporaryFolder.newFile();
+        File file = CompressedFileReference.compress(dirWithFiles, tempFile);
+        transferCompressedData(new FileReference("ref"), "a", IOUtils.readFileBytes(file));
         File downloadDir = new File(root, "ref");
         assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
         assertEquals("2", IOUtils.readFile(new File(downloadDir, "b")));
