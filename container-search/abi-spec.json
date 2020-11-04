@@ -5868,7 +5868,7 @@
       "public com.yahoo.search.query.profile.DimensionValues getDimensionValues()",
       "public java.util.Map values()",
       "public java.util.List inherited()",
-      "public void set(java.lang.String, java.lang.Object)",
+      "public java.lang.Object set(java.lang.String, java.lang.Object)",
       "public void inherit(com.yahoo.search.query.profile.QueryProfile)",
       "public int compareTo(com.yahoo.search.query.profile.QueryProfileVariant)",
       "public boolean matches(com.yahoo.search.query.profile.DimensionValues)",
@@ -5899,6 +5899,7 @@
       "public int compareTo(com.yahoo.search.query.profile.QueryProfileVariants$FieldValue)",
       "public com.yahoo.search.query.profile.QueryProfileVariants$FieldValue clone(java.lang.String, java.util.List)",
       "public com.yahoo.search.query.profile.QueryProfileVariants$FieldValue clone()",
+      "public java.lang.String toString()",
       "public bridge synthetic java.lang.Object clone()",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
@@ -5954,6 +5955,7 @@
       "public com.yahoo.search.query.profile.QueryProfileVariants clone()",
       "protected void ensureNotFrozen()",
       "public com.yahoo.search.query.profile.QueryProfileVariant getVariant(com.yahoo.search.query.profile.DimensionValues, boolean)",
+      "public java.lang.String toString()",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
