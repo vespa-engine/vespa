@@ -66,11 +66,14 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId));
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
-        Optional<ClusterResources> target = autoscaler.autoscale(cluster.get(), clusterNodes);
-        if ( ! cluster.get().targetResources().equals(target)) { // New target: Log and try to deploy now
-            applications().put(application.with(cluster.get().withTarget(target)), deployment.applicationLock().get());
-            if (target.isPresent()) {
-                logAutoscaling(target.get(), applicationId, clusterId, clusterNodes);
+        var advice = autoscaler.autoscale(cluster.get(), clusterNodes);
+
+        if (advice.isEmpty()) return;
+
+        if ( ! cluster.get().targetResources().equals(advice.target())) {
+            applications().put(application.with(cluster.get().withTarget(advice.target())), deployment.applicationLock().get());
+            if (advice.target().isPresent()) {
+                logAutoscaling(advice.target().get(), applicationId, clusterId, clusterNodes);
                 deployment.activate();
             }
         }

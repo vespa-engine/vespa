@@ -65,10 +65,11 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         Application application = applications().get(applicationId).orElse(new Application(applicationId));
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return true;
-        Optional<ClusterResources> suggestion = autoscaler.suggest(cluster.get(), clusterNodes);
+        var suggestion = autoscaler.suggest(cluster.get(), clusterNodes);
+        if (suggestion.isEmpty()) return false;
         // Wait only a short time for the lock to avoid interfering with change deployments
         try (Mutex lock = nodeRepository().lock(applicationId, Duration.ofSeconds(1))) {
-            applications().get(applicationId).ifPresent(a -> storeSuggestion(suggestion, clusterId, a, lock));
+            applications().get(applicationId).ifPresent(a -> storeSuggestion(suggestion.target(), clusterId, a, lock));
             return true;
         }
         catch (ApplicationLockException e) {
