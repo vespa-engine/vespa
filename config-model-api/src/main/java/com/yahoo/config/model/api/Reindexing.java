@@ -2,7 +2,7 @@
 package com.yahoo.config.model.api;
 
 import java.time.Instant;
-import java.util.Map;
+import java.util.Optional;
 
 /**
  * Status of reindexing for the documents of an application.
@@ -12,7 +12,7 @@ import java.util.Map;
 public interface Reindexing {
 
     /** Reindexing status for a given application, cluster and document type. */
-    default Status status(String cluster, String documentType) { return () -> Instant.MAX; }
+    default Optional<Status> status(String cluster, String documentType) { return Optional.empty(); }
 
     /** Reindexing status of a given document type in a given cluster in a given application. */
     interface Status {

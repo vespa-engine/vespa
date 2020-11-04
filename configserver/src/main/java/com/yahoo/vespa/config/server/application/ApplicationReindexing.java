@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.Reindexing;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
@@ -73,10 +74,10 @@ public class ApplicationReindexing implements Reindexing {
     public Map<String, Cluster> clusters() { return clusters; }
 
     @Override
-    public Reindexing.Status status(String cluster, String documentType) {
+    public Optional<Reindexing.Status> status(String cluster, String documentType) {
         if (clusters.containsKey(cluster)) {
             if (clusters.get(cluster).pending().containsKey(documentType))
-                return () -> Instant.MAX;
+                return Optional.empty();
 
             Status documentStatus = clusters.get(cluster).ready().get(documentType);
             Status clusterStatus = clusters.get(cluster).common();
@@ -84,9 +85,9 @@ public class ApplicationReindexing implements Reindexing {
                 documentStatus = clusterStatus;
 
             if (documentStatus.ready().isAfter(common().ready()))
-                return documentStatus;
+                return Optional.of(documentStatus);
         }
-        return common();
+        return Optional.of(common());
     }
 
     @Override
