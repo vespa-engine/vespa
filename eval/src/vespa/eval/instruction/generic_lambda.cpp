@@ -67,7 +67,7 @@ void my_compiled_lambda_op(eval::InterpretedFunction::State &state, uint64_t par
         *bind_next++ = state.params->resolve(binding, state.stash).as_double();
     }
     auto fun = params.token->get().get_function();
-    ArrayRef<CT> dst_cells = state.stash.create_array<CT>(params.num_cells);
+    ArrayRef<CT> dst_cells = state.stash.create_uninitialized_array<CT>(params.num_cells);
     CT *dst = &dst_cells[0];
     do {
         *dst++ = fun(&args[0]);
