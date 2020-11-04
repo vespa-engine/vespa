@@ -615,8 +615,7 @@ public class UpgraderTest {
         tester.controllerTester().upgradeSystem(version);
 
         // Setup our own upgrader as we need to control the interval
-        Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10),
-                                         tester.controllerTester().curator());
+        Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10));
         upgrader.setUpgradesPerMinute(0.2);
 
         // Setup applications
@@ -1084,8 +1083,7 @@ public class UpgraderTest {
 
         // Throttle upgrades per run
         ((ManualClock) tester.controller().clock()).setInstant(Instant.ofEpochMilli(1589787109000L)); // Fixed random seed
-        Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10),
-                                         tester.controllerTester().curator());
+        Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10));
         upgrader.setUpgradesPerMinute(0.1);
 
         // Trigger some upgrades
