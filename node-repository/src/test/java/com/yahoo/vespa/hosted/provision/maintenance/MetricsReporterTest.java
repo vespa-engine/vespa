@@ -96,6 +96,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.dirtyHosts", 0);
         expectedMetrics.put("hostedVespa.failedHosts", 0);
         expectedMetrics.put("hostedVespa.deprovisionedHosts", 0);
+        expectedMetrics.put("hostedVespa.breakfixedHosts", 0);
         expectedMetrics.put("hostedVespa.pendingRedeployments", 42);
         expectedMetrics.put("hostedVespa.docker.totalCapacityDisk", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityMem", 0.0);
@@ -122,7 +123,7 @@ public class MetricsReporterTest {
         nodeRepository.list();
         expectedMetrics.put("cache.curator.hitRate", 0.5D);
         expectedMetrics.put("cache.curator.evictionCount", 0L);
-        expectedMetrics.put("cache.curator.size", 11L);
+        expectedMetrics.put("cache.curator.size", 12L);
 
         ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
 

@@ -173,6 +173,7 @@ public interface NodeRepository {
             case dirty: return Node.State.dirty;
             case failed: return Node.State.failed;
             case parked: return Node.State.parked;
+            case breakfixed: return Node.State.breakfixed;
         }
         return Node.State.unknown;
     }

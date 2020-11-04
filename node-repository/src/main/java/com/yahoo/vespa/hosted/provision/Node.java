@@ -476,7 +476,10 @@ public final class Node implements Nodelike {
         parked,
 
         /** This host has previously been in use but is now removed. */
-        deprovisioned;
+        deprovisioned,
+
+        /** This host is currently undergoing repair. */
+        breakfixed;
 
         /** Returns whether this is a state where the node is assigned to an application */
         public boolean isAllocated() {

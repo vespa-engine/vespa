@@ -225,7 +225,8 @@ public class Node {
         dirty,
         failed,
         parked,
-        unknown,
+        breakfixed,
+        unknown
     }
 
     /** Known node states with regards to service orchestration */

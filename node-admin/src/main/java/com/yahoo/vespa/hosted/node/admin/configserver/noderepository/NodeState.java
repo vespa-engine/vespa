@@ -9,5 +9,5 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
  * @author freva
  */
 public enum NodeState {
-    provisioned, ready, reserved, active, inactive, dirty, failed, parked, deprovisioned
+    provisioned, ready, reserved, active, inactive, dirty, failed, parked, deprovisioned, breakfixed
 }
