@@ -46,7 +46,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final SystemRoutingPolicyMaintainer systemRoutingPolicyMaintainer;
     private final ApplicationMetaDataGarbageCollector applicationMetaDataGarbageCollector;
     private final HostRepairMaintainer hostRepairMaintainer;
-    private final ContainerImageExpirer containerImageExpirer;
 
 
     @Inject
@@ -79,7 +78,6 @@ public class ControllerMaintenance extends AbstractComponent {
         systemRoutingPolicyMaintainer = new SystemRoutingPolicyMaintainer(controller, Duration.ofMinutes(10));
         applicationMetaDataGarbageCollector = new ApplicationMetaDataGarbageCollector(controller, Duration.ofHours(12));
         hostRepairMaintainer = new HostRepairMaintainer(controller, Duration.ofHours(12));
-        containerImageExpirer = new ContainerImageExpirer(controller, Duration.ofHours(2));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -107,9 +105,7 @@ public class ControllerMaintenance extends AbstractComponent {
         rotationStatusUpdater.close();
         resourceTagMaintainer.close();
         systemRoutingPolicyMaintainer.close();
-        applicationMetaDataGarbageCollector.close();
         hostRepairMaintainer.close();
-        containerImageExpirer.close();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
