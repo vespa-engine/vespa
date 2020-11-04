@@ -6,5 +6,8 @@ namespace=vespa.config.content.reindexing
 # Whether reindexing should run at all
 enabled                bool default=false
 
+# The name of the content cluster to reindex documents from
+clusterName            string
+
 # Epoch millis after which latest reprocessing may begin, per document type
 status{}.readyAtMillis long
