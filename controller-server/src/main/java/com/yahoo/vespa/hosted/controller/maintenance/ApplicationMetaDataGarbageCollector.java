@@ -6,6 +6,9 @@ import java.time.Duration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * @author jvenstad
+ */
 public class ApplicationMetaDataGarbageCollector extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(ApplicationMetaDataGarbageCollector.class.getName());
