@@ -310,7 +310,6 @@ struct TypeExporter : public NodeTraverser {
     bool open(const Node &node) override {
         if (auto lambda = as<TensorLambda>(node)) {
             lambda->lambda().root().traverse(*this);
-            return false;
         }
         return true;
     }
