@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -27,13 +28,16 @@ public class ApplicationReindexingTest {
                                                                 .withReady("two", "c", Instant.ofEpochMilli(3));
 
         assertEquals(Instant.ofEpochMilli(1 << 20),
-                     reindexing.status("one", "a").ready());
+                     reindexing.status("one", "a").orElseThrow().ready());
 
         assertEquals(Instant.ofEpochMilli(1 << 20),
-                     reindexing.status("one", "d").ready());
+                     reindexing.status("one", "d").orElseThrow().ready());
 
         assertEquals(Instant.ofEpochMilli(1 << 20),
-                     reindexing.status("three", "a").ready());
+                     reindexing.status("three", "a").orElseThrow().ready());
+
+        assertEquals(Optional.empty(),
+                     reindexing.status("two", "b"));
 
         assertEquals(new Status(Instant.ofEpochMilli(1 << 20)),
                      reindexing.common());
