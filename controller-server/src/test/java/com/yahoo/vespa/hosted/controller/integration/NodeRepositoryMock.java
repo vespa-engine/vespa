@@ -233,6 +233,11 @@ public class NodeRepositoryMock implements NodeRepository {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void reboot(ZoneId zoneId, String hostName) {
+        throw new UnsupportedOperationException();
+    }
+
     public Optional<Duration> osUpgradeBudget(ZoneId zone, NodeType type, Version version) {
         return Optional.ofNullable(osUpgradeBudgets.get(Objects.hash(zone, type, version)));
     }
