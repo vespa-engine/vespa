@@ -56,24 +56,21 @@ public class Reindexer {
     /** Starts and tracks reprocessing of ready document types until done, or interrupted. */
     public void reindex(Lock __) {
         Reindexing reindexing = database.readReindexing();
-        for (DocumentType type : ready.keySet()) {
-            if (Thread.currentThread().isInterrupted())
-                break;
-
-            // We consider only document types for which we have config.
-            // Get status for document type, or, if this is a new type, mark it as just completed.
-            Instant readyAt = ready.get(type);
-            if (readyAt.isAfter(clock.instant())) {
-                log.log(WARNING, "Received config for reindexing which is ready in the future " +
-                                 "(" + readyAt + " is after " + clock.instant() + ")");
-                continue;
+        for (DocumentType type : ready.keySet()) { // We consider only document types for which we have config.
+            if (ready.get(type).isAfter(clock.instant())) {
+                log.log(WARNING, "Received config for reindexing which is ready in the future — will process later " +
+                                 "(" + ready.get(type) + " is after " + clock.instant() + ")");
             }
-
-            // If this is a new document type (or a new cluster), no reindexing is required.
-            Status status = reindexing.status().getOrDefault(type, Status.ready(clock.instant())
-                                                                         .running()
-                                                                         .successful(clock.instant()));
-            reindexing = reindexing.with(type, progress(type, status));
+            else {
+                // If this is a new document type (or a new cluster), no reindexing is required.
+                Status status = reindexing.status().getOrDefault(type,
+                                                                 Status.ready(clock.instant())
+                                                                       .running()
+                                                                       .successful(clock.instant()));
+                reindexing = reindexing.with(type, progress(type, status));
+            }
+            if (Thread.interrupted()) // Clear interruption status so blocking calls function normally again.
+                break;
         }
         database.writeReindexing(reindexing);
     }
