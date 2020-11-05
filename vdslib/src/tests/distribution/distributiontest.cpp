@@ -1003,7 +1003,6 @@ group[2].nodes[0].index 3
 group[2].nodes[0].retired false
 group[2].nodes[1].index 4
 group[2].nodes[1].retired false
-disk_distribution "MODULO_BID"
 )";
     Distribution distr(raw_config);
     ClusterState state("version:1 distributor:5 storage:5");

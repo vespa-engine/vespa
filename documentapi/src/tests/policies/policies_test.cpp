@@ -723,9 +723,7 @@ Test::get_document_messages_are_sent_to_the_route_handling_the_given_document_ty
 
 namespace {
     string getDefaultDistributionConfig(
-                    uint16_t redundancy = 2, uint16_t nodeCount = 10,
-                    storage::lib::Distribution::DiskDistribution distr
-                            = storage::lib::Distribution::MODULO_BID)
+                    uint16_t redundancy = 2, uint16_t nodeCount = 10)
     {
         std::ostringstream ost;
         ost << "raw:redundancy " << redundancy << "\n"
@@ -737,9 +735,6 @@ namespace {
         for (uint16_t i=0; i<nodeCount; ++i) {
             ost << "group[0].nodes[" << i << "].index " << i << "\n";
         }
-        ost << "disk_distribution "
-            << storage::lib::Distribution::getDiskDistributionName(distr)
-            << "\n";
         return ost.str();
     }
 }
