@@ -66,7 +66,7 @@ class ReindexingMaintainerTest {
                                   manager));
 
         // Cluster missing in bucket space list fails.
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                      () -> parseCluster("cluster",
                                         new ClusterListConfig.Builder()
                                                 .storage(new ClusterListConfig.Storage.Builder()
@@ -81,7 +81,7 @@ class ReindexingMaintainerTest {
                                         manager));
 
         // Cluster missing in cluster list fails.
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalStateException.class,
                      () -> parseCluster("cluster",
                                         new ClusterListConfig.Builder()
                                                 .storage(new ClusterListConfig.Storage.Builder()
