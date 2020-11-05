@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.noderepository;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -357,8 +358,9 @@ public class NodeRepositoryNode {
         this.wantedFirmwareCheck = wantedFirmwareCheck;
     }
 
+    @JsonIgnore
     public Map<String, JsonNode> getReports() {
-        return reports;
+        return reports == null ? Map.of() : reports;
     }
 
     public void setReports(Map<String, JsonNode> reports) {
