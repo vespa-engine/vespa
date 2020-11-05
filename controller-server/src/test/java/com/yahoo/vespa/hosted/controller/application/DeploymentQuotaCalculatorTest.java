@@ -4,16 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationData;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -64,5 +61,11 @@ public class DeploymentQuotaCalculatorTest {
         var application = mapper.readValue(content, ApplicationData.class).toApplication();
         var usage = DeploymentQuotaCalculator.calculateQuotaUsage(application);
         assertEquals(1.164, usage.rate(), 0.001);
+    }
+
+    @Test
+    public void unlimited_quota_in_pipeline() {
+        Quota calculated = DeploymentQuotaCalculator.calculate(Quota.zero(), List.of(), ApplicationId.defaultId(), ZoneId.from("test", "apac1"), DeploymentSpec.empty);
+        assertEquals(Quota.unlimited(), calculated);
     }
 }
