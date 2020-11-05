@@ -309,13 +309,6 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag AWS_NLB_SEPARATE_HEALTHCHECK_PORT = defineFeatureFlag(
-            "aws-nlb-separate-healthcheck-port",
-            false,
-            "Use separate port for NLB health checks",
-            "Takes effect on next internal redeploy",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             "Optionally deliver async messages in own thread",
