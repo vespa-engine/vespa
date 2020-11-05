@@ -35,11 +35,17 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
+/**
+ * Runs in all cluster controller containers, and progresses reindexngg efforts.
+ * Work is only done by one container at a time, by requiring a shared ZooKeeper lock to be held while visiting.
+ * Whichever maintainer gets the lock holds it until all reindexing is done, or until shutdown.
+ *
+ * @author jonmv
+ */
 public class ReindexingMaintainer extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(Reindexing.class.getName());
 
-    private final ReindexingCurator database;
     private final Reindexer reindexer;
     private final ScheduledExecutorService executor;
 
@@ -55,9 +61,11 @@ public class ReindexingMaintainer extends AbstractComponent {
                          ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig allClustersBucketSpacesConfig,
                          ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
         DocumentTypeManager manager = new DocumentTypeManager(documentmanagerConfig);
-        this.database = new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()), manager);
         this.reindexer = new Reindexer(parseCluster(reindexingConfig.clusterName(), clusterListConfig, allClustersBucketSpacesConfig, manager),
-                                       parseReady(reindexingConfig, manager), database, access, clock);
+                                       parseReady(reindexingConfig, manager),
+                                       new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()), manager),
+                                       access,
+                                       clock);
         this.executor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("reindexer-"));
         if (reindexingConfig.enabled())
             scheduleStaggered(this::maintain, executor, Duration.ofMinutes(1), clock.instant(),
@@ -65,8 +73,8 @@ public class ReindexingMaintainer extends AbstractComponent {
     }
 
     private void maintain() {
-        try (Lock lock = database.lockReindexing()){
-            reindexer.reindex(lock);
+        try {
+            reindexer.reindex();
         }
         catch (ReindexingLockException e) {
             // Some other container is handling the reindexing at this moment, which is fine.

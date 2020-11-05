@@ -2,13 +2,13 @@
 package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
+import ai.vespa.reindexing.ReindexingCurator.ReindexingLockException;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorControlHandler.CompletionCode;
-import com.yahoo.documentapi.VisitorControlSession;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -17,20 +17,23 @@ import com.yahoo.vespa.curator.Lock;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import static com.yahoo.documentapi.VisitorControlHandler.CompletionCode.ABORTED;
-import static java.time.Instant.EPOCH;
-import static java.time.temporal.ChronoUnit.MICROS;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
+/**
+ * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
+ * which send documents straight to storage — via indexing if the documenet type has "index" mode.
+ * The {@link #reindex} method blocks until unterrupted, or util no more reindexing is left to do.
+ *
+ * @author jonmv
+ */
 public class Reindexer {
 
     private static final Logger log = Logger.getLogger(Reindexer.class.getName());
@@ -54,25 +57,27 @@ public class Reindexer {
     }
 
     /** Starts and tracks reprocessing of ready document types until done, or interrupted. */
-    public void reindex(Lock __) {
-        Reindexing reindexing = database.readReindexing();
-        for (DocumentType type : ready.keySet()) { // We consider only document types for which we have config.
-            if (ready.get(type).isAfter(clock.instant())) {
-                log.log(WARNING, "Received config for reindexing which is ready in the future — will process later " +
-                                 "(" + ready.get(type) + " is after " + clock.instant() + ")");
+    public void reindex() throws ReindexingLockException {
+        try (Lock lock = database.lockReindexing()) {
+            Reindexing reindexing = database.readReindexing();
+            for (DocumentType type : ready.keySet()) { // We consider only document types for which we have config.
+                if (ready.get(type).isAfter(clock.instant())) {
+                    log.log(WARNING, "Received config for reindexing which is ready in the future — will process later " +
+                                     "(" + ready.get(type) + " is after " + clock.instant() + ")");
+                }
+                else {
+                    // If this is a new document type (or a new cluster), no reindexing is required.
+                    Status status = reindexing.status().getOrDefault(type,
+                                                                     Status.ready(clock.instant())
+                                                                           .running()
+                                                                           .successful(clock.instant()));
+                    reindexing = reindexing.with(type, progress(type, status));
+                }
+                if (Thread.interrupted()) // Clear interruption status so blocking calls function normally again.
+                    break;
             }
-            else {
-                // If this is a new document type (or a new cluster), no reindexing is required.
-                Status status = reindexing.status().getOrDefault(type,
-                                                                 Status.ready(clock.instant())
-                                                                       .running()
-                                                                       .successful(clock.instant()));
-                reindexing = reindexing.with(type, progress(type, status));
-            }
-            if (Thread.interrupted()) // Clear interruption status so blocking calls function normally again.
-                break;
+            database.writeReindexing(reindexing);
         }
-        database.writeReindexing(reindexing);
     }
 
     @SuppressWarnings("fallthrough") // (ノಠ ∩ಠ)ノ彡( \o°o)\
