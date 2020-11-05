@@ -59,4 +59,9 @@ TEST(TimeTest, to_string_print_iso_time) {
     EXPECT_EQ("2019-12-20 02:47:35.768 UTC", to_string(system_time(1576810055768543us)));
 }
 
+TEST(TimeTest, conversion_of_max) {
+    EXPECT_EQ(-9223372036.8547764, vespalib::to_s(vespalib::duration::min()));
+    EXPECT_EQ(9223372036.8547764, vespalib::to_s(vespalib::duration::max()));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
