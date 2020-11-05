@@ -4,6 +4,7 @@ package ai.vespa.reindexing;
 import ai.vespa.reindexing.Reindexing.Status;
 import ai.vespa.reindexing.ReindexingCurator.ReindexingLockException;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.ProgressToken;
@@ -18,14 +19,17 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.documentapi.VisitorControlHandler.CompletionCode.ABORTED;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
@@ -145,11 +149,11 @@ public class Reindexer {
         session.destroy(); // If thread is interrupted, this will not wait, but will retain the interrupted flag.
     }
 
-    private VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
+    VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
         VisitorParameters parameters = new VisitorParameters(type.getName());
         parameters.setRemoteDataHandler(cluster.name());
         parameters.setResumeToken(progress);
-        parameters.setFieldSet(type.getName() + ";[document]");
+        parameters.setFieldSet(type.getName() + ":" + type.getFields().stream().map(Field::getName).collect(joining(",")));
         parameters.setPriority(DocumentProtocol.Priority.LOW_1);
         parameters.setRoute(cluster.route());
         parameters.setBucketSpace(cluster.bucketOf(type));
@@ -180,6 +184,30 @@ public class Reindexer {
 
         String bucketOf(DocumentType documentType) {
             return requireNonNull(documentBuckets.get(documentType), "Unknown bucket for " + documentType);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Cluster cluster = (Cluster) o;
+            return name.equals(cluster.name) &&
+                   configId.equals(cluster.configId) &&
+                   documentBuckets.equals(cluster.documentBuckets);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, configId, documentBuckets);
+        }
+
+        @Override
+        public String toString() {
+            return "Cluster{" +
+                   "name='" + name + '\'' +
+                   ", configId='" + configId + '\'' +
+                   ", documentBuckets=" + documentBuckets +
+                   '}';
         }
 
     }
