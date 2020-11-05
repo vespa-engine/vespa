@@ -43,10 +43,16 @@ public class ReindexingCurator {
 
     private final Curator curator;
     private final ReindexingSerializer serializer;
+    private final Duration lockTimeout;
 
     public ReindexingCurator(Curator curator, DocumentTypeManager manager) {
+        this(curator, manager, Duration.ofSeconds(1));
+    }
+
+    ReindexingCurator(Curator curator, DocumentTypeManager manager, Duration lockTimeout) {
         this.curator = curator;
         this.serializer = new ReindexingSerializer(manager);
+        this.lockTimeout = lockTimeout;
     }
 
     public Reindexing readReindexing() {
@@ -61,7 +67,7 @@ public class ReindexingCurator {
     /** This lock must be held to manipulate reindexing state, or by whoever has a running visitor. */
     public Lock lockReindexing() throws ReindexingLockException {
         try {
-            return curator.lock(lockPath, Duration.ofSeconds(1));
+            return curator.lock(lockPath, lockTimeout);
         }
         catch (UncheckedTimeoutException e) {
             throw new ReindexingLockException(e);
