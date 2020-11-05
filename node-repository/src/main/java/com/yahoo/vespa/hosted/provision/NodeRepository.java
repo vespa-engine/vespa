@@ -127,7 +127,8 @@ public class NodeRepository extends AbstractComponent {
              Clock.systemUTC(),
              zone,
              new DnsNameResolver(),
-             DockerImage.fromString(config.containerImage()),
+             DockerImage.fromString(config.containerImage())
+                        .withReplacedBy(DockerImage.fromString(config.containerImageReplacement())),
              flagSource,
              config.useCuratorClientCache(),
              zone.environment().isProduction() && !zone.getCloud().dynamicProvisioning() ? 1 : 0,
@@ -144,7 +145,7 @@ public class NodeRepository extends AbstractComponent {
                           Clock clock,
                           Zone zone,
                           NameResolver nameResolver,
-                          DockerImage dockerImage,
+                          DockerImage containerImage,
                           FlagSource flagSource,
                           boolean useCuratorClientCache,
                           int spareCount,
@@ -164,7 +165,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.containerImages = new ContainerImages(db, dockerImage);
+        this.containerImages = new ContainerImages(db, containerImage, flagSource);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.spareCount = spareCount;

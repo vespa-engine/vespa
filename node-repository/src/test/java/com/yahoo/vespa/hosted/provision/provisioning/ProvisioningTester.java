@@ -89,11 +89,12 @@ public class ProvisioningTester {
     private int nextHost = 0;
     private int nextIP = 0;
 
-    public ProvisioningTester(Curator curator,
+    private ProvisioningTester(Curator curator,
                               NodeFlavors nodeFlavors,
                               HostResourcesCalculator resourcesCalculator,
                               Zone zone,
                               NameResolver nameResolver,
+                              DockerImage containerImage,
                               Orchestrator orchestrator,
                               HostProvisioner hostProvisioner,
                               LoadBalancerServiceMock loadBalancerService,
@@ -109,7 +110,7 @@ public class ProvisioningTester {
                                                  clock,
                                                  zone,
                                                  nameResolver,
-                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+                                                 containerImage,
                                                  flagSource,
                                                  true,
                                                  spareCount,
@@ -596,9 +597,9 @@ public class ProvisioningTester {
         private NameResolver nameResolver;
         private Orchestrator orchestrator;
         private HostProvisioner hostProvisioner;
-        private LoadBalancerServiceMock loadBalancerService;
         private FlagSource flagSource;
         private int spareCount = 0;
+        private DockerImage defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
 
         public Builder curator(Curator curator) {
             this.curator = curator;
@@ -636,6 +637,11 @@ public class ProvisioningTester {
             return this;
         }
 
+        public Builder defaultImage(DockerImage defaultImage) {
+            this.defaultImage = defaultImage;
+            return this;
+        }
+
         public Builder orchestrator(Orchestrator orchestrator) {
             this.orchestrator = orchestrator;
             return this;
@@ -643,11 +649,6 @@ public class ProvisioningTester {
 
         public Builder hostProvisioner(HostProvisioner hostProvisioner) {
             this.hostProvisioner = hostProvisioner;
-            return this;
-        }
-
-        public Builder loadBalancerService(LoadBalancerServiceMock loadBalancerService) {
-            this.loadBalancerService = loadBalancerService;
             return this;
         }
 
@@ -678,9 +679,10 @@ public class ProvisioningTester {
                                           resourcesCalculator,
                                           Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
                                           Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
+                                          defaultImage,
                                           orchestrator,
                                           hostProvisioner,
-                                          Optional.ofNullable(loadBalancerService).orElseGet(LoadBalancerServiceMock::new),
+                                          new LoadBalancerServiceMock(),
                                           Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
                                           spareCount);
         }
