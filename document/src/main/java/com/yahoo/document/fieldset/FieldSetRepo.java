@@ -34,21 +34,24 @@ public class FieldSetRepo {
     FieldSet parseFieldCollection(DocumentTypeManager docMan, String docType, String fieldNames) {
         DocumentType type = docMan.getDocumentType(docType);
         if (type == null) {
-         throw new IllegalArgumentException("Unknown document type " + docType);
+            throw new IllegalArgumentException("Unknown document type " + docType);
         }
 
-        StringTokenizer tokenizer = new StringTokenizer(fieldNames, ",");
         FieldCollection collection = new FieldCollection(type);
-
-        while (tokenizer.hasMoreTokens()) {
-            String token = tokenizer.nextToken();
-            Field f = type.getField(token);
-            if (f == null) {
-                throw new IllegalArgumentException("No such field " + token);
-            }
-            collection.add(f);
+        if (fieldNames.equals("[document]")) {
+            collection.addAll(type.fieldSet());
         }
-
+        else {
+            StringTokenizer tokenizer = new StringTokenizer(fieldNames, ",");
+            while (tokenizer.hasMoreTokens()) {
+                String token = tokenizer.nextToken();
+                Field f = type.getField(token);
+                if (f == null) {
+                    throw new IllegalArgumentException("No such field " + token);
+                }
+                collection.add(f);
+            }
+        }
         return collection;
     }
 

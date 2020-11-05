@@ -153,7 +153,7 @@ public class Reindexer {
         VisitorParameters parameters = new VisitorParameters(type.getName());
         parameters.setRemoteDataHandler(cluster.name());
         parameters.setResumeToken(progress);
-        parameters.setFieldSet(type.getName() + ":" + type.getFields().stream().map(Field::getName).collect(joining(",")));
+        parameters.setFieldSet(type.getName() + ":[document]");
         parameters.setPriority(DocumentProtocol.Priority.LOW_1);
         parameters.setRoute(cluster.route());
         parameters.setBucketSpace(cluster.bucketOf(type));

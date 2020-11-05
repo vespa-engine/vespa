@@ -84,11 +84,11 @@ class ReindexerTest {
     }
 
     @Test
-    void parameters() throws ReindexingLockException {
+    void parameters() {
         Reindexer reindexer = new Reindexer(cluster, Map.of(), database, access, clock);
         ProgressToken token = new ProgressToken();
         VisitorParameters parameters = reindexer.createParameters(music, token);
-        assertEquals("music:artist", parameters.getFieldSet());
+        assertEquals("music:[document]", parameters.getFieldSet());
         assertSame(token, parameters.getResumeToken());
         assertEquals("default", parameters.getBucketSpace());
         assertEquals("[Storage:cluster=cluster;clusterconfigid=id]", parameters.getRoute().toString());
