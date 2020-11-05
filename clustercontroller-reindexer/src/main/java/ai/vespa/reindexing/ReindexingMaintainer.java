@@ -16,7 +16,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 import java.time.Clock;
@@ -27,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -68,8 +68,8 @@ public class ReindexingMaintainer extends AbstractComponent {
                                        clock);
         this.executor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("reindexer-"));
         if (reindexingConfig.enabled())
-            scheduleStaggered(this::maintain, executor, Duration.ofMinutes(1), clock.instant(),
-                              HostName.getLocalhost(), zookeepersConfig.zookeeperserverlist());
+            scheduleStaggered((delayMillis, intervalMillis) -> executor.scheduleAtFixedRate(this::maintain, delayMillis, intervalMillis, TimeUnit.MILLISECONDS),
+                              Duration.ofMinutes(1), clock.instant(), HostName.getLocalhost(), zookeepersConfig.zookeeperserverlist());
     }
 
     private void maintain() {
@@ -104,8 +104,8 @@ public class ReindexingMaintainer extends AbstractComponent {
                                                 typeStatus -> Instant.ofEpochMilli(typeStatus.getValue().readyAtMillis())));
     }
 
-    /** Schedules the given task with the given interval (across all containers in this ZK cluster). */
-    static void scheduleStaggered(Runnable task, ScheduledExecutorService executor,
+    /** Schedules a task with the given interval (across all containers in this ZK cluster). */
+    static void scheduleStaggered(BiConsumer<Long, Long> scheduler,
                                   Duration interval, Instant now,
                                   String hostname, String clusterHostnames) {
         long delayMillis = 0;
@@ -116,13 +116,13 @@ public class ReindexingMaintainer extends AbstractComponent {
         if (hostnames.contains(hostname)) {
             long offset = hostnames.indexOf(hostname) * intervalMillis;
             intervalMillis *= hostnames.size();
-            delayMillis = Math.floorMod(offset - now.toEpochMilli(), interval.toMillis());
+            delayMillis = Math.floorMod(offset - now.toEpochMilli(), intervalMillis);
         }
-        executor.scheduleAtFixedRate(task, delayMillis, intervalMillis, TimeUnit.MILLISECONDS);
+        scheduler.accept(delayMillis, intervalMillis);
     }
 
-    private static Cluster parseCluster(String name, ClusterListConfig clusters, AllClustersBucketSpacesConfig buckets,
-                                        DocumentTypeManager manager) {
+    static Cluster parseCluster(String name, ClusterListConfig clusters, AllClustersBucketSpacesConfig buckets,
+                                DocumentTypeManager manager) {
         return clusters.storage().stream()
                        .filter(storage -> storage.name().equals(name))
                        .map(storage -> new Cluster(name,
