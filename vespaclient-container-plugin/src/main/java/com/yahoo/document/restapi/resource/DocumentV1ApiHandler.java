@@ -144,7 +144,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String CONCURRENCY = "concurrency";
     private static final String BUCKET_SPACE = "bucketSpace";
     private static final String TIMEOUT = "timeout";
-    private static final String TRACE_LEVEL = "traceLevel";
+    private static final String TRACELEVEL = "tracelevel";
 
     private final Clock clock;
     private final Metric metric;
@@ -369,8 +369,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
-        DocumentOperationParameters parameters = getProperty(request, TRACE_LEVEL, integerParser).map(parameters()::withTraceLevel)
-                                                                                                 .orElse(parameters());
+        DocumentOperationParameters parameters = getProperty(request, TRACELEVEL, integerParser).map(parameters()::withTraceLevel)
+                                                                                                .orElse(parameters());
         for (String name : names) switch (name) {
             case CLUSTER:
                 parameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).route())
