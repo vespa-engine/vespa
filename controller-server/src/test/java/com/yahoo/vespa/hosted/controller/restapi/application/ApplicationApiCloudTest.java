@@ -70,6 +70,15 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(infoRequest, "{}", 200);
     }
 
+    @Test
+    public void post_partial_tenant_info() {
+        var infoRequest =
+                request("/application/v4/tenant/scoober/info", POST)
+                        .data("{\"name\":\"newName\", \"billingContact\":{\"name\":\"billingName\"}}")
+                        .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(infoRequest, "{}", 200);
+    }
+
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()
                 .instances("default")
