@@ -74,11 +74,10 @@ public class NodePrioritizer {
         // In dynamically provisioned zones, we can always take spare hosts since we can provision new on-demand,
         // NodeCandidate::compareTo will ensure that they will not be used until there is no room elsewhere.
         // In non-dynamically provisioned zones, we only allow allocating to spare hosts to replace failed nodes.
-        this.canAllocateToSpareHosts = dynamicProvisioning ||
-                isReplacement(nodesInCluster.size(), nodesInCluster.state(Node.State.failed).size());
+        this.canAllocateToSpareHosts = dynamicProvisioning || isReplacement(nodesInCluster);
         // Do not allocate new nodes for exclusive deployments in dynamically provisioned zones: provision new host instead.
         this.canAllocateNew = requestedNodes instanceof NodeSpec.CountNodeSpec
-                && (!dynamicProvisioning || !requestedNodes.isExclusive());
+                              && (!dynamicProvisioning || !requestedNodes.isExclusive());
     }
 
     /** Collects all node candidates for this application and returns them in the most-to-least preferred order */
@@ -86,7 +85,7 @@ public class NodePrioritizer {
         addApplicationNodes();
         addSurplusNodes(surplusActiveNodes);
         addReadyNodes();
-        addNewNodes();
+        addCandidatesOnExistingHosts();
         return prioritize();
     }
 
@@ -128,12 +127,13 @@ public class NodePrioritizer {
     }
 
     /** Add a node on each host with enough capacity for the requested flavor  */
-    private void addNewNodes() {
+    private void addCandidatesOnExistingHosts() {
         if ( !canAllocateNew) return;
 
         for (Node host : allNodes) {
             if ( ! nodeRepository.canAllocateTenantNodeTo(host)) continue;
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
+            if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
             if (host.exclusiveTo().isPresent()) continue; // Never allocate new nodes to exclusive hosts
             if ( spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
@@ -193,9 +193,10 @@ public class NodePrioritizer {
     }
 
     /** Returns whether we are allocating to replace a failed node */
-    private boolean isReplacement(int nodesInCluster, int failedNodesInCluster) {
+    private boolean isReplacement(NodeList nodesInCluster) {
+        int failedNodesInCluster = nodesInCluster.state(Node.State.failed).size();
         if (failedNodesInCluster == 0) return false;
-        return ! requestedNodes.fulfilledBy(nodesInCluster - failedNodesInCluster);
+        return ! requestedNodes.fulfilledBy(nodesInCluster.size() - failedNodesInCluster);
     }
 
     /**
