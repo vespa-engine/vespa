@@ -60,7 +60,6 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                      .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
                                      .ifPresent(application -> {
                                          try {
-                                             Collection<Long> generations = convergence.getServiceConfigGenerations(application, timeout).values();
                                              try (Lock lock = database.lock(id)) {
                                                  ApplicationReindexing reindexing = database.readReindexingStatus(id)
                                                                                             .orElse(ApplicationReindexing.ready(clock.instant()));
