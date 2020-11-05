@@ -2,6 +2,7 @@
 package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.path.Path;
@@ -10,9 +11,12 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.yolean.Exceptions;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -33,7 +37,9 @@ public class ReindexingCurator {
     private static final String STATE = "state";
     private static final String MESSAGE = "message";
 
-    private static final Path statusPath = Path.fromString("/reindexing/v1/status");
+    private static final Path rootPath = Path.fromString("/reindexing/v1");
+    private static final Path statusPath = rootPath.append("status");
+    private static final Path lockPath = rootPath.append("lock");
 
     private final Curator curator;
     private final ReindexingSerializer serializer;
@@ -50,6 +56,16 @@ public class ReindexingCurator {
 
     public void writeReindexing(Reindexing reindexing) {
         curator.set(statusPath, serializer.serialize(reindexing));
+    }
+
+    /** This lock must be held to manipulate reindexing state, or by whoever has a running visitor. */
+    public Lock lockReindexing() throws ReindexingLockException {
+        try {
+            return curator.lock(lockPath, Duration.ofSeconds(1));
+        }
+        catch (UncheckedTimeoutException e) {
+            throw new ReindexingLockException(e);
+        }
     }
 
 
@@ -113,6 +129,15 @@ public class ReindexingCurator {
                 case "failed": return Reindexing.State.FAILED;
                 default: throw new IllegalArgumentException("Unknown state '" + value + "'");
             }
+        }
+
+    }
+
+    /** Indicates that taking the reindexing lock failed within the alotted time. */
+    static class ReindexingLockException extends Exception {
+
+        ReindexingLockException(UncheckedTimeoutException cause) {
+            super("Failed to obtain the reindexing lock", cause);
         }
 
     }
