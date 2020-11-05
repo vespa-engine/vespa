@@ -8,9 +8,9 @@ import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Superclass of expiry tasks which moves nodes from some state to the dirty state.
@@ -28,8 +28,8 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
     /** The event record type which contains the timestamp to use for expiry */
     private final History.Event.Type eventType;
 
+    private final Metric metric;
     private final Clock clock;
-
     private final Duration expiryTime;
 
     Expirer(Node.State fromState, History.Event.Type eventType, NodeRepository nodeRepository,
@@ -37,20 +37,23 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
         super(nodeRepository, min(Duration.ofMinutes(10), expiryTime), metric);
         this.fromState = fromState;
         this.eventType = eventType;
+        this.metric = metric;
         this.clock = clock;
         this.expiryTime = expiryTime;
     }
 
     @Override
     protected boolean maintain() {
-        List<Node> expired = new ArrayList<>();
-        for (Node node : nodeRepository().getNodes(fromState)) {
-            if (isExpired(node))
-                expired.add(node);
-        }
-        if ( ! expired.isEmpty())
+        List<Node> expired = nodeRepository().getNodes(fromState).stream()
+                .filter(this::isExpired)
+                .collect(Collectors.toList());
+
+        if ( ! expired.isEmpty()) {
             log.info(fromState + " expirer found " + expired.size() + " expired nodes: " + expired);
-        expire(expired);
+            expire(expired);
+        }
+
+        metric.add("expired." + fromState, expired.size(), null);
         return true;
     }
 
