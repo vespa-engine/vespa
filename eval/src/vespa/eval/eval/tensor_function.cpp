@@ -11,6 +11,7 @@
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_create.h>
 #include <vespa/eval/instruction/generic_join.h>
+#include <vespa/eval/instruction/generic_lambda.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/instruction/generic_peek.h>
@@ -465,6 +466,9 @@ Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const 
 InterpretedFunction::Instruction
 Lambda::compile_self(EngineOrFactory engine, Stash &stash) const
 {
+    if (engine.is_factory()) {
+        return instruction::GenericLambda::make_instruction(*this, engine.factory(), stash);
+    }
     InterpretedFunction fun(engine, _lambda->root(), _lambda_types);
     LambdaParams &params = stash.create<LambdaParams>(*this, std::move(fun));
     return Instruction(op_tensor_lambda, wrap_param<LambdaParams>(params));
