@@ -133,6 +133,7 @@ public class NodePrioritizer {
         for (Node host : allNodes) {
             if ( ! nodeRepository.canAllocateTenantNodeTo(host)) continue;
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
+            if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
             if (host.exclusiveTo().isPresent()) continue; // Never allocate new nodes to exclusive hosts
             if ( spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
