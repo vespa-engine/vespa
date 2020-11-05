@@ -86,7 +86,7 @@ public class Reindexing {
 
         /** Returns a new, empty status, with no progress or result, in state READY. */
         public static Status ready(Instant now) {
-            return new Status(requireNonNull(now), null, new ProgressToken(), State.READY, null);
+            return new Status(requireNonNull(now), null, null, State.READY, null);
         }
 
         /** Returns a copy of this, in state RUNNING. */
