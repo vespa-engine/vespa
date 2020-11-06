@@ -60,7 +60,7 @@ public class ConfigSubscriber implements AutoCloseable {
 
     /**
      * Constructs a new subscriber. The default Vespa network config source will be used, which is the address of
-     * a config proxy (part of vespa_base) running locally. It can also be changed by setting VESPA_CONFIG_SOURCES.
+     * a config proxy running locally. It can also be changed by setting VESPA_CONFIG_SOURCES.
      */
     public ConfigSubscriber() {
         this(JRTConfigRequester.defaultSourceSet);

@@ -148,19 +148,13 @@ sub getServicesVar {
     my ($varname, $default, $warn) = @_;
     # print "GET var '$varname'\n";
     my $cloud = getValue($varname, "services");
-    my $vespa = getValue($varname, "vespa_base");
     my $plain = $ENV{$varname};
-    if (defined($cloud) && defined($vespa)) {
-        print STDERR "Found settings for both services.$varname and vespa_base.$varname, using settings from services\n";
-    }
     if (defined($cloud)) {
         return $cloud;
-    } elsif (defined($vespa)) {
-        return $vespa;
     } elsif (defined($plain)) {
         return $plain;
     } elsif ($warn > 0) {
-        print STDERR "No value found for 'services.$varname' or 'vespa_base.$varname'; using '$default'\n";
+        print STDERR "No value found for 'services.$varname'; using '$default'\n";
     }
     return $default;
 }

@@ -121,9 +121,6 @@ const char *findConfigServers(const char *defServers) {
         env = getenv("services__addr_configserver");
     }
     if (env == NULL || *env == '\0') {
-        env = getenv("vespa_base__addr_configserver");
-    }
-    if (env == NULL || *env == '\0') {
         env = getenv("addr_configserver");
     }
     if (env != NULL && *env != '\0') {
