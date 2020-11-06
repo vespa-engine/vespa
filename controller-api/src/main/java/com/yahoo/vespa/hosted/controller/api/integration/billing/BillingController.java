@@ -52,7 +52,7 @@ public interface BillingController {
     void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged);
 
     default CollectionMethod getCollectionMethod(TenantName tenant) {
-        return CollectionMethod.NONE;
+        return CollectionMethod.AUTO;
     }
 
     default CollectionResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
