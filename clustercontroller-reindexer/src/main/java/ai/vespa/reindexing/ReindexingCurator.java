@@ -69,7 +69,7 @@ public class ReindexingCurator {
         try {
             return curator.lock(lockPath, lockTimeout);
         }
-        catch (UncheckedTimeoutException e) {
+        catch (UncheckedTimeoutException e) { // TODO jonmv: Avoid use of guava classes.
             throw new ReindexingLockException(e);
         }
     }

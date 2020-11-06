@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Local visitor session that copies and iterates through all items in the local document access.
- * Each document must be ack'ed for the session to be done visiting, unless the destinatino is remote.
+ * Each document must be ack'ed for the session to be done visiting, unless the destination is remote.
  * Only document puts are sent by this session, and this is done from a separate thread.
  *
  * @author jonmv

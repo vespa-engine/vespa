@@ -27,17 +27,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
- * Runs in all cluster controller containers, and progresses reindexngg efforts.
+ * Runs in all cluster controller containers, and progresses reindexing efforts.
  * Work is only done by one container at a time, by requiring a shared ZooKeeper lock to be held while visiting.
  * Whichever maintainer gets the lock holds it until all reindexing is done, or until shutdown.
  *
@@ -78,7 +78,7 @@ public class ReindexingMaintainer extends AbstractComponent {
             reindexer.reindex();
         }
         catch (ReindexingLockException e) {
-            // Some other container is handling the reindexing at this moment, which is fine.
+            log.log(FINE, "Failed to acquire reindexing lock");
         }
         catch (Exception e) {
             log.log(WARNING, "Exception when reindexing", e);

@@ -76,8 +76,8 @@ public class Reindexer {
         try (Lock lock = database.lockReindexing()) {
             for (DocumentType type : ready.keySet()) { // We consider only document types for which we have config.
                 if (ready.get(type).isAfter(clock.instant()))
-                    log.log(WARNING, "Received config for reindexing which is ready in the future — will process later " +
-                                     "(" + ready.get(type) + " is after " + clock.instant() + ")");
+                    log.log(INFO, "Received config for reindexing which is ready in the future — will process later " +
+                                  "(" + ready.get(type) + " is after " + clock.instant() + ")");
                 else
                     progress(type);
 
@@ -108,7 +108,7 @@ public class Reindexer {
             case SUCCESSFUL: // Intentional fallthrough — all three are done states.
                 return;
             case RUNNING:
-                log.log(WARNING, "Unepxected state 'RUNNING' of reindexing of " + type);
+                log.log(WARNING, "Unexpected state 'RUNNING' of reindexing of " + type);
             case READY: // Intentional fallthrough — must just assume we failed updating state when exiting previously.
             log.log(FINE, () -> "Running reindexing of " + type);
         }

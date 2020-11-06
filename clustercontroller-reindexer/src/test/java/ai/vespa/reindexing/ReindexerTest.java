@@ -35,6 +35,7 @@ import java.util.concurrent.Phaser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author jonmv
@@ -128,11 +129,7 @@ class ReindexerTest {
         // It's time to reindex the "music" documents — none yet, so this is a no-op, which just updates the timestamp.
         database.writeReindexing(reindexing); // Restore state where reindexing was complete at 5 ms after EPOCH.
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<?> future = executor.submit(uncheckedReindex(reindexer));
-        while (phaser.getRegisteredParties() == 1)
-            Thread.sleep(1); // Need to wait for the visitor to register, without any proper way of doing it >_<
-        phaser.arriveAndAwaitAdvance(); // Visitor has arrived — so should we.
-        future.get(); // Write state to database.
+        reindexer.reindex();
         reindexing = reindexing.with(music, Status.ready(clock.instant()).running().successful(clock.instant()));
         assertEquals(reindexing, database.readReindexing());
 
@@ -140,7 +137,7 @@ class ReindexerTest {
         access.createSyncSession(new SyncParameters.Builder().build()).put(new DocumentPut(document1));
         clock.advance(Duration.ofMillis(10));
         reindexer = new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(20)), database, access, clock);
-        future = executor.submit(uncheckedReindex(reindexer));
+        Future<?> future = executor.submit(uncheckedReindex(reindexer));
         while (phaser.getRegisteredParties() == 1)
             Thread.sleep(1); // Need to wait for the visitor to register, without any proper way of doing it >_<
         database.writeReindexing(Reindexing.empty()); // Wreck database while running, to verify we write the expected value.
@@ -168,6 +165,8 @@ class ReindexerTest {
         // Finally let the visit complete normally.
         reindexer = new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(20)), database, access, clock);
         future = executor.submit(uncheckedReindex(reindexer));
+        while (phaser.getRegisteredParties() == 1)
+            Thread.sleep(1); // Need to wait for the visitor to register, without any proper way of doing it >_<
         database.writeReindexing(Reindexing.empty()); // Wreck database while running, to verify we write the expected value.
         phaser.arriveAndAwaitAdvance(); // Synchronize with visitor, which may now send the document.
         phaser.arriveAndAwaitAdvance(); // Synchronize with visitor, which may now complete.
