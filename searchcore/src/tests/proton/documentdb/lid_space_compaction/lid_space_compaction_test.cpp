@@ -228,6 +228,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 struct MySubDb {
     test::DummyDocumentSubDb sub_db;
     MaintenanceDocumentSubDB maintenance_sub_db;
+    PendingLidTracker _pendingLidsForCommit;
     MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo);
     ~MySubDb();
 };
@@ -236,7 +237,8 @@ MySubDb::MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore
     : sub_db(std::move(bucket_db), SUBDB_ID),
       maintenance_sub_db(sub_db.getName(), sub_db.getSubDbId(), sub_db.getDocumentMetaStoreContext().getSP(),
                          std::make_shared<MyDocumentRetriever>(repo, store),
-                         std::make_shared<MyFeedView>(repo))
+                         std::make_shared<MyFeedView>(repo),
+                         &_pendingLidsForCommit)
 {
 }
 
@@ -532,7 +534,16 @@ TEST_F(HandlerTest, createMoveOperation_works_as_expected)
     const BucketId bucketId(100);
     const Timestamp timestamp(200);
     DocumentMetaData document(moveFromLid, timestamp, bucketId, GlobalId());
+    {
+        EXPECT_FALSE(_subDb.maintenance_sub_db.lidNeedsCommit(moveFromLid));
+        IPendingLidTracker::Token token = _subDb._pendingLidsForCommit.produce(moveFromLid);
+        EXPECT_TRUE(_subDb.maintenance_sub_db.lidNeedsCommit(moveFromLid));
+        MoveOperation::UP op = _handler.createMoveOperation(document, moveToLid);
+        ASSERT_FALSE(op);
+    }
+    EXPECT_FALSE(_subDb.maintenance_sub_db.lidNeedsCommit(moveFromLid));
     MoveOperation::UP op = _handler.createMoveOperation(document, moveToLid);
+    ASSERT_TRUE(op);
     EXPECT_EQ(10u, _docStore._readLid);
     EXPECT_EQ(DbDocumentId(SUBDB_ID, moveFromLid).toString(),
               op->getPrevDbDocumentId().toString()); // source

@@ -64,7 +64,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 1000, 4));
         var calculator = new CompleteResourcesCalculator(hostFlavor);
         var originalReal = new NodeResources(0.7, 6.0, 12.9, 1.0);
-        var realToRequest = calculator.realToRequest(originalReal);
+        var realToRequest = calculator.realToRequest(originalReal, false);
         var requestToReal = calculator.requestToReal(realToRequest, false);
         var realResourcesOf = calculator.realResourcesOf(realToRequest);
         assertEquals(originalReal, requestToReal);
@@ -82,7 +82,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
             if (node.parentHostname().isEmpty()) return node.resources(); // hosts use configured flavors
             return realResourcesOf(node.resources());
         }
@@ -93,7 +93,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
                                        .withDiskGb(advertisedResources.diskGb() -
                                                    diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), advertisedResources, false));
             System.out.println("        real given " + advertisedResources + ": " + r);
-            System.out.println("        adv. given those: " + realToRequest(r));
+            System.out.println("        adv. given those: " + realToRequest(r, false));
             return advertisedResources.withMemoryGb(advertisedResources.memoryGb() -
                                                     memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), advertisedResources, false))
                                       .withDiskGb(advertisedResources.diskGb() -
@@ -116,7 +116,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources realResources) {
+        public NodeResources realToRequest(NodeResources realResources, boolean exclusive) {
             double memoryOverhead = memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), realResources, true);
             double diskOverhead = diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), realResources, true);
             return realResources.withMemoryGb(realResources.memoryGb() + memoryOverhead)
@@ -124,7 +124,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
+        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
         /**
          * Returns the memory overhead resulting if the given advertised resources are placed on the given node

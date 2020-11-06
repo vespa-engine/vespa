@@ -38,6 +38,7 @@ import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
+import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
@@ -505,12 +506,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
             if (applicationTransaction.isPresent()) {
                 hostProvisioner.get().remove(applicationTransaction.get());
+                applicationTransaction.get().nested().commit();
             } else {
                 transaction.commit();
             }
             return true;
         } finally {
-            applicationTransaction.ifPresent(ApplicationTransaction::close); // Commits transaction and releases lock
+            applicationTransaction.ifPresent(ApplicationTransaction::close);
         }
     }
 
@@ -663,12 +665,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri,
                                                          Duration timeout, Optional<Version> vespaVersion) {
-        return convergeChecker.checkService(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
+        return convergeChecker.getServiceConfigGenerationResponse(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
     }
 
     public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri,
                                                             Duration timeoutPerService, Optional<Version> vespaVersion) {
-        return convergeChecker.servicesToCheck(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
+        return convergeChecker.getServiceConfigGenerationsResponse(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
     }
 
     // ---------------- Logs ----------------------------------------------------------------
@@ -734,12 +736,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 hostProvisioner.get().activate(session.getAllocatedHosts().getHosts(),
                                                new ActivationContext(session.getSessionId()),
                                                applicationTransaction.get());
+                applicationTransaction.get().nested().commit();
             } else {
                 transaction.commit();
             }
             return new Activation(waiter, activeSession);
         } finally {
-            applicationTransaction.ifPresent(ApplicationTransaction::close); // Commits transaction and releases lock
+            applicationTransaction.ifPresent(ApplicationTransaction::close);
         }
     }
 
@@ -1004,6 +1007,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             logger.log(allAllowed ? Level.INFO : Level.WARNING,
                        "Change(s) between active and new application that may require re-feed:\n" +
                                refeedActions.format());
+        }
+        ReindexActions reindexActions = actions.getReindexActions();
+        if ( ! reindexActions.isEmpty()) {
+            boolean allAllowed = reindexActions.getEntries().stream().allMatch(ReindexActions.Entry::allowed);
+            logger.log(allAllowed ? Level.INFO : Level.WARNING,
+                    "Change(s) between active and new application that may require re-index:\n" +
+                            reindexActions.format());
         }
     }
 

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A set of allows which suppresses specific validations in limited time periods.
@@ -54,7 +53,7 @@ public class ValidationOverrides {
             throw new ValidationException(validationId, message);
     }
 
-    public final boolean allows(String validationIdString, Instant now) {
+    public boolean allows(String validationIdString, Instant now) {
         Optional<ValidationId> validationId = ValidationId.from(validationIdString);
         if ( ! validationId.isPresent()) return false; // unknown id -> not allowed
         return allows(validationId.get(), now);

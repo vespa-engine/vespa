@@ -6,7 +6,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.custom.HostCapacity;
 import com.yahoo.vespa.flags.custom.SharedHost;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -15,6 +14,7 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -266,7 +266,7 @@ public class Flags {
             "tenant-budget-quota", -1,
             "The budget in cents/hr a tenant is allowed spend per instance, as calculated by NodeResources",
             "Only takes effect on next deployment, if set to a value other than the default for flag!",
-            APPLICATION_ID
+            TENANT_ID
     );
 
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
@@ -302,12 +302,6 @@ public class Flags {
             "Takes effect at next run of maintainer",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_NEW_RESTAPI_HANDLER = defineFeatureFlag(
-            "use-new-restapi-handler",
-            false,
-            "Whether application containers should use the new restapi handler implementation",
-            "Takes effect on next internal redeployment");
-
     public static final UnboundBooleanFlag USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION = defineFeatureFlag(
             "use-access-control-client-authentication",
             false,
@@ -315,25 +309,34 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag AWS_NLB_SEPARATE_HEALTHCHECK_PORT = defineFeatureFlag(
-            "aws-nlb-separate-healthcheck-port",
-            false,
-            "Use separate port for NLB health checks",
-            "Takes effect on next internal redeploy",
-            APPLICATION_ID);
-
-    public static final UnboundDoubleFlag JETTY_THREADPOOL_SCALE_FACTOR = defineDoubleFlag(
-            "jetty-threadpool-size-factor",
-            0.0,
-            "Size of Jetty threadpool as a factor of vcpu",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
+    public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
+            "async-message-handling-on-schedule", false,
+            "Optionally deliver async messages in own thread",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag CONTENT_NODE_BUCKET_DB_STRIPE_BITS = defineIntFlag(
+            "content-node-bucket-db-stripe-bits", 0,
+            "Number of bits used for striping the bucket DB in service layer",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag MERGE_CHUNK_SIZE = defineIntFlag(
+            "merge-chunk-size", 0x400000,
+            "Size of merge buffer in service layer",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag REGIONAL_CONTAINER_REGISTRY = defineFeatureFlag(
             "regional-container-registry",
             false,
             "Whether host-admin should download images from the zone's regional container registry",
             "Takes effect on host-admin restart");
+
+    public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
+            "enable-automatic-reindexing",
+            false,
+            "Whether to automatically trigger reindexing from config change",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,

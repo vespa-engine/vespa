@@ -280,30 +280,6 @@ struct MyTest {
         }
         return result;
     }
-    std::vector<uint16_t> getDiskCounts(uint16_t node) const {
-        std::vector<uint16_t> result(3, 0);
-        for (uint32_t i=0; i<_bucketsToTest; ++i) {
-            document::BucketId bucket(16, i);
-            std::vector<uint16_t> nodes;
-            ClusterState clusterState(_state);
-            _distribution->getIdealNodes(
-                    *_nodeType, clusterState, bucket, nodes,
-                    _upStates, _redundancy);
-            for (uint32_t j=0; j<nodes.size(); ++j) {
-                if (nodes[j] == node) {
-                    const NodeState& nodeState(clusterState.getNodeState(
-                            Node(NodeType::STORAGE, node)));
-                    // If disk was down, bucket should not map to this
-                    // node at all
-                    uint16_t disk = _distribution->getIdealDisk(
-                            nodeState, node, bucket,
-                            Distribution::IDEAL_DISK_EVEN_IF_DOWN);
-                    ++result[disk];
-                }
-            }
-        }
-        return result;
-    }
 };
 
 MyTest::MyTest()
@@ -350,13 +326,6 @@ std::vector<uint16_t> createNodeCountList(const std::string& source,
     EXPECT_EQ(exp123, cnt123); \
 }
 
-#define ASSERT_BUCKET_DISK_COUNTS(node, test, result) \
-{ \
-    std::vector<uint16_t> cnt123(test.getDiskCounts(node)); \
-    std::vector<uint16_t> exp123(createNodeCountList(result, cnt123)); \
-    EXPECT_EQ(exp123, cnt123); \
-}
-
 TEST(DistributionTest, test_down)
 {
     ASSERT_BUCKET_NODE_COUNTS(
@@ -370,28 +339,12 @@ TEST(DistributionTest, test_down)
             "0:+ 1:+ 2:+ 3:+ 8:+ 9:+");
 }
 
-TEST(DistributionTest, testDiskDown)
-{
-    ASSERT_BUCKET_DISK_COUNTS(
-            2,
-            MyTest().state("storage:10 .2.d:3 .2.d.0:d"),
-            "1:+ 2:+");
-}
-
 TEST(DistributionTest, test_serialize_deserialize)
 {
     MyTest t1;
     MyTest t2;
     t2.distribution(new Distribution(t1._distribution->serialize()));
     EXPECT_EQ(t1.getNodeCounts(), t2.getNodeCounts());
-}
-
-TEST(DistributionTest, test_disk_down_maintenance)
-{
-    ASSERT_BUCKET_DISK_COUNTS(
-            2,
-            MyTest().state("storage:10 .2.s:m .2.d:3 .2.d.0:d").upStates("um"),
-            "1:+ 2:+");
 }
 
 TEST(DistributionTest, test_initializing)
@@ -446,132 +399,6 @@ TEST(DistributionTest, testHighSplitBit)
     }
 
     EXPECT_EQ(ost1.str(), ost2.str());
-}
-
-TEST(DistributionTest, test_disk_capacity_weights)
-{
-    uint16_t num_disks = 10;
-    std::vector<double> capacities(num_disks);
-
-    RandomGen rg(13);
-    std::ostringstream ost;
-    ost << "d:" << num_disks;
-    for (unsigned i = 0; i < num_disks; ++i) {
-        capacities[i] = rg.nextDouble();
-        ost << " d." << i << ".c:" << capacities[i];
-    }
-
-    NodeState nodeState(ost.str(), &NodeType::STORAGE);
-
-    Distribution distr(Distribution::getDefaultDistributionConfig(2, 3));
-
-    for(int j=0; j < 10; ++j) {
-        std::vector<float> diskDist(num_disks);
-        for(int i=0; i < 1000; ++i) {
-            document::BucketId id(16, i);
-            int index = distr.getPreferredAvailableDisk(nodeState, j, id);
-            diskDist[index]+=1;
-        }
-
-        //normalization
-        for (unsigned i = 0; i < num_disks; ++i) {
-            diskDist[i] /= capacities[i];
-        }
-
-        std::sort(diskDist.begin(), diskDist.end());
-
-        double avg=0.0;
-        for (unsigned i = 0; i < num_disks; ++i) {
-            avg+=diskDist[i];
-        }
-        avg /= num_disks;
-        
-        double skew = (diskDist[num_disks-1]-avg)/(diskDist[num_disks-1]);
-
-        EXPECT_LT(skew, 0.3);
-    }
-}
-
-TEST(DistributionTest, test_disk_skew_local)
-{
-    Distribution distr(Distribution::getDefaultDistributionConfig(2, 3, Distribution::MODULO_INDEX));
-    std::vector<float> diskDist(100);
-    NodeState nodeState;
-    nodeState.setDiskCount(100);
-    for(int i=0; i < 65536; i++) {
-        document::BucketId id(16, i);
-        int index = distr.getPreferredAvailableDisk(nodeState, 7, id);
-        diskDist[index]+=1;
-    }
-
-    std::sort(diskDist.begin(), diskDist.end());
-
-    EXPECT_LT((diskDist[99]-diskDist[0])/(diskDist[99]), 0.05);
-}
-
-TEST(DistributionTest, test_disk_skew_global)
-{
-    uint16_t num_disks = 10;
-    uint16_t num_nodes = 10;
-    Distribution distr(Distribution::getDefaultDistributionConfig(2, num_nodes, Distribution::MODULO_INDEX));
-    std::vector<std::vector<float> > diskDist(num_nodes, std::vector<float>(num_disks));
-    NodeState nodeState;
-    nodeState.setDiskCount(num_disks);
-    for(uint16_t idx=0; idx < num_nodes; idx++) {
-        for(int i=0; i < 1000; i++) {
-            document::BucketId id(16, i);
-            int diskIndex = distr.getPreferredAvailableDisk(nodeState, idx, id);
-            diskDist[idx][diskIndex]+=1;
-        }
-    }
-
-    std::vector<float> diskDist2;
-    for(uint16_t idx=0; idx < num_nodes; idx++) {
-        for(uint16_t d=0; d < num_disks; d++) {
-            diskDist2.push_back(diskDist[idx][d]);
-        }
-    }
-
-    std::sort(diskDist2.begin(), diskDist2.end());
-    
-    double skew = (diskDist2[num_nodes*num_disks-1]-diskDist2[0])/(diskDist2[num_nodes*num_disks-1]);
-
-    EXPECT_LT(skew, 0.2);
-}
-
-TEST(DistributionTest, test_disk_intersection)
-{
-    uint16_t num_disks = 8;
-    uint16_t num_nodes = 20;
-    float max = 0;
-    Distribution distr(Distribution::getDefaultDistributionConfig(2, num_nodes, Distribution::MODULO_INDEX));
-
-    NodeState nodeState;
-    nodeState.setDiskCount(num_disks);
-
-    for(uint16_t i=0; i < num_nodes-1; i++) {
-        for(uint16_t j=i+1; j < num_nodes; j++) {
-            uint64_t count =0;
-//std::cerr << "Comparing node " << i << " and node " << j << ":\n";
-            for(int b=0; b < 1000; b++) {
-                document::BucketId id(16, b);
-                int idxI = distr.getPreferredAvailableDisk(nodeState, i, id);
-                int idxJ = distr.getPreferredAvailableDisk(nodeState, j, id);
-//if (b < 50) std::cerr << "  " << b << ": " << idxI << ", " << idxJ << "\n";
-                if(idxI == idxJ){
-                    count++;
-                }
-            }
-            if(count > max){
-                max = count;
-            }
-        }
-    }
-    if (max / 1000 > 0.5) {
-        std::ostringstream ost;
-        ost << "Value of " << max << " / " << 1000 << " is more than 0.5";
-        FAIL() << ost.str();
-    }
 }
 
 TEST(DistributionTest, test_distribution)
@@ -1176,7 +1003,6 @@ group[2].nodes[0].index 3
 group[2].nodes[0].retired false
 group[2].nodes[1].index 4
 group[2].nodes[1].retired false
-disk_distribution "MODULO_BID"
 )";
     Distribution distr(raw_config);
     ClusterState state("version:1 distributor:5 storage:5");

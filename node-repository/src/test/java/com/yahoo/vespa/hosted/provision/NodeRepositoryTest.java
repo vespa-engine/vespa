@@ -241,6 +241,39 @@ public class NodeRepositoryTest {
         assertEquals(asSet("host2", "node20"), filterNodes(tester, node -> node.state() == Node.State.dirty));
     }
 
+    @Test
+    public void breakfix_tenant_host() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        tester.addHost("host1", "host1", "default", NodeType.host);
+        tester.addNode("node1", "node1", "host1", "docker", NodeType.tenant);
+        String reason = NodeRepositoryTest.class.getSimpleName();
+
+        try {
+            tester.nodeRepository().breakfixRecursively("node1", Agent.system, reason);
+            fail("Should not be able to breakfix tenant node");
+        } catch (IllegalArgumentException ignored) {}
+
+        try {
+            tester.nodeRepository().breakfixRecursively("host1", Agent.system, reason);
+            fail("Should not be able to breakfix host in state not in [parked, failed]");
+        } catch (IllegalArgumentException ignored) {}
+
+        tester.setNodeState("host1", Node.State.failed);
+        tester.setNodeState("node1", Node.State.active);
+        try {
+            tester.nodeRepository().breakfixRecursively("host1", Agent.system, reason);
+            fail("Should not be able to breakfix host with active tenant node");
+        } catch (IllegalArgumentException ignored) {}
+
+        tester.setNodeState("node1", Node.State.failed);
+        tester.nodeRepository().breakfixRecursively("host1", Agent.system, reason);
+
+        assertEquals(1, tester.nodeRepository().getNodes().size());
+        Node node = tester.nodeRepository().getNodes().get(0);
+        assertEquals("host1", node.hostname());
+        assertEquals(Node.State.breakfixed, node.state());
+    }
+
     private static Set<String> asSet(String... elements) {
         return new HashSet<>(Arrays.asList(elements));
     }

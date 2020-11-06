@@ -26,6 +26,9 @@
     },
     "deprovisioned": {
       "url": "http://localhost:8080/nodes/v2/state/deprovisioned"
+    },
+    "breakfixed": {
+      "url": "http://localhost:8080/nodes/v2/state/breakfixed"
     }
   }
 }

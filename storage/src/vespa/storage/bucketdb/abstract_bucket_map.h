@@ -177,12 +177,8 @@ public:
         do_for_each_mutable_unordered(std::move(func), clientId);
     }
 
-    void for_each(std::function<Decision(uint64_t, const ValueT&)> func,
-                  const char* clientId,
-                  const key_type& first = 0,
-                  const key_type& last = UINT64_MAX)
-    {
-        do_for_each(std::move(func), clientId, first, last);
+    void for_each(std::function<Decision(uint64_t, const ValueT&)> func, const char* clientId) {
+        do_for_each(std::move(func), clientId);
     }
 
     std::unique_ptr<bucketdb::ReadGuard<ValueT>> acquire_read_guard() const {
@@ -206,9 +202,7 @@ private:
     virtual void do_for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func,
                                                const char* clientId) = 0;
     virtual void do_for_each(std::function<Decision(uint64_t, const ValueT&)> func,
-                             const char* clientId,
-                             const key_type& first,
-                             const key_type& last) = 0;
+                             const char* clientId) = 0;
     virtual std::unique_ptr<bucketdb::ReadGuard<ValueT>> do_acquire_read_guard() const = 0;
 };
 

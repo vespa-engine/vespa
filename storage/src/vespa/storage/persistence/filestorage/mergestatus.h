@@ -18,6 +18,7 @@ public:
     using SP = std::shared_ptr<MergeStatus>;
 
     std::shared_ptr<api::StorageReply> reply;
+    std::vector<api::MergeBucketCommand::Node> full_node_list;
     std::vector<api::MergeBucketCommand::Node> nodeList;
     framework::MicroSecTime maxTimestamp;
     std::deque<api::GetBucketDiffCommand::Entry> diff;

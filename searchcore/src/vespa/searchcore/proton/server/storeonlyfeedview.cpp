@@ -209,24 +209,19 @@ moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, c
     meta_store.move(op.getPrevLid(), op.getLid(), op.get_prepare_serial_num());
 }
 
-std::unique_ptr<PendingLidTrackerBase>
-createUncommitedLidTracker() {
-    return std::make_unique<PendingLidTracker>();
-}
-
 }  // namespace
 
-StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams &params)
+StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams &params)
     : IFeedView(),
       FeedDebugger(),
-      _summaryAdapter(ctx._summaryAdapter),
-      _documentMetaStoreContext(ctx._documentMetaStoreContext),
+      _summaryAdapter(std::move(ctx._summaryAdapter)),
+      _documentMetaStoreContext(std::move(ctx._documentMetaStoreContext)),
       _repo(ctx._repo),
       _docType(nullptr),
-      _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get(), ctx._lidReuseDelayerConfig),
+      _lidReuseDelayer(ctx._writeService, _documentMetaStoreContext->get()),
       _pendingLidsForDocStore(),
-      _pendingLidsForCommit(createUncommitedLidTracker()),
-      _schema(ctx._schema),
+      _pendingLidsForCommit(std::move(ctx._pendingLidsForCommit)),
+      _schema(std::move(ctx._schema)),
       _writeService(ctx._writeService),
       _params(params),
       _metaStore(_documentMetaStoreContext->get()),
@@ -236,16 +231,13 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
 }
 
 StoreOnlyFeedView::~StoreOnlyFeedView() = default;
+StoreOnlyFeedView::Context::Context(Context &&) noexcept = default;
+StoreOnlyFeedView::Context::~Context() = default;
 
 void
 StoreOnlyFeedView::sync()
 {
     _writeService.summary().sync();
-}
-
-ILidCommitState &
-StoreOnlyFeedView::getUncommittedLidsTracker() {
-    return *_pendingLidsForCommit;
 }
 
 void
@@ -383,8 +375,6 @@ StoreOnlyFeedView::handleUpdate(FeedToken token, const UpdateOperation &updOp)
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                                    FutureStream futureStream, OnOperationDoneType onDone)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
             makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, this] () mutable {
                 (void) onDone;
@@ -394,20 +384,16 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                     _summaryAdapter->put(serialNum, lid, os);
                 }
             }));
-#pragma GCC diagnostic pop
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, OnOperationDoneType onDone)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
             makeLambdaTask([serialNum, doc = std::move(doc), trackerToken = _pendingLidsForDocStore.produce(lid), onDone, lid, this] {
                 (void) onDone;
                 (void) trackerToken;
                 _summaryAdapter->put(serialNum, lid, *doc);
             }));
-#pragma GCC diagnostic pop
 }
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType onDone) {
     summaryExecutor().execute(
@@ -850,12 +836,6 @@ const ISimpleDocumentMetaStore *
 StoreOnlyFeedView::getDocumentMetaStorePtr() const
 {
     return &_documentMetaStoreContext->get();
-}
-
-bool
-StoreOnlyFeedView::isDrained() const
-{
-    return _pendingLidsForDocStore.getState() == ILidCommitState::State::COMPLETED;
 }
 
 } // namespace proton

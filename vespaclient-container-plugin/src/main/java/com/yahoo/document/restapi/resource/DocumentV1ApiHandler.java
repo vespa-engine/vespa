@@ -144,7 +144,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String CONCURRENCY = "concurrency";
     private static final String BUCKET_SPACE = "bucketSpace";
     private static final String TIMEOUT = "timeout";
-    private static final String TRACE_LEVEL = "traceLevel";
+    private static final String TRACELEVEL = "tracelevel";
 
     private final Clock clock;
     private final Metric metric;
@@ -311,8 +311,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getDocument(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
-            DocumentOperationParameters parameters = parametersFromRequest(request, CLUSTER, FIELD_SET)
-                    .withResponseHandler(response -> {
+            DocumentOperationParameters rawParameters = parametersFromRequest(request, CLUSTER, FIELD_SET);
+            if (rawParameters.fieldSet().isEmpty())
+                rawParameters = rawParameters.withFieldSet(path.documentType().orElseThrow() + ":[document]");
+            DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> {
                 handle(path, handler, response, (document, jsonResponse) -> {
                     if (document != null) {
                         jsonResponse.writeSingleDocument(document);
@@ -367,8 +369,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
-        DocumentOperationParameters parameters = getProperty(request, TRACE_LEVEL, integerParser).map(parameters()::withTraceLevel)
-                                                                                                 .orElse(parameters());
+        DocumentOperationParameters parameters = getProperty(request, TRACELEVEL, integerParser).map(parameters()::withTraceLevel)
+                                                                                                .orElse(parameters());
         for (String name : names) switch (name) {
             case CLUSTER:
                 parameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).route())

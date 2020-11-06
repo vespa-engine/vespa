@@ -233,22 +233,6 @@ CombiningFeedView::forceCommit(search::SerialNum serialNum, DoneCallback onDone)
     }
 }
 
-ILidCommitState &
-CombiningFeedView::getUncommittedLidsTracker() {
-    LOG_ABORT("CombiningFeedView::getUncommittedLidsTracker should never be called.");
-}
-
-bool
-CombiningFeedView::isDrained() const
-{
-    for (const auto &view : _views) {
-        if ( ! view->isDrained()) {
-            return false;
-        }
-    }
-    return true;
-}
-
 void
 CombiningFeedView::
 handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp)

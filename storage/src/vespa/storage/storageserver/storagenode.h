@@ -91,7 +91,6 @@ public:
      */
     virtual ResumeGuard pause() = 0;
     void requestShutdown(vespalib::stringref reason) override;
-    void notifyPartitionDown(int partId, vespalib::stringref reason);
     DoneInitializeHandler& getDoneInitializeHandler() { return *this; }
 
     // For testing

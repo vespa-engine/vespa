@@ -2,12 +2,15 @@
 
 #include "mergehandler.h"
 #include "persistenceutil.h"
+#include "apply_bucket_diff_entry_complete.h"
+#include "apply_bucket_diff_entry_result.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
+#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mergehandler");
@@ -37,22 +40,6 @@ constexpr int getDeleteFlag() {
 /**
  * Throws std::runtime_error if result has an error.
  */
-void
-checkResult(const spi::Result& result,
-            const spi::Bucket& bucket,
-            const document::DocumentId& docId,
-            const char* op)
-{
-    if (result.hasError()) {
-        vespalib::asciistream ss;
-        ss << "Failed " << op
-           << " for " << docId.toString()
-           << " in " << bucket
-           << ": " << result.toString();
-        throw std::runtime_error(ss.str());
-    }
-}
-
 void
 checkResult(const spi::Result& result, const spi::Bucket& bucket, const char* op)
 {
@@ -493,25 +480,27 @@ MergeHandler::deserializeDiffDocument(
     return doc;
 }
 
-void
+ApplyBucketDiffEntryResult
 MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
                              const api::ApplyBucketDiffCommand::Entry& e,
                              spi::Context& context,
                              const document::DocumentTypeRepo& repo) const
 {
+    std::promise<std::pair<std::unique_ptr<spi::Result>, double>> result_promise;
+    auto future_result = result_promise.get_future();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
         Document::SP doc(deserializeDiffDocument(e, repo));
         DocumentId docId = doc->getId();
-        framework::MilliSecTimer start_time(_clock);
-        checkResult(_spi.put(bucket, timestamp, std::move(doc), context), bucket, docId, "put");
-        _env._metrics.merge_handler_metrics.put_latency.addValue(start_time.getElapsedTimeAsDouble());
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock);
+        _spi.putAsync(bucket, timestamp, std::move(doc), context, std::move(complete));
+        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "put", _env._metrics.merge_handler_metrics.put_latency);
     } else {
         DocumentId docId(e._docName);
-        framework::MilliSecTimer start_time(_clock);
-        checkResult(_spi.remove(bucket, timestamp, docId, context), bucket, docId, "remove");
-        _env._metrics.merge_handler_metrics.remove_latency.addValue(start_time.getElapsedTimeAsDouble());
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock);
+        _spi.removeAsync(bucket, timestamp, docId, context, std::move(complete));
+        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "remove", _env._metrics.merge_handler_metrics.remove_latency);
     }
 }
 
@@ -534,6 +523,7 @@ MergeHandler::applyDiffLocally(
     uint32_t byteCount = 0;
     uint32_t addedCount = 0;
     uint32_t notNeededByteCount = 0;
+    std::vector<ApplyBucketDiffEntryResult> async_results;
 
     std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
@@ -572,7 +562,7 @@ MergeHandler::applyDiffLocally(
             ++i;
             LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
                 bucket.toString().c_str(), e.toString().c_str());
-            applyDiffEntry(bucket, e, context, repo);
+            async_results.push_back(applyDiffEntry(bucket, e, context, repo));
         } else {
             assert(spi::Timestamp(e._entry._timestamp) == existing.getTimestamp());
             // Diffing for existing timestamp; should either both be put
@@ -585,7 +575,7 @@ MergeHandler::applyDiffLocally(
                     "timestamp in %s. Diff slot: %s. Existing slot: %s",
                     bucket.toString().c_str(), e.toString().c_str(),
                     existing.toString().c_str());
-                applyDiffEntry(bucket, e, context, repo);
+                async_results.push_back(applyDiffEntry(bucket, e, context, repo));
             } else {
                 // Duplicate put, just ignore it.
                 LOG(debug, "During diff apply, attempting to add slot "
@@ -617,8 +607,14 @@ MergeHandler::applyDiffLocally(
         LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
             bucket.toString().c_str(), e.toString().c_str());
 
-        applyDiffEntry(bucket, e, context, repo);
+        async_results.push_back(applyDiffEntry(bucket, e, context, repo));
         byteCount += e._headerBlob.size() + e._bodyBlob.size();
+    }
+    for (auto &result_to_check : async_results) {
+        result_to_check.wait();
+    }
+    for (auto &result_to_check : async_results) {
+        result_to_check.check_result();
     }
 
     if (byteCount + notNeededByteCount != 0) {
@@ -651,18 +647,22 @@ MergeHandler::applyDiffLocally(
 }
 
 namespace {
-    void findCandidates(MergeStatus& status, bool constrictHasMask, uint16_t hasMask,
+    void findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHasMask, uint16_t hasMask,
                         uint16_t newHasMask, api::ApplyBucketDiffCommand& cmd)
     {
         uint32_t chunkSize = 0;
         for (const auto& entry : status.diff) {
-            if (constrictHasMask && entry._hasMask != hasMask) {
+            uint16_t entry_has_mask = (entry._hasMask & active_nodes_mask);
+            if ((entry_has_mask == 0u) ||
+                (constrictHasMask && (entry_has_mask != hasMask))) {
                 continue;
             }
             chunkSize += entry._bodySize + entry._headerSize;
             cmd.getDiff().emplace_back(entry);
             if (constrictHasMask) {
                 cmd.getDiff().back()._entry._hasMask = newHasMask;
+            } else {
+                cmd.getDiff().back()._entry._hasMask = entry_has_mask;
             }
         }
     }
@@ -690,52 +690,70 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     LOG(spam, "Processing merge of %s. %u entries left to merge.",
         bucket.toString().c_str(), (uint32_t) status.diff.size());
     std::shared_ptr<api::ApplyBucketDiffCommand> cmd;
+    std::map<uint16_t, uint32_t> counts;
 
-    // If we still have a source only node, eliminate that one from the
-    // merge.
-    while (status.nodeList.back().sourceOnly) {
-        std::vector<api::MergeBucketCommand::Node> nodes;
-        for (const auto& node : status.nodeList) {
-            if (!node.sourceOnly) {
-                nodes.emplace_back(node);
+    uint16_t active_nodes_mask;
+    do {
+        active_nodes_mask = (1u << status.nodeList.size()) - 1;
+        // If we still have a source only node, eliminate that one from the
+        // merge.
+        while (status.nodeList.back().sourceOnly) {
+            std::vector<api::MergeBucketCommand::Node> nodes;
+            for (const auto& node : status.nodeList) {
+                if (!node.sourceOnly) {
+                    nodes.emplace_back(node);
+                }
+            }
+            nodes.push_back(status.nodeList.back());
+            assert(nodes.size() > 1);
+
+            cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes);
+            cmd->setAddress(createAddress(_clusterName, nodes[1].index));
+            findCandidates(status,
+                           active_nodes_mask,
+                           true,
+                           1 << (status.nodeList.size() - 1),
+                           1 << (nodes.size() - 1),
+                           *cmd);
+            if (cmd->getDiff().size() != 0) {
+                break;
+            }
+            cmd.reset();
+            // If we found no data to merge from the last source only node,
+            // remove it and retry.
+            status.nodeList.pop_back();
+            active_nodes_mask = (1u << status.nodeList.size()) - 1;
+            // If only one node left in the merge, return ok.
+            if (status.nodeList.size() == 1) {
+                LOG(debug, "Done with merge of %s as there is only one node "
+                    "that is not source only left in the merge.",
+                    bucket.toString().c_str());
+                return status.reply;
             }
         }
-        nodes.push_back(status.nodeList.back());
-        assert(nodes.size() > 1);
-
-        cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes);
-        cmd->setAddress(createAddress(_clusterName, nodes[1].index));
-        findCandidates(status,
-                       true,
-                       1 << (status.nodeList.size() - 1),
-                       1 << (nodes.size() - 1),
-                       *cmd);
-        if (cmd->getDiff().size() != 0) break;
-        cmd.reset();
-        // If we found no data to merge from the last source only node,
-        // remove it and retry. (Clear it out of the hasmask such that we
-        // can match hasmask with operator==)
-        status.nodeList.pop_back();
-        uint16_t mask = ~(1 << status.nodeList.size());
-        for (auto& e : status.diff) {
-            e._hasMask &= mask;
+        if (!cmd) {
+            // If we did not have a source only node, check if we have a path with
+            // many documents within it that we'll merge separately
+            counts.clear();
+            for (const auto& e : status.diff) {
+                ++counts[e._hasMask & active_nodes_mask];
+            }
+            if (counts.size() == 1 &&
+                counts.begin()->first == 0u &&
+                status.nodeList.size() < status.full_node_list.size()) {
+                // Diff not empty, but none of the remaining nodes have any merge entries.
+                // Bring back source only nodes that might still have merge entries.
+                status.nodeList = status.full_node_list;
+                continue;
+            }
         }
-        // If only one node left in the merge, return ok.
-        if (status.nodeList.size() == 1) {
-            LOG(debug, "Done with merge of %s as there is only one node "
-                       "that is not source only left in the merge.",
-                bucket.toString().c_str());
-            return status.reply;
-        }
-    }
-    // If we did not have a source only node, check if we have a path with
-    // many documents within it that we'll merge separately
+        break;
+    } while (true);
     if (!cmd) {
-        std::map<uint16_t, uint32_t> counts;
-        for (const auto& e : status.diff) {
-            ++counts[e._hasMask];
-        }
         for (const auto& e : counts) {
+            if (e.first == 0u) {
+                continue;
+            }
             if (e.second >= uint32_t(_commonMergeChainOptimalizationMinimumSize)
                 || counts.size() == 1)
             {
@@ -769,7 +787,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
                 cmd->setAddress(createAddress(_clusterName, nodes[1].index));
                 // Add all the metadata, and thus use big limit. Max
                 // data to fetch parameter will control amount added.
-                findCandidates(status, true, e.first, newMask, *cmd);
+                findCandidates(status, active_nodes_mask, true, e.first, newMask, *cmd);
                 break;
             }
         }
@@ -780,7 +798,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     if ( ! cmd ) {
         cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), status.nodeList);
         cmd->setAddress(createAddress(_clusterName, status.nodeList[1].index));
-        findCandidates(status, false, 0, 0, *cmd);
+        findCandidates(status, active_nodes_mask, false, 0, 0, *cmd);
     }
     cmd->setPriority(status.context.getPriority());
     cmd->setTimeout(status.timeout);
@@ -868,6 +886,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
             _clock, cmd.getLoadType(),
             cmd.getPriority(), cmd.getTrace().getLevel());
     _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
+    s->full_node_list = cmd.getNodes();
     s->nodeList = cmd.getNodes();
     s->maxTimestamp = Timestamp(cmd.getMaxTimestamp());
     s->timeout = cmd.getTimeout();

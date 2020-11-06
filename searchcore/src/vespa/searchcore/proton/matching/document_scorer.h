@@ -2,24 +2,28 @@
 
 #pragma once
 
+#include "i_match_loop_communicator.h"
 #include <vespa/searchlib/fef/rank_program.h>
-#include <vespa/searchlib/queryeval/hitcollector.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace proton::matching {
 
 /**
  * Class used to calculate the rank score for a set of documents using
- * a rank program for calculation and a search iterator for unpacking match data.
- * The calculateScore() function is always called in increasing docId order.
+ * a rank program for calculation and a search iterator for unpacking
+ * match data. The doScore function must be called with increasing
+ * docid.
  */
-class DocumentScorer : public search::queryeval::HitCollector::DocumentScorer
+class DocumentScorer
 {
 private:
     search::queryeval::SearchIterator &_searchItr;
     search::fef::LazyValue _scoreFeature;
 
 public:
+    using TaggedHit = IMatchLoopCommunicator::TaggedHit;
+    using TaggedHits = IMatchLoopCommunicator::TaggedHits;
+
     DocumentScorer(search::fef::RankProgram &rankProgram,
                    search::queryeval::SearchIterator &searchItr);
 
@@ -28,7 +32,8 @@ public:
         return _scoreFeature.as_number(docId);
     }
 
-    virtual search::feature_t score(uint32_t docId) override;
+    // annotate hits with rank score, may change order
+    void score(TaggedHits &hits);
 };
 
 }

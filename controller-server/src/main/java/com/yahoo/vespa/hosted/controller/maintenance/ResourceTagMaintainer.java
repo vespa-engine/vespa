@@ -7,9 +7,11 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -31,7 +33,7 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
                 .ofCloud(CloudName.from("aws"))
                 .reachable()
                 .zones().forEach(zone -> {
-                    Map<HostName, ApplicationId> applicationOfHosts = getTenantOfParentHosts(zone.getId());
+                    Map<HostName, Optional<ApplicationId>> applicationOfHosts = getTenantOfParentHosts(zone.getId());
                     int taggedResources = resourceTagger.tagResources(zone, applicationOfHosts);
                     if (taggedResources > 0)
                         log.log(Level.INFO, "Tagged " + taggedResources + " resources in " + zone.getId());
@@ -39,14 +41,14 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
         return true;
     }
 
-    private Map<HostName, ApplicationId> getTenantOfParentHosts(ZoneId zoneId) {
+    private Map<HostName, Optional<ApplicationId>> getTenantOfParentHosts(ZoneId zoneId) {
         return controller().serviceRegistry().configServer().nodeRepository()
                 .list(zoneId)
                 .stream()
-                .filter(node -> node.parentHostname().isPresent() && node.owner().isPresent())
+                .filter(node -> node.type().isHost())
                 .collect(Collectors.toMap(
-                        node -> node.parentHostname().get(),
-                        node -> node.owner().get(),
+                        Node::hostname,
+                        Node::exclusiveTo,
                         (node1, node2) -> node1
                 ));
     }

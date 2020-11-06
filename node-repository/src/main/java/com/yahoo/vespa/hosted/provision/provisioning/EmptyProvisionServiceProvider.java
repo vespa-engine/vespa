@@ -35,7 +35,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
     private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository repository) { return node.resources(); }
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository repository, boolean exclusive) { return node.resources(); }
 
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) { return flavor.resources(); }
@@ -44,10 +44,10 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
         public NodeResources requestToReal(NodeResources resources, boolean exclusive) { return resources; }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources) { return resources; }
+        public NodeResources realToRequest(NodeResources resources, boolean exclusive) { return resources; }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
+        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
     }
 

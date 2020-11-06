@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.google.common.io.ByteStreams;
@@ -45,13 +45,6 @@ public class CompressedFileReference {
                 recurseDepth,
                 (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
                 .map(Path::toFile).collect(Collectors.toList()), outputFile);
-    }
-
-    public static byte[] compress(File directory) throws IOException {
-        return compress(directory, Files.find(Paths.get(directory.getAbsolutePath()),
-                                              recurseDepth,
-                                              (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
-                .map(Path::toFile).collect(Collectors.toList()));
     }
 
     public static byte[] compress(File baseDir, List<File> inputFiles) throws IOException {

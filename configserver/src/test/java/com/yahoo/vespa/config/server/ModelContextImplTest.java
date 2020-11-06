@@ -87,6 +87,9 @@ public class ModelContextImplTest {
         assertEquals(new Version(7), context.modelVespaVersion());
         assertEquals(new Version(8), context.wantedNodeVespaVersion());
         assertEquals(1.0, context.properties().defaultTermwiseLimit(), 0.0);
+        assertFalse(context.properties().useAsyncMessageHandlingOnSchedule());
+        assertEquals(0, context.properties().contentNodeBucketDBStripeBits());
+        assertEquals(0x400000, context.properties().mergeChunkSize());
     }
 
 }

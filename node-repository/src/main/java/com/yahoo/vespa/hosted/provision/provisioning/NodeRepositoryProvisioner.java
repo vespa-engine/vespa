@@ -102,12 +102,12 @@ public class NodeRepositoryProvisioner implements Provisioner {
         int groups;
         NodeResources resources;
         NodeSpec nodeSpec;
-        if ( requested.type() == NodeType.tenant) {
+        if (requested.type() == NodeType.tenant) {
             ClusterResources target = decideTargetResources(application, cluster, requested);
             int nodeCount = capacityPolicies.decideSize(target.nodes(), requested, cluster, application);
             groups = Math.min(target.groups(), nodeCount); // cannot have more groups than nodes
             resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested, cluster);
-            boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
+            boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
             nodeSpec = NodeSpec.from(nodeCount, resources, exclusive, requested.canFail());
             logIfDownscaled(target.nodes(), nodeCount, cluster, logger);
         }
@@ -168,7 +168,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         AllocatableClusterResources currentResources =
                 firstDeployment // start at min, preserve current resources otherwise
                 ? new AllocatableClusterResources(requested.minResources(), clusterSpec.type(), clusterSpec.isExclusive(), nodeRepository)
-                : new AllocatableClusterResources(nodes, nodeRepository);
+                : new AllocatableClusterResources(nodes, nodeRepository, clusterSpec.isExclusive());
         return within(Limits.of(requested), clusterSpec.isExclusive(), currentResources, firstDeployment);
     }
 
@@ -211,7 +211,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
-                                   nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository),
+                                   nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository, node.allocation().get().membership().cluster().isExclusive()),
                                    node.flavor().resources(),
                                    requestedResources,
                                    nodeAllocation.membership(),

@@ -6,6 +6,7 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
+import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.command.UpdateContainerCmd;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
@@ -90,15 +91,15 @@ public class DockerEngine implements ContainerEngine {
                 scheduledPulls.add(image);
 
                 logger.log(Level.INFO, "Starting download of " + image.asString());
+                PullImageCmd pullCmd = dockerClient.pullImageCmd(image.asString());
                 if (!registryCredentials.equals(RegistryCredentials.none)) {
+                    logger.log(Level.INFO, "Authenticating with " + registryCredentials.registryAddress());
                     AuthConfig authConfig = new AuthConfig().withUsername(registryCredentials.username())
                                                             .withPassword(registryCredentials.password())
                                                             .withRegistryAddress(registryCredentials.registryAddress());
-                    dockerClient.authCmd()
-                                .withAuthConfig(authConfig)
-                                .exec();
+                    pullCmd = pullCmd.withAuthConfig(authConfig);
                 }
-                dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+                pullCmd.exec(new ImagePullCallback(image));
                 return true;
             }
         } catch (RuntimeException e) {

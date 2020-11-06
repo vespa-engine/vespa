@@ -75,8 +75,8 @@ public class CapacityPolicies {
      * Whether or not the nodes requested can share physical host with other applications.
      * A security feature which only makes sense for prod.
      */
-    public boolean decideExclusivity(boolean requestedExclusivity) {
-        return requestedExclusivity && zone.environment() == Environment.prod;
+    public boolean decideExclusivity(Capacity capacity, boolean requestedExclusivity) {
+        return requestedExclusivity && (capacity.isRequired() || zone.environment() == Environment.prod);
     }
 
     /**

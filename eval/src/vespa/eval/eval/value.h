@@ -103,6 +103,9 @@ public:
     static const ValueType &shared_type() { return _type; }
 };
 
+extern template class ScalarValue<double>;
+extern template class ScalarValue<float>;
+
 using DoubleValue = ScalarValue<double>;
 
 /**

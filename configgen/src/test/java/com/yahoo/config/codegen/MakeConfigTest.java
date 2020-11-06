@@ -51,8 +51,8 @@ public class MakeConfigTest {
         assertEquals(p.destDir.getAbsolutePath(), dest.getAbsolutePath());
         assertTrue(p.dumpTree);
         assertTrue(p.generateFrameworkCode);
-        assertEquals(p.specFiles.length, 1);
-        assertEquals(p.specFiles[0].getAbsolutePath(), new File("src/test/resources/configgen.allfeatures.def").getAbsolutePath());
+        assertEquals(p.specFiles.size(), 1);
+        assertEquals(p.specFiles.get(0).getAbsolutePath(), new File("src/test/resources/configgen.allfeatures.def").getAbsolutePath());
         
         System.setProperty("config.dumpTree", "false");
         System.setProperty("config.useFramework", "false");
@@ -62,7 +62,7 @@ public class MakeConfigTest {
         assertEquals(p.destDir.getAbsolutePath(), dest.getAbsolutePath());
         assertFalse(p.dumpTree);
         assertFalse(p.generateFrameworkCode);
-        assertEquals(p.specFiles.length, 2);
+        assertEquals(p.specFiles.size(), 2);
     }
 
     @Test

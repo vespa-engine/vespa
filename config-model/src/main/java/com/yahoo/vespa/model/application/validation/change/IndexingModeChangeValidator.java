@@ -1,22 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
+import com.yahoo.vespa.model.search.SearchNode;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Returns any change to the indexing mode of a cluster.
  *
  * @author hmusum
+ * @author bjorncs
  */
 public class IndexingModeChangeValidator implements ChangeValidator {
 
@@ -27,31 +35,65 @@ public class IndexingModeChangeValidator implements ChangeValidator {
         for (Map.Entry<String, ContentCluster> currentEntry : currentModel.getContentClusters().entrySet()) {
             ContentCluster nextCluster = nextModel.getContentClusters().get(currentEntry.getKey());
             if (nextCluster == null) continue;
-
-            Optional<ConfigChangeAction> change = validateContentCluster(currentEntry.getValue(), nextCluster, overrides, now);
-            if (change.isPresent())
-                actions.add(change.get());
+            actions.addAll(validateContentCluster(currentEntry.getValue(), nextCluster, overrides, now));
         }
         return actions;
     }
 
-    private Optional<ConfigChangeAction> validateContentCluster(ContentCluster currentCluster, ContentCluster nextCluster,
-                                                                ValidationOverrides overrides, Instant now) {
-        boolean currentClusterIsIndexed = currentCluster.getSearch().hasIndexedCluster();
-        boolean nextClusterIsIndexed = nextCluster.getSearch().hasIndexedCluster();
-
-        if (currentClusterIsIndexed == nextClusterIsIndexed) return Optional.empty();
-
-        return Optional.of(VespaRefeedAction.of(currentCluster.id(),
-                                                ValidationId.indexModeChange.value(),
-                                                overrides,
-                                                "Cluster '" + currentCluster.getName() + "' changed indexing mode from '" +
-                                                indexingMode(currentClusterIsIndexed) + "' to '" + indexingMode(nextClusterIsIndexed) + "'", 
-                                                now));
+    private static List<ConfigChangeAction> validateContentCluster(
+            ContentCluster currentCluster, ContentCluster nextCluster, ValidationOverrides overrides, Instant now) {
+        List<ConfigChangeAction> actions = new ArrayList<>();
+        ContentSearchCluster currentSearchCluster = currentCluster.getSearch();
+        ContentSearchCluster nextSearchCluster = nextCluster.getSearch();
+        findDocumentTypesWithActionableIndexingModeChange(
+                actions, overrides, nextCluster, now,
+                toDocumentTypeNames(currentSearchCluster.getDocumentTypesWithStreamingCluster()),
+                toDocumentTypeNames(nextSearchCluster.getDocumentTypesWithIndexedCluster()),
+                "streaming", "indexed");
+        findDocumentTypesWithActionableIndexingModeChange(
+                actions, overrides, nextCluster, now,
+                toDocumentTypeNames(currentSearchCluster.getDocumentTypesWithIndexedCluster()),
+                toDocumentTypeNames(nextSearchCluster.getDocumentTypesWithStreamingCluster()),
+                "indexed", "streaming");
+        findDocumentTypesWithActionableIndexingModeChange(
+                actions, overrides, nextCluster, now,
+                toDocumentTypeNames(currentSearchCluster.getDocumentTypesWithStoreOnly()),
+                toDocumentTypeNames(nextSearchCluster.getDocumentTypesWithIndexedCluster()),
+                "store-only", "indexed");
+        findDocumentTypesWithActionableIndexingModeChange(
+                actions, overrides, nextCluster, now,
+                toDocumentTypeNames(currentSearchCluster.getDocumentTypesWithIndexedCluster()),
+                toDocumentTypeNames(nextSearchCluster.getDocumentTypesWithStoreOnly()),
+                "indexed", "store-only");
+        return actions;
     }
 
-    private String indexingMode(boolean isIndexed) {
-        return isIndexed ? "indexed" : "streaming";
+    private static void findDocumentTypesWithActionableIndexingModeChange(
+            List<ConfigChangeAction> actions, ValidationOverrides overrides, ContentCluster nextCluster, Instant now,
+            Set<String> currentTypes, Set<String> nextTypes, String currentIndexMode, String nextIndexingMode) {
+        for (String type : nextTypes) {
+            if (currentTypes.contains(type)) {
+                List<ServiceInfo> services = nextCluster.getSearch().getSearchNodes().stream()
+                        .map(SearchNode::getServiceInfo)
+                        .collect(Collectors.toList());
+                actions.add(VespaReindexAction.of(
+                        nextCluster.id(),
+                        ValidationId.indexModeChange.value(),
+                        overrides,
+                        String.format(
+                                "Document type '%s' in cluster '%s' changed indexing mode from '%s' to '%s'",
+                                type, nextCluster.getName(), currentIndexMode, nextIndexingMode),
+                        services,
+                        type,
+                        now));
+            }
+        }
+    }
+
+    private static Set<String> toDocumentTypeNames(List<NewDocumentType> types) {
+        return types.stream()
+                .map(type -> type.getFullName().getName())
+                .collect(toSet());
     }
 
 }

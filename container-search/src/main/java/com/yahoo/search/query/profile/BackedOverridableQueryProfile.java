@@ -22,7 +22,7 @@ import java.util.Map;
 public class BackedOverridableQueryProfile extends OverridableQueryProfile implements Cloneable {
 
     /** The backing read only query profile, or null if this is not backed */
-    private QueryProfile backingProfile;
+    private final QueryProfile backingProfile;
 
     /**
      * Creates an overridable profile from the given backing profile. The backing profile will never be
@@ -95,16 +95,16 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
     }
 
     @Override
-    protected void visitInherited(boolean allowContent,QueryProfileVisitor visitor,DimensionBinding dimensionBinding, QueryProfile owner) {
-        super.visitInherited(allowContent,visitor,dimensionBinding, owner);
+    protected void visitInherited(boolean allowContent, QueryProfileVisitor visitor, DimensionBinding dimensionBinding, QueryProfile owner) {
+        super.visitInherited(allowContent, visitor, dimensionBinding, owner);
         if (visitor.isDone()) return;
-        backingProfile.visitInherited(allowContent,visitor,dimensionBinding,owner);
+        backingProfile.visitInherited(allowContent, visitor, dimensionBinding,owner);
     }
 
     /** Returns a value from the content of this: The value in this, or the value from the backing if not set in this */
     protected Object getContent(String localKey) {
-        Object value=super.getContent(localKey);
-        if (value!=null) return value;
+        Object value = super.getContent(localKey);
+        if (value != null) return value;
         return backingProfile.getContent(localKey);
     }
 
@@ -125,7 +125,7 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
 
     @Override
     public String toString() {
-        return "overridable wrapper of " + backingProfile.toString();
+        return "overridable wrapper of " + backingProfile;
     }
 
     @Override

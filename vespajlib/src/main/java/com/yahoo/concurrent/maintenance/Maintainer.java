@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  * @author mpolden
+ * @author jonmv
  */
 public abstract class Maintainer implements Runnable, AutoCloseable {
 

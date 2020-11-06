@@ -279,7 +279,6 @@ public class ContainerClusterTest {
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
-                        .properties(new TestProperties().setJettyThreadpoolSizeFactor(4).setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
                         .modelHostProvisioner(hostProvisioner)
                         .build());
@@ -291,8 +290,8 @@ public class ContainerClusterTest {
         root.freezeModelTopology();
 
         ServerConfig cfg = root.getConfig(ServerConfig.class, "container0/c1/DefaultHttpServer");
-        assertEquals(64, cfg.maxWorkerThreads());
-        assertEquals(64, cfg.minWorkerThreads());
+        assertEquals(28, cfg.maxWorkerThreads());
+        assertEquals(28, cfg.minWorkerThreads());
     }
 
     @Test

@@ -39,45 +39,41 @@ public class Autoscaler {
      * without taking min and max limits into account.
      *
      * @param clusterNodes the list of all the active nodes in a cluster
-     * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
+     * @return scaling advice for this cluster
      */
-    public Optional<ClusterResources> suggest(Cluster cluster, List<Node> clusterNodes) {
-        return autoscale(cluster, clusterNodes, Limits.empty(), cluster.exclusive())
-                       .map(AllocatableClusterResources::toAdvertisedClusterResources);
-
+    public Advice suggest(Cluster cluster, List<Node> clusterNodes) {
+        return autoscale(cluster, clusterNodes, Limits.empty(), cluster.exclusive());
     }
 
     /**
      * Autoscale a cluster by load. This returns a better allocation (if found) inside the min and max limits.
      *
      * @param clusterNodes the list of all the active nodes in a cluster
-     * @return a new suggested allocation for this cluster, or empty if it should not be rescaled at this time
+     * @return scaling advice for this cluster
      */
-    public Optional<ClusterResources> autoscale(Cluster cluster, List<Node> clusterNodes) {
-        if (cluster.minResources().equals(cluster.maxResources())) return Optional.empty(); // Shortcut
-        return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive())
-                       .map(AllocatableClusterResources::toAdvertisedClusterResources);
+    public Advice autoscale(Cluster cluster, List<Node> clusterNodes) {
+        if (cluster.minResources().equals(cluster.maxResources())) return Advice.none(); // Shortcut
+        return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive());
     }
 
-    private Optional<AllocatableClusterResources> autoscale(Cluster cluster,
-                                                            List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        if (unstable(clusterNodes, nodeRepository)) return Optional.empty();
+    private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
+        if (unstable(clusterNodes, nodeRepository)) return Advice.none();
 
-        AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
+        AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository, cluster.exclusive());
 
         ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
         Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
         Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
         Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk);
-        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Optional.empty();
+        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Advice.none();
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits, exclusive);
-        if (bestAllocation.isEmpty()) return Optional.empty();
-        if (similar(bestAllocation.get(), currentAllocation)) return Optional.empty();
-        return bestAllocation;
+        if (bestAllocation.isEmpty()) return Advice.dontScale();
+        if (similar(bestAllocation.get(), currentAllocation)) return Advice.dontScale();
+        return Advice.scaleTo(bestAllocation.get().toAdvertisedClusterResources());
     }
 
     /** Returns true if both total real resources and total cost are similar */
@@ -123,6 +119,34 @@ public class Autoscaler {
             return true;
 
         return false;
+    }
+
+    public static class Advice {
+
+        private final boolean present;
+        private final Optional<ClusterResources> target;
+
+        private Advice(Optional<ClusterResources> target, boolean present) {
+            this.target = target;
+            this.present = present;
+        }
+
+        /**
+         * Returns the autoscaling target that should be set by this advice.
+         * This is empty if the advice is to keep the current allocation.
+         */
+        public Optional<ClusterResources> target() { return target; }
+
+        /** True if this does not provide any advice */
+        public boolean isEmpty() { return ! present; }
+
+        /** True if this provides advice (which may be to keep the current allocation) */
+        public boolean isPresent() { return present; }
+
+        private static Advice none() { return new Advice(Optional.empty(), false); }
+        private static Advice dontScale() { return new Advice(Optional.empty(), true); }
+        private static Advice scaleTo(ClusterResources target) { return new Advice(Optional.of(target), true); }
+
     }
 
 }

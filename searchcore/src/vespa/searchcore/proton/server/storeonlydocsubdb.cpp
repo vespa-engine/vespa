@@ -44,7 +44,6 @@ using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
-using proton::documentmetastore::LidReuseDelayerConfig;
 
 namespace proton {
 
@@ -118,6 +117,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _tlsSyncer(ctx._writeService.master(), ctx._getSerialNum, ctx._tlSyncer),
       _dmsFlushTarget(),
       _dmsShrinkTarget(),
+      _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _subDbId(cfg._subDbId),
       _subDbType(cfg._subDbType),
       _fileHeaderContext(*this, ctx._fileHeaderContext, _docTypeName, _baseDir),
@@ -338,8 +338,8 @@ StoreOnlyFeedView::Context
 StoreOnlyDocSubDB::getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot)
 {
     return StoreOnlyFeedView::Context(getSummaryAdapter(), configSnapshot.getSchemaSP(), _metaStoreCtx,
-                                      *_gidToLidChangeHandler, configSnapshot.getDocumentTypeRepoSP(),
-                                      _writeService, LidReuseDelayerConfig(configSnapshot));
+                                      configSnapshot.getDocumentTypeRepoSP(), _pendingLidsForCommit,
+                                      *_gidToLidChangeHandler, _writeService);
 }
 
 StoreOnlyFeedView::PersistentParams
@@ -354,7 +354,7 @@ void
 StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const SessionManager::SP &sessionManager)
 {
     assert(_writeService.master().isCurrentThread());
-    _iSearchView.set(ISearchHandler::SP(new EmptySearchView));
+    _iSearchView.set(std::make_shared<EmptySearchView>());
     {
         std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(configSnapshot);
@@ -390,11 +390,11 @@ void
 StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
-    auto feedView = std::make_unique<StoreOnlyFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
+    auto feedView = std::make_shared<StoreOnlyFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
                                                         getFeedViewPersistentParams());
 
     // XXX: Not exception safe.
-    _iFeedView.set(StoreOnlyFeedView::SP(feedView.release()));
+    _iFeedView.set(std::move(feedView));
 }
 
 vespalib::string

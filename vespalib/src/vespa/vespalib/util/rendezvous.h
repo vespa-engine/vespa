@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <type_traits>
 #include <condition_variable>
 #include <vector>
 
@@ -18,7 +19,7 @@ namespace vespalib {
  * subclass needs to implement the mingle function to supply the
  * application logic.
  **/
-template <typename IN, typename OUT>
+template <typename IN, typename OUT, bool external_id = false>
 class Rendezvous
 {
 private:
@@ -35,6 +36,17 @@ private:
      * processing.
      **/
     virtual void mingle() = 0;
+
+    /**
+     * lock-free version for when there is only one thread meeting
+     * itself.
+     **/
+    void meet_self(IN &input, OUT &output);
+
+    /**
+     * general version for when there are multiple threads meeting.
+     **/
+    void meet_others(IN &input, OUT &output, size_t my_id, std::unique_lock<std::mutex> guard);
 
 protected:
     /**
@@ -81,7 +93,22 @@ public:
      * @return output parameter for a single thread
      * @param input input parameter for a single thread
      **/
-    OUT rendezvous(IN input);
+    template <bool ext_id = external_id>
+    typename std::enable_if<!ext_id,OUT>::type rendezvous(IN input);
+
+    /**
+     * Called by individual threads to synchronize execution and share
+     * state with the mingle function where each caller has a
+     * pre-defined participation id (enable by setting the external_id
+     * template flag).
+     *
+     * @return output parameter for a single thread
+     * @param input input parameter for a single thread
+     * @param my_id participant id for this thread (must be in range and
+     *              not conflicting with other threads)
+     **/
+    template <bool ext_id = external_id>
+    typename std::enable_if<ext_id,OUT>::type rendezvous(IN input, size_t my_id);
 };
 
 } // namespace vespalib

@@ -544,12 +544,12 @@ public class InternalStepRunner implements StepRunner {
 
 
     private String wantedPlatform(Node node) {
-        return node.wantedDockerImage().untagged() + ":" + node.wantedVersion();
+        return node.wantedDockerImage().repository() + ":" + node.wantedVersion();
     }
 
     private String currentPlatform(Node node) {
-        String currentRepo = node.currentDockerImage().untagged();
-        String wantedRepo = node.wantedDockerImage().untagged();
+        String currentRepo = node.currentDockerImage().repository();
+        String wantedRepo = node.wantedDockerImage().repository();
         return (currentRepo.equals(wantedRepo) ? "" : currentRepo + ":") + node.currentVersion();
     }
 
@@ -828,13 +828,14 @@ public class InternalStepRunner implements StepRunner {
     }
 
     static NodeResources testerResourcesFor(ZoneId zone, DeploymentInstanceSpec spec) {
-        return spec.steps().stream()
+        NodeResources nodeResources = spec.steps().stream()
                    .filter(step -> step.concerns(zone.environment()))
                    .findFirst()
                    .flatMap(step -> step.zones().get(0).testerFlavor())
                    .map(NodeResources::fromLegacyName)
                    .orElse(zone.region().value().contains("aws-") ?
                            DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES);
+        return nodeResources.with(NodeResources.DiskSpeed.any);
     }
 
     /** Returns the generated services.xml content for the tester application. */

@@ -12,13 +12,16 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
-import com.yahoo.vespa.filedistribution.FileReferenceDataBlob;
+import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
+import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -116,7 +119,7 @@ public class FileServer {
         log.log(Level.FINE, () -> "Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         boolean success = false;
         String errorDescription = "OK";
-        FileReferenceData fileData = FileReferenceDataBlob.empty(reference, file.getName());
+        FileReferenceData fileData = EmptyFileReferenceData.empty(reference, file.getName());
         try {
             fileData = readFileReferenceData(reference);
             success = true;
@@ -139,9 +142,9 @@ public class FileServer {
         File file = root.getFile(reference);
 
         if (file.isDirectory()) {
-            //TODO Here we should compress to file, but then we have to clean up too. Pending.
-            byte [] blob = CompressedFileReference.compress(file.getParentFile());
-            return new FileReferenceDataBlob(reference, file.getName(), FileReferenceData.Type.compressed, blob);
+            Path tempFile = Files.createTempFile("filereferencedata", reference.value());
+            File compressedFile = CompressedFileReference.compress(file.getParentFile(), tempFile.toFile());
+            return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), FileReferenceData.Type.compressed, compressedFile);
         } else {
             return new LazyFileReferenceData(reference, file.getName(), FileReferenceData.Type.file, file);
         }

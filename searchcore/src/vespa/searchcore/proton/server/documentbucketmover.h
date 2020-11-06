@@ -33,7 +33,7 @@ private:
     document::GlobalId              _lastGid;
     bool                            _lastGidValid;
 
-    void moveDocument(search::DocumentIdT lid,
+    bool moveDocument(search::DocumentIdT lid,
                       const document::GlobalId &gid,
                       storage::spi::Timestamp timestamp);
 
@@ -46,7 +46,7 @@ public:
                         IDocumentMoveHandler &handler,
                         BucketDBOwner &bucketDb);
     const document::BucketId &getBucket() const { return _bucket; }
-    void moveDocuments(size_t maxDocsToMove);
+    bool moveDocuments(size_t maxDocsToMove);
     void cancel() { setBucketDone(); }
     bool bucketDone() const { return _bucketDone; }
     const MaintenanceDocumentSubDB * getSource() const { return _source; }

@@ -17,8 +17,6 @@ struct Options : public vespalib::ProgramOptions {
     bool showSyntaxPage;
     std::string clusterName;
     std::string clusterState;
-    uint32_t diskCount;
-    std::string diskDistribution;
     uint32_t redundancy;
     std::string bucket;
     std::string upStates;
@@ -46,12 +44,8 @@ Options::Options(int argc, const char* const* argv)
               "Shows this help page");
     addOption("s clusterstate", clusterState, std::string(""),
               "The state of the cluster to calculate position in");
-    addOption("n diskcount", diskCount, uint32_t(0),
-              "The number of disks on each node");
     addOption("r redundancy", redundancy, uint32_t(2),
               "The redundancy to keep for each bucket");
-    addOption("diskdistribution", diskDistribution, std::string("MODULO_BID"),
-              "Disk distribution algorithm used");
     addOption("u upstates", upStates, std::string("uims"),
               "States to consider as up in ideal state calculations");
     addOption("i stdin", bucketsOnStdIn, false,
@@ -108,7 +102,6 @@ int run(int argc, char** argv) {
     }
 
     uint16_t redundancy(o.redundancy);
-    lib::Distribution::DiskDistribution diskDistribution(lib::Distribution::getDiskDistribution(o.diskDistribution));
     std::unique_ptr<lib::Distribution> distribution;
     lib::ClusterState clusterState(o.clusterState);
 
@@ -122,7 +115,6 @@ int run(int argc, char** argv) {
             std::unique_ptr<vespa::config::content::StorDistributionConfig> config = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(uri.getConfigId(), uri.getContext());
             redundancy = config->redundancy;
             distribution.reset(new lib::Distribution(*config));
-            diskDistribution = distribution->getDiskDistribution();
             if (o.verbose) {
                 std::cerr << "Using distribution config: '";
                 config::OstreamConfigWriter ocw(std::cerr);
@@ -144,7 +136,7 @@ int run(int argc, char** argv) {
                       << "\n";
         }
         lib::Distribution::ConfigWrapper config(lib::Distribution::getDefaultDistributionConfig(
-                    redundancy, clusterState.getNodeCount(lib::NodeType::DISTRIBUTOR), diskDistribution));
+                    redundancy, clusterState.getNodeCount(lib::NodeType::DISTRIBUTOR)));
         distribution.reset(new lib::Distribution(config));
         if (o.verbose) {
             std::cerr << "Using distribution config: '";

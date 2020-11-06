@@ -19,14 +19,17 @@ namespace proton {
 
 typedef IDocumentMetaStore::Iterator Iterator;
 
-void
+bool
 DocumentBucketMover::moveDocument(DocumentIdT lid,
                                   const document::GlobalId &gid,
                                   Timestamp timestamp)
 {
-    Document::SP doc(_source->retriever()->getFullDocument(lid).release());
+    if ( _source->lidNeedsCommit(lid) ) {
+        return false;
+    }
+    Document::SP doc(_source->retriever()->getFullDocument(lid));
     if (!doc || doc->getId().getGlobalId() != gid)
-        return; // Failed to retrieve document, removed or changed identity
+        return true; // Failed to retrieve document, removed or changed identity
     // TODO(geirst): what if doc is NULL?
     BucketId bucketId = _bucket.stripUnused();
     MoveOperation op(bucketId, timestamp, doc, DbDocumentId(_source->sub_db_id(), lid), _targetSubDbId);
@@ -37,6 +40,7 @@ DocumentBucketMover::moveDocument(DocumentIdT lid,
     _bucketDb->takeGuard()->cacheBucket(bucketId);
     _handler->handleMove(op, _limiter.beginOperation());
     _bucketDb->takeGuard()->uncacheBucket();
+    return true;
 }
 
 
@@ -93,15 +97,16 @@ public:
 
 }
 
-void DocumentBucketMover::setBucketDone() {
+void
+DocumentBucketMover::setBucketDone() {
     _bucketDone = true;
 }
 
-void
+bool
 DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
 {
     if (_bucketDone) {
-        return;
+        return true;
     }
     Iterator itr = (_lastGidValid ? _source->meta_store()->upperBound(_lastGid)
                     : _source->meta_store()->lowerBound(_bucket));
@@ -124,15 +129,19 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
             toMove.push_back(MoveKey(lid, metaData.getGid(), metaData.getTimestamp()));
             ++docsMoved;
         }
-        _lastGid = metaData.getGid();
+    }
+    bool done = (itr == end);
+    for (const MoveKey & key : toMove) {
+        if ( ! moveDocument(key._lid, key._gid, key._timestamp)) {
+            return false;
+        }
+        _lastGid = key._gid;
         _lastGidValid = true;
     }
-    if (itr == end) {
+    if (done) {
         setBucketDone();
     }
-    for (const MoveKey & key : toMove) {
-        moveDocument(key._lid, key._gid, key._timestamp);
-    }
+    return true;
 }
 
 

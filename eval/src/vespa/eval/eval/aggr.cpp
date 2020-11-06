@@ -34,12 +34,13 @@ AggrNames::AggrNames()
     : _name_aggr_map(),
       _aggr_name_map()
 {
-    add(Aggr::AVG,   "avg");
-    add(Aggr::COUNT, "count");
-    add(Aggr::PROD,  "prod");
-    add(Aggr::SUM,   "sum");
-    add(Aggr::MAX,   "max");
-    add(Aggr::MIN,   "min");
+    add(Aggr::AVG,    "avg");
+    add(Aggr::COUNT,  "count");
+    add(Aggr::PROD,   "prod");
+    add(Aggr::SUM,    "sum");
+    add(Aggr::MAX,    "max");
+    add(Aggr::MEDIAN, "median");
+    add(Aggr::MIN,    "min");
 }
 
 const vespalib::string *
@@ -82,7 +83,8 @@ std::vector<Aggr>
 Aggregator::list()
 {
     return std::vector<Aggr>({ Aggr::AVG, Aggr::COUNT, Aggr::PROD,
-                               Aggr::SUM, Aggr::MAX,   Aggr::MIN });
+                               Aggr::SUM, Aggr::MAX,   Aggr::MEDIAN,
+                               Aggr::MIN });
 }
 
 } // namespace vespalib::eval

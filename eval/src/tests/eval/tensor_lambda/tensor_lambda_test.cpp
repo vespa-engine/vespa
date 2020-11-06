@@ -4,6 +4,8 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_replace_type_function.h>
 #include <vespa/eval/tensor/dense/dense_cell_range_function.h>
@@ -40,6 +42,7 @@ std::ostream &operator<<(std::ostream &os, EvalMode eval_mode)
 }
 
 const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const ValueBuilderFactory &simple_factory = SimpleValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
@@ -59,7 +62,9 @@ template <typename T, typename F>
 void verify_impl(const vespalib::string &expr, const vespalib::string &expect, F &&inspect) {
     EvalFixture fixture(prod_engine, expr, param_repo, true);
     EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
+    EvalFixture simple_factory_fixture(simple_factory, expr, param_repo, false);
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
+    EXPECT_EQUAL(fixture.result(), simple_factory_fixture.result());
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expect, param_repo));
     auto info = fixture.find_all<T>();
@@ -208,6 +213,33 @@ TEST("require that type resolving also include nodes in the inner tensor lambda 
     auto symbol = nodes::as<nodes::Symbol>(lambda->lambda().root());
     ASSERT_TRUE(symbol != nullptr);
     EXPECT_EQUAL(types.get_type(*symbol).to_spec(), "double");
+}
+
+size_t count_nodes(const NodeTypes &types) {
+    size_t cnt = 0;
+    types.each([&](const auto &, const auto &){++cnt;});
+    return cnt;
+}
+
+TEST("require that type exporting also include nodes in the inner tensor lambda function") {
+    auto fun = Function::parse("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})");
+    NodeTypes types(*fun, {ValueType::from_spec("double")});
+    const auto &root = fun->root();
+    NodeTypes copy = types.export_types(root);
+    EXPECT_TRUE(copy.errors().empty());
+    EXPECT_EQUAL(count_nodes(types), count_nodes(copy));
+
+    auto lambda = nodes::as<nodes::TensorLambda>(root);
+    ASSERT_TRUE(lambda != nullptr);
+    NodeTypes outer = copy.export_types(lambda->lambda().root());
+    EXPECT_TRUE(outer.errors().empty());
+
+    auto inner_lambda = nodes::as<nodes::TensorLambda>(lambda->lambda().root().get_child(0));
+    ASSERT_TRUE(inner_lambda != nullptr);
+    NodeTypes inner = outer.export_types(inner_lambda->lambda().root());
+    EXPECT_TRUE(inner.errors().empty());
+    // [x, y, (x+y), a, (x+y)+a] are the 5 nodes:
+    EXPECT_EQUAL(count_nodes(inner), 5u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

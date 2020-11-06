@@ -18,8 +18,6 @@
 #include "ireplayconfig.h"
 #include "maintenancecontroller.h"
 #include "threading_service_config.h"
-#include "visibilityhandler.h"
-
 #include <vespa/metrics/updatehook.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
@@ -139,7 +137,6 @@ private:
     AttributeUsageFilter          _writeFilter;
     std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
     std::unique_ptr<FeedHandler>  _feedHandler;
-    VisibilityHandler             _visibility;
     DocumentSubDBCollection       _subDBs;
     MaintenanceController         _maintenanceController;
     ILidSpaceCompactionHandler::Vector _lidSpaceCompactionHandlers;
@@ -192,7 +189,6 @@ private:
      */
     void performDropFeedView(IFeedView::SP feedView);
     void performDropFeedView2(IFeedView::SP feedView);
-    void performDropFeedView3(IFeedView::SP feedView, uint32_t numRetries);
 
     /**
      * Implements IFeedHandlerOwner

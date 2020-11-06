@@ -14,11 +14,14 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
+import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 
 import java.net.URI;
 import java.security.Principal;
@@ -60,6 +63,7 @@ public class TenantSerializer {
     private static final String customerIdField = "customerId";
     private static final String productCodeField = "productCode";
     private static final String pemDeveloperKeysField = "pemDeveloperKeys";
+    private static final String tenantInfoField = "info";
 
     public Slime toSlime(Tenant tenant) {
         Slime slime = new Slime();
@@ -93,6 +97,7 @@ public class TenantSerializer {
         tenant.creator().ifPresent(creator -> root.setString(creatorField, creator.getName()));
         developerKeysToSlime(tenant.developerKeys(), root.setArray(pemDeveloperKeysField));
         toSlime(legacyBillingInfo, root.setObject(billingInfoField));
+        toSlime(tenant.info(), root);
     }
 
     private void developerKeysToSlime(BiMap<PublicKey, Principal> keys, Cursor array) {
@@ -133,7 +138,8 @@ public class TenantSerializer {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
         Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
-        return new CloudTenant(name, creator, developerKeys);
+        TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfoField));
+        return new CloudTenant(name, creator, developerKeys, info);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {
@@ -143,6 +149,71 @@ public class TenantSerializer {
                          new SimplePrincipal(keyObject.field("user").asString())));
 
         return keys.build();
+    }
+
+    TenantInfo tenantInfoFromSlime(Inspector infoObject) {
+        if (!infoObject.valid()) return TenantInfo.EMPTY;
+
+        return TenantInfo.EMPTY
+                .withName(infoObject.field("name").asString())
+                .withEmail(infoObject.field("email").asString())
+                .withWebsite(infoObject.field("website").asString())
+                .withContactName(infoObject.field("contactName").asString())
+                .withContactEmail(infoObject.field("contactEmail").asString())
+                .withInvoiceEmail(infoObject.field("invoiceEmail").asString())
+                .withAddress(tenantInfoAddressFromSlime(infoObject.field("address")))
+                .withBillingContact(tenantInfoBillingContactFromSlime(infoObject.field("billingContact")));
+    }
+
+    private TenantInfoAddress tenantInfoAddressFromSlime(Inspector addressObject) {
+        return TenantInfoAddress.EMPTY
+                .withAddressLines(addressObject.field("addressLines").asString())
+                .withPostalCodeOrZip(addressObject.field("postalCodeOrZip").asString())
+                .withCity(addressObject.field("city").asString())
+                .withStateRegionProvince(addressObject.field("stateRegionProvince").asString())
+                .withCountry(addressObject.field("country").asString());
+    }
+
+    private TenantInfoBillingContact tenantInfoBillingContactFromSlime(Inspector billingObject) {
+        return TenantInfoBillingContact.EMPTY
+                .withName(billingObject.field("name").asString())
+                .withEmail(billingObject.field("email").asString())
+                .withPhone(billingObject.field("phone").asString())
+                .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
+    }
+
+    void toSlime(TenantInfo info, Cursor parentCursor) {
+        if (info.isEmpty()) return;
+        Cursor infoCursor = parentCursor.setObject("info");
+        infoCursor.setString("name", info.name());
+        infoCursor.setString("email", info.email());
+        infoCursor.setString("website", info.website());
+        infoCursor.setString("invoiceEmail", info.invoiceEmail());
+        infoCursor.setString("contactName", info.contactName());
+        infoCursor.setString("contactEmail", info.contactEmail());
+        toSlime(info.address(), infoCursor);
+        toSlime(info.billingContact(), infoCursor);
+    }
+
+    private void toSlime(TenantInfoAddress address, Cursor parentCursor) {
+        if (address.isEmpty()) return;
+
+        Cursor addressCursor = parentCursor.setObject("address");
+        addressCursor.setString("addressLines", address.addressLines());
+        addressCursor.setString("postalCodeOrZip", address.postalCodeOrZip());
+        addressCursor.setString("city", address.city());
+        addressCursor.setString("stateRegionProvince", address.stateRegionProvince());
+        addressCursor.setString("country", address.country());
+    }
+
+    private void toSlime(TenantInfoBillingContact billingContact, Cursor parentCursor) {
+        if (billingContact.isEmpty()) return;
+
+        Cursor addressCursor = parentCursor.setObject("billingContact");
+        addressCursor.setString("name", billingContact.name());
+        addressCursor.setString("email", billingContact.email());
+        addressCursor.setString("phone", billingContact.phone());
+        toSlime(billingContact.address(), addressCursor);
     }
 
     private Optional<Contact> contactFrom(Inspector object) {
@@ -208,5 +279,4 @@ public class TenantSerializer {
             default: throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
     }
-
 }

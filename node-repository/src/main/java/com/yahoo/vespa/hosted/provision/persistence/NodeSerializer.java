@@ -400,6 +400,7 @@ public class NodeSerializer {
             case "rebooted" : return History.Event.Type.rebooted;
             case "osUpgraded" : return History.Event.Type.osUpgraded;
             case "firmwareVerified" : return History.Event.Type.firmwareVerified;
+            case "breakfixed" : return History.Event.Type.breakfixed;
         }
         throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
     }
@@ -422,6 +423,7 @@ public class NodeSerializer {
             case rebooted: return "rebooted";
             case osUpgraded: return "osUpgraded";
             case firmwareVerified: return "firmwareVerified";
+            case breakfixed: return "breakfixed";
         }
         throw new IllegalArgumentException("Serialized form of '" + nodeEventType + "' not defined");
     }

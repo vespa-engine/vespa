@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "teststorageapp.h"
+#include <vespa/storage/common/content_bucket_db_options.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config-load-type.h>
@@ -135,27 +136,25 @@ namespace {
 }
 
 TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
-    : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
+    : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(ContentBucketDbOptions()),
                      lib::NodeType::STORAGE, getIndexFromConfig(configId), configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
       _executor(vespalib::SequencedTaskExecutor::create(1))
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
-    ns.setDiskCount(1);
     _nodeStateUpdater.setReportedNodeState(ns);
 }
 
 TestServiceLayerApp::TestServiceLayerApp(NodeIndex index,
                                          vespalib::stringref configId)
-    : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(true), // TODO remove B-tree flag once default
+    : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(ContentBucketDbOptions()),
                      lib::NodeType::STORAGE, index, configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
       _executor(vespalib::SequencedTaskExecutor::create(1))
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
-    ns.setDiskCount(1);
     _nodeStateUpdater.setReportedNodeState(ns);
 }
 

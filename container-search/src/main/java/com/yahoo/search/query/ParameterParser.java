@@ -3,8 +3,6 @@ package com.yahoo.search.query;
 
 import com.yahoo.processing.IllegalInputException;
 
-import static com.yahoo.container.util.Util.quote;
-
 /**
  * Wrapper class to avoid code duplication of common parsing requirements.
  *
@@ -40,7 +38,7 @@ public class ParameterParser {
             double multiplier = parseUnit(time.substring(unitOffset));
             return (long) (measure * multiplier);
         } catch (RuntimeException e) {
-            throw new IllegalInputException("Error parsing " + quote(time), e);
+            throw new IllegalInputException("Error parsing '" + time + "'", e);
         }
     }
 
@@ -55,7 +53,7 @@ public class ParameterParser {
             }
         }
         if (unitOffset == 0) {
-            throw new IllegalInputException("Invalid number " + quote(time));
+            throw new IllegalInputException("Invalid number '" + time + "'");
         }
         return unitOffset;
     }

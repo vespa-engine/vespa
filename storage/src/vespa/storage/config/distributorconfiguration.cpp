@@ -44,6 +44,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _merge_operations_disabled(false),
       _use_weak_internal_read_consistency_for_client_gets(false),
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
+      _prioritize_global_bucket_merges(true),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 {
 }
@@ -94,6 +95,7 @@ DistributorConfiguration::configureMaintenancePriorities(
     mp.mergeMoveToIdealNode = cfg.priorityMergeMoveToIdealNode;
     mp.mergeOutOfSyncCopies = cfg.priorityMergeOutOfSyncCopies;
     mp.mergeTooFewCopies = cfg.priorityMergeTooFewCopies;
+    mp.mergeGlobalBuckets = cfg.priorityMergeGlobalBuckets;
     mp.activateNoExistingActive = cfg.priorityActivateNoExistingActive;
     mp.activateWithExistingActive = cfg.priorityActivateWithExistingActive;
     mp.deleteBucketCopy = cfg.priorityDeleteBucketCopy;
@@ -160,6 +162,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _merge_operations_disabled = config.mergeOperationsDisabled;
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
     _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
+    _prioritize_global_bucket_merges = config.prioritizeGlobalBucketMerges;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 

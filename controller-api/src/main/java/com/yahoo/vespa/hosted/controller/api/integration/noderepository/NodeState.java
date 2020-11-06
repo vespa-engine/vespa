@@ -11,6 +11,7 @@ public enum NodeState {
     dirty,
     failed,
     parked,
-    deprovisioned;
+    deprovisioned,
+    breakfixed
 
 }

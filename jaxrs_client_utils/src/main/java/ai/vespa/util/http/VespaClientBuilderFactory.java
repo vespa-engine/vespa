@@ -13,6 +13,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,8 +60,10 @@ public class VespaClientBuilderFactory implements AutoCloseable {
 
     private final TlsContext tlsContext = TransportSecurityUtils.createTlsContext().orElse(null);
     private final MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode();
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public ClientBuilder newBuilder() {
+        if (closed.get()) throw new IllegalStateException("Client already closed");
         ClientBuilder builder = ClientBuilder.newBuilder();
         setSslConfiguration(builder);
         return builder;
@@ -78,6 +81,7 @@ public class VespaClientBuilderFactory implements AutoCloseable {
 
     @Override
     public void close() {
+        if (closed.getAndSet(true)) throw new IllegalStateException("Client already closed");
         if (tlsContext != null) {
             tlsContext.close();
         }

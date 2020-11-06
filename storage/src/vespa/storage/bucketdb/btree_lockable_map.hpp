@@ -1,4 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#pragma once
+
 #include "btree_lockable_map.h"
 #include "generic_btree_bucket_database.hpp"
 #include <vespa/vespalib/btree/btreebuilder.h>
@@ -293,15 +295,13 @@ void BTreeLockableMap<T>::do_for_each_mutable_unordered(std::function<Decision(u
 
 template <typename T>
 void BTreeLockableMap<T>::do_for_each(std::function<Decision(uint64_t, const mapped_type&)> func,
-                                      const char* clientId,
-                                      const key_type& first,
-                                      const key_type& last)
+                                      const char* clientId)
 {
-    key_type key = first;
+    key_type key = 0;
     mapped_type val;
     std::unique_lock guard(_lock);
     while (true) {
-        if (findNextKey(key, val, clientId, guard) || key > last) {
+        if (findNextKey(key, val, clientId, guard)) {
             return;
         }
         Decision d(func(key, val));
@@ -363,6 +363,7 @@ public:
     std::vector<T> find_parents_and_self(const document::BucketId& bucket) const override;
     std::vector<T> find_parents_self_and_children(const document::BucketId& bucket) const override;
     void for_each(std::function<void(uint64_t, const T&)> func) const override;
+    std::unique_ptr<ConstIterator<const T&>> create_iterator() const override;
     [[nodiscard]] uint64_t generation() const noexcept override;
 };
 
@@ -401,6 +402,12 @@ BTreeLockableMap<T>::ReadGuardImpl::find_parents_self_and_children(const documen
 template <typename T>
 void BTreeLockableMap<T>::ReadGuardImpl::for_each(std::function<void(uint64_t, const T&)> func) const {
     _snapshot.template for_each<ByConstRef>(std::move(func));
+}
+
+template <typename T>
+std::unique_ptr<ConstIterator<const T&>>
+BTreeLockableMap<T>::ReadGuardImpl::create_iterator() const {
+    return _snapshot.create_iterator(); // TODO test
 }
 
 template <typename T>

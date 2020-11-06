@@ -43,8 +43,7 @@ Distribution::Distribution()
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
-      _ensurePrimaryPersisted(true),
-      _diskDistribution()
+      _ensurePrimaryPersisted(true)
 {
     auto config(getDefaultDistributionConfig(0, 0));
     vespalib::asciistream ost;
@@ -61,7 +60,6 @@ Distribution::Distribution(const Distribution& d)
       _redundancy(),
       _initialRedundancy(0),
       _ensurePrimaryPersisted(true),
-      _diskDistribution(),
       _serialized(d._serialized)
 {
     vespalib::asciistream ist(_serialized);
@@ -84,8 +82,7 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig 
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
-      _ensurePrimaryPersisted(true),
-      _diskDistribution()
+      _ensurePrimaryPersisted(true)
 {
     vespalib::asciistream ost;
     config::AsciiConfigWriter writer(ost);
@@ -101,7 +98,6 @@ Distribution::Distribution(const vespalib::string& serialized)
       _redundancy(),
       _initialRedundancy(0),
       _ensurePrimaryPersisted(true),
-      _diskDistribution(),
       _serialized(serialized)
 {
     vespalib::asciistream ist(_serialized);
@@ -120,27 +116,6 @@ Distribution::operator=(const Distribution& d)
 
 Distribution::~Distribution() = default;
 
-namespace {
-    using ConfigDiskDistribution = vespa::config::content::StorDistributionConfig::DiskDistribution;
-    Distribution::DiskDistribution fromConfig(ConfigDiskDistribution cfg) {
-        switch (cfg) {
-            case ConfigDiskDistribution::MODULO : return Distribution::MODULO;
-            case ConfigDiskDistribution::MODULO_BID : return Distribution::MODULO_BID;
-            case ConfigDiskDistribution::MODULO_INDEX : return Distribution::MODULO_INDEX;
-            case ConfigDiskDistribution::MODULO_KNUTH : return Distribution::MODULO_KNUTH;
-        }
-        LOG_ABORT("should not be reached");
-    }
-    ConfigDiskDistribution toConfig(Distribution::DiskDistribution cfg) {
-        switch (cfg) {
-            case Distribution::MODULO : return ConfigDiskDistribution::MODULO;
-            case Distribution::MODULO_BID : return ConfigDiskDistribution::MODULO_BID;
-            case Distribution::MODULO_INDEX : return ConfigDiskDistribution::MODULO_INDEX;
-            case Distribution::MODULO_KNUTH : return ConfigDiskDistribution::MODULO_KNUTH;
-        }
-        LOG_ABORT("should not be reached");
-    }
-}
 
 void
 Distribution::configure(const vespa::config::content::StorDistributionConfig& config)
@@ -195,7 +170,6 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     _redundancy = config.redundancy;
     _initialRedundancy = config.initialRedundancy;
     _ensurePrimaryPersisted = config.ensurePrimaryPersisted;
-    _diskDistribution = fromConfig(config.diskDistribution);
     _readyCopies = config.readyCopies;
     _activePerGroup = config.activePerLeafGroup;
     _distributorAutoOwnershipTransferOnWholeGroupDown
@@ -237,112 +211,9 @@ Distribution::getStorageSeed(
     return seed;
 }
 
-uint32_t
-Distribution::getDiskSeed(const document::BucketId& bucket, uint16_t nodeIndex) const
-{
-    switch (_diskDistribution) {
-        case DiskDistribution::MODULO:
-        {
-            uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                    & _distributionBitMasks[16]);
-            return 0xdeadbeef ^ seed;
-        }
-        case DiskDistribution::MODULO_INDEX:
-        {
-            uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                    & _distributionBitMasks[16]);
-            return 0xdeadbeef ^ seed ^ nodeIndex;
-        }
-        case DiskDistribution::MODULO_KNUTH:
-        {
-            uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                    & _distributionBitMasks[16]);
-            return 0xdeadbeef ^ seed ^ (1664525L * nodeIndex + 1013904223L);
-        }
-        case DiskDistribution::MODULO_BID:
-        {
-            uint64_t currentid = bucket.withoutCountBits();
-            char ordered[8];
-            ordered[0] = currentid >> (0*8);
-            ordered[1] = currentid >> (1*8);
-            ordered[2] = currentid >> (2*8);
-            ordered[3] = currentid >> (3*8);
-            ordered[4] = currentid >> (4*8);
-            ordered[5] = currentid >> (5*8);
-            ordered[6] = currentid >> (6*8);
-            ordered[7] = currentid >> (7*8);
-            uint32_t initval = (1664525 * nodeIndex + 0xdeadbeef);
-            return vespalib::BobHash::hash(ordered, 8, initval);
-        }
-    }
-    throw vespalib::IllegalStateException("Unknown disk distribution: "
-            + getDiskDistributionName(_diskDistribution), VESPA_STRLOC);
-}
-
-vespalib::string Distribution::getDiskDistributionName(DiskDistribution dist) {
-
-    return DistributionConfig::getDiskDistributionName(toConfig(dist));
-}
-
-Distribution::DiskDistribution
-Distribution::getDiskDistribution(vespalib::stringref name)  {
-    return fromConfig(DistributionConfig::getDiskDistribution(name));
-}
-
 void
 Distribution::print(std::ostream& out, bool, const std::string&) const {
     out << serialize();
-}
-
-// This function should only depend on disk distribution and node index. It is
-// assumed that any other change, for instance in hierarchical grouping, does
-// not change disk index on disk.
-uint16_t
-Distribution::getIdealDisk(const NodeState& nodeState, uint16_t nodeIndex,
-                           const document::BucketId& bucket,
-                           DISK_MODE flag) const
-{
-        // Catch special cases in a single if statement
-    if (nodeState.getDiskCount() < 2) {
-        if (nodeState.getDiskCount() == 1) return 0;
-        throw vespalib::IllegalArgumentException(
-                "Cannot pick ideal disk without knowing disk count.",
-                VESPA_STRLOC);
-    }
-    RandomGen randomizer(getDiskSeed(bucket, nodeIndex));
-    switch (_diskDistribution) {
-        case DiskDistribution::MODULO_BID:
-        {
-            double maxScore = 0.0;
-            uint16_t idealDisk = 0xffff;
-            for (uint32_t i=0, n=nodeState.getDiskCount(); i<n; ++i) {
-                double score = randomizer.nextDouble();
-                const DiskState& diskState(nodeState.getDiskState(i));
-                if (flag == BEST_AVAILABLE_DISK
-                    && !diskState.getState().oneOf("uis"))
-                {
-                    continue;
-                }
-                if (diskState.getCapacity() != 1.0) {
-                    score = std::pow(score,
-                                     1.0 / diskState.getCapacity().getValue());
-                }
-                if (score > maxScore) {
-                    maxScore = score;
-                    idealDisk = i;
-                }
-            }
-            if (idealDisk == 0xffff) {
-                throw vespalib::IllegalStateException(
-                        "There are no available disks.", VESPA_STRLOC);
-            }
-            return idealDisk;
-        }
-        default:
-        {
-            return randomizer.nextUint32() % nodeState.getDiskCount();
-        }
-    }
 }
 
 namespace {
@@ -579,12 +450,6 @@ Distribution::getIdealNodes(const NodeType& nodeType,
             // seed if the node that is out of order is illegal anyways.
             const NodeState& nodeState(clusterState.getNodeState(Node(nodeType, nodes[j])));
             if (!nodeState.getState().oneOf(upStates)) continue;
-            if (nodeState.isAnyDiskDown()) {
-                uint16_t idealDiskIndex(getIdealDisk(nodeState, nodes[j], bucket, IDEAL_DISK_EVEN_IF_DOWN));
-                if (nodeState.getDiskState(idealDiskIndex).getState() != State::UP) {
-                    continue;
-                }
-            }
             // Get the score from the random number generator. Make sure we
             // pick correct random number. Optimize for the case where we
             // pick in rising order.
@@ -624,7 +489,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
 }
 
 Distribution::ConfigWrapper
-Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount, DiskDistribution distr)
+Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount)
 {
     std::unique_ptr<vespa::config::content::StorDistributionConfigBuilder> config(new vespa::config::content::StorDistributionConfigBuilder());
     config->redundancy = redundancy;
@@ -636,7 +501,6 @@ Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCou
     for (uint16_t i=0; i<nodeCount; ++i) {
         config->group[0].nodes[i].index = i;
     }
-    config->diskDistribution = toConfig(distr);
     return ConfigWrapper(std::move(config));
 }
 

@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.BinaryOperator;
@@ -42,9 +41,9 @@ public class Upgrader extends ControllerMaintainer {
     private final CuratorDb curator;
     private final Random random;
 
-    public Upgrader(Controller controller, Duration interval, CuratorDb curator) {
+    public Upgrader(Controller controller, Duration interval) {
         super(controller, interval);
-        this.curator = Objects.requireNonNull(curator, "curator cannot be null");
+        this.curator = controller.curator();
         this.random = new Random(controller.clock().instant().toEpochMilli()); // Seed with clock for test determinism
     }
 

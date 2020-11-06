@@ -89,6 +89,7 @@ public class History {
             case failed:        return this.with(new Event(Event.Type.failed, agent, at));
             case dirty:         return this.with(new Event(Event.Type.deallocated, agent, at));
             case parked:        return this.with(new Event(Event.Type.parked, agent, at));
+            case breakfixed:    return this.with(new Event(Event.Type.breakfixed, agent, at));
             default:            return this;
         }
     }
@@ -145,7 +146,9 @@ public class History {
             // The node verified its firmware (whether this resulted in a reboot depends on the node model)
             firmwareVerified(false),
             // The node was failed
-            failed(false);
+            failed(false),
+            // The node was breakfixed
+            breakfixed(false);
             
             private final boolean applicationLevel;
             

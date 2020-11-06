@@ -7,6 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ConfigServerBootstrap;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -27,6 +28,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
     private final FileDistributionMaintainer fileDistributionMaintainer;
     private final SessionsMaintainer sessionsMaintainer;
     private final ApplicationPackageMaintainer applicationPackageMaintainer;
+    private final ReindexingMaintainer reindexingMaintainer;
 
     @Inject
     public ConfigServerMaintenance(ConfigServerBootstrap configServerBootstrap,
@@ -34,12 +36,13 @@ public class ConfigServerMaintenance extends AbstractComponent {
                                    ApplicationRepository applicationRepository,
                                    Curator curator,
                                    FlagSource flagSource,
-                                   Metric metric) {
+                                   ConfigConvergenceChecker convergence) {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
         tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, flagSource, defaults.defaultInterval, Clock.systemUTC());
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
         sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
         applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
+        reindexingMaintainer = new ReindexingMaintainer(applicationRepository, curator, flagSource, Duration.ofMinutes(30), convergence, Clock.systemUTC());
     }
 
     @Override
@@ -48,6 +51,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         sessionsMaintainer.close();
         applicationPackageMaintainer.close();
         tenantsMaintainer.close();
+        reindexingMaintainer.close();
     }
 
     /*

@@ -103,8 +103,7 @@ private:
     void fail_with_unresolvable_bucket_space(std::unique_ptr<documentapi::DocumentMessage> msg,
                                              const vespalib::string& error_message);
 
-    void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription,
-                            bool includeDiskDescription, bool useOldFormat) const;
+    void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription) const;
 
     static const uint64_t FORWARDED_MESSAGE = 0;
 

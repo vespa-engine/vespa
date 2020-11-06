@@ -2,9 +2,14 @@
 package com.yahoo.config.codegen;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Encapsulates data extracted from system properties.
@@ -14,10 +19,10 @@ import java.util.StringTokenizer;
 @SuppressWarnings("WeakerAccess") // Used by ConfigGenMojo
 public class MakeConfigProperties {
 
-    private static final List<String> legalLanguages = Arrays.asList("java", "cpp" );
+    private static final List<String> legalLanguages = List.of("java", "cpp" );
 
     final File destDir;
-    final File[] specFiles;
+    final List<File> specFiles;
     final String language;
     final String dirInRoot; // Where within fileroot to store generated class files
     final String javaPackagePrefix;
@@ -81,20 +86,19 @@ public class MakeConfigProperties {
         return inputLang;
     }
 
-    private static File[] checkSpecificationFiles(String spec) throws PropertyException {
-        if (spec == null)
-            throw new PropertyException("Missing property: config.spec.");
+    private static List<File> checkSpecificationFiles(String spec) throws PropertyException {
+        if (spec == null || spec.isEmpty())
+            throw new PropertyException("Missing property: config.spec");
 
-        StringTokenizer st = new StringTokenizer(spec, ",");
-        if (st.countTokens() == 0)
-            throw new PropertyException("Missing property: config.spec.");
-
-        File[] files = new File[st.countTokens()];
-        for (int i = 0; st.hasMoreElements(); i++) {
-            files[i] = new File((String) st.nextElement());
-            if (!files[i].isFile())
-                throw new PropertyException("Could not read file " + files[i].getPath());
+        var files = new ArrayList<File>();
+        for (String token : spec.split(",", -1)) {
+            File file = new File(token);
+            if (!file.isFile()) {
+                throw new PropertyException("Could not read file " + file);
+            }
+            files.add(file);
         }
+
         return files;
     }
 

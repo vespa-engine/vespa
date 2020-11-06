@@ -149,6 +149,7 @@ public class ApplicationRepositoryTest {
     public void prepareAndActivate() {
         PrepareResult result = prepareAndActivate(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getReindexActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
         Tenant tenant = applicationRepository.getTenant(applicationId());
@@ -164,6 +165,7 @@ public class ApplicationRepositoryTest {
         Instant deployTime = clock.instant();
         PrepareResult result = prepareAndActivate(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
+        assertTrue(result.configChangeActions().getReindexActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
         Tenant tenant = applicationRepository.getTenant(applicationId());

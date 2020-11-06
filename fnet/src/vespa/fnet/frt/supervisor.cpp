@@ -157,7 +157,8 @@ FRT_Supervisor::InvokeAsync(SchedulerPtr scheduler, FNET_Connection *conn, FRT_R
         adapter->ScheduleNow();
         return;
     }
-    if (timeout > 0.0) {
+    constexpr double ONE_YEAR_S = 3600*24*365;
+    if (timeout > 0.0 && timeout < ONE_YEAR_S) {
         adapter->Schedule(timeout);
     }
     conn->PostPacket(packet, chid);

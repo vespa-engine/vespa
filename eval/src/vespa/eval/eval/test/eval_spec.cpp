@@ -173,6 +173,7 @@ EvalSpec::add_tensor_operation_cases() {
     add_rule({"a", -1.0, 1.0}, "reduce(a,prod)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,sum)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,max)", [](double a){ return a; });
+    add_rule({"a", -1.0, 1.0}, "reduce(a,median)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,min)", [](double a){ return a; });
     add_expression({"a"}, "rename(a,x,y)");
     add_expression({"a"}, "rename(a,(x,y),(y,x))");

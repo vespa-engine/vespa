@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "eval_fixture.h"
 #include <vespa/eval/eval/make_tensor_function.h>
+#include <vespa/eval/eval/optimize_tensor_function.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string_short::fmt;
@@ -203,7 +204,7 @@ EvalFixture::EvalFixture(EngineOrFactory engine,
       _mutable_set(get_mutable(*_function, param_repo)),
       _plain_tensor_function(make_tensor_function(_engine, _function->root(), _node_types, _stash)),
       _patched_tensor_function(maybe_patch(allow_mutable, _plain_tensor_function, _mutable_set, _stash)),
-      _tensor_function(optimized ? _engine.optimize(_patched_tensor_function, _stash) : _patched_tensor_function),
+      _tensor_function(optimized ? optimize_tensor_function(engine, _patched_tensor_function, _stash) : _patched_tensor_function),
       _ifun(_engine, _tensor_function),
       _ictx(_ifun),
       _param_values(make_params(_engine, *_function, param_repo)),

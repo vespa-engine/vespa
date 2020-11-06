@@ -6,6 +6,9 @@ import com.google.common.base.Suppliers;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Duration;
@@ -23,12 +26,12 @@ import java.util.logging.Logger;
  */
 public class ContainerImages {
 
-    private static final Duration defaultCacheTtl = Duration.ofMinutes(1);
+    private static final Duration cacheTtl = Duration.ofMinutes(1);
     private static final Logger log = Logger.getLogger(ContainerImages.class.getName());
 
     private final CuratorDatabaseClient db;
     private final DockerImage defaultImage;
-    private final Duration cacheTtl;
+    private final BooleanFlag replaceImage;
 
     /**
      * The container image is read on every request to /nodes/v2/node/[fqdn]. Cache current images to avoid
@@ -37,14 +40,10 @@ public class ContainerImages {
      */
     private volatile Supplier<Map<NodeType, DockerImage>> images;
 
-    public ContainerImages(CuratorDatabaseClient db, DockerImage defaultImage) {
-        this(db, defaultImage, defaultCacheTtl);
-    }
-
-    ContainerImages(CuratorDatabaseClient db, DockerImage defaultImage, Duration cacheTtl) {
+    public ContainerImages(CuratorDatabaseClient db, DockerImage defaultImage, FlagSource flagSource) {
         this.db = db;
         this.defaultImage = defaultImage;
-        this.cacheTtl = cacheTtl;
+        this.replaceImage = Flags.REGIONAL_CONTAINER_REGISTRY.bindTo(flagSource);
         createCache();
     }
 
@@ -58,15 +57,14 @@ public class ContainerImages {
         return images.get();
     }
 
-    /** Returns the current docker image for given node type, or the type for corresponding child nodes
-     * if it is a Docker host, or default */
+    /** Returns the container image to use for given node type */
     public DockerImage imageFor(NodeType type) {
         NodeType typeToUseForLookup = type.isHost() ? type.childNodeType() : type;
         DockerImage image = getImages().get(typeToUseForLookup);
         if (image == null) {
-            return defaultImage;
+            image = defaultImage;
         }
-        return image.withRegistry(defaultImage.registry()); // Always use the registry configured for this zone.
+        return rewriteRegistry(image);
     }
 
     /** Set the docker image for nodes of given type */
@@ -82,6 +80,15 @@ public class ContainerImages {
             createCache(); // Throw away current cache
             log.info("Set container image for " + nodeType + " nodes to " + image.map(DockerImage::asString).orElse(null));
         }
+    }
+
+    /** Rewrite the registry part of given image, using this zone's default image */
+    private DockerImage rewriteRegistry(DockerImage image) {
+        DockerImage zoneImage = defaultImage;
+        if (zoneImage.replacedBy().isPresent() && replaceImage.value()) {
+            zoneImage = zoneImage.replacedBy().get();
+        }
+        return image.withRegistry(zoneImage.registry());
     }
 
 }

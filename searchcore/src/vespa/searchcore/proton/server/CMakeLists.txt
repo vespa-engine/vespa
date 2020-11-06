@@ -103,7 +103,6 @@ vespa_add_library(searchcore_server STATIC
     transactionlogmanager.cpp
     transactionlogmanagerbase.cpp
     updatedonecontext.cpp
-    visibilityhandler.cpp
     DEPENDS
     searchcore_attribute
     searchcore_bucketdb

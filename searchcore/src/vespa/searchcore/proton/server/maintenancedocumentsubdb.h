@@ -8,6 +8,8 @@
 
 namespace proton {
 
+class ILidCommitState;
+
 /**
  * The view of a document sub db as seen from the maintenance controller
  * and various maintenance jobs.
@@ -20,6 +22,7 @@ private:
     IDocumentMetaStore::SP _meta_store;
     IDocumentRetriever::SP _retriever;
     IFeedView::SP          _feed_view;
+    const ILidCommitState *_pendingLidsForCommit;
 
 public:
     MaintenanceDocumentSubDB();
@@ -29,7 +32,8 @@ public:
                              uint32_t sub_db_id,
                              IDocumentMetaStore::SP meta_store,
                              IDocumentRetriever::SP retriever,
-                             IFeedView::SP feed_view);
+                             IFeedView::SP feed_view,
+                             const ILidCommitState *);
 
     const vespalib::string& name() const { return _name; }
     uint32_t sub_db_id() const { return _sub_db_id; }
@@ -38,6 +42,7 @@ public:
     const IFeedView::SP& feed_view() const { return _feed_view; }
 
     bool valid() const { return _meta_store.get() != nullptr; }
+    bool lidNeedsCommit(search::DocumentIdT lid) const;
 
     void clear();
 };

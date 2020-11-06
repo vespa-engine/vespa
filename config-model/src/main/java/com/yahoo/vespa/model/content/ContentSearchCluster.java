@@ -3,10 +3,10 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.UserConfigBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomSearchTuningBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -15,10 +15,10 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.cluster.DomResourceLimitsBuilder;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.search.NodeSpec;
-import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.NamedSchema;
+import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 import com.yahoo.vespa.model.search.TransactionLogServer;
@@ -33,7 +33,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Encapsulates the various options for search in a content model.
@@ -332,7 +335,31 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         return getClusters().values().stream()
                 .filter(StreamingSearchCluster.class::isInstance)
                 .map(StreamingSearchCluster.class::cast)
+                .collect(toList());
+    }
+
+    public List<NewDocumentType> getDocumentTypesWithStreamingCluster() { return documentTypes(this::hasIndexingModeStreaming); }
+    public List<NewDocumentType> getDocumentTypesWithIndexedCluster() { return documentTypes(this::hasIndexingModeIndexed); }
+    public List<NewDocumentType> getDocumentTypesWithStoreOnly() { return documentTypes(this::hasIndexingModeStoreOnly); }
+
+    private List<NewDocumentType> documentTypes(Predicate<NewDocumentType> filter) {
+        return documentDefinitions.values().stream()
+                .filter(filter)
                 .collect(Collectors.toList());
+    }
+
+    private boolean hasIndexingModeStreaming(NewDocumentType type) {
+        return findStreamingCluster(type.getFullName().getName()).isPresent();
+    }
+
+    private boolean hasIndexingModeIndexed(NewDocumentType type) {
+        return !hasIndexingModeStreaming(type)
+                && hasIndexedCluster()
+                && getIndexed().hasDocumentDB(type.getFullName().getName());
+    }
+
+    private boolean hasIndexingModeStoreOnly(NewDocumentType type) {
+        return !hasIndexingModeStreaming(type) && !hasIndexingModeIndexed(type);
     }
 
     @Override
@@ -347,25 +374,19 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
                 .global(globalDocType);
-            Optional<StreamingSearchCluster> ssc = findStreamingCluster(docTypeName);
-            if (ssc.isPresent()) {
+
+            if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedCluster = true;
                 ddbB.inputdoctypename(type.getFullName().getName())
-                    .configid(ssc.get().getDocumentDBConfigId())
+                        .configid(findStreamingCluster(docTypeName).get().getDocumentDBConfigId())
                         .mode(ProtonConfig.Documentdb.Mode.Enum.STREAMING)
-                    .feeding.concurrency(0.0);
-            } else if (hasIndexedCluster()) {
-                if (getIndexed().hasDocumentDB(type.getFullName().getName())) {
-                    getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
-                    if (tuning != null && tuning.searchNode != null && tuning.searchNode.feeding != null) {
-                        ddbB.feeding.concurrency(tuning.searchNode.feeding.concurrency / 2);
-                    } else {
-                        ddbB.feeding.concurrency(builder.feeding.build().concurrency());
-                    }
+                        .feeding.concurrency(0.0);
+            } else if (hasIndexingModeIndexed(type)) {
+                getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+                if (tuning != null && tuning.searchNode != null && tuning.searchNode.feeding != null) {
+                    ddbB.feeding.concurrency(tuning.searchNode.feeding.concurrency / 2);
                 } else {
-                    hasAnyNonIndexedCluster = true;
-                    ddbB.feeding.concurrency(0.0);
-                    ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.STORE_ONLY);
+                    ddbB.feeding.concurrency(builder.feeding.build().concurrency());
                 }
             } else {
                 hasAnyNonIndexedCluster = true;
