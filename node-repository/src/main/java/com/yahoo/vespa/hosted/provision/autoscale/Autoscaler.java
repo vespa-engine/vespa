@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * The autoscaler makes decisions about the flavor and node count that should be allocated to a cluster
@@ -18,6 +19,8 @@ import java.util.Optional;
  * @author bratseth
  */
 public class Autoscaler {
+
+    protected final Logger log = Logger.getLogger(this.getClass().getName());
 
     /** What cost difference factor is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
@@ -57,7 +60,12 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        if (unstable(clusterNodes, nodeRepository)) return Advice.none();
+        log.fine(() -> "Autoscale " + cluster.toString());
+
+        if (unstable(clusterNodes, nodeRepository)) {
+            log.fine(() -> "Unstable - Advice.none " + cluster.toString());
+            return Advice.none();
+        }
 
         AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository, cluster.exclusive());
 
@@ -66,13 +74,22 @@ public class Autoscaler {
         Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
         Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
         Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk);
-        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Advice.none();
+        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) {
+            log.fine(() -> "Missing average load - Advice.none  " + cluster.toString());
+            return Advice.none();
+        }
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits, exclusive);
-        if (bestAllocation.isEmpty()) return Advice.dontScale();
-        if (similar(bestAllocation.get(), currentAllocation)) return Advice.dontScale();
+        if (bestAllocation.isEmpty()) {
+            log.fine(() -> "bestAllocation.isEmpty - Advice.dontScale " + cluster.toString());
+            return Advice.dontScale();
+        }
+        if (similar(bestAllocation.get(), currentAllocation)) {
+            log.fine(() -> "Current allocation similar - Advice.dontScale " + cluster.toString());
+            return Advice.dontScale();
+        }
         return Advice.scaleTo(bestAllocation.get().toAdvertisedClusterResources());
     }
 
