@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
+
 /**
  * Implementation of {@link ModelContext} for configserver.
  *
@@ -209,7 +211,7 @@ public class ModelContextImpl implements ModelContext {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
-            this.configServerSpecs = com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig(configserverConfig);
+            this.configServerSpecs = fromConfig(configserverConfig);
             this.loadBalancerName = HostName.from(configserverConfig.loadBalancerAddress());
             this.ztsUrl = configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null;
             this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
