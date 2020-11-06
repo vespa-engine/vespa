@@ -33,13 +33,13 @@ public class NodeResourceLimits {
             illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu());
         if (requested.memoryGb() < minAdvertisedMemoryGb(cluster.type()))
             illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster.type()));
-        if (requested.diskGb() < minAdvertisedDiskGb(requested))
-            illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested));
+        if (requested.diskGb() < minAdvertisedDiskGb(requested, cluster.isExclusive()))
+            illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, cluster.isExclusive()));
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
     public boolean isWithinRealLimits(NodeCandidate candidateNode, ClusterSpec cluster) {
-        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
+        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository, cluster.isExclusive()),
                                   cluster.type());
     }
 
@@ -53,12 +53,12 @@ public class NodeResourceLimits {
        return true;
     }
 
-    public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec.Type clusterType) {
+    public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec.Type clusterType, boolean exclusive) {
         if (requested.isUnspecified()) return requested;
 
         return requested.withVcpu(Math.max(minAdvertisedVcpu(), requested.vcpu()))
                         .withMemoryGb(Math.max(minAdvertisedMemoryGb(clusterType), requested.memoryGb()))
-                        .withDiskGb(Math.max(minAdvertisedDiskGb(requested), requested.diskGb()));
+                        .withDiskGb(Math.max(minAdvertisedDiskGb(requested, exclusive), requested.diskGb()));
     }
 
     private double minAdvertisedVcpu() {
@@ -72,14 +72,14 @@ public class NodeResourceLimits {
         return 4;
     }
 
-    private double minAdvertisedDiskGb(NodeResources requested) {
-        return minRealDiskGb() + getThinPoolSize(requested.storageType());
+    private double minAdvertisedDiskGb(NodeResources requested, boolean exclusive) {
+        return minRealDiskGb() + getThinPoolSize(requested.storageType(), exclusive);
     }
 
     // Note: Assumes node type 'host'
-    private long getThinPoolSize(NodeResources.StorageType storageType) {
+    private long getThinPoolSize(NodeResources.StorageType storageType, boolean exclusive) {
         if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning())
-            return nodeRepository.resourcesCalculator().thinPoolSizeInBase2Gb(NodeType.host);
+            return nodeRepository.resourcesCalculator().thinPoolSizeInBase2Gb(NodeType.host, ! exclusive);
         else
             return 4;
     }

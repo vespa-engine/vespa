@@ -721,7 +721,7 @@ public class ProvisioningTester {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
             NodeResources resources = node.resources();
             if (node.type() == NodeType.host) return resources;
             return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
@@ -742,13 +742,13 @@ public class ProvisioningTester {
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources) {
+        public NodeResources realToRequest(NodeResources resources, boolean exclusive) {
             return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
                             .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
+        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
     }
 

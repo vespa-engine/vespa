@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.provision.Nodelike;
 public interface HostResourcesCalculator {
 
     /** Returns the real resources available on a node */
-    NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository);
+    NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive);
 
     /** Returns the advertised resources of a flavor */
     NodeResources advertisedResourcesOf(Flavor flavor);
@@ -33,11 +33,11 @@ public interface HostResourcesCalculator {
      * Used with shared hosts:
      * Returns the advertised resources we need to request to be sure to get at least the given real resources.
      */
-    NodeResources realToRequest(NodeResources realResources);
+    NodeResources realToRequest(NodeResources realResources, boolean exclusive);
 
     /**
      * Returns the needed thin pool size in base2 Gb.
      */
-    long thinPoolSizeInBase2Gb(NodeType nodeType);
+    long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost);
 
 }
