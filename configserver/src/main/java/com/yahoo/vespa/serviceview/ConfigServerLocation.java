@@ -15,6 +15,7 @@ public class ConfigServerLocation extends AbstractComponent {
 
     final int restApiPort;
     // The client factory must be owned by a component as StateResource is instantiated per request
+    @SuppressWarnings("removal")
     final VespaClientBuilderFactory clientBuilderFactory = new VespaClientBuilderFactory();
 
     @Inject

@@ -8,7 +8,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import java.util.logging.Level;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.glassfish.jersey.client.ClientProperties;
@@ -43,6 +42,7 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER
  * @author Ulf Lilleengen
  * @author hmusum
  */
+@SuppressWarnings("removal")
 public class ConfigConvergenceChecker extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(ConfigConvergenceChecker.class.getName());
