@@ -38,13 +38,13 @@ static int log_dummmy __attribute__((unused)) = logger.setRcsId(x)
 #ifndef VESPA_LOG_USELOGBUFFERFORREGULARLOG
 #define LOG(level, ...)                                                       \
 do {                                                                          \
-    if (logger.wants(ns_log::Logger::level)) {                                \
+    if (__builtin_expect(logger.wants(ns_log::Logger::level), false)) {       \
         logger.doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__); \
     }                                                                         \
 } while (false)
 #define VLOG(level, ...)                                      \
 do {                                                          \
-    if (logger.wants(level)) {                                \
+    if (__builtin_expect(logger.wants(level), false)) {                                \
         logger.doLog(level, __FILE__, __LINE__, __VA_ARGS__); \
     }                                                         \
 } while (false)
