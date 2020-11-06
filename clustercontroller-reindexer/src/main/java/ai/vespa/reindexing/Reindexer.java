@@ -33,7 +33,7 @@ import static java.util.stream.Collectors.joining;
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
  * which send documents straight to storage — via indexing if the documenet type has "index" mode.
- * The {@link #reindex} method blocks until interrupted, or until no more reindexing is left to do.
+ * The {@link #reindex} method blocks until shutdown is called, or until no more reindexing is left to do.
  *
  * @author jonmv
  */
@@ -121,8 +121,10 @@ public class Reindexer {
             public void onProgress(ProgressToken token) {
                 super.onProgress(token);
                 status = status.progressed(token);
-                if (progressLastStored.get().isBefore(clock.instant().minusSeconds(10)))
+                if (progressLastStored.get().isBefore(clock.instant().minusSeconds(10))) {
+                    progressLastStored.set(clock.instant());
                     database.writeReindexing(reindexing = reindexing.with(type, status));
+                }
             }
             @Override
             public void onDone(CompletionCode code, String message) {
