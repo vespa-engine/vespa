@@ -60,6 +60,7 @@ enum Policy {
 
     /** Full access to tenant information and settings. */
     tenantUpdate(Privilege.grant(Action.update)
+                          .on(PathGroup.tenantInfo)
                           .on(PathGroup.tenant)
                           .in(SystemName.all())),
 

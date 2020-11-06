@@ -259,6 +259,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
@@ -401,6 +402,60 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         addressCursor.setString("email", billingContact.email());
         addressCursor.setString("phone", billingContact.phone());
         toSlime(billingContact.address(), addressCursor);
+    }
+
+    private HttpResponse updateTenantInfo(String tenantName, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .filter(tenant -> tenant.type() == Tenant.Type.cloud)
+                .map(tenant -> updateTenantInfo(((CloudTenant)tenant), request))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
+    }
+
+    private String getString(Inspector field, String defaultVale) {
+        return field.valid() ? field.asString() : defaultVale;
+    }
+
+    private SlimeJsonResponse updateTenantInfo(CloudTenant tenant, HttpRequest request) {
+        TenantInfo oldInfo = tenant.info();
+
+        // Merge info from request with the existing info
+        Inspector insp = toSlime(request.getData()).get();
+        TenantInfo mergedInfo = TenantInfo.EMPTY
+                .withName(getString(insp.field("name"), oldInfo.name()))
+                .withEmail(getString(insp.field("email"),  oldInfo.email()))
+                .withWebsite(getString(insp.field("website"),  oldInfo.email()))
+                .withInvoiceEmail(getString(insp.field("invoiceEmail"), oldInfo.invoiceEmail()))
+                .withContactName(getString(insp.field("contactName"), oldInfo.contactName()))
+                .withContactEmail(getString(insp.field("contactEmail"), oldInfo.contactName()))
+                .withAddress(updateTenantInfoAddress(insp.field("address"), oldInfo.address()))
+                .withBillingContact(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()));
+
+        // Store changes
+        controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withInfo(mergedInfo);
+            controller.tenants().store(lockedTenant);
+        });
+
+        return new MessageResponse("Tenant info updated");
+    }
+
+    private TenantInfoAddress updateTenantInfoAddress(Inspector insp, TenantInfoAddress oldAddress) {
+        if (!insp.valid()) return oldAddress;
+        return TenantInfoAddress.EMPTY
+                .withCountry(getString(insp.field("country"), oldAddress.country()))
+                .withStateRegionProvince(getString(insp.field("stateRegionProvince"), oldAddress.stateRegionProvince()))
+                .withCity(getString(insp.field("city"), oldAddress.city()))
+                .withPostalCodeOrZip(getString(insp.field("postalCodeOrZip"), oldAddress.postalCodeOrZip()))
+                .withAddressLines(getString(insp.field("addressLines"), oldAddress.addressLines()));
+    }
+
+    private TenantInfoBillingContact updateTenantInfoBillingContact(Inspector insp, TenantInfoBillingContact oldContact) {
+        if (!insp.valid()) return oldContact;
+        return TenantInfoBillingContact.EMPTY
+                .withName(getString(insp.field("name"), oldContact.name()))
+                .withEmail(getString(insp.field("email"), oldContact.email()))
+                .withPhone(getString(insp.field("phone"), oldContact.phone()))
+                .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
     }
 
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
