@@ -24,6 +24,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
     private static final String METRIC_NAME = "athenz.request.error";
     private static final String ATHENZ_SERVICE_DIMENSION = "athenzService";
+    private static final String EXCEPTION_DIMENSION = "exception";
 
     private final AthenzConfig config;
     private final ServiceIdentityProvider identityProvider;
@@ -66,7 +67,9 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
     private void reportMetricErrorHandler(HttpUriRequest request, Exception error) {
         String hostname = request.getURI().getHost();
-        Metric.Context context = metricContexts.computeIfAbsent(hostname, host -> metrics.createContext(Map.of(ATHENZ_SERVICE_DIMENSION, host)));
+        Metric.Context context = metricContexts.computeIfAbsent(hostname, host -> metrics.createContext(
+                Map.of(ATHENZ_SERVICE_DIMENSION, host,
+                        EXCEPTION_DIMENSION, error.getClass().getSimpleName())));
         metrics.add(METRIC_NAME, 1, context);
     }
 }
