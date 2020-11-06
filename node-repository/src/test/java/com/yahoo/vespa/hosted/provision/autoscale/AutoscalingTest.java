@@ -373,7 +373,7 @@ public class AutoscalingTest {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
             return node.resources();
         }
 
@@ -388,12 +388,12 @@ public class AutoscalingTest {
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources) {
+        public NodeResources realToRequest(NodeResources resources, boolean exclusive) {
             return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
+        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
     }
 

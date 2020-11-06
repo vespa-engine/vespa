@@ -43,10 +43,10 @@ public class AllocatableClusterResources {
         this.fulfilment = 1;
     }
 
-    public AllocatableClusterResources(List<Node> nodes, NodeRepository nodeRepository) {
+    public AllocatableClusterResources(List<Node> nodes, NodeRepository nodeRepository, boolean exclusive) {
         this.nodes = nodes.size();
         this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
-        this.realResources = averageRealResourcesOf(nodes, nodeRepository); // Average since we average metrics over nodes
+        this.realResources = averageRealResourcesOf(nodes, nodeRepository, exclusive); // Average since we average metrics over nodes
         this.advertisedResources = nodes.get(0).resources();
         this.clusterType = nodes.get(0).allocation().get().membership().cluster().type();
         this.fulfilment = 1;
@@ -121,10 +121,10 @@ public class AllocatableClusterResources {
                (fulfilment < 1.0 ? " (fulfilment " + fulfilment + ")" : "");
     }
 
-    private static NodeResources averageRealResourcesOf(List<Node> nodes, NodeRepository nodeRepository) {
+    private static NodeResources averageRealResourcesOf(List<Node> nodes, NodeRepository nodeRepository, boolean exclusive) {
         NodeResources sum = new NodeResources(0, 0, 0, 0);
         for (Node node : nodes)
-            sum = sum.add(nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).justNumbers());
+            sum = sum.add(nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository, exclusive).justNumbers());
         return nodes.get(0).resources().justNonNumbers()
                                        .withVcpu(sum.vcpu() / nodes.size())
                                        .withMemoryGb(sum.memoryGb() / nodes.size())
@@ -140,8 +140,8 @@ public class AllocatableClusterResources {
         var systemLimits = new NodeResourceLimits(nodeRepository);
         if ( !exclusive && !nodeRepository.zone().getCloud().dynamicProvisioning()) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
-            NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources());
-            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterType); // Attempt to ask for something legal
+            NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
+            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterType, exclusive); // Attempt to ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
             NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // ... thus, what we really get may change
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterType)) return Optional.empty();

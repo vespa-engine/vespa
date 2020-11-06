@@ -240,7 +240,7 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
             if (zone.getCloud().dynamicProvisioning())
                 return node.resources().withMemoryGb(node.resources().memoryGb() - 3);
             else
@@ -261,12 +261,12 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources) {
+        public NodeResources realToRequest(NodeResources resources, boolean exclusive) {
             return resources.withMemoryGb(resources.memoryGb() + 3);
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType) { return 0; }
+        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
     }
 
