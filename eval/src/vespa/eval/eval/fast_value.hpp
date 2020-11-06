@@ -339,29 +339,40 @@ FastValueIndex::sparse_no_overlap_join(const ValueType &res_type, const Fun &fun
                                        ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash)
 {
     using HashedLabelRef = std::reference_wrapper<const FastSparseMap::HashedLabel>;
+    size_t num_mapped_dims = addr_sources.size();
     auto &result = stash.create<FastValue<OCT>>(res_type, res_type.count_mapped_dimensions(), 1, lhs.map.size()*rhs.map.size());
-    std::vector<HashedLabelRef> output_addr;
+    FastSparseMap::HashedLabel empty;
+    std::vector<HashedLabelRef> output_addr(num_mapped_dims, empty);
+    std::vector<size_t> store_lhs_idx;
+    std::vector<size_t> store_rhs_idx;
+    size_t out_idx = 0;
+    for (JoinAddrSource source : addr_sources) {
+        switch (source) {
+        case JoinAddrSource::LHS:
+            store_lhs_idx.push_back(out_idx++);
+            break;
+        case JoinAddrSource::RHS:
+            store_rhs_idx.push_back(out_idx++);
+            break;
+        default:
+            abort();
+        }
+    }
+    assert(out_idx == output_addr.size());
     for (size_t lhs_subspace = 0; lhs_subspace < lhs.map.size(); ++lhs_subspace) {
         auto l_addr = lhs.map.make_addr(lhs_subspace);
+        assert(l_addr.size() == store_lhs_idx.size());
+        for (size_t i = 0; i < store_lhs_idx.size(); ++i) {
+            size_t addr_idx = store_lhs_idx[i];
+            output_addr[addr_idx] = l_addr[i];
+        }
         for (size_t rhs_subspace = 0; rhs_subspace < rhs.map.size(); ++rhs_subspace) {
             auto r_addr = rhs.map.make_addr(rhs_subspace);
-            output_addr.clear();
-            size_t l_idx = 0;
-            size_t r_idx = 0;
-            for (JoinAddrSource source : addr_sources) {
-                switch (source) {
-                case JoinAddrSource::LHS:
-                    output_addr.push_back(l_addr[l_idx++]);
-                    break;
-                case JoinAddrSource::RHS:
-                    output_addr.push_back(r_addr[r_idx++]);
-                    break;
-                default:
-                    abort();
-                }
+            assert(r_addr.size() == store_rhs_idx.size());
+            for (size_t i = 0; i < store_rhs_idx.size(); ++i) {
+                size_t addr_idx = store_rhs_idx[i];
+                output_addr[addr_idx] = r_addr[i];
             }
-            assert(l_idx == l_addr.size());
-            assert(r_idx == r_addr.size());
             auto idx = result.my_index.map.add_mapping(ConstArrayRef(output_addr));
             if (__builtin_expect((idx == result.my_cells.size), true)) {
                 auto cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
