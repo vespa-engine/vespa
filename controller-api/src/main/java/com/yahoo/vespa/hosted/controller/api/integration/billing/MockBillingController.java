@@ -24,7 +24,7 @@ public class MockBillingController implements BillingController {
     Map<TenantName, List<Invoice>> committedInvoices = new HashMap<>();
     Map<TenantName, Invoice> uncommittedInvoices = new HashMap<>();
     Map<TenantName, List<Invoice.LineItem>> unusedLineItems = new HashMap<>();
-    CollectionMethod collectionMethod = CollectionMethod.NONE;
+    CollectionMethod collectionMethod = CollectionMethod.AUTO;
 
     @Override
     public PlanId getPlan(TenantName tenant) {
