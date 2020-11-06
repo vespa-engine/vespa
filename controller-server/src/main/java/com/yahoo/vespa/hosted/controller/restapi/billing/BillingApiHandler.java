@@ -51,7 +51,6 @@ public class BillingApiHandler extends LoggingRequestHandler {
     private static final String OPTIONAL_PREFIX = "/api";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-
     private final BillingController billingController;
     private final ApplicationController applicationController;
 
