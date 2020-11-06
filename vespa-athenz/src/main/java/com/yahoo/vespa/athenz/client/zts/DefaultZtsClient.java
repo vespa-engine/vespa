@@ -53,8 +53,8 @@ import static java.util.stream.Collectors.toList;
 public class DefaultZtsClient extends ClientBase implements ZtsClient {
 
     private final URI ztsUrl;
-    protected DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier, HostnameVerifier hostnameVerifier) {
-        super("vespa-zts-client", sslContextSupplier, ZtsClientException::new, hostnameVerifier);
+    protected DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier, HostnameVerifier hostnameVerifier, ErrorHandler errorHandler) {
+        super("vespa-zts-client", sslContextSupplier, ZtsClientException::new, hostnameVerifier, errorHandler);
         this.ztsUrl = addTrailingSlash(ztsUrl);
     }
 
@@ -225,11 +225,17 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
     public static class Builder {
         private URI ztsUrl;
+        private ClientBase.ErrorHandler errorHandler = ErrorHandler.empty();
         private HostnameVerifier hostnameVerifier = null;
         private Supplier<SSLContext> sslContextSupplier = null;
 
         public Builder(URI ztsUrl) {
             this.ztsUrl = ztsUrl;
+        }
+
+        public Builder withErrorHandler(ClientBase.ErrorHandler errorHandler) {
+            this.errorHandler = errorHandler;
+            return this;
         }
 
         public Builder withHostnameVerifier(HostnameVerifier hostnameVerifier) {
@@ -251,7 +257,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
             if (Objects.isNull(sslContextSupplier)) {
                 throw new IllegalArgumentException("No ssl context or identity provider available to set up zts client");
             }
-            return new DefaultZtsClient(ztsUrl, sslContextSupplier, hostnameVerifier);
+            return new DefaultZtsClient(ztsUrl, sslContextSupplier, hostnameVerifier, errorHandler);
         }
     }
 }

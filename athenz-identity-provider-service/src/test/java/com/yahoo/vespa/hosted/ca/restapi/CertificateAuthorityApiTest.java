@@ -224,7 +224,7 @@ public class CertificateAuthorityApiTest extends ContainerTester {
         private final X509Certificate certificate;
 
         public TestZtsClient(Principal principal, X509Certificate certificate, URI ztsUrl, SSLContext sslContext) {
-            super(ztsUrl, () -> sslContext, null);
+            super(ztsUrl, () -> sslContext, null, ErrorHandler.empty());
             this.principal = principal;
             this.certificate = certificate;
         }
