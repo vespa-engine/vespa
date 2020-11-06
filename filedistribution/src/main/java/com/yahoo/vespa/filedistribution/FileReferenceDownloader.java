@@ -122,7 +122,7 @@ public class FileReferenceDownloader {
                 log.log(Level.FINE, () -> "Found file reference '" + fileReference + "' available at " + connection.getAddress());
                 return true;
             } else {
-                log.log(logLevel, "File reference '" + fileReference + "' not found for " + connection.getAddress());
+                log.log(logLevel, "File reference '" + fileReference + "' not found at " + connection.getAddress());
                 connectionPool.setNewCurrentConnection();
                 return false;
             }
