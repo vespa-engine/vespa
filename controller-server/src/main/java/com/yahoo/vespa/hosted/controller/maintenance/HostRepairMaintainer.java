@@ -47,15 +47,12 @@ public class HostRepairMaintainer extends ControllerMaintainer {
         controller().zoneRegistry().zones()
                 .reachable().zones().stream()
                 .forEach(zoneApi -> {
-                            var nodeTicketMap = nodeRepository.list((zoneApi).getId())
+                            var breakfixedNodes = nodeRepository.list((zoneApi).getId())
                                     .stream()
-                                    .filter(this::hasOpenTicket)
-                                    .collect(Collectors.toMap(
-                                            node -> node,
-                                            this::getTicketReport)
-                                    );
+                                    .filter(node -> node.state() == Node.State.breakfixed)
+                                    .collect(Collectors.toList());
                             try {
-                                repairClient.updateRepairStatus(zoneApi, nodeTicketMap);
+                                repairClient.updateRepairStatus(zoneApi, breakfixedNodes);
                             } catch (Exception e) {
                                 log.warning("Failed to update repair status; " + Exceptions.toMessageString(e));
                                 exceptions.incrementAndGet();
@@ -66,16 +63,4 @@ public class HostRepairMaintainer extends ControllerMaintainer {
         return exceptions.get() == 0;
     }
 
-
-    private boolean hasOpenTicket(Node node) {
-        var reports = node.reports();
-        if (!reports.containsKey(RepairTicketReport.getReportId())) {
-            return false;
-        }
-        return "OPEN".equals(getTicketReport(node).getStatus());
-    }
-
-    private RepairTicketReport getTicketReport(Node node) {
-        return uncheck(() -> RepairTicketReport.fromJsonNode(node.reports().get(RepairTicketReport.getReportId())));
-    }
 }

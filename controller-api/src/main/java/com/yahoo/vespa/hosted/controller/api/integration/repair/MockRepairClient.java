@@ -18,8 +18,8 @@ public class MockRepairClient implements HostRepairClient {
     List<Node> updatedNodes = new ArrayList<>();
 
     @Override
-    public void updateRepairStatus(ZoneApi zone, Map<Node, RepairTicketReport> nodes) {
-        updatedNodes.addAll(nodes.keySet());
+    public void updateRepairStatus(ZoneApi zone, List<Node> nodes) {
+        updatedNodes.addAll(nodes);
     }
 
     @Override

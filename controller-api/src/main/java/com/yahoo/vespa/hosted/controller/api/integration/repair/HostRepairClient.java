@@ -15,7 +15,7 @@ import java.util.Map;
 public interface HostRepairClient {
 
     /* Checks current ticket status and takes appropriate action */
-    void updateRepairStatus(ZoneApi zone, Map<Node, RepairTicketReport> nodes);
+    void updateRepairStatus(ZoneApi zone, List<Node> nodes);
 
     /* Creates reparation ticket for given host. Returns ticket number */
     String createTicket(HostName hostname, String colo, ZoneId zoneId, String description, String category);
