@@ -12,7 +12,9 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeHistory;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,7 +56,7 @@ public class Node {
     private final Optional<TenantName> reservedTo;
     private final Optional<ApplicationId> exclusiveTo;
     private final Map<String, JsonNode> reports;
-    private final NodeHistory[] history;
+    private final List<NodeHistory> history;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
@@ -62,7 +64,7 @@ public class Node {
                 Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
                 int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
                 Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
-                DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports, NodeHistory[] history) {
+                DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports, List<NodeHistory> history) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -205,7 +207,7 @@ public class Node {
         return reports;
     }
 
-    public NodeHistory[] history() {
+    public List<NodeHistory> history() {
         return history;
     }
 
@@ -282,7 +284,7 @@ public class Node {
         private Optional<TenantName> reservedTo = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
         private Map<String, JsonNode> reports = new HashMap<>();
-        private NodeHistory[] history = {};
+        private List<NodeHistory> history = new ArrayList<>();
 
         public Builder() { }
 
@@ -456,6 +458,11 @@ public class Node {
 
         public Builder exclusiveTo(ApplicationId exclusiveTo) {
             this.exclusiveTo = Optional.of(exclusiveTo);
+            return this;
+        }
+
+        public Builder history(List<NodeHistory> history) {
+            this.history = history;
             return this;
         }
 

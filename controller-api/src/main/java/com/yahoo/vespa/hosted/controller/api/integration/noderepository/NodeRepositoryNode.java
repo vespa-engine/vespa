@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -77,7 +78,7 @@ public class NodeRepositoryNode {
     @JsonProperty("cost")
     private Integer cost;
     @JsonProperty("history")
-    private NodeHistory[] history;
+    private List<NodeHistory> history;
     @JsonProperty("allowedToBeDown")
     private Boolean allowedToBeDown;
     @JsonProperty("suspendedSinceMillis")
@@ -305,11 +306,11 @@ public class NodeRepositoryNode {
         this.cost = cost;
     }
 
-    public NodeHistory[] getHistory() {
+    public List<NodeHistory> getHistory() {
         return history;
     }
 
-    public void setHistory(NodeHistory[] history) {
+    public void setHistory(List<NodeHistory> history) {
         this.history = history;
     }
 
@@ -413,7 +414,7 @@ public class NodeRepositoryNode {
                ", wantToRetire=" + wantToRetire +
                ", wantToDeprovision=" + wantToDeprovision +
                ", cost=" + cost +
-               ", history=" + Arrays.toString(history) +
+               ", history=" + history +
                ", allowedToBeDown=" + allowedToBeDown +
                ", reports=" + reports +
                ", modelName=" + modelName +
