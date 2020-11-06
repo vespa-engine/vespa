@@ -43,8 +43,7 @@ Distribution::Distribution()
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
-      _ensurePrimaryPersisted(true),
-      _diskDistribution()
+      _ensurePrimaryPersisted(true)
 {
     auto config(getDefaultDistributionConfig(0, 0));
     vespalib::asciistream ost;
@@ -61,7 +60,6 @@ Distribution::Distribution(const Distribution& d)
       _redundancy(),
       _initialRedundancy(0),
       _ensurePrimaryPersisted(true),
-      _diskDistribution(),
       _serialized(d._serialized)
 {
     vespalib::asciistream ist(_serialized);
@@ -84,8 +82,7 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig 
       _node2Group(),
       _redundancy(),
       _initialRedundancy(0),
-      _ensurePrimaryPersisted(true),
-      _diskDistribution()
+      _ensurePrimaryPersisted(true)
 {
     vespalib::asciistream ost;
     config::AsciiConfigWriter writer(ost);
@@ -101,7 +98,6 @@ Distribution::Distribution(const vespalib::string& serialized)
       _redundancy(),
       _initialRedundancy(0),
       _ensurePrimaryPersisted(true),
-      _diskDistribution(),
       _serialized(serialized)
 {
     vespalib::asciistream ist(_serialized);
@@ -120,27 +116,6 @@ Distribution::operator=(const Distribution& d)
 
 Distribution::~Distribution() = default;
 
-namespace {
-    using ConfigDiskDistribution = vespa::config::content::StorDistributionConfig::DiskDistribution;
-    Distribution::DiskDistribution fromConfig(ConfigDiskDistribution cfg) {
-        switch (cfg) {
-            case ConfigDiskDistribution::MODULO : return Distribution::MODULO;
-            case ConfigDiskDistribution::MODULO_BID : return Distribution::MODULO_BID;
-            case ConfigDiskDistribution::MODULO_INDEX : return Distribution::MODULO_INDEX;
-            case ConfigDiskDistribution::MODULO_KNUTH : return Distribution::MODULO_KNUTH;
-        }
-        LOG_ABORT("should not be reached");
-    }
-    ConfigDiskDistribution toConfig(Distribution::DiskDistribution cfg) {
-        switch (cfg) {
-            case Distribution::MODULO : return ConfigDiskDistribution::MODULO;
-            case Distribution::MODULO_BID : return ConfigDiskDistribution::MODULO_BID;
-            case Distribution::MODULO_INDEX : return ConfigDiskDistribution::MODULO_INDEX;
-            case Distribution::MODULO_KNUTH : return ConfigDiskDistribution::MODULO_KNUTH;
-        }
-        LOG_ABORT("should not be reached");
-    }
-}
 
 void
 Distribution::configure(const vespa::config::content::StorDistributionConfig& config)
@@ -195,7 +170,6 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     _redundancy = config.redundancy;
     _initialRedundancy = config.initialRedundancy;
     _ensurePrimaryPersisted = config.ensurePrimaryPersisted;
-    _diskDistribution = fromConfig(config.diskDistribution);
     _readyCopies = config.readyCopies;
     _activePerGroup = config.activePerLeafGroup;
     _distributorAutoOwnershipTransferOnWholeGroupDown
@@ -235,16 +209,6 @@ Distribution::getStorageSeed(
                  & (bucket.getRawId() >> 32)) << 6;
     }
     return seed;
-}
-
-vespalib::string Distribution::getDiskDistributionName(DiskDistribution dist) {
-
-    return DistributionConfig::getDiskDistributionName(toConfig(dist));
-}
-
-Distribution::DiskDistribution
-Distribution::getDiskDistribution(vespalib::stringref name)  {
-    return fromConfig(DistributionConfig::getDiskDistribution(name));
 }
 
 void
@@ -525,7 +489,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
 }
 
 Distribution::ConfigWrapper
-Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount, DiskDistribution distr)
+Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount)
 {
     std::unique_ptr<vespa::config::content::StorDistributionConfigBuilder> config(new vespa::config::content::StorDistributionConfigBuilder());
     config->redundancy = redundancy;
@@ -537,7 +501,6 @@ Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCou
     for (uint16_t i=0; i<nodeCount; ++i) {
         config->group[0].nodes[i].index = i;
     }
-    config->diskDistribution = toConfig(distr);
     return ConfigWrapper(std::move(config));
 }
 

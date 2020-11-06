@@ -30,7 +30,6 @@ public:
     typedef std::unique_ptr<Distribution> UP;
     using DistributionConfig = const vespa::config::content::internal::InternalStorDistributionType;
     using DistributionConfigBuilder = vespa::config::content::internal::InternalStorDistributionType;
-    enum DiskDistribution { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID };
 
 private:
     std::vector<uint32_t>      _distributionBitMasks;
@@ -42,7 +41,6 @@ private:
     bool _activePerGroup;
     bool _ensurePrimaryPersisted;
     bool _distributorAutoOwnershipTransferOnWholeGroupDown;
-    DiskDistribution _diskDistribution;
     vespalib::string _serialized;
 
     struct ResultGroup {
@@ -125,7 +123,6 @@ public:
     bool ensurePrimaryPersisted() const { return _ensurePrimaryPersisted; }
     bool distributorAutoOwnershipTransferOnWholeGroupDown() const
         { return _distributorAutoOwnershipTransferOnWholeGroupDown; }
-    DiskDistribution getDiskDistribution() const { return _diskDistribution; }
     bool activePerGroup() const { return _activePerGroup; }
 
     bool operator==(const Distribution& o) const
@@ -163,10 +160,7 @@ public:
      * should not be used by any production code.
      */
     static ConfigWrapper getDefaultDistributionConfig(
-            uint16_t redundancy = 2, uint16_t nodeCount = 10,
-            DiskDistribution distr = MODULO_BID);
-    static vespalib::string getDiskDistributionName(DiskDistribution dist);
-    static DiskDistribution getDiskDistribution(vespalib::stringref name);
+            uint16_t redundancy = 2, uint16_t nodeCount = 10);
 
     /**
      * Utility function used by distributor to split copies into groups to
