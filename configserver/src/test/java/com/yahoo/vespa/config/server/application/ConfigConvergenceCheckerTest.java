@@ -2,12 +2,12 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -31,8 +31,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -184,10 +184,14 @@ public class ConfigConvergenceCheckerTest {
                                                                                 .withBody("response too slow")));
         HttpResponse response = checker.getServiceConfigGenerationResponse(application, hostAndPort(service), requestUrl, Duration.ofMillis(1));
         // Message contained in a SocketTimeoutException may differ across platforms, so we do a partial match of the response here
-        assertResponse((responseBody) -> assertTrue("Response matches", responseBody.startsWith(
-                "{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
-                "\",\"wantedGeneration\":3,\"error\":\"java.net.SocketTimeoutException") &&
-                                      responseBody.endsWith("\"}")), 404, response);
+        assertResponse(
+                responseBody ->
+                        assertThat(responseBody)
+                                .startsWith("{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
+                                        "\",\"wantedGeneration\":3,\"error\":\"Read timed out")
+                                .endsWith("\"}"),
+                404,
+                response);
     }
 
     private URI testServer() {

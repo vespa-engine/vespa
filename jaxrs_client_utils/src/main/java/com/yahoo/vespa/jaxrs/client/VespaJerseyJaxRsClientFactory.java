@@ -17,10 +17,13 @@ import java.util.List;
 /**
  * Factory for creating Jersey based Vespa clients from a JAX-RS resource interface.
  *
+ * @deprecated Use Apache httpclient based client factory instead (VespaHttpClientBuilder).
  * @author bjorncs
  */
+@Deprecated(forRemoval = true)
 public class VespaJerseyJaxRsClientFactory implements JaxRsClientFactory, AutoCloseable {
 
+    @SuppressWarnings("removal")
     private final VespaClientBuilderFactory clientBuilder = new VespaClientBuilderFactory();
     // Client is a heavy-weight object with a finalizer so we create only one and re-use it
     private final Client client;
