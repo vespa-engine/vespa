@@ -8,10 +8,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * @author bjorncs
+ * @author jonmv
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class RefeedAction {
+public class ReindexAction {
 
     public final String name;
     public final boolean allowed;
@@ -21,12 +21,12 @@ public class RefeedAction {
     public final List<String> messages;
 
     @JsonCreator
-    public RefeedAction(@JsonProperty("name") String name,
-                        @JsonProperty("allowed") boolean allowed,
-                        @JsonProperty("documentType") String documentType,
-                        @JsonProperty("clusterName") String clusterName,
-                        @JsonProperty("services") List<ServiceInfo> services,
-                        @JsonProperty("messages") List<String> messages) {
+    public ReindexAction(@JsonProperty("name") String name,
+                         @JsonProperty("allowed") boolean allowed,
+                         @JsonProperty("documentType") String documentType,
+                         @JsonProperty("clusterName") String clusterName,
+                         @JsonProperty("services") List<ServiceInfo> services,
+                         @JsonProperty("messages") List<String> messages) {
         this.name = name;
         this.allowed = allowed;
         this.documentType = documentType;
@@ -37,7 +37,7 @@ public class RefeedAction {
 
     @Override
     public String toString() {
-        return "RefeedAction{" +
+        return "ReindexAction{" +
                 "name='" + name + '\'' +
                 ", allowed=" + allowed +
                 ", documentType='" + documentType + '\'' +
