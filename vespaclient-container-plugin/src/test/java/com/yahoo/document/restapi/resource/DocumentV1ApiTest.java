@@ -331,7 +331,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc2, trace));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it&traceLevel=9", POST,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it&tracelevel=9", POST,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": \"Asa-Chan & Jun-Ray\"" +
