@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ModelFactory;
@@ -18,7 +17,6 @@ import com.yahoo.vespa.config.server.MockLogRetriever;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
@@ -37,12 +35,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.ws.rs.client.Client;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -423,21 +419,6 @@ public class ApplicationHandlerTest {
     private HttpResponse fileDistributionStatus(ApplicationId application, Zone zone) {
         String restartUrl = toUrlPath(application, zone, true) + "/filedistributionstatus";
         return createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, GET));
-    }
-
-    private static class MockStateApiFactory implements ConfigConvergenceChecker.StateApiFactory {
-        boolean createdApi = false;
-        @Override
-        public ConfigConvergenceChecker.StateApi createStateApi(Client client, URI serviceUri) {
-            createdApi = true;
-            return () -> {
-                try {
-                    return new ObjectMapper().readTree("{\"config\":{\"generation\":1}}");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            };
-        }
     }
 
     private ApplicationHandler createApplicationHandler() {
