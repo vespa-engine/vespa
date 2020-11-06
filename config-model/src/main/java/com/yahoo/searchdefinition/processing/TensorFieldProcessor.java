@@ -59,12 +59,14 @@ public class TensorFieldProcessor extends Processor {
 
     private boolean isTensorTypeThatSupportsDirectStore(ImmutableSDField field) {
         var type = ((TensorDataType)field.getDataType()).getTensorType();
-        // Tensors with only sparse dimensions can be "direct"
+        // Tensors with at least one mapped/sparse dimensions can be "direct"
         // (currenty triggered by fast-search flag)
         for (var dim : type.dimensions()) {
-            if (dim.isIndexed()) return false;
+            if (dim.isMapped()) {
+                return true;
+            }
         }
-        return true;
+        return false;
     }
 
     private String tensorTypeToString(ImmutableSDField field) {
