@@ -32,6 +32,7 @@ public class ReservationExpirerTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().flavors(flavors.getFlavors()).build();
         ManualClock clock = tester.clock();
         NodeRepository nodeRepository = tester.nodeRepository();
+        TestMetric metric = new TestMetric();
 
         NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
         NodeResources hostResources = nodeResources.add(nodeResources).add(nodeResources);
@@ -47,7 +48,7 @@ public class ReservationExpirerTest {
 
         // Reservation times out
         clock.advance(Duration.ofMinutes(14)); // Reserved but not used time out
-        new ReservationExpirer(nodeRepository, clock, Duration.ofMinutes(10), new TestMetric()).run();
+        new ReservationExpirer(nodeRepository, clock, Duration.ofMinutes(10), metric).run();
 
         // Assert nothing is reserved
         assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
@@ -55,6 +56,7 @@ public class ReservationExpirerTest {
         assertEquals(2, dirty.size());
         assertFalse(dirty.get(0).allocation().isPresent());
         assertFalse(dirty.get(1).allocation().isPresent());
+        assertEquals(2, metric.values.get("expired.reserved"));
     }
 
 }
