@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
 import com.google.common.collect.ImmutableSet;
@@ -12,10 +12,8 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
@@ -35,7 +33,6 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
-import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -132,12 +129,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
 
     private ModelContext.Properties createModelContextProperties(ApplicationId applicationId) {
         return new ModelContextImpl.Properties(applicationId,
-                                               configserverConfig.multitenant(),
-                                               ConfigServerSpec.fromConfig(configserverConfig),
-                                               HostName.from(configserverConfig.loadBalancerAddress()),
-                                               configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null,
-                                               configserverConfig.athenzDnsSuffix(),
-                                               configserverConfig.hostedVespa(),
+                                               configserverConfig,
                                                zone(),
                                                ImmutableSet.copyOf(new ContainerEndpointsCache(TenantRepository.getTenantPath(tenant), curator).read(applicationId)),
                                                false, // We may be bootstrapping, but we only know and care during prepare
@@ -150,7 +142,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                new ApplicationRolesStore(curator, TenantRepository.getTenantPath(tenant))
                                                        .readApplicationRoles(applicationId),
                                                zkClient.readQuota());
-
     }
 
 }
