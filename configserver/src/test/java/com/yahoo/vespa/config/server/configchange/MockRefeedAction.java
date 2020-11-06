@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.configchange;
 
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
@@ -8,7 +8,6 @@ import java.util.List;
 
 /**
  * @author geirst
- * @since 5.44
  */
 public class MockRefeedAction extends MockConfigChangeAction implements ConfigChangeRefeedAction {
 
