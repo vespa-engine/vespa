@@ -45,7 +45,7 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
      */
     @Override
     public ZtsClient createZtsClient() {
-        return new DefaultZtsClient(URI.create(config.ztsUrl()), identityProvider);
+        return new DefaultZtsClient.Builder(URI.create(config.ztsUrl())).withIdentityProvider(identityProvider).build();
     }
 
     @Override
