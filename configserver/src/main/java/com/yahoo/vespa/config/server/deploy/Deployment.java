@@ -12,12 +12,15 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
+import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -127,25 +130,44 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                 activation.sourceSessionId().stream().mapToObj(id -> ". Based on session " + id).findFirst().orElse("") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
 
-            if (configChangeActions != null && provisioner.isPresent()) {
-                RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
+            if (configChangeActions != null) {
+                if (provisioner.isPresent())
+                    restartServices(applicationId);
 
-                if (!restartActions.isEmpty()) {
-                    Set<String> hostnames = restartActions.getEntries().stream()
-                            .flatMap(entry -> entry.getServices().stream())
-                            .map(ServiceInfo::getHostName)
-                            .collect(Collectors.toUnmodifiableSet());
-
-                    provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
-                    deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
-                            hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
-
-                    this.configChangeActions = new ConfigChangeActions(
-                            new RestartActions(), configChangeActions.getRefeedActions(), configChangeActions.getReindexActions());
-                }
+                storeReindexing(applicationId, session.getMetaData().getGeneration());
             }
 
             return session.getMetaData().getGeneration();
+        }
+    }
+
+    private void restartServices(ApplicationId applicationId) {
+        RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
+
+        if ( ! restartActions.isEmpty()) {
+            Set<String> hostnames = restartActions.getEntries().stream()
+                                                  .flatMap(entry -> entry.getServices().stream())
+                                                  .map(ServiceInfo::getHostName)
+                                                  .collect(Collectors.toUnmodifiableSet());
+
+            provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
+            deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+                                                       hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
+
+            this.configChangeActions = new ConfigChangeActions(
+                    new RestartActions(), configChangeActions.getRefeedActions(), configChangeActions.getReindexActions());
+        }
+    }
+
+    private void storeReindexing(ApplicationId applicationId, long requiredSession) {
+        try (Lock sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
+            ApplicationReindexing reindexing = tenant.getApplicationRepo().database().readReindexingStatus(applicationId)
+                                                     .orElse(ApplicationReindexing.ready(clock.instant()));
+
+            for (ReindexActions.Entry entry : configChangeActions.getReindexActions().getEntries())
+                reindexing = reindexing.withPending(entry.getClusterName(), entry.getDocumentType(), requiredSession);
+
+            tenant.getApplicationRepo().database().writeReindexingStatus(applicationId, reindexing);
         }
     }
 

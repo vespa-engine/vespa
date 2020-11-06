@@ -15,6 +15,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.Quota;
+import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
@@ -46,6 +47,7 @@ public class ModelContextImpl implements ModelContext {
     private final FileRegistry fileRegistry;
     private final Optional<HostProvisioner> hostProvisioner;
     private final Provisioned provisioned;
+    private final Optional<? extends Reindexing> reindexing;
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
 
@@ -69,6 +71,7 @@ public class ModelContextImpl implements ModelContext {
                             DeployLogger deployLogger,
                             ConfigDefinitionRepo configDefinitionRepo,
                             FileRegistry fileRegistry,
+                            Optional<? extends Reindexing> reindexing,
                             Optional<HostProvisioner> hostProvisioner,
                             Provisioned provisioned,
                             ModelContext.Properties properties,
@@ -82,6 +85,7 @@ public class ModelContextImpl implements ModelContext {
         this.deployLogger = deployLogger;
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileRegistry = fileRegistry;
+        this.reindexing = reindexing;
         this.hostProvisioner = hostProvisioner;
         this.provisioned = provisioned;
         this.properties = properties;
@@ -119,6 +123,9 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public FileRegistry getFileRegistry() { return fileRegistry; }
+
+    @Override
+    public Optional<? extends Reindexing> reindexing() { return  reindexing; }
 
     @Override
     public ModelContext.Properties properties() { return properties; }

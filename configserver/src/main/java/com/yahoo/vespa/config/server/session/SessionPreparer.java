@@ -30,6 +30,7 @@ import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -221,6 +222,7 @@ public class SessionPreparer {
                                                                    configDefinitionRepo,
                                                                    fileDistributionProvider,
                                                                    hostProvisionerProvider,
+                                                                   curator,
                                                                    hostValidator,
                                                                    logger,
                                                                    params,

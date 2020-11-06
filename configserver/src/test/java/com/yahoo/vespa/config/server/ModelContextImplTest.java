@@ -47,6 +47,7 @@ public class ModelContextImplTest {
                 new StaticConfigDefinitionRepo(),
                 new MockFileRegistry(),
                 Optional.empty(),
+                Optional.empty(),
                 new Provisioned(),
                 new ModelContextImpl.Properties(
                         ApplicationId.defaultId(),
