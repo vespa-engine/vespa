@@ -37,6 +37,7 @@ public interface ModelContext {
     DeployLogger deployLogger();
     ConfigDefinitionRepo configDefinitionRepo();
     FileRegistry getFileRegistry();
+    default Optional<? extends Reindexing> reindexing() { return Optional.empty(); }
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
 

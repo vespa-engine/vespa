@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -97,6 +98,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 new SilentDeployLogger(),
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistries(), modelFactory.version()).orElse(new MockFileRegistry()),
+                new ApplicationCuratorDatabase(tenant, curator).readReindexingStatus(applicationId),
                 createStaticProvisioner(applicationPackage.getAllocatedHosts(),
                                         modelContextProperties.applicationId(),
                                         provisioned),
