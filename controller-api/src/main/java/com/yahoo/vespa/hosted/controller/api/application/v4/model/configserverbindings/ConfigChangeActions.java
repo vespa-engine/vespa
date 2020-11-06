@@ -14,19 +14,23 @@ import java.util.List;
 public class ConfigChangeActions {
     @JsonProperty("restart") public final List<RestartAction> restartActions;
     @JsonProperty("refeed") public final List<RefeedAction> refeedActions;
+    @JsonProperty("reindex") public final List<ReindexAction> reindexActions;
 
     @JsonCreator
     public ConfigChangeActions(@JsonProperty("restart") List<RestartAction> restartActions,
-                               @JsonProperty("refeed") List<RefeedAction> refeedActions) {
+                               @JsonProperty("refeed") List<RefeedAction> refeedActions,
+                               @JsonProperty("reindex") List<ReindexAction> reindexActions) {
         this.restartActions = restartActions;
         this.refeedActions = refeedActions;
+        this.reindexActions = reindexActions;
     }
 
     @Override
     public String toString() {
         return "ConfigChangeActions{" +
-                "restartActions=" + restartActions +
-                ", refeedActions=" + refeedActions +
-                '}';
+               "restartActions=" + restartActions +
+               ", refeedActions=" + refeedActions +
+               ", reindexActions=" + reindexActions +
+               '}';
     }
 }

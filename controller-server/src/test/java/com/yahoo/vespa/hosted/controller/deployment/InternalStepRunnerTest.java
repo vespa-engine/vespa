@@ -16,6 +16,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ReindexAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
@@ -124,14 +125,29 @@ public class InternalStepRunnerTest {
     }
 
     @Test
+    public void reindexRequirementBlocksDeployment() {
+        tester.configServer().setConfigChangeActions(new ConfigChangeActions(List.of(),
+                                                                             List.of(),
+                                                                             List.of(new ReindexAction("Reindex",
+                                                                                                       false,
+                                                                                                       "doctype",
+                                                                                                       "cluster",
+                                                                                                       Collections.emptyList(),
+                                                                                                       List.of("Reindex it!")))));
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
+    }
+
+    @Test
     public void refeedRequirementBlocksDeployment() {
-        tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.emptyList(),
-                                                                             singletonList(new RefeedAction("Refeed",
-                                                                                                            false,
-                                                                                                            "doctype",
-                                                                                                            "cluster",
-                                                                                                            Collections.emptyList(),
-                                                                                                            singletonList("Refeed it!")))));
+        tester.configServer().setConfigChangeActions(new ConfigChangeActions(List.of(),
+                                                                             List.of(new RefeedAction("Refeed",
+                                                                                                      false,
+                                                                                                      "doctype",
+                                                                                                      "cluster",
+                                                                                                      Collections.emptyList(),
+                                                                                                      singletonList("Refeed it!"))),
+                                                                             List.of()));
         tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
         assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
     }
@@ -142,15 +158,16 @@ public class InternalStepRunnerTest {
         ZoneId zone = id.type().zone(system());
         HostName host = tester.configServer().hostFor(instanceId, zone);
 
-        tester.configServer().setConfigChangeActions(new ConfigChangeActions(singletonList(new RestartAction("cluster",
-                                                                                                             "container",
-                                                                                                             "search",
-                                                                                                             singletonList(new ServiceInfo("queries",
-                                                                                                                                                                   "search",
-                                                                                                                                                                   "config",
-                                                                                                                                                                   host.value())),
-                                                                                                             singletonList("Restart it!"))),
-                                                                             Collections.emptyList()));
+        tester.configServer().setConfigChangeActions(new ConfigChangeActions(List.of(new RestartAction("cluster",
+                                                                                                       "container",
+                                                                                                       "search",
+                                                                                                       List.of(new ServiceInfo("queries",
+                                                                                                                               "search",
+                                                                                                                               "config",
+                                                                                                                               host.value())),
+                                                                                                       List.of("Restart it!"))),
+                                                                             List.of(),
+                                                                             List.of()));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.deployReal));
 

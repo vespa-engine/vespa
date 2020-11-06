@@ -572,7 +572,7 @@ public class ApplicationController {
                            " as a deployment is not currently expected";
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.log = List.of(logEntry);
-        prepareResponse.configChangeActions = new ConfigChangeActions(List.of(), List.of());
+        prepareResponse.configChangeActions = new ConfigChangeActions(List.of(), List.of(), List.of());
         return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 

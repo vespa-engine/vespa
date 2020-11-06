@@ -405,8 +405,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             prepareResponse.message = "foo";
             prepareResponse.configChangeActions = configChangeActions != null
                     ? configChangeActions
-                    : new ConfigChangeActions(Collections.emptyList(),
-                                              Collections.emptyList());
+                    : new ConfigChangeActions(List.of(), List.of(), List.of());
             setConfigChangeActions(null);
             prepareResponse.tenant = new TenantId("tenant");
             prepareResponse.log = warnings.getOrDefault(id, Collections.emptyList());
