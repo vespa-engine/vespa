@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -195,12 +196,7 @@ public class ModelContextImpl implements ModelContext {
         private final int mergeChunkSize;
 
         public Properties(ApplicationId applicationId,
-                          boolean multitenantFromConfig,
-                          List<ConfigServerSpec> configServerSpecs,
-                          HostName loadBalancerName,
-                          URI ztsUrl,
-                          String athenzDnsSuffix,
-                          boolean hostedVespa,
+                          ConfigserverConfig configserverConfig,
                           Zone zone,
                           Set<ContainerEndpoint> endpoints,
                           boolean isBootstrap,
@@ -212,12 +208,12 @@ public class ModelContextImpl implements ModelContext {
                           Optional<Quota> maybeQuota) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
-            this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
-            this.configServerSpecs = configServerSpecs;
-            this.loadBalancerName = loadBalancerName;
-            this.ztsUrl = ztsUrl;
-            this.athenzDnsSuffix = athenzDnsSuffix;
-            this.hostedVespa = hostedVespa;
+            this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
+            this.configServerSpecs = com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig(configserverConfig);
+            this.loadBalancerName = HostName.from(configserverConfig.loadBalancerAddress());
+            this.ztsUrl = configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null;
+            this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
+            this.hostedVespa = configserverConfig.hostedVespa();
             this.zone = zone;
             this.endpoints = endpoints;
             this.isBootstrap = isBootstrap;

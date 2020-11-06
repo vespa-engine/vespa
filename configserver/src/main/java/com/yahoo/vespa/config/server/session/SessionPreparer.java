@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.ImmutableList;
@@ -23,14 +23,11 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -57,7 +54,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -202,19 +198,15 @@ public class SessionPreparer {
             this.applicationRoles = params.applicationRoles()
                     .or(() -> applicationRolesStore.readApplicationRoles(applicationId));
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
-                                                              configserverConfig.multitenant(),
-                                                              ConfigServerSpec.fromConfig(configserverConfig),
-                                                              HostName.from(configserverConfig.loadBalancerAddress()),
-                                                              configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null,
-                                                              configserverConfig.athenzDnsSuffix(),
-                                                              configserverConfig.hostedVespa(),
+                                                              configserverConfig,
                                                               zone,
                                                               Set.copyOf(containerEndpoints),
                                                               params.isBootstrap(),
                                                               currentActiveApplicationSet.isEmpty(),
                                                               flagSource,
                                                               endpointCertificateSecrets,
-                                                              athenzDomain, applicationRoles,
+                                                              athenzDomain,
+                                                              applicationRoles,
                                                               params.quota());
             this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,

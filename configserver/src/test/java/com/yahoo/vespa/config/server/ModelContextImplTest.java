@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
@@ -39,6 +40,11 @@ public class ModelContextImplTest {
         Set<ContainerEndpoint> endpoints = Collections.singleton(endpoint);
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .multitenant(true)
+                .hostedVespa(false)
+                .build();
+
         ModelContext context = new ModelContextImpl(
                 MockApplicationPackage.createEmpty(),
                 Optional.empty(),
@@ -51,12 +57,7 @@ public class ModelContextImplTest {
                 new Provisioned(),
                 new ModelContextImpl.Properties(
                         ApplicationId.defaultId(),
-                        true,
-                        Collections.emptyList(),
-                        null,
-                        null,
-                        null,
-                        false,
+                        configserverConfig,
                         Zone.defaultZone(),
                         endpoints,
                         false,
