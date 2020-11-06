@@ -34,7 +34,7 @@ import static java.util.stream.Collectors.joining;
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
  * which send documents straight to storage — via indexing if the documenet type has "index" mode.
- * The {@link #reindex} method blocks until unterrupted, or util no more reindexing is left to do.
+ * The {@link #reindex} method blocks until interrupted, or until no more reindexing is left to do.
  *
  * @author jonmv
  */
@@ -54,7 +54,7 @@ public class Reindexer {
             cluster.bucketOf(type); // Verifies this is known.
 
         this.cluster = cluster;
-        this.ready = new TreeMap<>(ready);
+        this.ready = new TreeMap<>(ready); // Iterate through document types in consistent order.
         this.database = database;
         this.access = access;
         this.clock = clock;
@@ -94,11 +94,12 @@ public class Reindexer {
                 log.log(WARNING, "Unknown reindexing state '" + status.state() + "'");
             case FAILED:
                 log.log(FINE, () -> "Not continuing reindexing of " + type + " due to previous failure");
-            case SUCCESSFUL: // Intentional fallthrough — both are done states.
+            case SUCCESSFUL: // Intentional fallthrough — all three are done states.
                 return status;
             case RUNNING:
                 log.log(WARNING, "Unepxected state 'RUNNING' of reindexing of " + type);
             case READY: // Intentional fallthrough — must just assume we failed updating state when exiting previously.
+            log.log(FINE, () -> "Running reindexing of " + type + ", which started at " + status.startedAt());
         }
 
         // Visit buckets until they're all done, or until we are interrupted.
@@ -119,7 +120,7 @@ public class Reindexer {
                 log.log(WARNING, "Visiting failed: " + control.getResult().getMessage());
                 return status.failed(clock.instant(), control.getResult().getMessage());
             case ABORTED:
-                log.log(FINE, () -> "Aborting reindexing of " + type + " due to shutdown — will continue later");
+                log.log(FINE, () -> "Halting reindexing of " + type + " due to shutdown — will continue later");
                 return status.halted();
             case SUCCESS:
                 log.log(INFO, "Completed reindexing of " + type + " after " + Duration.between(status.startedAt(), clock.instant()));
@@ -213,4 +214,3 @@ public class Reindexer {
     }
 
 }
-
