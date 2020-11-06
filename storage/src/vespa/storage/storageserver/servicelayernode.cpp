@@ -77,17 +77,6 @@ ServiceLayerNode::subscribeToConfigs()
 {
     StorageNode::subscribeToConfigs();
     _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
-
-    std::lock_guard configLockGuard(_configLock);
-        // Verify and set disk count
-    if (_serverConfig->diskCount != 0
-        && _serverConfig->diskCount != 1u)
-    {
-        std::ostringstream ost;
-        ost << "Storage is configured to have " << _serverConfig->diskCount
-            << " disks but persistence provider states it has 1 disk.";
-        throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
-    }
 }
 
 void
@@ -101,8 +90,7 @@ void
 ServiceLayerNode::initializeNodeSpecific()
 {
     // Give node state to mount point initialization, such that we can
-    // get disk count and state of unavailable disks set in reported
-    // node state.
+    // get capacity and reliability set in reported node state.
     NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
     lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
 
@@ -115,8 +103,6 @@ ServiceLayerNode::initializeNodeSpecific()
 
 #define DIFFER(a) (!(oldC.a == newC.a))
 #define ASSIGN(a) { oldC.a = newC.a; updated = true; }
-#define DIFFERWARN(a, b) \
-    if (DIFFER(a)) { LOG(warning, "Live config failure: %s.", b); }
 
 void
 ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
@@ -125,7 +111,6 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         bool updated = false;
         vespa::config::content::core::StorServerConfigBuilder oldC(*_serverConfig);
         StorServerConfig& newC(*_newServerConfig);
-        DIFFERWARN(diskCount, "Cannot alter partition count of node live");
         {
             updated = false;
             NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());

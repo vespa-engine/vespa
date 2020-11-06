@@ -161,7 +161,7 @@ StorageNode::initialize()
     _component->registerMetricUpdateHook(*this, framework::SecondTime(300));
 
     // Initializing state manager early, as others use it init time to
-    // update node state according to disk count and min used bits etc.
+    // update node state according min used bits etc.
     // Needs node type to be set right away. Needs thread pool, index and
     // dead lock detector too, but not before open()
     _stateManager.reset(new StateManager(
@@ -318,12 +318,6 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         if (DIFFER(group)) {
             LOG(info, "Live config update: Group structure altered.");
             ASSIGN(group);
-        }
-        if (DIFFER(diskDistribution)) {
-            LOG(info, "Live config update: Disk distribution altered from %s to %s.",
-                StorDistributionConfig::getDiskDistributionName(oldC.diskDistribution).c_str(),
-                StorDistributionConfig::getDiskDistributionName(newC.diskDistribution).c_str());
-            ASSIGN(diskDistribution);
         }
         _distributionConfig = std::make_unique<StorDistributionConfig>(oldC);
         _newDistributionConfig.reset();
