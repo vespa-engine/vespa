@@ -43,7 +43,7 @@ AttributeFactory::createSingleFastSearch(stringref name, const Config & info)
     case BasicType::STRING:
         return std::make_shared<SingleValueStringPostingAttribute>(name, info);
     case BasicType::TENSOR:
-        if (info.tensorType().is_sparse()) {
+        if (!info.tensorType().is_dense()) {
             return std::make_shared<tensor::DirectTensorAttribute>(name, info);
         }
         break;
