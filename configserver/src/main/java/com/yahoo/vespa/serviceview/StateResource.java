@@ -40,6 +40,7 @@ public class StateResource implements StateClient {
     private static final String USER_AGENT = "service-view-config-server-client";
     private static final String SINGLE_API_LINK = "url";
 
+    @SuppressWarnings("removal")
     private final VespaClientBuilderFactory clientBuilderFactory;
     private final int restApiPort;
     private final String host;
