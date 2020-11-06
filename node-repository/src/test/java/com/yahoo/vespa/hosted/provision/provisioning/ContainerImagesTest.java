@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 
@@ -45,6 +46,28 @@ public class ContainerImagesTest {
         var proxyHosts = tester.makeReadyNodes(2, "default", NodeType.proxyhost);
         for (var host : proxyHosts) {
             assertEquals(proxyImage, tester.nodeRepository().containerImages().imageFor(host.type()));
+        }
+    }
+
+    @Test
+    public void image_replacement() {
+        var flagSource = new InMemoryFlagSource();
+        var defaultImage = DockerImage.fromString("foo.example.com/vespa/vespa")
+                                      .withReplacedBy(DockerImage.fromString("bar.example.com/vespa/vespa"));
+        var tester = new ProvisioningTester.Builder().defaultImage(defaultImage).flagSource(flagSource).build();
+        var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
+        tester.activateTenantHosts();
+
+        // Default image is used initially
+        for (var host : hosts) {
+            assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(host.type()));
+        }
+
+        // Enabling flag switches to replacement
+        flagSource.withBooleanFlag(Flags.REGIONAL_CONTAINER_REGISTRY.id(), true);
+        for (var host : hosts) {
+            assertEquals(defaultImage.replacedBy().get().asString(),
+                         tester.nodeRepository().containerImages().imageFor(host.type()).asString());
         }
     }
 

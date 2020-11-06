@@ -4,6 +4,10 @@ namespace=config.provisioning
 # Default container image to use for nodes.
 containerImage string default="registry.example.com:9999/myorg/vespa"
 
+# A replacement container image to use for nodes. This is used to avoid nodes seeing different wanted images in the
+# transition to a new default image or registry.
+containerImageReplacement string default=""
+
 # Whether to cache data read from ZooKeeper in-memory.
 useCuratorClientCache bool default=false
 
