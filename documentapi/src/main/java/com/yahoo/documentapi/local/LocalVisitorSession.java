@@ -186,6 +186,12 @@ public class LocalVisitorSession implements VisitorSession {
     @Override
     public void destroy() {
         abort();
+        try {
+            control.waitUntilDone(0);
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
 }

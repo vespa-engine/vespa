@@ -26,8 +26,8 @@ import java.util.logging.Logger;
  */
 public class VisitorIterator {
 
-    private ProgressToken progressToken;
-    private BucketSource bucketSource;
+    private final ProgressToken progressToken;
+    private final BucketSource bucketSource;
     private int distributionBitCount;
 
     private static final Logger log = Logger.getLogger(VisitorIterator.class.getName());

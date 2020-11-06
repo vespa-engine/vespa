@@ -4,12 +4,10 @@ package ai.vespa.reindexing;
 import ai.vespa.reindexing.Reindexing.Status;
 import ai.vespa.reindexing.ReindexingCurator.ReindexingLockException;
 import com.yahoo.document.DocumentType;
-import com.yahoo.document.Field;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
-import com.yahoo.documentapi.VisitorControlHandler.CompletionCode;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -21,10 +19,11 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
-import static com.yahoo.documentapi.VisitorControlHandler.CompletionCode.ABORTED;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
@@ -47,11 +46,15 @@ public class Reindexer {
     private final ReindexingCurator database;
     private final DocumentAccess access;
     private final Clock clock;
+    private final Phaser phaser = new Phaser(2); // Reindexer and visitor.
+
+    private Reindexing reindexing;
+    private Status status;
 
     public Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
                      DocumentAccess access, Clock clock) {
         for (DocumentType type : ready.keySet())
-            cluster.bucketOf(type); // Verifies this is known.
+            cluster.bucketSpaceOf(type); // Verifies this is known.
 
         this.cluster = cluster;
         this.ready = new TreeMap<>(ready); // Iterate through document types in consistent order.
@@ -60,34 +63,42 @@ public class Reindexer {
         this.clock = clock;
     }
 
+    /** Tells this to stop reindexing at its leisure. */
+    public void shutdown() {
+        phaser.forceTermination();
+    }
+
     /** Starts and tracks reprocessing of ready document types until done, or interrupted. */
     public void reindex() throws ReindexingLockException {
+        if (phaser.isTerminated())
+            throw new IllegalStateException("Already shut down");
+
         try (Lock lock = database.lockReindexing()) {
-            Reindexing reindexing = database.readReindexing();
             for (DocumentType type : ready.keySet()) { // We consider only document types for which we have config.
-                if (ready.get(type).isAfter(clock.instant())) {
+                if (ready.get(type).isAfter(clock.instant()))
                     log.log(WARNING, "Received config for reindexing which is ready in the future — will process later " +
                                      "(" + ready.get(type) + " is after " + clock.instant() + ")");
-                }
-                else {
-                    // If this is a new document type (or a new cluster), no reindexing is required.
-                    Status status = reindexing.status().getOrDefault(type,
-                                                                     Status.ready(clock.instant())
-                                                                           .running()
-                                                                           .successful(clock.instant()));
-                    reindexing = reindexing.with(type, progress(type, status));
-                }
-                if (Thread.interrupted()) // Clear interruption status so blocking calls function normally again.
+                else
+                    progress(type);
+
+                if (phaser.isTerminated())
                     break;
             }
-            database.writeReindexing(reindexing);
         }
     }
 
     @SuppressWarnings("fallthrough") // (ノಠ ∩ಠ)ノ彡( \o°o)\
-    private Status progress(DocumentType type, Status status) {
+    private void progress(DocumentType type) {
+        // If this is a new document type (or a new cluster), no reindexing is required.
+        reindexing = database.readReindexing();
+        status = reindexing.status().getOrDefault(type,
+                                                  Status.ready(clock.instant())
+                                                        .running()
+                                                        .successful(clock.instant()));
         if (ready.get(type).isAfter(status.startedAt()))
             status = Status.ready(clock.instant()); // Need to restart, as a newer reindexing is required.
+
+        database.writeReindexing(reindexing = reindexing.with(type, status));
 
         switch (status.state()) {
             default:
@@ -95,37 +106,49 @@ public class Reindexer {
             case FAILED:
                 log.log(FINE, () -> "Not continuing reindexing of " + type + " due to previous failure");
             case SUCCESSFUL: // Intentional fallthrough — all three are done states.
-                return status;
+                return;
             case RUNNING:
                 log.log(WARNING, "Unepxected state 'RUNNING' of reindexing of " + type);
             case READY: // Intentional fallthrough — must just assume we failed updating state when exiting previously.
-            log.log(FINE, () -> "Running reindexing of " + type + ", which started at " + status.startedAt());
+            log.log(FINE, () -> "Running reindexing of " + type);
         }
 
         // Visit buckets until they're all done, or until we are interrupted.
         status = status.running();
-        VisitorControlHandler control = new VisitorControlHandler();
+        AtomicReference<Instant> progressLastStored = new AtomicReference<>(clock.instant());
+        VisitorControlHandler control = new VisitorControlHandler() {
+            @Override
+            public void onProgress(ProgressToken token) {
+                super.onProgress(token);
+                status = status.progressed(token);
+                if (progressLastStored.get().isBefore(clock.instant().minusSeconds(10)))
+                    database.writeReindexing(reindexing = reindexing.with(type, status));
+            }
+            @Override
+            public void onDone(CompletionCode code, String message) {
+                super.onDone(code, message);
+                phaser.arriveAndAwaitAdvance();
+            }
+        };
         visit(type, status.progress().orElse(null), control);
 
-        // Progress is null if no buckets were successfully visited due to interrupt.
-        if (control.getProgress() != null)
-            status = status.progressed(control.getProgress());
-
         // If we were interrupted, the result may not yet be set in the control handler.
-        CompletionCode code = control.getResult() != null ? control.getResult().getCode() : ABORTED;
-        switch (code) {
+        switch (control.getResult().getCode()) {
             default:
                 log.log(WARNING, "Unexpected visitor result '" + control.getResult().getCode() + "'");
             case FAILURE: // Intentional fallthrough — this is an error.
                 log.log(WARNING, "Visiting failed: " + control.getResult().getMessage());
-                return status.failed(clock.instant(), control.getResult().getMessage());
+                status = status.failed(clock.instant(), control.getResult().getMessage());
+                break;
             case ABORTED:
                 log.log(FINE, () -> "Halting reindexing of " + type + " due to shutdown — will continue later");
-                return status.halted();
+                status = status.halted();
+                break;
             case SUCCESS:
                 log.log(INFO, "Completed reindexing of " + type + " after " + Duration.between(status.startedAt(), clock.instant()));
-                return status.successful(clock.instant());
+                status = status.successful(clock.instant());
         }
+        database.writeReindexing(reindexing.with(type, status));
     }
 
     private void visit(DocumentType type, ProgressToken progress, VisitorControlHandler control) {
@@ -139,15 +162,9 @@ public class Reindexer {
             throw new IllegalStateException(e);
         }
 
-        // Wait until done, or interrupted, in which case we abort the visit but don't wait for it to complete.
-        try {
-            control.waitUntilDone();
-        }
-        catch (InterruptedException e) {
-            control.abort();
-            Thread.currentThread().interrupt();
-        }
-        session.destroy(); // If thread is interrupted, this will not wait, but will retain the interrupted flag.
+        // Wait until done, or shut down, in which case we abort the visit and wait for it to complete.
+        phaser.arriveAndAwaitAdvance();
+        session.destroy();
     }
 
     VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
@@ -157,7 +174,7 @@ public class Reindexer {
         parameters.setFieldSet(type.getName() + ":[document]");
         parameters.setPriority(DocumentProtocol.Priority.LOW_1);
         parameters.setRoute(cluster.route());
-        parameters.setBucketSpace(cluster.bucketOf(type));
+        parameters.setBucketSpace(cluster.bucketSpaceOf(type));
         // parameters.setVisitorLibrary("ReindexVisitor");
         return parameters;
     }
@@ -183,8 +200,8 @@ public class Reindexer {
             return "[Storage:cluster=" + name + ";clusterconfigid=" + configId + "]";
         }
 
-        String bucketOf(DocumentType documentType) {
-            return requireNonNull(documentBuckets.get(documentType), "Unknown bucket for " + documentType);
+        String bucketSpaceOf(DocumentType documentType) {
+            return requireNonNull(documentBuckets.get(documentType), "Unknown bucket space for " + documentType);
         }
 
         @Override

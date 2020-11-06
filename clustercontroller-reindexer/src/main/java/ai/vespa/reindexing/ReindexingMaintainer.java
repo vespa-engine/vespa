@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -80,19 +81,20 @@ public class ReindexingMaintainer extends AbstractComponent {
             // Some other container is handling the reindexing at this moment, which is fine.
         }
         catch (Exception e) {
-            log.log(Level.WARNING, "Exception when reindexing", e);
+            log.log(WARNING, "Exception when reindexing", e);
         }
     }
 
     @Override
     public void deconstruct() {
         try {
-            executor.shutdownNow();
-            if ( ! executor.awaitTermination(20, TimeUnit.SECONDS))
-                log.log(Level.SEVERE, "Failed to shut down reindexer within timeout");
+            reindexer.shutdown();
+            executor.shutdown();
+            if ( ! executor.awaitTermination(45, TimeUnit.SECONDS))
+                log.log(WARNING, "Failed to shut down reindexer within timeout");
         }
         catch (InterruptedException e) {
-            log.log(Level.SEVERE, "Interrupted while waiting for reindexer to shut down");
+            log.log(WARNING, "Interrupted while waiting for reindexer to shut down");
             Thread.currentThread().interrupt();
         }
 
@@ -121,15 +123,15 @@ public class ReindexingMaintainer extends AbstractComponent {
         scheduler.accept(delayMillis, intervalMillis);
     }
 
-    static Cluster parseCluster(String name, ClusterListConfig clusters, AllClustersBucketSpacesConfig buckets,
+    static Cluster parseCluster(String name, ClusterListConfig clusters, AllClustersBucketSpacesConfig bucketSpaces,
                                 DocumentTypeManager manager) {
         return clusters.storage().stream()
                        .filter(storage -> storage.name().equals(name))
                        .map(storage -> new Cluster(name,
                                                    storage.configid(),
-                                                   buckets.cluster(name)
-                                                          .documentType().entrySet().stream()
-                                                          .collect(toMap(entry -> manager.getDocumentType(entry.getKey()),
+                                                   bucketSpaces.cluster(name)
+                                                               .documentType().entrySet().stream()
+                                                               .collect(toMap(entry -> manager.getDocumentType(entry.getKey()),
                                                                          entry -> entry.getValue().bucketSpace()))))
                        .findAny()
                        .orElseThrow(() -> new IllegalStateException("This cluster (" + name + ") not among the list of clusters"));
