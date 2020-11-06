@@ -132,7 +132,8 @@ public interface NodeRepository {
                         Optional.ofNullable(node.getExclusiveTo()).map(ApplicationId::fromSerializedForm),
                         dockerImageFrom(node.getWantedDockerImage()),
                         dockerImageFrom(node.getCurrentDockerImage()),
-                        node.getReports());
+                        node.getReports(),
+                        node.getHistory());
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {
