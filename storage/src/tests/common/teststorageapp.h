@@ -36,7 +36,6 @@ namespace storage {
 
 class StorageBucketDBInitializer;
 
-DEFINE_PRIMITIVE_WRAPPER(uint16_t, DiskCount);
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, NodeIndex);
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, NodeCount);
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, Redundancy);
