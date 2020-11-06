@@ -9,9 +9,12 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeHistory;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -53,6 +56,7 @@ public class Node {
     private final Optional<TenantName> reservedTo;
     private final Optional<ApplicationId> exclusiveTo;
     private final Map<String, JsonNode> reports;
+    private final List<NodeHistory> history;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
@@ -60,7 +64,7 @@ public class Node {
                 Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
                 int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
                 Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
-                DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports) {
+                DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports, List<NodeHistory> history) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -90,6 +94,7 @@ public class Node {
         this.wantedDockerImage = wantedDockerImage;
         this.currentDockerImage = currentDockerImage;
         this.reports = reports;
+        this.history = history;
     }
 
     public HostName hostname() {
@@ -202,6 +207,10 @@ public class Node {
         return reports;
     }
 
+    public List<NodeHistory> history() {
+        return history;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -275,6 +284,7 @@ public class Node {
         private Optional<TenantName> reservedTo = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
         private Map<String, JsonNode> reports = new HashMap<>();
+        private List<NodeHistory> history = new ArrayList<>();
 
         public Builder() { }
 
@@ -308,6 +318,7 @@ public class Node {
             this.reservedTo = node.reservedTo;
             this.exclusiveTo = node.exclusiveTo;
             this.reports = node.reports;
+            this.history = node.history;
         }
 
         public Builder hostname(HostName hostname) {
@@ -450,12 +461,17 @@ public class Node {
             return this;
         }
 
+        public Builder history(List<NodeHistory> history) {
+            this.history = history;
+            return this;
+        }
+
         public Node build() {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
                             cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo, exclusiveTo,
-                            wantedDockerImage, currentDockerImage, reports);
+                            wantedDockerImage, currentDockerImage, reports, history);
         }
 
     }
