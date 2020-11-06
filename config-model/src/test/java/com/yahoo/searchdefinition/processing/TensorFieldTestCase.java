@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.test.TestUtil;
+import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -44,7 +45,7 @@ public class TensorFieldTestCase {
     }
 
     @Test
-    public void requireThatTensorAttributeCannotBeFastSearch() throws ParseException {
+    public void requireThatIndexedTensorAttributeCannotBeFastSearch() throws ParseException {
         try {
             createFromString(getSd("field f1 type tensor(x[3]) { indexing: attribute \n attribute: fast-search }"));
             fail("Expected exception");
@@ -67,8 +68,7 @@ public class TensorFieldTestCase {
 
     @Test
     public void hnsw_index_is_default_turned_off() throws ParseException {
-        var attr = createFromString(getSd("field t1 type tensor(x[64]) { indexing: attribute }"))
-                .getSearch().getAttribute("t1");
+        var attr = getAttributeFromSd("field t1 type tensor(x[64]) { indexing: attribute }", "t1");
         assertFalse(attr.hnswIndexParams().isPresent());
     }
 
@@ -102,12 +102,24 @@ public class TensorFieldTestCase {
         }
     }
 
+    @Test
+    public void tensors_with_at_least_one_mapped_dimension_can_be_direct() throws ParseException {
+        assertTrue(getAttributeFromSd(
+                "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }", "t1").isFastSearch());
+        assertTrue(getAttributeFromSd(
+                "field t1 type tensor(x{},y{},z[4]) { indexing: attribute \n attribute: fast-search }", "t1").isFastSearch());
+    }
+
     private static String getSd(String field) {
         return joinLines("search test {",
                 "  document test {",
                 "    " + field,
                 "  }",
                 "}");
+    }
+
+    private Attribute getAttributeFromSd(String fieldSpec, String attrName) throws ParseException {
+        return createFromString(getSd(fieldSpec)).getSearch().getAttribute(attrName);
     }
 
     private void assertHnswIndexParams(String indexSpec, int maxLinksPerNode, int neighborsToExploreAtInsert) throws ParseException {
