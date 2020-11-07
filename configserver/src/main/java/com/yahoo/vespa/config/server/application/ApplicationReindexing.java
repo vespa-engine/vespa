@@ -42,14 +42,14 @@ public class ApplicationReindexing implements Reindexing {
 
     /** Returns a copy of this with common reindexing for the given cluster ready at the given instant. */
     public ApplicationReindexing withReady(String cluster, Instant readyAt) {
-        Cluster current = clusters.getOrDefault(cluster, Cluster.empty);
+        Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
         Cluster modified = new Cluster(new Status(readyAt), current.pending, current.ready);
         return new ApplicationReindexing(common, with(cluster, modified, clusters));
     }
 
     /** Returns a copy of this with reindexing for the given document type in the given cluster ready at the given instant. */
     public ApplicationReindexing withReady(String cluster, String documentType, Instant readyAt) {
-        Cluster current = clusters.getOrDefault(cluster, Cluster.empty);
+        Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
         Cluster modified = new Cluster(current.common,
                                        without(documentType, current.pending),
                                        with(documentType, new Status(readyAt), current.ready));
@@ -58,7 +58,7 @@ public class ApplicationReindexing implements Reindexing {
 
     /** Returns a copy of this with a pending reindexing at the given generation, for the given document type. */
     public ApplicationReindexing withPending(String cluster, String documentType, long requiredGeneration) {
-        Cluster current = clusters.getOrDefault(cluster, Cluster.empty);
+        Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
         Cluster modified = new Cluster(current.common,
                                        with(documentType, requirePositive(requiredGeneration), current.pending),
                                        without(documentType, current.ready));
@@ -79,13 +79,10 @@ public class ApplicationReindexing implements Reindexing {
             if (clusters.get(cluster).pending().containsKey(documentType))
                 return Optional.empty();
 
-            Status documentStatus = clusters.get(cluster).ready().get(documentType);
-            Status clusterStatus = clusters.get(cluster).common();
-            if (documentStatus == null || documentStatus.ready().isBefore(clusterStatus.ready()))
-                documentStatus = clusterStatus;
+            if (clusters.get(cluster).ready().containsKey(documentType))
+                return Optional.of(clusters.get(cluster).ready().get(documentType));
 
-            if (documentStatus.ready().isAfter(common().ready()))
-                return Optional.of(documentStatus);
+            return Optional.of(clusters.get(cluster).common());
         }
         return Optional.of(common());
     }
@@ -116,7 +113,7 @@ public class ApplicationReindexing implements Reindexing {
     /** Reindexing status for a single content cluster in an application. */
     public static class Cluster {
 
-        private static final Cluster empty = new Cluster(Status.ALWAYS_READY, Map.of(), Map.of());
+        private static Cluster ready(Status common) { return new Cluster(common, Map.of(), Map.of()); }
 
         private final Status common;
         private final Map<String, Long> pending;
@@ -172,9 +169,6 @@ public class ApplicationReindexing implements Reindexing {
 
     /** Reindexing status common to an application, one of its clusters, or a single document type in a cluster. */
     public static class Status implements Reindexing.Status {
-
-        /** Always ready, i.e., ignored when joining with more specific statuses. */
-        private static final Status ALWAYS_READY = new Status(Instant.EPOCH);
 
         private final Instant ready;
 
