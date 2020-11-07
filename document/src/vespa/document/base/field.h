@@ -12,9 +12,9 @@
 #pragma once
 
 #include <vespa/document/fieldset/fieldset.h>
-#include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/objects/fieldbase.h>
 #include <set>
+#include <vector>
 
 namespace document {
 
@@ -22,7 +22,6 @@ class FieldValue;
 class DataType;
 
 class Field final : public vespalib::FieldBase,
-                    public vespalib::Identifiable,
                     public FieldSet
 {
     const DataType *_dataType;

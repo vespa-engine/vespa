@@ -280,4 +280,8 @@ TEST(FieldCollectionTest, testHash ) {
     EXPECT_EQ(0x1e0918531b19734ul, FieldCollection(type, Field::Set::Builder().add(&type.getField("hstringval")).build()).hash());
 }
 
+TEST(FieldTest, testSizeOf) {
+    EXPECT_EQ(sizeof(Field), 96);
+}
+
 } // document

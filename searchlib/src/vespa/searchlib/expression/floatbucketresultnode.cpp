@@ -3,8 +3,7 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <cmath>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 IMPLEMENT_RESULTNODE(FloatBucketResultNode, BucketResultNode);
 
@@ -77,7 +76,6 @@ FloatBucketResultNode::onDeserialize(vespalib::Deserializer & is)
     return is.get(_fromField, _from).get(_toField, _to);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh
