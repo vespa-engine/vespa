@@ -188,8 +188,7 @@ public class ConfigConvergenceCheckerTest {
                 responseBody ->
                         assertThat(responseBody)
                                 .startsWith("{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
-                                        "\",\"wantedGeneration\":3,\"error\":\"")
-                                .contains("timed out")
+                                        "\",\"wantedGeneration\":3,\"error\":\"Read timed out")
                                 .endsWith("\"}"),
                 404,
                 response);
