@@ -42,7 +42,6 @@ FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nb
 }
 
 FieldUpdate::FieldUpdate(const FieldUpdate &) = default;
-FieldUpdate & FieldUpdate::operator = (const FieldUpdate &) = default;
 FieldUpdate::~FieldUpdate() = default;
 
 bool

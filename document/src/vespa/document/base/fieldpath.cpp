@@ -15,8 +15,7 @@ using vespalib::make_string;
 namespace document {
 
 FieldPathEntry::FieldPathEntry(const FieldPathEntry &) = default;
-FieldPathEntry & FieldPathEntry::operator=(const FieldPathEntry & ) = default;
-FieldPathEntry::~FieldPathEntry() { }
+FieldPathEntry::~FieldPathEntry() = default;
 
 FieldPathEntry::FieldPathEntry() :
     _type(NONE),

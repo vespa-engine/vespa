@@ -60,20 +60,20 @@ int FloatBucketResultNode::contains(const FloatBucketResultNode & b) const
 void
 FloatBucketResultNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    visit(visitor, _fromField.getName(), _from);
-    visit(visitor, _toField.getName(), _to);
+    visit(visitor, _fromField, _from);
+    visit(visitor, _toField, _to);
 }
 
 vespalib::Serializer &
 FloatBucketResultNode::onSerialize(vespalib::Serializer & os) const
 {
-    return os.put(_fromField, _from).put(_toField, _to);
+    return os.put(_from).put(_to);
 }
 
 vespalib::Deserializer &
 FloatBucketResultNode::onDeserialize(vespalib::Deserializer & is)
 {
-    return is.get(_fromField, _from).get(_toField, _to);
+    return is.get(_from).get(_to);
 }
 
 }

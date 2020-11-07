@@ -4,7 +4,6 @@
 
 namespace search::expression {
 
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 using namespace std::chrono;

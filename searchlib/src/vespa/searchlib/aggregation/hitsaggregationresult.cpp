@@ -9,7 +9,6 @@ LOG_SETUP(".searchlib.aggregation.hitsaggregationresult");
 
 namespace search::aggregation {
 
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 

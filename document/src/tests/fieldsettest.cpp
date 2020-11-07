@@ -281,7 +281,7 @@ TEST(FieldCollectionTest, testHash ) {
 }
 
 TEST(FieldTest, testSizeOf) {
-    EXPECT_EQ(sizeof(Field), 96);
+    EXPECT_EQ(sizeof(Field), 88);
 }
 
 } // document

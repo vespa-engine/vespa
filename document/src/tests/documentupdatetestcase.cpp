@@ -467,28 +467,28 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_EQ(*type, upd.getType());
 
     // Verify assign value update.
-    FieldUpdate serField = upd.getUpdates()[1];
-    EXPECT_EQ(serField.getField().getId(), type->getField("intfield").getId());
+    const FieldUpdate & serField1 = upd.getUpdates()[1];
+    EXPECT_EQ(serField1.getField().getId(), type->getField("intfield").getId());
 
-    const ValueUpdate* serValue = &serField[0];
+    const ValueUpdate* serValue = &serField1[0];
     ASSERT_EQ(serValue->getType(), ValueUpdate::Assign);
 
     const AssignValueUpdate* assign(static_cast<const AssignValueUpdate*>(serValue));
     EXPECT_EQ(IntFieldValue(4), static_cast<const IntFieldValue&>(assign->getValue()));
 
     // Verify clear field update.
-    serField = upd.getUpdates()[2];
-    EXPECT_EQ(serField.getField().getId(), type->getField("floatfield").getId());
+    const FieldUpdate & serField2 = upd.getUpdates()[2];
+    EXPECT_EQ(serField2.getField().getId(), type->getField("floatfield").getId());
 
-    serValue = &serField[0];
+    serValue = &serField2[0];
     EXPECT_EQ(serValue->getType(), ValueUpdate::Clear);
     EXPECT_TRUE(serValue->inherits(ClearValueUpdate::classId));
 
     // Verify add value update.
-    serField = upd.getUpdates()[0];
-    EXPECT_EQ(serField.getField().getId(), type->getField("arrayoffloatfield").getId());
+    const FieldUpdate & serField3 = upd.getUpdates()[0];
+    EXPECT_EQ(serField3.getField().getId(), type->getField("arrayoffloatfield").getId());
 
-    serValue = &serField[0];
+    serValue = &serField3[0];
     ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     const AddValueUpdate* add = static_cast<const AddValueUpdate*>(serValue);
@@ -496,7 +496,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
     EXPECT_FLOAT_EQ(value->getAsFloat(), 5.00f);
 
-    serValue = &serField[1];
+    serValue = &serField3[1];
     ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     add = static_cast<const AddValueUpdate*>(serValue);
@@ -504,7 +504,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     EXPECT_TRUE(value->inherits(FloatFieldValue::classId));
     EXPECT_FLOAT_EQ(value->getAsFloat(), 4.23f);
 
-    serValue = &serField[2];
+    serValue = &serField3[2];
     ASSERT_EQ(serValue->getType(), ValueUpdate::Add);
 
     add = static_cast<const AddValueUpdate*>(serValue);

@@ -35,13 +35,15 @@ Field::Field()
 { }
 
 Field::Field(vespalib::stringref name, int fieldId, const DataType& dataType)
-    : FieldBase(name),
+    : FieldSet(),
+      _name(name),
       _dataType(&dataType),
       _fieldId(fieldId)
 { }
 
 Field::Field(vespalib::stringref name, const DataType& dataType)
-    : FieldBase(name),
+    : FieldSet(),
+      _name(name),
       _dataType(&dataType),
       _fieldId(calculateIdV7())
 { }

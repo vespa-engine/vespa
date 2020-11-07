@@ -2,8 +2,7 @@
 #include "rawbucketresultnode.h"
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 IMPLEMENT_RESULTNODE(RawBucketResultNode, BucketResultNode);
 
@@ -41,7 +40,7 @@ RawBucketResultNode::RawBucketResultNode()
       _to(new RawResultNode())
 {}
 
-RawBucketResultNode::~RawBucketResultNode() {}
+RawBucketResultNode::~RawBucketResultNode() = default;
 
 int
 RawBucketResultNode::onCmp(const Identifiable & rhs) const
@@ -73,8 +72,8 @@ int RawBucketResultNode::contains(const ConstBufferRef & s) const
 void
 RawBucketResultNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    visit(visitor, _fromField.getName(), _from);
-    visit(visitor, _toField.getName(), _to);
+    visit(visitor, _fromField, _from);
+    visit(visitor, _toField, _to);
 }
 
 vespalib::Serializer &
@@ -93,7 +92,6 @@ RawBucketResultNode::onDeserialize(vespalib::Deserializer & is)
     return is;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

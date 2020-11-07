@@ -1,45 +1,45 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/objects/asciiserializer.h>
+#include "asciiserializer.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vespalib {
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, bool value) {
+AsciiSerializer &AsciiSerializer::put(bool value) {
     _stream << value;
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, uint8_t value) {
+AsciiSerializer &AsciiSerializer::put(uint8_t value) {
     _stream << value;
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, uint16_t value) {
+AsciiSerializer &AsciiSerializer::put(uint16_t value) {
     _stream << value;
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, uint32_t value) {
+AsciiSerializer &AsciiSerializer::put(uint32_t value) {
     _stream << value;
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, uint64_t value) {
+AsciiSerializer &AsciiSerializer::put(uint64_t value) {
     _stream << value;
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, float value) {
+AsciiSerializer &AsciiSerializer::put(float value) {
     _stream << value;
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, double value) {
+AsciiSerializer &AsciiSerializer::put(double value) {
     _stream << value;
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, stringref value) {
+AsciiSerializer &AsciiSerializer::put(stringref value) {
     _stream << value;
     return *this;
 }
