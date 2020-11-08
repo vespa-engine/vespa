@@ -8,7 +8,7 @@ namespace vespalib {
 class IFieldBase
 {
 public:
-    virtual ~IFieldBase() { }
+    virtual ~IFieldBase() = default;
     // Overrides must guarantee that returned reference is zero-terminated.
     virtual stringref getName() const = 0;
 };

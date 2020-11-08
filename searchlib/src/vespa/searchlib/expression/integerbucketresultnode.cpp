@@ -2,8 +2,7 @@
 #include "integerbucketresultnode.h"
 #include <vespa/vespalib/objects/visit.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 IMPLEMENT_RESULTNODE(IntegerBucketResultNode, BucketResultNode);
 
@@ -65,7 +64,6 @@ IntegerBucketResultNode::onDeserialize(vespalib::Deserializer & is)
     return is.get(_fromField, _from).get(_toField, _to);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh
