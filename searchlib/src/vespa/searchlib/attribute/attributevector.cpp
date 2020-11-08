@@ -16,12 +16,11 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/util/logutil.h>
+#include <vespa/searchcommon/attribute/attribute_utils.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");
@@ -129,7 +128,8 @@ AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config 
       _createSerialNum(0u),
       _compactLidSpaceGeneration(0u),
       _hasEnum(false),
-      _loaded(false)
+      _loaded(false),
+      _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig()))
 {
 }
 

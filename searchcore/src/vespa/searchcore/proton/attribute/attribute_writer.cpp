@@ -7,12 +7,12 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchcore/proton/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/tensor/prepare_result.h>
+#include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <future>
@@ -56,7 +56,7 @@ AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
       _use_two_phase_put(use_two_phase_put_for_attribute(attribute))
 {
     const vespalib::string &name = attribute.getName();
-    _structFieldAttribute = attribute::isStructFieldAttribute(name);
+    _structFieldAttribute = search::attribute::isStructFieldAttribute(name);
 }
 
 AttributeWriter::WriteField::~WriteField() = default;
