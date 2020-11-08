@@ -681,13 +681,13 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
         auto found = _attrMap.find(fupd.getField().getName());
         AttributeVector * attrp = (found != _attrMap.end()) ? found->second.first : nullptr;
         onUpdate.onUpdateField(fupd.getField().getName(), attrp);
-        if (attrp == nullptr) {
+        if (__builtin_expect(attrp == nullptr, false)) {
             LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().data());
             continue;
         }
         // TODO: Check if we must use > due to multiple entries for same
         // document and attribute.
-        if (attrp->getStatus().getLastSyncToken() >= serialNum)
+        if (__builtin_expect(attrp->getStatus().getLastSyncToken() >= serialNum, false))
             continue;
         args[found->second.second.getId()]->_updates.emplace_back(attrp, &fupd);
         LOG(debug, "About to apply update for docId %u in attribute vector '%s'.", lid, attrp->getName().c_str());
