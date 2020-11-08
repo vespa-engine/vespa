@@ -11,7 +11,6 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchcore/proton/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
@@ -29,7 +28,6 @@ using document::DocumentId;
 using document::GlobalId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using proton::attribute::isUpdateableInMemoryOnly;
 using search::IDestructorCallback;
 using search::SerialNum;
 using search::index::Schema;
@@ -418,7 +416,7 @@ StoreOnlyFeedView::UpdateScope::UpdateScope(const search::index::Schema & schema
 
 void
 StoreOnlyFeedView::UpdateScope::onUpdateField(vespalib::stringref fieldName, const search::AttributeVector * attr) {
-    if (!_nonAttributeFields && (attr == nullptr || !isUpdateableInMemoryOnly(attr->getName(), attr->getConfig()))) {
+    if (!_nonAttributeFields && (attr == nullptr || !attr->isUpdateableInMemoryOnly())) {
         _nonAttributeFields = true;
     }
     if (!_indexedFields && _schema->isIndexField(fieldName)) {

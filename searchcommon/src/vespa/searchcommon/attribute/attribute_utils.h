@@ -4,9 +4,9 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search::attribute { class Config; }
+namespace search::attribute {
 
-namespace proton::attribute {
+class Config;
 
 /**
  * Returns whether the given attribute vector is updateable only in-memory.
@@ -23,8 +23,7 @@ namespace proton::attribute {
  * During update the complex field is first updated in the document,
  * then the struct field attribute is updated based on the new content of the complex field.
  */
-bool isUpdateableInMemoryOnly(const vespalib::string &attrName,
-                              const search::attribute::Config &cfg);
+bool isUpdateableInMemoryOnly(const vespalib::string &attrName, const Config &cfg);
 
 bool isStructFieldAttribute(const vespalib::string &attrName);
 

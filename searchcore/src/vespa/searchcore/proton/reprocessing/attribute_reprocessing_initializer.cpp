@@ -2,7 +2,7 @@
 
 #include "attribute_reprocessing_initializer.h"
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
-#include <vespa/searchcore/proton/attribute/attribute_utils.h>
+#include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
@@ -12,7 +12,7 @@
 LOG_SETUP(".proton.reprocessing.attribute_reprocessing_initializer");
 
 using namespace search::index;
-using proton::attribute::isUpdateableInMemoryOnly;
+using search::attribute::isUpdateableInMemoryOnly;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::SerialNum;

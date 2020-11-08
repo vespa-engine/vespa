@@ -3,15 +3,14 @@
 #include "attribute_utils.h"
 #include <vespa/searchcommon/attribute/config.h>
 
-namespace proton::attribute {
+namespace search::attribute {
 
 bool
-isUpdateableInMemoryOnly(const vespalib::string &attrName,
-                         const search::attribute::Config &cfg)
+isUpdateableInMemoryOnly(const vespalib::string &attrName, const Config &cfg)
 {
     auto basicType = cfg.basicType().type();
-    return ((basicType != search::attribute::BasicType::Type::PREDICATE) &&
-            (basicType != search::attribute::BasicType::Type::REFERENCE)) &&
+    return ((basicType != BasicType::Type::PREDICATE) &&
+            (basicType != BasicType::Type::REFERENCE)) &&
             !isStructFieldAttribute(attrName);
 }
 

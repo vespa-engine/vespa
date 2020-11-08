@@ -431,7 +431,7 @@ public:
     /**
      * Virtual destructor to allow safe subclassing.
      **/
-    virtual ~IAttributeVector() {}
+    virtual ~IAttributeVector() = default;
 
     /**
      * This method is used to simulate sparseness in the single value attributes.
