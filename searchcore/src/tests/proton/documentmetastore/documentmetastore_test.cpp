@@ -759,7 +759,6 @@ TEST(DocumentMetaStoreTest, can_sort_gids)
     }
 }
 
-template <typename ChecksumType>
 void
 requireThatBasicBucketInfoWorks()
 {
@@ -773,8 +772,7 @@ requireThatBasicBucketInfoWorks()
         GlobalId gid = createGid(lid);
         Timestamp timestamp(UINT64_C(123456789) * lid);
         Timestamp oldTimestamp;
-        BucketId bucketId(minNumBits,
-                          gid.convertToBucketId().getRawId());
+        BucketId bucketId(minNumBits, gid.convertToBucketId().getRawId());
         uint32_t addLid = addGid(dms, gid, bucketId, timestamp);
         EXPECT_EQ(lid, addLid);
         m[std::make_pair(bucketId, gid)] = timestamp;
@@ -783,37 +781,35 @@ requireThatBasicBucketInfoWorks()
         GlobalId gid = createGid(lid);
         Timestamp timestamp(UINT64_C(14735) * lid);
         Timestamp oldTimestamp;
-        BucketId bucketId(minNumBits,
-                          gid.convertToBucketId().getRawId());
+        BucketId bucketId(minNumBits, gid.convertToBucketId().getRawId());
         uint32_t addLid = addGid(dms, gid, bucketId, timestamp);
         EXPECT_EQ(lid, addLid);
         m[std::make_pair(bucketId, gid)] = timestamp;
     }
     for (uint32_t lid = 3; lid <= numLids; lid += 5) {
         GlobalId gid = createGid(lid);
-        BucketId bucketId(minNumBits,
-                          gid.convertToBucketId().getRawId());
+        BucketId bucketId(minNumBits, gid.convertToBucketId().getRawId());
         EXPECT_TRUE(dms.remove(lid, 0u));
         dms.removeComplete(lid);
         m.erase(std::make_pair(bucketId, gid));
     }
     assert(!m.empty());
-    ChecksumType cksum(BucketChecksum(0));
+    BucketState cksum;
     BucketId prevBucket = m.begin()->first.first;
     uint32_t cnt = 0u;
     uint32_t maxcnt = 0u;
     BucketDBOwner::Guard bucketDB = dms.getBucketDB().takeGuard();
     for (Map::const_iterator i = m.begin(), ie = m.end(); i != ie; ++i) {
         if (i->first.first == prevBucket) {
-            cksum.addDoc(i->first.second, i->second);
+            cksum.add(i->first.second, i->second, 1, SubDbType::READY);
             ++cnt;
         } else {
             BucketInfo bi = bucketDB->get(prevBucket);
             EXPECT_EQ(cnt, bi.getDocumentCount());
             EXPECT_EQ(cksum.getChecksum(), bi.getChecksum());
             prevBucket = i->first.first;
-            cksum = ChecksumType(BucketChecksum(0));
-            cksum.addDoc(i->first.second, i->second);
+            cksum = BucketState();
+            cksum.add(i->first.second, i->second, 1, SubDbType::READY);
             maxcnt = std::max(maxcnt, cnt);
             cnt = 1u;
         }
@@ -828,9 +824,9 @@ requireThatBasicBucketInfoWorks()
 TEST(DocumentMetaStoreTest, basic_bucket_info_works)
 {
     BucketState::setChecksumType(BucketState::ChecksumType::LEGACY);
-    requireThatBasicBucketInfoWorks<LegacyChecksumAggregator>();
+    requireThatBasicBucketInfoWorks();
     BucketState::setChecksumType(BucketState::ChecksumType::XXHASH64);
-    requireThatBasicBucketInfoWorks<XXH64ChecksumAggregator>();
+    requireThatBasicBucketInfoWorks();
 }
 
 TEST(DocumentMetaStoreTest, can_retrieve_list_of_lids_from_bucket_id)
