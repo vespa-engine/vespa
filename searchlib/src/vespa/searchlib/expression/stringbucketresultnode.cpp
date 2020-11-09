@@ -75,8 +75,8 @@ int StringBucketResultNode::contains(const char * s) const
 void
 StringBucketResultNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    visit(visitor, _fromField.getName(), _from);
-    visit(visitor, _toField.getName(), _to);
+    visit(visitor, _fromField, _from);
+    visit(visitor, _toField, _to);
 }
 
 vespalib::Serializer &

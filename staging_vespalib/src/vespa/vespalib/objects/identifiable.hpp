@@ -23,7 +23,7 @@ namespace vespalib {
 template <typename T>
 Serializer & Identifiable::serialize(const T & v, Serializer & os) {
     uint32_t sz(v.size());
-    os.put(sizeField, sz);
+    os.put(sz);
     for(size_t i(0); i < sz; i++) {
         v[i].serialize(os);
     }
@@ -33,7 +33,7 @@ Serializer & Identifiable::serialize(const T & v, Serializer & os) {
 template <typename T>
 Deserializer & Identifiable::deserialize(T & v, Deserializer & is) {
     uint32_t sz(0);
-    is.get(sizeField, sz);
+    is.get(sz);
     v.resize(sz);
     for(size_t i(0); i < sz; i++) {
         v[i].deserialize(is);
@@ -50,7 +50,7 @@ public:
     IdentifiablePtr & operator = (IdentifiablePtr &&) noexcept = default;
     IdentifiablePtr(const IdentifiablePtr &) = default;
     IdentifiablePtr & operator = (const IdentifiablePtr &) = default;
-    IdentifiablePtr(T * p=NULL) noexcept : CloneablePtr<T>(p) { }
+    IdentifiablePtr(T * p=nullptr) noexcept : CloneablePtr<T>(p) { }
     IdentifiablePtr(std::unique_ptr<T> &&rhs) noexcept
         : CloneablePtr<T>(std::move(rhs))
     {
@@ -74,15 +74,15 @@ public:
     bool operator != (const IdentifiablePtr<T> &rhs) const { return (cmp(rhs) != 0); }
     Serializer & serialize(Serializer & os) const {
         if (this->get()) {
-            os.put(Identifiable::hasObjectField, uint8_t(1)) << *this->get();
+            os.put(uint8_t(1)) << *this->get();
         } else {
-            os.put(Identifiable::hasObjectField, uint8_t(0));
+            os.put(uint8_t(0));
         }
         return os;
     }
     Deserializer & deserialize(Deserializer & is) {
         uint8_t hasObject;
-        is.get(Identifiable::hasObjectField, hasObject);
+        is.get(hasObject);
         if (hasObject) {
             this->reset(static_cast<T *>(Identifiable::create(is).release()));
         }
@@ -97,7 +97,7 @@ class IdentifiableSharedPtr : public std::shared_ptr<T>
 {
 public:
     IdentifiableSharedPtr(const T &t) : std::shared_ptr<T>(t.clone()) {}
-    IdentifiableSharedPtr(T * p=NULL) : std::shared_ptr<T>(p) { }
+    IdentifiableSharedPtr(T * p=nullptr) : std::shared_ptr<T>(p) { }
     int cmp(const IdentifiableSharedPtr<T> &rhs) const {
         const T *a = this->get();
         const T *b = rhs.get();
@@ -111,15 +111,15 @@ public:
     }
     Serializer & serialize(Serializer & os) const {
         if (this->get()) {
-            os.put(Identifiable::hasObjectField, uint8_t(1)) << *this->get();
+            os.put(uint8_t(1)) << *this->get();
         } else {
-            os.put(Identifiable::hasObjectField, uint8_t(0));
+            os.put(uint8_t(0));
         }
         return os;
     }
     Deserializer & deserialize(Deserializer & is) {
         uint8_t hasObject;
-        is.get(Identifiable::hasObjectField, hasObject);
+        is.get(hasObject);
         if (hasObject) {
             reset(static_cast<T *>(Identifiable::create(is).release()));
         }

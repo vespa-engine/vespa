@@ -11,9 +11,8 @@
  */
 #pragma once
 
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/fieldset/fieldset.h>
-#include <vespa/vespalib/objects/fieldbase.h>
-#include <set>
 #include <vector>
 
 namespace document {
@@ -21,9 +20,9 @@ namespace document {
 class FieldValue;
 class DataType;
 
-class Field final : public vespalib::FieldBase,
-                    public FieldSet
+class Field final : public FieldSet
 {
+    vespalib::string _name;
     const DataType *_dataType;
     int             _fieldId;
 public:
@@ -92,11 +91,12 @@ public:
     // Note that only id is checked for equality.
     bool operator==(const Field & other) const noexcept { return (_fieldId == other._fieldId); }
     bool operator!=(const Field & other) const noexcept { return (_fieldId != other._fieldId); }
-    bool operator<(const Field & other) const noexcept { return (getName() < other.getName()); }
+    bool operator<(const Field & other) const noexcept { return (_name < other._name); }
 
     const DataType &getDataType() const { return *_dataType; }
 
     int getId() const noexcept { return _fieldId; }
+    const vespalib::string & getName() const { return _name; }
 
     vespalib::string toString(bool verbose=false) const;
     bool contains(const FieldSet& fields) const override;

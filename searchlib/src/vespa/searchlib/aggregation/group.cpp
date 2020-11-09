@@ -16,7 +16,6 @@ namespace search::aggregation {
 
 using search::expression::AggregationRefNode;
 using search::expression::ExpressionTree;
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 

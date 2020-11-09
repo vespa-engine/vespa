@@ -40,7 +40,7 @@ DocumentFieldNode & DocumentFieldNode::operator = (const DocumentFieldNode & rhs
         _fieldPath = rhs._fieldPath;
         _value = rhs._value;
         _fieldName = rhs._fieldName;
-        _doc = NULL;
+        _doc = nullptr;
     }
     return *this;
 }
@@ -123,7 +123,7 @@ void DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
             }
         }
         const document::FieldPathEntry & endOfPath(_fieldPath.back());
-        if (endOfPath.getFieldValueToSetPtr() != NULL) {
+        if (endOfPath.getFieldValueToSetPtr() != nullptr) {
             const FieldValue& fv = endOfPath.getFieldValueToSet();
             _value.reset(deduceResultNode(_fieldName, fv, preserveAccurateTypes, nestedMultiValue).release());
             if (_value->inherits(ResultNodeVector::classId)) {
@@ -155,7 +155,7 @@ class FieldValue2ResultNode : public ResultNode
 {
 public:
     DECLARE_EXPRESSIONNODE(FieldValue2ResultNode);
-    FieldValue2ResultNode(const FieldValue * fv=NULL) : _fv(fv) { }
+    FieldValue2ResultNode(const FieldValue * fv=nullptr) : _fv(fv) { }
     int64_t onGetInteger(size_t index) const override { (void) index; return _fv ? _fv->getAsLong() : 0; }
     double  onGetFloat(size_t index)   const override { (void) index; return _fv ? _fv->getAsDouble() : 0; }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
@@ -262,8 +262,8 @@ class String2ResultNode : public ResultNode
 {
 public:
     String2ResultNode(vespalib::stringref s) : _s(s) { }
-    int64_t onGetInteger(size_t index) const override { (void) index; return strtoul(_s.c_str(), NULL, 0); }
-    double  onGetFloat(size_t index)   const override { (void) index; return vespalib::locale::c::strtod(_s.c_str(), NULL); }
+    int64_t onGetInteger(size_t index) const override { (void) index; return strtoul(_s.c_str(), nullptr, 0); }
+    double  onGetFloat(size_t index)   const override { (void) index; return vespalib::locale::c::strtod(_s.c_str(), nullptr); }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; (void) buf; return ConstBufferRef(_s.c_str(), _s.size()); }
 private:
     String2ResultNode * clone() const override { return new String2ResultNode(_s); }
@@ -283,7 +283,9 @@ void GetDocIdNamespaceSpecificFunctionNode::onDoc(const Document & doc)
     _value->set(converter);
 }
 
-static const FieldBase _G_valueField("value");
+namespace {
+const vespalib::string _G_valueField("value");
+}
 
 Serializer & GetDocIdNamespaceSpecificFunctionNode::onSerialize(Serializer & os) const
 {
@@ -297,7 +299,7 @@ Deserializer & GetDocIdNamespaceSpecificFunctionNode::onDeserialize(Deserializer
 void
 GetDocIdNamespaceSpecificFunctionNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    visit(visitor, _G_valueField.getName(), _value);
+    visit(visitor, _G_valueField, _value);
 }
 
 void GetYMUMChecksumFunctionNode::onDoc(const Document & doc)

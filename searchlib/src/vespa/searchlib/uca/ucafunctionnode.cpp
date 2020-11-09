@@ -2,22 +2,15 @@
 #include "ucafunctionnode.h"
 #include "ucaconverter.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
-using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
 IMPLEMENT_EXPRESSIONNODE(UcaFunctionNode, UnaryFunctionNode);
 
-UcaFunctionNode::UcaFunctionNode()
-{
-}
-
-UcaFunctionNode::~UcaFunctionNode()
-{
-}
+UcaFunctionNode::UcaFunctionNode() = default;
+UcaFunctionNode::~UcaFunctionNode() = default;
 
 UcaFunctionNode::UcaFunctionNode(ExpressionNode::UP arg, const vespalib::string & locale, const vespalib::string & strength) :
     UnaryFunctionNode(std::move(arg)),
@@ -51,11 +44,11 @@ UcaFunctionNode & UcaFunctionNode::operator = (const UcaFunctionNode & rhs)
 void UcaFunctionNode::onPrepareResult()
 {
     if (getArg().getResult().inherits(ResultNodeVector::classId)) {
-        setResultType(std::unique_ptr<ResultNode>(new RawResultNodeVector));
-        _handler.reset(new MultiValueHandler(*this));
+        setResultType(std::make_unique<RawResultNodeVector>());
+        _handler = std::make_unique<MultiValueHandler>(*this);
     } else {
-        setResultType(std::unique_ptr<ResultNode>(new RawResultNode));
-        _handler.reset(new SingleValueHandler(*this));
+        setResultType(std::make_unique<RawResultNode>());
+        _handler = std::make_unique<SingleValueHandler>(*this);
     }
 }
 
@@ -107,7 +100,6 @@ Deserializer & UcaFunctionNode::onDeserialize(Deserializer & is)
     return is;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

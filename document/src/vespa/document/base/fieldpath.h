@@ -29,15 +29,11 @@ public:
     };
     using FieldValueCP = vespalib::CloneablePtr<FieldValue>;
 
-    /**
-       Creates a empty field path entry.
-    */
     FieldPathEntry();
 
     FieldPathEntry(FieldPathEntry &&) = default;
     FieldPathEntry & operator=(FieldPathEntry &&) = default;
     FieldPathEntry(const FieldPathEntry &);
-    FieldPathEntry & operator=(const FieldPathEntry &);
 
     /**
        Creates a field path entry for a struct field lookup.

@@ -8,83 +8,83 @@ const char * NBOSerializer::peek() const {
     return _stream.peek();
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, bool value) {
+NBOSerializer &NBOSerializer::put(bool value) {
     _stream << value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, uint8_t value) {
+NBOSerializer &NBOSerializer::put(uint8_t value) {
     _stream << value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, uint16_t value) {
+NBOSerializer &NBOSerializer::put(uint16_t value) {
     _stream << value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, uint32_t value) {
+NBOSerializer &NBOSerializer::put(uint32_t value) {
     _stream << value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, uint64_t value) {
+NBOSerializer &NBOSerializer::put(uint64_t value) {
     _stream << value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, float value) {
+NBOSerializer &NBOSerializer::put(float value) {
     _stream << value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, double value) {
+NBOSerializer &NBOSerializer::put(double value) {
     _stream << value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, stringref value) {
+NBOSerializer &NBOSerializer::put(stringref value) {
     _stream << value;
     return *this;
 }
 
 
-NBOSerializer &NBOSerializer::get(const IFieldBase &, bool & value) {
+NBOSerializer &NBOSerializer::get(bool & value) {
     _stream >> value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::get(const IFieldBase &, uint8_t & value) {
+NBOSerializer &NBOSerializer::get(uint8_t & value) {
     _stream >> value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::get(const IFieldBase &, uint16_t & value) {
+NBOSerializer &NBOSerializer::get(uint16_t & value) {
     _stream >> value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::get(const IFieldBase &, uint32_t & value) {
+NBOSerializer &NBOSerializer::get(uint32_t & value) {
     _stream >> value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::get(const IFieldBase &, uint64_t & value) {
+NBOSerializer &NBOSerializer::get(uint64_t & value) {
     _stream >> value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::get(const IFieldBase &, double & value) {
+NBOSerializer &NBOSerializer::get(double & value) {
     _stream >> value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::get(const IFieldBase &, float & value) {
+NBOSerializer &NBOSerializer::get(float & value) {
     _stream >> value;
     return *this;
 }
 
-NBOSerializer &NBOSerializer::get(const IFieldBase &, string & value) {
+NBOSerializer &NBOSerializer::get(string & value) {
     _stream >> value;
     return *this;
 }
