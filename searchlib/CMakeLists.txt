@@ -237,4 +237,5 @@ install_fat_java_artifact(searchlib)
 
 vespa_install_script(src/main/sh/vespa-gbdt-converter bin)
 vespa_install_script(src/main/sh/vespa-treenet-converter bin)
+vespa_install_script(src/main/sh/vespa-evaluate-tensor-conformance.sh bin)
 
