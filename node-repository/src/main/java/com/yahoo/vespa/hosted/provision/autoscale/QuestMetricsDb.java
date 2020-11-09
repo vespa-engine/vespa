@@ -114,7 +114,7 @@ public class QuestMetricsDb implements MetricsDb {
         // Since we remove full days at once we need to keep at least the scaling window + 1 day
         Instant oldestToKeep = clock.instant().minus(Autoscaler.maxScalingWindow().plus(Duration.ofDays(1)));
         SqlExecutionContext context = newContext();
-        int partitionsFound = 0;
+        int partitions = 0;
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             File tableRoot = new File(dataDir, tableName);
             List<String> removeList = new ArrayList<>();
@@ -122,7 +122,7 @@ public class QuestMetricsDb implements MetricsDb {
                 File partitionDir = new File(tableRoot, dirEntry);
                 if ( ! partitionDir.isDirectory()) continue;
 
-                partitionsFound++;
+                partitions++;
                 DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
                 Instant partitionDay = Instant.from(formatter.parse(dirEntry + "T00:00:00"));
                 if (partitionDay.isBefore(oldestToKeep))
@@ -130,7 +130,7 @@ public class QuestMetricsDb implements MetricsDb {
 
             }
             // Remove unless all partitions are old: Removing all partitions "will be supported in the future"
-            if ( removeList.size() < partitionsFound && ! removeList.isEmpty())
+            if ( removeList.size() < partitions && ! removeList.isEmpty())
                 compiler.compile("alter table " + tableName + " drop partition " +
                                  removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
                                  context);
