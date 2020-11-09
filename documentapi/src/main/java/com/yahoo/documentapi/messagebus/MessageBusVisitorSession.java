@@ -1166,7 +1166,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 }
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.log(Level.WARNING, "Interrupted waiting for visitor session to be destroyed");
         } finally {
             try {
                 sender.destroy();
