@@ -705,6 +705,12 @@ TEST(DenseJoin, no_overlap) {
     benchmark_join("dense no overlap multiply", lhs, rhs, operation::Mul::f);
 }
 
+TEST(DenseJoin, multiply_by_number) {
+    auto lhs = make_spec(3.0);
+    auto rhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::idx("c", 16), 2.0);
+    benchmark_join("dense cube multiply by number", lhs, rhs, operation::Mul::f);
+}
+
 //-----------------------------------------------------------------------------
 
 TEST(SparseJoin, small_vectors) {
@@ -743,6 +749,12 @@ TEST(SparseJoin, no_overlap) {
     benchmark_join("sparse no overlap multiply", lhs, rhs, operation::Mul::f);
 }
 
+TEST(SparseJoin, multiply_by_number) {
+    auto lhs = make_spec(3.0);
+    auto rhs = make_cube(D::map("a", 16, 2), D::map("b", 16, 2), D::map("c", 16, 2), 2.0);
+    benchmark_join("sparse multiply by number", lhs, rhs, operation::Mul::f);
+}
+
 //-----------------------------------------------------------------------------
 
 TEST(MixedJoin, full_overlap) {
@@ -761,6 +773,12 @@ TEST(MixedJoin, no_overlap) {
     auto lhs = make_cube(D::map("a", 4, 1), D::map("e", 4, 1), D::idx("f", 4), 1.0);
     auto rhs = make_cube(D::map("b", 4, 1), D::map("c", 4, 1), D::idx("d", 4), 2.0);
     benchmark_join("mixed no overlap multiply", lhs, rhs, operation::Mul::f);
+}
+
+TEST(MixedJoin, multiply_by_number) {
+    auto lhs = make_spec(3.0);
+    auto rhs = make_cube(D::map("a", 16, 2), D::map("b", 16, 2), D::idx("c", 16), 2.0);
+    benchmark_join("mixed multiply by number", lhs, rhs, operation::Mul::f);
 }
 
 //-----------------------------------------------------------------------------
