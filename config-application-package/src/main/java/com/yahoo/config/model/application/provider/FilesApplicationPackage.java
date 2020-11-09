@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,6 +62,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -614,6 +616,12 @@ public class FilesApplicationPackage implements ApplicationPackage {
                 transformer.transform(new DOMSource(document), new StreamResult(outputStream));
             }
         } catch (TransformerException |ParserConfigurationException | SAXException e) {
+            // TODO: 2020-11-09, debugging what seems like missing or empty file while preprocessing. Remove afterwards
+            if (inputXml.canRead()) {
+                log.log(Level.WARNING, "Error preprocessing " + inputXml.getAbsolutePath() + ", file content: " + IOUtils.readFile(inputXml));
+                java.nio.file.Path dir = inputXml.getParentFile().toPath();
+                log.log(Level.INFO, "Files in " + dir + ":" + Files.list(dir).map(java.nio.file.Path::toString).collect(Collectors.joining(",")));
+            }
             throw new RuntimeException("Error preprocessing " + inputXml.getAbsolutePath() + ": " + e.getMessage(), e);
         }
     }
