@@ -96,6 +96,8 @@ public class CloudEventReporter extends ControllerMaintainer {
     }
 
     private void submitIssue(CloudEvent event) {
+        if (controller().system().isPublic())
+            return;
         Issue issue = eventFetcher.createIssue(event);
         if (!issueHandler.issueExists(issue)) {
             issueHandler.file(issue);
