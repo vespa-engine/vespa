@@ -133,7 +133,7 @@ public class LocalVisitorSession implements VisitorSession {
             }
             finally {
                 if (synchronizer != null)
-                    synchronizer.awaitAdvance(synchronizer.arriveAndDeregister());
+                    synchronizer.arriveAndDeregister();
                 if (data != null)
                     data.onDone();
             }
