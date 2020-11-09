@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -25,19 +26,24 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Checks for convergence of config generation for a given application.
@@ -61,6 +67,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     private final CloseableHttpClient httpClient;
     private final ObjectMapper jsonMapper = new ObjectMapper();
+    private final ExecutorService executor = createThreadpool();
 
     @Inject
     public ConfigConvergenceChecker() {
@@ -114,20 +121,33 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     /** Gets service generation for a list of services (in parallel). */
     private Map<ServiceInfo, Long> getServiceGenerations(List<ServiceInfo> services, Duration timeout) {
-        return services.parallelStream()
-                .collect(Collectors.toMap(
-                        service -> service,
-                        service -> {
+        List<Callable<ServiceInfoWithGeneration>> tasks = services.stream()
+                .map(service ->
+                        (Callable<ServiceInfoWithGeneration>) () -> {
+                            long generation;
                             try {
-                                return getServiceGeneration(URI.create("http://" + service.getHostName()
+                                generation = getServiceGeneration(URI.create("http://" + service.getHostName()
                                         + ":" + getStatePort(service).get()), timeout);
                             } catch (IOException | NonSuccessStatusCodeException e) {
-                                return -1L;
+                                generation = -1L;
                             }
-                        },
-                        (v1, v2) -> { throw new IllegalStateException("Duplicate keys for values '" + v1 + "' and '" + v2 + "'."); },
-                        LinkedHashMap::new
-                ));
+                            return new ServiceInfoWithGeneration(service, generation);
+                        })
+                .collect(toList());
+        try {
+            List<Future<ServiceInfoWithGeneration>> taskResults = executor.invokeAll(tasks);
+            Map<ServiceInfo, Long> result = new HashMap<>();
+            for (Future<ServiceInfoWithGeneration> taskResult : taskResults) {
+                ServiceInfoWithGeneration info = taskResult.get();
+                result.put(info.service, info.generation);
+            }
+            return result;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to retrieve config generation: " + e.getMessage(), e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Failed to retrieve config generation: " + e.getMessage(), e);
+        }
     }
 
     /** Get service generation of service at given URL */
@@ -185,6 +205,11 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
     }
 
+    private static ExecutorService createThreadpool() {
+        return Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory("config-convergence-checker-"));
+    }
+
     private static CloseableHttpClient createHttpClient() {
         return VespaHttpClientBuilder
                 .create()
@@ -203,6 +228,16 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                 .setConnectTimeout(timeoutMillis)
                 .setSocketTimeout(timeoutMillis)
                 .build();
+    }
+
+    private static class ServiceInfoWithGeneration {
+        final ServiceInfo service;
+        final long generation;
+
+        ServiceInfoWithGeneration(ServiceInfo service, long generation) {
+            this.service = service;
+            this.generation = generation;
+        }
     }
 
     private static class NonSuccessStatusCodeException extends Exception {
