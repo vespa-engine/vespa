@@ -27,10 +27,8 @@ import static java.util.logging.Level.CONFIG;
  *  - hostname verification is not enabled - CN/SAN verification is assumed to be handled by the underlying x509 trust manager.
  *  - ssl context or hostname verifier must not be overridden by the caller
  *
- * @deprecated Use Apache httpclient based client factory instead (VespaHttpClientBuilder).
  * @author bjorncs
  */
-@Deprecated(forRemoval = true)
 public class VespaClientBuilderFactory implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(VespaClientBuilderFactory.class.getName());
