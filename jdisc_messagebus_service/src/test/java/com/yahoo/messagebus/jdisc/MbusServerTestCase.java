@@ -134,7 +134,7 @@ public class MbusServerTestCase {
     @Test
     public void requireThatNonMbusResponseCausesEmptyReply() {
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
-        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, false);
+        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
 
         assertNotNull(requestHandler.awaitRequest());
