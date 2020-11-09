@@ -64,8 +64,9 @@ public class DeploymentQuotaCalculatorTest {
     }
 
     @Test
-    public void unlimited_quota_in_pipeline() {
-        Quota calculated = DeploymentQuotaCalculator.calculate(Quota.zero(), List.of(), ApplicationId.defaultId(), ZoneId.from("test", "apac1"), DeploymentSpec.empty);
-        assertEquals(Quota.unlimited(), calculated);
+    public void tenant_quota_in_pipeline() {
+        var tenantQuota = Quota.unlimited().withBudget(42);
+        var calculated = DeploymentQuotaCalculator.calculate(tenantQuota, List.of(), ApplicationId.defaultId(), ZoneId.from("test", "apac1"), DeploymentSpec.empty);
+        assertEquals(tenantQuota, calculated);
     }
 }
