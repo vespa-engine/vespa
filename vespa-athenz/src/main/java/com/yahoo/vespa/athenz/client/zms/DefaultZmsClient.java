@@ -25,6 +25,7 @@ import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -39,16 +40,16 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     private final URI zmsUrl;
     private final AthenzIdentity identity;
 
-    public DefaultZmsClient(URI zmsUrl, AthenzIdentity identity, SSLContext sslContext, ErrorHandler errorHandler) {
-        this(zmsUrl, identity, () -> sslContext, errorHandler);
+    public DefaultZmsClient(URI zmsUrl, AthenzIdentity identity, SSLContext sslContext) {
+        this(zmsUrl, identity, () -> sslContext);
     }
 
-    public DefaultZmsClient(URI zmsUrl, ServiceIdentityProvider identityProvider, ErrorHandler errorHandler) {
-        this(zmsUrl, identityProvider.identity(), identityProvider::getIdentitySslContext, errorHandler);
+    public DefaultZmsClient(URI zmsUrl, ServiceIdentityProvider identityProvider) {
+        this(zmsUrl, identityProvider.identity(), identityProvider::getIdentitySslContext);
     }
 
-    private DefaultZmsClient(URI zmsUrl, AthenzIdentity identity, Supplier<SSLContext> sslContextSupplier, ErrorHandler errorHandler) {
-        super("vespa-zms-client", sslContextSupplier, ZmsClientException::new, null, errorHandler);
+    private DefaultZmsClient(URI zmsUrl, AthenzIdentity identity, Supplier<SSLContext> sslContextSupplier) {
+        super("vespa-zms-client", sslContextSupplier, ZmsClientException::new, null);
         this.zmsUrl = addTrailingSlash(zmsUrl);
         this.identity = identity;
     }
