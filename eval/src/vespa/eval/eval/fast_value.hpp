@@ -340,9 +340,8 @@ FastValueIndex::sparse_no_overlap_join(const ValueType &res_type, const Fun &fun
 {
     using HashedLabelRef = std::reference_wrapper<const FastSparseMap::HashedLabel>;
     size_t num_mapped_dims = addr_sources.size();
-    auto &result = stash.create<FastValue<OCT>>(res_type, res_type.count_mapped_dimensions(), 1, lhs.map.size()*rhs.map.size());
-    FastSparseMap::HashedLabel empty;
-    std::vector<HashedLabelRef> output_addr(num_mapped_dims, empty);
+    auto &result = stash.create<FastValue<OCT>>(res_type, num_mapped_dims, 1, lhs.map.size()*rhs.map.size());
+    std::vector<HashedLabelRef> output_addr(num_mapped_dims, FastSparseMap::empty_label);
     std::vector<size_t> store_lhs_idx;
     std::vector<size_t> store_rhs_idx;
     size_t out_idx = 0;
