@@ -80,7 +80,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
      * The name of the subdirectory (below the original application package root)
      * where a preprocessed version of this application package is stored.
      * As it happens, the config model is first created with an application package in this subdirectory,
-     * and later used backed by an application package which is not in this subdirectory.
+     * and later backed by an application package which is not in this subdirectory.
      * To enable model code to correct for this, this constant must be publicly known.
      *
      * All of this stuff is Very Unfortunate and should be fixed. -Jon
@@ -306,34 +306,15 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     @Override
     public Collection<NamedReader> searchDefinitionContents() {
-        Map<String, NamedReader> ret = new LinkedHashMap<>();
-        Set<String> fileSds = new LinkedHashSet<>();
-        Set<String> bundleSds = new LinkedHashSet<>();
+        Set<NamedReader> ret = new LinkedHashSet<>();
         try {
             for (File f : getSearchDefinitionFiles()) {
-                fileSds.add(f.getName());
-                ret.put(f.getName(), new NamedReader(f.getName(), new FileReader(f)));
+                ret.add(new NamedReader(f.getName(), new FileReader(f)));
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("Couldn't get search definition contents.", e);
         }
-        verifySdsDisjoint(fileSds, bundleSds);
-        return ret.values();
-    }
-
-    /**
-     * Verify that two sets of search definitions are disjoint (TODO: everything except error message is very generic).
-     *
-     * @param  fileSds Set of search definitions from file
-     * @param  bundleSds Set of search definitions from bundles
-     */
-    private void verifySdsDisjoint(Set<String> fileSds, Set<String> bundleSds) {
-        if (!Collections.disjoint(fileSds, bundleSds)) {
-            Collection<String> disjoint = new ArrayList<>(fileSds);
-            disjoint.retainAll(bundleSds);
-            throw new IllegalArgumentException("For the following search definitions names there are collisions between those specified inside " +
-            		                           "docproc bundles and those in searchdefinitions/ in application package: "+disjoint);
-        }
+        return ret;
     }
 
     /**
