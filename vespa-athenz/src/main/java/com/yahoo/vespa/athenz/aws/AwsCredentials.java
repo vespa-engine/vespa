@@ -35,11 +35,11 @@ public class AwsCredentials {
     }
 
     public AwsCredentials(URI ztsUrl, ServiceIdentityProvider identityProvider, AthenzDomain athenzDomain, AwsRole awsRole) {
-        this(new DefaultZtsClient.Builder(ztsUrl).withIdentityProvider(identityProvider).build(), athenzDomain, awsRole);
+        this(new DefaultZtsClient(ztsUrl, identityProvider), athenzDomain, awsRole);
     }
 
     public AwsCredentials(URI ztsUrl, SSLContext sslContext, AthenzDomain athenzDomain, AwsRole awsRole) {
-        this(new DefaultZtsClient.Builder(ztsUrl).withSslContext(sslContext).build(), athenzDomain, awsRole);
+        this(new DefaultZtsClient(ztsUrl, sslContext), athenzDomain, awsRole);
     }
 
     /**

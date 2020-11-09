@@ -39,15 +39,12 @@ public abstract class ClientBase implements AutoCloseable {
 
     private final CloseableHttpClient client;
     private final ClientExceptionFactory exceptionFactory;
-    private final ErrorHandler errorHandler;
 
     protected ClientBase(String userAgent,
                          Supplier<SSLContext> sslContextSupplier,
                          ClientExceptionFactory exceptionFactory,
-                         HostnameVerifier hostnameVerifier,
-                         ErrorHandler errorHandler) {
+                         HostnameVerifier hostnameVerifier) {
         this.exceptionFactory = exceptionFactory;
-        this.errorHandler = errorHandler;
         this.client = createHttpClient(userAgent, sslContextSupplier, hostnameVerifier);
     }
 
@@ -55,15 +52,8 @@ public abstract class ClientBase implements AutoCloseable {
         try {
             return client.execute(request, responseHandler);
         } catch (IOException e) {
-            try {
-                reportError(request, e);
-            } catch (Exception _ignored) {}
             throw new UncheckedIOException(e);
         }
-    }
-
-    private void reportError(HttpUriRequest request, Exception e) {
-        errorHandler.reportError(request, e);
     }
 
     protected StringEntity toJsonStringEntity(Object entity) {
@@ -123,12 +113,5 @@ public abstract class ClientBase implements AutoCloseable {
 
     protected interface ClientExceptionFactory {
         RuntimeException createException(int errorCode, String description);
-    }
-
-    public interface ErrorHandler {
-        static ErrorHandler empty() {
-            return (r,e)->{};
-        }
-        void reportError(HttpUriRequest request, Exception error);
     }
 }

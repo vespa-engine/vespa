@@ -198,7 +198,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         HostnameVerifier ztsHostNameVerifier = useInternalZts
                 ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
                 : null;
-        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
+        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider, ztsHostNameVerifier)) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             configserverIdentity,
@@ -227,7 +227,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             HostnameVerifier ztsHostNameVerifier = useInternalZts
                     ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
                     : null;
-            try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
+            try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentitySslContext, ztsHostNameVerifier)) {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
                                 configserverIdentity,

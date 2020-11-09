@@ -301,7 +301,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     private DefaultZtsClient createZtsClient() {
-        return new DefaultZtsClient.Builder(ztsEndpoint).withSslContext(getIdentitySslContext()).build();
+        return new DefaultZtsClient(ztsEndpoint, getIdentitySslContext());
     }
 
     @Override
