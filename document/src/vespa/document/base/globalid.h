@@ -64,7 +64,24 @@ public:
      * given bucket.
      */
     struct BucketOrderCmp {
-        bool operator()(const GlobalId &lhs, const GlobalId &rhs) const;
+        bool operator()(const GlobalId &lhs, const GlobalId &rhs) const {
+            const uint32_t * __restrict__ a = lhs._gid._nums;
+            const uint32_t * __restrict__ b = rhs._gid._nums;
+            if (a[0] != b[0]) {
+                return bitswap(a[0]) < bitswap(b[0]);
+            }
+            if (a[2] != b[2]) {
+                return bitswap(a[2]) < bitswap(b[2]);
+            }
+            return __builtin_bswap32(a[1]) < __builtin_bswap32(b[1]);
+        }
+        static uint32_t bitswap(uint32_t value) {
+            value = ((value & 0x55555555) << 1) | ((value & 0xaaaaaaaa) >> 1);
+            value = ((value & 0x33333333) << 2) | ((value & 0xcccccccc) >> 2);
+            value = ((value & 0x0f0f0f0f) << 4) | ((value & 0xf0f0f0f0) >> 4);
+            return __builtin_bswap32(value);
+        }
+
         //These 2 compare methods are exposed only for testing
         static int compareRaw(unsigned char a, unsigned char b) {
             return a - b;
