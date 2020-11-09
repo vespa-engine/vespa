@@ -1,53 +1,59 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import ai.vespa.util.http.VespaClientBuilderFactory;
+import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import java.util.logging.Level;
+import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
-import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.client.proxy.WebResourceFactory;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Checks for convergence of config generation for a given application.
  *
  * @author Ulf Lilleengen
  * @author hmusum
+ * @author bjorncs
  */
 public class ConfigConvergenceChecker extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(ConfigConvergenceChecker.class.getName());
-    private static final String statePath = "/state/v1/";
-    private static final String configSubPath = "config";
     private final static Set<String> serviceTypesToCheck = Set.of(
             CONTAINER.serviceName,
             QRSERVER.serviceName,
@@ -58,16 +64,13 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             "distributor"
     );
 
-    private final StateApiFactory stateApiFactory;
-    private final VespaClientBuilderFactory clientBuilderFactory = new VespaClientBuilderFactory();
+    private final CloseableHttpClient httpClient;
+    private final ObjectMapper jsonMapper = new ObjectMapper();
+    private final ExecutorService executor = createThreadpool();
 
     @Inject
     public ConfigConvergenceChecker() {
-        this(ConfigConvergenceChecker::createStateApi);
-    }
-
-    public ConfigConvergenceChecker(StateApiFactory stateApiFactory) {
-        this.stateApiFactory = stateApiFactory;
+        this.httpClient = createHttpClient();
     }
 
     /** Fetches the active config generation for all services in the given application. */
@@ -82,7 +85,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Check all services in given application. Returns the minimum current generation of all services */
-    public ServiceListResponse getServiceConfigGenerationsResponse(Application application, URI requestUrl, Duration timeoutPerService) {
+    public JSONResponse getServiceConfigGenerationsResponse(Application application, URI requestUrl, Duration timeoutPerService) {
         Map<ServiceInfo, Long> currentGenerations = getServiceConfigGenerations(application, timeoutPerService);
         long currentGeneration = currentGenerations.values().stream().mapToLong(Long::longValue).min().orElse(-1);
         return new ServiceListResponse(200, currentGenerations, requestUrl, application.getApplicationGeneration(),
@@ -90,7 +93,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Check service identified by host and port in given application */
-    public ServiceResponse getServiceConfigGenerationResponse(Application application, String hostAndPortToCheck, URI requestUrl, Duration timeout) {
+    public JSONResponse getServiceConfigGenerationResponse(Application application, String hostAndPortToCheck, URI requestUrl, Duration timeout) {
         Long wantedGeneration = application.getApplicationGeneration();
         try {
             if ( ! hostInApplication(application, hostAndPortToCheck))
@@ -99,7 +102,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             long currentGeneration = getServiceGeneration(URI.create("http://" + hostAndPortToCheck), timeout);
             boolean converged = currentGeneration >= wantedGeneration;
             return ServiceResponse.createOkResponse(requestUrl, hostAndPortToCheck, wantedGeneration, currentGeneration, converged);
-        } catch (ProcessingException e) { // e.g. if we cannot connect to the service to find generation
+        } catch (NonSuccessStatusCodeException | IOException e) { // e.g. if we cannot connect to the service to find generation
             return ServiceResponse.createNotFoundResponse(requestUrl, hostAndPortToCheck, wantedGeneration, e.getMessage());
         } catch (Exception e) {
             return ServiceResponse.createErrorResponse(requestUrl, hostAndPortToCheck, wantedGeneration, e.getMessage());
@@ -108,46 +111,64 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        clientBuilderFactory.close();
+        try {
+            httpClient.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    @Path(statePath)
-    public interface StateApi {
-        @Path(configSubPath)
-        @GET
-        JsonNode config();
-    }
-
-    public interface StateApiFactory {
-        StateApi createStateApi(Client client, URI serviceUri);
-    }
-
-    /** Gets service generation for a list of services (in parallel). */
+    /**
+     * Gets service generation for a list of services (in parallel).
+     * This should ideally be implemented using an async http client
+     * */
     private Map<ServiceInfo, Long> getServiceGenerations(List<ServiceInfo> services, Duration timeout) {
-        return services.parallelStream()
-                       .collect(Collectors.toMap(service -> service,
-                                                 service -> {
-                                                     try {
-                                                         return getServiceGeneration(URI.create("http://" + service.getHostName()
-                                                                                                + ":" + getStatePort(service).get()), timeout);
-                                                     }
-                                                     catch (ProcessingException e) { // Cannot connect to service to determine service generation
-                                                         return -1L;
-                                                     }
-                                                 },
-                                                 (v1, v2) -> { throw new IllegalStateException("Duplicate keys for values '" + v1 + "' and '" + v2 + "'."); },
-                                                 LinkedHashMap::new
-                                                ));
+        List<Callable<ServiceInfoWithGeneration>> tasks = services.stream()
+                .map(service ->
+                        (Callable<ServiceInfoWithGeneration>) () -> {
+                            long generation;
+                            try {
+                                generation = getServiceGeneration(URI.create("http://" + service.getHostName()
+                                        + ":" + getStatePort(service).get()), timeout);
+                            } catch (IOException | NonSuccessStatusCodeException e) {
+                                generation = -1L;
+                            }
+                            return new ServiceInfoWithGeneration(service, generation);
+                        })
+                .collect(toList());
+        try {
+            List<Future<ServiceInfoWithGeneration>> taskResults = executor.invokeAll(tasks);
+            Map<ServiceInfo, Long> result = new HashMap<>();
+            for (Future<ServiceInfoWithGeneration> taskResult : taskResults) {
+                ServiceInfoWithGeneration info = taskResult.get();
+                result.put(info.service, info.generation);
+            }
+            return result;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to retrieve config generation: " + e.getMessage(), e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Failed to retrieve config generation: " + e.getMessage(), e);
+        }
     }
 
     /** Get service generation of service at given URL */
-    private long getServiceGeneration(URI serviceUrl, Duration timeout) {
-        Client client = createClient(timeout);
-        try {
-            StateApi state = stateApiFactory.createStateApi(client, serviceUrl);
-            return generationFromContainerState(state.config());
-        } finally {
-            client.close();
+    private long getServiceGeneration(URI serviceUrl, Duration timeout) throws IOException, NonSuccessStatusCodeException {
+        HttpGet request = new HttpGet(createApiUri(serviceUrl));
+        request.addHeader("Connection", "close");
+        request.setConfig(createRequestConfig(timeout));
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode != HttpStatus.SC_OK) throw new NonSuccessStatusCodeException(statusCode);
+            if (response.getEntity() == null) throw new IOException("Response has no content");
+            JsonNode jsonContent = jsonMapper.readTree(response.getEntity().getContent());
+            return generationFromContainerState(jsonContent);
+        } catch (Exception e) {
+            log.log(
+                    LogLevel.DEBUG,
+                    e,
+                    () -> String.format("Failed to retrieve service config generation for '%s': %s", serviceUrl, e.getMessage()));
+            throw e;
         }
     }
 
@@ -166,16 +187,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return false;
     }
 
-    private Client createClient(Duration timeout) {
-        return clientBuilderFactory.newBuilder()
-                            .register(
-                                    (ClientRequestFilter) ctx ->
-                                            ctx.getHeaders().put(HttpHeaders.USER_AGENT, List.of("config-convergence-checker")))
-                            .property(ClientProperties.CONNECT_TIMEOUT, (int) timeout.toMillis())
-                            .property(ClientProperties.READ_TIMEOUT, (int) timeout.toMillis())
-                            .build();
-    }
-
     private static Optional<Integer> getStatePort(ServiceInfo service) {
         return service.getPorts().stream()
                       .filter(port -> port.getTags().contains("state"))
@@ -187,9 +198,57 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return state.get("config").get("generation").asLong(-1);
     }
 
-    private static StateApi createStateApi(Client client, URI uri) {
-        WebTarget target = client.target(uri);
-        return WebResourceFactory.newResource(StateApi.class, target);
+    private static URI createApiUri(URI serviceUrl) {
+        try {
+            return new URIBuilder(serviceUrl)
+                    .setPath("/state/v1/config")
+                    .build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static ExecutorService createThreadpool() {
+        return Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory("config-convergence-checker-"));
+    }
+
+    private static CloseableHttpClient createHttpClient() {
+        return VespaHttpClientBuilder
+                .create()
+                .setUserAgent("config-convergence-checker")
+                .setMaxConnPerRoute(10)
+                .setMaxConnTotal(400)
+                .setConnectionReuseStrategy((response, context) -> false) // Disable connection reuse
+                .build();
+    }
+
+    private static RequestConfig createRequestConfig(Duration timeout) {
+        int timeoutMillis = (int)timeout.toMillis();
+        return RequestConfig.custom()
+                .setConnectionRequestTimeout(timeoutMillis)
+                .setConnectTimeout(timeoutMillis)
+                .setSocketTimeout(timeoutMillis)
+                .build();
+    }
+
+    private static class ServiceInfoWithGeneration {
+        final ServiceInfo service;
+        final long generation;
+
+        ServiceInfoWithGeneration(ServiceInfo service, long generation) {
+            this.service = service;
+            this.generation = generation;
+        }
+    }
+
+    private static class NonSuccessStatusCodeException extends Exception {
+        final int statusCode;
+
+        NonSuccessStatusCodeException(int statusCode) {
+            super("Expected status code 200, got " + statusCode);
+            this.statusCode = statusCode;
+        }
     }
 
     private static class ServiceListResponse extends JSONResponse {
