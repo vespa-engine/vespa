@@ -64,7 +64,9 @@ public class ReindexingMaintainer extends AbstractComponent {
         DocumentTypeManager manager = new DocumentTypeManager(documentmanagerConfig);
         this.reindexer = new Reindexer(parseCluster(reindexingConfig.clusterName(), clusterListConfig, allClustersBucketSpacesConfig, manager),
                                        parseReady(reindexingConfig, manager),
-                                       new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()), manager),
+                                       new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()),
+                                                             reindexingConfig.clusterName(),
+                                                             manager),
                                        access,
                                        clock);
         this.executor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("reindexer-"));

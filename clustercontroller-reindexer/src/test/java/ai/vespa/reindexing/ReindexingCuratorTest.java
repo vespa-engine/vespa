@@ -25,7 +25,7 @@ class ReindexingCuratorTest {
         DocumentTypeManager manager = new DocumentTypeManager(musicConfig);
         DocumentType music = manager.getDocumentType("music");
         MockCurator mockCurator = new MockCurator();
-        ReindexingCurator curator = new ReindexingCurator(mockCurator, manager);
+        ReindexingCurator curator = new ReindexingCurator(mockCurator, "cluster", manager);
 
         assertEquals(Reindexing.empty(), curator.readReindexing());
 
@@ -42,7 +42,7 @@ class ReindexingCuratorTest {
         assertEquals(reindexing, curator.readReindexing());
 
         // Unknown document types are forgotten.
-        assertEquals(Reindexing.empty(), new ReindexingCurator(mockCurator, new DocumentTypeManager(emptyConfig)).readReindexing());
+        assertEquals(Reindexing.empty(), new ReindexingCurator(mockCurator, "cluster", new DocumentTypeManager(emptyConfig)).readReindexing());
     }
 
 }

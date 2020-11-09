@@ -16,7 +16,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -37,42 +36,44 @@ public class ReindexingCurator {
     private static final String STATE = "state";
     private static final String MESSAGE = "message";
 
-    private static final Path rootPath = Path.fromString("/reindexing/v1");
-    private static final Path statusPath = rootPath.append("status");
-    private static final Path lockPath = rootPath.append("lock");
-
     private final Curator curator;
+    private final String clusterName;
     private final ReindexingSerializer serializer;
     private final Duration lockTimeout;
 
-    public ReindexingCurator(Curator curator, DocumentTypeManager manager) {
-        this(curator, manager, Duration.ofSeconds(1));
+    public ReindexingCurator(Curator curator, String clusterName, DocumentTypeManager manager) {
+        this(curator, clusterName, manager, Duration.ofSeconds(1));
     }
 
-    ReindexingCurator(Curator curator, DocumentTypeManager manager, Duration lockTimeout) {
+    ReindexingCurator(Curator curator, String clusterName, DocumentTypeManager manager, Duration lockTimeout) {
         this.curator = curator;
+        this.clusterName = clusterName;
         this.serializer = new ReindexingSerializer(manager);
         this.lockTimeout = lockTimeout;
     }
 
     public Reindexing readReindexing() {
-        return curator.getData(statusPath).map(serializer::deserialize)
+        return curator.getData(statusPath()).map(serializer::deserialize)
                       .orElse(Reindexing.empty());
     }
 
     public void writeReindexing(Reindexing reindexing) {
-        curator.set(statusPath, serializer.serialize(reindexing));
+        curator.set(statusPath(), serializer.serialize(reindexing));
     }
 
     /** This lock must be held to manipulate reindexing state, or by whoever has a running visitor. */
     public Lock lockReindexing() throws ReindexingLockException {
         try {
-            return curator.lock(lockPath, lockTimeout);
+            return curator.lock(lockPath(), lockTimeout);
         }
         catch (UncheckedTimeoutException e) { // TODO jonmv: Avoid use of guava classes.
             throw new ReindexingLockException(e);
         }
     }
+
+    private Path rootPath() { return Path.fromString("/reindexing/v1/" + clusterName); }
+    private Path statusPath() { return rootPath().append("status"); }
+    private Path lockPath() { return rootPath().append("lock"); }
 
 
     private static class ReindexingSerializer {

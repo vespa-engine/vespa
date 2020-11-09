@@ -55,7 +55,7 @@ class ReindexerTest {
 
     @BeforeEach
     void setUp() {
-        database = new ReindexingCurator(new MockCurator(), manager, Duration.ofMillis(1));
+        database = new ReindexingCurator(new MockCurator(), "cluster", manager, Duration.ofMillis(1));
         access = new LocalDocumentAccess(new DocumentAccessParams().setDocumentmanagerConfig(musicConfig));
     }
 
