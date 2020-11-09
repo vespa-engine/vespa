@@ -36,7 +36,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
@@ -119,7 +118,10 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
     }
 
-    /** Gets service generation for a list of services (in parallel). */
+    /**
+     * Gets service generation for a list of services (in parallel).
+     * This should ideally be implemented using an async http client
+     * */
     private Map<ServiceInfo, Long> getServiceGenerations(List<ServiceInfo> services, Duration timeout) {
         List<Callable<ServiceInfoWithGeneration>> tasks = services.stream()
                 .map(service ->
@@ -153,6 +155,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     /** Get service generation of service at given URL */
     private long getServiceGeneration(URI serviceUrl, Duration timeout) throws IOException, NonSuccessStatusCodeException {
         HttpGet request = new HttpGet(createApiUri(serviceUrl));
+        request.addHeader("Connection", "close");
         request.setConfig(createRequestConfig(timeout));
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             int statusCode = response.getStatusLine().getStatusCode();
@@ -214,10 +217,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return VespaHttpClientBuilder
                 .create()
                 .setUserAgent("config-convergence-checker")
-                .setConnectionTimeToLive(20, TimeUnit.SECONDS)
-                .setMaxConnPerRoute(4)
-                .setMaxConnTotal(100)
-                .setDefaultRequestConfig(createRequestConfig(Duration.ofSeconds(10)))
+                .setMaxConnPerRoute(10)
+                .setMaxConnTotal(400)
+                .setConnectionReuseStrategy((response, context) -> false) // Disable connection reuse
                 .build();
     }
 
