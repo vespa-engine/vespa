@@ -27,12 +27,19 @@ public class ApplicationReindexingTest {
                                                                 .withReady("one", "a", Instant.ofEpochMilli(1))
                                                                 .withReady("two", "c", Instant.ofEpochMilli(3));
 
-        assertEquals(Instant.ofEpochMilli(1 << 20),
+        // Document is most specific, and is used.
+        assertEquals(Instant.ofEpochMilli(1),
                      reindexing.status("one", "a").orElseThrow().ready());
 
+        // Cluster is most specific, and inherits application's common status.
         assertEquals(Instant.ofEpochMilli(1 << 20),
                      reindexing.status("one", "d").orElseThrow().ready());
 
+        // Cluster is most specific, and has its own status set.
+        assertEquals(Instant.ofEpochMilli(2 << 10),
+                     reindexing.status("two", "d").orElseThrow().ready());
+
+        // Application is most specific, as cluster and documeent are unknown.
         assertEquals(Instant.ofEpochMilli(1 << 20),
                      reindexing.status("three", "a").orElseThrow().ready());
 
@@ -45,7 +52,7 @@ public class ApplicationReindexingTest {
         assertEquals(Set.of("one", "two"),
                      reindexing.clusters().keySet());
 
-        assertEquals(new Status(Instant.EPOCH),
+        assertEquals(new Status(Instant.ofEpochMilli(1 << 20)),
                      reindexing.clusters().get("one").common());
 
         assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(1))),

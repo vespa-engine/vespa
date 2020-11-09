@@ -16,13 +16,14 @@ public class ReindexingMaintainerTest {
 
     @Test
     public void testReadyComputation() {
-        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.ofEpochMilli(1 << 20))
+        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.EPOCH)
                                                                 .withPending("one", "a", 10)
                                                                 .withReady("two", "b", Instant.ofEpochMilli(2))
                                                                 .withPending("two", "b", 20)
                                                                 .withReady("two", Instant.ofEpochMilli(2 << 10))
                                                                 .withReady("one", "a", Instant.ofEpochMilli(1))
-                                                                .withReady("two", "c", Instant.ofEpochMilli(3));
+                                                                .withReady("two", "c", Instant.ofEpochMilli(3))
+                                                                .withReady(Instant.ofEpochMilli(1 << 20));
 
         assertEquals(reindexing,
                      withReady(reindexing, () -> -1L, Instant.EPOCH));
