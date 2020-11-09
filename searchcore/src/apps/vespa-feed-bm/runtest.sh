@@ -3,7 +3,7 @@
 numdocs=2000000
 stripe_bits=8
 
-base_cmd="numactl --cpunodebind=0 --localalloc perf stat -ddd env LD_PRELOAD=$HOME/vespa/lib64/vespa/malloc/libvespamalloc.so ./vespa-feed-bm --documents $numdocs --put-passes 1 --update-passes 10 --remove-passes 0 --max-pending 8000 --indexing-sequencer throughput client-threads 3"
+base_cmd="numactl --cpunodebind=0 --localalloc perf stat -ddd env LD_PRELOAD=$HOME/vespa/lib64/vespa/malloc/libvespamalloc.so ./vespa-feed-bm --documents $numdocs --put-passes 1 --update-passes 10 --remove-passes 0 --max-pending 8000 --indexing-sequencer throughput --client-threads 3"
 
 spi_only=$base_cmd
 base_for_rest="$base_cmd --response-threads 3"
