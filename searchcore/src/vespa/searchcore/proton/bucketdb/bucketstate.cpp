@@ -134,8 +134,7 @@ BucketState::empty() const
     if (getReadyCount() != 0 || getRemovedCount() != 0 ||
         getNotReadyCount() != 0)
         return false;
-    assert(_ch._xxh64 == 0);
-    assert(_ch._legacy == 0);
+    assert((_checksumType == ChecksumAggregator::ChecksumType::LEGACY) ? (_ch._legacy == 0) : (_ch._xxh64 == 0));
     for (uint32_t i = 0; i < COUNTS; ++i) {
         assert(_docSizes[i] == 0);
     }
