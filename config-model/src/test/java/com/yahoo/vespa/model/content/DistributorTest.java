@@ -122,9 +122,13 @@ public class DistributorTest {
                 "    <distribution partitions=\"1|*\"/>" +
                 "    <group name=\"a\" distribution-key=\"0\">" +
                 "       <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+                "       <node distribution-key=\"1\" hostalias=\"mockhost\"/>" +
+                "       <node distribution-key=\"2\" hostalias=\"mockhost\"/>" +
                 "    </group>" +
                 "    <group name=\"b\" distribution-key=\"1\">" +
-                "       <node distribution-key=\"1\" hostalias=\"mockhost\"/>" +
+                "       <node distribution-key=\"3\" hostalias=\"mockhost\"/>" +
+                "       <node distribution-key=\"4\" hostalias=\"mockhost\"/>" +
+                "       <node distribution-key=\"5\" hostalias=\"mockhost\"/>" +
                 "    </group>" +
                 "  </group>" +
                 "</cluster>");
@@ -136,7 +140,7 @@ public class DistributorTest {
         assertEquals(512, conf.joincount());
         assertEquals(33544432, conf.splitsize());
         assertEquals(16000000, conf.joinsize());
-        assertEquals(1, conf.minsplitcount());
+        assertEquals(14, conf.minsplitcount());
         assertTrue(conf.inlinebucketsplitting());
     }
 

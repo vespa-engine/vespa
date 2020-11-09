@@ -31,9 +31,7 @@ public class DistributionBitCalculator {
                 return 24;
             }
         } else if (mode == ContentCluster.DistributionMode.LEGACY) {
-            if (nodes == 1) {             // min 1 bucket/node
-                return 1;
-            } else if (nodes == 2) {      // min 128 buckets/node
+            if (nodes <= 2) {             // min 128 buckets/node
                 return 8;
             } else if (nodes <= 6) {      // min 5462 buckets/node
                 return 14;

@@ -27,7 +27,7 @@ public class DistributionBitCalculatorTest {
         assertEquals(24, DistributionBitCalculator.getDistributionBits(2500, mode));
 
         mode = ContentCluster.DistributionMode.LEGACY;
-        assertEquals( 1, DistributionBitCalculator.getDistributionBits(1, mode));
+        assertEquals( 8, DistributionBitCalculator.getDistributionBits(1, mode));
         assertEquals(14, DistributionBitCalculator.getDistributionBits(4, mode));
         assertEquals(19, DistributionBitCalculator.getDistributionBits(16, mode));
         assertEquals(23, DistributionBitCalculator.getDistributionBits(200, mode));
