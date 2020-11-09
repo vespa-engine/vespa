@@ -24,7 +24,7 @@ public class MockBillingController implements BillingController {
     Map<TenantName, List<Invoice>> committedInvoices = new HashMap<>();
     Map<TenantName, Invoice> uncommittedInvoices = new HashMap<>();
     Map<TenantName, List<Invoice.LineItem>> unusedLineItems = new HashMap<>();
-    CollectionMethod collectionMethod = CollectionMethod.AUTO;
+    Map<TenantName, CollectionMethod> collectionMethod = new HashMap<>();
 
     @Override
     public PlanId getPlan(TenantName tenant) {
@@ -138,12 +138,12 @@ public class MockBillingController implements BillingController {
 
     @Override
     public CollectionMethod getCollectionMethod(TenantName tenant) {
-        return collectionMethod;
+        return collectionMethod.getOrDefault(tenant, CollectionMethod.AUTO);
     }
 
     @Override
     public CollectionResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
-        collectionMethod = method;
+        collectionMethod.put(tenant, method);
         return CollectionResult.success();
     }
 
