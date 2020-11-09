@@ -26,7 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -138,7 +138,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                 .collect(toList());
         try {
             List<Future<ServiceInfoWithGeneration>> taskResults = executor.invokeAll(tasks);
-            Map<ServiceInfo, Long> result = new HashMap<>();
+            Map<ServiceInfo, Long> result = new LinkedHashMap<>();
             for (Future<ServiceInfoWithGeneration> taskResult : taskResults) {
                 ServiceInfoWithGeneration info = taskResult.get();
                 result.put(info.service, info.generation);
