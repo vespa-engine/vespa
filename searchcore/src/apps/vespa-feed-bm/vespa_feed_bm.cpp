@@ -280,7 +280,6 @@ class BMParams {
     bool     _use_document_api;
     bool     _use_message_bus;
     bool     _use_storage_chain;
-    bool     _use_legacy_bucket_db;
     bool     _use_async_message_handling_on_schedule;
     uint32_t _bucket_db_stripe_bits;
     uint32_t get_start(uint32_t thread_id) const {
@@ -305,7 +304,6 @@ public:
           _use_document_api(false),
           _use_message_bus(false),
           _use_storage_chain(false),
-          _use_legacy_bucket_db(false),
           _use_async_message_handling_on_schedule(false),
           _bucket_db_stripe_bits(0)
     {
@@ -329,7 +327,6 @@ public:
     bool get_use_document_api() const { return _use_document_api; }
     bool get_use_message_bus() const { return _use_message_bus; }
     bool get_use_storage_chain() const { return _use_storage_chain; }
-    bool get_use_legacy_bucket_db() const { return _use_legacy_bucket_db; }
     bool get_use_async_message_handling_on_schedule() const { return _use_async_message_handling_on_schedule; }
     uint32_t get_bucket_db_stripe_bits() const { return _bucket_db_stripe_bits; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
@@ -349,7 +346,6 @@ public:
     void set_use_document_api(bool value) { _use_document_api = value; }
     void set_use_message_bus(bool value) { _use_message_bus = value; }
     void set_use_storage_chain(bool value) { _use_storage_chain = value; }
-    void set_use_legacy_bucket_db(bool value) { _use_legacy_bucket_db = value; }
     void set_use_async_message_handling_on_schedule(bool value) { _use_async_message_handling_on_schedule = value; }
     void set_bucket_db_stripe_bits(uint32_t value) { _bucket_db_stripe_bits = value; }
     bool check() const;
@@ -490,7 +486,6 @@ struct MyStorageConfig
             dc.readyCopies = 1;
         }
         stor_server.isDistributor = distributor;
-        stor_server.useContentNodeBtreeBucketDb = !params.get_use_legacy_bucket_db();
         stor_server.contentNodeBucketDbStripeBits = params.get_bucket_db_stripe_bits();
         if (distributor) {
             stor_server.rootFolder = "distributor";
@@ -1388,7 +1383,6 @@ App::usage()
         "[--enable-service-layer]\n"
         "[--skip-get-spi-bucket-info]\n"
         "[--use-document-api]\n"
-        "[--use-legacy-bucket-db]\n"
         "[--use-async-message-handling]\n"
         "[--use-message-bus\n"
         "[--use-storage-chain]" << std::endl;
@@ -1418,7 +1412,6 @@ App::get_options()
         { "update-passes", 1, nullptr, 0 },
         { "use-async-message-handling", 0, nullptr, 0 },
         { "use-document-api", 0, nullptr, 0 },
-        { "use-legacy-bucket-db", 0, nullptr, 0 },
         { "use-message-bus", 0, nullptr, 0 },
         { "use-storage-chain", 0, nullptr, 0 }
     };
@@ -1440,7 +1433,6 @@ App::get_options()
         LONGOPT_UPDATE_PASSES,
         LONGOPT_USE_ASYNC_MESSAGE_HANDLING,
         LONGOPT_USE_DOCUMENT_API,
-        LONGOPT_USE_LEGACY_BUCKET_DB,
         LONGOPT_USE_MESSAGE_BUS,
         LONGOPT_USE_STORAGE_CHAIN
     };
@@ -1500,9 +1492,6 @@ App::get_options()
                 break;
             case LONGOPT_USE_DOCUMENT_API:
                 _bm_params.set_use_document_api(true);
-                break;
-            case LONGOPT_USE_LEGACY_BUCKET_DB:
-                _bm_params.set_use_legacy_bucket_db(true);
                 break;
             case LONGOPT_USE_MESSAGE_BUS:
                 _bm_params.set_use_message_bus(true);
