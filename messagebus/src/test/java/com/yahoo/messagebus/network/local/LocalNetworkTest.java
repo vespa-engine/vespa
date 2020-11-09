@@ -164,7 +164,7 @@ public class LocalNetworkTest {
         final BlockingDeque<Message> messages = new LinkedBlockingDeque<>();
         final BlockingDeque<Reply> replies = new LinkedBlockingDeque<>();
 
-        Server(final LocalWire wire) {
+        Server(LocalWire wire) {
             mbus = new MessageBus(new LocalNetwork(wire),
                                   new MessageBusParams().addProtocol(new SimpleProtocol())
                                                         .setRetryPolicy(null));
@@ -193,12 +193,12 @@ public class LocalNetworkTest {
         }
 
         @Override
-        public void handleMessage(final Message msg) {
+        public void handleMessage(Message msg) {
             messages.addLast(msg);
         }
 
         @Override
-        public void handleReply(final Reply reply) {
+        public void handleReply(Reply reply) {
             replies.addLast(reply);
         }
     }
