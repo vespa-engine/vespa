@@ -680,7 +680,7 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
         LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().data());
         auto found = _attrMap.find(fupd.getField().getName());
         AttributeVector * attrp = (found != _attrMap.end()) ? found->second.first : nullptr;
-        onUpdate.onUpdateField(fupd.getField().getName(), attrp);
+        onUpdate.onUpdateField(fupd.getField(), attrp);
         if (__builtin_expect(attrp == nullptr, false)) {
             LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().data());
             continue;

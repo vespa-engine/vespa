@@ -355,7 +355,7 @@ struct MyAttributeWriter : public IAttributeWriter
         _updateLid = lid;
         for (const auto & fieldUpdate : upd.getUpdates()) {
             search::AttributeVector * attr = getWritableAttribute(fieldUpdate.getField().getName());
-            onUpdate.onUpdateField(fieldUpdate.getField().getName(), attr);
+            onUpdate.onUpdateField(fieldUpdate.getField(), attr);
         }
     }
     void update(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, OnWriteDoneType) override {

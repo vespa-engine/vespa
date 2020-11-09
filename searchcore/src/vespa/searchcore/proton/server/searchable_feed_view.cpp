@@ -34,7 +34,7 @@ SearchableFeedView::SearchableFeedView(StoreOnlyFeedView::Context storeOnlyCtx, 
                                        const FastAccessFeedView::Context &fastUpdateCtx, Context ctx)
     : Parent(std::move(storeOnlyCtx), params, fastUpdateCtx),
       _indexWriter(ctx._indexWriter),
-      _hasIndexedFields(_schema->getNumIndexFields() > 0)
+      _hasIndexedFields(getSchema()->getNumIndexFields() > 0)
 { }
 
 SearchableFeedView::~SearchableFeedView() = default;
