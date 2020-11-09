@@ -63,9 +63,9 @@ public class Reindexer {
         this.clock = clock;
     }
 
-    /** Tells this to stop reindexing at its leisure. */
+    /** Lets the reindexere abort any ongoing visit session, wait for it to complete normally, then exit. */
     public void shutdown() {
-        phaser.forceTermination();
+        phaser.forceTermination(); // All parties waiting on this phaser are immediately allowed to proceed.
     }
 
     /** Starts and tracks reprocessing of ready document types until done, or interrupted. */
@@ -129,7 +129,7 @@ public class Reindexer {
             @Override
             public void onDone(CompletionCode code, String message) {
                 super.onDone(code, message);
-                phaser.arriveAndAwaitAdvance();
+                phaser.arriveAndAwaitAdvance(); // Synchronize with the reindex thread.
             }
         };
         visit(type, status.progress().orElse(null), control);
@@ -164,8 +164,8 @@ public class Reindexer {
             throw new IllegalStateException(e);
         }
 
-        // Wait until done, or shut down, in which case we abort the visit and wait for it to complete.
-        phaser.arriveAndAwaitAdvance();
+        // Wait until done; or until termination is forced, in which case we abort the visit and wait for it to complete.
+        phaser.arriveAndAwaitAdvance(); // Synchronize with the visitor completion thread.
         session.destroy();
     }
 
@@ -177,7 +177,7 @@ public class Reindexer {
         parameters.setPriority(DocumentProtocol.Priority.LOW_1);
         parameters.setRoute(cluster.route());
         parameters.setBucketSpace(cluster.bucketSpaceOf(type));
-        // parameters.setVisitorLibrary("ReindexVisitor");
+        // parameters.setVisitorLibrary("ReindexVisitor"); // TODO jonmv: Use when ready, or perhaps an argument to the DumpVisitor is enough?
         return parameters;
     }
 
