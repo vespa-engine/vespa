@@ -33,79 +33,30 @@ calcChecksum(const GlobalId &gid, const Timestamp &timestamp)
     return gidChecksum(gid) + timestampChecksum(timestamp);
 }
 
-}
-
-LegacyChecksumAggregator *
-LegacyChecksumAggregator::clone() const {
-    return new LegacyChecksumAggregator(*this);
-}
-LegacyChecksumAggregator &
-LegacyChecksumAggregator::addDoc(const GlobalId &gid, const Timestamp &timestamp) {
-    _checksum += calcChecksum(gid, timestamp);
-    return *this;
-}
-LegacyChecksumAggregator &
-LegacyChecksumAggregator::removeDoc(const GlobalId &gid, const Timestamp &timestamp) {
-    _checksum -= calcChecksum(gid, timestamp);
-    return *this;
-}
-LegacyChecksumAggregator &
-LegacyChecksumAggregator::addChecksum(const ChecksumAggregator & rhs) {
-    _checksum += dynamic_cast<const LegacyChecksumAggregator &>(rhs)._checksum;
-    return *this;
-}
-LegacyChecksumAggregator &
-LegacyChecksumAggregator::removeChecksum(const ChecksumAggregator & rhs) {
-    _checksum -= dynamic_cast<const LegacyChecksumAggregator &>(rhs)._checksum;
-    return *this;
-}
-BucketChecksum
-LegacyChecksumAggregator::getChecksum() const {
-    return BucketChecksum(_checksum);
-}
-bool
-LegacyChecksumAggregator::empty() const { return _checksum == 0; }
-
-
-
-XXH64ChecksumAggregator *
-XXH64ChecksumAggregator::clone() const {
-    return new XXH64ChecksumAggregator(*this);
-}
-XXH64ChecksumAggregator &
-XXH64ChecksumAggregator::addDoc(const GlobalId &gid, const Timestamp &timestamp) {
-    _checksum ^= compute(gid, timestamp);
-    return *this;
-}
-XXH64ChecksumAggregator &
-XXH64ChecksumAggregator::removeDoc(const GlobalId &gid, const Timestamp &timestamp) {
-    _checksum ^= compute(gid, timestamp);
-    return *this;
-}
-XXH64ChecksumAggregator &
-XXH64ChecksumAggregator::addChecksum(const ChecksumAggregator & rhs) {
-    _checksum ^= dynamic_cast<const XXH64ChecksumAggregator &>(rhs)._checksum;
-    return *this;
-}
-XXH64ChecksumAggregator &
-XXH64ChecksumAggregator::removeChecksum(const ChecksumAggregator & rhs) {
-    _checksum ^= dynamic_cast<const XXH64ChecksumAggregator &>(rhs)._checksum;
-    return *this;
-}
-BucketChecksum
-XXH64ChecksumAggregator::getChecksum() const {
-    return BucketChecksum((_checksum >> 32) ^ (_checksum & 0xffffffffL));
-}
-bool
-XXH64ChecksumAggregator::empty() const { return _checksum == 0; }
-
 uint64_t
-XXH64ChecksumAggregator::compute(const GlobalId &gid, const Timestamp &timestamp) {
+compute(const GlobalId &gid, const Timestamp &timestamp) {
     char buffer[20];
     memcpy(&buffer[0], gid.get(), GlobalId::LENGTH);
     uint64_t tmp = timestamp.getValue();
     memcpy(&buffer[GlobalId::LENGTH], &tmp, sizeof(tmp));
     return XXH64(buffer, sizeof(buffer), 0);
+}
+
+}
+
+uint32_t
+LegacyChecksumAggregator::addDoc(const GlobalId &gid, const Timestamp &timestamp, uint32_t checkSum) {
+    return add(calcChecksum(gid, timestamp), checkSum);
+}
+
+uint32_t
+LegacyChecksumAggregator::removeDoc(const GlobalId &gid, const Timestamp &timestamp, uint32_t checkSum) {
+    return remove(calcChecksum(gid, timestamp), checkSum);
+}
+
+uint64_t
+XXH64ChecksumAggregator::update(const GlobalId &gid, const Timestamp &timestamp, uint64_t checkSum) {
+    return update(compute(gid, timestamp), checkSum);
 }
 
 }

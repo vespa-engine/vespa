@@ -26,9 +26,9 @@ private:
     static constexpr uint32_t REMOVED = static_cast<uint32_t>(SubDbType::REMOVED);
     static constexpr uint32_t NOTREADY = static_cast<uint32_t>(SubDbType::NOTREADY);
     static constexpr uint32_t COUNTS = static_cast<uint32_t>(SubDbType::COUNT);
-    uint32_t _docCount[COUNTS];
+    union { uint32_t _legacy; uint64_t _xxh64;} _ch;
     size_t   _docSizes[COUNTS];
-    vespalib::CloneablePtr<ChecksumAggregator>  _checksum;
+    uint32_t _docCount[COUNTS];
     bool     _active;
 
     static ChecksumType _checksumType;
@@ -67,7 +67,7 @@ public:
     size_t getNotReadyDocSizes() const { return _docSizes[NOTREADY]; }
     uint32_t getDocumentCount() const { return getReadyCount() + getNotReadyCount(); }
     uint32_t getEntryCount() const { return getDocumentCount() + getRemovedCount(); }
-    BucketChecksum getChecksum() const { return _checksum->getChecksum(); }
+    BucketChecksum getChecksum() const;
     bool empty() const;
     BucketState &operator+=(const BucketState &rhs);
     BucketState &operator-=(const BucketState &rhs);

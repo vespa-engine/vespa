@@ -9,16 +9,11 @@ namespace proton::bucketdb {
  **/
 class LegacyChecksumAggregator : public ChecksumAggregator {
 public:
-    explicit LegacyChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
-    LegacyChecksumAggregator * clone() const override;
-    LegacyChecksumAggregator & addDoc(const GlobalId &gid, const Timestamp &timestamp) override;
-    LegacyChecksumAggregator & removeDoc(const GlobalId &gid, const Timestamp &timestamp) override;
-    LegacyChecksumAggregator & addChecksum(const ChecksumAggregator & rhs) override;
-    LegacyChecksumAggregator & removeChecksum(const ChecksumAggregator & rhs) override;
-    BucketChecksum getChecksum() const override;
-    bool empty() const override;
-private:
-    uint32_t _checksum;
+    static uint32_t addDoc(const GlobalId &gid, const Timestamp &timestamp, uint32_t checkSum);
+    static uint32_t removeDoc(const GlobalId &gid, const Timestamp &timestamp, uint32_t checkSum);
+    static uint32_t add(uint32_t checksum, uint32_t aggr) { return aggr + checksum; }
+    static uint32_t remove(uint32_t checksum, uint32_t aggr) { return aggr - checksum; }
+    static BucketChecksum get(uint32_t checkSum) { return BucketChecksum(checkSum); }
 };
 
 /**
@@ -26,17 +21,11 @@ private:
  **/
 class XXH64ChecksumAggregator : public ChecksumAggregator {
 public:
-    explicit XXH64ChecksumAggregator(BucketChecksum seed) : _checksum(seed) { }
-    XXH64ChecksumAggregator * clone() const override;
-    XXH64ChecksumAggregator & addDoc(const GlobalId &gid, const Timestamp &timestamp) override;
-    XXH64ChecksumAggregator & removeDoc(const GlobalId &gid, const Timestamp &timestamp) override;
-    XXH64ChecksumAggregator & addChecksum(const ChecksumAggregator & rhs) override;
-    XXH64ChecksumAggregator & removeChecksum(const ChecksumAggregator & rhs) override;
-    BucketChecksum getChecksum() const override;
-    bool empty() const override;
-private:
-    static uint64_t compute(const GlobalId &gid, const Timestamp &timestamp);
-    uint64_t _checksum;
+    static uint64_t update(const GlobalId &gid, const Timestamp &timestamp, uint64_t checkSum);
+    static uint64_t update(uint64_t a, uint64_t b) { return a ^ b; }
+    static BucketChecksum get(uint64_t checkSum) {
+        return BucketChecksum((checkSum >> 32) ^ (checkSum & 0xffffffffL));
+    }
 };
 
 }
