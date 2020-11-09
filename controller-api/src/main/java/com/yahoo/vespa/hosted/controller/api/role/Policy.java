@@ -164,6 +164,12 @@ enum Policy {
             .on(PathGroup.billingPlan)
             .in(SystemName.PublicCd)),
 
+    /** Ability to update tenant collection method */
+    collectionMethodUpdate(Privilege.grant(Action.update)
+            .on(PathGroup.billingCollection)
+            .in(SystemName.PublicCd)),
+
+
     /** Read the generated bills */
     billingInformationRead(Privilege.grant(Action.read)
                                     .on(PathGroup.billingList)

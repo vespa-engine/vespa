@@ -19,6 +19,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner;
@@ -104,6 +105,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePATCH(HttpRequest request, Path path, String userId) {
         if (path.matches("/billing/v1/tenant/{tenant}/instrument")) return patchActiveInstrument(request, path.get("tenant"), userId);
         if (path.matches("/billing/v1/tenant/{tenant}/plan")) return patchPlan(request, path.get("tenant"));
+        if (path.matches("/billing/v1/tenant/{tenant}/collection")) return patchCollectionMethod(request, path.get("tenant"));
         return ErrorResponse.notFoundError("Nothing at " + path);
 
     }
@@ -144,6 +146,23 @@ public class BillingApiHandler extends LoggingRequestHandler {
             return new StringResponse("Plan: " + planId.value());
 
         return ErrorResponse.forbidden(result.getErrorMessage().orElse("Invalid plan change"));
+    }
+
+    private HttpResponse patchCollectionMethod(HttpRequest request, String tenant) {
+        var tenantName = TenantName.from(tenant);
+        var slime = inspectorOrThrow(request);
+        String newMethod = slime.field("collectionMethod").asString().toUpperCase();
+        if (newMethod.isEmpty()) return ErrorResponse.badRequest("No collection method specified");
+
+        try {
+            var result = billingController.setCollectionMethod(tenantName, CollectionMethod.valueOf(newMethod));
+            if (result.isSuccess())
+                return new StringResponse("Collection method updated to " + newMethod);
+
+            return ErrorResponse.forbidden(result.getErrorMessage().orElse("Invalid collection method change"));
+        } catch (IllegalArgumentException iea){
+            return ErrorResponse.badRequest("Invalid collection method: " + newMethod);
+        }
     }
 
     private HttpResponse getBillingAllTenants(String until) {

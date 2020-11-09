@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
@@ -186,6 +187,22 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         assertEquals("new-plan", billingController.getPlan(tenant).value());
     }
 
+    @Test
+    public void patch_collection_method() {
+        var planRequest = request("/billing/v1/tenant/tenant1/collection", PATCH)
+                .data("{\"collectionMethod\": \"invoice\"}")
+                .roles(financeAdmin);
+        tester.assertResponse(planRequest, "Collection method updated to INVOICE");
+        assertEquals(CollectionMethod.INVOICE, billingController.getCollectionMethod(tenant));
+
+        // Test that not event tenant administrators can do this
+        planRequest = request("/billing/v1/tenant/tenant1/collection", PATCH)
+                .data("{\"collectionMethod\": \"epay\"}")
+                .roles(tenantRole);
+        tester.assertResponse(planRequest, accessDenied, 403);
+        assertEquals(CollectionMethod.INVOICE, billingController.getCollectionMethod(tenant));
+    }
+
     private Invoice createInvoice() {
         var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneId.systemDefault());
         var end = start.plusDays(5);
@@ -198,7 +215,6 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
                 end
         );
     }
-
 
     private Invoice.LineItem createLineItem(ZonedDateTime addedAt) {
         return new Invoice.LineItem(
