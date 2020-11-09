@@ -95,7 +95,7 @@ public class SharedDestinationSessionTestCase {
 
     @Test
     public void requireThatSessionCanSendReply() throws InterruptedException {
-        RemoteClient client = RemoteClient.newInstanceWithInternSlobrok();
+        RemoteClient client = RemoteClient.newInstanceWithInternSlobrok(true);
         MessageQueue queue = new MessageQueue();
         DestinationSessionParams params = new DestinationSessionParams().setMessageHandler(queue);
         SharedDestinationSession session = newDestinationSession(client.slobrokId(), params);

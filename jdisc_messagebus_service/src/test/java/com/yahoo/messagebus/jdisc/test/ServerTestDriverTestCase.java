@@ -17,17 +17,18 @@ public class ServerTestDriverTestCase {
 
     @Test
     public void requireThatFactoryMethodsWork() throws ListenFailedException {
-        ServerTestDriver driver = ServerTestDriver.newInstance(new NonWorkingRequestHandler());
+        ServerTestDriver driver = ServerTestDriver.newInstance(new NonWorkingRequestHandler(), false);
         assertNotNull(driver);
         assertTrue(driver.close());
 
-        driver = ServerTestDriver.newInstanceWithProtocol(new SimpleProtocol(), new NonWorkingRequestHandler());
+        driver = ServerTestDriver.newInstanceWithProtocol(new SimpleProtocol(), new NonWorkingRequestHandler(), false);
         assertNotNull(driver);
         assertTrue(driver.close());
 
         Slobrok slobrok = new Slobrok();
-        driver = ServerTestDriver.newInstanceWithExternSlobrok(slobrok.configId(), new NonWorkingRequestHandler());
+        driver = ServerTestDriver.newInstanceWithExternSlobrok(slobrok.configId(), new NonWorkingRequestHandler(), false);
         assertNotNull(driver);
         assertTrue(driver.close());
     }
+
 }

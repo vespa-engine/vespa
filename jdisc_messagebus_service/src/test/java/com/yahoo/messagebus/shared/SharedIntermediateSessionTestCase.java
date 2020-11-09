@@ -131,7 +131,7 @@ public class SharedIntermediateSessionTestCase {
 
     @Test
     public void requireThatSessionCanSendReply() throws InterruptedException {
-        RemoteClient client = RemoteClient.newInstanceWithInternSlobrok();
+        RemoteClient client = RemoteClient.newInstanceWithInternSlobrok(true);
         MessageQueue queue = new MessageQueue();
         IntermediateSessionParams params = new IntermediateSessionParams().setMessageHandler(queue);
         SharedIntermediateSession session = newIntermediateSession(client.slobrokId(), params, true);
