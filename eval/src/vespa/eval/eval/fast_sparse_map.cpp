@@ -7,6 +7,8 @@ namespace vespalib::eval {
 
 FastSparseMap::~FastSparseMap() = default;
 
+const FastSparseMap::HashedLabel FastSparseMap::empty_label;
+
 }
 
 VESPALIB_HASH_MAP_INSTANTIATE_H_E(vespalib::eval::FastSparseMap::Key, uint32_t, vespalib::eval::FastSparseMap::Hash, vespalib::eval::FastSparseMap::Equal);

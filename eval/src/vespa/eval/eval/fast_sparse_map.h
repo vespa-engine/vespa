@@ -58,6 +58,8 @@ public:
         HashedLabel(const vespalib::stringref *str) : label(*str), hash(hash_label(*str)) {}
     };
 
+    static const HashedLabel empty_label;
+
     static uint64_t hash_label(const HashedLabel &label) {
         return label.hash;
     }
