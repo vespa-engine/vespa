@@ -6,7 +6,6 @@ import com.yahoo.documentmodel.NewDocumentType;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Context required to configure automatic reindexing for a given cluster controller cluster (for a given content cluster).
@@ -23,12 +22,12 @@ public class ReindexingContext {
             Reindexing reindexing,
             String contentClusterName,
             Collection<NewDocumentType> documentTypes) {
-        this.reindexing = reindexing;
+        this.reindexing = Objects.requireNonNull(reindexing);
         this.contentClusterName = Objects.requireNonNull(contentClusterName);
         this.documentTypes = Objects.requireNonNull(documentTypes);
     }
 
-    public Optional<Reindexing> reindexing() { return Optional.ofNullable(reindexing); }
+    public Reindexing reindexing() { return reindexing; }
     public String contentClusterName() { return contentClusterName; }
     public Collection<NewDocumentType> documentTypes() { return documentTypes; }
 }

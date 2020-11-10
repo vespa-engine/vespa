@@ -331,9 +331,10 @@ public class ContentCluster extends AbstractConfigProducer implements
 
         private static ReindexingContext createReindexingContent(
                 ConfigModelContext ctx, String contentClusterName, Map<String, NewDocumentType> documentDefinitions) {
+            class DisabledReindexing implements Reindexing {}
             Reindexing reindexing = ctx.properties().featureFlags().enableAutomaticReindexing()
-                    ? ctx.getDeployState().reindexing().orElse(null)
-                    : null;
+                    ? ctx.getDeployState().reindexing().orElse(new DisabledReindexing())
+                    : new DisabledReindexing();
             return new ReindexingContext(reindexing, contentClusterName, documentDefinitions.values());
         }
 

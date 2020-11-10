@@ -27,7 +27,7 @@ class ReindexingController extends SimpleComponent implements ReindexingConfig.P
                         "reindexing-maintainer",
                         "ai.vespa.reindexing.ReindexingMaintainer",
                         REINDEXING_CONTROLLER_BUNDLE)));
-        this.reindexing = context.reindexing().orElse(null);
+        this.reindexing = context.reindexing();
         this.contentClusterName = context.contentClusterName();
         this.documentTypes = context.documentTypes();
     }
@@ -35,7 +35,7 @@ class ReindexingController extends SimpleComponent implements ReindexingConfig.P
     @Override
     public void getConfig(ReindexingConfig.Builder builder) {
         builder.clusterName(contentClusterName);
-        if (reindexing == null || !reindexing.enabled()) {
+        if (!reindexing.enabled()) {
             builder.enabled(false);
             return;
         }
