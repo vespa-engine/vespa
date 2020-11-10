@@ -1,0 +1,4 @@
+<query-profile id="main">
+    <dimensions>d1</dimensions>
+    <query-profile for="d1v" inherits="inherited" />
+</query-profile>

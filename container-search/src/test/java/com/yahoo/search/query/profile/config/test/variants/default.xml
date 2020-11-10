@@ -1,0 +1,4 @@
+<query-profile id="default">
+    <dimensions>d1</dimensions>
+    <field name="a.b"><ref>main</ref></field>
+</query-profile>

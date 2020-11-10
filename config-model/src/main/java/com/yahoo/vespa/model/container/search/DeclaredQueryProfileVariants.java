@@ -15,7 +15,7 @@ import java.util.*;
  */
 public class DeclaredQueryProfileVariants {
 
-    private Map<String, VariantQueryProfile> variantQueryProfiles =new LinkedHashMap<>();
+    private final Map<String, VariantQueryProfile> variantQueryProfiles =new LinkedHashMap<>();
 
     public DeclaredQueryProfileVariants(QueryProfile profile) {
         // Recreates the declared view (settings per set of dimensions)
@@ -23,9 +23,12 @@ public class DeclaredQueryProfileVariants {
         // yes, this is a little backwards, but the complexity of two representations
         // is contained right here...
         // TODO: This has become unnecessary as the variants now retains the original structure
-        for (Map.Entry<String,QueryProfileVariants.FieldValues> fieldValueEntry : profile.getVariants().getFieldValues().entrySet()) {
+        for (Map.Entry<String, QueryProfileVariants.FieldValues> fieldValueEntry : profile.getVariants().getFieldValues().entrySet()) {
             for (QueryProfileVariants.FieldValue fieldValue : fieldValueEntry.getValue().asList()) {
-                addVariant(fieldValueEntry.getKey(),fieldValue.getValue(),fieldValue.getDimensionValues().getValues());
+                addVariant(fieldValueEntry.getKey(),
+                           fieldValue.getValue(),
+                           profile.getVariants().getVariant(fieldValue.getDimensionValues(), false).isOverridable(fieldValueEntry.getKey()),
+                           fieldValue.getDimensionValues().getValues());
             }
         }
 
@@ -34,25 +37,27 @@ public class DeclaredQueryProfileVariants {
                 addVariantInherited(inherited,fieldValue.getDimensionValues().getValues());
         }
 
-        dereferenceCompoundedVariants(profile,"");
+        dereferenceCompoundedVariants(profile, "");
     }
 
-    private void addVariant(String name,Object value,String[] dimensionValues) {
-        String dimensionString=toCanonicalString(dimensionValues);
-        VariantQueryProfile variant=variantQueryProfiles.get(dimensionString);
-        if (variant==null) {
-            variant=new VariantQueryProfile(dimensionValues);
-            variantQueryProfiles.put(dimensionString,variant);
+    private void addVariant(String name, Object value, Boolean overridable, String[] dimensionValues) {
+        String dimensionString = toCanonicalString(dimensionValues);
+        VariantQueryProfile variant = variantQueryProfiles.get(dimensionString);
+        if (variant == null) {
+            variant = new VariantQueryProfile(dimensionValues);
+            variantQueryProfiles.put(dimensionString, variant);
         }
-        variant.getValues().put(name,value);
+        variant.getValues().put(name, value);
+        if (overridable != null)
+            variant.getOverriable().put(name, overridable);
     }
 
     private void addVariantInherited(QueryProfile inherited,String[] dimensionValues) {
-        String dimensionString=toCanonicalString(dimensionValues);
-        VariantQueryProfile variant=variantQueryProfiles.get(dimensionString);
-        if (variant==null) {
-            variant=new VariantQueryProfile(dimensionValues);
-            variantQueryProfiles.put(dimensionString,variant);
+        String dimensionString = toCanonicalString(dimensionValues);
+        VariantQueryProfile variant = variantQueryProfiles.get(dimensionString);
+        if (variant == null) {
+            variant = new VariantQueryProfile(dimensionValues);
+            variantQueryProfiles.put(dimensionString, variant);
         }
         variant.inherit(inherited);
     }
@@ -87,40 +92,42 @@ public class DeclaredQueryProfileVariants {
         }
     }
 
-    private void dereferenceCompoundedVariants(QueryProfileVariants profileVariants,String prefix) {
-        if (profileVariants==null) return;
-        for (Map.Entry<String,QueryProfileVariants.FieldValues> fieldVariant : profileVariants.getFieldValues().entrySet()) {
+    private void dereferenceCompoundedVariants(QueryProfileVariants profileVariants, String prefix) {
+        if (profileVariants == null) return;
+        for (Map.Entry<String, QueryProfileVariants.FieldValues> fieldVariant : profileVariants.getFieldValues().entrySet()) {
             for (QueryProfileVariants.FieldValue variantValue : fieldVariant.getValue().asList()) {
-                addVariant(prefix + fieldVariant.getKey(),variantValue.getValue(),variantValue.getDimensionValues().getValues());
+                addVariant(prefix + fieldVariant.getKey(), variantValue.getValue(), null, variantValue.getDimensionValues().getValues());
             }
         }
     }
 
     public String toCanonicalString(String[] dimensionValues) {
-        StringBuilder b=new StringBuilder();
+        StringBuilder b = new StringBuilder();
         for (String dimensionValue : dimensionValues) {
-            if (dimensionValue!=null)
+            if (dimensionValue != null)
                 b.append(dimensionValue);
             else
                 b.append("*");
             b.append(",");
         }
-        b.deleteCharAt(b.length()-1); // Remove last,
+        b.deleteCharAt(b.length() - 1); // Remove last,
         return b.toString();
     }
 
     public Map<String, VariantQueryProfile> getVariantQueryProfiles() { return variantQueryProfiles; }
 
-    public class VariantQueryProfile {
+    public static class VariantQueryProfile {
 
-        private Map<String,Object> values=new LinkedHashMap<>();
+        private final Map<String, Object> values = new LinkedHashMap<>();
 
-        private List<QueryProfile> inherited=new ArrayList<>();
+        private final Map<String, Boolean> overridable = new HashMap<>();
 
-        private String[] dimensionValues;
+        private final List<QueryProfile> inherited = new ArrayList<>();
+
+        private final String[] dimensionValues;
 
         public VariantQueryProfile(String[] dimensionValues) {
-            this.dimensionValues=dimensionValues;
+            this.dimensionValues = dimensionValues;
         }
 
         public String[] getDimensionValues() { return dimensionValues; }
@@ -131,7 +138,9 @@ public class DeclaredQueryProfileVariants {
 
         public List<QueryProfile> inherited() { return inherited; }
 
-        public Map<String,Object> getValues() { return values; }
+        public Map<String, Object> getValues() { return values; }
+
+        public Map<String, Boolean> getOverriable() { return overridable; }
 
     }
 

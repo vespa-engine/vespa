@@ -41,7 +41,7 @@ public class QueryProfileXMLReader {
         try {
             File dir = new File(directory);
             if ( ! dir.isDirectory() ) throw new IllegalArgumentException("Could not read query profiles: '" +
-                                                                         directory + "' is not a valid directory.");
+                                                                          directory + "' is not a valid directory.");
 
             for (File file : sortFiles(dir)) {
                 if ( ! file.getName().endsWith(".xml")) continue;
@@ -235,7 +235,7 @@ public class QueryProfileXMLReader {
             QueryProfile profile = registry.getComponent(new ComponentSpecification(element.getAttribute("id")).toId());
             try {
                 readInherited(element, profile, registry,null, profile.toString());
-                readFields(element, profile, registry,null, profile.toString());
+                readFields(element, profile, registry,DimensionValues.empty, profile.toString());
                 readVariants(element, profile, registry);
             }
             catch (RuntimeException e) {
@@ -268,10 +268,9 @@ public class QueryProfileXMLReader {
             if (name == null || name.equals(""))
                 throw new IllegalArgumentException("A field in " + sourceDescription + " has no 'name' attribute");
             try {
-                Boolean overridable = getBooleanAttribute("overridable",null,field);
+                Boolean overridable = getBooleanAttribute("overridable", null, field);
                 if (overridable != null)
-                    profile.setOverridable(name, overridable, null);
-
+                    profile.setOverridable(name, overridable, dimensionValues.asContext(profile.getDimensions()));
                 Object fieldValue = readFieldValue(field, name, sourceDescription, registry);
                 if (fieldValue instanceof QueryProfile)
                     references.add(new KeyValue(name, fieldValue));
@@ -358,8 +357,8 @@ public class QueryProfileXMLReader {
 
     private static class KeyValue {
 
-        private String key;
-        private Object value;
+        private final String key;
+        private final Object value;
 
         public KeyValue(String key, Object value) {
             this.key = key;

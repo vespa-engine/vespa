@@ -1,0 +1,10 @@
+<query-profile id="inherited">
+    <dimensions>d2</dimensions>
+
+    <field name="c">a.b.c-value</field>
+
+    <query-profile for="d2v">
+        <field name="c" overridable="false">a.b.c-variant-value</field>
+    </query-profile>
+
+</query-profile>

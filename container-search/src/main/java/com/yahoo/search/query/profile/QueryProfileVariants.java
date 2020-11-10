@@ -27,7 +27,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
     private boolean frozen = false;
 
     /** Properties indexed by name, to support fast lookup of single values */
-    private Map<String,FieldValues> fieldValuesByName = new HashMap<>();
+    private Map<String, FieldValues> fieldValuesByName = new HashMap<>();
 
     /** The inherited profiles for various dimensions settings - a set of fieldvalues of List&lt;QueryProfile&gt; */
     private FieldValues inheritedProfiles = new FieldValues();
@@ -230,6 +230,19 @@ public class QueryProfileVariants implements Freezable, Cloneable {
 
         if (combinedValue != null)
             fieldValues.put(dimensionValues, combinedValue);
+    }
+
+    /**
+     * Makes a value unoverridable in a given context.
+     */
+    public void setOverridable(String fieldName, boolean overridable, DimensionValues dimensionValues) {
+        getVariant(dimensionValues, true).setOverridable(fieldName, overridable);
+    }
+
+    public Boolean isOverridable(String fieldName, DimensionValues dimensionValues) {
+        QueryProfileVariant variant = getVariant(dimensionValues, false);
+        if (variant == null) return null;
+        return variant.isOverridable(fieldName);
     }
 
     /**

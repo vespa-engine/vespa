@@ -31,7 +31,7 @@ import java.util.logging.Level;
  */
 public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer {
 
-    private QueryProfileRegistry registry;
+    private final QueryProfileRegistry registry;
 
     /**
      * Creates a new set of query profiles for which the config can be returned at request
@@ -110,16 +110,16 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     }
 
     private void addFieldChildren(QueryProfilesConfig.Queryprofile.Builder qpB, QueryProfile profile, String namePrefix) {
-        List<Map.Entry<String,Object>> content=new ArrayList<>(profile.declaredContent().entrySet());
-        Collections.sort(content,new MapEntryKeyComparator());
-        if (profile.getValue()!=null) { // Add "prefix with dot removed"=value:
+        List<Map.Entry<String, Object>> content = new ArrayList<>(profile.declaredContent().entrySet());
+        Collections.sort(content, new MapEntryKeyComparator());
+        if (profile.getValue() != null) { // Add "prefix with dot removed"=value:
             QueryProfilesConfig.Queryprofile.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Property.Builder();
             String fullName = namePrefix.substring(0, namePrefix.length() - 1);
             Object value = profile.getValue();
             if (value instanceof SubstituteString)
-                value=value.toString(); // Send only types understood by configBuilder downwards
+                value = value.toString(); // Send only types understood by configBuilder downwards
             propB.name(fullName);
-            if (value!=null) propB.value(value.toString());
+            if (value != null) propB.value(value.toString());
             qpB.property(propB);
         }
         for (Map.Entry<String,Object> field : content) {
@@ -128,21 +128,23 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     }
 
     private void addVariantFieldChildren(QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder qpB,
-            QueryProfile profile, String namePrefix) {
-        List<Map.Entry<String,Object>> content=new ArrayList<>(profile.declaredContent().entrySet());
+                                         QueryProfile profile,
+                                         String namePrefix) {
+        List<Map.Entry<String, Object>> content = new ArrayList<>(profile.declaredContent().entrySet());
         Collections.sort(content,new MapEntryKeyComparator());
-        if (profile.getValue()!=null) { // Add "prefix with dot removed"=value:
+        if (profile.getValue() != null) { // Add "prefix with dot removed"=value:
             QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder();
             String fullName = namePrefix.substring(0, namePrefix.length() - 1);
             Object value = profile.getValue();
             if (value instanceof SubstituteString)
-                value=value.toString(); // Send only types understood by configBuilder downwards
+                value = value.toString(); // Send only types understood by configBuilder downwards
             propB.name(fullName);
-            if (value!=null) propB.value(value.toString());
+            if (value != null)
+                propB.value(value.toString());
             qpB.property(propB);
         }
-        for (Map.Entry<String,Object> field : content) {
-            addVariantField(qpB, field, namePrefix);
+        for (Map.Entry<String, Object> entry : content) {
+            addVariantField(qpB, entry, profile.isDeclaredOverridable(entry.getKey(), Map.of()), namePrefix);
         }
     }
 
@@ -167,10 +169,10 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     }
 
     private void addVariantField(QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder qpB,
-                                 Entry<String, Object> field, String namePrefix) {
-        String fullName=namePrefix + field.getKey();
+                                 Entry<String, Object> field, Boolean overridable, String namePrefix) {
+        String fullName = namePrefix + field.getKey();
         if (field.getValue() instanceof QueryProfile) {
-            QueryProfile subProfile=(QueryProfile)field.getValue();
+            QueryProfile subProfile = (QueryProfile)field.getValue();
             if ( ! subProfile.isExplicit()) { // Implicitly defined profile - add content
                 addVariantFieldChildren(qpB, subProfile,fullName + ".");
             }
@@ -182,27 +184,27 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
             }
         }
         else { // a primitive
-            qpB.property(createVariantPropertyFieldConfig(fullName, field.getValue()));
+            qpB.property(createVariantPropertyFieldConfig(fullName, field.getValue(), overridable));
         }
     }
 
     private void addVariants(QueryProfilesConfig.Queryprofile.Builder qB, QueryProfile profile) {
-        if (profile.getVariants()==null) return;
-        DeclaredQueryProfileVariants declaredVariants=new DeclaredQueryProfileVariants(profile);
+        if (profile.getVariants() == null) return;
+        DeclaredQueryProfileVariants declaredVariants = new DeclaredQueryProfileVariants(profile);
         for (DeclaredQueryProfileVariants.VariantQueryProfile variant : declaredVariants.getVariantQueryProfiles().values()) {
             QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder varB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder();
             for (String dimensionValue : variant.getDimensionValues()) {
-                if (dimensionValue==null)
-                    dimensionValue="*";
+                if (dimensionValue == null)
+                    dimensionValue = "*";
                 varB.fordimensionvalues(dimensionValue);
             }
             for (QueryProfile inherited : variant.inherited())
                 varB.inherit(inherited.getId().stringValue());
 
-            List<Map.Entry<String,Object>> content=new ArrayList<>(variant.getValues().entrySet());
-            Collections.sort(content,new MapEntryKeyComparator());
-            for (Map.Entry<String,Object> value : content) {
-                addVariantField(varB, value,"");
+            List<Map.Entry<String,Object>> content = new ArrayList<>(variant.getValues().entrySet());
+            Collections.sort(content, new MapEntryKeyComparator());
+            for (Map.Entry<String, Object> entry : content) {
+                addVariantField(varB, entry, variant.getOverriable().get(entry.getKey()), "");
             }
             qB.queryprofilevariant(varB);
         }
@@ -240,12 +242,18 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         return propB;
     }
 
-    private QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder createVariantPropertyFieldConfig(String fullName, Object value) {
+    private QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder createVariantPropertyFieldConfig(String fullName,
+                                                                                                                   Object value,
+                                                                                                                   Boolean overridable) {
         QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder();
         if (value instanceof SubstituteString)
-            value=value.toString(); // Send only types understood by configBuilder downwards
-        propB.name(fullName);        
-        if (value!=null) propB.value(value.toString());
+            value = value.toString(); // Send only types understood by configBuilder downwards
+
+        propB.name(fullName);
+        if (value != null)
+            propB.value(value.toString());
+        if (overridable != null)
+            propB.overridable(overridable.toString());
         return propB;
     }
 

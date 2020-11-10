@@ -219,6 +219,19 @@ public class XmlReadingTestCase {
     }
 
     @Test
+    public void testQueryProfileVariantsWithOverridableFalse() {
+        QueryProfileXMLReader reader = new QueryProfileXMLReader();
+        CompiledQueryProfileRegistry registry = reader.read("src/test/java/com/yahoo/search/query/profile/config/test/variants/").compile();
+        CompiledQueryProfile profile = registry.findQueryProfile("default");
+
+        assertEquals("a.b.c-value", new Query("?d1=d1v", profile).properties().get("a.b.c"));
+        assertEquals("a.b.c-variant-value", new Query("?d1=d1v&d2=d2v", profile).properties().get("a.b.c"));
+
+        assertTrue(profile.isOverridable(new CompoundName("a.b.c"), Map.of("d1", "d1v")));
+        assertFalse(profile.isOverridable(new CompoundName("a.b.c"), Map.of("d1", "d1v", "d2", "d2v")));
+    }
+
+    @Test
     public void testNewsFE1() {
         CompiledQueryProfileRegistry registry=new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/newsfe").compile();
 

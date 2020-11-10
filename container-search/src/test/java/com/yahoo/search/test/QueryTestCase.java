@@ -32,6 +32,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.GroupingQueryParser;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.SessionId;
+import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
@@ -427,7 +428,7 @@ public class QueryTestCase {
     @Test
     public void testQueryProfileInSubstitution() {
         QueryProfile testProfile = new QueryProfile("test");
-        testProfile.setOverridable("u", false, null);
+        testProfile.setOverridable("u", false, DimensionValues.empty);
         testProfile.set("d","e", null);
         testProfile.set("u","11", null);
         testProfile.set("foo.bar", "wiz", null);
@@ -560,7 +561,7 @@ public class QueryTestCase {
     @Test
     public void testQueryPropertyResolveTracing() {
         QueryProfile testProfile = new QueryProfile("test");
-        testProfile.setOverridable("u", false, null);
+        testProfile.setOverridable("u", false, DimensionValues.empty);
         testProfile.set("d","e", null);
         testProfile.set("u","11", null);
         testProfile.set("foo.bar", "wiz", null);
