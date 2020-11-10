@@ -33,7 +33,12 @@ public class ClusterControllerContainer extends Container implements
 
     private final Set<String> bundles = new TreeSet<>();
 
-    public ClusterControllerContainer(AbstractConfigProducer parent, int index, boolean runStandaloneZooKeeper, boolean isHosted) {
+    public ClusterControllerContainer(
+            AbstractConfigProducer<?> parent,
+            int index,
+            boolean runStandaloneZooKeeper,
+            boolean isHosted,
+            ReindexingContext reindexingContext) {
         super(parent, "" + index, index, isHosted);
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
@@ -61,6 +66,7 @@ public class ClusterControllerContainer extends Container implements
         addFileBundle("clustercontroller-core");
         addFileBundle("clustercontroller-utils");
         addFileBundle("zookeeper-server");
+        configureReindexing(reindexingContext);
     }
 
     @Override
@@ -100,6 +106,14 @@ public class ClusterControllerContainer extends Container implements
     private void addHandler(String id, String className, String path) {
         addHandler(new Handler(createComponentModel(id, className, CLUSTERCONTROLLER_BUNDLE)), path);
     }
+
+    private void configureReindexing(ReindexingContext context) {
+        if (context != null) {
+            addFileBundle(ReindexingController.REINDEXING_CONTROLLER_BUNDLE);
+            addComponent(new ReindexingController(context));
+        }
+    }
+
 
     @Override
     public void getConfig(PlatformBundlesConfig.Builder builder) {

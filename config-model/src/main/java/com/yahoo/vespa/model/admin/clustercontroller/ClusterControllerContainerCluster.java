@@ -20,6 +20,6 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     @Override
     protected void doPrepare(DeployState deployState) { }
 
-    protected boolean messageBusEnabled() { return false; }
+    @Override protected boolean messageBusEnabled() { return false; }
 
 }
