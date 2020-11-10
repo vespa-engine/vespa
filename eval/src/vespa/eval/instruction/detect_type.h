@@ -2,6 +2,7 @@
 
 #include <typeindex>
 #include <array>
+#include <cstddef>
 
 #pragma once
 
