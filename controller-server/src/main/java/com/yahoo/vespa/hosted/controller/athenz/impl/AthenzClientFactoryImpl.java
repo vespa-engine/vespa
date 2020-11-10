@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.athenz.impl;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.zms.DefaultZmsClient;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
@@ -11,7 +12,6 @@ import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
-import org.apache.http.client.methods.HttpUriRequest;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -65,9 +65,8 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
         return true;
     }
 
-    private void reportMetricErrorHandler(HttpUriRequest request, Exception error) {
-        String hostname = request.getURI().getHost();
-        Metric.Context context = metricContexts.computeIfAbsent(hostname, host -> metrics.createContext(
+    private void reportMetricErrorHandler(ErrorHandler.RequestProperties request, Exception error) {
+        Metric.Context context = metricContexts.computeIfAbsent(request.hostname(), host -> metrics.createContext(
                 Map.of(ATHENZ_SERVICE_DIMENSION, host,
                         EXCEPTION_DIMENSION, error.getClass().getSimpleName())));
         metrics.add(METRIC_NAME, 1, context);

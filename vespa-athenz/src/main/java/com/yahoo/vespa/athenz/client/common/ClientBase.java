@@ -64,7 +64,7 @@ public abstract class ClientBase implements AutoCloseable {
     }
 
     private void reportError(HttpUriRequest request, Exception e) {
-        errorHandler.reportError(request, e);
+        errorHandler.reportError(() -> request.getURI().getHost(), e);
     }
 
     protected StringEntity toJsonStringEntity(Object entity) {
