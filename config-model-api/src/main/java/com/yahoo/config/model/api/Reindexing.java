@@ -11,8 +11,11 @@ import java.util.Optional;
  */
 public interface Reindexing {
 
-    /** Reindexing status for a given application, cluster and document type. */
+    /** Reindexing status for this application, for a given cluster and document type. */
     default Optional<Status> status(String cluster, String documentType) { return Optional.empty(); }
+
+    /** Returns whether reindexing should run for this application. */
+    default boolean enabled() { return false; }
 
     /** Reindexing status of a given document type in a given cluster in a given application. */
     interface Status {

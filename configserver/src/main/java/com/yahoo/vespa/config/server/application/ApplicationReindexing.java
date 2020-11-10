@@ -72,7 +72,7 @@ public class ApplicationReindexing implements Reindexing {
         return new ApplicationReindexing(enabled, common, clusters);
     }
 
-    /** Returns whether reindexing should run for this application. */
+    @Override
     public boolean enabled() {
         return enabled;
     }

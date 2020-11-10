@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author jonmv
@@ -69,6 +71,11 @@ public class ApplicationReindexingTest {
 
         assertEquals(Map.of("b", 20L),
                      reindexing.clusters().get("two").pending());
+
+        assertTrue(reindexing.enabled());
+
+        assertFalse(reindexing.enabled(false).enabled());
+
     }
 
 }
