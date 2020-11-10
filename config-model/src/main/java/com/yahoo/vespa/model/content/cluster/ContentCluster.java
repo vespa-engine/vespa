@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -330,8 +331,10 @@ public class ContentCluster extends AbstractConfigProducer implements
 
         private static ReindexingContext createReindexingContent(
                 ConfigModelContext ctx, String contentClusterName, Map<String, NewDocumentType> documentDefinitions) {
-            return new ReindexingContext(
-                    ctx.getDeployState().reindexing().orElse(null), contentClusterName, documentDefinitions.values());
+            Reindexing reindexing = ctx.properties().featureFlags().enableAutomaticReindexing()
+                    ? ctx.getDeployState().reindexing().orElse(null)
+                    : null;
+            return new ReindexingContext(reindexing, contentClusterName, documentDefinitions.values());
         }
 
         /** Returns any other content cluster which shares nodes with this, or null if none are built */
