@@ -35,11 +35,7 @@ class ReindexingController extends SimpleComponent implements ReindexingConfig.P
     @Override
     public void getConfig(ReindexingConfig.Builder builder) {
         builder.clusterName(contentClusterName);
-        if (!reindexing.enabled()) {
-            builder.enabled(false);
-            return;
-        }
-        builder.enabled(true);
+        builder.enabled(reindexing.enabled());
         for (NewDocumentType type : documentTypes) {
             String typeName = type.getFullName().getName();
             reindexing.status(contentClusterName, typeName).ifPresent(status ->
