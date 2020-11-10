@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoreCollector.GDB_PATH;
+import static com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoreCollector.JAVA_HEAP_DUMP_METADATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -163,7 +164,7 @@ public class CoreCollectorTest {
 
     @Test
     public void metadata_for_java_heap_dump() {
-        assertEquals(Map.of("bin_path", "java"), coreCollector.collect(context, Paths.get("java_pid123.hprof")));
+        assertEquals(JAVA_HEAP_DUMP_METADATA, coreCollector.collect(context, Paths.get("dump_java_pid123.hprof")));
     }
 
     private void mockExec(String[] cmd, String output) {
