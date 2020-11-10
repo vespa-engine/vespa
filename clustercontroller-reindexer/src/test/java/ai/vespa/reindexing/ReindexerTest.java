@@ -129,8 +129,10 @@ class ReindexerTest {
             database.writeReindexing(Reindexing.empty()); // Wipe database to verify we write data from reindexer.
             parameters.getControlHandler().onProgress(new ProgressToken());
             aborted.get().shutdown();
-            executor.execute(() -> parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "Shut down"));
-            return () -> shutDown.set(true);
+            return () -> {
+                shutDown.set(true);
+                parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "Shut down");
+            };
         }, clock));
         aborted.get().reindex();
         reindexing = reindexing.with(music, Status.ready(clock.instant()).running().progressed(new ProgressToken()).halted());
