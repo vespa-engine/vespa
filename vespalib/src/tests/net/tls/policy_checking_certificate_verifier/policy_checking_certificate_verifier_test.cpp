@@ -8,7 +8,7 @@ using namespace vespalib;
 using namespace vespalib::net::tls;
 
 bool glob_matches(vespalib::stringref pattern, vespalib::stringref string_to_check) {
-    auto glob = HostGlobPattern::create_from_glob(pattern);
+    auto glob = CredentialMatchPattern::create_from_glob(pattern);
     return glob->matches(string_to_check);
 }
 
@@ -61,9 +61,22 @@ TEST("special extended regex characters are ignored") {
 }
 
 // TODO CN + SANs
+PeerCredentials creds_with_sans(std::vector<vespalib::string> dns_sans, std::vector<vespalib::string> uri_sans) {
+    PeerCredentials creds;
+    creds.dns_sans = std::move(dns_sans);
+    creds.uri_sans = std::move(uri_sans);
+    return creds;
+}
+
 PeerCredentials creds_with_dns_sans(std::vector<vespalib::string> dns_sans) {
     PeerCredentials creds;
     creds.dns_sans = std::move(dns_sans);
+    return creds;
+}
+
+PeerCredentials creds_with_uri_sans(std::vector<vespalib::string> uri_sans) {
+    PeerCredentials creds;
+    creds.uri_sans = std::move(uri_sans);
     return creds;
 }
 
@@ -93,7 +106,7 @@ TEST("Non-empty policies do not allow all authenticated peers") {
     EXPECT_FALSE(allow_not_all.allows_all_authenticated());
 }
 
-TEST("SAN requirement without glob pattern is matched as exact string") {
+TEST("DNS SAN requirement without glob pattern is matched as exact string") {
     auto authorized = authorized_peers({policy_with({required_san_dns("hello.world")})});
     EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}})));
     EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"foo.bar"}})));
@@ -103,7 +116,7 @@ TEST("SAN requirement without glob pattern is matched as exact string") {
     EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"hello.world.bar"}})));
 }
 
-TEST("SAN requirement can include glob wildcards") {
+TEST("DNS SAN requirement can include glob wildcards") {
     auto authorized = authorized_peers({policy_with({required_san_dns("*.w?rld")})});
     EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}})));
     EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"greetings.w0rld"}})));
@@ -111,23 +124,40 @@ TEST("SAN requirement can include glob wildcards") {
     EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"world"}})));
 }
 
-TEST("multi-SAN policy requires all SANs to be present in certificate") {
-    auto authorized = authorized_peers({policy_with({required_san_dns("hello.world"),
-                                                     required_san_dns("foo.bar")})});
-    EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}, {"foo.bar"}})));
-    // Need both
-    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"hello.world"}})));
-    EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"foo.bar"}})));
-    // OK with more SANs that strictly required
-    EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"baz.blorg"}})));
+// FIXME make this RFC 2459-compliant with subdomain matching, case insensitity for host etc
+TEST("URI SAN requirement is matched as exact string in cheeky, pragmatic violation of RFC 2459") {
+    auto authorized = authorized_peers({policy_with({required_san_uri("foo://bar.baz/zoid")})});
+    EXPECT_TRUE(verify(authorized,  creds_with_uri_sans({{"foo://bar.baz/zoid"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"foo://bar.baz/zoi"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"oo://bar.baz/zoid"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"bar://bar.baz/zoid"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"foo://bar.baz"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"foo://.baz/zoid"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"foo://BAR.baz/zoid"}})));
 }
 
-TEST("wildcard SAN in certificate is not treated as a wildcard match by policy") {
+TEST("multi-SAN policy requires all SANs to be present in certificate") {
+    auto authorized = authorized_peers({policy_with({required_san_dns("hello.world"),
+                                                     required_san_dns("foo.bar"),
+                                                     required_san_uri("foo://bar/baz")})});
+    EXPECT_TRUE(verify(authorized, creds_with_sans({{"hello.world"}, {"foo.bar"}}, {{"foo://bar/baz"}})));
+    // Need all
+    EXPECT_FALSE(verify(authorized, creds_with_sans({{"hello.world"}, {"foo.bar"}}, {})));
+    EXPECT_FALSE(verify(authorized, creds_with_sans({{"hello.world"}}, {{"foo://bar/baz"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_sans({{"hello.world"}}, {})));
+    EXPECT_FALSE(verify(authorized, creds_with_sans({{"foo.bar"}}, {})));
+    EXPECT_FALSE(verify(authorized, creds_with_sans({}, {{"foo://bar/baz"}})));
+    // OK with more SANs that strictly required
+    EXPECT_TRUE(verify(authorized,  creds_with_sans({{"hello.world"}, {"foo.bar"}, {"baz.blorg"}},
+                                                    {{"foo://bar/baz"}, {"hello://world/"}})));
+}
+
+TEST("wildcard DNS SAN in certificate is not treated as a wildcard match by policy") {
     auto authorized = authorized_peers({policy_with({required_san_dns("hello.world")})});
     EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"*.world"}})));
 }
 
-TEST("wildcard SAN in certificate is still matched by wildcard policy SAN") {
+TEST("wildcard DNS SAN in certificate is still matched by wildcard policy SAN") {
     auto authorized = authorized_peers({policy_with({required_san_dns("*.world")})});
     EXPECT_TRUE(verify(authorized, creds_with_dns_sans({{"*.world"}})));
 }
@@ -141,7 +171,8 @@ struct MultiPolicyMatchFixture {
 MultiPolicyMatchFixture::MultiPolicyMatchFixture()
     : authorized(authorized_peers({policy_with({required_san_dns("hello.world")}),
                                    policy_with({required_san_dns("foo.bar")}),
-                                   policy_with({required_san_dns("zoid.berg")})}))
+                                   policy_with({required_san_dns("zoid.berg")}),
+                                   policy_with({required_san_uri("zoid://be.rg/")})}))
 {}
 
 MultiPolicyMatchFixture::~MultiPolicyMatchFixture() = default;
@@ -150,6 +181,7 @@ TEST_F("peer verifies if it matches at least 1 policy of multiple", MultiPolicyM
     EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"hello.world"}})));
     EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"foo.bar"}})));
     EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"zoid.berg"}})));
+    EXPECT_TRUE(verify(f.authorized, creds_with_uri_sans({{"zoid://be.rg/"}})));
 }
 
 TEST_F("peer verifies if it matches multiple policies", MultiPolicyMatchFixture) {

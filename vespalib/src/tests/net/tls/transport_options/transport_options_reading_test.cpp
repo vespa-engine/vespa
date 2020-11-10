@@ -111,10 +111,12 @@ TEST("can parse single peer policy with multiple requirements") {
     const char* json = R"({
       "required-credentials":[
          {"field": "SAN_DNS", "must-match": "hello.world"},
+         {"field": "SAN_URI", "must-match": "foo://bar/baz"},
          {"field": "CN", "must-match": "goodbye.moon"}
       ]
     })";
     EXPECT_EQUAL(authorized_peers({policy_with({required_san_dns("hello.world"),
+                                                required_san_uri("foo://bar/baz"),
                                                 required_cn("goodbye.moon")})}),
                  parse_policies(json).authorized_peers());
 }

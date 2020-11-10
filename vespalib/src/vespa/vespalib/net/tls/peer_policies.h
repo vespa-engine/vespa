@@ -8,22 +8,23 @@
 
 namespace vespalib::net::tls {
 
-struct HostGlobPattern {
-    virtual ~HostGlobPattern() = default;
+struct CredentialMatchPattern {
+    virtual ~CredentialMatchPattern() = default;
     [[nodiscard]] virtual bool matches(vespalib::stringref str) const = 0;
 
-    static std::shared_ptr<const HostGlobPattern> create_from_glob(vespalib::stringref pattern);
+    static std::shared_ptr<const CredentialMatchPattern> create_from_glob(vespalib::stringref pattern);
+    static std::shared_ptr<const CredentialMatchPattern> create_exact_match(vespalib::stringref pattern);
 };
 
 class RequiredPeerCredential {
 public:
     enum class Field {
-        CN, SAN_DNS
+        CN, SAN_DNS, SAN_URI
     };
 private:
     Field _field = Field::SAN_DNS;
     vespalib::string _original_pattern;
-    std::shared_ptr<const HostGlobPattern> _match_pattern;
+    std::shared_ptr<const CredentialMatchPattern> _match_pattern;
 public:
     RequiredPeerCredential() = default;
     RequiredPeerCredential(Field field, vespalib::string must_match_pattern);

@@ -12,6 +12,10 @@ RequiredPeerCredential required_san_dns(vespalib::stringref pattern) {
     return {RequiredPeerCredential::Field::SAN_DNS, pattern};
 }
 
+RequiredPeerCredential required_san_uri(vespalib::stringref pattern) {
+    return {RequiredPeerCredential::Field::SAN_URI, pattern};
+}
+
 PeerPolicy policy_with(std::vector<RequiredPeerCredential> creds) {
     return PeerPolicy(std::move(creds));
 }

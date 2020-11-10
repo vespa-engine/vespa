@@ -7,6 +7,7 @@ namespace vespalib::net::tls {
 
 RequiredPeerCredential required_cn(vespalib::stringref pattern);
 RequiredPeerCredential required_san_dns(vespalib::stringref pattern);
+RequiredPeerCredential required_san_uri(vespalib::stringref pattern);
 PeerPolicy policy_with(std::vector<RequiredPeerCredential> creds);
 AuthorizedPeers authorized_peers(std::vector<PeerPolicy> peer_policies);
 

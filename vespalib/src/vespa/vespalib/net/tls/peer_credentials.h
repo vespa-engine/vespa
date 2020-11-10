@@ -14,6 +14,8 @@ struct PeerCredentials {
     vespalib::string common_name;
     // 0-n DNS SAN entries. Note: "DNS:" prefix is not present in strings.
     std::vector<vespalib::string> dns_sans;
+    // 0-n DNS URI entries. Note: "URI:" prefix is not present in strings.
+    std::vector<vespalib::string> uri_sans;
 
     PeerCredentials();
     ~PeerCredentials();

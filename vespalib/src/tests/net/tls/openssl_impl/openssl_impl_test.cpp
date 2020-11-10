@@ -583,10 +583,11 @@ TEST_F("Exception during verification callback processing breaks handshake", Cer
     EXPECT_FALSE(f.handshake());
 }
 
-TEST_F("Certificate verification callback observes CN and DNS SANs", CertFixture) {
+TEST_F("Certificate verification callback observes CN, DNS SANs and URI SANs", CertFixture) {
     auto ck = f.create_ca_issued_peer_cert(
             {{"rockets.wile.example.com"}},
-            {{"DNS:crash.wile.example.com"}, {"DNS:burn.wile.example.com"}});
+            {{"DNS:crash.wile.example.com"}, {"DNS:burn.wile.example.com"},
+             {"URI:foo://bar.baz/zoid"}});
 
     fprintf(stderr, "certs:\n%s%s\n", f.root_ca.cert->to_pem().c_str(), ck.cert->to_pem().c_str());
 
@@ -600,6 +601,8 @@ TEST_F("Certificate verification callback observes CN and DNS SANs", CertFixture
     ASSERT_EQUAL(2u, creds.dns_sans.size());
     EXPECT_EQUAL("crash.wile.example.com", creds.dns_sans[0]);
     EXPECT_EQUAL("burn.wile.example.com", creds.dns_sans[1]);
+    ASSERT_EQUAL(1u, server_cb->creds.uri_sans.size());
+    EXPECT_EQUAL("foo://bar.baz/zoid", server_cb->creds.uri_sans[0]);
 }
 
 TEST_F("Last occurring CN is given to verification callback if multiple CNs are present", CertFixture) {
@@ -616,7 +619,7 @@ TEST_F("Last occurring CN is given to verification callback if multiple CNs are 
 }
 
 // TODO we are likely to want IPADDR SANs at some point
-TEST_F("Only DNS SANs are enumerated", CertFixture) {
+TEST_F("Only DNS and URI SANs are enumerated", CertFixture) {
     auto ck = f.create_ca_issued_peer_cert({}, {"IP:127.0.0.1"});
 
     f.reset_client_with_cert_opts(ck, std::make_shared<PrintingCertificateCallback>());
@@ -624,6 +627,7 @@ TEST_F("Only DNS SANs are enumerated", CertFixture) {
     f.reset_server_with_cert_opts(ck, server_cb);
     ASSERT_TRUE(f.handshake());
     EXPECT_EQUAL(0u, server_cb->creds.dns_sans.size());
+    EXPECT_EQUAL(0u, server_cb->creds.uri_sans.size());
 }
 
 // We don't test too many combinations of peer policies here, only that

@@ -50,7 +50,7 @@ std::string dot_separated_glob_to_regex(vespalib::stringref glob) {
     return ret;
 }
 
-class RegexHostMatchPattern : public HostGlobPattern {
+class RegexHostMatchPattern : public CredentialMatchPattern {
     Regex _pattern_as_regex;
 public:
     explicit RegexHostMatchPattern(vespalib::stringref glob_pattern)
@@ -64,16 +64,36 @@ public:
     }
 };
 
+class ExactMatchPattern : public CredentialMatchPattern {
+    vespalib::string _must_match_exactly;
+public:
+    explicit ExactMatchPattern(vespalib::stringref str_to_match) noexcept // vespalib::string ctors marked noexcept
+        : _must_match_exactly(str_to_match)
+    {
+    }
+    ~ExactMatchPattern() override = default;
+
+    [[nodiscard]] bool matches(vespalib::stringref str) const override {
+        return (str == _must_match_exactly);
+    }
+};
+
 } // anon ns
 
-std::shared_ptr<const HostGlobPattern> HostGlobPattern::create_from_glob(vespalib::stringref glob_pattern) {
+std::shared_ptr<const CredentialMatchPattern> CredentialMatchPattern::create_from_glob(vespalib::stringref glob_pattern) {
     return std::make_shared<const RegexHostMatchPattern>(glob_pattern);
+}
+
+std::shared_ptr<const CredentialMatchPattern> CredentialMatchPattern::create_exact_match(vespalib::stringref str) {
+    return std::make_shared<const ExactMatchPattern>(str);
 }
 
 RequiredPeerCredential::RequiredPeerCredential(Field field, vespalib::string must_match_pattern)
     : _field(field),
       _original_pattern(std::move(must_match_pattern)),
-      _match_pattern(HostGlobPattern::create_from_glob(_original_pattern))
+      // FIXME it's not RFC 2459-compliant to use exact-matching for URIs, but that's all we currently need.
+      _match_pattern(field == Field::SAN_URI ? CredentialMatchPattern::create_exact_match(_original_pattern)
+                                             : CredentialMatchPattern::create_from_glob(_original_pattern))
 {
 }
 
