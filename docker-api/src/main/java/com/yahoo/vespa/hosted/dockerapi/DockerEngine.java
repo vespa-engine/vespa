@@ -37,12 +37,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -59,7 +58,7 @@ public class DockerEngine implements ContainerEngine {
     private static final Duration WAIT_BEFORE_KILLING = Duration.ofSeconds(10);
 
     private final Object monitor = new Object();
-    private final Set<DockerImage> scheduledPulls = new HashSet<>();
+    private final Map<DockerImage, RegistryCredentials> scheduledPulls = new HashMap<>();
 
     private final DockerClient dockerClient;
     private final DockerImageGarbageCollector dockerImageGC;
@@ -85,10 +84,10 @@ public class DockerEngine implements ContainerEngine {
     public boolean pullImageAsyncIfNeeded(DockerImage image, RegistryCredentials registryCredentials) {
         try {
             synchronized (monitor) {
-                if (scheduledPulls.contains(image)) return true;
+                if (pullScheduled(image, registryCredentials)) return true;
                 if (imageIsDownloaded(image)) return false;
 
-                scheduledPulls.add(image);
+                scheduledPulls.put(image, registryCredentials);
 
                 logger.log(Level.INFO, "Starting download of " + image.asString());
                 PullImageCmd pullCmd = dockerClient.pullImageCmd(image.asString());
@@ -108,7 +107,12 @@ public class DockerEngine implements ContainerEngine {
         }
     }
 
-    private void removeScheduledPoll(DockerImage image) {
+    /** Returns whether a pull is already scheduled for image using given credentials */
+    private boolean pullScheduled(DockerImage image, RegistryCredentials credentials) {
+        return credentials.equals(scheduledPulls.get(image));
+    }
+
+    private void removeScheduledPull(DockerImage image) {
         synchronized (monitor) {
             scheduledPulls.remove(image);
         }
@@ -367,7 +371,7 @@ public class DockerEngine implements ContainerEngine {
 
         @Override
         public void onError(Throwable throwable) {
-            removeScheduledPoll(dockerImage);
+            removeScheduledPull(dockerImage);
             logger.log(Level.SEVERE, "Could not download image " + dockerImage.asString(), throwable);
         }
 
@@ -375,7 +379,7 @@ public class DockerEngine implements ContainerEngine {
         public void onComplete() {
             if (imageIsDownloaded(dockerImage)) {
                 logger.log(Level.INFO, "Download completed: " + dockerImage.asString());
-                removeScheduledPoll(dockerImage);
+                removeScheduledPull(dockerImage);
             } else {
                 numberOfDockerApiFails.increment();
                 throw new DockerClientException("Could not download image: " + dockerImage);
@@ -429,4 +433,5 @@ public class DockerEngine implements ContainerEngine {
         return DockerClientImpl.getInstance(dockerClientConfig)
                 .withDockerCmdExecFactory(dockerFactory);
     }
+
 }

@@ -12,6 +12,7 @@ import com.github.dockerjava.api.command.InspectImageCmd;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.test.ManualClock;
@@ -32,6 +33,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -99,7 +102,7 @@ public class DockerEngineTest {
         when(dockerClient.pullImageCmd(eq(image.asString()))).thenReturn(pullImageCmd);
 
         assertTrue("Should return true, we just scheduled the pull", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
-        assertTrue("Should return true, the pull i still ongoing", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
+        assertTrue("Should return true, the pull is still ongoing", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
 
         assertTrue(docker.imageIsDownloaded(image));
         clock.advance(Duration.ofMinutes(10));
@@ -132,6 +135,44 @@ public class DockerEngineTest {
 
         assertFalse(docker.imageIsDownloaded(image));
         assertTrue("Should return true, new pull scheduled", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void pullImageAsyncRescheduleOnCredentialsChange() {
+        DockerImage image = DockerImage.fromString("registry.example.com/test:1.2.3");
+
+        InspectImageResponse inspectImageResponse = mock(InspectImageResponse.class);
+        when(inspectImageResponse.getId()).thenReturn(image.asString());
+
+        InspectImageCmd imageInspectCmd = mock(InspectImageCmd.class);
+        when(imageInspectCmd.exec())
+                .thenThrow(new NotFoundException("Image not found"))
+                .thenThrow(new NotFoundException("Unauthorized"))
+                .thenReturn(inspectImageResponse);
+        when(dockerClient.inspectImageCmd(image.asString())).thenReturn(imageInspectCmd);
+
+        ArgumentCaptor<ResultCallback> resultCallback = ArgumentCaptor.forClass(ResultCallback.class);
+        PullImageCmd pullCmd = mock(PullImageCmd.class);
+        when(pullCmd.exec(resultCallback.capture())).thenReturn(null);
+        when(dockerClient.pullImageCmd(eq(image.asString()))).thenReturn(pullCmd);
+
+        assertTrue("Pull triggered", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
+        verify(pullCmd, times(1)).exec(any());
+
+        assertTrue("Pull is already triggered", docker.pullImageAsyncIfNeeded(image, RegistryCredentials.none));
+        verify(pullCmd, times(1)).exec(any());
+
+        RegistryCredentials newCredentials = new RegistryCredentials("foo", "bar", "registry.example.com");
+        when(pullCmd.withAuthConfig(any())).thenReturn(pullCmd);
+        assertTrue("Credentials change and pull is re-triggered", docker.pullImageAsyncIfNeeded(image, newCredentials));
+        AuthConfig authConfig = new AuthConfig().withUsername(newCredentials.username())
+                                                .withPassword(newCredentials.password())
+                                                .withRegistryAddress(newCredentials.registryAddress());
+        verify(pullCmd, times(1)).withAuthConfig(eq(authConfig));
+
+        resultCallback.getValue().onComplete();
+        assertFalse("Image downloaded", docker.pullImageAsyncIfNeeded(image, newCredentials));
     }
 
     private void assertPullDuration(Duration duration, String image) {
