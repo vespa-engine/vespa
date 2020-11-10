@@ -116,7 +116,7 @@ public class ApplicationCuratorDatabase {
 
     public Optional<ApplicationReindexing> readReindexingStatus(ApplicationId id) {
         return curator.getData(reindexingDataPath(id))
-                      .map(data -> ReindexingStatusSerializer.fromBytes(data));
+                      .map(ReindexingStatusSerializer::fromBytes);
     }
 
     public void writeReindexingStatus(ApplicationId id, ApplicationReindexing status) {
