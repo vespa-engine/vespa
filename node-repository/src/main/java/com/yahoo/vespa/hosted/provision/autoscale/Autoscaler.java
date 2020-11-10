@@ -60,8 +60,6 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        log.fine(() -> "Autoscale " + cluster.toString());
-
         if (unstable(clusterNodes, nodeRepository)) {
             log.fine(() -> "Unstable - Advice.none " + cluster.toString());
             return Advice.none();

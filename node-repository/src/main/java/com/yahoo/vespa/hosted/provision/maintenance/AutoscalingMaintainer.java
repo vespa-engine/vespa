@@ -67,6 +67,9 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId));
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
+
+        log.fine(() -> "Autoscale " + application.toString());
+
         var advice = autoscaler.autoscale(cluster.get(), clusterNodes);
 
         if (advice.isEmpty()) return;
