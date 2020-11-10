@@ -119,9 +119,6 @@ public interface ModelContext {
 
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
-        // TODO(mpolden): Remove after May 2020
-        default boolean useDedicatedNodesWhenUnspecified() { return true; }
-
         Optional<ApplicationRoles> applicationRoles();
 
         // TODO(bjorncs): Temporary feature flag, revisit August 2020
