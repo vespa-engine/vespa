@@ -73,7 +73,7 @@ public class EvaluateTensorConformance {
     }
         
     private boolean testCase(String test, int count) {
-        boolean okAndEqual = false;
+        boolean wasOk = false;
         try {
             Slime input = SlimeUtils.jsonToSlime(test);
             Slime result = new Slime();
@@ -82,28 +82,23 @@ public class EvaluateTensorConformance {
             var num_tests = input.get().field("num_tests");
             if (input.get().field("num_tests").valid()) {
                 long expect = input.get().field("num_tests").asLong();
-                okAndEqual = (expect == count);
+                wasOk = (expect == count);
             } else if (input.get().field("expression").valid()) {
-                Tensor expect = getTensor(input.get().field("result").field("expect").asString());
                 String expression = input.get().field("expression").asString();
                 MapContext context = getInput(input.get().field("inputs"));
                 Tensor actual = evaluate(expression, context);
-                okAndEqual = Tensor.equals(actual, expect);
-                if (!okAndEqual) {
-                    System.err.println(count + " : Tensors not equal. Actual: " + actual.toString() + " Expected: " + expect.toString() + " -> expression \"" + expression + "\"");
-                } else if (! actual.type().valueType().equals(expect.type().valueType())) {
-                    System.err.println(count + " : Tensor cell value types not equal. Actual: " + actual.type() + " Expected: " + expect.type() + " -> expression \"" + expression + "\"");
-                    okAndEqual = false;
-                }
                 top.field("result").setData("vespajlib", TypedBinaryFormat.encode(actual));
+                wasOk = true;
             } else {
                 System.err.println(count + " : Invalid input >>>"+test+"<<<");
+                wasOk = false;
             }
             output(result);
         } catch (Exception e) {
             System.err.println(count + " : " + e.toString());
+            wasOk = false;
         }
-        return okAndEqual;
+        return wasOk;
     }
 
     private Tensor evaluate(String expression, MapContext context) throws ParseException {
