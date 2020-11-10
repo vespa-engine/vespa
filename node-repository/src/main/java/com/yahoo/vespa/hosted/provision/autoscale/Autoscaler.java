@@ -59,7 +59,9 @@ public class Autoscaler {
         return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive());
     }
 
-    private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
+    private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {        
+        log.fine(() -> "Autoscale " + cluster.toString());
+
         if (unstable(clusterNodes, nodeRepository)) {
             log.fine(() -> "Unstable - Advice.none " + cluster.toString());
             return Advice.none();
