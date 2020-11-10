@@ -86,7 +86,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {
         Tenant tenant = applicationRepository.getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
-        if (sessionRepository.getLocalSession(sessionId) == null)
+        if ( ! sessionRepository.localSessionExists(sessionId))
             sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
     }
 

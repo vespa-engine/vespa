@@ -129,6 +129,10 @@ public class SessionRepository {
         return localSessionCache.get(sessionId);
     }
 
+    public boolean localSessionExists(long sessionId) {
+        return localSessionCache.get(sessionId) != null;
+    }
+
     public Collection<LocalSession> getLocalSessions() {
         return localSessionCache.values();
     }
@@ -628,7 +632,15 @@ public class SessionRepository {
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            createLocalSession(sessionDir, applicationId, sessionId);
+            try {
+                createLocalSession(sessionDir, applicationId, sessionId);
+            } catch (RuntimeException e) {
+                // Rethrow only if local session does not exist, might have been created while doing the above
+                if (localSessionExists(sessionId))
+                    log.log(Level.INFO, () -> "Local session for tenant '" + tenantName + "' with session id " + sessionId + " already exists, continuing");
+                else
+                    throw e;
+            }
         }
     }
 
