@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author jonmv
@@ -70,23 +72,9 @@ public class ApplicationReindexingTest {
         assertEquals(Map.of("b", 20L),
                      reindexing.clusters().get("two").pending());
 
-        reindexing = reindexing.enabled(false);
+        assertTrue(reindexing.enabled());
 
-        // When disabled, status of any document type is empty.
-        assertEquals(Optional.empty(),
-                     reindexing.status("one", "a"));
-
-        assertEquals(Optional.empty(),
-                     reindexing.status("one", "d"));
-
-        assertEquals(Optional.empty(),
-                     reindexing.status("two", "d"));
-
-        assertEquals(Optional.empty(),
-                     reindexing.status("three", "a"));
-
-        assertEquals(Optional.empty(),
-                     reindexing.status("two", "b"));
+        assertFalse(reindexing.enabled(false).enabled());
 
     }
 

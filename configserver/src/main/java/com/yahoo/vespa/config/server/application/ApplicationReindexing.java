@@ -72,7 +72,7 @@ public class ApplicationReindexing implements Reindexing {
         return new ApplicationReindexing(enabled, common, clusters);
     }
 
-    /** Returns whether reindexing should run for this application. */
+    @Override
     public boolean enabled() {
         return enabled;
     }
@@ -87,9 +87,6 @@ public class ApplicationReindexing implements Reindexing {
 
     @Override
     public Optional<Reindexing.Status> status(String cluster, String documentType) {
-        if ( ! enabled)
-            return Optional.empty();
-
         if (clusters.containsKey(cluster)) {
             if (clusters.get(cluster).pending().containsKey(documentType))
                 return Optional.empty();
