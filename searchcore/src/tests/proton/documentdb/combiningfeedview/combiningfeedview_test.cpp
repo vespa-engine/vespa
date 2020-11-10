@@ -53,8 +53,6 @@ struct MyFeedView : public test::DummyFeedView
         _metaStore(bucketDB,
                    DocumentMetaStore::getFixedName(),
                    search::GrowStrategy(),
-                   documentmetastore::IGidCompare::SP(
-                           new documentmetastore::DefaultGidCompare),
                    subDbType),
         _streamHandler(),
         _preparePut(0),

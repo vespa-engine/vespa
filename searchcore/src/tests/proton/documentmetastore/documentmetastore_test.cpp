@@ -70,21 +70,6 @@ public:
     virtual void sync() override { }
 };
 
-class ReverseGidCompare : public DocumentMetaStore::IGidCompare {
-    GlobalId::BucketOrderCmp _comp;
-public:
-    ReverseGidCompare()
-        : IGidCompare(),
-          _comp()
-    {
-    }
-
-    virtual bool operator()(const GlobalId &lhs, const GlobalId &rhs) const override {
-        return _comp(rhs, lhs);
-    }
-};
-
-
 struct BoolVector : public std::vector<bool> {
     BoolVector() : std::vector<bool>() {}
     BoolVector(size_t sz) : std::vector<bool>(sz) {}
@@ -721,42 +706,6 @@ TEST(DocumentMetaStoreTest, can_put_and_remove_before_free_list_construct)
     assertPut(bucketId3, time3, 3, gid3, dms);
     EXPECT_EQ(3u, dms.getNumUsedLids());
     EXPECT_EQ(5u, dms.getNumDocs());
-}
-
-TEST(DocumentMetaStoreTest, can_sort_gids)
-{
-    DocumentMetaStore dms(createBucketDB());
-    DocumentMetaStore rdms(createBucketDB(),
-                         DocumentMetaStore::getFixedName(),
-                         GrowStrategy(),
-                         DocumentMetaStore::IGidCompare::SP(
-                                 new ReverseGidCompare));
-
-    dms.constructFreeList();
-    rdms.constructFreeList();
-    uint32_t numLids = 1000;
-    for (uint32_t lid = 1; lid <= numLids; ++lid) {
-        GlobalId gid = createGid(lid);
-        Timestamp oldTimestamp;
-        BucketId bucketId(minNumBits,
-                          gid.convertToBucketId().getRawId());
-        uint32_t addLid = addGid(dms, gid, bucketId, Timestamp(0u));
-        EXPECT_EQ(lid, addLid);
-        uint32_t addLid2 = addGid(rdms, gid, bucketId, Timestamp(0u));
-        EXPECT_EQ(lid, addLid2);
-    }
-    std::vector<uint32_t> lids;
-    std::vector<uint32_t> rlids;
-    for (DocumentMetaStore::ConstIterator it = dms.beginFrozen(); it.valid(); ++it)
-        lids.push_back(it.getKey());
-    for (DocumentMetaStore::ConstIterator rit = rdms.beginFrozen();
-         rit.valid(); ++rit)
-        rlids.push_back(rit.getKey());
-    EXPECT_EQ(numLids, lids.size());
-    EXPECT_EQ(numLids, rlids.size());
-    for (uint32_t i = 0; i < numLids; ++i) {
-        EXPECT_EQ(lids[numLids - 1 - i], rlids[i]);
-    }
 }
 
 void
@@ -1690,7 +1639,6 @@ RemovedFixture::RemovedFixture()
       dms(_bucketDB,
           DocumentMetaStore::getFixedName(),
           search::GrowStrategy(),
-          DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare),
           SubDbType::REMOVED),
       _bucketDBHandler(dms.getBucketDB())
 {

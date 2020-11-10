@@ -254,13 +254,11 @@ createDocumentMetaStoreInitializer(const search::TuneFileAttributes &tuneFile,
     vespalib::string baseDir(_baseDir + "/documentmetastore");
     vespalib::string name = DocumentMetaStore::getFixedName();
     vespalib::string attrFileName = baseDir + "/" + name; // XXX: Wrong
-    DocumentMetaStore::IGidCompare::SP
-        gidCompare(std::make_shared<DocumentMetaStore::DefaultGidCompare>());
     // make preliminary result visible early, allowing dependent
     // initializers to get hold of document meta store instance in
     // their constructors.
     *result = std::make_shared<DocumentMetaStoreInitializerResult>
-              (std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, gidCompare, _subDbType), tuneFile);
+              (std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, _subDbType), tuneFile);
     return std::make_shared<documentmetastore::DocumentMetaStoreInitializer>
         (baseDir, getSubDbName(), _docTypeName.toString(), (*result)->documentMetaStore());
 }

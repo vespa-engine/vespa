@@ -133,7 +133,7 @@ MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const st
       _subDBId(subDBId),
       _metaStoreSP(std::make_shared<DocumentMetaStore>(
               std::move(bucketDB), DocumentMetaStore::getFixedName(), search::GrowStrategy(),
-              DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare), subDbType)),
+              subDbType)),
       _metaStore(*_metaStoreSP),
       _repo(repo),
       _docTypeName(docTypeName)

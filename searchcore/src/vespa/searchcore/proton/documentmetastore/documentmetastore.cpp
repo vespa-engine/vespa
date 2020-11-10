@@ -304,7 +304,7 @@ DocumentMetaStore::lowerBound(const BucketId &bucketId,
                               const TreeView &treeView) const
 {
     document::GlobalId first(document::GlobalId::calculateFirstInBucket(bucketId));
-    KeyComp lowerComp(first, _metaDataStore, *_gidCompare);
+    KeyComp lowerComp(first, _metaDataStore);
     return treeView.lowerBound(KeyComp::FIND_DOC_ID, lowerComp);
 }
 
@@ -314,7 +314,7 @@ DocumentMetaStore::upperBound(const BucketId &bucketId,
                               const TreeView &treeView) const
 {
     document::GlobalId last(document::GlobalId::calculateLastInBucket(bucketId));
-    KeyComp upperComp(last, _metaDataStore, *_gidCompare);
+    KeyComp upperComp(last, _metaDataStore);
     return treeView.upperBound(KeyComp::FIND_DOC_ID, upperComp);
 }
 
@@ -380,7 +380,6 @@ DocumentMetaStore::unload()
 DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
                                      const vespalib::string &name,
                                      const GrowStrategy &grow,
-                                     const IGidCompare::SP &gidCompare,
                                      SubDbType subDbType)
     : DocumentMetaStoreAttribute(name),
       _metaDataStore(grow.getDocsInitialCapacity(),
@@ -393,7 +392,6 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
       _lidAlloc(_metaDataStore.size(),
                 _metaDataStore.capacity(),
                 getGenerationHolder()),
-      _gidCompare(gidCompare),
       _bucketDB(bucketDB),
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),
@@ -422,7 +420,7 @@ DocumentMetaStore::inspectExisting(const GlobalId &gid, uint64_t prepare_serial_
 {
     assert(_lidAlloc.isFreeListConstructed());
     Result res;
-    KeyComp comp(gid, _metaDataStore, *_gidCompare);
+    KeyComp comp(gid, _metaDataStore);
     auto& itr = _gid_to_lid_map_write_itr;
     itr.lower_bound(_gidToLidMap.getRoot(), KeyComp::FIND_DOC_ID, comp);
     _gid_to_lid_map_write_itr_prepare_serial_num = prepare_serial_num;
@@ -440,7 +438,7 @@ DocumentMetaStore::inspect(const GlobalId &gid, uint64_t prepare_serial_num)
 {
     assert(_lidAlloc.isFreeListConstructed());
     Result res;
-    KeyComp comp(gid, _metaDataStore, *_gidCompare);
+    KeyComp comp(gid, _metaDataStore);
     auto& itr = _gid_to_lid_map_write_itr;
     itr.lower_bound(_gidToLidMap.getRoot(), KeyComp::FIND_DOC_ID, comp);
     _gid_to_lid_map_write_itr_prepare_serial_num = prepare_serial_num;
@@ -467,7 +465,7 @@ DocumentMetaStore::put(const GlobalId &gid,
 {
     Result res;
     RawDocumentMetaData metaData(gid, bucketId, timestamp, docSize);
-    KeyComp comp(metaData, _metaDataStore, *_gidCompare);
+    KeyComp comp(metaData, _metaDataStore);
     auto& itr = _gid_to_lid_map_write_itr;
     if (prepare_serial_num == 0u || _gid_to_lid_map_write_itr_prepare_serial_num != prepare_serial_num) {
         itr.lower_bound(_gidToLidMap.getRoot(), KeyComp::FIND_DOC_ID, comp);
@@ -542,7 +540,7 @@ void
 DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num, BucketDBOwner::Guard &bucketGuard)
 {
     const GlobalId & gid = getRawGid(lid);
-    KeyComp comp(gid, _metaDataStore, *_gidCompare);
+    KeyComp comp(gid, _metaDataStore);
     auto& itr = _gid_to_lid_map_write_itr;
     if (prepare_serial_num == 0u || _gid_to_lid_map_write_itr_prepare_serial_num != prepare_serial_num) {
         itr.lower_bound(_gidToLidMap.getRoot(), lid, comp);
@@ -599,7 +597,7 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
     _lidAlloc.moveLidBegin(fromLid, toLid);
     _metaDataStore[toLid] = _metaDataStore[fromLid];
     const GlobalId & gid = getRawGid(fromLid);
-    KeyComp comp(gid, _metaDataStore, *_gidCompare);
+    KeyComp comp(gid, _metaDataStore);
     auto& itr = _gid_to_lid_map_write_itr;
     if (prepare_serial_num == 0u || _gid_to_lid_map_write_itr_prepare_serial_num != prepare_serial_num) {
         itr.lower_bound(_gidToLidMap.getRoot(), fromLid, comp);
@@ -666,7 +664,7 @@ bool
 DocumentMetaStore::getLid(const GlobalId &gid, DocId &lid) const
 {
     GlobalId value(gid);
-    KeyComp comp(value, _metaDataStore, *_gidCompare);
+    KeyComp comp(value, _metaDataStore);
     TreeType::ConstIterator itr =
         _gidToLidMap.getFrozenView().find(KeyComp::FIND_DOC_ID, comp);
     if (!itr.valid()) {
@@ -780,7 +778,7 @@ DocumentMetaStore::Iterator
 DocumentMetaStore::lowerBound(const GlobalId &gid) const
 {
     // Called by writer thread
-    KeyComp comp(gid, _metaDataStore, *_gidCompare);
+    KeyComp comp(gid, _metaDataStore);
     return _gidToLidMap.lowerBound(KeyComp::FIND_DOC_ID, comp);
 }
 
@@ -788,7 +786,7 @@ DocumentMetaStore::Iterator
 DocumentMetaStore::upperBound(const GlobalId &gid) const
 {
     // Called by writer thread
-    KeyComp comp(gid, _metaDataStore, *_gidCompare);
+    KeyComp comp(gid, _metaDataStore);
     return _gidToLidMap.upperBound(KeyComp::FIND_DOC_ID, comp);
 }
 

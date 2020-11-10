@@ -32,8 +32,6 @@ struct MySubDb
         : _metaStore(bucketDB,
                      DocumentMetaStore::getFixedName(),
                      search::GrowStrategy(),
-                     documentmetastore::IGidCompare::SP(
-                             new documentmetastore::DefaultGidCompare),
                      subDbType),
           _docs()
     {
