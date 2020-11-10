@@ -7,6 +7,7 @@ import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
+import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zms.bindings.AccessResponseEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.AssertionEntity;

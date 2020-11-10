@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.common.bindings.ErrorResponseEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import org.apache.http.HttpResponse;
@@ -125,10 +126,4 @@ public abstract class ClientBase implements AutoCloseable {
         RuntimeException createException(int errorCode, String description);
     }
 
-    public interface ErrorHandler {
-        static ErrorHandler empty() {
-            return (r,e)->{};
-        }
-        void reportError(HttpUriRequest request, Exception error);
-    }
 }

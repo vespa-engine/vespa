@@ -23,7 +23,7 @@ import java.util.Map;
 public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
     private static final String METRIC_NAME = "athenz.request.error";
-    private static final String ATHENZ_SERVICE_DIMENSION = "athenzService";
+    private static final String ATHENZ_SERVICE_DIMENSION = "athenz-service";
     private static final String EXCEPTION_DIMENSION = "exception";
 
     private final AthenzConfig config;

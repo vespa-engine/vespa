@@ -11,6 +11,7 @@ import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
+import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zts.bindings.AccessTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.AwsTemporaryCredentialsResponseEntity;
@@ -225,7 +226,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
     public static class Builder {
         private URI ztsUrl;
-        private ClientBase.ErrorHandler errorHandler = ErrorHandler.empty();
+        private ErrorHandler errorHandler = ErrorHandler.empty();
         private HostnameVerifier hostnameVerifier = null;
         private Supplier<SSLContext> sslContextSupplier = null;
 
@@ -233,7 +234,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
             this.ztsUrl = ztsUrl;
         }
 
-        public Builder withErrorHandler(ClientBase.ErrorHandler errorHandler) {
+        public Builder withErrorHandler(ErrorHandler errorHandler) {
             this.errorHandler = errorHandler;
             return this;
         }
