@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
@@ -16,16 +15,14 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolConfig.Producer {
 
     private final ContainerCluster<?> cluster;
-    private final DeployState deployState;
 
-    DefaultThreadpoolProvider(ContainerCluster<?> cluster, DeployState deployState) {
+    DefaultThreadpoolProvider(ContainerCluster<?> cluster) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(
                         "default-threadpool",
                         ThreadPoolProvider.class.getName(),
                         null)));
         this.cluster = cluster;
-        this.deployState = deployState;
     }
 
     @Override

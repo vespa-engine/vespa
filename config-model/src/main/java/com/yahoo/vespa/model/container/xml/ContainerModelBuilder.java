@@ -798,8 +798,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 new SearchHandler(
                         cluster,
                         serverBindings(searchElement, SearchHandler.DEFAULT_BINDING),
-                        ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null),
-                        deployState));
+                        ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null)));
     }
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {
