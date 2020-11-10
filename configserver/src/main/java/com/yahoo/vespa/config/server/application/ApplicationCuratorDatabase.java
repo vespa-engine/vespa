@@ -146,6 +146,7 @@ public class ApplicationCuratorDatabase {
     private static class ReindexingStatusSerializer {
 
         private static final String COMMON = "common";
+        private static final String ENABLED = "enabled";
         private static final String CLUSTERS = "clusters";
         private static final String PENDING = "pending";
         private static final String READY = "ready";
@@ -156,6 +157,7 @@ public class ApplicationCuratorDatabase {
 
         private static byte[] toBytes(ApplicationReindexing reindexing) {
             Cursor root = new Slime().setObject();
+            root.setBool(ENABLED, reindexing.enabled());
             setStatus(root.setObject(COMMON), reindexing.common());
 
             Cursor clustersArray = root.setArray(CLUSTERS);
@@ -187,7 +189,8 @@ public class ApplicationCuratorDatabase {
 
         private static ApplicationReindexing fromBytes(byte[] data) {
             Cursor root = SlimeUtils.jsonToSlimeOrThrow(data).get();
-            return new ApplicationReindexing(getStatus(root.field(COMMON)),
+            return new ApplicationReindexing(root.field(ENABLED).valid() ? root.field(ENABLED).asBool() : true,
+                                             getStatus(root.field(COMMON)),
                                              SlimeUtils.entriesStream(root.field(CLUSTERS))
                                                        .collect(toUnmodifiableMap(object -> object.field(NAME).asString(),
                                                                                   object -> getCluster(object))));

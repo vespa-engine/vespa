@@ -29,7 +29,8 @@ public class ApplicationCuratorDatabaseTest {
                                                                 .withPending("two", "b", 20)
                                                                 .withReady("two", Instant.ofEpochMilli(2 << 10))
                                                                 .withReady("one", "a", Instant.ofEpochMilli(1))
-                                                                .withReady("two", "c", Instant.ofEpochMilli(3));
+                                                                .withReady("two", "c", Instant.ofEpochMilli(3))
+                                                                .enabled(false);
 
         db.writeReindexingStatus(id, reindexing);
         assertEquals(reindexing, db.readReindexingStatus(id).orElseThrow());
