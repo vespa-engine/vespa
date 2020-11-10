@@ -3,13 +3,13 @@ package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
 import ai.vespa.reindexing.ReindexingCurator.ReindexingLockException;
+import com.google.inject.Inject;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorParameters;
-import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.vespa.curator.Lock;
 
@@ -19,16 +19,15 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
-import static java.util.stream.Collectors.joining;
 
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
@@ -44,22 +43,39 @@ public class Reindexer {
     private final Cluster cluster;
     private final Map<DocumentType, Instant> ready;
     private final ReindexingCurator database;
-    private final DocumentAccess access;
+    private final Function<VisitorParameters, Runnable> visitorSessions;
     private final Clock clock;
     private final Phaser phaser = new Phaser(2); // Reindexer and visitor.
 
     private Reindexing reindexing;
     private Status status;
 
+    @Inject
     public Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
                      DocumentAccess access, Clock clock) {
+        this(cluster,
+             ready,
+             database,
+             parameters -> {
+                 try {
+                     return access.createVisitorSession(parameters)::destroy;
+                 }
+                 catch (ParseException e) {
+                     throw new IllegalStateException(e);
+                 }
+             },
+             clock);
+    }
+
+    Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
+              Function<VisitorParameters, Runnable> visitorSessions, Clock clock) {
         for (DocumentType type : ready.keySet())
             cluster.bucketSpaceOf(type); // Verifies this is known.
 
         this.cluster = cluster;
         this.ready = new TreeMap<>(ready); // Iterate through document types in consistent order.
         this.database = database;
-        this.access = access;
+        this.visitorSessions = visitorSessions;
         this.clock = clock;
     }
 
@@ -132,7 +148,14 @@ public class Reindexer {
                 phaser.arriveAndAwaitAdvance(); // Synchronize with the reindex thread.
             }
         };
-        visit(type, status.progress().orElse(null), control);
+
+        VisitorParameters parameters = createParameters(type, status.progress().orElse(null));
+        parameters.setControlHandler(control);
+        Runnable sessionShutdown = visitorSessions.apply(parameters);
+
+        // Wait until done; or until termination is forced, in which case we abort the visit and wait for it to complete.
+        phaser.arriveAndAwaitAdvance(); // Synchronize with the visitor completion thread.
+        sessionShutdown.run();
 
         // If we were interrupted, the result may not yet be set in the control handler.
         switch (control.getResult().getCode()) {
@@ -151,22 +174,6 @@ public class Reindexer {
                 status = status.successful(clock.instant());
         }
         database.writeReindexing(reindexing.with(type, status));
-    }
-
-    private void visit(DocumentType type, ProgressToken progress, VisitorControlHandler control) {
-        VisitorParameters parameters = createParameters(type, progress);
-        parameters.setControlHandler(control);
-        VisitorSession session;
-        try {
-            session = access.createVisitorSession(parameters);
-        }
-        catch (ParseException e) {
-            throw new IllegalStateException(e);
-        }
-
-        // Wait until done; or until termination is forced, in which case we abort the visit and wait for it to complete.
-        phaser.arriveAndAwaitAdvance(); // Synchronize with the visitor completion thread.
-        session.destroy();
     }
 
     VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
