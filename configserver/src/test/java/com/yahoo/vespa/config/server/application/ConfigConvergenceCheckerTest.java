@@ -2,13 +2,15 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.yahoo.component.Version;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import org.junit.Before;
@@ -29,9 +31,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -183,15 +184,10 @@ public class ConfigConvergenceCheckerTest {
                                                                                 .withBody("response too slow")));
         HttpResponse response = checker.getServiceConfigGenerationResponse(application, hostAndPort(service), requestUrl, Duration.ofMillis(1));
         // Message contained in a SocketTimeoutException may differ across platforms, so we do a partial match of the response here
-        assertResponse(
-                responseBody ->
-                        assertThat(responseBody)
-                                .startsWith("{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
-                                        "\",\"wantedGeneration\":3,\"error\":\"")
-                                .contains("timed out")
-                                .endsWith("\"}"),
-                404,
-                response);
+        assertResponse((responseBody) -> assertTrue("Response matches", responseBody.startsWith(
+                "{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
+                "\",\"wantedGeneration\":3,\"error\":\"java.net.SocketTimeoutException") &&
+                                      responseBody.endsWith("\"}")), 404, response);
     }
 
     private URI testServer() {
@@ -206,8 +202,16 @@ public class ConfigConvergenceCheckerTest {
         return uri.getHost() + ":" + uri.getPort();
     }
 
-    private static void assertResponse(String expectedJson, int status, HttpResponse response) {
-        assertResponse((responseBody) -> assertJsonEquals(new String(responseBody.getBytes()), expectedJson), status, response);
+    private static void assertResponse(String json, int status, HttpResponse response) {
+        assertResponse((responseBody) -> {
+            Slime expected = SlimeUtils.jsonToSlime(json.getBytes());
+            Slime actual = SlimeUtils.jsonToSlime(responseBody.getBytes());
+            try {
+                assertEquals(new String((SlimeUtils.toJsonBytes(expected))), new String(SlimeUtils.toJsonBytes(actual)));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }, status, response);
     }
 
     private static void assertResponse(Consumer<String> assertFunc, int status, HttpResponse response) {
