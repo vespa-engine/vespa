@@ -8,6 +8,8 @@ import com.yahoo.messagebus.jdisc.test.MessageQueue;
 import com.yahoo.messagebus.jdisc.test.RemoteClient;
 import com.yahoo.messagebus.jdisc.test.RemoteServer;
 import com.yahoo.messagebus.jdisc.test.ReplyQueue;
+import com.yahoo.messagebus.network.local.LocalNetwork;
+import com.yahoo.messagebus.network.local.LocalWire;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.SimpleMessage;
@@ -26,7 +28,7 @@ public class SharedIntermediateSessionTestCase {
 
     @Test
     public void requireThatMessageHandlerCanBeAccessed() {
-        SharedIntermediateSession session = newIntermediateSession();
+        SharedIntermediateSession session = newIntermediateSession(false);
         assertNull(session.getMessageHandler());
 
         MessageQueue handler = new MessageQueue();
@@ -36,7 +38,7 @@ public class SharedIntermediateSessionTestCase {
 
     @Test
     public void requireThatMessageHandlerCanOnlyBeSetOnce() {
-        SharedIntermediateSession session = newIntermediateSession();
+        SharedIntermediateSession session = newIntermediateSession(false);
         session.setMessageHandler(new MessageQueue());
         try {
             session.setMessageHandler(new MessageQueue());
@@ -49,7 +51,7 @@ public class SharedIntermediateSessionTestCase {
 
     @Test
     public void requireThatMessageHandlerIsCalled() throws InterruptedException {
-        SharedIntermediateSession session = newIntermediateSession();
+        SharedIntermediateSession session = newIntermediateSession(false);
         MessageQueue queue = new MessageQueue();
         session.setMessageHandler(queue);
         session.handleMessage(new SimpleMessage("foo"));
@@ -59,7 +61,7 @@ public class SharedIntermediateSessionTestCase {
 
     @Test
     public void requireThatSessionRepliesIfMessageHandlerIsNull() throws InterruptedException {
-        SharedIntermediateSession session = newIntermediateSession();
+        SharedIntermediateSession session = newIntermediateSession(false);
         Message msg = new SimpleMessage("foo");
         ReplyQueue queue = new ReplyQueue();
         msg.pushHandler(queue);
@@ -76,7 +78,8 @@ public class SharedIntermediateSessionTestCase {
         Slobrok slobrok = new Slobrok();
         try {
             newIntermediateSession(slobrok.configId(),
-                                   new IntermediateSessionParams().setReplyHandler(new ReplyQueue()));
+                                   new IntermediateSessionParams().setReplyHandler(new ReplyQueue()),
+                                   false);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Reply handler must be null.", e.getMessage());
@@ -85,21 +88,20 @@ public class SharedIntermediateSessionTestCase {
 
     @Test
     public void requireThatSessionIsClosedOnDestroy() {
-        SharedIntermediateSession session = newIntermediateSession();
+        SharedIntermediateSession session = newIntermediateSession(false);
         session.release();
         assertFalse("IntermediateSession not destroyed by release().", session.session().destroy());
     }
 
     @Test
     public void requireThatMbusIsReleasedOnDestroy() {
-        Slobrok slobrok = null;
         try {
-            slobrok = new Slobrok();
+            new Slobrok();
         } catch (ListenFailedException e) {
             fail();
         }
-        RPCNetworkParams netParams = new RPCNetworkParams().setSlobrokConfigId(slobrok.configId());
-        SharedMessageBus mbus = SharedMessageBus.newInstance(new MessageBusParams(), netParams);
+        SharedMessageBus mbus = new SharedMessageBus(new MessageBus(new LocalNetwork(new LocalWire()), new MessageBusParams()));
+
         SharedIntermediateSession session = mbus.newIntermediateSession(new IntermediateSessionParams());
         mbus.release();
         session.release();
@@ -110,7 +112,8 @@ public class SharedIntermediateSessionTestCase {
     public void requireThatSessionCanSendMessage() throws InterruptedException {
         RemoteServer server = RemoteServer.newInstanceWithInternSlobrok();
         SharedIntermediateSession session = newIntermediateSession(server.slobrokId(),
-                                                                   new IntermediateSessionParams());
+                                                                   new IntermediateSessionParams(),
+                                                                   true);
         ReplyQueue queue = new ReplyQueue();
         Message msg = new SimpleMessage("foo").setRoute(Route.parse(server.connectionSpec()));
         msg.setTimeReceivedNow();
@@ -128,10 +131,10 @@ public class SharedIntermediateSessionTestCase {
 
     @Test
     public void requireThatSessionCanSendReply() throws InterruptedException {
-        RemoteClient client = RemoteClient.newInstanceWithInternSlobrok();
+        RemoteClient client = RemoteClient.newInstanceWithInternSlobrok(true);
         MessageQueue queue = new MessageQueue();
         IntermediateSessionParams params = new IntermediateSessionParams().setMessageHandler(queue);
-        SharedIntermediateSession session = newIntermediateSession(client.slobrokId(), params);
+        SharedIntermediateSession session = newIntermediateSession(client.slobrokId(), params, true);
         Route route = Route.parse(session.connectionSpec());
 
         assertTrue(client.sendMessage(new SimpleMessage("foo").setRoute(route)).isAccepted());
@@ -146,20 +149,24 @@ public class SharedIntermediateSessionTestCase {
         client.close();
     }
 
-    private static SharedIntermediateSession newIntermediateSession() {
+    private static SharedIntermediateSession newIntermediateSession(boolean network) {
         Slobrok slobrok = null;
         try {
             slobrok = new Slobrok();
         } catch (ListenFailedException e) {
             fail();
         }
-        return newIntermediateSession(slobrok.configId(), new IntermediateSessionParams());
+        return newIntermediateSession(slobrok.configId(), new IntermediateSessionParams(), network);
     }
 
-    private static SharedIntermediateSession newIntermediateSession(String slobrokId, IntermediateSessionParams params) {
+    private static SharedIntermediateSession newIntermediateSession(String slobrokId,
+                                                                    IntermediateSessionParams params,
+                                                                    boolean network) {
         RPCNetworkParams netParams = new RPCNetworkParams().setSlobrokConfigId(slobrokId);
         MessageBusParams mbusParams = new MessageBusParams().addProtocol(new SimpleProtocol());
-        SharedMessageBus mbus = SharedMessageBus.newInstance(mbusParams, netParams);
+        SharedMessageBus mbus = network
+                                ? SharedMessageBus.newInstance(mbusParams, netParams)
+                                : new SharedMessageBus(new MessageBus(new LocalNetwork(new LocalWire()), mbusParams));
         SharedIntermediateSession session = mbus.newIntermediateSession(params);
         mbus.release();
         return session;

@@ -581,17 +581,17 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
                  new DestinationSessionParams());
         }
 
-        TestRunner(final MessageBusParams mbusParams, final DestinationSessionParams sessionParams) {
+        TestRunner(MessageBusParams mbusParams, DestinationSessionParams sessionParams) {
             this.mbus = new SharedMessageBus(new MessageBus(new LocalNetwork(wire), mbusParams));
             this.session = mbus.newDestinationSession(sessionParams);
         }
 
-        TestRunner setRequestTimeout(final long timeout, final TimeUnit unit) {
+        TestRunner setRequestTimeout(long timeout, TimeUnit unit) {
             timeoutMillis = unit.toMillis(timeout);
             return this;
         }
 
-        TestRunner expectError(final Matcher<Integer> matcher) {
+        TestRunner expectError(Matcher<Integer> matcher) {
             assertThat(successExpected, is(false));
             expectedError = matcher;
             return this;
@@ -620,12 +620,12 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
         }
 
         @Override
-        public MyClient newClient(final MbusServer server) throws Throwable {
+        public MyClient newClient(MbusServer server) throws Throwable {
             return new MyClient(wire, server.connectionSpec());
         }
 
         @Override
-        public Reply executeRequest(final MyClient client, final boolean withRequestContent) throws Throwable {
+        public Reply executeRequest(MyClient client, boolean withRequestContent) throws Throwable {
             // This protocol doesn't have the concept of "request content", so if we are asked to send any, it's a bug.
             assertThat(withRequestContent, is(false));
 
@@ -647,7 +647,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
         }
 
         @Override
-        public void validateResponse(final Reply reply) throws Throwable {
+        public void validateResponse(Reply reply) throws Throwable {
             final String trace = String.valueOf(reply.getTrace());
             if (expectedError != null) {
                 assertThat(reply.hasErrors(), is(true));
@@ -673,7 +673,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
         final Route route;
         final SourceSession session;
 
-        MyClient(final LocalWire wire, final String connectionSpec) {
+        MyClient(LocalWire wire, String connectionSpec) {
             this.mbus = new MessageBus(new LocalNetwork(wire),
                                        new MessageBusParams().addProtocol(new SimpleProtocol()));
             this.session = mbus.createSourceSession(new SourceSessionParams().setReplyHandler(this));
@@ -687,7 +687,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
         }
 
         @Override
-        public void handleReply(final Reply reply) {
+        public void handleReply(Reply reply) {
             replies.addLast(reply);
         }
     }

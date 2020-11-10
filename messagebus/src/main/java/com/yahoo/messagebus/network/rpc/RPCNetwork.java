@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 /**
  * An RPC implementation of the Network interface.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public class RPCNetwork implements Network, MethodHandler {
 
@@ -81,7 +81,7 @@ public class RPCNetwork implements Network, MethodHandler {
      * prefix is 'a/b' and the session name is 'c', the resulting service name that identifies the session on the
      * message bus will be 'a/b/c'
      *
-     * @param params        A complete set of parameters.
+     * @param params        a complete set of parameters
      * @param slobrokConfig subscriber for slobroks config
      */
     public RPCNetwork(RPCNetworkParams params, SlobrokConfigSubscriber slobrokConfig) {
@@ -115,7 +115,7 @@ public class RPCNetwork implements Network, MethodHandler {
      * prefix is 'a/b' and the session name is 'c', the resulting service name that identifies the session on the
      * message bus will be 'a/b/c'
      *
-     * @param params A complete set of parameters.
+     * @param params a complete set of parameters
      */
     public RPCNetwork(RPCNetworkParams params) {
         this(params, params.getSlobroksConfig() != null ? new SlobrokConfigSubscriber(params.getSlobroksConfig())
@@ -249,7 +249,7 @@ public class RPCNetwork implements Network, MethodHandler {
      * resolved. If all versions were resolved ahead of time, this method is invoked by the same thread as the former.
      * If not, this method is invoked by the network thread during the version callback.
      *
-     * @param ctx All the required send-data.
+     * @param ctx all the required send-data
      */
     private void send(SendContext ctx) {
         if (destroyed.get()) {
@@ -267,7 +267,7 @@ public class RPCNetwork implements Network, MethodHandler {
      * Sets the destroyed flag to true. The very first time this method is called, it cleans up all its dependencies.
      * Even if you retain a reference to this object, all of its content is allowed to be garbage collected.
      *
-     * @return True if content existed and was destroyed.
+     * @return true if content existed and was destroyed
      */
     public boolean destroy() {
         if (!destroyed.getAndSet(true)) {
@@ -290,7 +290,7 @@ public class RPCNetwork implements Network, MethodHandler {
      * network, and is separated into its own function so that unit tests can override it to simulate other versions
      * than current.
      *
-     * @return The version to claim to be.
+     * @return the version to claim to be
      */
     protected Version getVersion() {
         return Vtag.currentVersion;
@@ -301,9 +301,9 @@ public class RPCNetwork implements Network, MethodHandler {
      * {@link #allocServiceAddress(RoutingNode)} method. The target allocated here is released when the routing node
      * calls {@link #freeServiceAddress(RoutingNode)}.
      *
-     * @param recipient   The recipient to assign the service address to.
-     * @param serviceName The name of the service to resolve.
-     * @return Any error encountered, or null.
+     * @param recipient   the recipient to assign the service address to
+     * @param serviceName the name of the service to resolve
+     * @return any error encountered, or null
      */
     public Error resolveServiceAddress(RoutingNode recipient, String serviceName) {
         RPCServiceAddress ret = servicePool.resolve(serviceName);
@@ -329,8 +329,8 @@ public class RPCNetwork implements Network, MethodHandler {
      * Registers a send adapter for a given version. This will overwrite whatever is already registered under the same
      * version.
      *
-     * @param version The version for which to register an adapter.
-     * @param adapter The adapter to register.
+     * @param version the version for which to register an adapter
+     * @param adapter the adapter to register
      */
     private void addSendAdapter(Version version, RPCSendAdapter adapter) {
         adapter.attach(this);
@@ -341,8 +341,8 @@ public class RPCNetwork implements Network, MethodHandler {
      * Determines and returns the send adapter that is compatible with the given version. If no adapter can be found,
      * this method returns null.
      *
-     * @param version The version for which to return an adapter.
-     * @return The compatible adapter.
+     * @param version the version for which to return an adapter
+     * @return the compatible adapter
      */
     public RPCSendAdapter getSendAdapter(Version version) {
         Map.Entry<Version, RPCSendAdapter> lower = sendAdapters.floorEntry(version);
@@ -352,9 +352,9 @@ public class RPCNetwork implements Network, MethodHandler {
     /**
      * Deliver an error reply to the recipients of a {@link SendContext} in a way that avoids entanglement.
      *
-     * @param ctx     The send context that contains the recipient data.
-     * @param errCode The error code to return.
-     * @param errMsg  The error string to return.
+     * @param ctx     the send context that contains the recipient data
+     * @param errCode the error code to return
+     * @param errMsg  the error string to return
      */
     private void replyError(SendContext ctx, int errCode, String errMsg) {
         for (RoutingNode recipient : ctx.recipients) {
@@ -365,38 +365,22 @@ public class RPCNetwork implements Network, MethodHandler {
         }
     }
 
-    /**
-     * Get the owner of this network
-     *
-     * @return network owner
-     */
+    /** Returns the owner of this network. */
     NetworkOwner getOwner() {
         return owner;
     }
 
-    /**
-     * Returns the identity of this network.
-     *
-     * @return The identity.
-     */
+    /** Returns the identity of this network. */
     public Identity getIdentity() {
         return identity;
     }
 
-    /**
-     * Obtain the port number this network listens to
-     *
-     * @return listening port number
-     */
+    /** Returns the port number this network listens to. */
     public int getPort() {
         return listener.port();
     }
 
-    /**
-     * Returns the JRT supervisor.
-     *
-     * @return The supervisor.
-     */
+    /** Returns the JRT supervisor. */
     Supervisor getSupervisor() {
         return orb;
     }
@@ -492,8 +476,8 @@ public class RPCNetwork implements Network, MethodHandler {
     }
 
     /**
-     * Implements a helper class to invoke {@link RPCTargetPool#flushTargets(boolean)} once every second. This is to
-     * unentangle the target pool from the scheduler.
+     * Implements a helper class to invoke {@link RPCTargetPool#flushTargets(boolean)} once every second.
+     * This is to untangle the target pool from the scheduler.
      */
     private static class TargetPoolTask implements Runnable {
 
@@ -512,4 +496,5 @@ public class RPCNetwork implements Network, MethodHandler {
             jrtTask.schedule(1.0);
         }
     }
+
 }

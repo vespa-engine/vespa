@@ -11,6 +11,7 @@ import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.MessageBusParams;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.network.Identity;
+import com.yahoo.messagebus.network.local.LocalNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.RoutingSpec;
@@ -24,11 +25,10 @@ import java.util.logging.Logger;
 /**
  * A simple test server implementation.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public class TestServer {
 
-    private static final Logger log = Logger.getLogger(TestServer.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     public final VersionedRPCNetwork net;
     public final MessageBus mb;
@@ -36,10 +36,10 @@ public class TestServer {
     /**
      * Create a new test server.
      *
-     * @param name             The service name prefix for this server.
-     * @param table            The routing table spec to be used, may be null for no routing.
-     * @param slobrok          The slobrok to register with (local).
-     * @param protocol         The protocol that this server should support in addition to SimpleProtocol.
+     * @param name             the service name prefix for this server
+     * @param table            the routing table spec to be used, may be null for no routing
+     * @param slobrok          the slobrok to register with (local)
+     * @param protocol         the protocol that this server should support in addition to SimpleProtocol
      */
     public TestServer(String name, RoutingTableSpec table, Slobrok slobrok, Protocol protocol) {
         this(new MessageBusParams().addProtocol(new SimpleProtocol()),
@@ -54,27 +54,29 @@ public class TestServer {
         }
     }
 
-    /**
-     * Create a new test server.
-     *
-     * @param mbusParams The parameters for mesasge bus.
-     * @param netParams  The parameters for the rpc network.
-     */
+    /** Creates a new test server. */
     public TestServer(MessageBusParams mbusParams, RPCNetworkParams netParams) {
         net = new VersionedRPCNetwork(netParams);
         mb = new MessageBus(net, mbusParams);
+    }
+
+    /** Creates a new test server without network setup */
+    public TestServer(MessageBusParams mbusParams) {
+        mb = new MessageBus(new LocalNetwork(), mbusParams);
+        net = null;
     }
 
     /**
      * Sets the destroyed flag to true. The very first time this method is called, it cleans up all its dependencies.
      * Even if you retain a reference to this object, all of its content is allowed to be garbage collected.
      *
-     * @return True if content existed and was destroyed.
+     * @return true if content existed and was destroyed
      */
     public boolean destroy() {
         if (!destroyed.getAndSet(true)) {
             mb.destroy();
-            net.destroy();
+            if (net != null)
+                net.destroy();
             return true;
         }
         return false;
@@ -83,8 +85,8 @@ public class TestServer {
     /**
      * Returns the raw config needed to connect to the given slobrok.
      *
-     * @param slobrok The slobrok whose connection spec to include.
-     * @return The raw config string.
+     * @param slobrok the slobrok whose connection spec to include
+     * @return the raw config string
      */
     public static String getSlobrokConfig(Slobrok slobrok) {
         return "raw:slobrok[1]\n" +
@@ -95,7 +97,7 @@ public class TestServer {
      * Proxies the {@link MessageBus#setupRouting(RoutingSpec)} method by encapsulating the given table specification
      * within the required {@link RoutingSpec}.
      *
-     * @param table The table to configure.
+     * @param table the table to configure
      */
     public void setupRouting(RoutingTableSpec table) {
         mb.setupRouting(new RoutingSpec().addTable(table));
@@ -104,9 +106,9 @@ public class TestServer {
     /**
      * Wait for some pattern to resolve to some number of services.
      *
-     * @param pattern Pattern to lookup in slobrok.
-     * @param cnt     Number of services it must resolve to.
-     * @return Whether or not the required state was reached.
+     * @param pattern pattern to lookup in slobrok
+     * @param cnt     number of services it must resolve to
+     * @return Whether or not the required state was reached
      */
     public boolean waitSlobrok(String pattern, int cnt) {
         return waitState(new SlobrokState().add(pattern, cnt));
@@ -115,8 +117,8 @@ public class TestServer {
     /**
      * Wait for a required slobrok state.
      *
-     * @param slobrokState The state to wait for.
-     * @return Whether or not the required state was reached.
+     * @param slobrokState the state to wait for
+     * @return whether or not the required state was reached
      */
     public boolean waitState(SlobrokState slobrokState) {
         for (int i = 0; i < 6000 && !Thread.currentThread().isInterrupted(); ++i) {
@@ -158,4 +160,5 @@ public class TestServer {
             flushTargetPool();
         }
     }
+
 }

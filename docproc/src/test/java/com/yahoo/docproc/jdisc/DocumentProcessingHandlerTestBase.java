@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public abstract class DocumentProcessingHandlerTestBase {
 
@@ -42,7 +42,7 @@ public abstract class DocumentProcessingHandlerTestBase {
     protected RemoteServer remoteServer;
     protected DocumentTypeManager documentTypeManager = new DocumentTypeManager();
     SessionCache sessionCache;
-    private List<MbusServerProvider> serviceProviders = new ArrayList<>();
+    private final List<MbusServerProvider> serviceProviders = new ArrayList<>();
 
     @Before
     public void createHandler() {
@@ -50,7 +50,7 @@ public abstract class DocumentProcessingHandlerTestBase {
 
         Protocol protocol = new DocumentProtocol(documentTypeManager);
 
-        driver = ServerTestDriver.newInactiveInstanceWithProtocol(protocol);
+        driver = ServerTestDriver.newInactiveInstanceWithProtocol(protocol, true);
 
         sessionCache =
                 new SessionCache("raw:", driver.client().slobrokId(), "test", "raw:", null, "raw:", documentTypeManager);

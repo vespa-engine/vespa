@@ -118,37 +118,38 @@ public class ServerTestDriver {
         return server;
     }
 
-    public static ServerTestDriver newInstance(RequestHandler requestHandler, Module... guiceModules) {
-        return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(), true, requestHandler,
+    public static ServerTestDriver newInstance(RequestHandler requestHandler, boolean network, Module... guiceModules) {
+        return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(network), true, requestHandler,
                                     new SimpleProtocol(), guiceModules);
     }
 
     public static ServerTestDriver newInstanceWithProtocol(Protocol protocol, RequestHandler requestHandler,
-                                                           Module... guiceModules)
+                                                           boolean network, Module... guiceModules)
     {
-        return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(), true, requestHandler, protocol,
+        return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(network), true, requestHandler, protocol,
                                     guiceModules);
     }
 
     public static ServerTestDriver newInstanceWithExternSlobrok(String slobrokId, RequestHandler requestHandler,
-                                                                Module... guiceModules)
+                                                                boolean network, Module... guiceModules)
     {
-        return new ServerTestDriver(RemoteClient.newInstanceWithExternSlobrok(slobrokId),
+        return new ServerTestDriver(RemoteClient.newInstanceWithExternSlobrok(slobrokId, network),
                                     true, requestHandler, new SimpleProtocol(), guiceModules);
     }
 
-    public static ServerTestDriver newInactiveInstance(Module... guiceModules) {
-        return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(), false, null,
+    public static ServerTestDriver newInactiveInstance(boolean network, Module... guiceModules) {
+        return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(network), false, null,
                                     new SimpleProtocol(), guiceModules);
     }
 
-    public static ServerTestDriver newInactiveInstanceWithProtocol(Protocol protocol, Module... guiceModules) {
-        return new ServerTestDriver(RemoteClient.newInstanceWithProtocolAndInternSlobrok(protocol), false, null,
+    public static ServerTestDriver newInactiveInstanceWithProtocol(Protocol protocol, boolean network, Module... guiceModules) {
+        return new ServerTestDriver(RemoteClient.newInstanceWithProtocolAndInternSlobrok(protocol, network), false, null,
                                     protocol, guiceModules);
     }
 
-    public static ServerTestDriver newUnboundInstance(Module... guiceModules) {
-        return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(), true, null,
+    public static ServerTestDriver newUnboundInstance(boolean network, Module... guiceModules) {
+        return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(network), true, null,
                                     new SimpleProtocol(), guiceModules);
     }
+
 }

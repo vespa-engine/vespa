@@ -45,7 +45,7 @@ public class MbusServerTestCase {
 
     @Test
     public void requireThatNoBindingSetSelectedExceptionIsCaught() {
-        ServerTestDriver driver = ServerTestDriver.newUnboundInstance(new MySelector(null));
+        ServerTestDriver driver = ServerTestDriver.newUnboundInstance(true, new MySelector(null));
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
         assertNotNull(driver.awaitErrors(ErrorCode.APP_FATAL_ERROR));
         assertTrue(driver.close());
@@ -53,7 +53,7 @@ public class MbusServerTestCase {
 
     @Test
     public void requireThatBindingSetNotFoundExceptionIsCaught() {
-        ServerTestDriver driver = ServerTestDriver.newUnboundInstance(new MySelector("foo"));
+        ServerTestDriver driver = ServerTestDriver.newUnboundInstance(true, new MySelector("foo"));
         assertTrue(driver.sendMessage(new SimpleMessage("bar")));
         assertNotNull(driver.awaitErrors(ErrorCode.APP_FATAL_ERROR));
         assertTrue(driver.close());
@@ -61,7 +61,7 @@ public class MbusServerTestCase {
 
     @Test
     public void requireThatContainerNotReadyExceptionIsCaught() {
-        ServerTestDriver driver = ServerTestDriver.newInactiveInstance();
+        ServerTestDriver driver = ServerTestDriver.newInactiveInstance(true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
         assertNotNull(driver.awaitErrors(ErrorCode.APP_FATAL_ERROR));
         assertTrue(driver.close());
@@ -69,7 +69,7 @@ public class MbusServerTestCase {
 
     @Test
     public void requireThatBindingNotFoundExceptionIsCaught() {
-        ServerTestDriver driver = ServerTestDriver.newUnboundInstance();
+        ServerTestDriver driver = ServerTestDriver.newUnboundInstance(true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
         assertNotNull(driver.awaitErrors(ErrorCode.APP_FATAL_ERROR));
         assertTrue(driver.close());
@@ -77,7 +77,7 @@ public class MbusServerTestCase {
 
     @Test
     public void requireThatRequestDeniedExceptionIsCaught() {
-        ServerTestDriver driver = ServerTestDriver.newInstance(MyRequestHandler.newRequestDenied());
+        ServerTestDriver driver = ServerTestDriver.newInstance(MyRequestHandler.newRequestDenied(), true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
         assertNotNull(driver.awaitErrors(ErrorCode.APP_FATAL_ERROR));
         assertTrue(driver.close());
@@ -86,7 +86,7 @@ public class MbusServerTestCase {
     @Test
     public void requireThatRequestResponseWorks() {
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
-        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler);
+        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
 
         assertNotNull(requestHandler.awaitRequest());
@@ -99,7 +99,7 @@ public class MbusServerTestCase {
     @Test
     public void requireThatRequestIsMbus() {
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
-        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler);
+        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
 
         Request request = requestHandler.awaitRequest();
@@ -116,7 +116,7 @@ public class MbusServerTestCase {
     @Test
     public void requireThatReplyInsideMbusResponseIsUsed() {
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
-        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler);
+        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
 
         assertNotNull(requestHandler.awaitRequest());
@@ -134,7 +134,7 @@ public class MbusServerTestCase {
     @Test
     public void requireThatNonMbusResponseCausesEmptyReply() {
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
-        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler);
+        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
 
         assertNotNull(requestHandler.awaitRequest());
@@ -147,7 +147,7 @@ public class MbusServerTestCase {
     @Test
     public void requireThatMbusRequestContentCallsCompletion() throws InterruptedException {
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
-        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler);
+        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
 
         assertNotNull(requestHandler.awaitRequest());
@@ -162,9 +162,9 @@ public class MbusServerTestCase {
     }
 
     @Test
-    public void requireThatResponseContentDoesNotSupportWrite() throws InterruptedException {
+    public void requireThatResponseContentDoesNotSupportWrite() {
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
-        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler);
+        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
 
         assertNotNull(requestHandler.awaitRequest());
@@ -198,7 +198,7 @@ public class MbusServerTestCase {
 
     private static void assertError(List<Integer> expectedErrors, int responseStatus, int... responseErrors) {
         MyRequestHandler requestHandler = MyRequestHandler.newInstance();
-        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler);
+        ServerTestDriver driver = ServerTestDriver.newInstance(requestHandler, true);
         assertTrue(driver.sendMessage(new SimpleMessage("foo")));
 
         assertNotNull(requestHandler.awaitRequest());
