@@ -45,6 +45,7 @@ vespa_define_module(
     src/tests/instruction/generic_peek
     src/tests/instruction/generic_reduce
     src/tests/instruction/generic_rename
+    src/tests/instruction/join_with_number
     src/tests/tensor/default_value_builder_factory
     src/tests/tensor/dense_add_dimension_optimizer
     src/tests/tensor/dense_dimension_combiner
