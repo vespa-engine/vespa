@@ -154,7 +154,6 @@ public class VespaModelFactory implements ModelFactory {
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo());
         modelContext.previousModel().ifPresent(builder::previousModel);
-        modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);
     }
 
