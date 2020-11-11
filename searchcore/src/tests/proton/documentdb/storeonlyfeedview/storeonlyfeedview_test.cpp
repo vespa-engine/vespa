@@ -202,7 +202,6 @@ struct FixtureBase {
           metaStore(std::make_shared<DocumentMetaStore>(std::make_shared<BucketDBOwner>(),
                                                         DocumentMetaStore::getFixedName(),
                                                         search::GrowStrategy(),
-                                                        std::make_shared<DocumentMetaStore::DefaultGidCompare>(),
                                                         subDbType)),
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),

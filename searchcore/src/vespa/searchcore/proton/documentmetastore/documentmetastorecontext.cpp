@@ -13,9 +13,8 @@ DocumentMetaStoreContext::ReadGuard::ReadGuard(const search::AttributeVector::SP
 
 DocumentMetaStoreContext::DocumentMetaStoreContext(BucketDBOwner::SP bucketDB,
                                                    const vespalib::string &name,
-                                                   const search::GrowStrategy &grow,
-                                                   const DocumentMetaStore::IGidCompare::SP &gidCompare) :
-    _metaStoreAttr(std::make_shared<DocumentMetaStore>(bucketDB, name, grow, gidCompare)),
+                                                   const search::GrowStrategy &grow) :
+    _metaStoreAttr(std::make_shared<DocumentMetaStore>(bucketDB, name, grow)),
     _metaStore(std::dynamic_pointer_cast<IDocumentMetaStore>(_metaStoreAttr))
 {
 }

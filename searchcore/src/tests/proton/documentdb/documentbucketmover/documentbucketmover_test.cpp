@@ -183,7 +183,6 @@ MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::share
     : _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB,
                                                        DocumentMetaStore::getFixedName(),
                                                        search::GrowStrategy(),
-                                                       std::make_shared<documentmetastore::DefaultGidCompare>(),
                                                        subDbType)),
       _metaStore(*_metaStoreSP),
       _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),

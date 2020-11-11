@@ -9,20 +9,18 @@ const search::IDocumentMetaStore::DocId
 LidGidKeyComparator::FIND_DOC_ID = std::numeric_limits<DocId>::max();
 
 LidGidKeyComparator::LidGidKeyComparator(const document::GlobalId &gid,
-                                         const MetaDataStore &metaDataStore,
-                                         const IGidCompare &gidCompare)
+                                         const MetaDataStore &metaDataStore)
     : _gid(gid),
       _metaDataStore(metaDataStore),
-      _gidCompare(gidCompare)
+      _gidCompare()
 {
 }
 
 LidGidKeyComparator::LidGidKeyComparator(const RawDocumentMetaData &metaData,
-                                         const MetaDataStore &metaDataStore,
-                                         const IGidCompare &gidCompare)
+                                         const MetaDataStore &metaDataStore)
     : _gid(metaData.getGid()),
       _metaDataStore(metaDataStore),
-      _gidCompare(gidCompare)
+      _gidCompare()
 {
 }
 

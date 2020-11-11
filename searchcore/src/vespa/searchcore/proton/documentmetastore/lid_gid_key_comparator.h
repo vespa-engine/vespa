@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "gid_compare.h"
 #include "raw_document_meta_data.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
@@ -25,7 +24,7 @@ private:
 
     const document::GlobalId &_gid;
     const MetaDataStore      &_metaDataStore;
-    const IGidCompare        &_gidCompare;
+    const document::GlobalId::BucketOrderCmp _gidCompare;
 
     const document::GlobalId &getGid(DocId lid) const {
         if (lid != FIND_DOC_ID) {
@@ -41,12 +40,10 @@ public:
      * used to map from lid -> metadata (including gid).
      **/
     LidGidKeyComparator(const document::GlobalId &gid,
-                        const MetaDataStore &metaDataStore,
-                        const IGidCompare &gidCompare);
+                        const MetaDataStore &metaDataStore);
 
     LidGidKeyComparator(const RawDocumentMetaData &metaData,
-                        const MetaDataStore &metaDataStore,
-                        const IGidCompare &gidCompare);
+                        const MetaDataStore &metaDataStore);
 
     bool operator()(const DocId &lhs, const DocId &rhs) const {
             return _gidCompare(getGid(lhs), getGid(rhs));

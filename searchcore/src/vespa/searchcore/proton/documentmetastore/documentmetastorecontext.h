@@ -34,9 +34,7 @@ public:
      */
     DocumentMetaStoreContext(BucketDBOwner::SP bucketDB,
                              const vespalib::string &name = DocumentMetaStore::getFixedName(),
-                             const search::GrowStrategy &grow = search::GrowStrategy(),
-                             const DocumentMetaStore::IGidCompare::SP &gidCompare =
-                             DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare));
+                             const search::GrowStrategy &grow = search::GrowStrategy());
     ~DocumentMetaStoreContext();
     /**
      * Create a new context with the given document meta store encapsulated

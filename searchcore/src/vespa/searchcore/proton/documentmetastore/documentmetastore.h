@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "gid_compare.h"
 #include "document_meta_store_adapter.h"
 #include "documentmetastoreattribute.h"
 #include "lid_allocator.h"
@@ -44,8 +43,6 @@ public:
     typedef documentmetastore::IStore::GlobalId GlobalId;
     typedef documentmetastore::IStore::BucketId BucketId;
     typedef documentmetastore::IStore::Timestamp Timestamp;
-    typedef documentmetastore::IGidCompare IGidCompare;
-    typedef documentmetastore::DefaultGidCompare DefaultGidCompare;
 
     // If using proton::DocumentMetaStore directly, the
     // DocumentMetaStoreAttribute functions here are used instead of
@@ -71,7 +68,6 @@ private:
     Iterator            _gid_to_lid_map_write_itr; // Iterator used for all updates of _gidToLidMap
     SerialNum           _gid_to_lid_map_write_itr_prepare_serial_num;
     documentmetastore::LidAllocator _lidAlloc;
-    IGidCompare::SP     _gidCompare;
     BucketDBOwner::SP   _bucketDB;
     uint32_t            _shrinkLidSpaceBlockers;
     const SubDbType     _subDbType;
@@ -141,8 +137,6 @@ public:
     DocumentMetaStore(BucketDBOwner::SP bucketDB,
                       const vespalib::string & name=getFixedName(),
                       const search::GrowStrategy & grow=search::GrowStrategy(),
-                      const IGidCompare::SP &gidCompare =
-                      IGidCompare::SP(new documentmetastore::DefaultGidCompare),
                       SubDbType subDbType = SubDbType::READY);
     ~DocumentMetaStore();
 
