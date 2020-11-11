@@ -56,6 +56,7 @@ public class ClusterControllerContainer extends Container implements
                          "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StandaloneZooKeeperProvider",
                          CLUSTERCONTROLLER_BUNDLE);
         } else {
+            // TODO bjorncs/jonmv: remove extraneous ZooKeeperProvider layer
             addComponent(
                     "clustercontroller-zkrunner",
                     "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
