@@ -16,12 +16,10 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,7 +61,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                              try (Lock lock = database.lock(id)) {
                                                  ApplicationReindexing reindexing = database.readReindexingStatus(id)
                                                                                             .orElse(ApplicationReindexing.ready(clock.instant()));
-                                                 database.writeReindexingStatus(id, withReady(reindexing, lazyGeneration(application), clock.instant()));
+                                                 database.writeReindexingStatus(id, withConvergenceOn(reindexing, lazyGeneration(application), clock.instant()));
                                              }
                                          }
                                          catch (RuntimeException e) {
@@ -87,11 +85,12 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         };
     }
 
-    static ApplicationReindexing withReady(ApplicationReindexing reindexing, Supplier<Long> oldestGeneration, Instant now) {
+    static ApplicationReindexing withConvergenceOn(ApplicationReindexing reindexing, Supplier<Long> oldestGeneration, Instant now) {
         for (var cluster : reindexing.clusters().entrySet()) {
             for (var pending : cluster.getValue().pending().entrySet())
                 if (pending.getValue() <= oldestGeneration.get())
-                    reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now);
+                    reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now)
+                                           .withoutPending(cluster.getKey(), pending.getKey());
 
             for (var documentType : cluster.getValue().ready().entrySet())
                 if (documentType.getValue().ready().isBefore(now.minus(reindexingInterval)))
