@@ -2,7 +2,7 @@
 /**
  * @author bjorncs
  */
-@ExportPackage(version = @Version(major = 5, minor = 4, micro = 2))
+@ExportPackage(version = @Version(major = 5, minor = 7, micro = 0))
 package org.junit.jupiter.api.parallel;
 
 import com.yahoo.osgi.annotation.ExportPackage;
