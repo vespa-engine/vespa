@@ -181,15 +181,16 @@ public class ThreadLockStats {
             }
 
             Thread threadHoldingLockPath = threadLockStats.get().thread;
+            if (threadAcquiringLockPath == threadHoldingLockPath) {
+                // reentry
+                return;
+            }
+
             errorMessage.append(", trying to acquire lock ")
                         .append(lockPath)
                         .append(" held by thread ")
                         .append(threadHoldingLockPath.getName());
-
-            if (threadAcquiringLockPath == threadHoldingLockPath) {
-                // reentry
-                return;
-            } else if (threadsAcquiring.contains(threadHoldingLockPath)) {
+            if (threadsAcquiring.contains(threadHoldingLockPath)) {
                 // deadlock
                 getGlobalLockMetrics(pathToAcquire).incrementDeadlockCount();
                 logger.warning(errorMessage.toString());
