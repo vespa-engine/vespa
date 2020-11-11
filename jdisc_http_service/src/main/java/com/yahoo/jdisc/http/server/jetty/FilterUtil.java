@@ -4,7 +4,7 @@ package com.yahoo.container.jdisc;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.http.filter.FilterChainRepository;
+import com.yahoo.jdisc.http.server.jetty.FilterChainRepository;
 import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.http.filter.RequestFilter;
