@@ -120,6 +120,20 @@ private:
     std::unique_ptr<Executor::Task> _task;
 };
 
+/**
+ * Wraps the original feed token so that it will be delivered
+ * when the derived operation is completed.
+ */
+class DaisyChainedFeedToken : public feedtoken::ITransport {
+public:
+    DaisyChainedFeedToken(FeedToken token) : _token(std::move(token)) {}
+    void send(ResultUP, bool ) override {
+        _token.reset();
+    }
+private:
+    FeedToken _token;
+};
+
 }  // namespace
 
 void
@@ -206,9 +220,8 @@ FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &o
     if (token) {
         token->setResult(make_unique<UpdateResult>(putOp.getTimestamp()), true);
     }
-    TransportLatch latch(1);
-    _activeFeedView->handlePut(feedtoken::make(latch), putOp);
-    latch.await();
+
+    _activeFeedView->handlePut(feedtoken::make(std::make_unique<DaisyChainedFeedToken>(std::move(token))), putOp);
 }
 
 
