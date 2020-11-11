@@ -22,6 +22,8 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing.Status;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -412,6 +414,25 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             return prepareResponse;
         };
     }
+
+    @Override
+    public void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes) { }
+
+    @Override
+    public ApplicationReindexing getReindexing(DeploymentId deployment) {
+        return new ApplicationReindexing(true,
+                                         new Status(Instant.ofEpochMilli(123)),
+                                         Map.of("cluster",
+                                                new ApplicationReindexing.Cluster(new Status(Instant.ofEpochMilli(234)),
+                                                                                  Map.of("type", 100L),
+                                                                                  Map.of("type", new Status(Instant.ofEpochMilli(345))))));
+    }
+
+    @Override
+    public void disableReindexing(DeploymentId deployment) { }
+
+    @Override
+    public void enableReindexing(DeploymentId deployment) { }
 
     @Override
     public boolean isSuspended(DeploymentId deployment) {

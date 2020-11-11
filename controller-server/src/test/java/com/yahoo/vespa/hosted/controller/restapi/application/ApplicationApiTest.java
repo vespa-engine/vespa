@@ -580,6 +580,39 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Triggered production-us-west-1 for tenant1.application1.instance1\"}");
 
+        // POST a 'reindex application' command
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindex", POST)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Requested reindexing of tenant1.application1.instance1 in prod.us-central-1\"}");
+
+        // POST a 'reindex application' command with cluster filter
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindex", POST)
+                                      .properties(Map.of("cluster", "boo,moo"))
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Requested reindexing of tenant1.application1.instance1 in prod.us-central-1, on clusters boo, moo\"}");
+
+        // POST a 'reindex application' command with cluster and document type filters
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindex", POST)
+                                      .properties(Map.of("cluster", "boo,moo",
+                                                         "type", "foo,boo"))
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Requested reindexing of tenant1.application1.instance1 in prod.us-central-1, on clusters boo, moo, for types foo, boo\"}");
+
+        // POST to enable reindexing
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindexing", POST)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Enabled reindexing of tenant1.application1.instance1 in prod.us-central-1\"}");
+
+        // DELETE to disable reindexing
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindexing", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Disabled reindexing of tenant1.application1.instance1 in prod.us-central-1\"}");
+
+        // GET to get reindexing status
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindexing", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"enabled\":true,\"status\":{\"readyAtMillis\":123},\"clusters\":[{\"name\":\"cluster\",\"status\":{\"readyAtMillis\":234},\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345}]}]}");
+
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
                                       .userIdentity(USER_ID),
