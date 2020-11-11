@@ -9,15 +9,10 @@
 
 #include <cblas.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::TensorEngine;
-using eval::as;
-using eval::Aggr;
-using namespace eval::tensor_function;
-using namespace eval::operation;
+using namespace tensor_function;
+using namespace operation;
 
 namespace {
 
@@ -33,9 +28,9 @@ double my_dot_product(const LCT *lhs, const RCT *rhs, size_t vector_size, size_t
 }
 
 template <typename LCT, typename RCT, bool common_inner>
-void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_xw_product_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
-    using OCT = typename eval::UnifyCellTypes<LCT,RCT>::type;
+    using OCT = typename UnifyCellTypes<LCT,RCT>::type;
     auto vector_cells = state.peek(1).cells().typify<LCT>();
     auto matrix_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_array<OCT>(self.result_size);
@@ -45,11 +40,11 @@ void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
         *dst++ = my_dot_product<LCT,RCT,common_inner>(vector_cells.cbegin(), matrix, self.vector_size, self.result_size);
         matrix += (common_inner ? self.vector_size : 1);
     }
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool common_inner>
-void my_cblas_double_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_cblas_double_xw_product_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
     auto vector_cells = state.peek(1).cells().typify<double>();
     auto matrix_cells = state.peek(0).cells().typify<double>();
@@ -59,11 +54,11 @@ void my_cblas_double_xw_product_op(eval::InterpretedFunction::State &state, uint
                 common_inner ? self.vector_size : self.result_size,
                 1.0, matrix_cells.cbegin(), common_inner ? self.vector_size : self.result_size, vector_cells.cbegin(), 1,
                 0.0, dst_cells.begin(), 1);
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool common_inner>
-void my_cblas_float_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_cblas_float_xw_product_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
     auto vector_cells = state.peek(1).cells().typify<float>();
     auto matrix_cells = state.peek(0).cells().typify<float>();
@@ -73,7 +68,7 @@ void my_cblas_float_xw_product_op(eval::InterpretedFunction::State &state, uint6
                 common_inner ? self.vector_size : self.result_size,
                 1.0, matrix_cells.cbegin(), common_inner ? self.vector_size : self.result_size, vector_cells.cbegin(), 1,
                 0.0, dst_cells.begin(), 1);
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 bool isDenseTensor(const ValueType &type, size_t d) {
@@ -117,9 +112,9 @@ struct MyXWProductOp {
     }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
-DenseXWProductFunction::Self::Self(const eval::ValueType &result_type_in,
+DenseXWProductFunction::Self::Self(const ValueType &result_type_in,
                                    size_t vector_size_in, size_t result_size_in)
     : result_type(result_type_in),
       vector_size(vector_size_in),
@@ -128,28 +123,28 @@ DenseXWProductFunction::Self::Self(const eval::ValueType &result_type_in,
 }
 DenseXWProductFunction::Self::~Self() = default;
 
-DenseXWProductFunction::DenseXWProductFunction(const eval::ValueType &result_type,
-                                               const eval::TensorFunction &vector_in,
-                                               const eval::TensorFunction &matrix_in,
+DenseXWProductFunction::DenseXWProductFunction(const ValueType &result_type,
+                                               const TensorFunction &vector_in,
+                                               const TensorFunction &matrix_in,
                                                size_t vector_size,
                                                size_t result_size,
                                                bool common_inner)
-    : eval::tensor_function::Op2(result_type, vector_in, matrix_in),
+    : tensor_function::Op2(result_type, vector_in, matrix_in),
       _vector_size(vector_size),
       _result_size(result_size),
       _common_inner(common_inner)
 {
 }
 
-eval::InterpretedFunction::Instruction
-DenseXWProductFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
+InterpretedFunction::Instruction
+DenseXWProductFunction::compile_self(EngineOrFactory, Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
-    using MyTypify = TypifyValue<eval::TypifyCellType,vespalib::TypifyBool>;
+    using MyTypify = TypifyValue<TypifyCellType,vespalib::TypifyBool>;
     auto op = typify_invoke<3,MyTypify,MyXWProductOp>(lhs().result_type().cell_type(),
                                                       rhs().result_type().cell_type(),
                                                       _common_inner);
-    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseXWProductFunction::Self>(self));
+    return InterpretedFunction::Instruction(op, wrap_param<DenseXWProductFunction::Self>(self));
 }
 
 void
@@ -162,7 +157,7 @@ DenseXWProductFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 }
 
 const TensorFunction &
-DenseXWProductFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
+DenseXWProductFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     const Reduce *reduce = as<Reduce>(expr);
     if (reduce && (reduce->aggr() == Aggr::SUM)) {
@@ -182,4 +177,4 @@ DenseXWProductFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

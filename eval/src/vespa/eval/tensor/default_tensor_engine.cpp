@@ -41,6 +41,7 @@ namespace vespalib::tensor {
 
 using eval::Aggr;
 using eval::Aggregator;
+using eval::DenseXWProductFunction;
 using eval::DoubleValue;
 using eval::TensorFunction;
 using eval::TensorSpec;

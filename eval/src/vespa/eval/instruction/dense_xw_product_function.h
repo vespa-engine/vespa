@@ -5,20 +5,20 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Tensor function for product of one 1-dimensional and one 2-dimensional dense tensor.
  */
-class DenseXWProductFunction : public eval::tensor_function::Op2
+class DenseXWProductFunction : public tensor_function::Op2
 {
-    using Super = eval::tensor_function::Op2;
+    using Super = tensor_function::Op2;
 public:
     struct Self {
-        eval::ValueType result_type;
+        ValueType result_type;
         size_t vector_size;
         size_t result_size;
-        Self(const eval::ValueType &result_type_in,
+        Self(const ValueType &result_type_in,
              size_t vector_size_in, size_t result_size_in);
         ~Self();
     };
@@ -29,9 +29,9 @@ private:
     bool _common_inner;
 
 public:
-    DenseXWProductFunction(const eval::ValueType &result_type,
-                           const eval::TensorFunction &vector_in,
-                           const eval::TensorFunction &matrix_in,
+    DenseXWProductFunction(const ValueType &result_type,
+                           const TensorFunction &vector_in,
+                           const TensorFunction &matrix_in,
                            size_t vector_size,
                            size_t result_size,
                            bool common_inner);
@@ -44,9 +44,9 @@ public:
     size_t result_size() const { return _result_size; }
     bool common_inner() const { return _common_inner; }
 
-    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
-    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
+    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
 } // namespace vespalib::tensor
