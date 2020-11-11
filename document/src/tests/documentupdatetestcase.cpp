@@ -1031,6 +1031,13 @@ TEST(DocumentUpdateTest, tensor_remove_update_can_be_roundtrip_serialized)
     f.assertRoundtripSerialize(TensorRemoveUpdate(f.makeBaselineTensor()));
 }
 
+TEST(DocumentUpdateTest, tensor_remove_update_with_not_fully_specified_address_can_be_roundtrip_serialized)
+{
+    TensorUpdateFixture f("sparse_xy_tensor");
+    TensorDataType type(ValueType::from_spec("tensor(y{})"));
+    f.assertRoundtripSerialize(TensorRemoveUpdate(
+            makeTensorFieldValue(TensorSpec("tensor(y{})").add({{"y", "a"}}, 1), type)));
+}
 
 TEST(DocumentUpdateTest, tensor_remove_update_on_float_tensor_can_be_roundtrip_serialized)
 {
@@ -1087,7 +1094,7 @@ TEST(DocumentUpdateTest, tensor_remove_update_throws_if_address_tensor_is_not_sp
     auto addressTensor = f.makeTensor(f.spec().add({{"x", 0}}, 2)); // creates a dense address tensor
     ASSERT_THROW(
             f.assertRoundtripSerialize(TensorRemoveUpdate(std::move(addressTensor))),
-            document::WrongTensorTypeException);
+            vespalib::IllegalStateException);
 }
 
 TEST(DocumentUpdateTest, tensor_modify_update_throws_if_cells_tensor_is_not_sparse)

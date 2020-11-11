@@ -20,6 +20,7 @@
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::EngineOrFactory;
 using vespalib::tensor::TensorPartialUpdate;
@@ -157,38 +158,47 @@ TensorRemoveUpdate::print(std::ostream &out, bool verbose, const std::string &in
 namespace {
 
 void
-verifyAddressTensorIsSparse(const vespalib::eval::Value *addressTensor)
+verifyAddressTensorIsSparse(const Value *addressTensor)
 {
     if (addressTensor == nullptr) {
-        return;
+        throw IllegalStateException("Address tensor is not set", VESPA_STRLOC);
     }
     auto engine = EngineOrFactory::get();
     if (TensorPartialUpdate::check_suitably_sparse(*addressTensor, engine)) {
         return;
     }
-    vespalib::string err = make_string("Expected address tensor to be sparse, but has type '%s'",
-                                       addressTensor->type().to_spec().c_str());
+    auto err = make_string("Expected address tensor to be sparse, but has type '%s'",
+                           addressTensor->type().to_spec().c_str());
     throw IllegalStateException(err, VESPA_STRLOC);
 }
 
+void
+verify_tensor_type_dimensions_are_subset_of(const ValueType& lhs_type,
+                                            const ValueType& rhs_type)
+{
+    for (const auto& dim : lhs_type.dimensions()) {
+        if (rhs_type.dimension_index(dim.name) == ValueType::Dimension::npos) {
+            auto err = make_string("Unexpected type '%s' for address tensor. "
+                                   "Expected dimensions to be a subset of '%s'",
+                                   lhs_type.to_spec().c_str(), rhs_type.to_spec().c_str());
+            throw IllegalStateException(err, VESPA_STRLOC);
+        }
+    }
+}
 
 }
 
 void
 TensorRemoveUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &type, nbostream &stream)
 {
-    _tensorType = convertToCompatibleType(Identifiable::cast<const TensorDataType &>(type));
-    auto tensor = _tensorType->createFieldValue();
-    if (tensor->inherits(TensorFieldValue::classId)) {
-        _tensor.reset(static_cast<TensorFieldValue *>(tensor.release()));
-    } else {
-        vespalib::string err = make_string("Expected tensor field value, got a '%s' field value",
-                                           tensor->getClass().name());
-        throw IllegalStateException(err, VESPA_STRLOC);
-    }
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());
-    deserializer.read(*_tensor);
-    verifyAddressTensorIsSparse(_tensor->getAsTensorPtr());
+    auto tensor = deserializer.readTensor();
+    verifyAddressTensorIsSparse(tensor.get());
+    auto compatible_type = convertToCompatibleType(Identifiable::cast<const TensorDataType &>(type));
+    verify_tensor_type_dimensions_are_subset_of(tensor->type(), compatible_type->getTensorType());
+    _tensorType = std::make_unique<const TensorDataType>(tensor->type());
+    _tensor = std::make_unique<TensorFieldValue>(*_tensorType);
+    _tensor->assignDeserialized(std::move(tensor));
 }
 
 TensorRemoveUpdate *

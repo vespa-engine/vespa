@@ -355,9 +355,14 @@ void VespaDocumentDeserializer::read(WeightedSetFieldValue &value) {
     }
 }
 
-
 void
 VespaDocumentDeserializer::read(TensorFieldValue &value)
+{
+    value.assignDeserialized(readTensor());
+}
+
+std::unique_ptr<vespalib::eval::Value>
+VespaDocumentDeserializer::readTensor()
 {
     size_t length = _stream.getInt1_4Bytes();
     if (length > _stream.size()) {
@@ -372,8 +377,8 @@ VespaDocumentDeserializer::read(TensorFieldValue &value)
             throw DeserializeException("Leftover bytes deserializing tensor field value.", VESPA_STRLOC);
         }
     }
-    value.assignDeserialized(std::move(tensor));
     _stream.adjustReadPos(length);
+    return tensor;
 }
 
 void VespaDocumentDeserializer::read(ReferenceFieldValue& value) {

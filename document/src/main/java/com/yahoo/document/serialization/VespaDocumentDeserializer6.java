@@ -243,7 +243,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         int encodedTensorLength = buf.getInt1_4Bytes();
         if (encodedTensorLength > 0) {
             byte[] encodedTensor = getBytes(null, encodedTensorLength);
-            value.assign(TypedBinaryFormat.decode(Optional.of(value.getDataType().getTensorType()), 
+            value.assign(TypedBinaryFormat.decode(value.getTensorType(),
                                                   GrowableByteBuffer.wrap(encodedTensor)));
         } else {
             value.clear();

@@ -168,6 +168,8 @@ public class JsonReaderTestCase {
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             x.addField(new Field("mixed_tensor",
                     new TensorDataType(new TensorType.Builder().mapped("x").indexed("y", 3).build())));
+            x.addField(new Field("mixed_tensor_adv",
+                    new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").mapped("z").indexed("a", 3).build())));
             types.registerDocumentType(x);
         }
         {
@@ -1685,6 +1687,24 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_remove_update_on_sparse_tensor_with_not_fully_specified_address() {
+        assertTensorRemoveUpdate("{{y:b}:1.0,{y:d}:1.0}", "sparse_tensor",
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'y': 'b' },",
+                        "    { 'y': 'd' } ]}"));
+    }
+
+    @Test
+    public void tensor_remove_update_on_mixed_tensor_with_not_fully_specified_address() {
+        assertTensorRemoveUpdate("{{x:1,z:a}:1.0,{x:2,z:b}:1.0}", "mixed_tensor_adv",
+                inputJson("{",
+                        "  'addresses': [",
+                        "    { 'x': '1', 'z': 'a' },",
+                        "    { 'x': '2', 'z': 'b' } ]}"));
+    }
+
+    @Test
     public void tensor_remove_update_on_mixed_tensor_with_dense_addresses_throws() {
         illegalTensorRemoveUpdate("Error in 'mixed_tensor': Indexed dimension address 'y' should not be specified in remove update",
                                   "mixed_tensor",
@@ -1703,12 +1723,19 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void tensor_remove_update_on_not_fully_specified_cell_throws() {
-        illegalTensorRemoveUpdate("Error in 'sparse_tensor': Missing a label for dimension y for tensor(x{},y{})",
-                                  "sparse_tensor",
-                                  "{",
-                                  "  'addresses': [",
-                                  "    { 'x': 'a' } ]}");
+    public void tensor_remove_update_with_stray_dimension_throws() {
+        illegalTensorRemoveUpdate("Error in 'sparse_tensor': tensor(x{},y{}) does not contain dimension 'foo'",
+                "sparse_tensor",
+                "{",
+                "  'addresses': [",
+                "    { 'x': 'a', 'foo': 'b' } ]}");
+
+        illegalTensorRemoveUpdate("Error in 'sparse_tensor': tensor(x{}) does not contain dimension 'foo'",
+                "sparse_tensor",
+                "{",
+                "  'addresses': [",
+                "    { 'x': 'c' },",
+                "    { 'x': 'a', 'foo': 'b' } ]}");
     }
 
     @Test
