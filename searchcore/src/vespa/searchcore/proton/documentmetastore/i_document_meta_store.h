@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "gid_to_lid_map_key.h"
 #include "lid_gid_key_comparator.h"
 #include "i_simple_document_meta_store.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -34,7 +35,7 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
     // Lids are stored as keys in the tree, sorted by their gid counterpart.
     // The LidGidKeyComparator class maps from lids -> metadata by using the metadata store.
     // TODO(geirst): move this typedef and iterator functions away from this interface.
-    typedef vespalib::btree::BTree<DocId,
+    typedef vespalib::btree::BTree<documentmetastore::GidToLidMapKey,
             vespalib::btree::BTreeNoLeafData,
             vespalib::btree::NoAggregated,
             const documentmetastore::LidGidKeyComparator &> TreeType;

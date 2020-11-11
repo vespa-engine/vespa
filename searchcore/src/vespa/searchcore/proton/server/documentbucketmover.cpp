@@ -116,7 +116,7 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
     typedef std::vector<MoveKey> MoveVec;
     MoveVec toMove;
     for (; itr != end && docsMoved < maxDocsToMove; ++itr) {
-        DocumentIdT lid = itr.getKey();
+        DocumentIdT lid = itr.getKey().get_lid();
         const RawDocumentMetaData &metaData = _source->meta_store()->getRawMetaData(lid);
         if (metaData.getBucketUsedBits() != _bucket.getUsedBits()) {
             ++docsSkipped;
