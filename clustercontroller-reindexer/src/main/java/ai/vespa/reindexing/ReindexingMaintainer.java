@@ -16,6 +16,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -50,7 +51,8 @@ public class ReindexingMaintainer extends AbstractComponent {
     private final ScheduledExecutorService executor;
 
     @Inject
-    public ReindexingMaintainer(DocumentAccess access, ZookeepersConfig zookeepersConfig,
+    public ReindexingMaintainer(@SuppressWarnings("unused") VespaZooKeeperServer ensureZkHasStarted,
+                                DocumentAccess access, ZookeepersConfig zookeepersConfig,
                                 ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig allClustersBucketSpacesConfig,
                                 ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
         this(Clock.systemUTC(), access, zookeepersConfig, clusterListConfig, allClustersBucketSpacesConfig, reindexingConfig, documentmanagerConfig);
