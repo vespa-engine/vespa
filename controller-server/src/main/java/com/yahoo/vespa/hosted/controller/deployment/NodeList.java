@@ -1,5 +1,5 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
-
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -12,6 +12,9 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
 
+/**
+ * @author jonmv
+ */
 public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> {
 
     private final long wantedConfigGeneration;

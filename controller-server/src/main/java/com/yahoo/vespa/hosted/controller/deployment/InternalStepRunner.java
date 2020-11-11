@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSet;
@@ -541,7 +541,7 @@ public class InternalStepRunner implements StepRunner {
                                                                                         ? " <-- " + currentPlatform(node.node())
                                                                                         : "") +
                                        (node.needsOsUpgrade() && node.isAllowedDown()
-                                        ? ", upgrading OS (" + node.node().wantedOsVersion() + " <-- " + node.node().currentOsVersion() + ")"
+                                        ? ", upgrading OS (" + node.parent().wantedOsVersion() + " <-- " + node.parent().currentOsVersion() + ")"
                                         : "") +
                                        (node.needsFirmwareUpgrade() && node.isAllowedDown()
                                         ? ", upgrading firmware"
