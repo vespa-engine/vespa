@@ -235,16 +235,30 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                                                     executor.submit(() -> applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
                                 .ifPresent(Deployment::activate))));
 
-        Set<ApplicationId> failedDeployments =
-                deployments.entrySet().stream()
-                        .map(entry -> checkDeployment(entry.getKey(), entry.getValue()))
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toSet());
+        applicationIds.forEach(appId -> deployments.put(appId, executor.submit(deployWithLock(appId))));
+        Set<ApplicationId> failedDeployments = failedDeployments(deployments);
 
         executor.shutdown();
         executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
         return failedDeployments;
+    }
+
+    private Set<ApplicationId> failedDeployments(Map<ApplicationId, Future<?>> deployments) {
+        return deployments.entrySet().stream()
+                .map(entry -> checkDeployment(entry.getKey(), entry.getValue()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+    }
+
+    // Need to take application lock in case some other config server deploys the application and changes the current active session
+    // If so, the below would fail and retrying might fail if the application package is not available on this server
+    private Runnable deployWithLock(ApplicationId appId) {
+        return () -> {
+            try (var applicationLock = applicationRepository.getTenant(appId).getApplicationRepo().lock(appId)) {
+                applicationRepository.deployFromLocalActive(appId, true /* bootstrap */).ifPresent(Deployment::activate);
+            }
+        };
     }
 
     // Returns an application id if deployment failed
