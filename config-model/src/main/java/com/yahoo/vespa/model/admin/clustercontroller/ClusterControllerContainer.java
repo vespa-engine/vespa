@@ -6,7 +6,6 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.container.core.documentapi.DocumentAccessProvider;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
@@ -35,12 +33,7 @@ public class ClusterControllerContainer extends Container implements
 
     private final Set<String> bundles = new TreeSet<>();
 
-    public ClusterControllerContainer(
-            AbstractConfigProducer<?> parent,
-            int index,
-            boolean runStandaloneZooKeeper,
-            boolean isHosted,
-            ReindexingContext reindexingContext) {
+    public ClusterControllerContainer(AbstractConfigProducer parent, int index, boolean runStandaloneZooKeeper, boolean isHosted) {
         super(parent, "" + index, index, isHosted);
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
@@ -56,11 +49,6 @@ public class ClusterControllerContainer extends Container implements
                          "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StandaloneZooKeeperProvider",
                          CLUSTERCONTROLLER_BUNDLE);
         } else {
-            // TODO bjorncs/jonmv: remove extraneous ZooKeeperProvider layer
-            addComponent(
-                    "clustercontroller-zkrunner",
-                    "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
-                    new ComponentSpecification("zookeeper-server-common"));
             addComponent("clustercontroller-zkprovider",
                          "com.yahoo.vespa.clustercontroller.apps.clustercontroller.DummyZooKeeperProvider",
                          CLUSTERCONTROLLER_BUNDLE);
@@ -73,7 +61,6 @@ public class ClusterControllerContainer extends Container implements
         addFileBundle("clustercontroller-core");
         addFileBundle("clustercontroller-utils");
         addFileBundle("zookeeper-server");
-        configureReindexing(reindexingContext);
     }
 
     @Override
@@ -113,15 +100,6 @@ public class ClusterControllerContainer extends Container implements
     private void addHandler(String id, String className, String path) {
         addHandler(new Handler(createComponentModel(id, className, CLUSTERCONTROLLER_BUNDLE)), path);
     }
-
-    private void configureReindexing(ReindexingContext context) {
-        if (context != null) {
-            addFileBundle(ReindexingController.REINDEXING_CONTROLLER_BUNDLE);
-            addComponent(new ReindexingController(context));
-            addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
-        }
-    }
-
 
     @Override
     public void getConfig(PlatformBundlesConfig.Builder builder) {
