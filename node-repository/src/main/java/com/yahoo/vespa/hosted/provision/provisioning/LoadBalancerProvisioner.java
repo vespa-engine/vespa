@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -83,7 +82,7 @@ public class LoadBalancerProvisioner {
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             List<Node> nodes = nodesOf(clusterId, application);
-            provision(application, clusterId, nodes, false, new ProvisionLock(application, lock));
+            provision(application, clusterId, nodes, false);
         }
     }
 
@@ -100,7 +99,7 @@ public class LoadBalancerProvisioner {
     public void activate(Set<ClusterSpec> clusters, ApplicationTransaction transaction) {
         for (var cluster : loadBalancedClustersOf(transaction.application()).entrySet()) {
             // Provision again to ensure that load balancer instance is re-configured with correct nodes
-            provision(transaction.application(), cluster.getKey(), cluster.getValue(), true, transaction.lock());
+            provision(transaction.application(), cluster.getKey(), cluster.getValue(), true);
         }
         // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
         var surplusLoadBalancers = surplusLoadBalancersOf(transaction.application(), clusters.stream()
@@ -151,8 +150,7 @@ public class LoadBalancerProvisioner {
     }
 
     /** Idempotently provision a load balancer for given application and cluster */
-    private void provision(ApplicationId application, ClusterSpec.Id clusterId, List<Node> nodes, boolean activate,
-                           @SuppressWarnings("unused") ProvisionLock lock) {
+    private void provision(ApplicationId application, ClusterSpec.Id clusterId, List<Node> nodes, boolean activate) {
         var id = new LoadBalancerId(application, clusterId);
         var now = nodeRepository.clock().instant();
         var loadBalancer = db.readLoadBalancer(id);
@@ -167,7 +165,7 @@ public class LoadBalancerProvisioner {
             var newState = activate ? LoadBalancer.State.active : loadBalancer.get().state();
             newLoadBalancer = loadBalancer.get().with(instance).with(newState, now);
             if (loadBalancer.get().state() != newLoadBalancer.state()) {
-                log.log(logLevel(), "Moving " + newLoadBalancer.id() + " to state " + newLoadBalancer.state());
+                log.log(Level.FINE, "Moving " + newLoadBalancer.id() + " to state " + newLoadBalancer.state());
             }
         }
         db.writeLoadBalancer(newLoadBalancer);
@@ -180,7 +178,7 @@ public class LoadBalancerProvisioner {
                 reals.add(new Real(HostName.from(node.hostname()), ip));
             }
         }
-        log.log(logLevel(), "Creating " + id + ", targeting: " + reals);
+        log.log(Level.FINE, "Creating " + id + ", targeting: " + reals);
         try {
             return service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals), force);
         } catch (Exception e) {
@@ -225,10 +223,6 @@ public class LoadBalancerProvisioner {
 
     private static ClusterSpec.Id effectiveId(ClusterSpec cluster) {
         return cluster.combinedId().orElse(cluster.id());
-    }
-
-    private Level logLevel() {
-        return nodeRepository.zone().system().isCd() ? Level.INFO : Level.FINE;
     }
 
 }
