@@ -2,6 +2,7 @@
 
 vespa_add_library(eval_instruction OBJECT
     SOURCES
+    dense_xw_product_function.cpp
     generic_concat.cpp
     generic_create.cpp
     generic_join.cpp

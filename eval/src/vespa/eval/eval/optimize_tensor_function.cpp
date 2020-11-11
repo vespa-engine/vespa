@@ -6,7 +6,7 @@
 #include "simple_value.h"
 
 #include <vespa/eval/tensor/dense/dense_dot_product_function.h>
-#include <vespa/eval/tensor/dense/dense_xw_product_function.h>
+#include <vespa/eval/instruction/dense_xw_product_function.h>
 #include <vespa/eval/tensor/dense/dense_matmul_function.h>
 #include <vespa/eval/tensor/dense/dense_multi_matmul_function.h>
 #include <vespa/eval/tensor/dense/dense_fast_rename_optimizer.h>

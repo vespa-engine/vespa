@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dense_xw_product_function.h"
-#include "dense_tensor_view.h"
+#include <vespa/eval/instruction/dense_xw_product_function.h>
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
