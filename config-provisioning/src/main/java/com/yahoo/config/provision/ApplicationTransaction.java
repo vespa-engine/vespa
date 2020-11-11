@@ -23,10 +23,6 @@ public class ApplicationTransaction implements Closeable {
 
     public ApplicationId application() { return lock.application(); }
 
-    /** Returns the lock held by this */
-    // Usage of this might indicate we are writing changes directly (outside of the transaction) and should probably be avoided
-    public ProvisionLock lock() { return lock; }
-
     /** Returns the NestedTransaction of this */
     public NestedTransaction nested() { return transaction; }
 

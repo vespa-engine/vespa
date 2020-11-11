@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -83,7 +82,7 @@ public class LoadBalancerProvisioner {
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             List<Node> nodes = nodesOf(clusterId, application);
-            provision(application, clusterId, nodes, false, new ProvisionLock(application, lock));
+            provision(application, clusterId, nodes, false);
         }
     }
 
@@ -100,7 +99,7 @@ public class LoadBalancerProvisioner {
     public void activate(Set<ClusterSpec> clusters, ApplicationTransaction transaction) {
         for (var cluster : loadBalancedClustersOf(transaction.application()).entrySet()) {
             // Provision again to ensure that load balancer instance is re-configured with correct nodes
-            provision(transaction.application(), cluster.getKey(), cluster.getValue(), true, transaction.lock());
+            provision(transaction.application(), cluster.getKey(), cluster.getValue(), true);
         }
         // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
         var surplusLoadBalancers = surplusLoadBalancersOf(transaction.application(), clusters.stream()
@@ -151,8 +150,7 @@ public class LoadBalancerProvisioner {
     }
 
     /** Idempotently provision a load balancer for given application and cluster */
-    private void provision(ApplicationId application, ClusterSpec.Id clusterId, List<Node> nodes, boolean activate,
-                           @SuppressWarnings("unused") ProvisionLock lock) {
+    private void provision(ApplicationId application, ClusterSpec.Id clusterId, List<Node> nodes, boolean activate) {
         var id = new LoadBalancerId(application, clusterId);
         var now = nodeRepository.clock().instant();
         var loadBalancer = db.readLoadBalancer(id);
