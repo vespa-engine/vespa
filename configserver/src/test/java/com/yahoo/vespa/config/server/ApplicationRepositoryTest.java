@@ -325,13 +325,12 @@ public class ApplicationRepositoryTest {
             // Delete app and verify that it has been deleted from repos and provisioner
             assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
-            assertNull(sessionRepository.getLocalSession(sessionId));
-            assertNull(sessionRepository.getLocalSession(sessionId));
             assertTrue(provisioner.removed());
             assertEquals(tenant.getName(), provisioner.lastApplicationId().tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId());
-            assertFalse(configCurator.exists(sessionNode));
-            assertFalse(sessionFile.exists());
+            assertTrue(configCurator.exists(sessionNode));
+            assertEquals(Session.Status.DELETE.name(), configCurator.getData(sessionNode + "/sessionState"));
+            assertTrue(sessionFile.exists());
 
             assertFalse(applicationRepository.delete(applicationId()));
         }

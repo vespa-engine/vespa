@@ -74,7 +74,7 @@ public abstract class Session implements Comparable<Session>  {
      * The status of this session.
      */
     public enum Status {
-        NEW, PREPARE, ACTIVATE, DEACTIVATE, NONE;
+        NEW, PREPARE, ACTIVATE, DEACTIVATE, NONE, DELETE;
 
         public static Status parse(String data) {
             for (Status status : Status.values()) {

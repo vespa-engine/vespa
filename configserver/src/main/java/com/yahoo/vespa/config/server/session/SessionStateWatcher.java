@@ -48,6 +48,7 @@ public class SessionStateWatcher {
         switch (newStatus) {
             case NEW:
             case NONE:
+            case DELETE:
                 break;
             case PREPARE:
                 createLocalSession(sessionId);
