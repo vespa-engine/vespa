@@ -28,7 +28,6 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_tensor_reduce.cpp
     dense_tensor_value_builder.cpp
     dense_tensor_view.cpp
-    dense_xw_product_function.cpp
     index_lookup_table.cpp
     mutable_dense_tensor_view.cpp
     onnx_wrapper.cpp

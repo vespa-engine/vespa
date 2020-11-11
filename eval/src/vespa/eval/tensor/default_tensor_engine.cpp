@@ -9,7 +9,7 @@
 #include "dense/dense_tensor.h"
 #include "dense/typed_dense_tensor_builder.h"
 #include "dense/dense_dot_product_function.h"
-#include "dense/dense_xw_product_function.h"
+#include <vespa/eval/instruction/dense_xw_product_function.h>
 #include "dense/dense_matmul_function.h"
 #include "dense/dense_multi_matmul_function.h"
 #include "dense/dense_fast_rename_optimizer.h"
@@ -41,6 +41,7 @@ namespace vespalib::tensor {
 
 using eval::Aggr;
 using eval::Aggregator;
+using eval::DenseXWProductFunction;
 using eval::DoubleValue;
 using eval::TensorFunction;
 using eval::TensorSpec;
