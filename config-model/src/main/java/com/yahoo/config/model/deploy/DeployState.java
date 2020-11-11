@@ -17,6 +17,7 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Provisioned;
+import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -50,6 +51,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -82,6 +84,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Instant now;
     private final HostProvisioner provisioner;
     private final Provisioned provisioned;
+    private final Reindexing reindexing;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -115,7 +118,8 @@ public class DeployState implements ConfigDefinitionStore {
                         Instant now,
                         Version wantedNodeVespaVersion,
                         boolean accessLoggingEnabledByDefault,
-                        Optional<DockerImage> wantedDockerImageRepo) {
+                        Optional<DockerImage> wantedDockerImageRepo,
+                        Reindexing reindexing) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.rankProfileRegistry = rankProfileRegistry;
@@ -147,6 +151,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
         this.wantedDockerImageRepo = wantedDockerImageRepo;
+        this.reindexing = reindexing;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -289,6 +294,8 @@ public class DeployState implements ConfigDefinitionStore {
         }
     }
 
+    public Optional<Reindexing> reindexing() { return Optional.ofNullable(reindexing); }
+
     public static class Builder {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
@@ -308,6 +315,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
         private boolean accessLoggingEnabledByDefault = true;
         private Optional<DockerImage> wantedDockerImageRepo = Optional.empty();
+        private Reindexing reindexing = null;
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -398,6 +406,8 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder reindexing(Reindexing reindexing) { this.reindexing = Objects.requireNonNull(reindexing); return this; }
+
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -427,7 +437,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    now,
                                    wantedNodeVespaVersion,
                                    accessLoggingEnabledByDefault,
-                                   wantedDockerImageRepo);
+                                   wantedDockerImageRepo,
+                                   reindexing);
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
