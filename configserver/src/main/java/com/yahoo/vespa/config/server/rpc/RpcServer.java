@@ -148,7 +148,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     private static int threadsToUse() {
-        return Math.max(8, Runtime.getRuntime().availableProcessors());
+        return Math.max(8, Runtime.getRuntime().availableProcessors()/2);
     }
 
     /**
