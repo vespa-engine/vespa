@@ -1188,4 +1188,15 @@ TEST_F(DistributorTest, prioritize_global_bucket_merges_config_is_propagated_to_
     EXPECT_FALSE(getConfig().prioritize_global_bucket_merges());
 }
 
+TEST_F(DistributorTest, wanted_split_bit_count_is_lower_bounded) {
+    createLinks();
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    ConfigBuilder builder;
+    builder.minsplitcount = 7;
+    configureDistributor(builder);
+
+    EXPECT_EQ(getConfig().getMinimalBucketSplit(), 8);
+}
+
 }
