@@ -469,7 +469,7 @@ public class ApplicationHandler extends HttpHandler {
                                      .forEach(pending -> {
                                          Cursor pendingObject = pendingArray.addObject();
                                          pendingObject.setString("type", pending.getKey());
-                                         pendingObject.setLong("requireGeneration", pending.getValue());
+                                         pendingObject.setLong("requiredGeneration", pending.getValue());
                                      });
 
                               Cursor readyArray = clusterObject.setArray("ready");

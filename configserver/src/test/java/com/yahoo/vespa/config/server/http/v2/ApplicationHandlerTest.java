@@ -260,6 +260,8 @@ public class ApplicationHandlerTest {
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
+        database.writeReindexingStatus(applicationId, expected.withPending("boo", "bar", 123L));
+
         long now = clock.instant().toEpochMilli();
         reindexing(applicationId, GET, "{" +
                                        "  \"enabled\": true," +
@@ -272,7 +274,12 @@ public class ApplicationHandlerTest {
                                        "      \"status\": {" +
                                        "        \"readyMillis\": " + (now - 1000) +
                                        "      }," +
-                                       "      \"pending\": []," +
+                                       "      \"pending\": [" +
+                                       "        {" +
+                                       "          \"type\": \"bar\"," +
+                                       "          \"requiredGeneration\": 123" +
+                                       "        }" +
+                                       "      ]," +
                                        "      \"ready\": [" +
                                        "        {" +
                                        "          \"type\": \"bar\"," +
