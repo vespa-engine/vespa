@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/param_variants.h>
 #include <vespa/eval/instruction/join_with_number_function.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
@@ -34,16 +35,17 @@ std::ostream &operator<<(std::ostream &os, Primary primary)
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
-    return EvalFixture::ParamRepo()
+    auto repo = EvalFixture::ParamRepo()
         .add("a", spec(1.5))
         .add("number", spec(2.5))        
-        .add("sparse", spec({x({"a"})}, N()))
         .add("dense", spec({y(5)}, N()))
-        .add("mixed", spec({x({"a"}),y(5)}, N()))
-        .add("mixed_float", spec(float_cells({x({"a"}),y(5)}), N()))
-        .add("mixed_inplace", spec({x({"a"}),y(5)}, N()), true)
         .add_matrix("x", 3, "y", 5);
+    
+    add_variants(repo, "mixed", {x({"a"}),y(5),z({"d","e"})}, N());
+    add_variants(repo, "sparse", {x({"a","b","c"}),z({"d","e","f"})}, N());
+    return repo;
 }
+
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify_optimized(const vespalib::string &expr, Primary primary, bool inplace) {
@@ -97,6 +99,24 @@ TEST("require that asymmetric operations work") {
     TEST_DO(verify_optimized("a-x3y5f", Primary::RHS, false));
 }
 
+TEST("require that sparse number join can be optimized") {
+    TEST_DO(verify_optimized("sparse+a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a+sparse", Primary::RHS, false));
+    TEST_DO(verify_optimized("sparse<a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a<sparse", Primary::RHS, false));
+    TEST_DO(verify_optimized("sparse_float+a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a+sparse_float", Primary::RHS, false));
+    TEST_DO(verify_optimized("sparse_float<a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a<sparse_float", Primary::RHS, false));
+}
+
+TEST("require that sparse number join can be inplace") {
+    TEST_DO(verify_optimized("sparse_mutable+a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a+sparse_mutable", Primary::RHS, true));
+    TEST_DO(verify_optimized("sparse_mutable<a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a<sparse_mutable", Primary::RHS, true));
+}
+
 TEST("require that mixed number join can be optimized") {
     TEST_DO(verify_optimized("mixed+a", Primary::LHS, false));
     TEST_DO(verify_optimized("a+mixed", Primary::RHS, false));
@@ -109,10 +129,10 @@ TEST("require that mixed number join can be optimized") {
 }
 
 TEST("require that mixed number join can be inplace") {
-    TEST_DO(verify_optimized("mixed_inplace+a", Primary::LHS, true));
-    TEST_DO(verify_optimized("a+mixed_inplace", Primary::RHS, true));
-    TEST_DO(verify_optimized("mixed_inplace<a", Primary::LHS, true));
-    TEST_DO(verify_optimized("a<mixed_inplace", Primary::RHS, true));
+    TEST_DO(verify_optimized("mixed_mutable+a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a+mixed_mutable", Primary::RHS, true));
+    TEST_DO(verify_optimized("mixed_mutable<a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a<mixed_mutable", Primary::RHS, true));
 }
 
 TEST("require that all appropriate cases are optimized, others not") {
