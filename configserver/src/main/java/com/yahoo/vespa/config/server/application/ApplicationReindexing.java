@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.application;
 import com.yahoo.config.model.api.Reindexing;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -198,7 +199,7 @@ public class ApplicationReindexing implements Reindexing {
         private final Instant ready;
 
         Status(Instant ready) {
-            this.ready = requireNonNull(ready);
+            this.ready = ready.truncatedTo(ChronoUnit.MILLIS);
         }
 
         @Override
