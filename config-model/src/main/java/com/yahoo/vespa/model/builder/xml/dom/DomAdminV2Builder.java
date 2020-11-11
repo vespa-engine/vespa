@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
+import java.util.logging.Level;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Configserver;
@@ -18,8 +19,8 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerC
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
 import org.w3c.dom.Element;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.logging.Level;
 
@@ -207,7 +208,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
         @Override
         protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
-            return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState.isHosted(), /*reindexingContext*/null);
+            return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState.isHosted());
         }
     }
 }
