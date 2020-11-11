@@ -49,10 +49,10 @@ TensorSpec reference_peek(const TensorSpec &param, const vespalib::string &resul
     for (const auto & [dim_name, label_or_child] : spec) {
         std::visit(vespalib::overload
                    {
-                       [&](const TensorSpec::Label &label) {
+                       [&,&dim_name = dim_name](const TensorSpec::Label &label) {
                            addr.emplace(dim_name, label);
                        },
-                       [&](const size_t &child_value) {
+                       [&,&dim_name = dim_name](const size_t &child_value) {
                            // here, label_or_child is a size_t specifying the value
                            // we pretend a child produced
                            if (is_mapped_dim(dim_name)) {

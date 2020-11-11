@@ -506,10 +506,10 @@ Peek::compile_self(EngineOrFactory engine, Stash &stash) const
         size_t child_idx = 0;
         for (const auto & [dim_name, label_or_child] : spec()) {
             std::visit(vespalib::overload {
-                    [&](const TensorSpec::Label &label) {
+                    [&,&dim_name = dim_name](const TensorSpec::Label &label) {
                         generic_spec.emplace(dim_name, label);
                     },
-                    [&](const TensorFunction::Child &) {
+                    [&,&dim_name = dim_name](const TensorFunction::Child &) {
                         generic_spec.emplace(dim_name, child_idx++);
                     }
                 }, label_or_child);
