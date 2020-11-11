@@ -21,7 +21,7 @@ public:
     using KeyComp = documentmetastore::LidGidKeyComparator;
     using DocId = documentmetastore::IStore::DocId;
     using GidIterator = vespalib::btree::BTreeConstIterator<
-        DocId,
+        documentmetastore::GidToLidMapKey,
         vespalib::btree::BTreeNoLeafData,
         vespalib::btree::NoAggregated,
         const KeyComp &>;

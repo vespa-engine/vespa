@@ -32,9 +32,9 @@ DocumentScanIterator::next(uint32_t compactLidLimit,
             (retry ? _metaStore.lowerBound(_lastGid) : _metaStore.upperBound(_lastGid))
                     : _metaStore.begin());
     uint32_t i = 1; // We have already 'scanned' a document when creating the iterator
-    for (; i < maxDocsToScan && itr.valid() && itr.getKey() <= compactLidLimit; ++i, ++itr) {}
+    for (; i < maxDocsToScan && itr.valid() && itr.getKey().get_lid() <= compactLidLimit; ++i, ++itr) {}
     if (itr.valid()) {
-        uint32_t lid = itr.getKey();
+        uint32_t lid = itr.getKey().get_lid();
         const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(lid);
         _lastGid = metaData.getGid();
         _lastGidValid = true;
