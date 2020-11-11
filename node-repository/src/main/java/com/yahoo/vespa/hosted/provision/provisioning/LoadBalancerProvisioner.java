@@ -167,7 +167,7 @@ public class LoadBalancerProvisioner {
             var newState = activate ? LoadBalancer.State.active : loadBalancer.get().state();
             newLoadBalancer = loadBalancer.get().with(instance).with(newState, now);
             if (loadBalancer.get().state() != newLoadBalancer.state()) {
-                log.log(logLevel(), "Moving " + newLoadBalancer.id() + " to state " + newLoadBalancer.state());
+                log.log(Level.FINE, "Moving " + newLoadBalancer.id() + " to state " + newLoadBalancer.state());
             }
         }
         db.writeLoadBalancer(newLoadBalancer);
@@ -180,7 +180,7 @@ public class LoadBalancerProvisioner {
                 reals.add(new Real(HostName.from(node.hostname()), ip));
             }
         }
-        log.log(logLevel(), "Creating " + id + ", targeting: " + reals);
+        log.log(Level.FINE, "Creating " + id + ", targeting: " + reals);
         try {
             return service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals), force);
         } catch (Exception e) {
@@ -225,10 +225,6 @@ public class LoadBalancerProvisioner {
 
     private static ClusterSpec.Id effectiveId(ClusterSpec cluster) {
         return cluster.combinedId().orElse(cluster.id());
-    }
-
-    private Level logLevel() {
-        return nodeRepository.zone().system().isCd() ? Level.INFO : Level.FINE;
     }
 
 }
