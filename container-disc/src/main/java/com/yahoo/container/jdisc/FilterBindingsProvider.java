@@ -4,13 +4,13 @@ package com.yahoo.container.jdisc;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.jdisc.http.server.jetty.FilterChainRepository;
+import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.jdisc.http.server.jetty.FilterBindings;
+import com.yahoo.jdisc.http.server.FilterBindings;
 
 import java.util.ArrayList;
 import java.util.List;
