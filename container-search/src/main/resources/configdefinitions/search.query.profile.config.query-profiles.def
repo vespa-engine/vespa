@@ -52,10 +52,14 @@ queryprofile[].queryprofilevariant[].inherit[] string
 queryprofile[].queryprofilevariant[].property[].name string
 # Content of profile variant
 queryprofile[].queryprofilevariant[].property[].value string
+# Whether this property is overridable: "true", "false" or ""
+queryprofile[].queryprofilevariant[].property[].overridable string default=""
 # Content of profile variant
 queryprofile[].queryprofilevariant[].reference[].name string
 # Content of profile variant
 queryprofile[].queryprofilevariant[].reference[].value string
+# Whether this reference is overridable: "true", "false" or ""
+queryprofile[].queryprofilevariant[].reference[].overridable string default=""
 
 # A query profile type defines the values of instance query profiles.
 # The id follows the same rules as for query profiles

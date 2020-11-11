@@ -2,13 +2,18 @@
 package com.yahoo.vespa.model.container.search.test;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.search.Query;
+import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
+import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
@@ -29,6 +34,20 @@ import static org.junit.Assert.assertTrue;
 public class QueryProfilesTestCase {
 
     private final static String root="src/test/java/com/yahoo/vespa/model/container/search/test/";
+
+    @Test
+    public void testVariants() {
+        QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "variants");
+        QueryProfiles profiles = new QueryProfiles(registry, new TestableDeployLogger());
+        QueryProfileRegistry registryFromConfig = QueryProfileConfigurer.createFromConfig(profiles.getConfig());
+        CompiledQueryProfile profile = registryFromConfig.compile().getComponent("default");
+
+        assertEquals("a.b.c-value", new Query("?d1=d1v", profile).properties().get("a.b.c"));
+        assertEquals("a.b.c-variant-value", new Query("?d1=d1v&d2=d2v", profile).properties().get("a.b.c"));
+
+        assertEquals("query-value", new Query("?d1=d1v&a.b.c=query-value", profile).properties().get("a.b.c"));
+        assertEquals("a.b.c-variant-value", new Query("?d1=d1v&d2=d2v&a.b.c=query-value", profile).properties().get("a.b.c"));
+    }
 
     @Test
     public void testEmpty() throws IOException {
@@ -67,28 +86,28 @@ public class QueryProfilesTestCase {
         QueryProfile defaultProfile=new QueryProfile("default");
         defaultProfile.set("ranking","production23", registry);
         defaultProfile.set("representation.defaultIndex", "title", registry);
-        defaultProfile.setOverridable("representation.defaultIndex", false, null);
+        defaultProfile.setOverridable("representation.defaultIndex", false, DimensionValues.empty);
         registry.register(defaultProfile);
 
         QueryProfile test=new QueryProfile("test");
         test.set("tracelevel",2,registry);
         registry.register(test);
 
-        QueryProfile genericUser=new QueryProfile("genericUser");
+        QueryProfile genericUser = new QueryProfile("genericUser");
         genericUser.setType(userType);
-        genericUser.set("robot",false,registry);
-        genericUser.set("ads","all",registry);
+        genericUser.set("robot", false, registry);
+        genericUser.set("ads", "all", registry);
         registry.register(genericUser);
 
-        QueryProfile root=new QueryProfile("root");
+        QueryProfile root = new QueryProfile("root");
         root.setType(rootType);
         root.addInherited(defaultProfile);
         root.addInherited(test);
-        root.set("hits",30,registry);
-        root.setOverridable("hits",false,null);
-        root.set("unique","category",registry);
-        root.set("user",genericUser,registry);
-        root.set("defaultage", "7d",registry);
+        root.set("hits", 30, registry);
+        root.setOverridable("hits", false, DimensionValues.empty);
+        root.set("unique", "category", registry);
+        root.set("user", genericUser, registry);
+        root.set("defaultage", "7d", registry);
         registry.register(root);
 
         QueryProfile marketUser=new QueryProfile("marketUser");
@@ -98,21 +117,21 @@ public class QueryProfilesTestCase {
         marketUser.set("age",25,registry);
         registry.register(marketUser);
 
-        QueryProfile market=new QueryProfile("root/market");
+        QueryProfile market = new QueryProfile("root/market");
         market.setType(marketType);
         market.addInherited(root);
-        market.set("hits",15,registry);
-        market.set("user",marketUser,registry);
-        market.set("market","some market",registry);
-        market.set("marketHeading","Market of %{market}",registry);
+        market.set("hits", 15, registry);
+        market.set("user", marketUser, registry);
+        market.set("market", "some market", registry);
+        market.set("marketHeading", "Market of %{market}", registry);
         registry.register(market);
 
-        QueryProfile untypedUser=new QueryProfile("untypedUser");
-        untypedUser.set("robot",false,registry);
-        untypedUser.set("robot.type","continent-class",registry);
+        QueryProfile untypedUser = new QueryProfile("untypedUser");
+        untypedUser.set("robot", false, registry);
+        untypedUser.set("robot.type", "continent-class", registry);
         registry.register(untypedUser);
 
-        assertConfig("query-profiles.cfg",registry);
+        assertConfig("query-profiles.cfg", registry);
 
         DeployLoggerStub logger = new DeployLoggerStub();
         new QueryProfiles(registry, logger);

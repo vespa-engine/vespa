@@ -147,7 +147,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * Returns the content fields declared in this (i.e not including those inherited) as a read-only map.
      * @throws IllegalStateException if this is frozen
      */
-    public Map<String,Object> declaredContent() {
+    public Map<String, Object> declaredContent() {
         ensureNotFrozen();
         return content.unmodifiableMap();
     }
@@ -203,6 +203,14 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     }
 
     /**
+     * Sets the overridability of a field in this profile,
+     * this overrides the corresponding setting in the type (if any)
+     */
+    public final void setOverridable(String fieldName, boolean overridable, DimensionValues dimensionValues) {
+        setOverridable(new CompoundName(fieldName), overridable, DimensionBinding.createFrom(getDimensions(), dimensionValues));
+    }
+
+    /**
      * Return all objects that start with the given prefix path using no context. Use "" to list all.
      * <p>
      * For example, if {a.d =&gt; "a.d-value" ,a.e =&gt; "a.e-value", b.d =&gt; "b.d-value", then calling listValues("a")
@@ -234,7 +242,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * For example, if {a.d =&gt; "a.d-value" ,a.e =&gt; "a.e-value", b.d =&gt; "b.d-value", then calling listValues("a")
      * will return {"d" =&gt; "a.d-value","e" =&gt; "a.e-value"}
      */
-    public final Map<String, Object> listValues(CompoundName prefix, Map<String,String> context) {
+    public final Map<String, Object> listValues(CompoundName prefix, Map<String, String> context) {
         return listValues(prefix, context, null);
     }
 
@@ -341,11 +349,11 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * @throws IllegalArgumentException if the given name is illegal given the types of this or any nested query profile
      * @throws IllegalStateException if this query profile is frozen
      */
-    public final void set(CompoundName name, Object value, Map<String,String> context, QueryProfileRegistry registry) {
+    public final void set(CompoundName name, Object value, Map<String, String> context, QueryProfileRegistry registry) {
         set(name, value, DimensionBinding.createFrom(getDimensions(), context), registry);
     }
 
-    public final void set(String name, Object value, Map<String,String> context, QueryProfileRegistry registry) {
+    public final void set(String name, Object value, Map<String, String> context, QueryProfileRegistry registry) {
         set(new CompoundName(name), value, DimensionBinding.createFrom(getDimensions(), context), registry);
     }
 
@@ -479,9 +487,14 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      */
     Boolean isLocalOverridable(String localName, DimensionBinding binding) {
         if (localLookup(localName, binding) == null) return null; // Not set
+        if ( ! binding.isNull() && getVariants() != null) {
+            Boolean variantIsOverriable = getVariants().isOverridable(localName, binding.getValues());
+            if (variantIsOverriable != null)
+                return variantIsOverriable;
+        }
         Boolean isLocalInstanceOverridable = isLocalInstanceOverridable(localName);
         if (isLocalInstanceOverridable != null)
-            return isLocalInstanceOverridable.booleanValue();
+            return isLocalInstanceOverridable;
         if (type != null) return type.isOverridable(localName);
         return true;
     }
@@ -731,9 +744,14 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      */
     private void setOverridable(CompoundName fieldName, boolean overridable, DimensionBinding dimensionBinding) {
         QueryProfile parent = lookupParentExact(fieldName, true, dimensionBinding);
-        if (parent.overridable == null)
-            parent.overridable = new HashMap<>();
-        parent.overridable.put(fieldName.last(), overridable);
+        if (dimensionBinding.isNull()) {
+            if (parent.overridable == null)
+                parent.overridable = new HashMap<>();
+            parent.overridable.put(fieldName.last(), overridable);
+        }
+        else {
+            variants.setOverridable(fieldName.last(), overridable, dimensionBinding.getValues());
+        }
     }
 
     /** Sets a value to a (possibly non-local) node. */

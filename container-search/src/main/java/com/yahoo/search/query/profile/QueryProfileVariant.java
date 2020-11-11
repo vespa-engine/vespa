@@ -20,6 +20,8 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
 
     private Map<String, Object> values;
 
+    private final Map<String, Boolean> overridable = new HashMap<>();
+
     private boolean frozen = false;
 
     private final QueryProfile owner;
@@ -69,6 +71,14 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
         if (combinedOrNull != null)
             values.put(key, combinedOrNull);
         return combinedOrNull;
+    }
+
+    public void setOverridable(String key, boolean overridable) {
+        this.overridable.put(key, overridable);
+    }
+
+    public Boolean isOverridable(String key) {
+        return overridable.get(key);
     }
 
     public void inherit(QueryProfile profile) {

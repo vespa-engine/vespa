@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -331,7 +332,7 @@ public class QueryProfileTestCase {
     public void testInstanceOverridable() {
         QueryProfile profile = new QueryProfile("root/unoverridableIndex");
         profile.set("model.defaultIndex","default", null);
-        profile.setOverridable("model.defaultIndex", false,null);
+        profile.setOverridable("model.defaultIndex", false, DimensionValues.empty);
 
         assertFalse(profile.isDeclaredOverridable("model.defaultIndex",null));
 
@@ -351,7 +352,7 @@ public class QueryProfileTestCase {
         QueryProfile profile = new QueryProfile("root/unoverridableIndex");
         profile.setDimensions(new String[] {"x"});
         profile.set("model.defaultIndex","default", null);
-        profile.setOverridable("model.defaultIndex",false,null);
+        profile.setOverridable("model.defaultIndex", false, DimensionValues.empty);
 
         assertFalse(profile.isDeclaredOverridable("model.defaultIndex",null));
 
@@ -370,7 +371,7 @@ public class QueryProfileTestCase {
         QueryProfile profile=new QueryProfile("test");
         profile.setDimensions(new String[] {"x"});
         profile.set("a","original", null);
-        profile.setOverridable("a",false,null);
+        profile.setOverridable("a", false, DimensionValues.empty);
 
         assertFalse(profile.isDeclaredOverridable("a",null));
 
@@ -380,12 +381,12 @@ public class QueryProfileTestCase {
 
     @Test
     public void testSimpleInstanceOverridableWithVariants2() {
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.setDimensions(new String[] {"x"});
-        profile.set("a","original",new String[] {"x1"}, null);
-        profile.setOverridable("a",false,null);
+        profile.set("a", "original", new String[] {"x1"}, null);
+        profile.setOverridable("a", false, DimensionValues.empty);
 
-        assertFalse(profile.isDeclaredOverridable("a",null));
+        assertFalse(profile.isDeclaredOverridable("a", null));
 
         Query query = new Query(HttpRequest.createTestRequest("?x=x1&a=overridden", Method.GET), profile.compile(null));
         assertEquals("original",query.properties().get("a"));
