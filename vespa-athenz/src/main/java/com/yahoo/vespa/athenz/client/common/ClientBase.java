@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.common.bindings.ErrorResponseEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import org.apache.http.HttpResponse;
@@ -39,12 +40,15 @@ public abstract class ClientBase implements AutoCloseable {
 
     private final CloseableHttpClient client;
     private final ClientExceptionFactory exceptionFactory;
+    private final ErrorHandler errorHandler;
 
     protected ClientBase(String userAgent,
                          Supplier<SSLContext> sslContextSupplier,
                          ClientExceptionFactory exceptionFactory,
-                         HostnameVerifier hostnameVerifier) {
+                         HostnameVerifier hostnameVerifier,
+                         ErrorHandler errorHandler) {
         this.exceptionFactory = exceptionFactory;
+        this.errorHandler = errorHandler;
         this.client = createHttpClient(userAgent, sslContextSupplier, hostnameVerifier);
     }
 
@@ -52,8 +56,15 @@ public abstract class ClientBase implements AutoCloseable {
         try {
             return client.execute(request, responseHandler);
         } catch (IOException e) {
+            try {
+                reportError(request, e);
+            } catch (Exception _ignored) {}
             throw new UncheckedIOException(e);
         }
+    }
+
+    private void reportError(HttpUriRequest request, Exception e) {
+        errorHandler.reportError(() -> request.getURI().getHost(), e);
     }
 
     protected StringEntity toJsonStringEntity(Object entity) {
@@ -114,4 +125,5 @@ public abstract class ClientBase implements AutoCloseable {
     protected interface ClientExceptionFactory {
         RuntimeException createException(int errorCode, String description);
     }
+
 }

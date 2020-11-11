@@ -11,6 +11,7 @@ import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
+import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zts.bindings.AccessTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.AwsTemporaryCredentialsResponseEntity;
@@ -37,6 +38,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -52,25 +54,8 @@ import static java.util.stream.Collectors.toList;
 public class DefaultZtsClient extends ClientBase implements ZtsClient {
 
     private final URI ztsUrl;
-
-    public DefaultZtsClient(URI ztsUrl, SSLContext sslContext) {
-        this(ztsUrl, sslContext, null);
-    }
-
-    public DefaultZtsClient(URI ztsUrl, SSLContext sslContext, HostnameVerifier hostnameVerifier) {
-        this(ztsUrl, () -> sslContext, hostnameVerifier);
-    }
-
-    public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider) {
-        this(ztsUrl, identityProvider::getIdentitySslContext, null);
-    }
-
-    public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider, HostnameVerifier hostnameVerifier) {
-        this(ztsUrl, identityProvider::getIdentitySslContext, hostnameVerifier);
-    }
-
-    private DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier, HostnameVerifier hostnameVerifier) {
-        super("vespa-zts-client", sslContextSupplier, ZtsClientException::new, hostnameVerifier);
+    protected DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier, HostnameVerifier hostnameVerifier, ErrorHandler errorHandler) {
+        super("vespa-zts-client", sslContextSupplier, ZtsClientException::new, hostnameVerifier, errorHandler);
         this.ztsUrl = addTrailingSlash(ztsUrl);
     }
 
@@ -239,5 +224,41 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
         else
             return URI.create(ztsUrl.toString() + '/');
     }
+    public static class Builder {
+        private URI ztsUrl;
+        private ErrorHandler errorHandler = ErrorHandler.empty();
+        private HostnameVerifier hostnameVerifier = null;
+        private Supplier<SSLContext> sslContextSupplier = null;
 
+        public Builder(URI ztsUrl) {
+            this.ztsUrl = ztsUrl;
+        }
+
+        public Builder withErrorHandler(ErrorHandler errorHandler) {
+            this.errorHandler = errorHandler;
+            return this;
+        }
+
+        public Builder withHostnameVerifier(HostnameVerifier hostnameVerifier) {
+            this.hostnameVerifier = hostnameVerifier;
+            return this;
+        }
+
+        public Builder withSslContext(SSLContext sslContext) {
+            this.sslContextSupplier = () -> sslContext;
+            return this;
+        }
+
+        public Builder withIdentityProvider(ServiceIdentityProvider identityProvider) {
+            this.sslContextSupplier = identityProvider::getIdentitySslContext;
+            return this;
+        }
+
+        public DefaultZtsClient build() {
+            if (Objects.isNull(sslContextSupplier)) {
+                throw new IllegalArgumentException("No ssl context or identity provider available to set up zts client");
+            }
+            return new DefaultZtsClient(ztsUrl, sslContextSupplier, hostnameVerifier, errorHandler);
+        }
+    }
 }

@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.http.ssl.impl.TlsContextBasedProvider;
-import java.util.logging.Level;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
@@ -37,6 +36,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -66,7 +66,8 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
                                                  KeyProvider keyProvider,
                                                  AthenzProviderServiceConfig config) {
         this.athenzProviderServiceConfig = config;
-        this.ztsClient = new DefaultZtsClient(URI.create(athenzProviderServiceConfig.ztsUrl()), bootstrapIdentity);
+        this.ztsClient = new DefaultZtsClient.Builder(URI.create(athenzProviderServiceConfig.ztsUrl()))
+                .withIdentityProvider(bootstrapIdentity).build();
         this.keyProvider = keyProvider;
         this.configserverIdentity = new AthenzService(athenzProviderServiceConfig.domain(), athenzProviderServiceConfig.serviceName());
 
