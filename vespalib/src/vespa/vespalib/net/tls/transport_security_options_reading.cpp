@@ -57,6 +57,8 @@ RequiredPeerCredential parse_peer_credential(const Inspector& req_entry) {
         field = RequiredPeerCredential::Field::CN;
     } else if (field_string == "SAN_DNS") {
         field = RequiredPeerCredential::Field::SAN_DNS;
+    } else if (field_string == "SAN_URI") {
+        field = RequiredPeerCredential::Field::SAN_URI;
     } else {
         throw IllegalArgumentException(make_string(
                 "Unsupported credential field type: '%s'. Supported are: CN, SAN_DNS",

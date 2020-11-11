@@ -374,6 +374,24 @@ struct GeneralNamesDeleter {
     }
 };
 
+// Returns empty string if unsupported type or bad content.
+vespalib::string get_ia5_string(const ASN1_IA5STRING* ia5_str) {
+    if ((ia5_str->type == V_ASN1_IA5STRING) && (ia5_str->data != nullptr) && (ia5_str->length > 0)) {
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+        const char* data  = reinterpret_cast<const char*>(::ASN1_STRING_get0_data(ia5_str));
+#else
+        const char* data  = reinterpret_cast<const char*>(::ASN1_STRING_data(ia5_str));
+#endif
+        const auto length = static_cast<size_t>(::ASN1_STRING_length(ia5_str));
+        if (has_embedded_nulls(data, length)) {
+            LOG(warning, "Got X509 peer certificate with embedded nulls in SAN field");
+            return {};
+        }
+        return {data, length};
+    }
+    return {};
+}
+
 using GeneralNamesPtr = std::unique_ptr<::GENERAL_NAMES, GeneralNamesDeleter>;
 
 bool fill_certificate_subject_alternate_names(::X509* cert, PeerCredentials& creds) {
@@ -383,21 +401,19 @@ bool fill_certificate_subject_alternate_names(::X509* cert, PeerCredentials& cre
         for (int i = 0; i < sk_GENERAL_NAME_num(san_names.get()); ++i) {
             auto* value = sk_GENERAL_NAME_value(san_names.get(), i);
             if (value->type == GEN_DNS) {
-                auto* dns_name = value->d.dNSName; // const or non-const depending on version...
-                if ((dns_name->type == V_ASN1_IA5STRING) && (dns_name->data != nullptr) && (dns_name->length > 0)) {
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-                    const char* data  = reinterpret_cast<const char*>(::ASN1_STRING_get0_data(dns_name));
-#else
-                    const char* data  = reinterpret_cast<const char*>(::ASN1_STRING_data(dns_name));
-#endif
-                    const auto length = static_cast<size_t>(::ASN1_STRING_length(dns_name));
-                    if (has_embedded_nulls(data, length)) {
-                        LOG(warning, "Got X509 peer certificate with embedded nulls in SAN field");
-                        return false;
-                    }
-                    creds.dns_sans.emplace_back(data, length);
+                auto content = get_ia5_string(value->d.dNSName); // arg is const or non-const depending on version...
+                if (content.empty()) {
+                    return false; // We assume there's something fishy with certs containing empty SANs
                 }
-            } // TODO support GEN_IPADD SAN?
+                creds.dns_sans.emplace_back(std::move(content));
+            } else if (value->type == GEN_URI) {
+                auto content = get_ia5_string(value->d.uniformResourceIdentifier);
+                if (content.empty()) {
+                    return false;
+                }
+                creds.uri_sans.emplace_back(std::move(content));
+            }
+            // TODO support GEN_IPADD SAN?
         }
     }
     return true;
