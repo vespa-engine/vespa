@@ -37,6 +37,7 @@ vespa_define_module(
     src/tests/eval/value_codec
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
+    src/tests/instruction/dense_xw_product_function
     src/tests/instruction/generic_concat
     src/tests/instruction/generic_create
     src/tests/instruction/generic_join
@@ -64,7 +65,6 @@ vespa_define_module(
     src/tests/tensor/dense_single_reduce_function
     src/tests/tensor/dense_tensor_create_function
     src/tests/tensor/dense_tensor_peek_function
-    src/tests/tensor/dense_xw_product_function
     src/tests/tensor/direct_dense_tensor_builder
     src/tests/tensor/direct_sparse_tensor_builder
     src/tests/tensor/index_lookup_table
