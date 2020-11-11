@@ -68,7 +68,7 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify_optimized(const vespalib::string &expr, size_t vec_size, size_t res_size, bool happy) {
-    EvalFixture slow_fixture(old_engine, expr, param_repo, false);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
@@ -79,9 +79,10 @@ void verify_optimized(const vespalib::string &expr, size_t vec_size, size_t res_
     EXPECT_EQUAL(info[0]->result_size(), res_size);
     EXPECT_EQUAL(info[0]->common_inner(), happy);
 
+    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
     EvalFixture old_fixture(old_engine, expr, param_repo, true);
     EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(old_fixture.result(), slow_fixture.result());
+    EXPECT_EQUAL(old_fixture.result(), old_slow_fixture.result());
     info = old_fixture.find_all<DenseXWProductFunction>();
     ASSERT_EQUAL(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
@@ -112,16 +113,17 @@ void verify_optimized_multi(const vespalib::string &a, const vespalib::string &b
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
-    EvalFixture slow_fixture(old_engine, expr, param_repo, false);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseXWProductFunction>();
     EXPECT_TRUE(info.empty());
 
+    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
     EvalFixture old_fixture(old_engine, expr, param_repo, true);
     EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(old_fixture.result(), slow_fixture.result());
+    EXPECT_EQUAL(old_fixture.result(), old_slow_fixture.result());
     info = old_fixture.find_all<DenseXWProductFunction>();
     EXPECT_TRUE(info.empty());
 }
