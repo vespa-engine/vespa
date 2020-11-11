@@ -50,9 +50,9 @@ public class ReindexingMaintainer extends AbstractComponent {
     private final Reindexer reindexer;
     private final ScheduledExecutorService executor;
 
+    // VespaZooKeeperServer dependency to ensure the ZK cluster is running.
     @Inject
-    public ReindexingMaintainer(@SuppressWarnings("unused") VespaZooKeeperServer ensureZkHasStarted,
-                                DocumentAccess access, ZookeepersConfig zookeepersConfig,
+    public ReindexingMaintainer(VespaZooKeeperServer zooKeeperServer, DocumentAccess access, ZookeepersConfig zookeepersConfig,
                                 ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig allClustersBucketSpacesConfig,
                                 ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
         this(Clock.systemUTC(), access, zookeepersConfig, clusterListConfig, allClustersBucketSpacesConfig, reindexingConfig, documentmanagerConfig);
