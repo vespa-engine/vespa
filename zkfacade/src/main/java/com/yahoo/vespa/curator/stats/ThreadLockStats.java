@@ -189,7 +189,7 @@ public class ThreadLockStats {
             if (threadAcquiringLockPath == threadHoldingLockPath) {
                 // reentry
                 return;
-            } else if (threadsAcquiring.contains(threadAcquiringLockPath)) {
+            } else if (threadsAcquiring.contains(threadHoldingLockPath)) {
                 // deadlock
                 getGlobalLockMetrics(pathToAcquire).incrementDeadlockCount();
                 logger.warning(errorMessage.toString());
@@ -201,7 +201,7 @@ public class ThreadLockStats {
                 return;
             }
 
-            threadsAcquiring.add(threadHoldingLockPath);
+            threadsAcquiring.add(threadAcquiringLockPath);
             lockPath = nextLockPath.get();
             threadAcquiringLockPath = threadHoldingLockPath;
         }
