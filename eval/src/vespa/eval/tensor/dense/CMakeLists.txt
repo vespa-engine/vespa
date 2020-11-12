@@ -2,7 +2,6 @@
 vespa_add_library(eval_tensor_dense OBJECT
     SOURCES
     dense_add_dimension_optimizer.cpp
-    dense_cell_range_function.cpp
     dense_dimension_combiner.cpp
     dense_fast_rename_optimizer.cpp
     dense_lambda_function.cpp

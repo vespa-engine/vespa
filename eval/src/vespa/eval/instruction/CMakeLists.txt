@@ -2,6 +2,7 @@
 
 vespa_add_library(eval_instruction OBJECT
     SOURCES
+    dense_cell_range_function.cpp
     dense_dot_product_function.cpp
     dense_lambda_peek_function.cpp
     dense_lambda_peek_optimizer.cpp
