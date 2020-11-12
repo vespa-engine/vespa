@@ -534,7 +534,6 @@ public class ApplicationHandlerTest {
         if (expectedBody != null) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             response.render(out);
-            System.err.println(out);
             assertJsonEquals(out.toString(), expectedBody);
         }
     }
