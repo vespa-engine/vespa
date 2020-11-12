@@ -64,6 +64,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
+    private double defaultFeedConcurrency;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
@@ -203,6 +204,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.flushOnShutdown = flushOnShutdown;
         this.combined = combined;
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
+        defaultFeedConcurrency = featureFlags.feedConcurrency();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -364,7 +366,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
-        builder.feeding.concurrency(0.50); // As if specified 1.0 in services.xml
+        builder.feeding.concurrency(defaultFeedConcurrency); // As if specified 1.0 in services.xml
         boolean hasAnyNonIndexedCluster = false;
         for (NewDocumentType type : TopologicalDocumentTypeSorter.sort(documentDefinitions.values())) {
             ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();

@@ -92,6 +92,7 @@ public class ModelContextImplTest {
         assertFalse(context.properties().useAsyncMessageHandlingOnSchedule());
         assertEquals(0, context.properties().contentNodeBucketDBStripeBits());
         assertEquals(0x400000, context.properties().mergeChunkSize());
+        assertEquals(0.5, context.properties().feedConcurrency(), 0.0);
     }
 
 }

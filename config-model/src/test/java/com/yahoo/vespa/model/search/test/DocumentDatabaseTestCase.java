@@ -2,6 +2,9 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -106,12 +109,16 @@ public class DocumentDatabaseTestCase {
     }
 
     private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning) {
+        return createModel(nameAndModes, xmlTuning, null);
+    }
+    private VespaModel createModel(List<DocType> nameAndModes, String xmlTuning, DeployState.Builder builder) {
         List<String> sds = new ArrayList<>(nameAndModes.size());
         for (DocType nameAndMode : nameAndModes) {
             sds.add(nameAndMode.getType());
         }
-        return new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServicesXml(nameAndModes, xmlTuning),
-                ApplicationPackageUtils.generateSchemas(sds)).create();
+        var creator = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServicesXml(nameAndModes, xmlTuning),
+                ApplicationPackageUtils.generateSchemas(sds));
+        return builder != null ? creator.create(builder) : creator.create();
     }
 
     @Test
@@ -119,6 +126,12 @@ public class DocumentDatabaseTestCase {
         verifyConcurrency("index", "", 0.50, 0.50);
         verifyConcurrency("streaming", "", 1.0, 0.0);
         verifyConcurrency("store-only", "", 1.0, 0.0);
+    }
+    @Test
+    public void requireThatFeatureFlagConcurrencyIsReflectedCorrectlyForDefault() {
+        verifyConcurrency("index", "", 0.30, 0.30, 0.3);
+        verifyConcurrency("streaming", "", 0.6, 0.0, 0.3);
+        verifyConcurrency("store-only", "", 0.8, 0.0, 0.4);
     }
     @Test
     public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
@@ -140,12 +153,22 @@ public class DocumentDatabaseTestCase {
         verifyConcurrency("streaming", feedTuning, 0.7, 0.0);
         verifyConcurrency("store-only", feedTuning, 0.7, 0.0);
     }
+    private void verifyConcurrency(String mode, String xmlTuning, double global, double local, double featureFlagConcurrency) {
+        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), featureFlagConcurrency);
+    }
     private void verifyConcurrency(String mode, String xmlTuning, double global, double local) {
-        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local));
+        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), null);
     }
     private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local) {
+        verifyConcurrency(nameAndModes, xmlTuning, global, local, null);
+    }
+    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local, Double featureFlagConcurrency) {
         assertEquals(nameAndModes.size(), local.size());
-        VespaModel model = createModel(nameAndModes, xmlTuning);
+        TestProperties properties = new TestProperties();
+        if (featureFlagConcurrency != null) {
+            properties.setFeedConcurrency(featureFlagConcurrency);
+        }
+        VespaModel model = createModel(nameAndModes, xmlTuning, new DeployState.Builder().properties(properties));
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         ProtonConfig proton = getProtonCfg(contentSearchCluster);
         assertEquals(global, proton.feeding().concurrency(), SMALL);
