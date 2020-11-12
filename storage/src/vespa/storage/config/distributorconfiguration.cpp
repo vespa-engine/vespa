@@ -2,7 +2,7 @@
 #include "distributorconfiguration.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/traversingvisitor.h>
-#include <vespa/storage/common/bucket_limits.h>
+#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 
@@ -126,7 +126,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _docCountSplitLimit = config.splitcount;
     _byteCountJoinLimit = config.joinsize;
     _docCountJoinLimit = config.joincount;
-    _minimalBucketSplit = std::max(config.minsplitcount, static_cast<int>(BucketLimits::MinUsedBits));
+    _minimalBucketSplit = std::max(config.minsplitcount, static_cast<int>(spi::BucketLimits::MinUsedBits));
     _maxNodesPerMerge = config.maximumNodesPerMerge;
     _max_consecutively_inhibited_maintenance_ticks = config.maxConsecutivelyInhibitedMaintenanceTicks;
 

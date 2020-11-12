@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace storage {
+namespace storage::spi {
 
 /**
  * Wrapper of constants that specify absolute lower and upper bounds for buckets
