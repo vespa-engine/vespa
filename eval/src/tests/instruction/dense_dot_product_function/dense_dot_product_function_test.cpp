@@ -3,7 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/dense/dense_dot_product_function.h>
+#include <vespa/eval/instruction/dense_dot_product_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>

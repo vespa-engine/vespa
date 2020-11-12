@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/dense/dense_simple_expand_function.h>
+#include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/gtest/gtest.h>

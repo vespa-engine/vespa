@@ -1,10 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_lambda_peek_optimizer.h"
-#include "dense_tensor_view.h"
-#include "dense_replace_type_function.h"
-#include "dense_cell_range_function.h"
 #include "dense_lambda_peek_function.h"
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
+#include <vespa/eval/tensor/dense/dense_replace_type_function.h>
+#include <vespa/eval/tensor/dense/dense_cell_range_function.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/node_tools.h>
 #include <vespa/eval/eval/basic_nodes.h>

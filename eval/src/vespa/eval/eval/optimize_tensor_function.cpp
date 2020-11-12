@@ -5,24 +5,24 @@
 #include "tensor_engine.h"
 #include "simple_value.h"
 
-#include <vespa/eval/tensor/dense/dense_dot_product_function.h>
+#include <vespa/eval/instruction/dense_dot_product_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
-#include <vespa/eval/tensor/dense/dense_matmul_function.h>
-#include <vespa/eval/tensor/dense/dense_multi_matmul_function.h>
+#include <vespa/eval/instruction/dense_matmul_function.h>
+#include <vespa/eval/instruction/dense_multi_matmul_function.h>
 #include <vespa/eval/tensor/dense/dense_fast_rename_optimizer.h>
 #include <vespa/eval/tensor/dense/dense_add_dimension_optimizer.h>
 #include <vespa/eval/tensor/dense/dense_single_reduce_function.h>
 #include <vespa/eval/tensor/dense/dense_remove_dimension_optimizer.h>
-#include <vespa/eval/tensor/dense/dense_lambda_peek_optimizer.h>
+#include <vespa/eval/instruction/dense_lambda_peek_optimizer.h>
 #include <vespa/eval/tensor/dense/dense_lambda_function.h>
-#include <vespa/eval/tensor/dense/dense_simple_expand_function.h>
+#include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/eval/tensor/dense/dense_simple_join_function.h>
 #include <vespa/eval/tensor/dense/dense_number_join_function.h>
 #include <vespa/eval/tensor/dense/dense_pow_as_map_optimizer.h>
 #include <vespa/eval/tensor/dense/dense_simple_map_function.h>
 #include <vespa/eval/tensor/dense/vector_from_doubles_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor_create_function.h>
-#include <vespa/eval/tensor/dense/dense_tensor_peek_function.h>
+#include <vespa/eval/instruction/dense_tensor_peek_function.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.eval.optimize_tensor_function");
