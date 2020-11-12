@@ -35,11 +35,11 @@ FastValueIndex::create_view(const std::vector<size_t> &dims) const
     if (map.num_dims() == 0) {
         return TrivialIndex::get().create_view(dims);
     } else if (dims.empty()) {
-        return std::make_unique<IterateView>(map);
+        return std::make_unique<FastIterateView>(map);
     } else if (dims.size() == map.num_dims()) {
-        return std::make_unique<LookupView>(map);
+        return std::make_unique<FastLookupView>(map);
     } else {
-        return std::make_unique<FilterView>(map, dims);
+        return std::make_unique<FastFilterView>(map, dims);
     }
 }
 

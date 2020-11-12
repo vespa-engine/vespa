@@ -16,12 +16,12 @@ namespace {
 //-----------------------------------------------------------------------------
 
 // look up a full address in the map directly
-struct LookupView : public Value::Index::View {
+struct FastLookupView : public Value::Index::View {
 
     const FastSparseMap &map;
     size_t               subspace;
 
-    LookupView(const FastSparseMap &map_in)
+    FastLookupView(const FastSparseMap &map_in)
         : map(map_in), subspace(FastSparseMap::npos()) {}
 
     void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
@@ -41,7 +41,7 @@ struct LookupView : public Value::Index::View {
 //-----------------------------------------------------------------------------
 
 // find matching mappings for a partial address with brute force filtering
-struct FilterView : public Value::Index::View {
+struct FastFilterView : public Value::Index::View {
 
     using Label = FastSparseMap::HashedLabel;
 
@@ -61,7 +61,7 @@ struct FilterView : public Value::Index::View {
         return true;
     }
 
-    FilterView(const FastSparseMap &map, const std::vector<size_t> &match_dims_in)
+    FastFilterView(const FastSparseMap &map, const std::vector<size_t> &match_dims_in)
         : num_mapped_dims(map.num_dims()), labels(map.labels()), match_dims(match_dims_in),
           extract_dims(), query(match_dims.size(), Label()), pos(labels.size())
     {
@@ -105,7 +105,7 @@ struct FilterView : public Value::Index::View {
 //-----------------------------------------------------------------------------
 
 // iterate all mappings
-struct IterateView : public Value::Index::View {
+struct FastIterateView : public Value::Index::View {
 
     using Labels = std::vector<FastSparseMap::HashedLabel>;
 
@@ -113,7 +113,7 @@ struct IterateView : public Value::Index::View {
     const Labels &labels;
     size_t        pos;
 
-    IterateView(const FastSparseMap &map)
+    FastIterateView(const FastSparseMap &map)
         : num_mapped_dims(map.num_dims()), labels(map.labels()), pos(labels.size()) {}
 
     void lookup(ConstArrayRef<const vespalib::stringref*>) override {

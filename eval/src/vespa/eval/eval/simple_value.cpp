@@ -28,7 +28,7 @@ struct CreateSimpleValueBuilderBase {
 //-----------------------------------------------------------------------------
 
 // look up a full address in the map directly
-struct LookupView : public Value::Index::View {
+struct SimpleLookupView : public Value::Index::View {
 
     using Labels = std::vector<vespalib::string>;
     using Map = std::map<Labels, size_t>;
@@ -37,7 +37,7 @@ struct LookupView : public Value::Index::View {
     Labels my_addr;
     Map::const_iterator pos;
 
-    LookupView(const Map &map_in, size_t num_dims)
+    SimpleLookupView(const Map &map_in, size_t num_dims)
         : map(map_in), my_addr(num_dims, ""), pos(map.end()) {}
 
     void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
@@ -61,7 +61,7 @@ struct LookupView : public Value::Index::View {
 //-----------------------------------------------------------------------------
 
 // find matching mappings for a partial address with brute force filtering
-struct FilterView : public Value::Index::View {
+struct SimpleFilterView : public Value::Index::View {
 
     using Labels = std::vector<vespalib::string>;
     using Map = std::map<Labels, size_t>;
@@ -81,7 +81,7 @@ struct FilterView : public Value::Index::View {
         return true;
     }
 
-    FilterView(const Map &map_in, const std::vector<size_t> &match_dims_in, size_t num_dims)
+    SimpleFilterView(const Map &map_in, const std::vector<size_t> &match_dims_in, size_t num_dims)
         : map(map_in), match_dims(match_dims_in), extract_dims(), query(match_dims.size(), ""), pos(map.end())
     {
         auto my_pos = match_dims.begin();
@@ -124,7 +124,7 @@ struct FilterView : public Value::Index::View {
 //-----------------------------------------------------------------------------
 
 // iterate all mappings
-struct IterateView : public Value::Index::View {
+struct SimpleIterateView : public Value::Index::View {
 
     using Labels = std::vector<vespalib::string>;
     using Map = std::map<Labels, size_t>;
@@ -132,7 +132,7 @@ struct IterateView : public Value::Index::View {
     const Map &map;
     Map::const_iterator pos;
 
-    IterateView(const Map &map_in)
+    SimpleIterateView(const Map &map_in)
         : map(map_in), pos(map.end()) {}
 
     void lookup(ConstArrayRef<const vespalib::stringref*>) override {
@@ -197,11 +197,11 @@ std::unique_ptr<Value::Index::View>
 SimpleValue::create_view(const std::vector<size_t> &dims) const
 {
     if (dims.empty()) {
-        return std::make_unique<IterateView>(_index);
+        return std::make_unique<SimpleIterateView>(_index);
     } else if (dims.size() == _num_mapped_dims) {
-        return std::make_unique<LookupView>(_index, _num_mapped_dims);
+        return std::make_unique<SimpleLookupView>(_index, _num_mapped_dims);
     } else {
-        return std::make_unique<FilterView>(_index, dims, _num_mapped_dims);
+        return std::make_unique<SimpleFilterView>(_index, dims, _num_mapped_dims);
     }
 }
 
