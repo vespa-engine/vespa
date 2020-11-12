@@ -264,6 +264,7 @@ public class InternalStepRunner implements StepRunner {
                                          ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.getErrorCode()) {
                 case CERTIFICATE_NOT_READY:
+                    logger.log("Waiting for provisioned web certificate — new application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
                         logger.log("Deployment failed to find provisioned endpoint certificate after " + timeouts.endpointCertificate());
                         return Optional.of(RunStatus.endpointCertificateTimeout);
@@ -295,6 +296,7 @@ public class InternalStepRunner implements StepRunner {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
+                    logger.log("Waiting for provisioned web certificate — new application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
                         logger.log("Deployment failed to find provisioned endpoint certificate after " + timeouts.endpointCertificate());
                         return Optional.of(RunStatus.endpointCertificateTimeout);
