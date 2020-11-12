@@ -104,17 +104,17 @@ TEST("require that sparse number join can be optimized") {
     TEST_DO(verify_optimized("a+sparse", Primary::RHS, false));
     TEST_DO(verify_optimized("sparse<a", Primary::LHS, false));
     TEST_DO(verify_optimized("a<sparse", Primary::RHS, false));
-    TEST_DO(verify_optimized("sparse_float+a", Primary::LHS, false));
-    TEST_DO(verify_optimized("a+sparse_float", Primary::RHS, false));
-    TEST_DO(verify_optimized("sparse_float<a", Primary::LHS, false));
-    TEST_DO(verify_optimized("a<sparse_float", Primary::RHS, false));
+    TEST_DO(verify_optimized("sparse_f+a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a+sparse_f", Primary::RHS, false));
+    TEST_DO(verify_optimized("sparse_f<a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a<sparse_f", Primary::RHS, false));
 }
 
 TEST("require that sparse number join can be inplace") {
-    TEST_DO(verify_optimized("sparse_mutable+a", Primary::LHS, true));
-    TEST_DO(verify_optimized("a+sparse_mutable", Primary::RHS, true));
-    TEST_DO(verify_optimized("sparse_mutable<a", Primary::LHS, true));
-    TEST_DO(verify_optimized("a<sparse_mutable", Primary::RHS, true));
+    TEST_DO(verify_optimized("@sparse+a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a+@sparse_f", Primary::RHS, true));
+    TEST_DO(verify_optimized("@sparse_f<a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a<@sparse", Primary::RHS, true));
 }
 
 TEST("require that mixed number join can be optimized") {
@@ -122,17 +122,17 @@ TEST("require that mixed number join can be optimized") {
     TEST_DO(verify_optimized("a+mixed", Primary::RHS, false));
     TEST_DO(verify_optimized("mixed<a", Primary::LHS, false));
     TEST_DO(verify_optimized("a<mixed", Primary::RHS, false));
-    TEST_DO(verify_optimized("mixed_float+a", Primary::LHS, false));
-    TEST_DO(verify_optimized("a+mixed_float", Primary::RHS, false));
-    TEST_DO(verify_optimized("mixed_float<a", Primary::LHS, false));
-    TEST_DO(verify_optimized("a<mixed_float", Primary::RHS, false));
+    TEST_DO(verify_optimized("mixed_f+a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a+mixed_f", Primary::RHS, false));
+    TEST_DO(verify_optimized("mixed_f<a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a<mixed_f", Primary::RHS, false));
 }
 
 TEST("require that mixed number join can be inplace") {
-    TEST_DO(verify_optimized("mixed_mutable+a", Primary::LHS, true));
-    TEST_DO(verify_optimized("a+mixed_mutable", Primary::RHS, true));
-    TEST_DO(verify_optimized("mixed_mutable<a", Primary::LHS, true));
-    TEST_DO(verify_optimized("a<mixed_mutable", Primary::RHS, true));
+    TEST_DO(verify_optimized("@mixed+a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a+@mixed_f", Primary::RHS, true));
+    TEST_DO(verify_optimized("@mixed_f<a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a<@mixed", Primary::RHS, true));
 }
 
 TEST("require that all appropriate cases are optimized, others not") {
