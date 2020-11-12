@@ -61,7 +61,7 @@ skip_thread bool default=false
 use_direct_storageapi_rpc bool default=false
 
 ## The number of network (FNET) threads used by the shared rpc resource.
-rpc.num_network_threads int default=2
+rpc.num_network_threads int default=1
 
 ## The number of (FNET) RPC targets to use per node in the cluster.
 ##
