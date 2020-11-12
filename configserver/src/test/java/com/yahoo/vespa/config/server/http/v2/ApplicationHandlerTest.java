@@ -63,7 +63,6 @@ import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCod
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -455,13 +454,11 @@ public class ApplicationHandlerTest {
         Tenant tenant = applicationRepository.getTenant(applicationId);
         long sessionId = tenant.getApplicationRepo().requireActiveSessionOf(applicationId);
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, fullAppIdInUrl);
-        assertNull(tenant.getSessionRepository().getLocalSession(sessionId));
     }
 
     private void deleteAndAssertOKResponse(Tenant tenant, ApplicationId applicationId) throws IOException {
         long sessionId = tenant.getApplicationRepo().requireActiveSessionOf(applicationId);
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, true);
-        assertNull(tenant.getSessionRepository().getLocalSession(sessionId));
     }
 
     private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.errorCodes errorCode, boolean fullAppIdInUrl) throws IOException {
