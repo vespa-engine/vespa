@@ -1054,6 +1054,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                         RegionName.from(configserverConfig.region()));
     }
 
+    public Clock clock() { return clock; }
+
     /** Emits as a metric the time in millis spent while holding this timer, with deployment ID as dimensions. */
     public ActionTimer timerFor(ApplicationId id, String metricName) {
         return new ActionTimer(metric, clock, id, configserverConfig.environment(), configserverConfig.region(), metricName);
