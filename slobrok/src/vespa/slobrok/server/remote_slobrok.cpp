@@ -116,7 +116,7 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
             FRT_Values &args = *req->GetParams();
             const char *myname     = args[0]._string._str;
             const char *myspec     = args[1]._string._str;
-            LOG(error, "addPeer(%s, %s) on remote slobrok %s at %s: %s",
+            LOG(info, "addPeer(%s, %s) on remote slobrok %s at %s: %s",
                 myname, myspec, getName().c_str(), getSpec().c_str(), req->GetErrorMessage());
             req->SubRef();
             _remAddPeerReq = nullptr;
