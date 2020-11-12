@@ -49,9 +49,6 @@ public class SessionStateWatcher {
             case NEW:
             case NONE:
                 break;
-            case DELETE:
-                sessionRepository.deactivateAndUpdateCache(session);
-                break;
             case PREPARE:
                 createLocalSession(sessionId);
                 sessionRepository.prepareRemoteSession(session);

@@ -299,8 +299,6 @@ public class SessionRepository {
      * @param sessionId session id for the new session
      */
     public synchronized void sessionAdded(long sessionId) {
-        if (hasStatusDeleted(sessionId)) return;
-
         log.log(Level.FINE, () -> "Adding remote session " + sessionId);
         Session session = createRemoteSession(sessionId);
         if (session.getStatus() == Session.Status.NEW) {
@@ -308,12 +306,6 @@ public class SessionRepository {
             confirmUpload(session);
         }
         createLocalSessionFromDistributedApplicationPackage(sessionId);
-    }
-
-    private boolean hasStatusDeleted(long sessionId) {
-        SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
-        return session.getStatus() == Session.Status.DELETE;
     }
 
     void activate(RemoteSession session) {
@@ -332,7 +324,6 @@ public class SessionRepository {
         long sessionId = remoteSession.getSessionId();
         // TODO: Change log level to FINE when debugging is finished
         log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
-        createSetStatusTransaction(remoteSession, Session.Status.DELETE).commit();
         deleteRemoteSessionFromZooKeeper(remoteSession);
         remoteSessionCache.remove(sessionId);
         LocalSession localSession = getLocalSession(sessionId);
@@ -733,7 +724,7 @@ public class SessionRepository {
         return transaction;
     }
 
-    public Transaction createSetStatusTransaction(Session session, Session.Status status) {
+    private Transaction createSetStatusTransaction(Session session, Session.Status status) {
         return session.sessionZooKeeperClient.createWriteStatusTransaction(status);
     }
 

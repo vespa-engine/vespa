@@ -322,16 +322,16 @@ public class ApplicationRepositoryTest {
             File sessionFile = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
             assertTrue(sessionFile.exists());
 
-            // Delete app and verify that it has been deleted from repos and provisioner and no application set exists
+            // Delete app and verify that it has been deleted from repos and provisioner
             assertTrue(applicationRepository.delete(applicationId()));
             assertNull(applicationRepository.getActiveSession(applicationId()));
-            assertEquals(Optional.empty(), sessionRepository.getRemoteSession(sessionId).applicationSet());
+            assertNull(sessionRepository.getLocalSession(sessionId));
+            assertNull(sessionRepository.getLocalSession(sessionId));
             assertTrue(provisioner.removed());
             assertEquals(tenant.getName(), provisioner.lastApplicationId().tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId());
-            assertTrue(configCurator.exists(sessionNode));
-            assertEquals(Session.Status.DELETE.name(), configCurator.getData(sessionNode + "/sessionState"));
-            assertTrue(sessionFile.exists());
+            assertFalse(configCurator.exists(sessionNode));
+            assertFalse(sessionFile.exists());
 
             assertFalse(applicationRepository.delete(applicationId()));
         }

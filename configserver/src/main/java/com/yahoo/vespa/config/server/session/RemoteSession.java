@@ -42,7 +42,7 @@ public class RemoteSession extends Session {
     }
 
     @Override
-    public Optional<ApplicationSet> applicationSet() { return applicationSet; }
+    Optional<ApplicationSet> applicationSet() { return applicationSet; }
 
     public synchronized RemoteSession activated(ApplicationSet applicationSet) {
         Objects.requireNonNull(applicationSet, "applicationSet cannot be null");
