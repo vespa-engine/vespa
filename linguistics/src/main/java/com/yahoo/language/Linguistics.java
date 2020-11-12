@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language;
 
-import com.yahoo.collections.Tuple2;
-import com.yahoo.component.Version;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.CharacterClasses;
 import com.yahoo.language.process.GramSplitter;
@@ -11,7 +9,6 @@ import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.process.Stemmer;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.process.Transformer;
-import com.yahoo.language.simple.SimpleLinguistics;
 
 /**
  * <p>Factory of linguistic processors. For technical reasons this provides more flexibility to provide separate

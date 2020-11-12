@@ -1493,6 +1493,33 @@ public class ModelProvisioningTest {
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
     }
 
+    /** Deploying an application with "nodes count" standalone should give a single-node deployment */
+    @Test
+    public void testThatHostedSyntaxWorksOnStandalone() {
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <search/>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(false);
+        tester.addHosts(3);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+
+        assertEquals("Nodes in container cluster", 1, model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Nodes in content cluster (downscaled)", 1, model.getContentClusters().get("content").getRootGroup().getNodes().size());
+    }
+
     @Test
     public void testNoNodeTagMeansTwoNodes() {
         String services =
