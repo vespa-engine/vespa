@@ -38,11 +38,9 @@ import static org.junit.Assert.assertTrue;
 public class DeploymentIssueReporterTest {
 
     private final static ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .environment(Environment.prod)
             .region("us-west-1")
             .build();
     private final static ApplicationPackage canaryPackage = new ApplicationPackageBuilder()
-            .environment(Environment.prod)
             .region("us-west-1")
             .upgradePolicy("canary")
             .build();

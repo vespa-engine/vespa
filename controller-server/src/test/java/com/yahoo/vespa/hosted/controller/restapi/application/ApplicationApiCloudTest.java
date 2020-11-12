@@ -97,7 +97,6 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()
                 .instances("default")
-                .environment(Environment.prod)
                 .region("aws-us-east-1a");
     }
 

@@ -130,7 +130,6 @@ public class VersionStatusTest {
         DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
