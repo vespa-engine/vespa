@@ -393,57 +393,59 @@ FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket, api::LockingRe
 }
 
 namespace {
-    struct MultiLockGuard {
-        using monitor_guard = FileStorHandlerImpl::monitor_guard;
 
-        std::map<uint16_t, std::mutex*> monitors;
-        std::vector<std::shared_ptr<monitor_guard>> guards;
+struct MultiLockGuard {
+    using monitor_guard = FileStorHandlerImpl::monitor_guard;
 
-        MultiLockGuard() = default;
+    std::map<uint16_t, std::mutex*> monitors;
+    std::vector<std::shared_ptr<monitor_guard>> guards;
 
-        void addLock(std::mutex & lock, uint16_t stripe_index) {
-            monitors[stripe_index] = & lock;
+    MultiLockGuard() = default;
+
+    void addLock(std::mutex & lock, uint16_t stripe_index) {
+        monitors[stripe_index] = & lock;
+    }
+    void lock() {
+        for (auto & entry : monitors) {
+            guards.push_back(std::make_shared<monitor_guard>(*entry.second));
         }
-        void lock() {
-            for (auto & entry : monitors) {
-                guards.push_back(std::make_shared<monitor_guard>(*entry.second));
-            }
-        }
-    };
+    }
+};
+
+document::DocumentId
+getDocId(const api::StorageMessage& msg) {
+    switch (msg.getType().getId()) {
+        case api::MessageType::GET_ID:
+            return static_cast<const api::GetCommand&>(msg).getDocumentId();
+            break;
+        case api::MessageType::PUT_ID:
+            return static_cast<const api::PutCommand&>(msg).getDocumentId();
+            break;
+        case api::MessageType::UPDATE_ID:
+            return static_cast<const api::UpdateCommand&>(msg).getDocumentId();
+            break;
+        case api::MessageType::REMOVE_ID:
+            return static_cast<const api::RemoveCommand&>(msg).getDocumentId();
+            break;
+        default:
+            LOG_ABORT("should not be reached");
+    }
+}
+uint32_t
+findCommonBits(document::BucketId a, document::BucketId b) {
+    if (a.getUsedBits() > b.getUsedBits()) {
+        a.setUsedBits(b.getUsedBits());
+    } else {
+        b.setUsedBits(a.getUsedBits());
+    }
+    for (uint32_t i=a.getUsedBits() - 1; i>0; --i) {
+        if (a == b) return i + 1;
+        a.setUsedBits(i);
+        b.setUsedBits(i);
+    }
+    return (a == b ? 1 : 0);
 }
 
-namespace {
-    document::DocumentId getDocId(const api::StorageMessage& msg) {
-        switch (msg.getType().getId()) {
-            case api::MessageType::GET_ID:
-                return static_cast<const api::GetCommand&>(msg).getDocumentId();
-                break;
-            case api::MessageType::PUT_ID:
-                return static_cast<const api::PutCommand&>(msg).getDocumentId();
-                break;
-            case api::MessageType::UPDATE_ID:
-                return static_cast<const api::UpdateCommand&>(msg).getDocumentId();
-                break;
-            case api::MessageType::REMOVE_ID:
-                return static_cast<const api::RemoveCommand&>(msg).getDocumentId();
-                break;
-            default:
-                LOG_ABORT("should not be reached");
-        }
-    }
-    uint32_t findCommonBits(document::BucketId a, document::BucketId b) {
-        if (a.getUsedBits() > b.getUsedBits()) {
-            a.setUsedBits(b.getUsedBits());
-        } else {
-            b.setUsedBits(a.getUsedBits());
-        }
-        for (uint32_t i=a.getUsedBits() - 1; i>0; --i) {
-            if (a == b) return i + 1;
-            a.setUsedBits(i);
-            b.setUsedBits(i);
-        }
-        return (a == b ? 1 : 0);
-    }
 }
 
 int
@@ -993,8 +995,9 @@ FileStorHandlerImpl::Stripe::hasActive(monitor_guard &, const AbortBucketOperati
     return false;
 }
 
-void FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply>> & aborted,
-                                        const AbortBucketOperationsCommand& cmd)
+void
+FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply>> & aborted,
+                                   const AbortBucketOperationsCommand& cmd)
 {
     std::lock_guard lockGuard(*_lock);
     for (auto it(_queue->begin()); it != _queue->end();) {
@@ -1008,7 +1011,8 @@ void FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::Storage
     }
 }
 
-bool FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
+bool
+FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
 {
     {
         std::lock_guard guard(*_lock);
@@ -1045,7 +1049,8 @@ FileStorHandlerImpl::Stripe::flush()
 
 namespace {
 
-bool message_type_is_merge_related(api::MessageType::Id msg_type_id) {
+bool
+message_type_is_merge_related(api::MessageType::Id msg_type_id) {
     switch (msg_type_id) {
     case api::MessageType::MERGEBUCKET_ID:
     case api::MessageType::MERGEBUCKET_REPLY_ID:
@@ -1060,9 +1065,11 @@ bool message_type_is_merge_related(api::MessageType::Id msg_type_id) {
 
 }
 
-void FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
-                                          api::LockingRequirements reqOfReleasedLock,
-                                          api::StorageMessage::Id lockMsgId) {
+void
+FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
+                                     api::LockingRequirements reqOfReleasedLock,
+                                     api::StorageMessage::Id lockMsgId)
+{
     std::unique_lock guard(*_lock);
     auto iter = _lockedBuckets.find(bucket);
     assert(iter != _lockedBuckets.end());
@@ -1090,8 +1097,9 @@ void FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     _cond->notify_all();
 }
 
-void FileStorHandlerImpl::Stripe::lock(const monitor_guard &, const document::Bucket & bucket,
-                                       api::LockingRequirements lockReq, const LockEntry & lockEntry) {
+void
+FileStorHandlerImpl::Stripe::lock(const monitor_guard &, const document::Bucket & bucket,
+                                  api::LockingRequirements lockReq, const LockEntry & lockEntry) {
     auto& entry = _lockedBuckets[bucket];
     assert(!entry._exclusiveLock);
     if (lockReq == api::LockingRequirements::Exclusive) {
