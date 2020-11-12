@@ -419,13 +419,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes) { }
 
     @Override
-    public ApplicationReindexing getReindexing(DeploymentId deployment) {
-        return new ApplicationReindexing(true,
-                                         new Status(Instant.ofEpochMilli(123)),
-                                         Map.of("cluster",
-                                                new ApplicationReindexing.Cluster(new Status(Instant.ofEpochMilli(234)),
-                                                                                  Map.of("type", 100L),
-                                                                                  Map.of("type", new Status(Instant.ofEpochMilli(345))))));
+    public Optional<ApplicationReindexing> getReindexing(DeploymentId deployment) {
+        return Optional.of(new ApplicationReindexing(true,
+                                                     new Status(Instant.ofEpochMilli(123)),
+                                                     Map.of("cluster",
+                                                            new ApplicationReindexing.Cluster(new Status(Instant.ofEpochMilli(234)),
+                                                                                              Map.of("type", 100L),
+                                                                                              Map.of("type", new Status(Instant.ofEpochMilli(345)))))));
     }
 
     @Override

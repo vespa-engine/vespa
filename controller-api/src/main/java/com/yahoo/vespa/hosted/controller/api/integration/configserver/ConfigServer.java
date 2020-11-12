@@ -37,7 +37,7 @@ public interface ConfigServer {
 
     void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes);
 
-    ApplicationReindexing getReindexing(DeploymentId deployment);
+    Optional<ApplicationReindexing> getReindexing(DeploymentId deployment);
 
     void disableReindexing(DeploymentId deployment);
 

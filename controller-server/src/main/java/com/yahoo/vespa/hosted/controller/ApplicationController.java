@@ -186,7 +186,8 @@ public class ApplicationController {
 
     /** Returns the reindexing status for the given application in the given zone. */
     public ApplicationReindexing applicationReindexing(ApplicationId id, ZoneId zoneId) {
-        return configServer.getReindexing(new DeploymentId(id, zoneId));
+        return configServer.getReindexing(new DeploymentId(id, zoneId))
+                .orElseThrow(() -> new NotExistsException("Reindexing status not found for " + id + " in " + zoneId));
     }
 
     /** Enables reindexing for the given application in the given zone. */
