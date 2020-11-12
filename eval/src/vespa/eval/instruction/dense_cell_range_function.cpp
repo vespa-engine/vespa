@@ -4,23 +4,18 @@
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/value.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::Value;
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::TensorEngine;
-using eval::as;
-using namespace eval::tensor_function;
+using namespace tensor_function;
 
 namespace {
 
 template <typename CT>
-void my_cell_range_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_cell_range_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &self = unwrap_param<DenseCellRangeFunction>(param);
     auto old_cells = state.peek(0).cells().typify<CT>();
     ConstArrayRef<CT> new_cells(&old_cells[self.offset()], self.length());
-    state.pop_push(state.stash.create<DenseTensorView>(self.result_type(), TypedCells(new_cells)));
+    state.pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type(), TypedCells(new_cells)));
 }
 
 struct MyCellRangeOp {
@@ -30,10 +25,10 @@ struct MyCellRangeOp {
 
 } // namespace vespalib::tensor::<unnamed>
 
-DenseCellRangeFunction::DenseCellRangeFunction(const eval::ValueType &result_type,
-                                               const eval::TensorFunction &child,
+DenseCellRangeFunction::DenseCellRangeFunction(const ValueType &result_type,
+                                               const TensorFunction &child,
                                                size_t offset, size_t length)
-    : eval::tensor_function::Op1(result_type, child),
+    : tensor_function::Op1(result_type, child),
       _offset(offset),
       _length(length)
 {
@@ -41,14 +36,14 @@ DenseCellRangeFunction::DenseCellRangeFunction(const eval::ValueType &result_typ
 
 DenseCellRangeFunction::~DenseCellRangeFunction() = default;
 
-eval::InterpretedFunction::Instruction
-DenseCellRangeFunction::compile_self(eval::EngineOrFactory, Stash &) const
+InterpretedFunction::Instruction
+DenseCellRangeFunction::compile_self(EngineOrFactory, Stash &) const
 {
     assert(result_type().cell_type() == child().result_type().cell_type());
 
-    using MyTypify = eval::TypifyCellType;
+    using MyTypify = TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyCellRangeOp>(result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseCellRangeFunction>(*this));
+    return InterpretedFunction::Instruction(op, wrap_param<DenseCellRangeFunction>(*this));
 }
 
 } // namespace vespalib::tensor

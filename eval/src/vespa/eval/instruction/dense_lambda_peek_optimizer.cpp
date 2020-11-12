@@ -185,7 +185,7 @@ DenseLambdaPeekOptimizer::optimize(const TensorFunction &expr, Stash &stash)
                         if (cell_range.is_full(src_type.dense_subspace_size())) {
                             return tensor::DenseReplaceTypeFunction::create_compact(dst_type, get_param, stash);
                         } else {
-                            return stash.create<tensor::DenseCellRangeFunction>(dst_type, get_param,
+                            return stash.create<DenseCellRangeFunction>(dst_type, get_param,
                                     cell_range.offset, cell_range.length);
                         }
                     } else {
