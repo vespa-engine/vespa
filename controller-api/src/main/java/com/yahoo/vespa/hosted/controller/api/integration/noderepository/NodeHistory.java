@@ -41,6 +41,7 @@ public class NodeHistory {
         FailedExpirer,
         InactiveExpirer,
         NodeFailer,
+        NodeFailureStatusUpdater,
         ProvisionedExpirer,
         Rebalancer,
         ReservationExpirer,

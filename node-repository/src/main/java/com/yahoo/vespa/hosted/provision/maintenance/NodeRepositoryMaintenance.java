@@ -29,6 +29,7 @@ import java.util.Optional;
 public class NodeRepositoryMaintenance extends AbstractComponent {
 
     private final NodeFailer nodeFailer;
+    private final NodeFailureStatusUpdater nodeFailureStatusUpdater;
     private final PeriodicApplicationMaintainer periodicApplicationMaintainer;
     private final OperatorChangeApplicationMaintainer operatorChangeApplicationMaintainer;
     private final ReservationExpirer reservationExpirer;
@@ -68,8 +69,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      MetricsFetcher metricsFetcher, MetricsDb metricsDb) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, defaults.failGrace,
-                                    defaults.nodeFailerInterval, clock, orchestrator, defaults.throttlePolicy, metric);
+        nodeFailer = new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, clock, orchestrator, defaults.throttlePolicy, metric);
+        nodeFailureStatusUpdater = new NodeFailureStatusUpdater(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository,
                                                                           defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval, flagSource);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
@@ -101,6 +102,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     @Override
     public void deconstruct() {
         nodeFailer.close();
+        nodeFailureStatusUpdater.close();
         periodicApplicationMaintainer.close();
         operatorChangeApplicationMaintainer.close();
         reservationExpirer.close();
@@ -144,6 +146,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration spareCapacityMaintenanceInterval;
         private final Duration metricsInterval;
         private final Duration nodeFailerInterval;
+        private final Duration nodeFailureStatusUpdateInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
         private final Duration loadBalancerExpirerInterval;
@@ -166,6 +169,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             metricsInterval = Duration.ofMinutes(1);
             nodeFailerInterval = Duration.ofMinutes(15);
+            nodeFailureStatusUpdateInterval = Duration.ofMinutes(2);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             operatorChangeRedeployInterval = Duration.ofMinutes(3);
             // Vespa upgrade frequency is higher in CD so (de)activate OS upgrades more frequently as well

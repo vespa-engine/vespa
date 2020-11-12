@@ -187,7 +187,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
             metric.set("someServicesDown", (numberOfServicesDown > 0 ? 1 : 0), context);
 
-            boolean badNode = NodeFailer.badNode(services);
+            boolean badNode = NodeFailureStatusUpdater.badNode(services);
             metric.set("nodeFailerBadNode", (badNode ? 1 : 0), context);
 
             boolean nodeDownInNodeRepo = node.history().event(History.Event.Type.down).isPresent();

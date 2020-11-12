@@ -59,6 +59,7 @@ public class NodeFailTester {
     public final NodeRepository nodeRepository;
     public final ProvisioningTester tester;
     public NodeFailer failer;
+    public NodeFailureStatusUpdater updater;
     public ServiceMonitorStub serviceMonitor;
     public MockDeployer deployer;
     public TestMetric metric;
@@ -77,6 +78,14 @@ public class NodeFailTester {
         nodeRepository = tester.nodeRepository();
         provisioner = tester.provisioner();
         hostLivenessTracker = new TestHostLivenessTracker(clock);
+    }
+
+    private void initializeMaintainers(Map<ApplicationId, MockDeployer.ApplicationContext> apps) {
+        deployer = new MockDeployer(provisioner, tester.clock(), apps);
+        serviceMonitor = new ServiceMonitorStub(apps, nodeRepository);
+        metric = new TestMetric();
+        failer = createFailer();
+        updater = createUpdater();
     }
 
     public static NodeFailTester withTwoApplications() {
@@ -99,10 +108,7 @@ public class NodeFailTester {
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
                 app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
-        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
-        tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
-        tester.metric = new TestMetric();
-        tester.failer = tester.createFailer();
+        tester.initializeMaintainers(apps);
         return tester;
     }
 
@@ -135,10 +141,7 @@ public class NodeFailTester {
                 tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts),
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
                 app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
-        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
-        tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
-        tester.metric = new TestMetric();
-        tester.failer = tester.createFailer();
+        tester.initializeMaintainers(apps);
         return tester;
     }
 
@@ -148,10 +151,7 @@ public class NodeFailTester {
         // Create applications
         ClusterSpec clusterApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(app1, new MockDeployer.ApplicationContext(app1, clusterApp, capacity));
-        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
-        tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
-        tester.metric = new TestMetric();
-        tester.failer = tester.createFailer();
+        tester.initializeMaintainers(apps);
         return tester;
     }
 
@@ -167,20 +167,19 @@ public class NodeFailTester {
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allNodes));
-        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), apps);
-        tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
-        tester.metric = new TestMetric();
-        tester.failer = tester.createFailer();
+        tester.initializeMaintainers(apps);
         return tester;
     }
 
     public static NodeFailTester withNoApplications() {
         NodeFailTester tester = new NodeFailTester();
-        tester.deployer = new MockDeployer(tester.provisioner, tester.clock(), Map.of());
-        tester.serviceMonitor = new ServiceMonitorStub(Map.of(), tester.nodeRepository);
-        tester.metric = new TestMetric();
-        tester.failer = tester.createFailer();
+        tester.initializeMaintainers(Map.of());
         return tester;
+    }
+
+    public void runMaintainers() {
+        updater.maintain();
+        failer.maintain();
     }
 
     public void suspend(ApplicationId app) {
@@ -200,8 +199,12 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour,
+        return new NodeFailer(deployer, nodeRepository, downtimeLimitOneHour,
                               Duration.ofMinutes(5), clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric);
+    }
+
+    public NodeFailureStatusUpdater createUpdater() {
+        return new NodeFailureStatusUpdater(hostLivenessTracker, serviceMonitor, nodeRepository, Duration.ofMinutes(5), metric);
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
