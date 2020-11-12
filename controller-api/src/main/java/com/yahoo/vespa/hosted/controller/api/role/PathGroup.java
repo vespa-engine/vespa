@@ -158,8 +158,8 @@ enum PathGroup {
     reindexing(Matcher.tenant,
                Matcher.application,
                PathPrefix.api,
-               "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindex",
-               "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing"),
+               "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/reindex",
+               "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/reindexing"),
 
     /** Paths used for development deployments. */
     developmentDeployment(Matcher.tenant,
