@@ -153,7 +153,7 @@ const TensorFunction &create_multi_matmul(const TensorFunction &a, const TensorF
     }
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 DenseMultiMatMulFunction::DenseMultiMatMulFunction(const ValueType &result_type,
                                                    const TensorFunction &lhs_in,
@@ -212,4 +212,4 @@ DenseMultiMatMulFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

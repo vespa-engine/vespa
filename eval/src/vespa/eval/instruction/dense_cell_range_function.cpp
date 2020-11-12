@@ -23,7 +23,7 @@ struct MyCellRangeOp {
     static auto invoke() { return my_cell_range_op<CT>; }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 DenseCellRangeFunction::DenseCellRangeFunction(const ValueType &result_type,
                                                const TensorFunction &child,
@@ -46,4 +46,4 @@ DenseCellRangeFunction::compile_self(EngineOrFactory, Stash &) const
     return InterpretedFunction::Instruction(op, wrap_param<DenseCellRangeFunction>(*this));
 }
 
-} // namespace vespalib::tensor
+} // namespace

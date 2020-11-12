@@ -41,7 +41,7 @@ struct MyTensorPeekOp {
     static auto invoke() { return my_tensor_peek_op<CT>; }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 DenseTensorPeekFunction::DenseTensorPeekFunction(std::vector<Child> children,
                                                  std::vector<std::pair<int64_t,size_t>> spec)
@@ -98,4 +98,4 @@ DenseTensorPeekFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

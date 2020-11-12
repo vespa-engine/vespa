@@ -78,7 +78,7 @@ std::optional<Inner> detect_simple_expand(const TensorFunction &lhs, const Tenso
     }
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
 
@@ -123,4 +123,4 @@ DenseSimpleExpandFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

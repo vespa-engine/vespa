@@ -28,4 +28,4 @@ public:
     bool result_is_mutable() const override { return true; }
 };
 
-} // namespace vespalib::tensor
+} // namespace

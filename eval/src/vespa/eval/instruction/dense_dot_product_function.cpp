@@ -58,7 +58,7 @@ InterpretedFunction::op_function my_select(ValueType::CellType lct, ValueType::C
     return typify_invoke<2,MyTypify,MyDotProductOp>(lct, rct);
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 DenseDotProductFunction::DenseDotProductFunction(const TensorFunction &lhs_in,
                                                  const TensorFunction &rhs_in)
@@ -96,4 +96,4 @@ DenseDotProductFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

@@ -40,7 +40,7 @@ struct MyLambdaPeekOp {
     static auto invoke() { return my_lambda_peek_op<DST_CT, SRC_CT>; }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 DenseLambdaPeekFunction::DenseLambdaPeekFunction(const ValueType &result_type,
                                                  const TensorFunction &child,
@@ -67,4 +67,4 @@ DenseLambdaPeekFunction::idx_fun_dump() const {
     return _idx_fun->dump_as_lambda();
 }
 
-} // namespace vespalib::tensor
+} // namespace

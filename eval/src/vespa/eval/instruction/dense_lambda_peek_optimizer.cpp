@@ -163,7 +163,7 @@ struct PeekAnalyzer {
     }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 const TensorFunction &
 DenseLambdaPeekOptimizer::optimize(const TensorFunction &expr, Stash &stash)
@@ -199,4 +199,4 @@ DenseLambdaPeekOptimizer::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

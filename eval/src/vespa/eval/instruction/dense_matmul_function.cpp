@@ -125,7 +125,7 @@ struct MyGetFun {
     }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 DenseMatMulFunction::Self::Self(const ValueType &result_type_in,
                                 size_t lhs_size_in,
@@ -198,4 +198,4 @@ DenseMatMulFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

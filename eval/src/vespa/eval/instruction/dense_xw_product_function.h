@@ -49,5 +49,5 @@ public:
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
-} // namespace vespalib::tensor
+} // namespace
 
