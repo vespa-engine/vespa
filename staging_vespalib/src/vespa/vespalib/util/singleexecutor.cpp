@@ -5,11 +5,11 @@
 
 namespace vespalib {
 
-SingleExecutor::SingleExecutor(uint32_t taskLimit)
-    : SingleExecutor(taskLimit, taskLimit/10, 5ms)
+SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit)
+    : SingleExecutor(func, taskLimit, taskLimit/10, 5ms)
 { } 
 
-SingleExecutor::SingleExecutor(uint32_t taskLimit, uint32_t watermark, duration reactionTime)
+SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t watermark, duration reactionTime)
     : _taskLimit(vespalib::roundUp2inN(taskLimit)),
       _wantedTaskLimit(_taskLimit.load()),
       _rp(0),
@@ -27,6 +27,7 @@ SingleExecutor::SingleExecutor(uint32_t taskLimit, uint32_t watermark, duration 
       _reactionTime(reactionTime),
       _closed(false)
 {
+    (void) func; //TODO implement similar to ThreadStackExecutor
     assert(taskLimit >= watermark);
     _thread.start();
 }

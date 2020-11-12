@@ -121,12 +121,14 @@ private:
     Index &operator=(const Index &index);
 };
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(push_executor)
 
 Index::Index(const MySetup &setup)
     : schema(setup.schema),
       _executor(1, 128 * 1024),
-      _invertThreads(SequencedTaskExecutor::create(2)),
-      _pushThreads(SequencedTaskExecutor::create(2)),
+      _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
+      _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
       index(schema, setup, *_invertThreads, *_pushThreads),
       builder(schema),
       docid(1),

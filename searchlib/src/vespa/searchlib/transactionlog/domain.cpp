@@ -215,7 +215,7 @@ Domain::triggerSyncNow()
     std::unique_lock guard(_syncMonitor);
     if (!_pendingSync) {
         _pendingSync = true;
-        _executor.execute(makeLambdaTask([this, domainPart=_parts.rbegin()->second]() {
+        _executor.execute(makeLambdaTask([this, domainPart= getActivePart()]() {
             domainPart->sync();
             std::lock_guard monitorGuard(_syncMonitor);
             _pendingSync = false;
@@ -240,6 +240,12 @@ Domain::findPart(SerialNum s)
         return it->second;
     }
     return DomainPart::SP();
+}
+
+DomainPart::SP
+Domain::getActivePart() {
+    std::lock_guard guard(_lock);
+    return _parts.rbegin()->second;
 }
 
 uint64_t
@@ -307,7 +313,7 @@ waitPendingSync(std::mutex &syncMonitor, std::condition_variable & syncCond, boo
 
 DomainPart::SP
 Domain::optionallyRotateFile(SerialNum serialNum) {
-    DomainPart::SP dp(_parts.rbegin()->second);
+    DomainPart::SP dp = getActivePart();
     if (dp->byteSize() > _config.getPartSizeLimit()) {
         waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
         triggerSyncNow();
@@ -404,14 +410,14 @@ Domain::erase(SerialNum to)
 {
     bool retval(true);
     /// Do not erase the last element
+    UniqueLock guard(_lock);
     for (DomainPartList::iterator it(_parts.begin()); (_parts.size() > 1) && (it->second.get()->range().to() < to); it = _parts.begin()) {
         DomainPart::SP dp(it->second);
-        {
-            std::lock_guard guard(_lock);
-            _parts.erase(it);
-        }
+        _parts.erase(it);
+        guard.unlock();
         retval = retval && dp->erase(to);
         vespalib::File::sync(dir());
+        guard.lock();
     }
     if (_parts.begin()->second->range().to() >= to) {
         _parts.begin()->second->erase(to);

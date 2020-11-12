@@ -81,6 +81,10 @@ public:
             value = ((value & 0x0f0f0f0f) << 4) | ((value & 0xf0f0f0f0) >> 4);
             return __builtin_bswap32(value);
         }
+        // Return most significant 32 bits of gid key
+        static uint32_t gid_key32(const GlobalId &gid) {
+            return bitswap(gid._gid._nums[0]);
+        }
 
         //These 2 compare methods are exposed only for testing
         static int compareRaw(unsigned char a, unsigned char b) {

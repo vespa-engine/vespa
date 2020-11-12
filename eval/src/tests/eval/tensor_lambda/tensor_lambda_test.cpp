@@ -8,8 +8,8 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_replace_type_function.h>
-#include <vespa/eval/tensor/dense/dense_cell_range_function.h>
-#include <vespa/eval/tensor/dense/dense_lambda_peek_function.h>
+#include <vespa/eval/instruction/dense_cell_range_function.h>
+#include <vespa/eval/instruction/dense_lambda_peek_function.h>
 #include <vespa/eval/tensor/dense/dense_lambda_function.h>
 #include <vespa/eval/tensor/dense/dense_fast_rename_optimizer.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>

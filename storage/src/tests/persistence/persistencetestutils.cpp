@@ -88,9 +88,11 @@ PersistenceTestUtils::dumpBucket(const document::BucketId& bid) {
     return dynamic_cast<spi::dummy::DummyPersistence&>(_env->_node.getPersistenceProvider()).dumpBucket(makeSpiBucket(bid));
 }
 
+VESPA_THREAD_STACK_TAG(test_executor)
+
 void
 PersistenceTestUtils::setupExecutor(uint32_t numThreads) {
-    _sequenceTaskExecutor = vespalib::SequencedTaskExecutor::create(numThreads, 1000, vespalib::Executor::OptimizeFor::ADAPTIVE);
+    _sequenceTaskExecutor = vespalib::SequencedTaskExecutor::create(test_executor, numThreads, 1000, vespalib::Executor::OptimizeFor::ADAPTIVE);
 }
 
 document::Document::SP

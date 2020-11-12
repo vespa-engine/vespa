@@ -42,7 +42,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
         sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
         applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
-        reindexingMaintainer = new ReindexingMaintainer(applicationRepository, curator, flagSource, Duration.ofMinutes(30), convergence, Clock.systemUTC());
+        reindexingMaintainer = new ReindexingMaintainer(applicationRepository, curator, flagSource, Duration.ofMinutes(3), convergence, Clock.systemUTC());
     }
 
     @Override

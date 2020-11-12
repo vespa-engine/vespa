@@ -25,7 +25,7 @@ import java.util.Optional;
 /**
  * The API controllers use when communicating with config servers.
  *
- * @author Oyvind Grønnesby
+ * @author Øyvind Grønnesby
  */
 public interface ConfigServer {
 
@@ -34,6 +34,14 @@ public interface ConfigServer {
     }
 
     PreparedApplication deploy(DeploymentData deployment);
+
+    void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes);
+
+    ApplicationReindexing getReindexing(DeploymentId deployment);
+
+    void disableReindexing(DeploymentId deployment);
+
+    void enableReindexing(DeploymentId deployment);
 
     void restart(DeploymentId deployment, RestartFilter restartFilter);
 

@@ -143,14 +143,16 @@ void Test::testSearch(Searchable &source,
     EXPECT_TRUE(search_iterator->isAtEnd());
 }
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(write_executor)
 // Creates a memory index, inserts documents, performs a few
 // searches, dumps the index to disk, and performs the searches
 // again.
 void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     Schema schema = getSchema();
     vespalib::ThreadStackExecutor sharedExecutor(2, 0x10000);
-    auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(2);
-    auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(2);
+    auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(invert_executor, 2);
+    auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(write_executor, 2);
     MemoryIndex memory_index(schema, MockFieldLengthInspector(), *indexFieldInverter, *indexFieldWriter);
     DocBuilder doc_builder(schema);
 

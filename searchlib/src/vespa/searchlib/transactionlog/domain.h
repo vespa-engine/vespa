@@ -58,6 +58,7 @@ public:
     Domain & setConfig(const DomainConfig & cfg);
 private:
     using UniqueLock = std::unique_lock<std::mutex>;
+    DomainPartSP getActivePart();
     void verifyLock(const UniqueLock & guard) const;
     void commitIfFull(const UniqueLock & guard);
     void commitAndTransferResponses(const UniqueLock & guard);

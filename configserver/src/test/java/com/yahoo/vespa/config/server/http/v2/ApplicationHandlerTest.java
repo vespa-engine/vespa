@@ -13,11 +13,16 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.test.ManualClock;
+import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
+import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
@@ -39,19 +44,25 @@ import org.junit.rules.TemporaryFolder;
 
 import javax.ws.rs.client.Client;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
+import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
+import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
+import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
+import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeAndMessage;
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -76,12 +87,14 @@ public class ApplicationHandlerTest {
     private ApplicationRepository applicationRepository;
     private MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
+    private ManualClock clock;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void setup() throws IOException {
+        clock = new ManualClock();
         List<ModelFactory> modelFactories = List.of(DeployTester.createModelFactory(vespaVersion));
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
@@ -92,6 +105,7 @@ public class ApplicationHandlerTest {
                 .provisioner(provisioner)
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .configServerConfig(configserverConfig)
+                .clock(clock)
                 .build();
         tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenantName);
@@ -186,11 +200,115 @@ public class ApplicationHandlerTest {
         applicationRepository.deploy(testApp, prepareParams).sessionId();
 
         var url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/quota";
-        var response = createApplicationHandler().handle(HttpRequest.createTestRequest(url, GET));
+        var response = createApplicationHandler().handle(createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
         var renderedString = SessionHandlerTest.getRenderedString(response);
 
         assertEquals("{\"rate\":0.0}", renderedString);
+    }
+
+    @Test
+    public void testReindex() throws Exception {
+        ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        ApplicationReindexing expected = ApplicationReindexing.ready(clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "");
+        expected = expected.withReady(clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        expected = expected.withReady(clock.instant());
+        reindex(applicationId, "?cluster=");
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        expected = expected.withReady(clock.instant());
+        reindex(applicationId, "?type=moo");
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "?cluster=foo,boo");
+        expected = expected.withReady("foo", clock.instant())
+                           .withReady("boo", clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "?cluster=foo,boo&type=bar,baz");
+        expected = expected.withReady("foo", "bar", clock.instant())
+                           .withReady("foo", "baz", clock.instant())
+                           .withReady("boo", "bar", clock.instant())
+                           .withReady("boo", "baz", clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        reindexing(applicationId, DELETE);
+        expected = expected.enabled(false);
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        reindexing(applicationId, POST);
+        expected = expected.enabled(true);
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        database.writeReindexingStatus(applicationId, expected.withPending("boo", "bar", 123L));
+
+        long now = clock.instant().toEpochMilli();
+        reindexing(applicationId, GET, "{" +
+                                       "  \"enabled\": true," +
+                                       "  \"status\": {" +
+                                       "    \"readyMillis\": " + (now - 2000) +
+                                       "  }," +
+                                       "  \"clusters\": [" +
+                                       "    {" +
+                                       "      \"name\": \"boo\"," +
+                                       "      \"status\": {" +
+                                       "        \"readyMillis\": " + (now - 1000) +
+                                       "      }," +
+                                       "      \"pending\": [" +
+                                       "        {" +
+                                       "          \"type\": \"bar\"," +
+                                       "          \"requiredGeneration\": 123" +
+                                       "        }" +
+                                       "      ]," +
+                                       "      \"ready\": [" +
+                                       "        {" +
+                                       "          \"type\": \"bar\"," +
+                                       "          \"readyMillis\": " + now +
+                                       "        }," +
+                                       "        {" +
+                                       "          \"type\": \"baz\"," +
+                                       "          \"readyMillis\": " + now +
+                                       "        }" +
+                                       "      ]" +
+                                       "    }," +
+                                       "    {" +
+                                       "      \"name\": \"foo\", " +
+                                       "      \"status\": {" +
+                                       "        \"readyMillis\": " + (now - 1000) +
+                                       "      }," +
+                                       "      \"pending\": []," +
+                                       "      \"ready\": [" +
+                                       "        {" +
+                                       "          \"type\": \"bar\"," +
+                                       "          \"readyMillis\": " + now +
+                                       "        }," +
+                                       "        {" +
+                                       "          \"type\": \"baz\"," +
+                                       "          \"readyMillis\": " + now +
+                                       "        }" +
+                                       "      ]" +
+                                       "    }" +
+                                       "  ]" +
+                                       "}");
     }
 
     @Test
@@ -233,13 +351,13 @@ public class ApplicationHandlerTest {
         when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
 
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, GET));
-        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>...</html>");
+        HttpResponse response = mockHandler.handle(createTestRequest(url, GET));
+        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>...</html>");
     }
 
     @Test
     public void testPutIsIllegal() throws IOException {
-        assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method.PUT);
+        assertNotAllowed(Method.PUT);
     }
 
     @Test
@@ -266,7 +384,7 @@ public class ApplicationHandlerTest {
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/logs?from=100&to=200";
         ApplicationHandler mockHandler = createApplicationHandler();
 
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, GET));
+        HttpResponse response = mockHandler.handle(createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
 
         assertEquals("log line", getRenderedString(response));
@@ -277,7 +395,7 @@ public class ApplicationHandlerTest {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/status";
         ApplicationHandler mockHandler = createApplicationHandler();
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, GET));
+        HttpResponse response = mockHandler.handle(createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
         assertEquals("OK", getRenderedString(response));
     }
@@ -288,7 +406,7 @@ public class ApplicationHandlerTest {
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/log?after=1234";
         ApplicationHandler mockHandler = createApplicationHandler();
 
-        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, GET));
+        HttpResponse response = mockHandler.handle(createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
         assertEquals("log", getRenderedString(response));
     }
@@ -300,7 +418,7 @@ public class ApplicationHandlerTest {
         ApplicationHandler mockHandler = createApplicationHandler();
 
         InputStream requestData =  new ByteArrayInputStream("foo".getBytes(StandardCharsets.UTF_8));
-        HttpRequest testRequest = HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.POST, requestData);
+        HttpRequest testRequest = createTestRequest(url, POST, requestData);
         HttpResponse response = mockHandler.handle(testRequest);
         assertEquals(200, response.getStatus());
     }
@@ -310,7 +428,7 @@ public class ApplicationHandlerTest {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/ready";
         ApplicationHandler mockHandler = createApplicationHandler();
-        HttpRequest testRequest = HttpRequest.createTestRequest(url, GET);
+        HttpRequest testRequest = createTestRequest(url, GET);
         HttpResponse response = mockHandler.handle(testRequest);
         assertEquals(200, response.getStatus());
     }
@@ -320,13 +438,13 @@ public class ApplicationHandlerTest {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/report";
         ApplicationHandler mockHandler = createApplicationHandler();
-        HttpRequest testRequest = HttpRequest.createTestRequest(url, GET);
+        HttpRequest testRequest = createTestRequest(url, GET);
         HttpResponse response = mockHandler.handle(testRequest);
         assertEquals(200, response.getStatus());
         assertEquals("report", getRenderedString(response));
     }
 
-    private void assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {
+    private void assertNotAllowed(Method method) throws IOException {
         String url = "http://myhost:14000/application/v2/tenant/" + mytenantName + "/application/default";
         deleteAndAssertResponse(url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
                                 method);
@@ -336,29 +454,27 @@ public class ApplicationHandlerTest {
         Tenant tenant = applicationRepository.getTenant(applicationId);
         long sessionId = tenant.getApplicationRepo().requireActiveSessionOf(applicationId);
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, fullAppIdInUrl);
-        assertNull(tenant.getSessionRepository().getLocalSession(sessionId));
     }
 
     private void deleteAndAssertOKResponse(Tenant tenant, ApplicationId applicationId) throws IOException {
         long sessionId = tenant.getApplicationRepo().requireActiveSessionOf(applicationId);
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, true);
-        assertNull(tenant.getSessionRepository().getLocalSession(sessionId));
     }
 
     private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.errorCodes errorCode, boolean fullAppIdInUrl) throws IOException {
         String expectedResponse = "{\"message\":\"Application '" + applicationId + "' deleted\"}";
-        deleteAndAssertResponse(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedStatus, errorCode, expectedResponse, com.yahoo.jdisc.http.HttpRequest.Method.DELETE);
+        deleteAndAssertResponse(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedStatus, errorCode, expectedResponse, Method.DELETE);
     }
 
     private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.errorCodes errorCode, String expectedResponse) throws IOException {
-        deleteAndAssertResponse(toUrlPath(applicationId, zone, true), expectedStatus, errorCode, expectedResponse, com.yahoo.jdisc.http.HttpRequest.Method.DELETE);
+        deleteAndAssertResponse(toUrlPath(applicationId, zone, true), expectedStatus, errorCode, expectedResponse, Method.DELETE);
     }
 
-    private void deleteAndAssertResponse(String url, int expectedStatus, HttpErrorResponse.errorCodes errorCode, String expectedResponse, com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {
+    private void deleteAndAssertResponse(String url, int expectedStatus, HttpErrorResponse.errorCodes errorCode, String expectedResponse, Method method) throws IOException {
         ApplicationHandler handler = createApplicationHandler();
-        HttpResponse response = handler.handle(HttpRequest.createTestRequest(url, method));
+        HttpResponse response = handler.handle(createTestRequest(url, method));
         if (expectedStatus == 200) {
-            HandlerTest.assertHttpStatusCodeAndMessage(response, 200, expectedResponse);
+            assertHttpStatusCodeAndMessage(response, 200, expectedResponse);
         } else {
             HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, expectedStatus, errorCode, expectedResponse);
         }
@@ -371,8 +487,8 @@ public class ApplicationHandlerTest {
 
     private void assertSuspended(boolean expectedValue, ApplicationId application, Zone zone) throws IOException {
         String restartUrl = toUrlPath(application, zone, true) + "/suspended";
-        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, GET));
-        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "{\"suspended\":" + expectedValue + "}");
+        HttpResponse response = createApplicationHandler().handle(createTestRequest(restartUrl, GET));
+        assertHttpStatusCodeAndMessage(response, 200, "{\"suspended\":" + expectedValue + "}");
     }
 
     private String toUrlPath(ApplicationId application, Zone zone, boolean fullAppIdInUrl) {
@@ -383,7 +499,7 @@ public class ApplicationHandlerTest {
     }
 
     private void assertApplicationResponse(String url, long expectedGeneration, Version expectedVersion) throws IOException {
-        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(url, GET));
+        HttpResponse response = createApplicationHandler().handle(createTestRequest(url, GET));
         assertEquals(200, response.getStatus());
         String renderedString = SessionHandlerTest.getRenderedString(response);
         assertEquals("{\"generation\":" + expectedGeneration +
@@ -408,21 +524,41 @@ public class ApplicationHandlerTest {
                                                    GET);
     }
 
+    private void reindexing(ApplicationId application, Method method, String expectedBody) throws IOException {
+        String reindexingUrl = toUrlPath(application, Zone.defaultZone(), true) + "/reindexing";
+        HttpResponse response = createApplicationHandler().handle(createTestRequest(reindexingUrl, method));
+        assertEquals(200, response.getStatus());
+        if (expectedBody != null) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            response.render(out);
+            assertJsonEquals(out.toString(), expectedBody);
+        }
+    }
+
+    private void reindexing(ApplicationId application, Method method) throws IOException {
+        reindexing(application, method, null);
+    }
+
+    private void reindex(ApplicationId application, String query) throws IOException {
+        String reindexUrl = toUrlPath(application, Zone.defaultZone(), true) + "/reindex" + query;
+        assertHttpStatusCodeAndMessage(createApplicationHandler().handle(createTestRequest(reindexUrl, POST)), 200, "");
+    }
+
     private void restart(ApplicationId application, Zone zone) throws IOException {
         String restartUrl = toUrlPath(application, zone, true) + "/restart";
-        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.POST));
-        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "");
+        HttpResponse response = createApplicationHandler().handle(createTestRequest(restartUrl, POST));
+        assertHttpStatusCodeAndMessage(response, 200, "");
     }
 
     private void converge(ApplicationId application, Zone zone) throws IOException {
         String convergeUrl = toUrlPath(application, zone, true) + "/serviceconverge";
-        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(convergeUrl, GET));
-        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "");
+        HttpResponse response = createApplicationHandler().handle(createTestRequest(convergeUrl, GET));
+        assertHttpStatusCodeAndMessage(response, 200, "");
     }
 
     private HttpResponse fileDistributionStatus(ApplicationId application, Zone zone) {
         String restartUrl = toUrlPath(application, zone, true) + "/filedistributionstatus";
-        return createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, GET));
+        return createApplicationHandler().handle(createTestRequest(restartUrl, GET));
     }
 
     private static class MockStateApiFactory implements ConfigConvergenceChecker.StateApiFactory {

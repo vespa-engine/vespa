@@ -42,6 +42,8 @@ uint32_t getNumDocs(const DocsumReply &reply) {
     }
 }
 
+VESPA_THREAD_STACK_TAG(summary_engine_executor)
+
 } // namespace anonymous
 
 namespace proton {
@@ -60,7 +62,7 @@ SummaryEngine::SummaryEngine(size_t numThreads)
     : _lock(),
       _closed(false),
       _handlers(),
-      _executor(numThreads, 128 * 1024),
+      _executor(numThreads, 128 * 1024, summary_engine_executor),
       _metrics(std::make_unique<DocsumMetrics>())
 { }
 

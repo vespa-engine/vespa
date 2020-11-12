@@ -16,16 +16,6 @@ namespace vespalib {
 
 namespace thread { struct ThreadInit; }
 
-// Convenience macro used to create a function that can be used as an
-// init function when creating an executor to inject a frame with the
-// given name into the stack of all worker threads.
-
-#define VESPA_THREAD_STACK_TAG(name)         \
-    int name(::vespalib::Runnable &worker) { \
-        worker.run();                        \
-        return 1;                            \
-    }
-
 /**
  * An executor service that executes tasks in multiple threads.
  **/
@@ -33,7 +23,6 @@ class ThreadStackExecutorBase : public SyncableThreadExecutor,
                                 public Runnable
 {
 public:
-    using init_fun_t = std::function<int(Runnable&)>;
     using unique_lock = std::unique_lock<std::mutex>;
 
 private:

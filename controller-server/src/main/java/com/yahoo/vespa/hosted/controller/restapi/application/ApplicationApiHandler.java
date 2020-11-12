@@ -49,6 +49,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
@@ -129,12 +130,15 @@ import java.util.Scanner;
 import java.util.StringJoiner;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
+import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * This implements the application/v4 API which is used to deploy and manage applications
@@ -234,6 +238,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/test-config")) return testConfig(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing")) return getReindexing(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspended")) return suspended(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
@@ -284,6 +289,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return pause(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindex")) return reindex(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing")) return enableReindexing(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
@@ -311,6 +318,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return resume(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing")) return disableReindexing(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
@@ -1529,6 +1537,83 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         });
 
         return new MessageResponse(response.toString());
+    }
+
+    /** Schedule reindexing of an application, or a subset of clusters, possibly on a subset of documents. */
+    private HttpResponse reindex(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        List<String> clusterNames = Optional.ofNullable(request.getProperty("cluster")).stream()
+                                            .flatMap(clusters -> Stream.of(clusters.split(",")))
+                                            .filter(cluster -> ! cluster.isBlank())
+                                            .collect(toUnmodifiableList());
+        List<String> documentTypes = Optional.ofNullable(request.getProperty("type")).stream()
+                                             .flatMap(types -> Stream.of(types.split(",")))
+                                             .filter(type -> ! type.isBlank())
+                                             .collect(toUnmodifiableList());
+
+        controller.applications().reindex(id, zone, clusterNames, documentTypes);
+        return new MessageResponse("Requested reindexing of " + id + " in " + zone +
+                                   (clusterNames.isEmpty() ? "" : ", on clusters " + String.join(", ", clusterNames) +
+                                                                  (documentTypes.isEmpty() ? "" : ", for types " + String.join(", ", documentTypes))));
+    }
+
+    /** Gets reindexing status of an application in a zone. */
+    private HttpResponse getReindexing(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        ApplicationReindexing reindexing = controller.applications().applicationReindexing(id, zone);
+
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+
+        root.setBool("enabled", reindexing.enabled());
+        setStatus(root.setObject("status"), reindexing.common());
+
+        Cursor clustersArray = root.setArray("clusters");
+        reindexing.clusters().entrySet().stream().sorted(comparingByKey())
+                  .forEach(cluster -> {
+                      Cursor clusterObject = clustersArray.addObject();
+                      clusterObject.setString("name", cluster.getKey());
+                      setStatus(clusterObject.setObject("status"), cluster.getValue().common());
+
+                      Cursor pendingArray = clusterObject.setArray("pending");
+                      cluster.getValue().pending().entrySet().stream().sorted(comparingByKey())
+                             .forEach(pending -> {
+                                 Cursor pendingObject = pendingArray.addObject();
+                                 pendingObject.setString("type", pending.getKey());
+                                 pendingObject.setLong("requiredGeneration", pending.getValue());
+                             });
+
+                      Cursor readyArray = clusterObject.setArray("ready");
+                      cluster.getValue().ready().entrySet().stream().sorted(comparingByKey())
+                             .forEach(ready -> {
+                                 Cursor readyObject = readyArray.addObject();
+                                 readyObject.setString("type", ready.getKey());
+                                 setStatus(readyObject, ready.getValue());
+                             });
+                  });
+        return new SlimeJsonResponse(slime);
+    }
+
+    void setStatus(Cursor statusObject, ApplicationReindexing.Status status) {
+        statusObject.setLong("readyAtMillis", status.readyAt().toEpochMilli());
+    }
+
+    /** Enables reindexing of an application in a zone. */
+    private HttpResponse enableReindexing(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        controller.applications().enableReindexing(id, zone);
+        return new MessageResponse("Enabled reindexing of " + id + " in " + zone);
+    }
+
+    /** Disables reindexing of an application in a zone. */
+    private HttpResponse disableReindexing(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        controller.applications().disableReindexing(id, zone);
+        return new MessageResponse("Disabled reindexing of " + id + " in " + zone);
     }
 
     /** Schedule restart of deployment, or specific host in a deployment */

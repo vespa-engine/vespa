@@ -34,6 +34,7 @@ public:
     }
 };
 
+VESPA_THREAD_STACK_TAG(match_engine_executor)
 
 } // namespace anon
 
@@ -46,7 +47,7 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _distributionKey(distributionKey),
       _closed(false),
       _handlers(),
-      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256 * 1024),
+      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256 * 1024, match_engine_executor),
       _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
       _nodeUp(false)
 {

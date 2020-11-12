@@ -484,14 +484,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
-            // Deleting an application is done by deleting the remote session, other config
-            // servers will pick this up and clean up through the watcher in this class
-            try {
-                Session session = getRemoteSession(tenant, activeSession.get());
-                tenant.getSessionRepository().delete(session);
-            } catch (NotFoundException e) {
-                log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
-            }
+            Session session = getRemoteSession(tenant, activeSession.get());
+            tenant.getSessionRepository().createSetStatusTransaction(session, Session.Status.DELETE).commit();
 
             Curator curator = tenantRepository.getCurator();
             transaction.add(new ContainerEndpointsCache(tenant.getPath(), curator).delete(applicationId)); // TODO: Not unit tested
@@ -1053,6 +1047,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                         Environment.from(configserverConfig.environment()),
                         RegionName.from(configserverConfig.region()));
     }
+
+    public Clock clock() { return clock; }
 
     /** Emits as a metric the time in millis spent while holding this timer, with deployment ID as dimensions. */
     public ActionTimer timerFor(ApplicationId id, String metricName) {

@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 
-import static com.yahoo.vespa.config.server.maintenance.ReindexingMaintainer.withReady;
+import static com.yahoo.vespa.config.server.maintenance.ReindexingMaintainer.withConvergenceOn;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -16,29 +16,35 @@ public class ReindexingMaintainerTest {
 
     @Test
     public void testReadyComputation() {
-        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.EPOCH)
+        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.ofEpochMilli(1 << 20))
                                                                 .withPending("one", "a", 10)
-                                                                .withReady("two", "b", Instant.ofEpochMilli(2))
                                                                 .withPending("two", "b", 20)
-                                                                .withReady("two", Instant.ofEpochMilli(2 << 10))
+                                                                .withReady("one", Instant.EPOCH)
                                                                 .withReady("one", "a", Instant.ofEpochMilli(1))
-                                                                .withReady("two", "c", Instant.ofEpochMilli(3))
-                                                                .withReady(Instant.ofEpochMilli(1 << 20));
+                                                                .withReady("two", Instant.ofEpochMilli(2 << 10))
+                                                                .withReady("two", "b", Instant.ofEpochMilli(2))
+                                                                .withReady("two", "c", Instant.ofEpochMilli(3));
 
+        // Nothing happens without convergence.
         assertEquals(reindexing,
-                     withReady(reindexing, () -> -1L, Instant.EPOCH));
+                     withConvergenceOn(reindexing, () -> -1L, Instant.EPOCH));
 
-        assertEquals(reindexing,
-                     withReady(reindexing, () -> 19L, Instant.EPOCH));
+        // Status for (one, a) changes, but not (two, b).
+
+        assertEquals(reindexing.withReady("one", "a", Instant.EPOCH).withoutPending("one", "a"),
+                     withConvergenceOn(reindexing, () -> 19L, Instant.EPOCH));
 
         Instant later = Instant.ofEpochMilli(2).plus(ReindexingMaintainer.reindexingInterval);
-        assertEquals(reindexing.withReady("one", later)         // Had EPOCH as previous, so is updated.
+        assertEquals(reindexing.withReady("one", later)         // Had EPOCH as previous, so is updated, overwriting status for "a".
                                .withReady("two", "b", later)    // Got config convergence, so is updated.
-                               .withReady("one", "a", later),   // Had EPOCH + 1 as previous, so is updated.
-                     withReady(reindexing, () -> 20L, later));
+                               .withoutPending("one", "a")
+                               .withoutPending("two", "b"),
+                     withConvergenceOn(reindexing, () -> 20L, later));
 
         // Verify generation supplier isn't called when no pending document types.
-        withReady(reindexing.withReady("two", "b", later), () -> { throw new AssertionError("not supposed to run"); }, later);
+        withConvergenceOn(reindexing.withoutPending("one", "a").withoutPending("two", "b"),
+                          () -> { throw new AssertionError("not supposed to run"); },
+                          later);
     }
 
 }

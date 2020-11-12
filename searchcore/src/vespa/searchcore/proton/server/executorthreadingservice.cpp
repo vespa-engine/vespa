@@ -19,13 +19,21 @@ namespace proton {
 namespace {
 
 std::unique_ptr<SyncableThreadExecutor>
-createExecutorWithOneThread(uint32_t stackSize, uint32_t taskLimit, OptimizeFor optimize) {
+createExecutorWithOneThread(uint32_t stackSize, uint32_t taskLimit, OptimizeFor optimize,
+                            vespalib::Runnable::init_fun_t init_function) {
     if (optimize == OptimizeFor::THROUGHPUT) {
-        return std::make_unique<SingleExecutor>(taskLimit);
+        return std::make_unique<SingleExecutor>(std::move(init_function), taskLimit);
     } else {
-        return std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit);
+        return std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, std::move(init_function));
     }
 }
+
+VESPA_THREAD_STACK_TAG(master_executor)
+VESPA_THREAD_STACK_TAG(index_executor)
+VESPA_THREAD_STACK_TAG(summary_executor)
+VESPA_THREAD_STACK_TAG(field_inverter_executor)
+VESPA_THREAD_STACK_TAG(field_writer_executor)
+VESPA_THREAD_STACK_TAG(attribute_executor)
 
 }
 
@@ -37,16 +45,16 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::SyncableThreadExecu
                                                    const ThreadingServiceConfig & cfg,  uint32_t stackSize)
 
     : _sharedExecutor(sharedExecutor),
-      _masterExecutor(1, stackSize),
-      _indexExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize())),
-      _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize())),
+      _masterExecutor(1, stackSize, master_executor),
+      _indexExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), index_executor)),
+      _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), summary_executor)),
       _masterService(_masterExecutor),
       _indexService(*_indexExecutor),
       _summaryService(*_summaryExecutor),
-      _indexFieldInverter(SequencedTaskExecutor::create(cfg.indexingThreads(), cfg.defaultTaskLimit())),
-      _indexFieldWriter(SequencedTaskExecutor::create(cfg.indexingThreads(), cfg.defaultTaskLimit())),
-      _attributeFieldWriter(SequencedTaskExecutor::create(cfg.indexingThreads(), cfg.defaultTaskLimit(), cfg.optimize(),
-                                                          cfg.kindOfwatermark(), cfg.reactionTime()))
+      _indexFieldInverter(SequencedTaskExecutor::create(field_inverter_executor, cfg.indexingThreads(), cfg.defaultTaskLimit())),
+      _indexFieldWriter(SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit())),
+      _attributeFieldWriter(SequencedTaskExecutor::create(attribute_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
+                                                          cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime()))
 {
 }
 

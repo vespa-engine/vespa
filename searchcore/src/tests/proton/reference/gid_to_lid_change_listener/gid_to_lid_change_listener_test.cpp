@@ -33,6 +33,7 @@ GlobalId toGid(vespalib::stringref docId) {
 vespalib::string doc1("id:test:music::1");
 vespalib::string doc2("id:test:music::2");
 vespalib::string doc3("id:test:music::3");
+VESPA_THREAD_STACK_TAG(test_executor)
 
 struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory
 {
@@ -55,7 +56,7 @@ struct Fixture
 
     Fixture()
         : _attr(std::make_shared<ReferenceAttribute>("test", Config(BasicType::REFERENCE))),
-          _writer(vespalib::SequencedTaskExecutor::create(1)),
+          _writer(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
           _refCount(),
           _listener()
     {
