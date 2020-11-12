@@ -34,7 +34,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -98,6 +97,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     private final List<String> userIncludeDirs = new ArrayList<>();
     private final ApplicationMetaData metaData;
     private final boolean includeSourceFiles;
+    private final TransformerFactory transformerFactory;
 
     /** Creates from a directory with source files included */
     public static FilesApplicationPackage fromFile(File appDir) {
@@ -160,6 +160,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         configDefsDir = new File(appDir, ApplicationPackage.CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
         this.metaData = metaData;
+        transformerFactory = TransformerFactory.newInstance();
     }
 
     @Override
@@ -591,12 +592,13 @@ public class FilesApplicationPackage implements ApplicationPackage {
                                                     inputXml,
                                                     metaData.getApplicationId().instance(),
                                                     zone.environment(),
-                                                    zone.region()).run();
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+                                                    zone.region())
+                    .run();
+
             try (FileOutputStream outputStream = new FileOutputStream(destination)) {
-                transformer.transform(new DOMSource(document), new StreamResult(outputStream));
+                transformerFactory.newTransformer().transform(new DOMSource(document), new StreamResult(outputStream));
             }
-        } catch (TransformerException |ParserConfigurationException | SAXException e) {
+        } catch (TransformerException | ParserConfigurationException | SAXException e) {
             // TODO: 2020-11-09, debugging what seems like missing or empty file while preprocessing. Remove afterwards
             if (inputXml.canRead()) {
                 log.log(Level.WARNING, "Error preprocessing " + inputXml.getAbsolutePath() + ", file content: " + IOUtils.readFile(inputXml));
