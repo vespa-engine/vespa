@@ -12,6 +12,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("sequencedtaskexecutor_test");
 
+VESPA_THREAD_STACK_TAG(sequenced_executor)
+
 namespace vespalib {
 
 
@@ -20,7 +22,7 @@ class Fixture
 public:
     std::unique_ptr<ISequencedTaskExecutor> _threads;
 
-    Fixture() : _threads(SequencedTaskExecutor::create(2)) { }
+    Fixture() : _threads(SequencedTaskExecutor::create(sequenced_executor, 2)) { }
 };
 
 
@@ -233,12 +235,12 @@ TEST_F("require that executeLambda works", Fixture)
 }
 
 TEST("require that you get correct number of executors") {
-    auto seven = SequencedTaskExecutor::create(7);
+    auto seven = SequencedTaskExecutor::create(sequenced_executor, 7);
     EXPECT_EQUAL(7u, seven->getNumExecutors());
 }
 
 TEST("require that you distribute well") {
-    auto seven = SequencedTaskExecutor::create(7);
+    auto seven = SequencedTaskExecutor::create(sequenced_executor, 7);
     const SequencedTaskExecutor & seq = dynamic_cast<const SequencedTaskExecutor &>(*seven);
     EXPECT_EQUAL(7u, seven->getNumExecutors());
     EXPECT_EQUAL(97u, seq.getComponentHashSize());
@@ -251,21 +253,21 @@ TEST("require that you distribute well") {
 }
 
 TEST("Test creation of different types") {
-    auto iseq = SequencedTaskExecutor::create(1);
+    auto iseq = SequencedTaskExecutor::create(sequenced_executor, 1);
 
     EXPECT_EQUAL(1u, iseq->getNumExecutors());
     auto * seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
     ASSERT_TRUE(seq != nullptr);
 
-    iseq = SequencedTaskExecutor::create(1, 1000, Executor::OptimizeFor::LATENCY);
+    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, Executor::OptimizeFor::LATENCY);
     seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
     ASSERT_TRUE(seq != nullptr);
 
-    iseq = SequencedTaskExecutor::create(1, 1000, Executor::OptimizeFor::THROUGHPUT);
+    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, Executor::OptimizeFor::THROUGHPUT);
     seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
     ASSERT_TRUE(seq != nullptr);
 
-    iseq = SequencedTaskExecutor::create(1, 1000, Executor::OptimizeFor::ADAPTIVE, 17);
+    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, Executor::OptimizeFor::ADAPTIVE, 17);
     auto aseq = dynamic_cast<AdaptiveSequencedExecutor *>(iseq.get());
     ASSERT_TRUE(aseq != nullptr);
 }

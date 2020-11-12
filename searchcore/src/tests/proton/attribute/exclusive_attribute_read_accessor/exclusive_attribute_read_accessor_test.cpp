@@ -13,6 +13,7 @@ using namespace search;
 using namespace vespalib;
 
 using ReadGuard = ExclusiveAttributeReadAccessor::Guard;
+VESPA_THREAD_STACK_TAG(test_executor)
 
 AttributeVector::SP
 createAttribute()
@@ -29,7 +30,7 @@ struct Fixture
 
     Fixture()
         : attribute(createAttribute()),
-          writer(SequencedTaskExecutor::create(1)),
+          writer(SequencedTaskExecutor::create(test_executor, 1)),
           accessor(attribute, *writer)
     {}
 };

@@ -18,8 +18,8 @@ namespace vespalib {
  */
 class SingleExecutor final : public vespalib::SyncableThreadExecutor, vespalib::Runnable {
 public:
-    explicit SingleExecutor(uint32_t taskLimit);
-    SingleExecutor(uint32_t taskLimit, uint32_t watermark, duration reactionTime);
+    explicit SingleExecutor(init_fun_t func, uint32_t taskLimit);
+    SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t watermark, duration reactionTime);
     ~SingleExecutor() override;
     Task::UP execute(Task::UP task) override;
     void setTaskLimit(uint32_t taskLimit) override;

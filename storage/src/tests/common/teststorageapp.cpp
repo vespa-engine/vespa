@@ -125,14 +125,16 @@ TestStorageApp::waitUntilInitialized(
 }
 
 namespace {
-    NodeIndex getIndexFromConfig(vespalib::stringref configId) {
-        if (!configId.empty()) {
-            config::ConfigUri uri(configId);
-            return NodeIndex(
-                config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext())->nodeIndex);
-        }
-        return NodeIndex(0);
+NodeIndex getIndexFromConfig(vespalib::stringref configId) {
+    if (!configId.empty()) {
+        config::ConfigUri uri(configId);
+        return NodeIndex(
+            config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext())->nodeIndex);
     }
+    return NodeIndex(0);
+}
+
+VESPA_THREAD_STACK_TAG(test_executor)
 }
 
 TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
@@ -140,7 +142,7 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
                      lib::NodeType::STORAGE, getIndexFromConfig(configId), configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
-      _executor(vespalib::SequencedTaskExecutor::create(1))
+      _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1))
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     _nodeStateUpdater.setReportedNodeState(ns);
@@ -152,7 +154,7 @@ TestServiceLayerApp::TestServiceLayerApp(NodeIndex index,
                      lib::NodeType::STORAGE, index, configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
-      _executor(vespalib::SequencedTaskExecutor::create(1))
+      _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1))
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     _nodeStateUpdater.setReportedNodeState(ns);

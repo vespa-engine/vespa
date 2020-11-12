@@ -374,12 +374,15 @@ TEST_F(IndexManagerTest, require_that_source_selector_is_flushed)
     ASSERT_TRUE(file.OpenReadOnlyExisting());
 }
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(push_executor)
+
 TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
 {
     Schema schema(getSchema());
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
-    auto invertThreads = SequencedTaskExecutor::create(2);
-    auto pushThreads = SequencedTaskExecutor::create(2);
+    auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
+    auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
     search::memoryindex::DocumentInverter inverter(schema, *invertThreads, *pushThreads, fic);
 
     uint64_t fixed_index_size = fic.getMemoryUsage().allocatedBytes();

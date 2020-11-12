@@ -9,6 +9,10 @@ using vespalib::makeLambdaTask;
 
 namespace proton::initializer {
 
+namespace {
+    VESPA_THREAD_STACK_TAG(task_runner)
+}
+
 TaskRunner::TaskRunner(vespalib::Executor &executor)
     : _executor(executor),
       _runningTasks(0u)
@@ -89,7 +93,7 @@ TaskRunner::internalRunTasks(const TaskList &taskList, Context::SP context)
 void
 TaskRunner::runTask(InitializerTask::SP task)
 {
-    vespalib::ThreadStackExecutor executor(1, 128 * 1024);
+    vespalib::ThreadStackExecutor executor(1, 128 * 1024, task_runner);
     std::promise<void> promise;
     auto future = promise.get_future();
     runTask(task, executor, makeLambdaTask([&]() { promise.set_value(); }));

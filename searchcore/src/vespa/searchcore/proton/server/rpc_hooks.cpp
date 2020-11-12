@@ -29,6 +29,8 @@ struct Pair {
 
 Pair::~Pair() = default;
 
+VESPA_THREAD_STACK_TAG(proton_rpc_executor)
+
 }
 
 namespace proton {
@@ -203,7 +205,7 @@ RPCHooksBase::RPCHooksBase(Params &params)
       _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config)),
       _stateLock(),
       _stateCond(),
-      _executor(48, 128 * 1024)
+      _executor(48, 128 * 1024, proton_rpc_executor)
 { }
 
 void

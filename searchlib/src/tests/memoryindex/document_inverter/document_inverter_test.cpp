@@ -116,6 +116,8 @@ public:
     }
 };
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(push_executor)
 
 struct DocumentInverterTest : public ::testing::Test {
     Schema _schema;
@@ -141,8 +143,8 @@ struct DocumentInverterTest : public ::testing::Test {
     DocumentInverterTest()
         : _schema(makeSchema()),
           _b(_schema),
-          _invertThreads(SequencedTaskExecutor::create(2)),
-          _pushThreads(SequencedTaskExecutor::create(2)),
+          _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
+          _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
           _word_store(),
           _remover(_word_store),
           _inserter(),

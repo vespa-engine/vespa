@@ -27,7 +27,8 @@ isLazy(const std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> & ex
 }
 
 std::unique_ptr<ISequencedTaskExecutor>
-SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor optimize, uint32_t kindOfWatermark, duration reactionTime)
+SequencedTaskExecutor::create(vespalib::Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit,
+                              OptimizeFor optimize, uint32_t kindOfWatermark, duration reactionTime)
 {
     if (optimize == OptimizeFor::ADAPTIVE) {
         size_t num_strands = std::min(taskLimit, threads*32);
@@ -38,9 +39,9 @@ SequencedTaskExecutor::create(uint32_t threads, uint32_t taskLimit, OptimizeFor 
         for (uint32_t id = 0; id < threads; ++id) {
             if (optimize == OptimizeFor::THROUGHPUT) {
                 uint32_t watermark = kindOfWatermark == 0 ? taskLimit / 10 : kindOfWatermark;
-                executors->push_back(std::make_unique<SingleExecutor>(taskLimit, watermark, reactionTime));
+                executors->push_back(std::make_unique<SingleExecutor>(func, taskLimit, watermark, reactionTime));
             } else {
-                executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit));
+                executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, func));
             }
         }
         return std::unique_ptr<ISequencedTaskExecutor>(new SequencedTaskExecutor(std::move(executors)));
