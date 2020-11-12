@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
@@ -16,7 +17,8 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-const TensorEngine &prod_engine = tensor::DefaultTensorEngine::ref();
+const TensorEngine &old_engine = tensor::DefaultTensorEngine::ref();
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 struct MyVecSeq : Sequence {
     double bias;
@@ -44,10 +46,16 @@ void check_gen_with_result(size_t l, size_t r, double wanted) {
     param_repo.add("a", makeTensor(l, leftBias));
     param_repo.add("b", makeTensor(r, rightBias));
     vespalib::string expr = "reduce(a*b,sum,x)";
-    EvalFixture evaluator(prod_engine, expr, param_repo, true);
+    EvalFixture evaluator(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(spec(wanted), evaluator.result());
     EXPECT_EQUAL(evaluator.result(), EvalFixture::ref(expr, param_repo));
     auto info = evaluator.find_all<DenseDotProductFunction>();
+    EXPECT_EQUAL(info.size(), 1u);
+
+    EvalFixture old_evaluator(old_engine, expr, param_repo, true);
+    EXPECT_EQUAL(spec(wanted), old_evaluator.result());
+    EXPECT_EQUAL(old_evaluator.result(), EvalFixture::ref(expr, param_repo));
+    info = old_evaluator.find_all<DenseDotProductFunction>();
     EXPECT_EQUAL(info.size(), 1u);
 };
 
@@ -107,17 +115,28 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void assertOptimized(const vespalib::string &expr) {
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<DenseDotProductFunction>();
+    ASSERT_EQUAL(info.size(), 1u);
+    EXPECT_TRUE(info[0]->result_is_mutable());
+
+    EvalFixture old_fixture(old_engine, expr, param_repo, true);
+    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
+    info = old_fixture.find_all<DenseDotProductFunction>();
     ASSERT_EQUAL(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
 }
 
 void assertNotOptimized(const vespalib::string &expr) {
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<DenseDotProductFunction>();
+    EXPECT_TRUE(info.empty());
+
+    EvalFixture old_fixture(old_engine, expr, param_repo, true);
+    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
+    info = old_fixture.find_all<DenseDotProductFunction>();
     EXPECT_TRUE(info.empty());
 }
 

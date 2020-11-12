@@ -1,5 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
@@ -14,7 +15,8 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 
-const TensorEngine &prod_engine = tensor::DefaultTensorEngine::ref();
+const TensorEngine &old_engine = tensor::DefaultTensorEngine::ref();
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
@@ -31,7 +33,7 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify(const vespalib::string &expr, double expect, size_t expect_optimized_cnt, size_t expect_not_optimized_cnt) {
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     auto expect_spec = TensorSpec("double").add({}, expect);
     EXPECT_EQUAL(EvalFixture::ref(expr, param_repo), expect_spec);
     EXPECT_EQUAL(fixture.result(), expect_spec);
@@ -41,6 +43,15 @@ void verify(const vespalib::string &expr, double expect, size_t expect_optimized
         EXPECT_TRUE(info[i]->result_is_mutable());
     }
     EXPECT_EQUAL(fixture.find_all<Peek>().size(), expect_not_optimized_cnt);
+
+    EvalFixture old_fixture(old_engine, expr, param_repo, true);
+    EXPECT_EQUAL(old_fixture.result(), expect_spec);
+    info = old_fixture.find_all<DenseTensorPeekFunction>();
+    EXPECT_EQUAL(info.size(), expect_optimized_cnt);
+    for (size_t i = 0; i < info.size(); ++i) {
+        EXPECT_TRUE(info[i]->result_is_mutable());
+    }
+    EXPECT_EQUAL(old_fixture.find_all<Peek>().size(), expect_not_optimized_cnt);
 }
 
 //-----------------------------------------------------------------------------
