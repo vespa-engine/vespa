@@ -107,7 +107,9 @@ void SharedRpcResources::wait_until_slobrok_is_ready() {
 
 void SharedRpcResources::shutdown() {
     assert(!_shutdown);
-    _slobrok_register->unregisterName(_handle);
+    if (listen_port() > 0) {
+        _slobrok_register->unregisterName(_handle);
+    }
     _transport->ShutDown(true);
     _shutdown = true;
 }
