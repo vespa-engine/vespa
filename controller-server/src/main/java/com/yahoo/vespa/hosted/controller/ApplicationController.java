@@ -35,6 +35,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.ApplicationRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -170,6 +171,32 @@ public class ApplicationController {
     // TODO jonmv: remove or inline
     public Optional<Instance> getInstance(ApplicationId id) {
         return getApplication(TenantAndApplicationId.from(id)).flatMap(application -> application.get(id.instance()));
+    }
+
+    /**
+     * Triggers reindexing for the given document types in the given clusters, for the given application.
+     *
+     * If no clusters are given, reindexing is triggered for the entire application; otherwise
+     * if no documents types are given, reindexing is triggered for all given clusters; otherwise
+     * reindexing is triggered for the cartesian product of the given clusters and document types.
+     */
+    public void reindex(ApplicationId id, ZoneId zoneId, List<String> clusterNames, List<String> documentTypes) {
+        configServer.reindex(new DeploymentId(id, zoneId), clusterNames, documentTypes);
+    }
+
+    /** Returns the reindexing status for the given application in the given zone. */
+    public ApplicationReindexing applicationReindexing(ApplicationId id, ZoneId zoneId) {
+        return configServer.getReindexing(new DeploymentId(id, zoneId));
+    }
+
+    /** Enables reindexing for the given application in the given zone. */
+    public void enableReindexing(ApplicationId id, ZoneId zoneId) {
+        configServer.enableReindexing(new DeploymentId(id, zoneId));
+    }
+
+    /** Disables reindexing for the given application in the given zone. */
+    public void disableReindexing(ApplicationId id, ZoneId zoneId) {
+        configServer.disableReindexing(new DeploymentId(id, zoneId));
     }
 
     /**
