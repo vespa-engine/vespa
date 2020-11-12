@@ -262,7 +262,7 @@ public class RoutingApiTest extends ControllerContainerTest {
 
     // TODO(mpolden): Remove this once a zone supports either of routing policy and rotation
     @Test
-    public void mixed_routing() {
+    public void mixed_routing_single_zone() {
         var westZone = ZoneId.from("prod", "us-west-1");
         var eastZone = ZoneId.from("prod", "us-east-3");
 
@@ -300,6 +300,41 @@ public class RoutingApiTest extends ControllerContainerTest {
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("multi-status-in.json"));
+    }
+
+    @Test
+    public void mixed_routing_multiple_zones() {
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+
+        // One shared and one exclusive zone
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(westZone),
+                                                                            RoutingMethod.shared);
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(eastZone),
+                                                                            RoutingMethod.exclusive);
+
+        // Deploy application
+        var context = deploymentTester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(westZone.region())
+                .region(eastZone.region())
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                .endpoint("endpoint1", "default", westZone.region().value())
+                .endpoint("endpoint2", "default", eastZone.region().value())
+                .build();
+        context.submit(applicationPackage).deploy();
+
+        // GET status for zone using shared routing
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
+                                              "", Request.Method.GET),
+                              new File("rotation/deployment-status-initial.json"));
+
+        // GET status for zone using exclusive routing
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-east-3",
+                                              "", Request.Method.GET),
+                              "{\"deployments\":[{\"routingMethod\":\"exclusive\",\"instance\":\"tenant:application:default\"," +
+                              "\"environment\":\"prod\",\"region\":\"us-east-3\",\"status\":\"in\",\"agent\":\"system\",\"changedAt\":0}]}");
     }
 
     @Test

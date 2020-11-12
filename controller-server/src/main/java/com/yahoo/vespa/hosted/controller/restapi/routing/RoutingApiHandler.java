@@ -18,7 +18,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -205,8 +204,8 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var status = in ? GlobalRouting.Status.in : GlobalRouting.Status.out;
         var agent = GlobalRouting.Agent.operator; // Always operator as this is an operator API
 
-        // Set rotation status, if any assigned
-        if (rotationCanRouteTo(deployment.zoneId(), instance)) {
+        // Set rotation status, if rotations can route to this zone
+        if (rotationCanRouteTo(deployment.zoneId())) {
             var endpointStatus = new EndpointStatus(in ? EndpointStatus.Status.in : EndpointStatus.Status.out, "",
                                                     agent.name(),
                                                     controller.clock().instant().getEpochSecond());
@@ -241,7 +240,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                 for (var zone : zones) {
                     var deploymentId = new DeploymentId(instance.id(), zone);
                     // Include status from rotation
-                    if (rotationCanRouteTo(zone, instance)) {
+                    if (rotationCanRouteTo(zone)) {
                         var rotationStatus = controller.routing().globalRotationStatus(deploymentId);
                         // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
                         var endpointStatus = rotationStatus.values().stream().findFirst();
@@ -277,11 +276,12 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     }
 
-    /** Returns whether instance has an assigned rotation that can route to given zone */
-    private boolean rotationCanRouteTo(ZoneId zone, Instance instance) {
-        return !instance.rotations().isEmpty() &&
-               instance.deployments().containsKey(zone) &&
-               controller.zoneRegistry().routingMethods(zone).get(0).isShared();
+    /** Returns whether a rotation can route traffic to given zone */
+    private boolean rotationCanRouteTo(ZoneId zone) {
+        // A system may support multiple routing methods, i.e. it has both exclusively routed zones and zones using
+        // shared routing. When changing or reading routing status in the context of a specific deployment, rotation
+        // status should only be considered if the zone supports shared routing.
+        return controller.zoneRegistry().routingMethods(zone).stream().anyMatch(RoutingMethod::isShared);
     }
 
     private static void zoneStatusToSlime(Cursor object, ZoneId zone, GlobalRouting globalRouting, RoutingMethod method) {
