@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
@@ -30,6 +30,8 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
+
+import java.util.Objects;
 import java.util.logging.Level;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -88,7 +90,7 @@ import static com.yahoo.text.StringUtilities.quote;
  * <p>
  * The vespa model starts in an unfrozen state, where children can be added freely,
  * but no structure dependent information can be used.
- * When frozen, structure dependent information(such as config id and controller) are
+ * When frozen, structure dependent information (such as config id) are
  * made available, but no additional config producers can be added.
  *
  * @author gjoranv
@@ -346,7 +348,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     private static Builder newBuilder(Class<? extends ConfigInstance> configClass) throws ReflectiveOperationException {
-        Class builderClazz = configClass.getClassLoader().loadClass(configClass.getName() + "$Builder");
+        Class<?> builderClazz = configClass.getClassLoader().loadClass(configClass.getName() + "$Builder");
         return (Builder)builderClazz.getDeclaredConstructor().newInstance();
     }
 
@@ -396,21 +398,18 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @return The payload as a list of strings
      */
     @Override
-    public ConfigPayload getConfig(ConfigKey configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
+    public ConfigPayload getConfig(ConfigKey<?> configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
+        Objects.requireNonNull(targetDef, "config definition cannot be null");
         ConfigInstance.Builder builder = resolveToBuilder(configKey);
-        // TODO: remove if-statement, the builder can never be null.
-        if (builder != null) {
-            log.log(Level.FINE, () -> "Found builder for " + configKey);
-            ConfigPayload payload;
-            InnerCNode innerCNode = targetDef != null ?  targetDef.getCNode() : null;
-            if (builder instanceof GenericConfig.GenericConfigBuilder) {
-                payload = getConfigFromGenericBuilder(builder);
-            } else {
-                payload = getConfigFromBuilder(builder, innerCNode);
-            }
-            return (innerCNode != null) ? payload.applyDefaultsFromDef(innerCNode) : payload;
+        log.log(Level.FINE, () -> "Found builder for " + configKey);
+        ConfigPayload payload;
+        InnerCNode innerCNode = targetDef.getCNode();
+        if (builder instanceof GenericConfig.GenericConfigBuilder) {
+            payload = getConfigFromGenericBuilder(builder);
+        } else {
+            payload = getConfigFromBuilder(builder, innerCNode);
         }
-        return null;
+        return (innerCNode != null) ? payload.applyDefaultsFromDef(innerCNode) : payload;
     }
 
     /**
