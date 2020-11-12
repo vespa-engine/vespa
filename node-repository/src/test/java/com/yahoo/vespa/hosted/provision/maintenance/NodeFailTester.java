@@ -200,7 +200,7 @@ public class NodeFailTester {
 
     public NodeFailer createFailer() {
         return new NodeFailer(deployer, nodeRepository, downtimeLimitOneHour,
-                              Duration.ofMinutes(5), clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, metric);
+                              Duration.ofMinutes(5), orchestrator, NodeFailer.ThrottlePolicy.hosted, metric);
     }
 
     public NodeFailureStatusUpdater createUpdater() {

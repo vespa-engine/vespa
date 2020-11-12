@@ -158,14 +158,12 @@ public class RetiredExpirerTest {
     }
 
     private RetiredExpirer createRetiredExpirer(Deployer deployer) {
-        return new RetiredExpirer(
-                nodeRepository,
-                orchestrator,
-                deployer,
-                new TestMetric(),
-                clock,
-                Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */
-                RETIRED_EXPIRATION);
+        return new RetiredExpirer(nodeRepository,
+                                  orchestrator,
+                                  deployer,
+                                  new TestMetric(),
+                                  Duration.ofDays(30), /* Maintenance interval, use large value so it never runs by itself */
+                                  RETIRED_EXPIRATION);
     }
 
 }

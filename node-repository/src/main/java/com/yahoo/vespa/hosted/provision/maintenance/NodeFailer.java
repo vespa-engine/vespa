@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
@@ -18,10 +17,8 @@ import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
-import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -58,22 +55,20 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     private final Deployer deployer;
     private final Duration downTimeLimit;
-    private final Clock clock;
     private final Orchestrator orchestrator;
     private final Instant constructionTime;
     private final ThrottlePolicy throttlePolicy;
     private final Metric metric;
 
     public NodeFailer(Deployer deployer, NodeRepository nodeRepository,
-                      Duration downTimeLimit, Duration interval, Clock clock, Orchestrator orchestrator,
+                      Duration downTimeLimit, Duration interval, Orchestrator orchestrator,
                       ThrottlePolicy throttlePolicy, Metric metric) {
         // check ping status every interval, but at least twice as often as the down time limit
         super(nodeRepository, min(downTimeLimit.dividedBy(2), interval), metric);
         this.deployer = deployer;
         this.downTimeLimit = downTimeLimit;
-        this.clock = clock;
         this.orchestrator = orchestrator;
-        this.constructionTime = clock.instant();
+        this.constructionTime = nodeRepository.clock().instant();
         this.throttlePolicy = throttlePolicy;
         this.metric = metric;
     }
@@ -124,12 +119,12 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private Map<Node, String> getReadyNodesByFailureReason() {
         Instant oldestAcceptableRequestTime =
                 // Allow requests some time to be registered in case all config servers have been down
-                constructionTime.isAfter(clock.instant().minus(nodeRequestInterval.multipliedBy(2))) ?
+                constructionTime.isAfter(clock().instant().minus(nodeRequestInterval.multipliedBy(2))) ?
                         Instant.EPOCH :
 
                         // Nodes are taken as dead if they have not made a config request since this instant.
                         // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
-                        clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
+                        clock().instant().minus(downTimeLimit).minus(nodeRequestInterval);
 
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : nodeRepository().getNodes(Node.State.ready)) {
@@ -152,7 +147,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     private Map<Node, String> getActiveNodesByFailureReason() {
         List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
-        Instant graceTimeEnd = clock.instant().minus(downTimeLimit);
+        Instant graceTimeEnd = clock().instant().minus(downTimeLimit);
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : activeNodes) {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
@@ -303,7 +298,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     /** Returns true if node failing should be throttled */
     private boolean throttle(Node node) {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
-        Instant startOfThrottleWindow = clock.instant().minus(throttlePolicy.throttleWindow);
+        Instant startOfThrottleWindow = clock().instant().minus(throttlePolicy.throttleWindow);
         List<Node> nodes = nodeRepository().getNodes();
         NodeList recentlyFailedNodes = nodes.stream()
                                             .filter(n -> n.state() == Node.State.failed)

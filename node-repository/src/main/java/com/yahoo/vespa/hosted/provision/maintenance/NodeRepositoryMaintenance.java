@@ -57,31 +57,22 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
-                                     MetricsFetcher nodeMetrics, MetricsDb metricsDb) {
-        this(nodeRepository, deployer, infraDeployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-             orchestrator, metric, provisionServiceProvider, flagSource, nodeMetrics, metricsDb);
-    }
-
-    public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
-                                     HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
-                                     Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
-                                     ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
                                      MetricsFetcher metricsFetcher, MetricsDb metricsDb) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
-        nodeFailer = new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, clock, orchestrator, defaults.throttlePolicy, metric);
+        nodeFailer = new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, orchestrator, defaults.throttlePolicy, metric);
         nodeFailureStatusUpdater = new NodeFailureStatusUpdater(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository,
                                                                           defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval, flagSource);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
-        reservationExpirer = new ReservationExpirer(nodeRepository, clock, defaults.reservationExpiry, metric);
-        retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, clock, defaults.retiredInterval, defaults.retiredExpiry);
-        inactiveExpirer = new InactiveExpirer(nodeRepository, clock, defaults.inactiveExpiry, metric);
-        failedExpirer = new FailedExpirer(nodeRepository, zone, clock, defaults.failedExpirerInterval, metric);
-        dirtyExpirer = new DirtyExpirer(nodeRepository, clock, defaults.dirtyExpiry, metric);
-        provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, defaults.provisionedExpiry, metric);
-        nodeRebooter = new NodeRebooter(nodeRepository, clock, flagSource, metric);
-        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval, clock);
+        reservationExpirer = new ReservationExpirer(nodeRepository, defaults.reservationExpiry, metric);
+        retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry);
+        inactiveExpirer = new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, metric);
+        failedExpirer = new FailedExpirer(nodeRepository, zone, defaults.failedExpirerInterval, metric);
+        dirtyExpirer = new DirtyExpirer(nodeRepository, defaults.dirtyExpiry, metric);
+        provisionedExpirer = new ProvisionedExpirer(nodeRepository, defaults.provisionedExpiry, metric);
+        nodeRebooter = new NodeRebooter(nodeRepository, flagSource, metric);
+        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval);
         infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, defaults.infrastructureProvisionInterval, metric);
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService(nodeRepository).map(lbService ->
                 new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric));

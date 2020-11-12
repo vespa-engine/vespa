@@ -90,16 +90,16 @@ public class NodeTypeProvisioningTest {
 
     @Test
     public void retire_proxy() {
-        MockDeployer deployer = new MockDeployer(
-                tester.provisioner(),
-                tester.clock(),
-                Collections.singletonMap(
-                        application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity)));
+        MockDeployer deployer = new MockDeployer(tester.provisioner(),
+                                                 tester.clock(),
+                                                 Collections.singletonMap(application,
+                                                                          new MockDeployer.ApplicationContext(application,
+                                                                                                              clusterSpec,
+                                                                                                              capacity)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
                                                             tester.orchestrator(),
                                                             deployer,
                                                             new TestMetric(),
-                                                            tester.clock(),
                                                             Duration.ofDays(30),
                                                             Duration.ofMinutes(10));
 
@@ -168,7 +168,6 @@ public class NodeTypeProvisioningTest {
                                                             tester.orchestrator(),
                                                             deployer,
                                                             new TestMetric(),
-                                                            tester.clock(),
                                                             Duration.ofDays(30),
                                                             Duration.ofMinutes(10));
         final int numNodesToRetire = 5;

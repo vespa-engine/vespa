@@ -33,7 +33,7 @@ public class NodeRebooterTest {
 
         makeReadyHosts(15, tester);
         NodeRepository nodeRepository = tester.nodeRepository();
-        NodeRebooter rebooter = new NodeRebooter(nodeRepository, tester.clock(), flagSource, new TestMetric());
+        NodeRebooter rebooter = new NodeRebooter(nodeRepository, flagSource, new TestMetric());
 
         assertReadyHosts(15, nodeRepository, 0L);
 
@@ -79,7 +79,7 @@ public class NodeRebooterTest {
 
         makeReadyHosts(2, tester);
         NodeRepository nodeRepository = tester.nodeRepository();
-        NodeRebooter rebooter = new NodeRebooter(nodeRepository, tester.clock(), flagSource, new TestMetric());
+        NodeRebooter rebooter = new NodeRebooter(nodeRepository, flagSource, new TestMetric());
 
         assertReadyHosts(2, nodeRepository, 0L);
 

@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.logging.Logger;
@@ -29,16 +28,14 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
     private final History.Event.Type eventType;
 
     private final Metric metric;
-    private final Clock clock;
     private final Duration expiryTime;
 
     Expirer(Node.State fromState, History.Event.Type eventType, NodeRepository nodeRepository,
-            Clock clock, Duration expiryTime, Metric metric) {
+            Duration expiryTime, Metric metric) {
         super(nodeRepository, min(Duration.ofMinutes(10), expiryTime), metric);
         this.fromState = fromState;
         this.eventType = eventType;
         this.metric = metric;
-        this.clock = clock;
         this.expiryTime = expiryTime;
     }
 
@@ -58,7 +55,7 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
     }
 
     protected boolean isExpired(Node node) {
-        return node.history().hasEventBefore(eventType, clock.instant().minus(expiryTime));
+        return node.history().hasEventBefore(eventType, clock().instant().minus(expiryTime));
     }
 
     /** Implement this callback to take action to expire these nodes */

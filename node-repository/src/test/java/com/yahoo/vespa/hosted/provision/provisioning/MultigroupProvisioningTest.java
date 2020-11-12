@@ -240,7 +240,6 @@ public class MultigroupProvisioningTest {
                            tester.orchestrator(),
                            deployer,
                            new TestMetric(),
-                           tester.clock(),
                            Duration.ofDays(30),
                            Duration.ofHours(12)).run();
 

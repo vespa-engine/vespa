@@ -22,7 +22,6 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -44,21 +43,18 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
     private final Supplier<Integer> pendingRedeploymentsSupplier;
-    private final Clock clock;
 
     MetricsReporter(NodeRepository nodeRepository,
                     Metric metric,
                     Orchestrator orchestrator,
                     ServiceMonitor serviceMonitor,
                     Supplier<Integer> pendingRedeploymentsSupplier,
-                    Duration interval,
-                    Clock clock) {
+                    Duration interval) {
         super(nodeRepository, interval, metric);
         this.metric = metric;
         this.orchestrator = orchestrator;
         this.serviceMonitor = serviceMonitor;
         this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
-        this.clock = clock;
     }
 
     @Override
@@ -157,7 +153,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     metric.set("suspended", suspended, context);
                     metric.set("allowedToBeDown", suspended, context); // remove summer 2020.
                     long suspendedSeconds = info.suspendedSince()
-                            .map(suspendedSince -> Duration.between(suspendedSince, clock.instant()).getSeconds())
+                            .map(suspendedSince -> Duration.between(suspendedSince, clock().instant()).getSeconds())
                             .orElse(0L);
                     metric.set("suspendedSeconds", suspendedSeconds, context);
                 });

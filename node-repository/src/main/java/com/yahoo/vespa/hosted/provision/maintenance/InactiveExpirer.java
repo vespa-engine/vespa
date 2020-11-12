@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 
@@ -37,8 +36,8 @@ public class InactiveExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
 
-    InactiveExpirer(NodeRepository nodeRepository, Clock clock, Duration inactiveTimeout, Metric metric) {
-        super(Node.State.inactive, History.Event.Type.deactivated, nodeRepository, clock, inactiveTimeout, metric);
+    InactiveExpirer(NodeRepository nodeRepository, Duration inactiveTimeout, Metric metric) {
+        super(Node.State.inactive, History.Event.Type.deactivated, nodeRepository, inactiveTimeout, metric);
         this.nodeRepository = nodeRepository;
     }
 

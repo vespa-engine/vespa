@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -29,14 +28,12 @@ import java.util.stream.Collectors;
 public class NodeRebooter extends NodeRepositoryMaintainer {
 
     private final IntFlag rebootIntervalInDays;
-    private final Clock clock;
     private final Random random;
 
-    NodeRebooter(NodeRepository nodeRepository, Clock clock, FlagSource flagSource, Metric metric) {
+    NodeRebooter(NodeRepository nodeRepository, FlagSource flagSource, Metric metric) {
         super(nodeRepository, Duration.ofMinutes(25), metric);
         this.rebootIntervalInDays = Flags.REBOOT_INTERVAL_IN_DAYS.bindTo(flagSource);
-        this.clock = clock;
-        this.random = new Random(clock.millis()); // seed with clock for test determinism   
+        this.random = new Random(nodeRepository.clock().millis()); // seed with clock for test determinism
     }
 
     @Override
@@ -62,7 +59,7 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
                 .filter(event -> rebootEvents.contains(event.type()))
                 .map(History.Event::at)
                 .max(Comparator.naturalOrder())
-                .map(lastReboot -> Duration.between(lastReboot, clock.instant()).minus(rebootInterval));
+                .map(lastReboot -> Duration.between(lastReboot, clock().instant()).minus(rebootInterval));
 
         if (overdue.isEmpty()) // should never happen as all !docker-container should have provisioned timestamp
             return random.nextDouble() < interval().getSeconds() / (double) rebootInterval.getSeconds();

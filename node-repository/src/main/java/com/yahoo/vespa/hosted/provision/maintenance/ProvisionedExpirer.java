@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 
@@ -18,17 +17,14 @@ import java.util.List;
  */
 public class ProvisionedExpirer extends Expirer {
 
-    private final NodeRepository nodeRepository;
-
-    ProvisionedExpirer(NodeRepository nodeRepository, Clock clock, Duration dirtyTimeout, Metric metric) {
-        super(Node.State.provisioned, History.Event.Type.provisioned, nodeRepository, clock, dirtyTimeout, metric);
-        this.nodeRepository = nodeRepository;
+    ProvisionedExpirer(NodeRepository nodeRepository, Duration dirtyTimeout, Metric metric) {
+        super(Node.State.provisioned, History.Event.Type.provisioned, nodeRepository, dirtyTimeout, metric);
     }
 
     @Override
     protected void expire(List<Node> expired) {
         for (Node expiredNode : expired)
-            nodeRepository.parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer, "Node is stuck in provisioned");
+            nodeRepository().parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer, "Node is stuck in provisioned");
     }
 
 }
