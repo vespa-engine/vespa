@@ -100,6 +100,7 @@ vespa_define_module(
     src/tests/slime
     src/tests/slime/external_data_value
     src/tests/slime/summary-feature-benchmark
+    src/tests/spin_lock
     src/tests/stash
     src/tests/stllike
     src/tests/stringfmt
