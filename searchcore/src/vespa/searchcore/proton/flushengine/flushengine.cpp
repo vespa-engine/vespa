@@ -49,6 +49,8 @@ logTarget(const char * text, const FlushContext & ctx) {
         ctx.getHandler()->getCurrentSerialNumber());
 }
 
+VESPA_THREAD_STACK_TAG(flush_engine_executor)
+
 }
 
 FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, uint32_t id)
@@ -82,7 +84,7 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _threadPool(128 * 1024),
       _strategy(std::move(strategy)),
       _priorityStrategy(),
-      _executor(numThreads, 128 * 1024),
+      _executor(numThreads, 128 * 1024, flush_engine_executor),
       _lock(),
       _cond(),
       _handlers(),

@@ -40,6 +40,8 @@ struct SimpleParams {
     }
 };
 
+VESPA_THREAD_STACK_TAG(sequenced_executor)
+
 int main(int argc, char **argv) {
     SimpleParams params(argc, argv);
     bool use_adaptive_executor = params.next("use_adaptive_executor", 0);
@@ -58,7 +60,7 @@ int main(int argc, char **argv) {
         auto optimize = optimize_for_throughput
                         ? vespalib::Executor::OptimizeFor::THROUGHPUT
                         : vespalib::Executor::OptimizeFor::LATENCY;
-        executor = SequencedTaskExecutor::create(num_strands, task_limit, optimize);
+        executor = SequencedTaskExecutor::create(sequenced_executor, num_strands, task_limit, optimize);
     }
     vespalib::Timer timer;
     for (size_t task_id = 0; task_id < num_tasks; ++task_id) {

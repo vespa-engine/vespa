@@ -29,6 +29,8 @@ struct Pair {
 
 Pair::~Pair() = default;
 
+VESPA_THREAD_STACK_TAG(proton_rpc_executor)
+
 }
 
 namespace proton {
@@ -182,11 +184,12 @@ RPCHooksBase::initRPC()
     
 }
 
-RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident)
+RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident, uint32_t numThreads)
     : proton(parent),
       slobrok_config(config::ConfigUri("admin/slobrok.0")),
       identity(ident),
-      rtcPort(port)
+      rtcPort(port),
+      numRpcThreads(numThreads)
 { }
 
 RPCHooksBase::Params::~Params() = default;
@@ -203,7 +206,7 @@ RPCHooksBase::RPCHooksBase(Params &params)
       _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config)),
       _stateLock(),
       _stateCond(),
-      _executor(48, 128 * 1024)
+      _executor(params.numRpcThreads, 128 * 1024, proton_rpc_executor)
 { }
 
 void

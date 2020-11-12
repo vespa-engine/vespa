@@ -279,6 +279,8 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
 }
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(push_executor)
 
 void
 FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool directio, bool readmmap)
@@ -315,8 +317,8 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
                                addField("f4"));
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
     DocBuilder b(schema);
-    auto invertThreads = SequencedTaskExecutor::create(2);
-    auto pushThreads = SequencedTaskExecutor::create(2);
+    auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
+    auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
     DocumentInverter inv(schema, *invertThreads, *pushThreads, fic);
     Document::UP doc;
 
@@ -456,8 +458,8 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
     uint32_t numDocs = 20;
     uint32_t numWords = 1000;
     DocBuilder b(_schema);
-    auto invertThreads = SequencedTaskExecutor::create(2);
-    auto pushThreads = SequencedTaskExecutor::create(2);
+    auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
+    auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
     DocumentInverter inv(_schema, *invertThreads, *pushThreads, fic);
 
     inv.invertDocument(10, *make_doc10(b));

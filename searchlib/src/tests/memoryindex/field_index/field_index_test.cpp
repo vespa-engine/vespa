@@ -901,6 +901,8 @@ TEST_F(FieldIndexCollectionTypeTest, instantiates_field_index_type_based_on_sche
     expect_field_index_type<FieldIndex<true>>(fic.getFieldIndex(1));
 }
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(push_executor)
 
 class InverterTest : public ::testing::Test {
 public:
@@ -915,8 +917,8 @@ public:
         : _schema(schema),
           _fic(_schema, MockFieldLengthInspector()),
           _b(_schema),
-          _invertThreads(SequencedTaskExecutor::create(2)),
-          _pushThreads(SequencedTaskExecutor::create(2)),
+          _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
+          _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
           _inv(_schema, *_invertThreads, *_pushThreads, _fic)
     {
     }
@@ -1449,14 +1451,15 @@ TEST_F(FieldIndexCollectionTest, require_that_insert_tells_which_word_ref_that_w
     insertAndAssertTuple("c", 2, 22, fic);
 }
 
+
 struct RemoverTest : public FieldIndexCollectionTest {
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
 
     RemoverTest()
         : FieldIndexCollectionTest(),
-          _invertThreads(SequencedTaskExecutor::create(2)),
-          _pushThreads(SequencedTaskExecutor::create(2))
+          _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
+          _pushThreads(SequencedTaskExecutor::create(push_executor, 2))
     {
     }
     void assertPostingLists(const vespalib::string &e1,

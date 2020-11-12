@@ -242,13 +242,15 @@ private:
     Fixture &operator=(Fixture &&index) = delete;
 };
 
+VESPA_THREAD_STACK_TAG(invert_executor)
+VESPA_THREAD_STACK_TAG(push_executor)
 
 Fixture::Fixture(uint32_t readThreads)
     : schema(makeSchema()),
       repo(makeDocTypeRepoConfig()),
       _executor(1, 128 * 1024),
-      _invertThreads(vespalib::SequencedTaskExecutor::create(2)),
-      _pushThreads(vespalib::SequencedTaskExecutor::create(2)),
+      _invertThreads(vespalib::SequencedTaskExecutor::create(invert_executor, 2)),
+      _pushThreads(vespalib::SequencedTaskExecutor::create(push_executor, 2)),
       index(schema, MockFieldLengthInspector(), *_invertThreads, *_pushThreads),
       _readThreads(readThreads),
       _writer(1, 128 * 1024),

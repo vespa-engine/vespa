@@ -188,6 +188,8 @@ asImportedAttribute(const IAttributeVector &attr)
     return *result;
 }
 
+VESPA_THREAD_STACK_TAG(attribute_executor)
+
 struct Fixture {
     MyGidToLidMapperFactory::SP factory;
     MonitoredRefCount _gidToLidChangeListenerRefCount;
@@ -204,7 +206,7 @@ struct Fixture {
     Fixture() :
         factory(std::make_shared<MyGidToLidMapperFactory>()),
         _gidToLidChangeListenerRefCount(),
-        _attributeFieldWriter(SequencedTaskExecutor::create(1)),
+        _attributeFieldWriter(SequencedTaskExecutor::create(attribute_executor, 1)),
         _parentGidToLidChangeHandler(std::make_shared<MockGidToLidChangeHandler>()),
         _parentGidToLidChangeHandler2(std::make_shared<MockGidToLidChangeHandler>()),
         parentReference(std::make_shared<MyDocumentDBReference>(factory, _parentGidToLidChangeHandler)),
