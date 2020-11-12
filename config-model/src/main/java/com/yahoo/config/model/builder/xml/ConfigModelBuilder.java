@@ -20,11 +20,10 @@ import java.util.List;
  * Builds a config model using DOM parsers
  *
  * @author vegardh
- * @since 5.1.10
  */
 public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends AbstractComponent implements ConfigModelPlugin {
 
-    private Class<MODEL> configModelClass;
+    private final Class<MODEL> configModelClass;
 
     public ConfigModelBuilder(Class<MODEL> configModelClass) {
         this.configModelClass = configModelClass;
@@ -34,16 +33,16 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
      * Method that must return the XML elements this builder handles. Subclasses must implement this in order to
      * get called when one of the elements have been encountered when parsing.
      *
-     * @return A list of elements that this builder handles.
+     * @return a list of elements that this builder handles
      */
     public abstract List<ConfigModelId> handlesElements();
 
     /**
      * Convenience hook called from {@link #build}. Implement this method to build a config model.
      *
-     * @param spec The XML element that this builder should handle.
-     * @param modelContext A model context that contains the application package and other data needed by the
-     *                     config model constructor.
+     * @param spec the XML element that this builder should handle
+     * @param modelContext a model context that contains the application package and other data needed by the
+     *                     config model constructor
      */
     public abstract void doBuild(MODEL model, Element spec, ConfigModelContext modelContext);
 
@@ -56,7 +55,7 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
      * @param spec the XML element this is constructed from
      */
     public final MODEL build(DeployState deployState, VespaModel vespaModel, ConfigModelRepo configModelRepo,
-                             AbstractConfigProducer parent, Element spec) {
+                             AbstractConfigProducer<?> parent, Element spec) {
         ConfigModelContext context = ConfigModelContext.create(deployState, vespaModel, configModelRepo, parent, getIdString(spec));
         return build(new DefaultModelInstanceFactory(), spec, context);
     }
@@ -92,7 +91,7 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
         if (!(other instanceof ConfigModelBuilder)) {
             return false;
         }
-        ConfigModelBuilder otherBuilder = (ConfigModelBuilder) other;
+        ConfigModelBuilder<?> otherBuilder = (ConfigModelBuilder<?>) other;
         List<ConfigModelId> thisIds = this.handlesElements();
         List<ConfigModelId> otherIds = otherBuilder.handlesElements();
         if (thisIds.size() != otherIds.size()) {
@@ -118,4 +117,5 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
             }
         }
     }
+
 }

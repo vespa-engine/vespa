@@ -18,7 +18,7 @@ import java.util.stream.Stream;
  */
 public final class ConfigModelContext {
 
-    private final AbstractConfigProducer parent;
+    private final AbstractConfigProducer<?> parent;
     private final String producerId;
     private final DeployState deployState;
     private final VespaModel vespaModel;
@@ -29,7 +29,7 @@ public final class ConfigModelContext {
                                DeployState deployState,
                                VespaModel vespaModel,
                                ConfigModelRepoAdder configModelRepoAdder,
-                               AbstractConfigProducer parent,
+                               AbstractConfigProducer<?> parent,
                                String producerId) {
         this.applicationType = applicationType;
         this.deployState = deployState;
@@ -41,7 +41,7 @@ public final class ConfigModelContext {
 
     public ApplicationPackage getApplicationPackage() { return deployState.getApplicationPackage(); }
     public String getProducerId() { return producerId; }
-    public AbstractConfigProducer getParentProducer() { return parent; }
+    public AbstractConfigProducer<?> getParentProducer() { return parent; }
     public DeployLogger getDeployLogger() { return deployState.getDeployLogger(); }
     public DeployState getDeployState() { return deployState; }
     public ApplicationType getApplicationType() { return applicationType; }
@@ -52,7 +52,7 @@ public final class ConfigModelContext {
     public ConfigModelRepoAdder getConfigModelRepoAdder() { return configModelRepoAdder; }
 
     /** Create a new context with a different parent */
-    public ConfigModelContext withParent(AbstractConfigProducer newParent) {
+    public ConfigModelContext withParent(AbstractConfigProducer<?> newParent) {
         return ConfigModelContext.create(deployState, vespaModel, configModelRepoAdder, newParent, producerId);
     }
 
@@ -76,7 +76,7 @@ public final class ConfigModelContext {
     public static ConfigModelContext create(DeployState deployState,
                                             VespaModel vespaModel,
                                             ConfigModelRepoAdder configModelRepoAdder,
-                                            AbstractConfigProducer parent,
+                                            AbstractConfigProducer<?> parent,
                                             String producerId) {
         return new ConfigModelContext(ApplicationType.DEFAULT, deployState, vespaModel, configModelRepoAdder, parent, producerId);
     }
@@ -94,7 +94,7 @@ public final class ConfigModelContext {
                                             DeployState deployState,
                                             VespaModel vespaModel,
                                             ConfigModelRepoAdder configModelRepoAdder,
-                                            AbstractConfigProducer parent,
+                                            AbstractConfigProducer<?> parent,
                                             String producerId) {
         return new ConfigModelContext(applicationType, deployState, vespaModel, configModelRepoAdder, parent, producerId);
     }
