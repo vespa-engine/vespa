@@ -260,7 +260,7 @@ public class ApplicationHandlerTest {
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
-        database.writeReindexingStatus(applicationId, expected.withPending("boo", "bar", 123L));
+        applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.withPending("boo", "bar", 123L));
 
         long now = clock.instant().toEpochMilli();
         reindexing(applicationId, GET, "{" +

@@ -58,11 +58,8 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                      .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
                                      .ifPresent(application -> {
                                          try {
-                                             try (Lock lock = database.lock(id)) {
-                                                 ApplicationReindexing reindexing = database.readReindexingStatus(id)
-                                                                                            .orElse(ApplicationReindexing.ready(clock.instant()));
-                                                 database.writeReindexingStatus(id, withConvergenceOn(reindexing, lazyGeneration(application), clock.instant()));
-                                             }
+                                             applicationRepository.modifyReindexing(id, reindexing ->
+                                                     withConvergenceOn(reindexing, lazyGeneration(application), clock.instant()));
                                          }
                                          catch (RuntimeException e) {
                                              log.log(Level.INFO, "Failed to update reindexing status for " + id + ": " + Exceptions.toMessageString(e));

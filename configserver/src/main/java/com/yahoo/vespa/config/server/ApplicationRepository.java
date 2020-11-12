@@ -30,6 +30,7 @@ import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -93,6 +94,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -899,6 +901,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public ApplicationMetaData getMetadataFromLocalSession(Tenant tenant, long sessionId) {
         return getLocalSession(tenant, sessionId).getMetaData();
+    }
+
+    public ApplicationReindexing getReindexing(ApplicationId id) {
+        return getTenant(id).getApplicationRepo().database().readReindexingStatus(id)
+                .orElse(ApplicationReindexing.ready(clock.instant()));
+    }
+
+    public void modifyReindexing(ApplicationId id, UnaryOperator<ApplicationReindexing> modifications) {
+        getTenant(id).getApplicationRepo().database().modifyReindexing(id, ApplicationReindexing.ready(clock.instant()), modifications);
     }
 
     public ConfigserverConfig configserverConfig() {

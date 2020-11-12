@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -56,6 +57,13 @@ public class ApplicationCuratorDatabase {
     /** Returns the lock for changing the session status of the given application. */
     public Lock lock(ApplicationId id) {
         return curator.lock(lockPath(id), Duration.ofMinutes(1)); // These locks shouldn't be held for very long.
+    }
+
+    /** Reads, modifies and writes the application reindexing for this application, while holding its lock. */
+    public void modifyReindexing(ApplicationId id, ApplicationReindexing emptyValue, UnaryOperator<ApplicationReindexing> modifications) {
+        try (Lock lock = curator.lock(reindexingLockPath(id), Duration.ofMinutes(1))) {
+            writeReindexingStatus(id, modifications.apply(readReindexingStatus(id).orElse(emptyValue)));
+        }
     }
 
     public boolean exists(ApplicationId id) {
@@ -119,7 +127,7 @@ public class ApplicationCuratorDatabase {
                       .map(ReindexingStatusSerializer::fromBytes);
     }
 
-    public void writeReindexingStatus(ApplicationId id, ApplicationReindexing status) {
+    void writeReindexingStatus(ApplicationId id, ApplicationReindexing status) {
         curator.set(reindexingDataPath(id), ReindexingStatusSerializer.toBytes(status));
     }
 
@@ -129,6 +137,10 @@ public class ApplicationCuratorDatabase {
         return curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
     }
 
+
+    private Path reindexingLockPath(ApplicationId id) {
+        return locksPath.append(id.serializedForm()).append("reindexing");
+    }
 
     private Path lockPath(ApplicationId id) {
         return locksPath.append(id.serializedForm());
