@@ -13,11 +13,10 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
-using namespace vespalib::tensor;
 
 using Inner = DenseSimpleExpandFunction::Inner;
 
-const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const TensorEngine &prod_engine = tensor::DefaultTensorEngine::ref();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()

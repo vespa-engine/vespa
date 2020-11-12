@@ -17,9 +17,8 @@ LOG_SETUP("dense_dot_product_function_test");
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
-using namespace vespalib::tensor;
 
-const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const TensorEngine &prod_engine = tensor::DefaultTensorEngine::ref();
 
 struct MyVecSeq : Sequence {
     double bias;
