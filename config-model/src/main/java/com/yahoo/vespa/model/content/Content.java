@@ -57,7 +57,7 @@ public class Content extends ConfigModel {
     // to find or add the docproc container and supplement cluster controllers with clusters having less then 3 nodes
     private final Collection<ContainerModel> containers;
 
-    @SuppressWarnings({ "UnusedDeclaration"}) // Created by reflection in ConfigModelRepo
+    @SuppressWarnings("UnusedDeclaration") // Created by reflection in ConfigModelRepo
     public Content(ConfigModelContext modelContext, AdminModel adminModel, Collection<ContainerModel> containers) {
         super(modelContext);
         modelContext.getParentProducer().getRoot();
@@ -92,7 +92,7 @@ public class Content extends ConfigModel {
         return docprocChain.getChainSpecification();
     }
 
-    private static void addIndexingChain(ContainerCluster containerCluster) {
+    private static void addIndexingChain(ContainerCluster<?> containerCluster) {
         DocprocChain chainAlreadyPresent = containerCluster.getDocprocChains().allChains().
                 getComponent(new ComponentId(IndexingDocprocChain.NAME));
         if (chainAlreadyPresent != null) {
@@ -104,7 +104,7 @@ public class Content extends ConfigModel {
         containerCluster.getDocprocChains().add(new IndexingDocprocChain());
     }
 
-    private static ContainerCluster getContainerWithSearch(Collection<ContainerModel> containers) {
+    private static ContainerCluster<?> getContainerWithSearch(Collection<ContainerModel> containers) {
         for (ContainerModel container : containers)
             if (container.getCluster().getSearch() != null)
                 return container.getCluster();
@@ -204,11 +204,6 @@ public class Content extends ConfigModel {
             content.cluster = new ContentCluster.Builder(admin).build(content.containers, modelContext, xml);
             buildIndexingClusters(content, modelContext,
                                   (ApplicationConfigProducerRoot)modelContext.getParentProducer());
-            markCombinedClusters();
-        }
-
-        private void markCombinedClusters() {
-
         }
 
         /** Select/creates and initializes the indexing cluster coupled to this */
@@ -231,7 +226,7 @@ public class Content extends ConfigModel {
             if (content.containers.isEmpty()) {
                 createImplicitIndexingCluster(indexedSearchCluster, content, modelContext, root);
             } else {
-                ContainerCluster targetCluster = getContainerWithDocproc(content.containers);
+                ContainerCluster<?> targetCluster = getContainerWithDocproc(content.containers);
                 if (targetCluster == null)
                     targetCluster = getContainerWithSearch(content.containers);
                 if (targetCluster == null)
@@ -259,7 +254,7 @@ public class Content extends ConfigModel {
             return null;
         }
 
-        private void addIndexingChainsTo(ContainerCluster indexer, IndexedSearchCluster cluster) {
+        private void addIndexingChainsTo(ContainerCluster<?> indexer, IndexedSearchCluster cluster) {
             addIndexingChain(indexer);
             DocprocChain indexingChain;
             ComponentRegistry<DocprocChain> allChains = indexer.getDocprocChains().allChains();
@@ -284,7 +279,7 @@ public class Content extends ConfigModel {
                                                    ConfigModelContext modelContext,
                                                    ApplicationConfigProducerRoot root) {
             String indexerName = cluster.getIndexingClusterName();
-            AbstractConfigProducer parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
+            AbstractConfigProducer<?> parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
             if (parent == null)
                 parent = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
             ApplicationContainerCluster indexingCluster = new ApplicationContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
@@ -319,14 +314,14 @@ public class Content extends ConfigModel {
             cluster.setIndexingChain(indexingCluster.getDocprocChains().allChains().getComponent(IndexingDocprocChain.NAME));
         }
 
-        private ContainerCluster getContainerWithDocproc(Collection<ContainerModel> containers) {
+        private ContainerCluster<?> getContainerWithDocproc(Collection<ContainerModel> containers) {
             for (ContainerModel container : containers)
                 if (container.getCluster().getDocproc() != null)
                     return container.getCluster();
             return null;
         }
 
-        private void addDocproc(ContainerCluster cluster) {
+        private void addDocproc(ContainerCluster<?> cluster) {
             if (cluster.getDocproc() == null) {
                 DocprocChains chains = new DocprocChains(cluster, "docprocchains");
                 ContainerDocproc containerDocproc = new ContainerDocproc(cluster, chains);
