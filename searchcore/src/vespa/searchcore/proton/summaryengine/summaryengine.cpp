@@ -42,7 +42,7 @@ uint32_t getNumDocs(const DocsumReply &reply) {
     }
 }
 
-VESPA_THREAD_STACK_TAG(suammry_engine_executor)
+VESPA_THREAD_STACK_TAG(summary_engine_executor)
 
 } // namespace anonymous
 
@@ -62,7 +62,7 @@ SummaryEngine::SummaryEngine(size_t numThreads)
     : _lock(),
       _closed(false),
       _handlers(),
-      _executor(numThreads, 128 * 1024, suammry_engine_executor),
+      _executor(numThreads, 128 * 1024, summary_engine_executor),
       _metrics(std::make_unique<DocsumMetrics>())
 { }
 
