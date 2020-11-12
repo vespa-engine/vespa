@@ -4,12 +4,12 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Tensor function for looking at the cell value of a dense tensor.
  */
-class DenseTensorPeekFunction : public eval::TensorFunction
+class DenseTensorPeekFunction : public TensorFunction
 {
 private:
     // first child is the tensor we want to peek
@@ -24,11 +24,11 @@ private:
 public:
     DenseTensorPeekFunction(std::vector<Child> children, std::vector<std::pair<int64_t,size_t>> spec);
     ~DenseTensorPeekFunction();
-    const eval::ValueType &result_type() const override { return eval::DoubleValue::shared_type(); }
+    const ValueType &result_type() const override { return DoubleValue::shared_type(); }
     void push_children(std::vector<Child::CREF> &children) const override;
-    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
-    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
+    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
 } // namespace vespalib::tensor

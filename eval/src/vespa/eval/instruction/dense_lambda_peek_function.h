@@ -4,7 +4,7 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Tensor function creating a new dense tensor based on peeking cells
@@ -13,17 +13,17 @@ namespace vespalib::tensor {
  * indexes of the tensor to be created into global cell indexes of the
  * tensor to be peeked.
  **/
-class DenseLambdaPeekFunction : public eval::tensor_function::Op1
+class DenseLambdaPeekFunction : public tensor_function::Op1
 {
 private:
-    std::shared_ptr<eval::Function const> _idx_fun;
+    std::shared_ptr<Function const> _idx_fun;
 
 public:
-    DenseLambdaPeekFunction(const eval::ValueType &result_type,
-                            const eval::TensorFunction &child,
-                            std::shared_ptr<eval::Function const> idx_fun);
+    DenseLambdaPeekFunction(const ValueType &result_type,
+                            const TensorFunction &child,
+                            std::shared_ptr<Function const> idx_fun);
     ~DenseLambdaPeekFunction() override;
-    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
     vespalib::string idx_fun_dump() const;
     bool result_is_mutable() const override { return true; }
 };

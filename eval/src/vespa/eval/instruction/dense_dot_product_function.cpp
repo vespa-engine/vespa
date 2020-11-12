@@ -4,23 +4,17 @@
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
-
 #include <cblas.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::TensorEngine;
-using eval::as;
-using eval::Aggr;
-using namespace eval::tensor_function;
-using namespace eval::operation;
+using namespace tensor_function;
+using namespace operation;
 
 namespace {
 
 template <typename LCT, typename RCT>
-void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
+void my_dot_product_op(InterpretedFunction::State &state, uint64_t) {
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
     double result = 0.0;
@@ -29,21 +23,21 @@ void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
     for (size_t i = 0; i < lhs_cells.size(); ++i) {
         result += ((*lhs++) * (*rhs++));
     }
-    state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
+    state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
-void my_cblas_double_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
+void my_cblas_double_dot_product_op(InterpretedFunction::State &state, uint64_t) {
     auto lhs_cells = state.peek(1).cells().typify<double>();
     auto rhs_cells = state.peek(0).cells().typify<double>();
     double result = cblas_ddot(lhs_cells.size(), lhs_cells.cbegin(), 1, rhs_cells.cbegin(), 1);
-    state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
+    state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
-void my_cblas_float_dot_product_op(eval::InterpretedFunction::State &state, uint64_t) {
+void my_cblas_float_dot_product_op(InterpretedFunction::State &state, uint64_t) {
     auto lhs_cells = state.peek(1).cells().typify<float>();
     auto rhs_cells = state.peek(0).cells().typify<float>();
     double result = cblas_sdot(lhs_cells.size(), lhs_cells.cbegin(), 1, rhs_cells.cbegin(), 1);
-    state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
+    state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
 struct MyDotProductOp {
@@ -51,7 +45,7 @@ struct MyDotProductOp {
     static auto invoke() { return my_dot_product_op<LCT,RCT>; }
 };
 
-eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct) {
+InterpretedFunction::op_function my_select(ValueType::CellType lct, ValueType::CellType rct) {
     if (lct == rct) {
         if (lct == ValueType::CellType::DOUBLE) {
             return my_cblas_double_dot_product_op;
@@ -60,23 +54,23 @@ eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct) {
             return my_cblas_float_dot_product_op;
         }
     }
-    using MyTypify = eval::TypifyCellType;
+    using MyTypify = TypifyCellType;
     return typify_invoke<2,MyTypify,MyDotProductOp>(lct, rct);
 }
 
 } // namespace vespalib::tensor::<unnamed>
 
-DenseDotProductFunction::DenseDotProductFunction(const eval::TensorFunction &lhs_in,
-                                                 const eval::TensorFunction &rhs_in)
-    : eval::tensor_function::Op2(eval::ValueType::double_type(), lhs_in, rhs_in)
+DenseDotProductFunction::DenseDotProductFunction(const TensorFunction &lhs_in,
+                                                 const TensorFunction &rhs_in)
+    : tensor_function::Op2(ValueType::double_type(), lhs_in, rhs_in)
 {
 }
 
-eval::InterpretedFunction::Instruction
-DenseDotProductFunction::compile_self(eval::EngineOrFactory, Stash &) const
+InterpretedFunction::Instruction
+DenseDotProductFunction::compile_self(EngineOrFactory, Stash &) const
 {
     auto op = my_select(lhs().result_type().cell_type(), rhs().result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op);
+    return InterpretedFunction::Instruction(op);
 }
 
 bool
@@ -86,7 +80,7 @@ DenseDotProductFunction::compatible_types(const ValueType &res, const ValueType 
 }
 
 const TensorFunction &
-DenseDotProductFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
+DenseDotProductFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     auto reduce = as<Reduce>(expr);
     if (reduce && (reduce->aggr() == Aggr::SUM)) {

@@ -6,7 +6,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
-using namespace vespalib::tensor;
 
 std::vector<uint32_t> make_table(std::vector<uint32_t> list) { return list; }
 

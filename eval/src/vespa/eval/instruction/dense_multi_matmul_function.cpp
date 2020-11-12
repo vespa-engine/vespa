@@ -6,19 +6,12 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
 #include <cassert>
-
 #include <cblas.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::InterpretedFunction;
-using eval::TensorEngine;
-using eval::as;
-using eval::Aggr;
-using namespace eval::tensor_function;
-using namespace eval::operation;
+using namespace tensor_function;
+using namespace operation;
 
 using Dim = ValueType::Dimension;
 using DimList = std::vector<Dim>;
@@ -43,7 +36,7 @@ void my_cblas_double_multi_matmul_op(InterpretedFunction::State &state, uint64_t
                     rhs, self.rhs_common_inner() ? self.common_size() : self.rhs_size(),
                     0.0, dst, self.rhs_size());
     }
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type(), TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type(), TypedCells(dst_cells)));
 }
 
 void my_cblas_float_multi_matmul_op(InterpretedFunction::State &state, uint64_t param) {
@@ -64,10 +57,10 @@ void my_cblas_float_multi_matmul_op(InterpretedFunction::State &state, uint64_t 
                     rhs, self.rhs_common_inner() ? self.common_size() : self.rhs_size(),
                     0.0, dst, self.rhs_size());
     }
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type(), TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type(), TypedCells(dst_cells)));
 }
 
-InterpretedFunction::op_function my_select(CellType cell_type) {
+InterpretedFunction::op_function my_select(ValueType::CellType cell_type) {
     if (cell_type == ValueType::CellType::DOUBLE) {
         return my_cblas_double_multi_matmul_op;
     }
@@ -124,7 +117,7 @@ struct DimPrefix {
 bool check_input_type(const ValueType &type, const DimList &relevant) {
     return (type.is_dense() &&
             (relevant.size() >= 2) &&
-            ((type.cell_type() == CellType::FLOAT) || (type.cell_type() == CellType::DOUBLE)));
+            ((type.cell_type() == ValueType::CellType::FLOAT) || (type.cell_type() == ValueType::CellType::DOUBLE)));
 }
 
 bool is_multi_matmul(const ValueType &a, const ValueType &b, const vespalib::string &reduce_dim) {
@@ -184,7 +177,7 @@ DenseMultiMatMulFunction::DenseMultiMatMulFunction(const ValueType &result_type,
 DenseMultiMatMulFunction::~DenseMultiMatMulFunction() = default;
 
 InterpretedFunction::Instruction
-DenseMultiMatMulFunction::compile_self(eval::EngineOrFactory, Stash &) const
+DenseMultiMatMulFunction::compile_self(EngineOrFactory, Stash &) const
 {
     auto op = my_select(lhs().result_type().cell_type());
     return InterpretedFunction::Instruction(op, wrap_param<DenseMultiMatMulFunction>(*this));

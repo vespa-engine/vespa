@@ -5,24 +5,16 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/tensor.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::Value;
-using eval::DoubleValue;
-using eval::ValueType;
-using eval::TensorSpec;
-using eval::TensorFunction;
-using eval::TensorEngine;
-using Child = eval::TensorFunction::Child;
+using Child = TensorFunction::Child;
 using SpecVector = std::vector<std::pair<int64_t,size_t>>;
-using eval::as;
-using namespace eval::tensor_function;
+using namespace tensor_function;
 
 namespace {
 
-
 template <typename CT>
-void my_tensor_peek_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_tensor_peek_op(InterpretedFunction::State &state, uint64_t param) {
     const SpecVector &spec = unwrap_param<SpecVector>(param);
     size_t idx = 0;
     size_t factor = 1;
@@ -69,16 +61,16 @@ DenseTensorPeekFunction::push_children(std::vector<Child::CREF> &target) const
     }
 }
 
-eval::InterpretedFunction::Instruction
-DenseTensorPeekFunction::compile_self(eval::EngineOrFactory, Stash &) const
+InterpretedFunction::Instruction
+DenseTensorPeekFunction::compile_self(EngineOrFactory, Stash &) const
 {
-    using MyTypify = eval::TypifyCellType;
+    using MyTypify = TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorPeekOp>(_children[0].get().result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, wrap_param<SpecVector>(_spec));
+    return InterpretedFunction::Instruction(op, wrap_param<SpecVector>(_spec));
 }
 
 const TensorFunction &
-DenseTensorPeekFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
+DenseTensorPeekFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto peek = as<Peek>(expr)) {
         const ValueType &peek_type = peek->param_type();

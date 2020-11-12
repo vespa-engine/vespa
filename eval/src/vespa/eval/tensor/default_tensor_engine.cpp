@@ -41,7 +41,6 @@ namespace vespalib::tensor {
 
 using eval::Aggr;
 using eval::Aggregator;
-using eval::DenseXWProductFunction;
 using eval::DoubleValue;
 using eval::TensorFunction;
 using eval::TensorSpec;
@@ -285,10 +284,10 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         }
         while (!nodes.empty()) {
             const Child &child = nodes.back().get();
-            child.set(DenseDotProductFunction::optimize(child.get(), stash));
-            child.set(DenseXWProductFunction::optimize(child.get(), stash));
-            child.set(DenseMatMulFunction::optimize(child.get(), stash));
-            child.set(DenseMultiMatMulFunction::optimize(child.get(), stash));
+            child.set(eval::DenseDotProductFunction::optimize(child.get(), stash));
+            child.set(eval::DenseXWProductFunction::optimize(child.get(), stash));
+            child.set(eval::DenseMatMulFunction::optimize(child.get(), stash));
+            child.set(eval::DenseMultiMatMulFunction::optimize(child.get(), stash));
             nodes.pop_back();
         }
     }
@@ -299,13 +298,13 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         }
         while (!nodes.empty()) {
             const Child &child = nodes.back().get();
-            child.set(DenseSimpleExpandFunction::optimize(child.get(), stash));
+            child.set(eval::DenseSimpleExpandFunction::optimize(child.get(), stash));
             child.set(DenseAddDimensionOptimizer::optimize(child.get(), stash));
             child.set(DenseRemoveDimensionOptimizer::optimize(child.get(), stash));
             child.set(VectorFromDoublesFunction::optimize(child.get(), stash));
             child.set(DenseTensorCreateFunction::optimize(child.get(), stash));
-            child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
-            child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
+            child.set(eval::DenseTensorPeekFunction::optimize(child.get(), stash));
+            child.set(eval::DenseLambdaPeekOptimizer::optimize(child.get(), stash));
             child.set(DenseLambdaFunction::optimize(child.get(), stash));
             child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
             child.set(DensePowAsMapOptimizer::optimize(child.get(), stash));

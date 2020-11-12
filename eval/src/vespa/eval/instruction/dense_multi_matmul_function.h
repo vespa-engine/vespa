@@ -5,16 +5,16 @@
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Tensor function for multiple dense matrix multiplications. This is
  * an extension to normal matrix multiplication where the tensors
  * combined may have more than 2 dimensions.
  **/
-class DenseMultiMatMulFunction : public eval::tensor_function::Op2
+class DenseMultiMatMulFunction : public tensor_function::Op2
 {
-    using Super = eval::tensor_function::Op2;
+    using Super = tensor_function::Op2;
 private:
     size_t _lhs_size;
     size_t _common_size;
@@ -24,9 +24,9 @@ private:
     bool   _rhs_common_inner;
 
 public:
-    DenseMultiMatMulFunction(const eval::ValueType &result_type,
-                             const eval::TensorFunction &lhs_in,
-                             const eval::TensorFunction &rhs_in,
+    DenseMultiMatMulFunction(const ValueType &result_type,
+                             const TensorFunction &lhs_in,
+                             const TensorFunction &rhs_in,
                              size_t lhs_size,
                              size_t common_size,
                              size_t rhs_size,
@@ -44,9 +44,9 @@ public:
     bool lhs_common_inner() const { return _lhs_common_inner; }
     bool rhs_common_inner() const { return _rhs_common_inner; }
 
-    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
-    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
+    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
 } // namespace vespalib::tensor

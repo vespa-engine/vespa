@@ -5,12 +5,7 @@
 #include <vespa/eval/eval/key_gen.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 
-namespace vespalib::tensor {
-
-using eval::CompiledFunction;
-using eval::Function;
-using eval::PassParams;
-using eval::ValueType;
+namespace vespalib::eval {
 
 namespace {
 
