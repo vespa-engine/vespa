@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.ApplicationId;
@@ -16,7 +15,6 @@ import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 
 /**
  * Handles request for supermodel config.
@@ -25,7 +23,6 @@ import java.util.logging.Level;
  */
 public class SuperModelRequestHandler implements RequestHandler {
 
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SuperModelRequestHandler.class.getName());
     private volatile SuperModelController handler;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final ConfigResponseFactory responseFactory;
@@ -73,18 +70,7 @@ public class SuperModelRequestHandler implements RequestHandler {
 
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
-        log.log(Level.FINE, () -> "SuperModelRequestHandler resolving " + req + " for app id '" + appId + "'");
-        if (handler != null) {
-            ConfigResponse configResponse = handler.resolveConfig(req);
-            log.log(Level.FINE, () -> "SuperModelRequestHandler returning response for config " + req +
-                    " with generation " + configResponse.getGeneration());
-            return configResponse;
-        }
-        return null;
-    }
-
-    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, ApplicationId applicationId, String configId) {
-        return handler.getConfig(configClass, applicationId, configId);
+        return (handler == null) ? null : handler.resolveConfig(req);
     }
 
     @Override
