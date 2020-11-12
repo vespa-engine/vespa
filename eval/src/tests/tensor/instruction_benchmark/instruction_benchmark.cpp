@@ -705,6 +705,12 @@ TEST(DenseJoin, no_overlap) {
     benchmark_join("dense no overlap multiply", lhs, rhs, operation::Mul::f);
 }
 
+TEST(DenseJoin, simple_expand) {
+    auto lhs = make_cube(D::idx("a", 5), D::idx("b", 4), D::idx("c", 4), 1.0);
+    auto rhs = make_cube(D::idx("d", 4), D::idx("e", 4), D::idx("f", 5), 2.0);
+    benchmark_join("dense simple expand multiply", lhs, rhs, operation::Mul::f);
+}
+
 TEST(DenseJoin, multiply_by_number) {
     auto lhs = make_spec(3.0);
     auto rhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::idx("c", 16), 2.0);

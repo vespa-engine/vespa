@@ -4,7 +4,7 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Tensor lambda optimizer for creating a new dense tensor based on
@@ -12,7 +12,7 @@ namespace vespalib::tensor {
  * wide area of operations (reshape, gather, slice).
  **/
 struct DenseLambdaPeekOptimizer {
-    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
+    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
 }

@@ -1,10 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_lambda_peek_optimizer.h"
-#include "dense_tensor_view.h"
-#include "dense_replace_type_function.h"
-#include "dense_cell_range_function.h"
 #include "dense_lambda_peek_function.h"
+#include "dense_cell_range_function.h"
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
+#include <vespa/eval/tensor/dense/dense_replace_type_function.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/node_tools.h>
 #include <vespa/eval/eval/basic_nodes.h>
@@ -14,10 +14,9 @@
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <optional>
 
-using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 namespace {
 
@@ -164,7 +163,7 @@ struct PeekAnalyzer {
     }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 const TensorFunction &
 DenseLambdaPeekOptimizer::optimize(const TensorFunction &expr, Stash &stash)
@@ -184,7 +183,7 @@ DenseLambdaPeekOptimizer::optimize(const TensorFunction &expr, Stash &stash)
                     if (result.cell_range && (dst_type.cell_type() == src_type.cell_type())) {
                         auto cell_range = result.cell_range.value();
                         if (cell_range.is_full(src_type.dense_subspace_size())) {
-                            return DenseReplaceTypeFunction::create_compact(dst_type, get_param, stash);
+                            return tensor::DenseReplaceTypeFunction::create_compact(dst_type, get_param, stash);
                         } else {
                             return stash.create<DenseCellRangeFunction>(dst_type, get_param,
                                     cell_range.offset, cell_range.length);
@@ -200,4 +199,4 @@ DenseLambdaPeekOptimizer::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

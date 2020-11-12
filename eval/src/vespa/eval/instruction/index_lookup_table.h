@@ -8,11 +8,9 @@
 #include <map>
 
 namespace vespalib::eval {
+
 class ValueType;
 class Function;
-}
-
-namespace vespalib::tensor {
 
 /**
  * Pre-computed index tables used by DenseLambdaPeekFunction. The
@@ -63,7 +61,7 @@ public:
     IndexLookupTable() = delete;
     static size_t num_cached();
     static size_t count_refs();
-    static Token::UP create(const eval::Function &idx_fun, const eval::ValueType &type);
+    static Token::UP create(const Function &idx_fun, const ValueType &type);
 };
 
 }

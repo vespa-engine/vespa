@@ -1,27 +1,23 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/eval/eval/tensor_function.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/dense/dense_matmul_function.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/instruction/dense_matmul_function.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
-using namespace vespalib::tensor;
 using namespace vespalib::eval::tensor_function;
 
-const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const TensorEngine &old_engine = tensor::DefaultTensorEngine::ref();
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
@@ -38,8 +34,8 @@ void verify_optimized(const vespalib::string &expr,
                       size_t lhs_size, size_t common_size, size_t rhs_size,
                       bool lhs_inner, bool rhs_inner)
 {
-    EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseMatMulFunction>();
@@ -50,14 +46,34 @@ void verify_optimized(const vespalib::string &expr,
     EXPECT_EQUAL(info[0]->rhs_size(), rhs_size);
     EXPECT_EQUAL(info[0]->lhs_common_inner(), lhs_inner);
     EXPECT_EQUAL(info[0]->rhs_common_inner(), rhs_inner);
+
+    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
+    EvalFixture old_fixture(old_engine, expr, param_repo, true);
+    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQUAL(old_fixture.result(), old_slow_fixture.result());
+    info = old_fixture.find_all<DenseMatMulFunction>();
+    ASSERT_EQUAL(info.size(), 1u);
+    EXPECT_TRUE(info[0]->result_is_mutable());
+    EXPECT_EQUAL(info[0]->lhs_size(), lhs_size);
+    EXPECT_EQUAL(info[0]->common_size(), common_size);
+    EXPECT_EQUAL(info[0]->rhs_size(), rhs_size);
+    EXPECT_EQUAL(info[0]->lhs_common_inner(), lhs_inner);
+    EXPECT_EQUAL(info[0]->rhs_common_inner(), rhs_inner);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
-    EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseMatMulFunction>();
+    EXPECT_TRUE(info.empty());
+
+    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
+    EvalFixture old_fixture(old_engine, expr, param_repo, true);
+    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQUAL(old_fixture.result(), old_slow_fixture.result());
+    info = old_fixture.find_all<DenseMatMulFunction>();
     EXPECT_TRUE(info.empty());
 }
 
@@ -84,7 +100,7 @@ TEST("require that expressions similar to matmul are not optimized") {
 }
 
 TEST("require that xw product can be debug dumped") {
-    EvalFixture fixture(prod_engine, "reduce(a2d3*b5d3,sum,d)", param_repo, true);
+    EvalFixture fixture(prod_factory, "reduce(a2d3*b5d3,sum,d)", param_repo, true);
     auto info = fixture.find_all<DenseMatMulFunction>();
     ASSERT_EQUAL(info.size(), 1u);
     fprintf(stderr, "%s\n", info[0]->as_string().c_str());

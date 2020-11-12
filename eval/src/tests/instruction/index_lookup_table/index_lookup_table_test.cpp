@@ -1,12 +1,11 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/tensor/dense/index_lookup_table.h>
+#include <vespa/eval/instruction/index_lookup_table.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
-using namespace vespalib::tensor;
 
 std::vector<uint32_t> make_table(std::vector<uint32_t> list) { return list; }
 

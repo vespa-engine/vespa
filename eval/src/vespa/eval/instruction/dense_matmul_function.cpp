@@ -1,23 +1,17 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_matmul_function.h"
-#include "dense_tensor_view.h"
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
 #include <cassert>
-
 #include <cblas.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::TensorEngine;
-using eval::as;
-using eval::Aggr;
-using namespace eval::tensor_function;
-using namespace eval::operation;
+using namespace tensor_function;
+using namespace operation;
 
 namespace {
 
@@ -33,9 +27,9 @@ double my_dot_product(const LCT *lhs, const RCT *rhs, size_t lhs_size, size_t co
 }
 
 template <typename LCT, typename RCT, bool lhs_common_inner, bool rhs_common_inner>
-void my_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
-    using OCT = typename eval::UnifyCellTypes<LCT,RCT>::type;
+    using OCT = typename UnifyCellTypes<LCT,RCT>::type;
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_array<OCT>(self.lhs_size * self.rhs_size);
@@ -49,11 +43,11 @@ void my_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
         }
         lhs += (lhs_common_inner ? self.common_size : 1);
     }
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool lhs_common_inner, bool rhs_common_inner>
-void my_cblas_double_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_cblas_double_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
     auto lhs_cells = state.peek(1).cells().typify<double>();
     auto rhs_cells = state.peek(0).cells().typify<double>();
@@ -63,11 +57,11 @@ void my_cblas_double_matmul_op(eval::InterpretedFunction::State &state, uint64_t
                 lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
                 rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
                 0.0, dst_cells.begin(), self.rhs_size);
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool lhs_common_inner, bool rhs_common_inner>
-void my_cblas_float_matmul_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_cblas_float_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
     auto lhs_cells = state.peek(1).cells().typify<float>();
     auto rhs_cells = state.peek(0).cells().typify<float>();
@@ -77,15 +71,15 @@ void my_cblas_float_matmul_op(eval::InterpretedFunction::State &state, uint64_t 
                 lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
                 rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
                 0.0, dst_cells.begin(), self.rhs_size);
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 bool is_matrix(const ValueType &type) {
     return (type.is_dense() && (type.dimensions().size() == 2));
 }
 
-bool is_matmul(const eval::ValueType &a, const eval::ValueType &b,
-               const vespalib::string &reduce_dim, const eval::ValueType &result_type)
+bool is_matmul(const ValueType &a, const ValueType &b,
+               const vespalib::string &reduce_dim, const ValueType &result_type)
 {
     size_t npos = ValueType::Dimension::npos;
     return (is_matrix(a) && is_matrix(b) && is_matrix(result_type) &&
@@ -131,9 +125,9 @@ struct MyGetFun {
     }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
-DenseMatMulFunction::Self::Self(const eval::ValueType &result_type_in,
+DenseMatMulFunction::Self::Self(const ValueType &result_type_in,
                                 size_t lhs_size_in,
                                 size_t common_size_in,
                                 size_t rhs_size_in)
@@ -146,9 +140,9 @@ DenseMatMulFunction::Self::Self(const eval::ValueType &result_type_in,
 
 DenseMatMulFunction::Self::~Self() = default;
 
-DenseMatMulFunction::DenseMatMulFunction(const eval::ValueType &result_type,
-                                         const eval::TensorFunction &lhs_in,
-                                         const eval::TensorFunction &rhs_in,
+DenseMatMulFunction::DenseMatMulFunction(const ValueType &result_type,
+                                         const TensorFunction &lhs_in,
+                                         const TensorFunction &rhs_in,
                                          size_t lhs_size,
                                          size_t common_size,
                                          size_t rhs_size,
@@ -165,15 +159,15 @@ DenseMatMulFunction::DenseMatMulFunction(const eval::ValueType &result_type,
 
 DenseMatMulFunction::~DenseMatMulFunction() = default;
 
-eval::InterpretedFunction::Instruction
-DenseMatMulFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
+InterpretedFunction::Instruction
+DenseMatMulFunction::compile_self(EngineOrFactory, Stash &stash) const
 {
-    using MyTypify = TypifyValue<eval::TypifyCellType,TypifyBool>;
+    using MyTypify = TypifyValue<TypifyCellType,TypifyBool>;
     Self &self = stash.create<Self>(result_type(), _lhs_size, _common_size, _rhs_size);
     auto op = typify_invoke<4,MyTypify,MyGetFun>(
             lhs().result_type().cell_type(), rhs().result_type().cell_type(),
             _lhs_common_inner, _rhs_common_inner);
-    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseMatMulFunction::Self>(self));
+    return InterpretedFunction::Instruction(op, wrap_param<DenseMatMulFunction::Self>(self));
 }
 
 void
@@ -188,7 +182,7 @@ DenseMatMulFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 }
 
 const TensorFunction &
-DenseMatMulFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
+DenseMatMulFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     auto reduce = as<Reduce>(expr);
     if (reduce && (reduce->aggr() == Aggr::SUM) && (reduce->dimensions().size() == 1)) {
@@ -204,4 +198,4 @@ DenseMatMulFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

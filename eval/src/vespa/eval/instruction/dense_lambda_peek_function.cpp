@@ -2,20 +2,12 @@
 
 #include "dense_lambda_peek_function.h"
 #include "index_lookup_table.h"
-#include "dense_tensor_view.h"
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/value.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::Function;
-using eval::InterpretedFunction;
-using eval::PassParams;
-using eval::TensorEngine;
-using eval::TensorFunction;
-using eval::Value;
-using eval::ValueType;
-using eval::as;
-using namespace eval::tensor_function;
+using namespace tensor_function;
 
 namespace {
 
@@ -40,7 +32,7 @@ void my_lambda_peek_op(InterpretedFunction::State &state, uint64_t param) {
     for (uint32_t idx: lookup_table) {
         *dst++ = src_cells[idx];
     }
-    state.pop_push(state.stash.create<DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
 }
 
 struct MyLambdaPeekOp {
@@ -48,7 +40,7 @@ struct MyLambdaPeekOp {
     static auto invoke() { return my_lambda_peek_op<DST_CT, SRC_CT>; }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 DenseLambdaPeekFunction::DenseLambdaPeekFunction(const ValueType &result_type,
                                                  const TensorFunction &child,
@@ -61,10 +53,10 @@ DenseLambdaPeekFunction::DenseLambdaPeekFunction(const ValueType &result_type,
 DenseLambdaPeekFunction::~DenseLambdaPeekFunction() = default;
 
 InterpretedFunction::Instruction
-DenseLambdaPeekFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
+DenseLambdaPeekFunction::compile_self(EngineOrFactory, Stash &stash) const
 {
     const Self &self = stash.create<Self>(result_type(), *_idx_fun);
-    using MyTypify = eval::TypifyCellType;
+    using MyTypify = TypifyCellType;
     auto op = typify_invoke<2,MyTypify,MyLambdaPeekOp>(result_type().cell_type(), child().result_type().cell_type());
     assert(child().result_type().is_dense());
     return InterpretedFunction::Instruction(op, wrap_param<Self>(self));
@@ -75,4 +67,4 @@ DenseLambdaPeekFunction::idx_fun_dump() const {
     return _idx_fun->dump_as_lambda();
 }
 
-} // namespace vespalib::tensor
+} // namespace

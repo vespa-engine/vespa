@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_simple_expand_function.h"
-#include "dense_tensor_view.h"
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
@@ -10,25 +10,18 @@
 #include <optional>
 #include <algorithm>
 
-namespace vespalib::tensor {
+namespace vespalib::eval{
 
 using vespalib::ArrayRef;
 
-using eval::Value;
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::TensorEngine;
-using eval::TypifyCellType;
-using eval::as;
-
-using namespace eval::operation;
-using namespace eval::tensor_function;
+using namespace operation;
+using namespace tensor_function;
 
 using Inner = DenseSimpleExpandFunction::Inner;
 
-using op_function = eval::InterpretedFunction::op_function;
-using Instruction = eval::InterpretedFunction::Instruction;
-using State = eval::InterpretedFunction::State;
+using op_function = InterpretedFunction::op_function;
+using Instruction = InterpretedFunction::Instruction;
+using State = InterpretedFunction::State;
 
 namespace {
 
@@ -44,7 +37,7 @@ template <typename LCT, typename RCT, typename Fun, bool rhs_inner>
 void my_simple_expand_op(State &state, uint64_t param) {
     using ICT = typename std::conditional<rhs_inner,RCT,LCT>::type;
     using OCT = typename std::conditional<rhs_inner,LCT,RCT>::type;
-    using DCT = typename eval::UnifyCellTypes<ICT,OCT>::type;
+    using DCT = typename UnifyCellTypes<ICT,OCT>::type;
     using OP = typename std::conditional<rhs_inner,SwapArgs2<Fun>,Fun>::type;
     const ExpandParams &params = unwrap_param<ExpandParams>(param);
     OP my_op(params.function);
@@ -56,7 +49,7 @@ void my_simple_expand_op(State &state, uint64_t param) {
         apply_op2_vec_num(dst, inner_cells.begin(), outer_cell, inner_cells.size(), my_op);
         dst += inner_cells.size();
     }
-    state.pop_pop_push(state.stash.create<DenseTensorView>(params.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(params.result_type, TypedCells(dst_cells)));
 }
 
 //-----------------------------------------------------------------------------
@@ -85,7 +78,7 @@ std::optional<Inner> detect_simple_expand(const TensorFunction &lhs, const Tenso
     }
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
 
@@ -102,7 +95,7 @@ DenseSimpleExpandFunction::DenseSimpleExpandFunction(const ValueType &result_typ
 DenseSimpleExpandFunction::~DenseSimpleExpandFunction() = default;
 
 Instruction
-DenseSimpleExpandFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
+DenseSimpleExpandFunction::compile_self(EngineOrFactory, Stash &stash) const
 {
     size_t result_size = result_type().dense_subspace_size();
     const ExpandParams &params = stash.create<ExpandParams>(result_type(), result_size, function());
@@ -130,4 +123,4 @@ DenseSimpleExpandFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace

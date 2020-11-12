@@ -8,24 +8,24 @@
 #include "sparse/direct_sparse_tensor_builder.h"
 #include "dense/dense_tensor.h"
 #include "dense/typed_dense_tensor_builder.h"
-#include "dense/dense_dot_product_function.h"
+#include <vespa/eval/instruction/dense_dot_product_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
-#include "dense/dense_matmul_function.h"
-#include "dense/dense_multi_matmul_function.h"
+#include <vespa/eval/instruction/dense_matmul_function.h>
+#include <vespa/eval/instruction/dense_multi_matmul_function.h>
 #include "dense/dense_fast_rename_optimizer.h"
 #include "dense/dense_add_dimension_optimizer.h"
 #include "dense/dense_single_reduce_function.h"
 #include "dense/dense_remove_dimension_optimizer.h"
-#include "dense/dense_lambda_peek_optimizer.h"
+#include <vespa/eval/instruction/dense_lambda_peek_optimizer.h>
 #include "dense/dense_lambda_function.h"
-#include "dense/dense_simple_expand_function.h"
+#include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include "dense/dense_simple_join_function.h"
 #include "dense/dense_number_join_function.h"
 #include "dense/dense_pow_as_map_optimizer.h"
 #include "dense/dense_simple_map_function.h"
 #include "dense/vector_from_doubles_function.h"
 #include "dense/dense_tensor_create_function.h"
-#include "dense/dense_tensor_peek_function.h"
+#include <vespa/eval/instruction/dense_tensor_peek_function.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -41,7 +41,6 @@ namespace vespalib::tensor {
 
 using eval::Aggr;
 using eval::Aggregator;
-using eval::DenseXWProductFunction;
 using eval::DoubleValue;
 using eval::TensorFunction;
 using eval::TensorSpec;
@@ -285,10 +284,10 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         }
         while (!nodes.empty()) {
             const Child &child = nodes.back().get();
-            child.set(DenseDotProductFunction::optimize(child.get(), stash));
-            child.set(DenseXWProductFunction::optimize(child.get(), stash));
-            child.set(DenseMatMulFunction::optimize(child.get(), stash));
-            child.set(DenseMultiMatMulFunction::optimize(child.get(), stash));
+            child.set(eval::DenseDotProductFunction::optimize(child.get(), stash));
+            child.set(eval::DenseXWProductFunction::optimize(child.get(), stash));
+            child.set(eval::DenseMatMulFunction::optimize(child.get(), stash));
+            child.set(eval::DenseMultiMatMulFunction::optimize(child.get(), stash));
             nodes.pop_back();
         }
     }
@@ -299,13 +298,13 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         }
         while (!nodes.empty()) {
             const Child &child = nodes.back().get();
-            child.set(DenseSimpleExpandFunction::optimize(child.get(), stash));
+            child.set(eval::DenseSimpleExpandFunction::optimize(child.get(), stash));
             child.set(DenseAddDimensionOptimizer::optimize(child.get(), stash));
             child.set(DenseRemoveDimensionOptimizer::optimize(child.get(), stash));
             child.set(VectorFromDoublesFunction::optimize(child.get(), stash));
             child.set(DenseTensorCreateFunction::optimize(child.get(), stash));
-            child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
-            child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
+            child.set(eval::DenseTensorPeekFunction::optimize(child.get(), stash));
+            child.set(eval::DenseLambdaPeekOptimizer::optimize(child.get(), stash));
             child.set(DenseLambdaFunction::optimize(child.get(), stash));
             child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
             child.set(DensePowAsMapOptimizer::optimize(child.get(), stash));
