@@ -331,7 +331,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     initializeThreads.reset();
 
     _prepareRestartHandler = std::make_unique<PrepareRestartHandler>(*_flushEngine);
-    RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId());
+    RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId(),
+                               std::max(2u, hwInfo.cpu().cores()/4));
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks = std::make_unique<RPCHooks>(rpcParams);
     _metricsEngine->addExternalMetrics(_rpcHooks->proto_rpc_adapter_metrics());

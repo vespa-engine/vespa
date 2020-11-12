@@ -87,8 +87,9 @@ public:
         config::ConfigUri slobrok_config;
         vespalib::string  identity;
         uint32_t          rtcPort;
+        uint32_t          numRpcThreads;
 
-        Params(Proton &parent, uint32_t port, const vespalib::string &ident);
+        Params(Proton &parent, uint32_t port, const vespalib::string &ident, uint32_t numRpcThreads);
         ~Params();
     };
     RPCHooksBase(const RPCHooksBase &) = delete;
