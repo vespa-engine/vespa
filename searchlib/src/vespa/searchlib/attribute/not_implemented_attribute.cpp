@@ -3,6 +3,7 @@
 #include "not_implemented_attribute.h"
 #include <vespa/vespalib/util/exceptions.h>
 
+using vespalib::make_string_short::fmt;
 namespace search {
 
 using largeint_t = attribute::IAttributeVector::largeint_t;
@@ -10,7 +11,8 @@ using SearchContext = AttributeVector::SearchContext;
 
 void
 NotImplementedAttribute::notImplemented() const {
-    throw vespalib::IllegalStateException("The function is not implemented.");
+    throw vespalib::IllegalStateException(fmt("The function is not implemented for attribute '%s' of type '%s'.",
+                                              getName().c_str(), getNativeClassName().c_str()));
 }
 
 uint32_t

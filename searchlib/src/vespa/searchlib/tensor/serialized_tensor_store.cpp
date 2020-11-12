@@ -7,7 +7,6 @@
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/macro.h>
 
 using vespalib::datastore::Handle;
 using vespalib::eval::Value;
