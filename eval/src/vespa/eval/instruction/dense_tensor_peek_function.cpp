@@ -3,7 +3,6 @@
 #include "dense_tensor_peek_function.h"
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/tensor.h>
 
 namespace vespalib::eval {
 

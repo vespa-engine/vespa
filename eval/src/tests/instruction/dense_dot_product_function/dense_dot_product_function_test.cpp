@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/instruction/dense_dot_product_function.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/instruction/dense_dot_product_function.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("dense_dot_product_function_test");
