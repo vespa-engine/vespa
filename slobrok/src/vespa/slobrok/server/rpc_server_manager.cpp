@@ -11,6 +11,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".rpcserver");
 
+using vespalib::make_string_short::fmt;
+
 namespace slobrok {
 
 RpcServerManager::RpcServerManager(SBEnv &sbenv)
@@ -128,9 +130,8 @@ RpcServerManager::addMyReservation(const std::string & name, const std::string &
             // was alright already
             return OkState(0, "already registered");
         } else {
-            return OkState(FRTE_RPC_METHOD_FAILED, vespalib::make_string(
-                          "name %s registered (to %s), cannot register %s",
-                          name.c_str(), old->getSpec().c_str(), spec.c_str()));
+            return OkState(FRTE_RPC_METHOD_FAILED, fmt("name %s registered (to %s), cannot register %s",
+                                                       name.c_str(), old->getSpec().c_str(), spec.c_str()));
         }
     }
 
@@ -229,7 +230,7 @@ RpcServerManager::removeLocal(const std::string & name, const std::string &spec)
     if (rpcsrv->getSpec() != spec) {
         // the client can probably ignore this "error"
         // or log it on level INFO?
-        return OkState(1, "name registered, but with different spec");
+        return OkState(1, fmt("name registered, but with different spec (%s)", rpcsrv->getSpec().c_str()));
     }
     auto tdUP = _rpcsrvmap.remove(name);
     LOG_ASSERT(tdUP.get() == rpcsrv);
