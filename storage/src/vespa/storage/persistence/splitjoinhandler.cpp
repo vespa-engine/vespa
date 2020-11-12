@@ -68,19 +68,6 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
     PersistenceUtil::LockResult lock1(_env.lockAndGetDisk(target1));
     PersistenceUtil::LockResult lock2(_env.lockAndGetDisk(target2));
 
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-    {
-    auto desc = fmt("split(%s -> %s, %s)",
-                    cmd.getBucketId().toString().c_str(),
-                    target1.getBucketId().toString().c_str(),
-                    target2.getBucketId().toString().c_str()));
-    LOG_BUCKET_OPERATION(cmd.getBucketId(), desc);
-    LOG_BUCKET_OPERATION(target1.getBucketId(), desc);
-    if (target2.getRawId() != 0) {
-        LOG_BUCKET_OPERATION(target2.getBucketId(), desc);
-    }
-}
-#endif
     spi::Result result = _spi.split(spiBucket, spi::Bucket(target1),
                                     spi::Bucket(target2), tracker->context());
     if (result.hasError()) {
@@ -247,19 +234,6 @@ SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker
         lock2 = _env.lockAndGetDisk(secondBucket);
     }
 
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-    {
-    auto desc = fmt("join(%s, %s -> %s)",
-                    firstBucket.getBucketId().toString().c_str(),
-                    secondBucket.getBucketId().toString().c_str(),
-                    cmd.getBucketId().toString().c_str());
-    LOG_BUCKET_OPERATION(cmd.getBucketId(), desc);
-    LOG_BUCKET_OPERATION(firstBucket.getBucketId(), desc);
-    if (firstBucket != secondBucket) {
-        LOG_BUCKET_OPERATION(secondBucket.getBucketId(), desc);
-    }
-}
-#endif
     spi::Result result =
             _spi.join(spi::Bucket(firstBucket),
                       spi::Bucket(secondBucket),

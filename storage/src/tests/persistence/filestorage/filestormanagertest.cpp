@@ -85,9 +85,8 @@ struct FileStorTestBase : Test {
     void SetUp() override;
     void TearDown() override;
 
-    void createBucket(document::BucketId bid, uint16_t disk) {
+    void createBucket(document::BucketId bid) {
         spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
-        assert(disk == 0u);
         _node->getPersistenceProvider().createBucket(makeSpiBucket(bid), context);
 
         StorBucketDatabase::WrappedEntry entry(
@@ -103,7 +102,7 @@ struct FileStorTestBase : Test {
     std::shared_ptr<api::PutCommand> make_put_command(StorageMessage::Priority pri = 20,
                                                       const std::string& docid = "id:foo:testdoctype1::bar",
                                                       Timestamp timestamp = 100) {
-        Document::SP doc(createDocument("my content", docid).release());
+        Document::SP doc(createDocument("my content", docid));
         auto bucket = make_bucket_for_doc(doc->getId());
         auto cmd = std::make_shared<api::PutCommand>(bucket, std::move(doc), timestamp);
         cmd->setPriority(pri);
@@ -313,7 +312,7 @@ FileStorTestBase::SetUp()
 void
 FileStorTestBase::TearDown()
 {
-    _node.reset(0);
+    _node.reset();
 }
 
 struct FileStorManagerTest : public FileStorTestBase {
@@ -330,7 +329,7 @@ TEST_F(FileStorManagerTest, header_only_put) {
 
     document::BucketId bid(16, 4000);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     // Putting it
     {
@@ -393,7 +392,7 @@ TEST_F(FileStorManagerTest, put) {
 
     document::BucketId bid(16, 4000);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     // Putting it
     {
@@ -1071,7 +1070,7 @@ TEST_F(FileStorManagerTest, notify_on_split_source_ownership_changed) {
     auto thread = c.make_disk_thread();
 
     document::BucketId source(getFirstBucketNotOwnedByDistributor(0));
-    createBucket(source, 0);
+    createBucket(source);
     for (uint32_t i=0; i<10; ++i) {
         ASSERT_NO_FATAL_FAILURE(putDoc(top, filestorHandler, source, i));
     }
@@ -1110,8 +1109,8 @@ TEST_F(FileStorManagerTest, join) {
     }
     document::BucketIdFactory factory;
 
-    createBucket(document::BucketId(17, 0x00001), 0);
-    createBucket(document::BucketId(17, 0x10001), 0);
+    createBucket(document::BucketId(17, 0x00001));
+    createBucket(document::BucketId(17, 0x10001));
 
     {
         // Populate bucket with the given data
@@ -1217,8 +1216,8 @@ TEST_F(FileStorManagerTest, visiting) {
         document::BucketId(16, 2)
     };
 
-    createBucket(ids[0], 0);
-    createBucket(ids[1], 0);
+    createBucket(ids[0]);
+    createBucket(ids[1]);
 
     lib::RandomGen randomizer(523);
     for (uint32_t i=0; i<docCount; ++i) {
@@ -1326,7 +1325,7 @@ TEST_F(FileStorManagerTest, remove_location) {
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     document::BucketId bid(8, 0);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     // Adding some documents to be removed later
     for (uint32_t i=0; i<=10; ++i) {
@@ -1368,7 +1367,7 @@ TEST_F(FileStorManagerTest, delete_bucket) {
     auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     api::BucketInfo bucketInfo;
     // Putting it
@@ -1410,7 +1409,7 @@ TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
     Document::SP doc(new Document(*_testdoctype1, docId));
     document::BucketId bid(16, 4000);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     api::BucketInfo bucketInfo;
 
@@ -1458,7 +1457,7 @@ TEST_F(FileStorManagerTest, delete_bucket_with_invalid_bucket_info){
     auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     // Putting it
     {
@@ -1498,7 +1497,7 @@ TEST_F(FileStorManagerTest, no_timestamps) {
                 "some content", "id:ns:testdoctype1::crawler:http://www.ntnu.no/").release());
     document::BucketId bid(16, 4000);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     // Putting it
     {
@@ -1535,7 +1534,7 @@ TEST_F(FileStorManagerTest, equal_timestamps) {
     // Creating a document to test with
     document::BucketId bid(16, 4000);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     // Putting it
     {
@@ -1592,7 +1591,7 @@ TEST_F(FileStorManagerTest, get_iter) {
             "storage", lib::NodeType::STORAGE, 3);
     document::BucketId bid(16, 4000);
 
-    createBucket(bid, 0);
+    createBucket(bid);
 
     std::vector<Document::SP > docs;
     // Creating some documents to test with
@@ -1666,8 +1665,7 @@ TEST_F(FileStorManagerTest, set_bucket_active_state) {
 
     document::BucketId bid(16, 4000);
 
-    const uint16_t disk = 0;
-    createBucket(bid, disk);
+    createBucket(bid);
     auto& provider = dynamic_cast<spi::dummy::DummyPersistence&>(_node->getPersistenceProvider());
     EXPECT_FALSE(provider.isActive(makeSpiBucket(bid)));
 
@@ -1738,7 +1736,7 @@ TEST_F(FileStorManagerTest, notify_owner_distributor_on_outdated_set_bucket_stat
 
     document::BucketId bid(getFirstBucketNotOwnedByDistributor(0));
     ASSERT_NE(bid.getRawId(), 0);
-    createBucket(bid, 0);
+    createBucket(bid);
 
     auto cmd = std::make_shared<api::SetBucketStateCommand>(
             makeDocumentBucket(bid), api::SetBucketStateCommand::ACTIVE);
@@ -1882,7 +1880,7 @@ void FileStorTestBase::assert_request_size_set(TestFileStorComponents& c, std::s
 TEST_F(FileStorManagerTest, put_command_size_is_added_to_metric) {
     TestFileStorComponents c(*this);
     document::BucketId bucket(16, 4000);
-    createBucket(bucket, 0);
+    createBucket(bucket);
     auto cmd = std::make_shared<api::PutCommand>(
             makeDocumentBucket(bucket), _node->getTestDocMan().createRandomDocument(), api::Timestamp(12345));
 
@@ -1892,7 +1890,7 @@ TEST_F(FileStorManagerTest, put_command_size_is_added_to_metric) {
 TEST_F(FileStorManagerTest, update_command_size_is_added_to_metric) {
     TestFileStorComponents c(*this);
     document::BucketId bucket(16, 4000);
-    createBucket(bucket, 0);
+    createBucket(bucket);
     auto update = std::make_shared<document::DocumentUpdate>(
             _node->getTestDocMan().getTypeRepo(),
             _node->getTestDocMan().createRandomDocument()->getType(),
@@ -1906,7 +1904,7 @@ TEST_F(FileStorManagerTest, update_command_size_is_added_to_metric) {
 TEST_F(FileStorManagerTest, remove_command_size_is_added_to_metric) {
     TestFileStorComponents c(*this);
     document::BucketId bucket(16, 4000);
-    createBucket(bucket, 0);
+    createBucket(bucket);
     auto cmd = std::make_shared<api::RemoveCommand>(
             makeDocumentBucket(bucket), document::DocumentId("id:foo:testdoctype1::bar"), api::Timestamp(123456));
 
@@ -1916,7 +1914,7 @@ TEST_F(FileStorManagerTest, remove_command_size_is_added_to_metric) {
 TEST_F(FileStorManagerTest, get_command_size_is_added_to_metric) {
     TestFileStorComponents c(*this);
     document::BucketId bucket(16, 4000);
-    createBucket(bucket, 0);
+    createBucket(bucket);
     auto cmd = std::make_shared<api::GetCommand>(
             makeDocumentBucket(bucket), document::DocumentId("id:foo:testdoctype1::bar"), document::AllFields::NAME);
 
@@ -1927,7 +1925,7 @@ TEST_F(FileStorManagerTest, test_and_set_condition_mismatch_not_counted_as_failu
     TestFileStorComponents c(*this);
     auto doc = _node->getTestDocMan().createRandomDocument();
     document::BucketId bucket(16, document::BucketIdFactory().getBucketId(doc->getId()).getRawId());
-    createBucket(bucket, 0);
+    createBucket(bucket);
     auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), std::move(doc), api::Timestamp(12345));
     cmd->setCondition(TestAndSetCondition("not testdoctype1"));
     cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 3));
