@@ -18,6 +18,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -203,6 +204,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var instance = controller.applications().requireInstance(deployment.applicationId());
         var status = in ? GlobalRouting.Status.in : GlobalRouting.Status.out;
         var agent = GlobalRouting.Agent.operator; // Always operator as this is an operator API
+        requireDeployment(deployment, instance);
 
         // Set rotation status, if rotations can route to this zone
         if (rotationCanRouteTo(deployment.zoneId())) {
@@ -238,7 +240,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .collect(Collectors.toList())
                         : List.of(zoneId);
                 for (var zone : zones) {
-                    var deploymentId = new DeploymentId(instance.id(), zone);
+                    var deploymentId = requireDeployment(new DeploymentId(instance.id(), zone), instance);
                     // Include status from rotation
                     if (rotationCanRouteTo(zone)) {
                         var rotationStatus = controller.routing().globalRotationStatus(deploymentId);
@@ -329,6 +331,13 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("No such zone: " + zone);
         }
         return zone;
+    }
+
+    private static DeploymentId requireDeployment(DeploymentId deployment, Instance instance) {
+        if (!instance.deployments().containsKey(deployment.zoneId())) {
+            throw new IllegalArgumentException("No such deployment: " + deployment);
+        }
+        return deployment;
     }
 
     private static boolean isRecursive(HttpRequest request) {

@@ -345,6 +345,22 @@ public class RoutingApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"t1.a1 not found\"}",
                               400);
 
+        // GET, DELETE non-existent deployment
+        var context = deploymentTester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region("us-east-3")
+                .endpoint("default", "default")
+                .build();
+        context.submit(applicationPackage).deploy();
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
+                                              "", Request.Method.GET),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such deployment: tenant.application in prod.us-west-1\"}",
+                              400);
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
+                                              "", Request.Method.DELETE),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such deployment: tenant.application in prod.us-west-1\"}",
+                              400);
+
         // GET non-existent zone
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/environment/prod/region/us-north-1",
                                                    "", Request.Method.GET),
