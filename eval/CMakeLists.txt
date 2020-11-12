@@ -52,6 +52,7 @@ vespa_define_module(
     src/tests/instruction/dense_simple_expand_function
     src/tests/instruction/dense_tensor_peek_function
     src/tests/instruction/index_lookup_table
+    src/tests/instruction/join_with_number
     src/tests/tensor/default_value_builder_factory
     src/tests/tensor/dense_add_dimension_optimizer
     src/tests/tensor/dense_dimension_combiner

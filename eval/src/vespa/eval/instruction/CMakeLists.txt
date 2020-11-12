@@ -21,4 +21,5 @@ vespa_add_library(eval_instruction OBJECT
     generic_reduce.cpp
     generic_rename.cpp
     index_lookup_table.cpp
+    join_with_number_function.cpp
 )

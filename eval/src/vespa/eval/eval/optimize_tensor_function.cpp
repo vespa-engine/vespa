@@ -17,7 +17,7 @@
 #include <vespa/eval/tensor/dense/dense_lambda_function.h>
 #include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/eval/tensor/dense/dense_simple_join_function.h>
-#include <vespa/eval/tensor/dense/dense_number_join_function.h>
+#include <vespa/eval/instruction/join_with_number_function.h>
 #include <vespa/eval/tensor/dense/dense_pow_as_map_optimizer.h>
 #include <vespa/eval/tensor/dense/dense_simple_map_function.h>
 #include <vespa/eval/tensor/dense/vector_from_doubles_function.h>
@@ -73,7 +73,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, c
             child.set(DensePowAsMapOptimizer::optimize(child.get(), stash));
             child.set(DenseSimpleMapFunction::optimize(child.get(), stash));
             child.set(DenseSimpleJoinFunction::optimize(child.get(), stash));
-            child.set(DenseNumberJoinFunction::optimize(child.get(), stash));
+            child.set(JoinWithNumberFunction::optimize(child.get(), stash));
             child.set(DenseSingleReduceFunction::optimize(child.get(), stash));
             nodes.pop_back();
         }
