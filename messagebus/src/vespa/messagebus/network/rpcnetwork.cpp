@@ -276,6 +276,9 @@ RPCNetwork::unregisterSession(const string &session)
     if (_ident.getServicePrefix().empty()) {
         return;
     }
+    if (getPort() <= 0) {
+        return;
+    }
     string name = _ident.getServicePrefix();
     name += "/";
     name += session;
