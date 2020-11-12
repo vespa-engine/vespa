@@ -17,7 +17,6 @@ import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
@@ -25,13 +24,11 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
-import com.yahoo.vespa.curator.Lock;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -84,7 +81,7 @@ public class ApplicationHandler extends HttpHandler {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
 
         if (isReindexingRequest(request)) {
-            setReindexingEnabled(applicationId, false);
+            applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.enabled(false));
             return new JSONResponse(Response.Status.OK);
         }
 
@@ -215,7 +212,7 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isReindexingRequest(request)) {
-            setReindexingEnabled(applicationId, true);
+            applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.enabled(true));
             return new JSONResponse(Response.Status.OK);
         }
 
@@ -232,10 +229,7 @@ public class ApplicationHandler extends HttpHandler {
                                      .filter(type -> ! type.isBlank())
                                      .collect(toList());
         Instant now = applicationRepository.clock().instant();
-        ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
-        try (Lock lock = database.lock(applicationId)) {
-            ApplicationReindexing reindexing = database.readReindexingStatus(applicationId)
-                                                       .orElse(ApplicationReindexing.ready(now));
+        applicationRepository.modifyReindexing(applicationId, reindexing -> {
             if (clusters.isEmpty())
                 reindexing = reindexing.withReady(now);
             else
@@ -245,24 +239,14 @@ public class ApplicationHandler extends HttpHandler {
                     else
                         for (String type : types)
                             reindexing = reindexing.withReady(cluster, type, now);
-            database.writeReindexingStatus(applicationId, reindexing);
-        }
-    }
-
-    void setReindexingEnabled(ApplicationId applicationId, boolean enabled) {
-        Instant now = applicationRepository.clock().instant();
-        ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
-        try (Lock lock = database.lock(applicationId)) {
-            database.writeReindexingStatus(applicationId,
-                                           database.readReindexingStatus(applicationId)
-                                                   .orElse(ApplicationReindexing.ready(now))
-                                                   .enabled(enabled));
-        }
+            return reindexing;
+        });
     }
 
     private HttpResponse getReindexingStatus(ApplicationId applicationId) {
         return new ReindexResponse(applicationRepository.getTenant(applicationId).getApplicationRepo().database()
-                                                        .readReindexingStatus(applicationId));
+                                                        .readReindexingStatus(applicationId)
+                                                        .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)));
     }
 
     private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {
@@ -451,36 +435,25 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static class ReindexResponse extends JSONResponse {
-        ReindexResponse(Optional<ApplicationReindexing> applicationReindexing) {
+        ReindexResponse(ApplicationReindexing reindexing) {
             super(Response.Status.OK);
-            applicationReindexing.ifPresent(reindexing -> {
                 object.setBool("enabled", reindexing.enabled());
                 setStatus(object.setObject("status"), reindexing.common());
 
-                Cursor clustersArray = object.setArray("clusters");
+                Cursor clustersObject = object.setObject("clusters");
                 reindexing.clusters().entrySet().stream().sorted(comparingByKey())
                           .forEach(cluster -> {
-                              Cursor clusterObject = clustersArray.addObject();
-                              clusterObject.setString("name", cluster.getKey());
+                              Cursor clusterObject = clustersObject.setObject(cluster.getKey());
                               setStatus(clusterObject.setObject("status"), cluster.getValue().common());
 
-                              Cursor pendingArray = clusterObject.setArray("pending");
+                              Cursor pendingObject = clusterObject.setObject("pending");
                               cluster.getValue().pending().entrySet().stream().sorted(comparingByKey())
-                                     .forEach(pending -> {
-                                         Cursor pendingObject = pendingArray.addObject();
-                                         pendingObject.setString("type", pending.getKey());
-                                         pendingObject.setLong("requiredGeneration", pending.getValue());
-                                     });
+                                     .forEach(pending -> pendingObject.setLong(pending.getKey(), pending.getValue()));
 
-                              Cursor readyArray = clusterObject.setArray("ready");
+                              Cursor readyObject = clusterObject.setObject("ready");
                               cluster.getValue().ready().entrySet().stream().sorted(comparingByKey())
-                                     .forEach(ready -> {
-                                         Cursor readyObject = readyArray.addObject();
-                                         readyObject.setString("type", ready.getKey());
-                                         setStatus(readyObject, ready.getValue());
-                                     });
+                                     .forEach(ready -> setStatus(readyObject.setObject(ready.getKey()), ready.getValue()));
                           });
-            });
         }
 
         private static void setStatus(Cursor object, ApplicationReindexing.Status status) {

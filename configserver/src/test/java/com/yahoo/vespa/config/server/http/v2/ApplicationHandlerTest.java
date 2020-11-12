@@ -210,6 +210,8 @@ public class ApplicationHandlerTest {
     @Test
     public void testReindex() throws Exception {
         ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
+        reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Reindexing status not found for default.default\"}", 404);
+
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         ApplicationReindexing expected = ApplicationReindexing.ready(clock.instant());
         assertEquals(expected,
@@ -259,7 +261,7 @@ public class ApplicationHandlerTest {
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
-        database.writeReindexingStatus(applicationId, expected.withPending("boo", "bar", 123L));
+        applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.withPending("boo", "bar", 123L));
 
         long now = clock.instant().toEpochMilli();
         reindexing(applicationId, GET, "{" +
@@ -267,47 +269,38 @@ public class ApplicationHandlerTest {
                                        "  \"status\": {" +
                                        "    \"readyMillis\": " + (now - 2000) +
                                        "  }," +
-                                       "  \"clusters\": [" +
-                                       "    {" +
-                                       "      \"name\": \"boo\"," +
+                                       "  \"clusters\": {" +
+                                       "    \"boo\": {" +
                                        "      \"status\": {" +
                                        "        \"readyMillis\": " + (now - 1000) +
                                        "      }," +
-                                       "      \"pending\": [" +
-                                       "        {" +
-                                       "          \"type\": \"bar\"," +
-                                       "          \"requiredGeneration\": 123" +
-                                       "        }" +
-                                       "      ]," +
-                                       "      \"ready\": [" +
-                                       "        {" +
-                                       "          \"type\": \"bar\"," +
+                                       "      \"pending\": {" +
+                                       "        \"bar\": 123" +
+                                       "      }," +
+                                       "      \"ready\": {" +
+                                       "        \"bar\": {" +
                                        "          \"readyMillis\": " + now +
                                        "        }," +
-                                       "        {" +
-                                       "          \"type\": \"baz\"," +
+                                       "        \"baz\": {" +
                                        "          \"readyMillis\": " + now +
                                        "        }" +
-                                       "      ]" +
+                                       "      }" +
                                        "    }," +
-                                       "    {" +
-                                       "      \"name\": \"foo\", " +
+                                       "    \"foo\": {" +
                                        "      \"status\": {" +
                                        "        \"readyMillis\": " + (now - 1000) +
                                        "      }," +
-                                       "      \"pending\": []," +
-                                       "      \"ready\": [" +
-                                       "        {" +
-                                       "          \"type\": \"bar\"," +
+                                       "      \"pending\": {}," +
+                                       "      \"ready\": {" +
+                                       "        \"bar\": {" +
                                        "          \"readyMillis\": " + now +
                                        "        }," +
-                                       "        {" +
-                                       "          \"type\": \"baz\"," +
+                                       "        \"baz\": {" +
                                        "          \"readyMillis\": " + now +
                                        "        }" +
-                                       "      ]" +
+                                       "      }" +
                                        "    }" +
-                                       "  ]" +
+                                       "  }" +
                                        "}");
     }
 
@@ -524,15 +517,19 @@ public class ApplicationHandlerTest {
                                                    GET);
     }
 
-    private void reindexing(ApplicationId application, Method method, String expectedBody) throws IOException {
+    private void reindexing(ApplicationId application, Method method, String expectedBody, int statusCode) throws IOException {
         String reindexingUrl = toUrlPath(application, Zone.defaultZone(), true) + "/reindexing";
         HttpResponse response = createApplicationHandler().handle(createTestRequest(reindexingUrl, method));
-        assertEquals(200, response.getStatus());
         if (expectedBody != null) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             response.render(out);
             assertJsonEquals(out.toString(), expectedBody);
         }
+        assertEquals(statusCode, response.getStatus());
+    }
+
+    private void reindexing(ApplicationId application, Method method, String expectedBody) throws IOException {
+        reindexing(application, method, expectedBody, 200);
     }
 
     private void reindexing(ApplicationId application, Method method) throws IOException {

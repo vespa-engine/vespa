@@ -160,15 +160,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     }
 
     private void storeReindexing(ApplicationId applicationId, long requiredSession) {
-        try (Lock sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
-            ApplicationReindexing reindexing = tenant.getApplicationRepo().database().readReindexingStatus(applicationId)
-                                                     .orElse(ApplicationReindexing.ready(clock.instant()));
-
+        applicationRepository.modifyReindexing(applicationId, reindexing -> {
             for (ReindexActions.Entry entry : configChangeActions.getReindexActions().getEntries())
                 reindexing = reindexing.withPending(entry.getClusterName(), entry.getDocumentType(), requiredSession);
 
-            tenant.getApplicationRepo().database().writeReindexingStatus(applicationId, reindexing);
-        }
+            return reindexing;
+        });
     }
 
     /**
