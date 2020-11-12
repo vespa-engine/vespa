@@ -1493,7 +1493,7 @@ public class ModelProvisioningTest {
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
     }
 
-    /** Deploying an application with "nodes count" stnax standalone should give a single-node deployment */
+    /** Deploying an application with "nodes count" standalone should give a single-node deployment */
     @Test
     public void testThatHostedSyntaxWorksOnStandalone() {
         String xmlWithNodes =
