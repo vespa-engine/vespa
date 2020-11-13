@@ -94,8 +94,6 @@ public interface ModelContext {
         boolean skipCommunicationManagerThread();
         boolean skipMbusRequestThread();
         boolean skipMbusReplyThread();
-        default String tlsCompressionType() { return "ZSTD"; }
-        default double visibilityDelay() { return 0.0; }
 
         boolean useAsyncMessageHandlingOnSchedule();
         int contentNodeBucketDBStripeBits();
