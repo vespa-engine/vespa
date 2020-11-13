@@ -90,6 +90,7 @@ public class Configurator {
         // Need NettyServerCnxnFactory to be able to use TLS for communication
         sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
         sb.append("quorumListenOnAllIPs=true").append("\n");
+        sb.append("standaloneEnabled=false").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server));
         SSLContext sslContext = new SslContextBuilder().build();
