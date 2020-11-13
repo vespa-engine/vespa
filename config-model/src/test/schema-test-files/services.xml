@@ -85,7 +85,7 @@
     </servlet>
 
     <http>
-      <filtering>
+      <filtering strict-mode="true">
         <access-control domain="my.athens-domain" read="true">
           <exclude>
             <binding>http//*/foo/*</binding>
@@ -124,7 +124,7 @@
         </request-chain>
       </filtering>
 
-      <server port="4080" id="myServer"/>
+      <server port="4080" id="myServer" default-request-chain="DerivedChain" default-response-chain="BaseChain"/>
       <server port="4081" id="anotherServer"/>
       <server port="4082" id="defaultSsl">
         <ssl>

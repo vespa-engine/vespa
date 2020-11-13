@@ -53,6 +53,7 @@ Http = element http {
 }
 
 Filtering = element filtering {
+    attribute strict-mode { xsd:boolean }? &
     HttpFilter* &
     AccessControl? &
     element request-chain {
@@ -66,6 +67,8 @@ Filtering = element filtering {
 HttpServer =  element server {
     attribute port { xsd:nonNegativeInteger }? &
     attribute required { xsd:boolean }? &
+    attribute default-request-chain { xsd:string }? &
+    attribute default-response-chain { xsd:string }? &
     ComponentId &
     (Ssl | SslProvider)? &
     GenericConfig*
