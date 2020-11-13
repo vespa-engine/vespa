@@ -24,9 +24,12 @@ yum -y install centos-release-scl
 yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
 
 yum-builddep -y \
+             --setopt="base-source.skip_if_unavailable=true" \
+             --setopt="updates-source.skip_if_unavailable=true" \
+             --setopt="extras-source.skip_if_unavailable=true" \
+             --setopt="epel-source.skip_if_unavailable=true" \
              --setopt="centos-sclo-rh-source.skip_if_unavailable=true" \
              --setopt="centos-sclo-sclo-source.skip_if_unavailable=true" \
-             --setopt="extras-source.skip_if_unavailable=true" \
              ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
 
 rpmbuild -bb ~/rpmbuild/SPECS/vespa-${VESPA_VERSION}.spec
