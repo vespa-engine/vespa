@@ -927,7 +927,7 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
         assert(!bucket_result.hasError());
         const auto& buckets = bucket_result.getList();
         LOG(debug, "Fetching bucket info for %zu buckets in space '%s'",
-            buckets.size(), elem.first.toString().c_str());
+            buckets.size(), bucket_space.toString().c_str());
         auto& db = elem.second->bucketDatabase();
 
         for (const auto& bucket : buckets) {

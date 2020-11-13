@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.billing;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -272,7 +271,9 @@ public class BillingApiHandler extends LoggingRequestHandler {
     }
 
     private void getPlanForTenant(Cursor cursor, TenantName tenant) {
-        cursor.setString("plan", billingController.getPlan(tenant).value());
+        PlanId plan = billingController.getPlan(tenant);
+        cursor.setString("plan", plan.value());
+        cursor.setString("planName", billingController.getPlanDisplayName(plan));
     }
 
     private void renderInstrument(Cursor cursor, PaymentInstrument instrument) {
@@ -357,8 +358,12 @@ public class BillingApiHandler extends LoggingRequestHandler {
         cursor.setString("id", lineItem.id());
         cursor.setString("description", lineItem.description());
         cursor.setString("amount", lineItem.amount().toString());
+        cursor.setString("plan", lineItem.plan());
+        cursor.setString("planName", billingController.getPlanDisplayName(PlanId.from(lineItem.plan())));
+
         lineItem.applicationId().ifPresent(appId -> {
             cursor.setString("application", appId.application().value());
+            cursor.setString("instance", appId.instance().value());
         });
         lineItem.zoneId().ifPresent(zoneId ->
             cursor.setString("zone", zoneId.value())
