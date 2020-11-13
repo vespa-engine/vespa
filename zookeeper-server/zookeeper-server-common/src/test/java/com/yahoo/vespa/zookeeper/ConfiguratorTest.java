@@ -55,9 +55,11 @@ public class ConfiguratorTest {
     @Test
     public void config_is_written_correctly_when_one_server() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
+        builder.myidFile(idFile.getAbsolutePath());
+        builder.myid(0);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
         validateConfigFileSingleHost(cfgFile);
-        validateIdFile(idFile, "");
+        validateIdFile(idFile, "0\n");
     }
 
     @Test

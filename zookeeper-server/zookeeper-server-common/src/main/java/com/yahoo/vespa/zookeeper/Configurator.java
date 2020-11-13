@@ -100,10 +100,8 @@ public class Configurator {
     }
 
     private void writeMyIdFile(ZookeeperServerConfig config) throws IOException {
-        if (config.server().size() > 1) {
-            try (FileWriter writer = new FileWriter(getDefaults().underVespaHome(config.myidFile()))) {
-                writer.write(config.myid() + "\n");
-            }
+        try (FileWriter writer = new FileWriter(getDefaults().underVespaHome(config.myidFile()))) {
+            writer.write(config.myid() + "\n");
         }
     }
 
