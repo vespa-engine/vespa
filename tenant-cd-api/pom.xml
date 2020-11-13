@@ -22,10 +22,10 @@
     <properties>
 
         <!--
-            This version must match the string in all ExportPackage annotations.
+            This version must match the string in all ExportPackage annotations in this module.
             It must also be in sync junit version specified in 'hosted-tenant-base'.
         -->
-        <hosted-tenant-base-junit-version>5.6.2</hosted-tenant-base-junit-version>
+        <hosted-tenant-base-junit-version>5.7.0</hosted-tenant-base-junit-version>
 
     </properties>
 
