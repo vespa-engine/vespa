@@ -10,6 +10,15 @@ namespace vespalib {
  * get the lock since this will not affect the fast-path of obtaining
  * the lock immediately.
  *
+ * Note that multiple threads trying to obtain the lock at the same
+ * time will reduce performance due to atomic writes against the same
+ * cache line.
+ *
+ * Note that being preempted while holding the lock will reduce
+ * performance, even more if the thread holding the lock is lower
+ * priority than the threads trying to obtain the lock. With a
+ * deterministic scheduler this could even lead to deadlock.
+ *
  * This implementation satisfies the BasicLockable requirements,
  * making it work with things like std::lock_guard.
  **/
