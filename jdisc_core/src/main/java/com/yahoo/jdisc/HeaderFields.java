@@ -223,7 +223,7 @@ public class HeaderFields implements Map<String, List<String>> {
     @Override
     public List<String> get(Object key) {
         synchronized (monitor) {
-            return new ArrayList<>(content.get(key));
+            return content.get(key);
         }
     }
 
