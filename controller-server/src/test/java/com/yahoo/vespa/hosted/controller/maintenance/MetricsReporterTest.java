@@ -107,7 +107,6 @@ public class MetricsReporterTest {
     public void deployment_fail_ratio() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
         MetricsReporter metricsReporter = createReporter(tester.controller());
@@ -141,7 +140,6 @@ public class MetricsReporterTest {
     public void deployment_average_duration() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
@@ -187,7 +185,6 @@ public class MetricsReporterTest {
     public void deployments_failing_upgrade() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
@@ -237,7 +234,6 @@ public class MetricsReporterTest {
     public void deployment_warnings_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
@@ -269,7 +265,6 @@ public class MetricsReporterTest {
     public void name_service_queue_size_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .globalServiceId("default")
                 .region("us-west-1")
                 .region("us-east-3")

@@ -30,7 +30,6 @@ public class OutstandingChangeDeployerTest {
         DeploymentTester tester = new DeploymentTester();
         OutstandingChangeDeployer deployer = new OutstandingChangeDeployer(tester.controller(), Duration.ofMinutes(10));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 

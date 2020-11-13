@@ -116,7 +116,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private static final ApplicationPackage applicationPackageDefault = new ApplicationPackageBuilder()
             .instances("default")
-            .environment(Environment.prod)
             .globalServiceId("foo")
             .region("us-central-1")
             .region("us-east-3")
@@ -126,7 +125,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private static final ApplicationPackage applicationPackageInstance1 = new ApplicationPackageBuilder()
             .instances("instance1")
-            .environment(Environment.prod)
             .globalServiceId("foo")
             .region("us-central-1")
             .region("us-east-3")
@@ -332,7 +330,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
                 .globalServiceId("foo")
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-east-3")
                 .allow(ValidationId.globalEndpointChange)
@@ -709,7 +706,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Second attempt has a service under a different domain than the tenant of the application, and fails.
         ApplicationPackage packageWithServiceForWrongDomain = new ApplicationPackageBuilder()
                 .instances("instance1")
-                .environment(Environment.prod)
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN_2.getName()), AthenzService.from("service"))
                 .region("us-west-1")
                 .build();
@@ -723,7 +719,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ApplicationPackage packageWithService = new ApplicationPackageBuilder()
                 .instances("instance1")
                 .globalServiceId("foo")
-                .environment(Environment.prod)
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN.getName()), AthenzService.from("service"))
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
@@ -770,7 +765,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Sixth attempt has a multi-instance deployment spec, and is accepted.
         ApplicationPackage multiInstanceSpec = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
-                .environment(Environment.prod)
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
                 .endpoint("default", "foo", "us-central-1", "us-west-1", "us-east-3")
@@ -1338,7 +1332,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("another.domain"), com.yahoo.config.provision.AthenzService.from("service"))
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
@@ -1360,7 +1353,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
@@ -1493,7 +1485,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
                 .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
-                .environment(Environment.prod)
                 .instances("instance1")
                 .region(zone.region().value())
                 .build();

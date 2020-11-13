@@ -32,7 +32,6 @@ public class RotationStatusUpdaterTest {
 
         // Deploy application with global rotation
         var applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .globalServiceId("foo")
                 .region(zone1.region().value())
                 .region(zone2.region().value())
@@ -61,7 +60,6 @@ public class RotationStatusUpdaterTest {
 
         // Another rotation is assigned
         applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region(zone1.region().value())
                 .region(zone2.region().value())
                 .region(zone3.region().value())

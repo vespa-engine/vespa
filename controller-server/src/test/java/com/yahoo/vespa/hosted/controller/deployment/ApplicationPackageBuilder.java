@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
@@ -40,7 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ApplicationPackageBuilder {
 
-    private final StringBuilder environmentBody = new StringBuilder();
+    private final StringBuilder prodBody = new StringBuilder();
     private final StringBuilder validationOverridesBody = new StringBuilder();
     private final StringBuilder blockChange = new StringBuilder();
     private final StringJoiner notifications = new StringJoiner("/>\n  <email ",
@@ -52,7 +51,6 @@ public class ApplicationPackageBuilder {
     private OptionalInt majorVersion = OptionalInt.empty();
     private String instances = "default";
     private String upgradePolicy = null;
-    private Environment environment = Environment.prod;
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
@@ -72,11 +70,6 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder upgradePolicy(String upgradePolicy) {
         this.upgradePolicy = upgradePolicy;
-        return this;
-    }
-
-    public ApplicationPackageBuilder environment(Environment environment) {
-        this.environment = environment;
         return this;
     }
 
@@ -116,32 +109,32 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder region(RegionName regionName, boolean active) {
-        environmentBody.append("      <region active='")
-                       .append(active)
-                       .append("'>")
-                       .append(regionName.value())
-                       .append("</region>\n");
+        prodBody.append("      <region active='")
+                .append(active)
+                .append("'>")
+                .append(regionName.value())
+                .append("</region>\n");
         return this;
     }
 
     public ApplicationPackageBuilder test(String regionName) {
-        environmentBody.append("      <test>");
-        environmentBody.append(regionName);
-        environmentBody.append("</test>\n");
+        prodBody.append("      <test>");
+        prodBody.append(regionName);
+        prodBody.append("</test>\n");
         return this;
     }
 
     public ApplicationPackageBuilder parallel(String... regionName) {
-        environmentBody.append("    <parallel>\n");
+        prodBody.append("    <parallel>\n");
         Arrays.stream(regionName).forEach(this::region);
-        environmentBody.append("    </parallel>\n");
+        prodBody.append("    </parallel>\n");
         return this;
     }
 
     public ApplicationPackageBuilder delay(Duration delay) {
-        environmentBody.append("    <delay seconds='");
-        environmentBody.append(delay.getSeconds());
-        environmentBody.append("'/>\n");
+        prodBody.append("    <delay seconds='");
+        prodBody.append(delay.getSeconds());
+        prodBody.append("'/>\n");
         return this;
     }
 
@@ -236,18 +229,15 @@ public class ApplicationPackageBuilder {
         if (explicitStagingTest)
             xml.append("    <staging />\n");
         xml.append(blockChange);
-        xml.append("    <");
-        xml.append(environment.value());
+        xml.append("    <prod");
         if (globalServiceId != null) {
             xml.append(" global-service-id='");
             xml.append(globalServiceId);
             xml.append("'");
         }
         xml.append(">\n");
-        xml.append(environmentBody);
-        xml.append("    </");
-        xml.append(environment.value());
-        xml.append(">\n");
+        xml.append(prodBody);
+        xml.append("    </prod>\n");
         xml.append("    <endpoints>\n");
         xml.append(endpointsBody);
         xml.append("    </endpoints>\n");

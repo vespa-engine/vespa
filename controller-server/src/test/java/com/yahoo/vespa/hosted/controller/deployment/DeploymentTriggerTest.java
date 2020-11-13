@@ -72,7 +72,6 @@ public class DeploymentTriggerTest {
     public void testTriggerFailing() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
@@ -154,7 +153,6 @@ public class DeploymentTriggerTest {
     public void deploymentSpecWithDelays() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .systemTest()
-                .environment(Environment.prod)
                 .delay(Duration.ofSeconds(30))
                 .region("us-west-1")
                 .delay(Duration.ofMinutes(2))
@@ -212,7 +210,6 @@ public class DeploymentTriggerTest {
     @Test
     public void deploymentSpecWithParallelDeployments() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
                 .region("eu-west-1")
@@ -251,7 +248,6 @@ public class DeploymentTriggerTest {
     public void testNoOtherChangesDuringSuspension() {
         // Application is deployed in 3 regions:
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
                 .build();
@@ -413,7 +409,6 @@ public class DeploymentTriggerTest {
     @Test
     public void applicationVersionIsNotDowngraded() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-central-1")
                 .region("eu-west-1")
                 .build();
@@ -456,7 +451,6 @@ public class DeploymentTriggerTest {
         var app1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var app2 = tester.newDeploymentContext("tenant1", "app2", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-central-1")
                 .region("eu-west-1")
                 .build();
@@ -527,7 +521,6 @@ public class DeploymentTriggerTest {
     @Test
     public void eachParallelDeployTargetIsTested() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .parallel("eu-west-1", "us-east-3")
                 .build();
         // Application version 1 and platform version 6.1.
@@ -575,7 +568,6 @@ public class DeploymentTriggerTest {
     @Test
     public void retriesFailingJobs() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-central-1")
                 .build();
 
@@ -626,7 +618,6 @@ public class DeploymentTriggerTest {
     public void testPlatformVersionSelection() {
         // Setup system
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
         Version version1 = tester.controller().readSystemVersion();
@@ -648,7 +639,6 @@ public class DeploymentTriggerTest {
         tester.controllerTester().upgradeSystem(version2);
 
         applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
@@ -668,7 +658,6 @@ public class DeploymentTriggerTest {
     @Test
     public void requeueOutOfCapacityStagingJob() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
 
@@ -777,7 +766,6 @@ public class DeploymentTriggerTest {
     public void testMultipleInstances() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
-                .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
         var app = tester.newDeploymentContext("tenant1", "application1", "instance1").submit(applicationPackage); // TODO jonmv: support instances in deployment context>

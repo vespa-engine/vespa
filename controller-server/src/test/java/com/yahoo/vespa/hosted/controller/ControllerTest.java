@@ -78,7 +78,6 @@ public class ControllerTest {
     public void testDeployment() {
         // Setup system
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
@@ -140,7 +139,6 @@ public class ControllerTest {
 
         // Production zone for which there is no JobType is not allowed.
         applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("deep-space-9")
                 .build();
         try {
@@ -153,7 +151,6 @@ public class ControllerTest {
 
         // prod zone removal is not allowed
         applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
         try {
@@ -173,7 +170,6 @@ public class ControllerTest {
         applicationPackage = new ApplicationPackageBuilder()
                 .allow(ValidationId.deploymentRemoval)
                 .upgradePolicy("default")
-                .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
         context.submit(applicationPackage);
@@ -238,7 +234,6 @@ public class ControllerTest {
     public void testDnsAliasRegistration() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "foo")
                 .region("us-west-1")
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
@@ -267,7 +262,6 @@ public class ControllerTest {
     public void testDnsAliasRegistrationLegacy() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .globalServiceId("foo")
                 .region("us-west-1")
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
@@ -307,7 +301,6 @@ public class ControllerTest {
     public void testDnsAliasRegistrationWithEndpoints() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("foobar", "qrs", "us-west-1", "us-central-1")  // Rotation 01
                 .endpoint("default", "qrs", "us-west-1", "us-central-1") // Rotation 02
                 .endpoint("all", "qrs")                                  // Rotation 03
@@ -366,7 +359,6 @@ public class ControllerTest {
 
         // Application is deployed with endpoint pointing to 2/3 zones
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "qrs", west.region().value(), central.region().value())
                 .region(west.region().value())
                 .region(central.region().value())
@@ -384,7 +376,6 @@ public class ControllerTest {
 
         // Application is deployed with an additional endpoint
         ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "qrs", west.region().value(), central.region().value())
                 .endpoint("east", "qrs", east.region().value())
                 .region(west.region().value())
@@ -408,7 +399,6 @@ public class ControllerTest {
 
         // Application is deployed with default endpoint pointing to 3/3 zones
         ApplicationPackage applicationPackage3 = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "qrs", west.region().value(), central.region().value(), east.region().value())
                 .endpoint("east", "qrs", east.region().value())
                 .region(west.region().value())
@@ -429,7 +419,6 @@ public class ControllerTest {
 
         // Region is removed from an endpoint without override
         ApplicationPackage applicationPackage4 = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "qrs", west.region().value(), central.region().value())
                 .endpoint("east", "qrs", east.region().value())
                 .region(west.region().value())
@@ -450,7 +439,6 @@ public class ControllerTest {
 
         // Entire endpoint is removed without override
         ApplicationPackage applicationPackage5 = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("east", "qrs", east.region().value())
                 .region(west.region().value())
                 .region(central.region().value())
@@ -469,7 +457,6 @@ public class ControllerTest {
 
         // ... override is added
         ApplicationPackage applicationPackage6 = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("east", "qrs", east.region().value())
                 .region(west.region().value())
                 .region(central.region().value())
@@ -483,7 +470,6 @@ public class ControllerTest {
     public void testUnassignRotations() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "qrs", "us-west-1", "us-central-1")
                 .region("us-west-1")
                 .region("us-central-1")
@@ -491,7 +477,6 @@ public class ControllerTest {
         context.submit(applicationPackage).deploy();
 
         ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-central-1")
                 .allow(ValidationId.globalEndpointChange)
@@ -513,7 +498,6 @@ public class ControllerTest {
         {
             var context = tester.newDeploymentContext("tenant1", "app1", "default");
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                    .environment(Environment.prod)
                     .endpoint("default", "foo")
                     .region("us-west-1")
                     .region("us-central-1") // Two deployments should result in each DNS alias being registered once
@@ -529,7 +513,6 @@ public class ControllerTest {
 
             // Application is deleted and rotation is unassigned
             applicationPackage = new ApplicationPackageBuilder()
-                    .environment(Environment.prod)
                     .allow(ValidationId.deploymentRemoval)
                     .allow(ValidationId.globalEndpointChange)
                     .build();
@@ -558,7 +541,6 @@ public class ControllerTest {
         {
             var context = tester.newDeploymentContext("tenant2", "app2", "default");
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                    .environment(Environment.prod)
                     .endpoint("default", "foo")
                     .region("us-west-1")
                     .region("us-central-1")
@@ -576,7 +558,6 @@ public class ControllerTest {
         {
             var context = tester.newDeploymentContext("tenant1", "app1", "default");
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                    .environment(Environment.prod)
                     .endpoint("default", "foo")
                     .region("us-west-1")
                     .region("us-central-1")
@@ -606,7 +587,6 @@ public class ControllerTest {
         tester.configServer().bootstrap(List.of(ZoneId.from("prod.cd-us-central-1")), SystemApplication.all());
         tester.controllerTester().upgradeSystem(six);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .majorVersion(6)
                 .region("cd-us-central-1")
                 .build();
@@ -636,11 +616,7 @@ public class ControllerTest {
 
     @Test
     public void testDevDeployment() {
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.dev)
-                .majorVersion(6)
-                .region("us-east-1")
-                .build();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().build();
 
         // Create application
         var context = tester.newDeploymentContext();
@@ -682,7 +658,6 @@ public class ControllerTest {
     public void testSuspension() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                                                        .environment(Environment.prod)
                                                         .region("us-west-1")
                                                         .region("us-east-3")
                                                         .build();
@@ -703,7 +678,6 @@ public class ControllerTest {
     public void testDeletingApplicationThatHasAlreadyBeenDeleted() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-east-3")
                 .region("us-west-1")
                 .build();
@@ -717,7 +691,6 @@ public class ControllerTest {
     @Test
     public void testDeployApplicationPackageWithApplicationDir() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build(true);
         tester.newDeploymentContext().submit(applicationPackage);
@@ -727,7 +700,6 @@ public class ControllerTest {
     public void testDeployApplicationWithWarnings() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
         ZoneId zone = ZoneId.from("prod", "us-west-1");
@@ -750,7 +722,6 @@ public class ControllerTest {
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
         var applicationPackage = new ApplicationPackageBuilder().athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
                                                                 .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
-                                                                .environment(prodZone.environment())
                                                                 .region(prodZone.region())
                                                                 .build();
         // Deploy app1 in production
@@ -822,7 +793,6 @@ public class ControllerTest {
         var context = tester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
@@ -936,7 +906,6 @@ public class ControllerTest {
 
         // Deploy application
         var applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "foo")
                 .region(west.region().value())
                 .region(east.region().value())
@@ -947,7 +916,6 @@ public class ControllerTest {
 
         // Redeploy with endpoint cluster changed needs override
         applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "bar")
                 .region(west.region().value())
                 .region(east.region().value())
@@ -967,7 +935,6 @@ public class ControllerTest {
 
         // Redeploy with override succeeds
         applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .endpoint("default", "bar")
                 .region(west.region().value())
                 .region(east.region().value())
