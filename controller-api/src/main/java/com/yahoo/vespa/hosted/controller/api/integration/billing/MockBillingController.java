@@ -32,6 +32,11 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
+    public String getPlanDisplayName(String planId) {
+        return "Plan with id: " + planId;
+    }
+
+    @Override
     public Quota getQuota(TenantName tenant) {
         return Quota.unlimited().withMaxClusterSize(5);
     }

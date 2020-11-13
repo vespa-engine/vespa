@@ -1,6 +1,7 @@
 {
     "until":"2020-05-28",
     "plan":"some-plan",
+    "planName":"Plan with id: some-plan",
     "current":{
         "amount":"123.00",
         "status":"accrued",
@@ -9,7 +10,9 @@
             {
                 "id":"some-id",
                 "description":"description",
-                "amount":"123.00"
+                "amount":"123.00",
+                "plan":"some-plan",
+                "planName":"Plan with id: some-plan"
             }
         ]
     },
@@ -30,7 +33,9 @@
                 {
                     "id":"some-id",
                     "description":"description",
-                    "amount":"123.00"
+                    "amount":"123.00",
+                    "plan":"some-plan",
+                    "planName":"Plan with id: some-plan"
                 }
             ]
         }
