@@ -3,4 +3,5 @@ Makefile
 gidmapattribute_test
 /documentmetastore2.dat
 /documentmetastore3.dat
+/documentmetastore4.dat
 searchcore_documentmetastore_test_app

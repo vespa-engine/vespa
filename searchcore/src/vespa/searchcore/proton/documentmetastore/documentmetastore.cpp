@@ -5,6 +5,7 @@
 #include "operation_listener.h"
 #include "search_context.h"
 #include <vespa/fastos/file.h>
+#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>
@@ -102,7 +103,7 @@ public:
 
     uint8_t
     getNextBucketUsedBits() {
-        return _bucketUsedBitsReader.readHostOrder();
+        return std::max(_bucketUsedBitsReader.readHostOrder(), storage::spi::BucketLimits::MinUsedBits);
     }
 
     Timestamp

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/documentid.h>
+#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/checksumaggregators.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
@@ -627,6 +628,31 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded)
         EXPECT_EQ(numLids + 1, dms2.getNumDocs());
         EXPECT_EQ(numLids - (3 - i), dms2.getNumUsedLids());
     }
+}
+
+TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time)
+{
+    DocumentMetaStore dms1(createBucketDB());
+    dms1.constructFreeList();
+
+    constexpr uint32_t lid = 1;
+    GlobalId gid = createGid(lid);
+    BucketId bucketId(gid.convertToBucketId());
+    bucketId.setUsedBits(storage::spi::BucketLimits::MinUsedBits - 1);
+    uint32_t added_lid = addGid(dms1, gid, bucketId, Timestamp(1000));
+    ASSERT_EQ(added_lid, lid);
+
+    TuneFileAttributes tuneFileAttributes;
+    DummyFileHeaderContext fileHeaderContext;
+    AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
+    ASSERT_TRUE(dms1.save(saveTarget, "documentmetastore2"));
+
+    DocumentMetaStore dms2(createBucketDB(), "documentmetastore2");
+    ASSERT_TRUE(dms2.load());
+    ASSERT_EQ(dms2.getNumDocs(), 2); // Incl. zero LID
+
+    BucketId expected_bucket(storage::spi::BucketLimits::MinUsedBits, gid.convertToBucketId().getRawId());
+    assertGid(gid, lid, dms2, expected_bucket, Timestamp(1000));
 }
 
 TEST(DocumentMetaStore, stats_are_updated)
