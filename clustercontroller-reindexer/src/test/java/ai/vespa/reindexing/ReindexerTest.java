@@ -80,7 +80,7 @@ class ReindexerTest {
     }
 
     @Test
-    void parameters() {
+    void testParameters() {
         Reindexer reindexer = new Reindexer(cluster, Map.of(), database, failIfCalled, clock);
         ProgressToken token = new ProgressToken();
         VisitorParameters parameters = reindexer.createParameters(music, token);
@@ -90,12 +90,12 @@ class ReindexerTest {
         assertEquals("[Storage:cluster=cluster;clusterconfigid=id]", parameters.getRoute().toString());
         assertEquals("cluster", parameters.getRemoteDataHandler());
         assertEquals("music", parameters.getDocumentSelection());
-        assertEquals(DocumentProtocol.Priority.LOW_1, parameters.getPriority());
+        assertEquals(DocumentProtocol.Priority.NORMAL_3, parameters.getPriority());
     }
 
     @Test
     @Timeout(10)
-    void testReindexing() throws ReindexingLockException, ExecutionException, InterruptedException {
+    void testReindexing() throws ReindexingLockException {
         // Reindexer is told to update "music" documents no earlier than EPOCH, which is just now.
         // Since "music" is a new document type, it is stored as just reindexed, and nothing else happens.
         new Reindexer(cluster, Map.of(music, Instant.EPOCH), database, failIfCalled, clock).reindex();
@@ -108,7 +108,7 @@ class ReindexerTest {
         new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(10)), database, failIfCalled, clock).reindex();
         assertEquals(reindexing, database.readReindexing());
 
-        // It's time to reindex the "music" documents — let this complete successfully.
+        // It's time to reindex the "music" documents — let this complete successfully.
         clock.advance(Duration.ofMillis(10));
         AtomicBoolean shutDown = new AtomicBoolean();
         Executor executor = Executors.newSingleThreadExecutor();
