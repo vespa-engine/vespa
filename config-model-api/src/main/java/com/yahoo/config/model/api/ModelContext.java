@@ -94,17 +94,12 @@ public interface ModelContext {
         boolean skipCommunicationManagerThread();
         boolean skipMbusRequestThread();
         boolean skipMbusReplyThread();
-        // TODO(balder) Last used on 7.305
-        default boolean tlsUseFSync() { return true; }
         default String tlsCompressionType() { return "ZSTD"; }
         default double visibilityDelay() { return 0.0; }
 
         boolean useAsyncMessageHandlingOnSchedule();
         int contentNodeBucketDBStripeBits();
         int mergeChunkSize();
-
-        // TODO(balder) Last used on 7.306
-        default boolean useContentNodeBtreeDb() { return true; }
 
         boolean useThreePhaseUpdates();
 
