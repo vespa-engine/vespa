@@ -145,7 +145,7 @@ TEST_MT_FF("require that SpinLock is thread safe", 24, SpinLock(), MyState()) {
     }
 }
 
-TEST_MT_FF("require that SpinLock is thread safe", 24, std::mutex(), MyState()) {
+TEST_MT_FF("require that std::mutex is thread safe", 24, std::mutex(), MyState()) {
     size_t expect = thread_safety_loop(f1, f2, thread_id, 24);
     expect += thread_safety_loop(f1, f2, thread_id, 12);
     expect += thread_safety_loop(f1, f2, thread_id, 6);
