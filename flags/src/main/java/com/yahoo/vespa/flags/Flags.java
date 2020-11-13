@@ -324,6 +324,11 @@ public class Flags {
             "Size of merge buffer in service layer",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
+    public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
+            "feed-concurrency", 0.5,
+            "How much concurrency should be allowed for feed",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag REGIONAL_CONTAINER_REGISTRY = defineFeatureFlag(
             "regional-container-registry",

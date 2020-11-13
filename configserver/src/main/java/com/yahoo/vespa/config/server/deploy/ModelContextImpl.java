@@ -196,6 +196,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final int contentNodeBucketDBStripeBits;
         private final int mergeChunkSize;
+        private final double feedConcurrency;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -255,6 +256,8 @@ public class ModelContextImpl implements ModelContext {
             contentNodeBucketDBStripeBits = Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             mergeChunkSize = Flags.MERGE_CHUNK_SIZE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            feedConcurrency = Flags.FEED_CONCURRENCY.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
@@ -338,6 +341,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
         @Override public int mergeChunkSize() { return mergeChunkSize; }
+        @Override public double feedConcurrency() { return feedConcurrency; }
     }
 
 }

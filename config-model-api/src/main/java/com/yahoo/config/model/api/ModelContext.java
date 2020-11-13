@@ -102,6 +102,7 @@ public interface ModelContext {
         boolean useAsyncMessageHandlingOnSchedule();
         int contentNodeBucketDBStripeBits();
         int mergeChunkSize();
+        double feedConcurrency();
 
         // TODO(balder) Last used on 7.306
         default boolean useContentNodeBtreeDb() { return true; }
