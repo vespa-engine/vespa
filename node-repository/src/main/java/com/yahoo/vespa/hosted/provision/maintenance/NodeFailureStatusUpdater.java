@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -73,25 +72,25 @@ public class NodeFailureStatusUpdater extends NodeRepositoryMaintainer {
     }
 
     /**
-     * If the node is down (see {@link #badNode}), and there is no "down" history record, we add it.
+     * If the node is down (see {@link #allDown}), and there is no "down" history record, we add it.
      * Otherwise we remove any "down" history record.
      */
     private void updateActiveNodeDownState() {
-        NodeList activeNodes = NodeList.copyOf(nodeRepository().getNodes(Node.State.active));
+        NodeList activeNodes = nodeRepository().list(Node.State.active);
         serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName().forEach((hostname, serviceInstances) -> {
             Optional<Node> node = activeNodes.matching(n -> n.hostname().equals(hostname.toString())).first();
             if (node.isEmpty()) return;
 
             // Already correct record, nothing to do
-            boolean badNode = badNode(serviceInstances);
-            if (badNode == node.get().history().event(History.Event.Type.down).isPresent()) return;
+            boolean isDown = allDown(serviceInstances);
+            if (isDown == node.get().isDown()) return;
 
             // Lock and update status
             ApplicationId owner = node.get().allocation().get().owner();
             try (var lock = nodeRepository().lock(owner)) {
                 node = getNode(hostname.toString(), owner, lock); // Re-get inside lock
                 if (node.isEmpty()) return; // Node disappeared or changed allocation
-                if (badNode) {
+                if (isDown) {
                     recordAsDown(node.get(), lock);
                 } else {
                     clearDownRecord(node.get(), lock);
@@ -107,7 +106,7 @@ public class NodeFailureStatusUpdater extends NodeRepositoryMaintainer {
      * Returns true if the node is considered bad: All monitored services services are down.
      * If a node remains bad for a long time, the NodeFailer will try to fail the node.
      */
-    static boolean badNode(List<ServiceInstance> services) {
+    static boolean allDown(List<ServiceInstance> services) {
         Map<ServiceStatus, Long> countsByStatus = services.stream()
                                                           .collect(Collectors.groupingBy(ServiceInstance::serviceStatus, counting()));
 

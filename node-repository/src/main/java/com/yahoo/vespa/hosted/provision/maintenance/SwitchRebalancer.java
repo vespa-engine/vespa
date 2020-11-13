@@ -33,6 +33,8 @@ public class SwitchRebalancer extends NodeMover<Move> {
 
     @Override
     protected boolean maintain() {
+        if ( ! nodeRepository().isWorking()) return false;
+
         boolean success = true;
         // Using node list without holding lock as strong consistency is not needed here
         NodeList allNodes = nodeRepository().list();

@@ -385,6 +385,18 @@ public class NodeRepository extends AbstractComponent {
         return List.of(getNodeAcl(node, candidates));
     }
 
+    /**
+     * Returns whether the zone managed by this node repository seems to be working.
+     * If too many nodes are not responding, there is probably some zone-wide issue
+     * and we should probably refrain from making changes to it.
+     */
+    public boolean isWorking() {
+        NodeList activeNodes = list(State.active);
+        if (activeNodes.size() <= 5) return true; // Not enough data to decide
+        NodeList downNodes = activeNodes.down();
+        return ! ( (double)downNodes.size() / (double)activeNodes.size() > 0.2 );
+    }
+
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
@@ -768,7 +780,7 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Increases the restart generation of the active nodes matching the filter.
      *
-     * @return the nodes in their new state.
+     * @return the nodes in their new state
      */
     public List<Node> restart(NodeFilter filter) {
         return performOn(StateFilter.from(State.active, filter),
@@ -778,7 +790,8 @@ public class NodeRepository extends AbstractComponent {
 
     /**
      * Increases the reboot generation of the nodes matching the filter.
-     * @return the nodes in their new state.
+     *
+     * @return the nodes in their new state
      */
     public List<Node> reboot(NodeFilter filter) {
         return performOn(filter, (node, lock) -> write(node.withReboot(node.status().reboot().withIncreasedWanted()), lock));
@@ -787,7 +800,7 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Set target OS version of all nodes matching given filter.
      *
-     * @return the nodes in their new state.
+     * @return the nodes in their new state
      */
     public List<Node> upgradeOs(NodeFilter filter, Optional<Version> version) {
         return performOn(filter, (node, lock) -> {
@@ -805,7 +818,7 @@ public class NodeRepository extends AbstractComponent {
      * Writes this node after it has changed some internal state but NOT changed its state field.
      * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
      *
-     * @param lock Already acquired lock
+     * @param lock already acquired lock
      * @return the written node for convenience
      */
     public Node write(Node node, Mutex lock) { return write(List.of(node), lock).get(0); }

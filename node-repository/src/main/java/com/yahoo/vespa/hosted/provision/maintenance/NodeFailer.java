@@ -75,6 +75,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
+        if ( ! nodeRepository().isWorking()) return false;
+
         int throttledHostFailures = 0;
         int throttledNodeFailures = 0;
 

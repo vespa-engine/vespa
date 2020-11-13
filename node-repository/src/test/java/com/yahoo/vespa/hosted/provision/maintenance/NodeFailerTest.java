@@ -180,8 +180,31 @@ public class NodeFailerTest {
         tester.clock.advance(Duration.ofMinutes(65));
         tester.runMaintainers();
 
+        assertTrue(tester.nodeRepository.getNode(host_from_normal_app).get().isDown());
+        assertTrue(tester.nodeRepository.getNode(host_from_suspended_app).get().isDown());
         assertEquals(Node.State.failed, tester.nodeRepository.getNode(host_from_normal_app).get().state());
         assertEquals(Node.State.active, tester.nodeRepository.getNode(host_from_suspended_app).get().state());
+    }
+
+    @Test
+    public void zone_is_not_working_if_too_many_nodes_down() {
+        NodeFailTester tester = NodeFailTester.withTwoApplications();
+
+        tester.serviceMonitor.setHostDown(tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active).get(0).hostname());
+        tester.runMaintainers();
+        assertTrue(tester.nodeRepository.isWorking());
+
+        tester.serviceMonitor.setHostDown(tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname());
+        tester.runMaintainers();
+        assertTrue(tester.nodeRepository.isWorking());
+
+        tester.serviceMonitor.setHostDown(tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active).get(2).hostname());
+        tester.runMaintainers();
+        assertFalse(tester.nodeRepository.isWorking());
+
+        tester.clock.advance(Duration.ofMinutes(65));
+        tester.runMaintainers();
+        assertTrue("Node failing is deactivated", tester.nodeRepository.list(Node.State.failed).isEmpty());
     }
 
     @Test
@@ -694,7 +717,7 @@ public class NodeFailerTest {
         addServiceInstances(services, ServiceStatus.NOT_CHECKED, numNotChecked);
         Collections.shuffle(services);
 
-        return NodeFailureStatusUpdater.badNode(services);
+        return NodeFailureStatusUpdater.allDown(services);
     }
 
     /**

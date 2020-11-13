@@ -62,14 +62,19 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         NodeList nodes = nodeRepository().list();
         ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
 
-        updateLockMetrics();
+        updateZoneMetrics();
+        updateCacheMetrics();
+        updateMaintenanceMetrics();
         nodes.forEach(node -> updateNodeMetrics(node, serviceModel));
         updateNodeCountMetrics(nodes);
-        updateMaintenanceMetrics();
+        updateLockMetrics();
         updateDockerMetrics(nodes);
         updateTenantUsageMetrics(nodes);
-        updateCacheMetrics();
         return true;
+    }
+
+    private void updateZoneMetrics() {
+        metric.set("zone.working", nodeRepository().isWorking() ? 1 : 0, null);
     }
 
     private void updateCacheMetrics() {
@@ -183,8 +188,8 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
             metric.set("someServicesDown", (numberOfServicesDown > 0 ? 1 : 0), context);
 
-            boolean badNode = NodeFailureStatusUpdater.badNode(services);
-            metric.set("nodeFailerBadNode", (badNode ? 1 : 0), context);
+            boolean down = NodeFailureStatusUpdater.allDown(services);
+            metric.set("nodeFailerBadNode", (down ? 1 : 0), context);
 
             boolean nodeDownInNodeRepo = node.history().event(History.Event.Type.down).isPresent();
             metric.set("downInNodeRepo", (nodeDownInNodeRepo ? 1 : 0), context);

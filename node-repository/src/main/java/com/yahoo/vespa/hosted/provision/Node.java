@@ -292,6 +292,11 @@ public final class Node implements Nodelike {
         return with(history.without(History.Event.Type.down));
     }
 
+    /** Returns whether this node has a record of being down */
+    public boolean isDown() {
+        return history().event(History.Event.Type.down).isPresent();
+    }
+
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
     public Node allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
         return this

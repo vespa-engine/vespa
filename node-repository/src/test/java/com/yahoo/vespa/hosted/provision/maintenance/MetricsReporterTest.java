@@ -87,6 +87,7 @@ public class MetricsReporterTest {
         tester.makeProvisionedNodes(1, "default", NodeType.proxy, 0);
 
         Map<String, Number> expectedMetrics = new TreeMap<>();
+        expectedMetrics.put("zone.working", 1);
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
         expectedMetrics.put("hostedVespa.parkedHosts", 0);
         expectedMetrics.put("hostedVespa.readyHosts", 0);
@@ -121,7 +122,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("cache.nodeObject.size", 2L);
 
         nodeRepository.list();
-        expectedMetrics.put("cache.curator.hitRate", 0.5D);
+        expectedMetrics.put("cache.curator.hitRate", 0.52D);
         expectedMetrics.put("cache.curator.evictionCount", 0L);
         expectedMetrics.put("cache.curator.size", 12L);
 

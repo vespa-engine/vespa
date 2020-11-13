@@ -153,6 +153,9 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> nodeStates.contains(node.state()));
     }
 
+    /** Returns the subset of nodes which have a record of being down */
+    public NodeList down() { return matching(Node::isDown); }
+
     /** Returns the subset of nodes which wantToRetire set true */
     public NodeList wantToRetire() {
         return matching(node -> node.status().wantToRetire());
