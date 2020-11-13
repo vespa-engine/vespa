@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
@@ -55,9 +55,11 @@ public class ConfiguratorTest {
     @Test
     public void config_is_written_correctly_when_one_server() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
+        builder.myidFile(idFile.getAbsolutePath());
+        builder.myid(0);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
         validateConfigFileSingleHost(cfgFile);
-        validateIdFile(idFile, "");
+        validateIdFile(idFile, "0\n");
     }
 
     @Test
@@ -175,7 +177,8 @@ public class ConfiguratorTest {
                "4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
                "admin.enableServer=false\n" +
                "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n" +
-               "quorumListenOnAllIPs=true\n";
+               "quorumListenOnAllIPs=true\n" +
+               "standaloneEnabled=false\n";
     }
 
     private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
