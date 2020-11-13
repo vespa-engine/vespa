@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <atomic>
+#include <thread>
 
 namespace vespalib {
 
@@ -32,7 +33,7 @@ public:
     void lock() noexcept {
         while (__builtin_expect(_lock.exchange(true, std::memory_order_acquire), false)) {
             while (_lock.load(std::memory_order_relaxed)) {
-                __builtin_ia32_pause();                
+                std::this_thread::yield();
             }
         }
     }
