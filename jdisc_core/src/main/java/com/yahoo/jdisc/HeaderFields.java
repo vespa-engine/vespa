@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.TreeMap;
 
 /**
  * This is an encapsulation of the header fields that belong to either a {@link Request} or a {@link Response}. It is
@@ -19,26 +19,35 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class HeaderFields implements Map<String, List<String>> {
 
-    private final ConcurrentSkipListMap<String, List<String>> content = new ConcurrentSkipListMap<>(String::compareToIgnoreCase);
+    private final Map<String, List<String>> content = new TreeMap<>(String::compareToIgnoreCase);
+    private final Object monitor = new Object();
 
     @Override
     public int size() {
-        return content.size();
+        synchronized (monitor) {
+            return content.size();
+        }
     }
 
     @Override
     public boolean isEmpty() {
-        return content.isEmpty();
+        synchronized (monitor) {
+            return content.isEmpty();
+        }
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return content.containsKey(key);
+        synchronized (monitor) {
+            return content.containsKey(key);
+        }
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return content.containsValue(value);
+        synchronized (monitor) {
+            return content.containsValue(value);
+        }
     }
 
     /**
@@ -54,11 +63,13 @@ public class HeaderFields implements Map<String, List<String>> {
      * @see #containsIgnoreCase
      */
     public boolean contains(String key, String value) {
-        List<String> lst = content.get(key);
-        if (lst == null) {
-            return false;
+        synchronized (monitor) {
+            List<String> lst = content.get(key);
+            if (lst == null) {
+                return false;
+            }
+            return lst.contains(value);
         }
-        return lst.contains(value);
     }
 
     /**
@@ -74,16 +85,18 @@ public class HeaderFields implements Map<String, List<String>> {
      * @see #contains
      */
     public boolean containsIgnoreCase(String key, String value) {
-        List<String> lst = content.get(key);
-        if (lst == null) {
+        synchronized (monitor) {
+            List<String> lst = content.get(key);
+            if (lst == null) {
+                return false;
+            }
+            for (String val : lst) {
+                if (value.equalsIgnoreCase(val)) {
+                    return true;
+                }
+            }
             return false;
         }
-        for (String val : lst) {
-            if (value.equalsIgnoreCase(val)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -94,11 +107,14 @@ public class HeaderFields implements Map<String, List<String>> {
      * @param value The value to be added to the list associated with the specified key.
      */
     public void add(String key, String value) {
-        List<String> lst = content.get(key);
-        if (lst != null) {
-            lst.add(value);
-        } else {
-            put(key, value);
+        synchronized (monitor) {
+            List<String> lst = content.get(key);
+            if (lst != null) {
+                lst.add(value);
+            }
+            else {
+                put(key, value);
+            }
         }
     }
 
@@ -110,11 +126,13 @@ public class HeaderFields implements Map<String, List<String>> {
      * @param values The values to be added to the list associated with the specified key.
      */
     public void add(String key, List<String> values) {
-        List<String> lst = content.get(key);
-        if (lst != null) {
-            lst.addAll(values);
-        } else {
-            put(key, values);
+        synchronized (monitor) {
+            List<String> lst = content.get(key);
+            if (lst != null) {
+                lst.addAll(values);
+            } else {
+                put(key, values);
+            }
         }
     }
 
@@ -125,8 +143,10 @@ public class HeaderFields implements Map<String, List<String>> {
      * @param values The values to be added to this.
      */
     public void addAll(Map<? extends String, ? extends List<String>> values) {
-        for (Entry<? extends String, ? extends List<String>> entry : values.entrySet()) {
-            add(entry.getKey(), entry.getValue());
+        synchronized (monitor) {
+            for (Entry<? extends String, ? extends List<String>> entry : values.entrySet()) {
+                add(entry.getKey(), entry.getValue());
+            }
         }
     }
 
@@ -140,26 +160,34 @@ public class HeaderFields implements Map<String, List<String>> {
      *         <code>key</code>.
      */
     public List<String> put(String key, String value) {
-        ArrayList<String> list = new ArrayList<String>(1);
-        list.add(value);
-        return content.put(key, list);
+        synchronized (monitor) {
+            ArrayList<String> list = new ArrayList<String>(1);
+            list.add(value);
+            return content.put(key, list);
+        }
     }
 
     @Override
     public List<String> put(String key, List<String> value) {
-        return content.put(key, new ArrayList<>(value));
+        synchronized (monitor) {
+            return content.put(key, new ArrayList<>(value));
+        }
     }
 
     @Override
     public void putAll(Map<? extends String, ? extends List<String>> values) {
-        for (Entry<? extends String, ? extends List<String>> entry : values.entrySet()) {
-            put(entry.getKey(), entry.getValue());
+        synchronized (monitor) {
+            for (Entry<? extends String, ? extends List<String>> entry : values.entrySet()) {
+                put(entry.getKey(), entry.getValue());
+            }
         }
     }
 
     @Override
     public List<String> remove(Object key) {
-        return content.remove(key);
+        synchronized (monitor) {
+            return content.remove(key);
+        }
     }
 
     /**
@@ -170,27 +198,33 @@ public class HeaderFields implements Map<String, List<String>> {
      * @return True if the value was removed.
      */
     public boolean remove(String key, String value) {
-        List<String> lst = content.get(key);
-        if (lst == null) {
-            return false;
+        synchronized (monitor) {
+            List<String> lst = content.get(key);
+            if (lst == null) {
+                return false;
+            }
+            if (!lst.remove(value)) {
+                return false;
+            }
+            if (lst.isEmpty()) {
+                content.remove(key);
+            }
+            return true;
         }
-        if (!lst.remove(value)) {
-            return false;
-        }
-        if (lst.isEmpty()) {
-            content.remove(key);
-        }
-        return true;
     }
 
     @Override
     public void clear() {
-        content.clear();
+        synchronized (monitor) {
+            content.clear();
+        }
     }
 
     @Override
     public List<String> get(Object key) {
-        return content.get(key);
+        synchronized (monitor) {
+            return new ArrayList<>(content.get(key));
+        }
     }
 
     /**
@@ -201,11 +235,13 @@ public class HeaderFields implements Map<String, List<String>> {
      * @return The first value of the named header, or null.
      */
     public String getFirst(String key) {
-        List<String> lst = get(key);
-        if (lst == null || lst.isEmpty()) {
-            return null;
+        synchronized (monitor) {
+            List<String> lst = get(key);
+            if (lst == null || lst.isEmpty()) {
+                return null;
+            }
+            return lst.get(0);
         }
-        return lst.get(0);
     }
 
     /**
@@ -217,36 +253,46 @@ public class HeaderFields implements Map<String, List<String>> {
      * @return The boolean value of the named header.
      */
     public boolean isTrue(String key) {
-        List<String> lst = content.get(key);
-        if (lst == null) {
-            return false;
-        }
-        for (String value : lst) {
-            if (!Boolean.valueOf(value)) {
+        synchronized (monitor) {
+            List<String> lst = content.get(key);
+            if (lst == null) {
                 return false;
             }
+            for (String value : lst) {
+                if (!Boolean.valueOf(value)) {
+                    return false;
+                }
+            }
+            return true;
         }
-        return true;
     }
 
     @Override
     public Set<String> keySet() {
-        return content.keySet();
+        synchronized (monitor) {
+            return content.keySet();
+        }
     }
 
     @Override
     public Collection<List<String>> values() {
-        return content.values();
+        synchronized (monitor) {
+            return content.values();
+        }
     }
 
     @Override
     public Set<Entry<String, List<String>>> entrySet() {
-        return content.entrySet();
+        synchronized (monitor) {
+            return content.entrySet();
+        }
     }
 
     @Override
     public String toString() {
-        return content.toString();
+        synchronized (monitor) {
+            return content.toString();
+        }
     }
 
     /**
@@ -256,24 +302,30 @@ public class HeaderFields implements Map<String, List<String>> {
      * @return The collection of entries.
      */
     public List<Entry<String, String>> entries() {
-        List<Entry<String, String>> list = new ArrayList<>(content.size());
-        for (Entry<String, List<String>> entry : content.entrySet()) {
-            String key = entry.getKey();
-            for (String value : entry.getValue()) {
-                list.add(new MyEntry(key, value));
+        synchronized (monitor) {
+            List<Entry<String, String>> list = new ArrayList<>(content.size());
+            for (Entry<String, List<String>> entry : content.entrySet()) {
+                String key = entry.getKey();
+                for (String value : entry.getValue()) {
+                    list.add(new MyEntry(key, value));
+                }
             }
+            return ImmutableList.copyOf(list);
         }
-        return ImmutableList.copyOf(list);
     }
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof HeaderFields && content.equals(((HeaderFields)obj).content);
+        synchronized (monitor) {
+            return obj instanceof HeaderFields && content.equals(((HeaderFields) obj).content);
+        }
     }
 
     @Override
     public int hashCode() {
-        return content.hashCode();
+        synchronized (monitor) {
+            return content.hashCode();
+        }
     }
 
     private static class MyEntry implements Map.Entry<String, String> {
