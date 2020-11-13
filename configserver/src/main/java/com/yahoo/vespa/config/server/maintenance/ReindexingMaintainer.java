@@ -9,7 +9,6 @@ import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.yolean.Exceptions;
 
@@ -36,7 +35,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     /** Timeout per service when getting config generations. */
     private static final Duration timeout = Duration.ofSeconds(10);
 
-    static final Duration reindexingInterval = Duration.ofDays(30);
+    static final Duration reindexingInterval = Duration.ofDays(28);
 
     private final ConfigConvergenceChecker convergence;
     private final Clock clock;
@@ -59,7 +58,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                      .ifPresent(application -> {
                                          try {
                                              applicationRepository.modifyReindexing(id, reindexing ->
-                                                     withConvergenceOn(reindexing, lazyGeneration(application), clock.instant()));
+                                                     withNewReady(reindexing, lazyGeneration(application), clock.instant()));
                                          }
                                          catch (RuntimeException e) {
                                              log.log(Level.INFO, "Failed to update reindexing status for " + id + ": " + Exceptions.toMessageString(e));
@@ -82,22 +81,18 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         };
     }
 
-    static ApplicationReindexing withConvergenceOn(ApplicationReindexing reindexing, Supplier<Long> oldestGeneration, Instant now) {
-        for (var cluster : reindexing.clusters().entrySet()) {
+    static ApplicationReindexing withNewReady(ApplicationReindexing reindexing, Supplier<Long> oldestGeneration, Instant now) {
+        // Config convergence means reindexing of detected reindex actions may begin.
+        for (var cluster : reindexing.clusters().entrySet())
             for (var pending : cluster.getValue().pending().entrySet())
                 if (pending.getValue() <= oldestGeneration.get())
                     reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now)
                                            .withoutPending(cluster.getKey(), pending.getKey());
 
-            for (var documentType : cluster.getValue().ready().entrySet())
-                if (documentType.getValue().ready().isBefore(now.minus(reindexingInterval)))
-                    reindexing = reindexing.withReady(cluster.getKey(), documentType.getKey(), now);
-
-            if (cluster.getValue().common().ready().isBefore(now.minus(reindexingInterval)))
-                reindexing = reindexing.withReady(cluster.getKey(), now);
-        }
-        if (reindexing.common().ready().isBefore(now.minus(reindexingInterval)))
-            reindexing = reindexing.withReady(now);
+        // Additionally, reindex the whole application with a fixed interval.
+        Instant nextPeriodicReindexing = reindexing.common().ready();
+        while ((nextPeriodicReindexing = nextPeriodicReindexing.plus(reindexingInterval)).isBefore(now))
+            reindexing = reindexing.withReady(nextPeriodicReindexing); // Deterministic timestamp.
 
         return reindexing;
     }
