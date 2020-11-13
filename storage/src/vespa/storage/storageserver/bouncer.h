@@ -67,6 +67,8 @@ private:
     void rejectDueToInsufficientPriority(api::StorageMessage&,
                                          api::StorageMessage::Priority);
 
+    void reject_due_to_too_few_bucket_bits(api::StorageMessage&);
+
     bool clusterIsUp() const;
 
     bool isDistributor() const;

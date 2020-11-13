@@ -12,6 +12,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -334,6 +335,30 @@ TEST_F(BouncerTest, allow_get_operations_when_node_is_in_maintenance_mode) {
     _upper->sendDown(create_dummy_get_message());
     expectMessageNotBounced();
     EXPECT_EQ(0, _manager->metrics().unavailable_node_aborts.getValue());
+}
+
+namespace {
+
+std::shared_ptr<api::RemoveCommand> make_remove_with_used_bits(uint8_t n_bits) {
+    auto id = document::DocumentId("id:ns:foo::bar");
+    auto raw_bucket = id.getGlobalId().convertToBucketId();
+    return std::make_shared<api::RemoveCommand>(
+            makeDocumentBucket(document::BucketId(n_bits, raw_bucket.getRawId())),
+            id, api::Timestamp(1000));
+}
+
+}
+
+TEST_F(BouncerTest, operation_with_too_few_bucket_bits_is_rejected) {
+    auto cmd = make_remove_with_used_bits(spi::BucketLimits::MinUsedBits - 1);
+    _upper->sendDown(std::move(cmd));
+    expectMessageBouncedWithRejection();
+}
+
+TEST_F(BouncerTest, operation_with_sufficient_bucket_bits_is_not_rejected) {
+    auto cmd = make_remove_with_used_bits(spi::BucketLimits::MinUsedBits);
+    _upper->sendDown(std::move(cmd));
+    expectMessageNotBounced();
 }
 
 } // storage
