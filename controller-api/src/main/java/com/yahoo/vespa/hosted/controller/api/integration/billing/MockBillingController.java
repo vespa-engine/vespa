@@ -32,8 +32,8 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public String getPlanDisplayName(String planId) {
-        return "Plan with id: " + planId;
+    public String getPlanDisplayName(PlanId planId) {
+        return "Plan with id: " + planId.value();
     }
 
     @Override

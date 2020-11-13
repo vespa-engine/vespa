@@ -273,7 +273,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
     private void getPlanForTenant(Cursor cursor, TenantName tenant) {
         PlanId plan = billingController.getPlan(tenant);
         cursor.setString("plan", plan.value());
-        cursor.setString("planName", billingController.getPlanDisplayName(plan.value()));
+        cursor.setString("planName", billingController.getPlanDisplayName(plan));
     }
 
     private void renderInstrument(Cursor cursor, PaymentInstrument instrument) {
@@ -359,7 +359,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
         cursor.setString("description", lineItem.description());
         cursor.setString("amount", lineItem.amount().toString());
         cursor.setString("plan", lineItem.plan());
-        cursor.setString("planName", billingController.getPlanDisplayName(lineItem.plan()));
+        cursor.setString("planName", billingController.getPlanDisplayName(PlanId.from(lineItem.plan())));
 
         lineItem.applicationId().ifPresent(appId -> {
             cursor.setString("application", appId.application().value());

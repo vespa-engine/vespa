@@ -16,7 +16,7 @@ public interface BillingController {
 
     PlanId getPlan(TenantName tenant);
 
-    String getPlanDisplayName(String planId);
+    String getPlanDisplayName(PlanId planId);
 
     Quota getQuota(TenantName tenant);
 
