@@ -109,6 +109,8 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
                             input_feature.value().c_str(), model_input.name.c_str(),
                             feature_input.type().to_spec().c_str(), model_input.type_as_string().c_str());
             }
+        } else {
+            return fail("undefined input: %s (->%s)", input_feature.value().c_str(), model_input.name.c_str());
         }
     }
     for (size_t i = 0; i < _model->outputs().size(); ++i) {
