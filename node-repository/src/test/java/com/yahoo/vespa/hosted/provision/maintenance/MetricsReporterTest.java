@@ -87,6 +87,7 @@ public class MetricsReporterTest {
         tester.makeProvisionedNodes(1, "default", NodeType.proxy, 0);
 
         Map<String, Number> expectedMetrics = new TreeMap<>();
+        expectedMetrics.put("zone.working", 1);
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
         expectedMetrics.put("hostedVespa.parkedHosts", 0);
         expectedMetrics.put("hostedVespa.readyHosts", 0);
@@ -121,25 +122,23 @@ public class MetricsReporterTest {
         expectedMetrics.put("cache.nodeObject.size", 2L);
 
         nodeRepository.list();
-        expectedMetrics.put("cache.curator.hitRate", 0.5D);
+        expectedMetrics.put("cache.curator.hitRate", 0.52D);
         expectedMetrics.put("cache.curator.evictionCount", 0L);
         expectedMetrics.put("cache.curator.size", 12L);
 
-        ManualClock clock = new ManualClock(Instant.ofEpochSecond(124));
+        tester.clock().setInstant(Instant.ofEpochSecond(124));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
         when(orchestrator.getHostInfo(eq(reference), any())).thenReturn(
                 HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)));
 
         TestMetric metric = new TestMetric();
-        MetricsReporter metricsReporter = new MetricsReporter(
-                nodeRepository,
-                metric,
-                orchestrator,
-                serviceMonitor,
-                () -> 42,
-                Duration.ofMinutes(1),
-                clock);
+        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository,
+                                                              metric,
+                                                              orchestrator,
+                                                              serviceMonitor,
+                                                              () -> 42,
+                                                              Duration.ofMinutes(1));
         metricsReporter.maintain();
 
         // Verify sum of values across dimensions, and remove these metrics to avoid checking against
@@ -218,15 +217,12 @@ public class MetricsReporterTest {
         when(orchestrator.getHostInfo(eq(reference), any())).thenReturn(HostInfo.createNoRemarks());
 
         TestMetric metric = new TestMetric();
-        ManualClock clock = new ManualClock();
-        MetricsReporter metricsReporter = new MetricsReporter(
-                nodeRepository,
-                metric,
-                orchestrator,
-                serviceMonitor,
-                () -> 42,
-                Duration.ofMinutes(1),
-                clock);
+        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository,
+                                                              metric,
+                                                              orchestrator,
+                                                              serviceMonitor,
+                                                              () -> 42,
+                                                              Duration.ofMinutes(1));
         metricsReporter.maintain();
 
         assertEquals(0, metric.values.get("hostedVespa.readyHosts")); // Only tenants counts

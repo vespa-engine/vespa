@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +29,11 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
     private final Metric metric;
     private final Orchestrator orchestrator;
     private final Duration retiredExpiry;
-    private final Clock clock;
 
     public RetiredExpirer(NodeRepository nodeRepository,
                           Orchestrator orchestrator,
                           Deployer deployer,
                           Metric metric,
-                          Clock clock,
                           Duration maintenanceInterval,
                           Duration retiredExpiry) {
         super(nodeRepository, maintenanceInterval, metric);
@@ -44,7 +41,6 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
         this.metric = metric;
         this.orchestrator = orchestrator;
         this.retiredExpiry = retiredExpiry;
-        this.clock = clock;
     }
 
     @Override
@@ -98,7 +94,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
             return false;
         }
 
-        if (node.history().hasEventBefore(History.Event.Type.retired, clock.instant().minus(retiredExpiry))) {
+        if (node.history().hasEventBefore(History.Event.Type.retired, clock().instant().minus(retiredExpiry))) {
             log.info("Node " + node + " has been retired longer than " + retiredExpiry);
             return true;
         }

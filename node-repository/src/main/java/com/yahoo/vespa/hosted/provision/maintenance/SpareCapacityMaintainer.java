@@ -67,6 +67,8 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
+        if ( ! nodeRepository().isWorking()) return false;
+
         boolean success = true;
         // Don't need to maintain spare capacity in dynamically provisioned zones; can provision more on demand.
         if (nodeRepository().zone().getCloud().dynamicProvisioning()) return success;

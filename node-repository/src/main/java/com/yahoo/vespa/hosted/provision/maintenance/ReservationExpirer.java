@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 
@@ -21,14 +20,11 @@ import java.util.List;
  */
 public class ReservationExpirer extends Expirer {
 
-    private final NodeRepository nodeRepository;
-
-    public ReservationExpirer(NodeRepository nodeRepository, Clock clock, Duration reservationPeriod, Metric metric) {
-        super(Node.State.reserved, History.Event.Type.reserved, nodeRepository, clock, reservationPeriod, metric);
-        this.nodeRepository = nodeRepository;
+    public ReservationExpirer(NodeRepository nodeRepository, Duration reservationPeriod, Metric metric) {
+        super(Node.State.reserved, History.Event.Type.reserved, nodeRepository, reservationPeriod, metric);
     }
 
     @Override
-    protected void expire(List<Node> expired) { nodeRepository.setDirty(expired, Agent.ReservationExpirer, "Expired by ReservationExpirer"); }
+    protected void expire(List<Node> expired) { nodeRepository().setDirty(expired, Agent.ReservationExpirer, "Expired by ReservationExpirer"); }
 
 }

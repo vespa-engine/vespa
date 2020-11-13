@@ -852,7 +852,7 @@ public class ProvisioningTest {
 
         // Over 10 minutes pass since first reservation. First set of reserved nodes are not expired
         tester.clock().advance(Duration.ofMinutes(8).plus(Duration.ofSeconds(1)));
-        ReservationExpirer expirer = new ReservationExpirer(tester.nodeRepository(), tester.clock(),
+        ReservationExpirer expirer = new ReservationExpirer(tester.nodeRepository(),
                                                             Duration.ofMinutes(10), new TestMetric());
         expirer.run();
         assertEquals("Nodes remain reserved", 4,

@@ -46,6 +46,8 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
+        if ( ! nodeRepository().isWorking()) return false;
+
         boolean success = true;
         if ( ! nodeRepository().zone().environment().isProduction()) return success;
 

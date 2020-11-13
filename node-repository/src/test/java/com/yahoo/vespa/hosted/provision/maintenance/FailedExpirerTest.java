@@ -256,7 +256,7 @@ public class FailedExpirerTest {
             this.clock = tester.clock();
             this.nodeRepository = tester.nodeRepository();
             this.provisioner = tester.provisioner();
-            this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30), new TestMetric());
+            this.expirer = new FailedExpirer(nodeRepository, zone, Duration.ofMinutes(30), new TestMetric());
         }
 
         public ManualClock clock() {

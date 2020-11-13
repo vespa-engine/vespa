@@ -9,6 +9,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,9 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
 
     /** Returns the node repository */
     protected NodeRepository nodeRepository() { return nodeRepository; }
+
+    /** Returns the node repository clock */
+    protected Clock clock() { return nodeRepository.clock(); }
 
     /** A utility to group active tenant nodes by application */
     protected Map<ApplicationId, List<Node>> activeNodesByApplication() {

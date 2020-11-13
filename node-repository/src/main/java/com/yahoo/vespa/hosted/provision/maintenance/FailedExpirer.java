@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,16 +48,12 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
     private static final int maxAllowedFailures = 50;
 
     private final NodeRepository nodeRepository;
-    private final Zone zone;
-    private final Clock clock;
     private final Duration defaultExpiry; // Grace period to allow recovery of data
     private final Duration containerExpiry; // Stateless nodes, no data to recover
 
-    FailedExpirer(NodeRepository nodeRepository, Zone zone, Clock clock, Duration interval, Metric metric) {
+    FailedExpirer(NodeRepository nodeRepository, Zone zone, Duration interval, Metric metric) {
         super(nodeRepository, interval, metric);
         this.nodeRepository = nodeRepository;
-        this.zone = zone;
-        this.clock = clock;
         if (zone.system().isCd()) {
             defaultExpiry = containerExpiry = Duration.ofMinutes(30);
         } else {
@@ -81,9 +76,9 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
         recycleIf(remainingNodes, node -> node.allocation().isEmpty());
         recycleIf(remainingNodes, node ->
                 node.allocation().get().membership().cluster().type() == ClusterSpec.Type.container &&
-                node.history().hasEventBefore(History.Event.Type.failed, clock.instant().minus(containerExpiry)));
+                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(containerExpiry)));
         recycleIf(remainingNodes, node ->
-                node.history().hasEventBefore(History.Event.Type.failed, clock.instant().minus(defaultExpiry)));
+                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(defaultExpiry)));
         return true;
     }
 
