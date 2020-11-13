@@ -578,7 +578,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
         Inspector inspector;
         try {
-            byte[] byteArray = IOUtils.readBytes(request.getData(), 1 << 20);
+            // Use an 4k buffer, that should be plenty for most json requests to pass in a single chunk
+            byte[] byteArray = IOUtils.readBytes(request.getData(), 4096);
             inspector = SlimeUtils.jsonToSlime(byteArray).get();
             if (inspector.field("error_message").valid()) {
                 throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() + " at: '" +
