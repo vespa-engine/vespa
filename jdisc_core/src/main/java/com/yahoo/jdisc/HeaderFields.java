@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -140,14 +141,14 @@ public class HeaderFields implements Map<String, List<String>> {
      *         <code>key</code>.
      */
     public List<String> put(String key, String value) {
-        ArrayList<String> list = new ArrayList<String>(1);
+        List<String> list = Collections.synchronizedList(new ArrayList<>(1));
         list.add(value);
         return content.put(key, list);
     }
 
     @Override
     public List<String> put(String key, List<String> value) {
-        return content.put(key, new ArrayList<>(value));
+        return content.put(key, Collections.synchronizedList(new ArrayList<>(value)));
     }
 
     @Override
