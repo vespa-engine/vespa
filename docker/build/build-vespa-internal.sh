@@ -21,7 +21,16 @@ fi
 yum -y install epel-release
 yum -y install centos-release-scl
 
-yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+if ! yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo; then
+  cat << 'EOF' > /etc/yum.repos.d/vespa-engine-stable.repo
+[vespa-engine-stable]
+name=vespa-engine-stable
+baseurl=https://yahoo.bintray.com/vespa-engine/centos/$releasever/stable/$basearch
+gpgcheck=0
+repo_gpgcheck=0
+enabled=1
+EOF
+fi
 
 yum-builddep -y \
              --setopt="base-source.skip_if_unavailable=true" \
