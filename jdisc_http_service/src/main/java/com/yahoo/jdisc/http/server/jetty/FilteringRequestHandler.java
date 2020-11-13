@@ -4,7 +4,6 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.common.base.Preconditions;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.application.BindingSet;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.BindingNotFoundException;
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -42,13 +41,10 @@ class FilteringRequestHandler extends AbstractRequestHandler {
 
     };
 
-    private final BindingSet<RequestFilter> requestFilters;
-    private final BindingSet<ResponseFilter> responseFilters;
+    private final FilterBindings filterBindings;
 
-    public FilteringRequestHandler(BindingSet<RequestFilter> requestFilters, 
-                                   BindingSet<ResponseFilter> responseFilters) {
-        this.requestFilters = requestFilters;
-        this.responseFilters = responseFilters;
+    public FilteringRequestHandler(FilterBindings filterBindings) {
+        this.filterBindings = filterBindings;
     }
 
     @Override
@@ -56,8 +52,12 @@ class FilteringRequestHandler extends AbstractRequestHandler {
         Preconditions.checkArgument(request instanceof HttpRequest, "Expected HttpRequest, got " + request);
         Objects.requireNonNull(originalResponseHandler, "responseHandler");
 
-        RequestFilter requestFilter = requestFilters.resolve(request.getUri());
-        ResponseFilter responseFilter = responseFilters.resolve(request.getUri());
+        RequestFilter requestFilter = filterBindings.resolveRequestFilter(request.getUri())
+                .map(filterBindings::getRequestFilter)
+                .orElse(null);
+        ResponseFilter responseFilter = filterBindings.resolveResponseFilter(request.getUri())
+                .map(filterBindings::getResponseFilter)
+                .orElse(null);
         // Not using request.connect() here - it adds logic for error handling that we'd rather leave to the framework.
         RequestHandler resolvedRequestHandler = request.container().resolveHandler(request);
 

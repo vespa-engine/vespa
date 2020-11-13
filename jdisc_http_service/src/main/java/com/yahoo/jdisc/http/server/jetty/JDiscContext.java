@@ -2,31 +2,25 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.application.BindingSet;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.filter.RequestFilter;
-import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.service.CurrentContainer;
 
 import java.util.concurrent.Executor;
 
 public class JDiscContext {
-    final BindingSet<RequestFilter> requestFilters;
-    final BindingSet<ResponseFilter> responseFilters;
+    final FilterBindings filterBindings;
     final CurrentContainer container;
     final Executor janitor;
     final Metric metric;
     final ServerConfig serverConfig;
 
-    public JDiscContext(BindingSet<RequestFilter> requestFilters,
-                        BindingSet<ResponseFilter> responseFilters,
+    public JDiscContext(FilterBindings filterBindings,
                         CurrentContainer container,
                         Executor janitor,
                         Metric metric,
                         ServerConfig serverConfig) {
 
-        this.requestFilters = requestFilters;
-        this.responseFilters = responseFilters;
+        this.filterBindings = filterBindings;
         this.container = container;
         this.janitor = janitor;
         this.metric = metric;

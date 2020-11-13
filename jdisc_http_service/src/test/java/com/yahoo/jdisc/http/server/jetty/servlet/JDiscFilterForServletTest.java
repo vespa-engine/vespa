@@ -7,13 +7,12 @@ import com.google.inject.util.Modules;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
-import com.yahoo.jdisc.http.server.FilterBindings;
+import com.yahoo.jdisc.http.server.jetty.FilterBindings;
 import com.yahoo.jdisc.http.server.jetty.FilterInvoker;
 import com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
 import com.yahoo.jdisc.http.server.jetty.TestDriver;
@@ -79,21 +78,27 @@ public class JDiscFilterForServletTest extends ServletTestBase {
     }
 
     private TestDriver requestFilterTestDriver() throws IOException {
-        return TestDrivers.newInstance(dummyRequestHandler, bindings(requestFilters(), noBindings()));
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", "http://*/*", new TestRequestFilter())
+                .build();
+        return TestDrivers.newInstance(dummyRequestHandler, bindings(filterBindings));
     }
 
     private TestDriver responseFilterTestDriver() throws IOException {
-        return TestDrivers.newInstance(dummyRequestHandler, bindings(noBindings(), responseFilters()));
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addResponseFilter("my-response-filter", "http://*/*", new TestResponseFilter())
+                .build();
+        return TestDrivers.newInstance(dummyRequestHandler, bindings(filterBindings));
     }
 
-    private Module bindings(BindingRepository<RequestFilter> requestFilters,
-                            BindingRepository<ResponseFilter> responseFilters) {
 
+
+    private Module bindings(FilterBindings filterBindings) {
         return Modules.combine(
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(FilterBindings.class).toInstance(new FilterBindings(requestFilters, responseFilters));
+                        bind(FilterBindings.class).toInstance(filterBindings);
                         bind(FilterInvoker.class).toInstance(new FilterInvoker() {
                             @Override
                             public HttpServletRequest invokeRequestFilterChain(
@@ -121,23 +126,6 @@ public class JDiscFilterForServletTest extends ServletTestBase {
                 },
                 guiceModule());
     }
-
-    private BindingRepository<RequestFilter> requestFilters() {
-        BindingRepository<RequestFilter> repository = new BindingRepository<>();
-        repository.bind("http://*/*" , new TestRequestFilter());
-        return repository;
-    }
-
-    private BindingRepository<ResponseFilter> responseFilters() {
-        BindingRepository<ResponseFilter> repository = new BindingRepository<>();
-        repository.bind("http://*/*" , new TestResponseFilter());
-        return repository;
-    }
-
-    private <T> BindingRepository<T> noBindings() {
-        return new BindingRepository<>();
-    }
-
 
     static class TestRequestFilter extends AbstractResource implements RequestFilter {
         static final String simpleName = TestRequestFilter.class.getSimpleName();

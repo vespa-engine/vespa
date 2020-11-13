@@ -7,7 +7,6 @@ import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -24,7 +23,6 @@ import com.yahoo.jdisc.http.filter.ResponseHeaderFilter;
 import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
 import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
 import com.yahoo.jdisc.http.guiceModules.ConnectorFactoryRegistryModule;
-import com.yahoo.jdisc.http.server.FilterBindings;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -53,12 +51,12 @@ import static org.mockito.Mockito.when;
 public class FilterTestCase {
     @Test
     public void requireThatRequestFilterIsNotRunOnUnboundPath() throws Exception {
-        final RequestFilter filter = mock(RequestFilterMockBase.class);
-        final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
-        requestFilters.bind("http://*/filtered/*", filter);
-        final BindingRepository<ResponseFilter> responseFilters = null;
+        RequestFilterMockBase filter = mock(RequestFilterMockBase.class);
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", "http://*/filtered/*", filter)
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -71,11 +69,11 @@ public class FilterTestCase {
     @Test
     public void requireThatRequestFilterIsRunOnBoundPath() throws Exception {
         final RequestFilter filter = mock(RequestFilterMockBase.class);
-        final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
-        requestFilters.bind("http://*/filtered/*", filter);
-        final BindingRepository<ResponseFilter> responseFilters = null;
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", "http://*/filtered/*", filter)
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/filtered/status.html");
 
@@ -88,11 +86,11 @@ public class FilterTestCase {
     @Test
     public void requireThatRequestFilterChangesAreSeenByRequestHandler() throws Exception {
         final RequestFilter filter = new HeaderRequestFilter("foo", "bar");
-        final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
-        requestFilters.bind("http://*/*", filter);
-        final BindingRepository<ResponseFilter> responseFilters = null;
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", "http://*/*", filter)
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("status.html");
 
@@ -104,11 +102,11 @@ public class FilterTestCase {
 
     @Test
     public void requireThatRequestFilterCanRespond() throws Exception {
-        final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
-        requestFilters.bind("http://*/*", new RespondForbiddenFilter());
-        final BindingRepository<ResponseFilter> responseFilters = null;
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", "http://*/*", new RespondForbiddenFilter())
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html").expectStatusCode(is(Response.Status.FORBIDDEN));
 
@@ -121,11 +119,11 @@ public class FilterTestCase {
     public void requireThatFilterCanHaveNullCompletionHandler() throws Exception {
         final int responseStatus = Response.Status.OK;
         final String responseMessage = "Excellent";
-        final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
-        requestFilters.bind("http://*/*", new NullCompletionHandlerFilter(responseStatus, responseMessage));
-        final BindingRepository<ResponseFilter> responseFilters = null;
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", "http://*/*", new NullCompletionHandlerFilter(responseStatus, responseMessage))
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html")
                 .expectStatusCode(is(responseStatus))
@@ -138,11 +136,11 @@ public class FilterTestCase {
 
     @Test
     public void requireThatRequestFilterExecutionIsExceptionSafe() throws Exception {
-        final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
-        final BindingRepository<ResponseFilter> responseFilters = null;
-        requestFilters.bind("http://*/*", new ThrowingRequestFilter());
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", "http://*/*", new ThrowingRequestFilter())
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html").expectStatusCode(is(Response.Status.INTERNAL_SERVER_ERROR));
 
@@ -154,11 +152,11 @@ public class FilterTestCase {
     @Test
     public void requireThatResponseFilterIsNotRunOnUnboundPath() throws Exception {
         final ResponseFilter filter = mock(ResponseFilterMockBase.class);
-        final BindingRepository<RequestFilter> requestFilters = null;
-        final BindingRepository<ResponseFilter> responseFilters = new BindingRepository<>();
-        responseFilters.bind("http://*/filtered/*", filter);
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addResponseFilter("my-response-filter", "http://*/filtered/*", filter)
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -171,11 +169,11 @@ public class FilterTestCase {
     @Test
     public void requireThatResponseFilterIsRunOnBoundPath() throws Exception {
         final ResponseFilter filter = mock(ResponseFilterMockBase.class);
-        final BindingRepository<RequestFilter> requestFilters = null;
-        final BindingRepository<ResponseFilter> responseFilters = new BindingRepository<>();
-        responseFilters.bind("http://*/filtered/*", filter);
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addResponseFilter("my-response-filter", "http://*/filtered/*", filter)
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/filtered/status.html");
 
@@ -187,11 +185,11 @@ public class FilterTestCase {
 
     @Test
     public void requireThatResponseFilterChangesAreWrittenToResponse() throws Exception {
-        final BindingRepository<RequestFilter> requestFilters = null;
-        final BindingRepository<ResponseFilter> responseFilters = new BindingRepository<>();
-        responseFilters.bind("http://*/*", new HeaderResponseFilter("foo", "bar"));
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addResponseFilter("my-response-filter", "http://*/*", new HeaderResponseFilter("foo", "bar"))
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html")
                 .expectHeader("foo", is("bar"));
@@ -203,11 +201,11 @@ public class FilterTestCase {
 
     @Test
     public void requireThatResponseFilterExecutionIsExceptionSafe() throws Exception {
-        final BindingRepository<RequestFilter> requestFilters = null;
-        final BindingRepository<ResponseFilter> responseFilters = new BindingRepository<>();
-        responseFilters.bind("http://*/*", new ThrowingResponseFilter());
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addResponseFilter("my-response-filter", "http://*/*", new ThrowingResponseFilter())
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html").expectStatusCode(is(Response.Status.INTERNAL_SERVER_ERROR));
 
@@ -218,15 +216,15 @@ public class FilterTestCase {
 
     @Test
     public void requireThatRequestFilterAndResponseFilterCanBindToSamePath() throws Exception {
-        final String uriPattern = "http://*/*";
-        final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
         final RequestFilter requestFilter = mock(RequestFilterMockBase.class);
-        requestFilters.bind(uriPattern, requestFilter);
-        final BindingRepository<ResponseFilter> responseFilters = new BindingRepository<>();
         final ResponseFilter responseFilter = mock(ResponseFilterMockBase.class);
-        responseFilters.bind(uriPattern, responseFilter);
+        final String uriPattern = "http://*/*";
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", uriPattern, requestFilter)
+                .addResponseFilter("my-response-filter", uriPattern, responseFilter)
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -239,12 +237,12 @@ public class FilterTestCase {
 
     @Test
     public void requireThatResponseFromRequestFilterGoesThroughResponseFilter() throws Exception {
-        final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
-        requestFilters.bind("http://*/*", new RespondForbiddenFilter());
-        final BindingRepository<ResponseFilter> responseFilters = new BindingRepository<>();
-        responseFilters.bind("http://*/*", new HeaderResponseFilter("foo", "bar"));
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", "http://*/*", new RespondForbiddenFilter())
+                .addResponseFilter("my-response-filter", "http://*/*", new HeaderResponseFilter("foo", "bar"))
+                .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, requestFilters, responseFilters);
+        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html")
                 .expectStatusCode(is(Response.Status.FORBIDDEN))
@@ -384,26 +382,20 @@ public class FilterTestCase {
 
     private static TestDriver newDriver(
             final MyRequestHandler requestHandler,
-            final BindingRepository<RequestFilter> requestFilters,
-            final BindingRepository<ResponseFilter> responseFilters)
+            FilterBindings filterBindings)
             throws IOException {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
                 requestHandler,
-                newFilterModule(requestFilters, responseFilters));
+                newFilterModule(filterBindings));
     }
 
-    private static com.google.inject.Module newFilterModule(
-            final BindingRepository<RequestFilter> requestFilters,
-            final BindingRepository<ResponseFilter> responseFilters) {
+    private static com.google.inject.Module newFilterModule(FilterBindings filterBindings) {
         return Modules.combine(
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(FilterBindings.class).toInstance(
-                                new FilterBindings(
-                                        requestFilters != null ? requestFilters : EMPTY_REQUEST_FILTER_REPOSITORY,
-                                        responseFilters != null ? responseFilters : EMPTY_RESPONSE_FILTER_REPOSITORY));
+                        bind(FilterBindings.class).toInstance(filterBindings);
                         bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder()));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(new ConnectorConfig.Builder()));
                         bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
@@ -411,9 +403,6 @@ public class FilterTestCase {
                 },
                 new ConnectorFactoryRegistryModule());
     }
-
-    private static final BindingRepository<RequestFilter> EMPTY_REQUEST_FILTER_REPOSITORY = new BindingRepository<>();
-    private static final BindingRepository<ResponseFilter> EMPTY_RESPONSE_FILTER_REPOSITORY = new BindingRepository<>();
 
     private static abstract class RequestFilterMockBase extends AbstractResource implements RequestFilter {}
     private static abstract class ResponseFilterMockBase extends AbstractResource implements ResponseFilter {}

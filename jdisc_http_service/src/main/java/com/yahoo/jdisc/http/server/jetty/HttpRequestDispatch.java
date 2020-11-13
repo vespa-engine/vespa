@@ -212,7 +212,7 @@ class HttpRequestDispatch {
                                                     AccessLogEntry accessLogEntry,
                                                     HttpServletRequest servletRequest) {
         RequestHandler requestHandler = wrapHandlerIfFormPost(
-                new FilteringRequestHandler(context.requestFilters, context.responseFilters),
+                new FilteringRequestHandler(context.filterBindings),
                 servletRequest, context.serverConfig.removeRawPostBodyForWwwUrlEncodedPost());
 
         return new AccessLoggingRequestHandler(requestHandler, accessLogEntry);

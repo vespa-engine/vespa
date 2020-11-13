@@ -5,32 +5,19 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.http.filter.FilterChainRepository;
-import com.yahoo.jdisc.application.BindingRepository;
-import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
-import com.yahoo.jdisc.http.server.FilterBindings;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
+import com.yahoo.jdisc.http.server.jetty.FilterBindings;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 /**
- * @author bakksjo
+ * @author Oyvind Bakksjo
+ * @author bjorncs
  */
 public class FilterBindingsProviderTest {
     final ServerConfig.Builder configBuilder = new ServerConfig.Builder();
@@ -52,9 +39,9 @@ public class FilterBindingsProviderTest {
 
         final FilterBindings filterBindings = provider.get();
 
-        assertNotNull(filterBindings);
-        assertFalse(filterBindings.getRequestFilters().iterator().hasNext());
-        assertFalse(filterBindings.getResponseFilters().iterator().hasNext());
+        assertThat(filterBindings).isNotNull();
+        assertThat(filterBindings.requestFilterIds()).isEmpty();
+        assertThat(filterBindings.responseFilterIds()).isEmpty();
     }
 
     @Test
@@ -105,19 +92,11 @@ public class FilterBindingsProviderTest {
         final FilterBindings filterBindings = provider.get();
 
         // Verify.
-        assertNotNull(filterBindings);
-        assertThat(
-                filterBindings.getRequestFilters(),
-                containsFilters(requestFilter1Instance, requestFilter2Instance));
-        assertThat(
-                filterBindings.getRequestFilters(),
-                not(containsFilters(requestFilter3Instance)));
-        assertThat(
-                filterBindings.getResponseFilters(),
-                containsFilters(responseFilter1Instance, responseFilter3Instance));
-        assertThat(
-                filterBindings.getResponseFilters(),
-                not(containsFilters(responseFilter2Instance)));
+        assertThat(filterBindings).isNotNull();
+        assertThat(filterBindings.requestFilters())
+                .containsExactlyInAnyOrder(requestFilter1Instance, requestFilter2Instance);
+        assertThat(filterBindings.responseFilters())
+                .containsExactlyInAnyOrder(responseFilter1Instance, responseFilter3Instance);
     }
 
     private interface DualRoleFilter extends RequestFilter, ResponseFilter {}
@@ -148,7 +127,7 @@ public class FilterBindingsProviderTest {
                     new ComponentRegistry<>());
             fail("Dual-role filter should not be accepted");
         } catch (RuntimeException e) {
-            assertTrue(e.getMessage().contains("Invalid config"));
+            assertThat(e.getMessage()).contains("Invalid config");
         }
     }
 
@@ -173,30 +152,8 @@ public class FilterBindingsProviderTest {
                     new ComponentRegistry<>());
             fail("Config with unknown filter reference should not be accepted");
         } catch (RuntimeException e) {
-            assertTrue(e.getMessage().contains("Invalid config"));
+            assertThat(e.getMessage()).contains("Invalid config");
         }
     }
 
-    @SafeVarargs
-    @SuppressWarnings("varargs")
-    private static <T> Matcher<? super BindingRepository<T>> containsFilters(
-            final T... requiredInstances) {
-        return new TypeSafeMatcher<>() {
-            private final Set<T> requiredFilterSet = new HashSet<>(Arrays.asList(requiredInstances));
-
-            @Override
-            protected boolean matchesSafely(final BindingRepository<T> actualInstances) {
-                final Set<T> notFoundFilterSet = new HashSet<>(requiredFilterSet);
-                for (final Map.Entry<UriPattern, T> actualEntry : actualInstances) {
-                    notFoundFilterSet.remove(actualEntry.getValue());
-                }
-                return notFoundFilterSet.isEmpty();
-            }
-
-            @Override
-            public void describeTo(final Description description) {
-                description.appendText("BindingRepository containing " + requiredFilterSet);
-            }
-        };
-    }
 }

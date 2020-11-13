@@ -5,12 +5,9 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.http.filter.FilterChainRepository;
-import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.filter.RequestFilter;
-import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.jdisc.http.server.FilterBindings;
+import com.yahoo.jdisc.http.server.jetty.FilterBindings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,28 +15,26 @@ import java.util.List;
 /**
  * Provides filter bindings based on vespa config.
  *
- * @author bakksjo
+ * @author Oyvind Bakksjo
+ * @author bjorncs
  */
 public class FilterBindingsProvider implements Provider<FilterBindings> {
 
-    final BindingRepository<RequestFilter> requestFilters = new BindingRepository<>();
-    final BindingRepository<ResponseFilter> responseFilters = new BindingRepository<>();
+    private final FilterBindings filterBindings;
 
     public FilterBindingsProvider(ComponentId componentId,
                                   ServerConfig config,
                                   FilterChainRepository filterChainRepository,
                                   ComponentRegistry<SecurityRequestFilter> legacyRequestFilters) {
-        ComponentId serverId = componentId.getNamespace();
         try {
-            FilterUtil.setupFilters(
+            this.filterBindings = FilterUtil.setupFilters(
                     componentId,
                     legacyRequestFilters,
                     toFilterSpecs(config.filter()),
-                    filterChainRepository,
-                    requestFilters,
-                    responseFilters);
+                    filterChainRepository);
         } catch (Exception e) {
-            throw new RuntimeException("Invalid config for http server " + serverId, e);
+            throw new RuntimeException(
+                    "Invalid config for http server '" + componentId.getNamespace() + "': " + e.getMessage(), e);
         }
     }
 
@@ -51,10 +46,7 @@ public class FilterBindingsProvider implements Provider<FilterBindings> {
         return outFilters;
     }
 
-    @Override
-    public FilterBindings get() {
-        return new FilterBindings(requestFilters, responseFilters);
-    }
+    @Override public FilterBindings get() { return filterBindings; }
 
     @Override
     public void deconstruct() {}

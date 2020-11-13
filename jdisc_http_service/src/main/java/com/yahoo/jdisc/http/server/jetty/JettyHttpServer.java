@@ -10,7 +10,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
-import com.yahoo.jdisc.http.server.FilterBindings;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.http.HttpField;
@@ -94,8 +93,7 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         janitor = newJanitor();
 
-        JDiscContext jDiscContext = new JDiscContext(filterBindings.getRequestFilters().activate(),
-                                                     filterBindings.getResponseFilters().activate(),
+        JDiscContext jDiscContext = new JDiscContext(filterBindings,
                                                      container,
                                                      janitor,
                                                      metric,
