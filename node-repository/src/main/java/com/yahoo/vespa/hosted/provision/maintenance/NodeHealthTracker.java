@@ -31,7 +31,7 @@ import static java.util.stream.Collectors.counting;
  *
  * @author bratseth
  */
-public class NodeFailureStatusUpdater extends NodeRepositoryMaintainer {
+public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
     /** Provides information about the status of ready hosts */
     private final HostLivenessTracker hostLivenessTracker;
@@ -39,9 +39,9 @@ public class NodeFailureStatusUpdater extends NodeRepositoryMaintainer {
     /** Provides (more accurate) information about the status of active hosts */
     private final ServiceMonitor serviceMonitor;
 
-    public NodeFailureStatusUpdater(HostLivenessTracker hostLivenessTracker,
-                                    ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
-                                    Duration interval, Metric metric) {
+    public NodeHealthTracker(HostLivenessTracker hostLivenessTracker,
+                             ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
+                             Duration interval, Metric metric) {
         super(nodeRepository, interval, metric);
         this.hostLivenessTracker = hostLivenessTracker;
         this.serviceMonitor = serviceMonitor;
@@ -64,7 +64,7 @@ public class NodeFailureStatusUpdater extends NodeRepositoryMaintainer {
 
                 if (!node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
                     History updatedHistory = node.history()
-                                                 .with(new History.Event(History.Event.Type.requested, Agent.NodeFailureStatusUpdater, lastLocalRequest.get()));
+                                                 .with(new History.Event(History.Event.Type.requested, Agent.NodeHealthTracker, lastLocalRequest.get()));
                     nodeRepository().write(node.with(updatedHistory), lock);
                 }
             }
@@ -124,7 +124,7 @@ public class NodeFailureStatusUpdater extends NodeRepositoryMaintainer {
     /** Record a node as down if not already recorded */
     private void recordAsDown(Node node, Mutex lock) {
         if (node.history().event(History.Event.Type.down).isPresent()) return; // already down: Don't change down timestamp
-        nodeRepository().write(node.downAt(clock().instant(), Agent.NodeFailureStatusUpdater), lock);
+        nodeRepository().write(node.downAt(clock().instant(), Agent.NodeHealthTracker), lock);
     }
 
     /** Clear down record for node, if any */

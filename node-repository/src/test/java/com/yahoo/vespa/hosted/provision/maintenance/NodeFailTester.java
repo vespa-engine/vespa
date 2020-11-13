@@ -59,7 +59,7 @@ public class NodeFailTester {
     public final NodeRepository nodeRepository;
     public final ProvisioningTester tester;
     public NodeFailer failer;
-    public NodeFailureStatusUpdater updater;
+    public NodeHealthTracker updater;
     public ServiceMonitorStub serviceMonitor;
     public MockDeployer deployer;
     public TestMetric metric;
@@ -203,8 +203,8 @@ public class NodeFailTester {
                               Duration.ofMinutes(5), orchestrator, NodeFailer.ThrottlePolicy.hosted, metric);
     }
 
-    public NodeFailureStatusUpdater createUpdater() {
-        return new NodeFailureStatusUpdater(hostLivenessTracker, serviceMonitor, nodeRepository, Duration.ofMinutes(5), metric);
+    public NodeHealthTracker createUpdater() {
+        return new NodeHealthTracker(hostLivenessTracker, serviceMonitor, nodeRepository, Duration.ofMinutes(5), metric);
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {

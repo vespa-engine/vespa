@@ -25,7 +25,7 @@
       "name": "NodeFailer"
     },
     {
-      "name": "NodeFailureStatusUpdater"
+      "name": "NodeHealthTracker"
     },
     {
       "name": "NodeMetricsDbMaintainer"

@@ -14,7 +14,7 @@ public enum Agent {
 
     // Specific system agents:
     NodeFailer,
-    NodeFailureStatusUpdater,
+    NodeHealthTracker,
     Rebalancer,
     DirtyExpirer,
     FailedExpirer,

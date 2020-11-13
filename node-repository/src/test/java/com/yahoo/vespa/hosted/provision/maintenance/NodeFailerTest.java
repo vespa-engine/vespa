@@ -717,7 +717,7 @@ public class NodeFailerTest {
         addServiceInstances(services, ServiceStatus.NOT_CHECKED, numNotChecked);
         Collections.shuffle(services);
 
-        return NodeFailureStatusUpdater.allDown(services);
+        return NodeHealthTracker.allDown(services);
     }
 
     /**

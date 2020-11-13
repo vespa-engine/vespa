@@ -438,7 +438,7 @@ public class NodeSerializer {
             case "FailedExpirer" : return Agent.FailedExpirer;
             case "InactiveExpirer" : return Agent.InactiveExpirer;
             case "NodeFailer" : return Agent.NodeFailer;
-            case "NodeFailureStatusUpdater" : return Agent.NodeFailureStatusUpdater;
+            case "NodeHealthTracker" : return Agent.NodeHealthTracker;
             case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
             case "Rebalancer" : return Agent.Rebalancer;
             case "ReservationExpirer" : return Agent.ReservationExpirer;
@@ -458,7 +458,7 @@ public class NodeSerializer {
             case FailedExpirer : return "FailedExpirer";
             case InactiveExpirer : return "InactiveExpirer";
             case NodeFailer : return "NodeFailer";
-            case NodeFailureStatusUpdater : return "NodeFailureStatusUpdater";
+            case NodeHealthTracker: return "NodeHealthTracker";
             case ProvisionedExpirer : return "ProvisionedExpirer";
             case Rebalancer : return "Rebalancer";
             case ReservationExpirer : return "ReservationExpirer";

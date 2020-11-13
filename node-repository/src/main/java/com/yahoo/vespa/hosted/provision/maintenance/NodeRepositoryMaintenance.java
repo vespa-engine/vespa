@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -29,7 +28,7 @@ import java.util.Optional;
 public class NodeRepositoryMaintenance extends AbstractComponent {
 
     private final NodeFailer nodeFailer;
-    private final NodeFailureStatusUpdater nodeFailureStatusUpdater;
+    private final NodeHealthTracker nodeHealthTracker;
     private final PeriodicApplicationMaintainer periodicApplicationMaintainer;
     private final OperatorChangeApplicationMaintainer operatorChangeApplicationMaintainer;
     private final ReservationExpirer reservationExpirer;
@@ -61,7 +60,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
         nodeFailer = new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, orchestrator, defaults.throttlePolicy, metric);
-        nodeFailureStatusUpdater = new NodeFailureStatusUpdater(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric);
+        nodeHealthTracker = new NodeHealthTracker(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository,
                                                                           defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval, flagSource);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
@@ -93,7 +92,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     @Override
     public void deconstruct() {
         nodeFailer.close();
-        nodeFailureStatusUpdater.close();
+        nodeHealthTracker.close();
         periodicApplicationMaintainer.close();
         operatorChangeApplicationMaintainer.close();
         reservationExpirer.close();
