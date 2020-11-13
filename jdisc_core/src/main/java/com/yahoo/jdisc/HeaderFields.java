@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This is an encapsulation of the header fields that belong to either a {@link Request} or a {@link Response}. It is
@@ -141,13 +140,14 @@ public class HeaderFields implements Map<String, List<String>> {
      *         <code>key</code>.
      */
     public List<String> put(String key, String value) {
-        List<String> list = new CopyOnWriteArrayList<>(List.of(value));
+        ArrayList<String> list = new ArrayList<String>(1);
+        list.add(value);
         return content.put(key, list);
     }
 
     @Override
     public List<String> put(String key, List<String> value) {
-        return content.put(key, new CopyOnWriteArrayList<>(value));
+        return content.put(key, new ArrayList<>(value));
     }
 
     @Override
