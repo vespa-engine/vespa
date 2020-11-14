@@ -178,13 +178,14 @@ public class TenantApplicationsTest {
         ApplicationId applicationId = ApplicationId.defaultId();
         applications.createApplication(applicationId);
         applications.createPutTransaction(applicationId, 1).commit();
-        applications.reloadConfig(ApplicationSet.fromSingle(new Application(model,
-                                                                            new ServerCache(),
-                                                                            1,
-                                                                            false,
-                                                                            vespaVersion,
-                                                                            MetricUpdater.createTestUpdater(),
-                                                                            applicationId)));
+        applications.activateApplication(ApplicationSet.fromSingle(new Application(model,
+                                                                                   new ServerCache(),
+                                                                                   1,
+                                                                                   false,
+                                                                                   vespaVersion,
+                                                                                   MetricUpdater.createTestUpdater(),
+                                                                                   applicationId)),
+                                         1);
         Set<ConfigKey<?>> configNames = applications.listConfigs(applicationId, Optional.of(vespaVersion), false);
         assertTrue(configNames.contains(new ConfigKey<>("sentinel", "hosts", "cloud.config")));
 

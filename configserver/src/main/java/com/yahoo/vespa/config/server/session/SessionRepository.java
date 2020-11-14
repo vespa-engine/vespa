@@ -319,10 +319,8 @@ public class SessionRepository {
     void activate(RemoteSession session) {
         long sessionId = session.getSessionId();
         Curator.CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
-        log.log(Level.FINE, () -> session.logPre() + "Getting session from repo: " + session);
-        ApplicationSet app = ensureApplicationLoaded(session);
-        log.log(Level.FINE, () -> session.logPre() + "Reloading config for " + sessionId);
-        applicationRepo.reloadConfig(app);
+        log.log(Level.FINE, () -> session.logPre() + "Activating " + sessionId);
+        applicationRepo.activateApplication(ensureApplicationLoaded(session), sessionId);
         log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
         notifyCompletion(waiter, session);
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
@@ -330,15 +328,13 @@ public class SessionRepository {
 
     public void delete(Session remoteSession) {
         long sessionId = remoteSession.getSessionId();
-        // TODO: Change log level to FINE when debugging is finished
-        log.log(Level.INFO, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
+        log.log(Level.FINE, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
         createSetStatusTransaction(remoteSession, Session.Status.DELETE).commit();
         deleteRemoteSessionFromZooKeeper(remoteSession);
         remoteSessionCache.remove(sessionId);
         LocalSession localSession = getLocalSession(sessionId);
         if (localSession != null) {
-            // TODO: Change log level to FINE when debugging is finished
-            log.log(Level.INFO, () -> localSession.logPre() + "Deleting local session " + sessionId);
+            log.log(Level.FINE, () -> localSession.logPre() + "Deleting local session " + sessionId);
             deleteLocalSession(localSession);
         }
     }
@@ -354,7 +350,7 @@ public class SessionRepository {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
-                applicationRepo.reloadConfig(ensureApplicationLoaded(session));
+                applicationRepo.activateApplication(ensureApplicationLoaded(session), session.getSessionId());
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
                 return;
             }

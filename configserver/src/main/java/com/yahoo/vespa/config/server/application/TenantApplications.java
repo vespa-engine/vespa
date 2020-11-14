@@ -238,12 +238,12 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      *
      * @param applicationSet the {@link ApplicationSet} to be reloaded
      */
-    public void reloadConfig(ApplicationSet applicationSet) {
+    public void activateApplication(ApplicationSet applicationSet, long activeSessionId) {
         ApplicationId id = applicationSet.getId();
         try (Lock lock = lock(id)) {
             if ( ! exists(id))
                 return; // Application was deleted before activation.
-            if (applicationSet.getApplicationGeneration() != requireActiveSessionOf(id))
+            if (applicationSet.getApplicationGeneration() != activeSessionId)
                 return; // Application activated a new session before we got here.
 
             setLiveApp(applicationSet);
