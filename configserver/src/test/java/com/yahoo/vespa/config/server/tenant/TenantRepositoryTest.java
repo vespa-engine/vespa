@@ -89,14 +89,14 @@ public class TenantRepositoryTest {
         ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
         applicationRepo.createApplication(id);
         applicationRepo.createPutTransaction(id, 4).commit();
-        applicationRepo.reloadConfig(ApplicationSet.fromSingle(
-                new Application(new VespaModel(MockApplicationPackage.createEmpty()),
-                                new ServerCache(),
-                                4L,
-                                false,
-                                new Version(1, 2, 3),
-                                MetricUpdater.createTestUpdater(),
-                                id)));
+        applicationRepo.activateApplication(ApplicationSet.fromSingle(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
+                                                                                      new ServerCache(),
+                                                                                      4L,
+                                                                                      false,
+                                                                                      new Version(1, 2, 3),
+                                                                                      MetricUpdater.createTestUpdater(),
+                                                                                      id)),
+                                            4);
         assertEquals(1, listener.reloaded.get());
     }
 
