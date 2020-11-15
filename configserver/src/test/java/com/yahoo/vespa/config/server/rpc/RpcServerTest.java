@@ -135,7 +135,7 @@ public class RpcServerTest {
                                           new Version(1, 2, 3),
                                           MetricUpdater.createTestUpdater(),
                                           applicationId);
-        ApplicationSet appSet = ApplicationSet.fromSingle(app);
+        ApplicationSet appSet = ApplicationSet.from(app);
         tester.rpcServer().configActivated(appSet);
         ConfigKey<?> key = new ConfigKey<>(LbServicesConfig.class, "*");
         JRTClientConfigRequest clientReq  = createRequest(new RawConfig(key, LbServicesConfig.getDefMd5()));

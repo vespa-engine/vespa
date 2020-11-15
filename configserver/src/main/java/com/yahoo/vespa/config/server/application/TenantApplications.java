@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -8,7 +8,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
-import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
@@ -26,7 +25,6 @@ import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -34,7 +32,6 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,7 +41,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -187,13 +183,16 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
+            ApplicationId applicationId = ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName());
             switch (event.getType()) {
                 case CHILD_ADDED:
-                    applicationAdded(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
+                    /* A new application is added when a session is added, @see
+                    {@link com.yahoo.vespa.config.server.session.SessionRepository#childEvent(CuratorFramework, PathChildrenCacheEvent)} */
+                    log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
                     break;
                 // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
                 case CHILD_REMOVED:
-                    applicationRemoved(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
+                    removeApplication(applicationId);
                     break;
                 case CHILD_UPDATED:
                     // do nothing, application just got redeployed
@@ -202,18 +201,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                     break;
             }
             // We may have lost events and may need to remove applications.
-            // New applications are added when session is added, not here. See SessionRepository.
             removeUnusedApplications();
         });
-    }
-
-    private void applicationRemoved(ApplicationId applicationId) {
-        removeApplication(applicationId);
-        log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Application removed: " + applicationId);
-    }
-
-    private void applicationAdded(ApplicationId applicationId) {
-        log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
     }
 
     /**
@@ -253,8 +242,10 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     public void removeApplication(ApplicationId applicationId) {
         try (Lock lock = lock(applicationId)) {
-            if (exists(applicationId))
-                return; // Application was deployed again.
+            if (exists(applicationId)) {
+                log.log(Level.INFO, "Tried removing application " + applicationId + ", but it seems to have been deployed again");
+                return;
+            }
 
             if (applicationMapper.hasApplication(applicationId, clock.instant())) {
                 applicationMapper.remove(applicationId);
@@ -262,6 +253,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                 reloadListenersOnRemove(applicationId);
                 tenantMetricUpdater.setApplications(applicationMapper.numApplications());
                 metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
+                log.log(Level.INFO, "Application removed: " + applicationId);
             }
         }
     }
@@ -269,7 +261,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     public void removeApplicationsExcept(Set<ApplicationId> applications) {
         for (ApplicationId activeApplication : applicationMapper.listApplicationIds()) {
             if ( ! applications.contains(activeApplication)) {
-                log.log(Level.INFO, "Will remove deleted application " + activeApplication.toShortString());
                 removeApplication(activeApplication);
             }
         }

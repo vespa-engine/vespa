@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.model.api.HostInfo;
@@ -17,21 +17,29 @@ import java.util.stream.Collectors;
 public final class ApplicationSet {
 
     private final Version latestVersion;
-    // TODO: Should not need these as part of application?
     private final ApplicationId applicationId;
     private final long generation;
     private final HashMap<Version, Application> applications = new HashMap<>();
 
-    private ApplicationSet(List<Application> applicationList) {
-        applicationId = applicationList.get(0).getId();
-        generation = applicationList.get(0).getApplicationGeneration();
-        for (Application application : applicationList) {
-            applications.put(application.getVespaVersion(), application);
-            if (!application.getId().equals(applicationId)) {
-                throw new IllegalArgumentException("Trying to create set with different application ids");
+    private ApplicationSet(List<Application> applications) {
+        if (applications.isEmpty()) throw new IllegalArgumentException("application list cannot be empty");
+
+        Application firstApp = applications.get(0);
+        applicationId = firstApp.getId();
+        generation = firstApp.getApplicationGeneration();
+        for (Application application : applications) {
+            this.applications.put(application.getVespaVersion(), application);
+            ApplicationId applicationId = application.getId();
+            if ( ! applicationId.equals(this.applicationId)) {
+                throw new IllegalArgumentException("Trying to create set with different application ids (" +
+                                                   application + " and " + this.applicationId + ")");
+            }
+            if ( ! application.getApplicationGeneration().equals(generation)) {
+                throw new IllegalArgumentException("Trying to create set with different generations ("  +
+                                                   generation + " and " + this.generation + ")");
             }
         }
-        latestVersion = applications.keySet().stream().max((a, b) -> a.compareTo(b)).get();
+        latestVersion = this.applications.keySet().stream().max(Version::compareTo).get();
     }
 
     /**
@@ -71,8 +79,8 @@ public final class ApplicationSet {
         return new ApplicationSet(applications);
     }
 
-    public static ApplicationSet fromSingle(Application application) {
-        return fromList(Arrays.asList(application));
+    public static ApplicationSet from(Application application) {
+        return fromList(List.of(application));
     }
 
     public Collection<String> getAllHosts() {

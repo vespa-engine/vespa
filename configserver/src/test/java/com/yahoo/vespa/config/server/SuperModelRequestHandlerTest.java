@@ -114,7 +114,7 @@ public class SuperModelRequestHandlerTest {
     }
 
     private ApplicationSet createApp(ApplicationId applicationId, long generation) throws IOException, SAXException {
-        return ApplicationSet.fromSingle(
+        return ApplicationSet.from(
                 new TestApplication(
                         new VespaModel(FilesApplicationPackage.fromFile(testApp)),
                         new ServerCache(),
