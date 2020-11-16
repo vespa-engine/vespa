@@ -16,11 +16,15 @@ public class AutoscalingMetrics {
 
     private static MetricSet create() {
         return new MetricSet("autoscaling",
-                             metrics("cpu.util", "mem_total.util", "disk.util", "application_generation"));
+                             metrics("cpu.util",
+                                     "mem_total.util",
+                                     "disk.util",
+                                     "application_generation",
+                                     "in_rotation"));
     }
 
-    private static Set<Metric> metrics(String ... names) {
-        return Arrays.stream(names).map(Metric::new).collect(Collectors.toSet());
+    private static Set<Metric> metrics(String ... metrics) {
+        return Arrays.stream(metrics).map(Metric::new).collect(Collectors.toSet());
     }
 
 }
