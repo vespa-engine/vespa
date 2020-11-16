@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,10 +27,9 @@ public class NodeRebooterTest {
 
     @Test
     public void testRebootScheduling() {
-        var rebootInterval = Duration.ofDays(30);
-        var flagSource = new InMemoryFlagSource().withIntFlag(Flags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
-        var tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
-        ((MockCurator) tester.getCurator()).setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");
+        Duration rebootInterval = Duration.ofDays(30);
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        ProvisioningTester tester = createTester(rebootInterval, flagSource);
 
         makeReadyHosts(15, tester);
         NodeRepository nodeRepository = tester.nodeRepository();
@@ -70,12 +70,11 @@ public class NodeRebooterTest {
         assertReadyHosts(15, nodeRepository, 2L);
     }
 
-    @Test
+    @Test(timeout = 30_000) // Avoid looping forever if assertions don't hold
     public void testRebootScheduledEvenWithSmallProbability() {
         Duration rebootInterval = Duration.ofDays(30);
-        var flagSource = new InMemoryFlagSource().withIntFlag(Flags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
-        var tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
-        ((MockCurator) tester.getCurator()).setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        ProvisioningTester tester = createTester(rebootInterval, flagSource);
 
         makeReadyHosts(2, tester);
         NodeRepository nodeRepository = tester.nodeRepository();
@@ -92,7 +91,7 @@ public class NodeRebooterTest {
         // Advancing just a little bit into the 1x-2x interval, there is a >0 probability of
         // rebooting a host. Run until all have been scheduled.
         tester.clock().advance(Duration.ofMinutes(25));
-        for (int i = 0;; ++i) {
+        while (true) {
             rebooter.maintain();
             simulateReboot(nodeRepository);
             List<Node> nodes = nodeRepository.getNodes(NodeType.host, Node.State.ready);
@@ -136,10 +135,18 @@ public class NodeRebooterTest {
                                      () -> {});
         }
     }
-    
+
     /** Returns the subset of the given nodes which have the given current reboot generation */
     private List<Node> withCurrentRebootGeneration(long generation, List<Node> nodes) {
         return nodes.stream().filter(n -> n.status().reboot().current() == generation).collect(Collectors.toList());
+    }
+
+    private static ProvisioningTester createTester(Duration rebootInterval, InMemoryFlagSource flagSource) {
+        flagSource = flagSource.withIntFlag(Flags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
+        ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
+        tester.clock().setInstant(Instant.ofEpochMilli(1605522619000L)); // Use a fixed random seed
+        ((MockCurator) tester.getCurator()).setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");
+        return tester;
     }
 
 }
