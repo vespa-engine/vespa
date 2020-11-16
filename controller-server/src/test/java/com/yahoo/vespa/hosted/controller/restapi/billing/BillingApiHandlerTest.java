@@ -189,8 +189,13 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
 
     @Test
     public void patch_collection_method() {
+        test_patch_collection_with_field_name("collectionMethod");
+        test_patch_collection_with_field_name("collection");
+    }
+
+    private void test_patch_collection_with_field_name(String fieldName) {
         var planRequest = request("/billing/v1/tenant/tenant1/collection", PATCH)
-                .data("{\"collectionMethod\": \"invoice\"}")
+                .data("{\"" + fieldName + "\": \"invoice\"}")
                 .roles(financeAdmin);
         tester.assertResponse(planRequest, "Collection method updated to INVOICE");
         assertEquals(CollectionMethod.INVOICE, billingController.getCollectionMethod(tenant));
