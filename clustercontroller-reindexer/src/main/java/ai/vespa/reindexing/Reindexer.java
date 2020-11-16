@@ -76,10 +76,11 @@ public class Reindexer {
         this.ready = new TreeMap<>(ready); // Iterate through document types in consistent order.
         this.database = database;
         this.visitorSessions = visitorSessions;
+        this.metrics = new ReindexingMetrics(metric, cluster.name);
         this.clock = clock;
     }
 
-    /** Lets the reindexere abort any ongoing visit session, wait for it to complete normally, then exit. */
+    /** Lets the reindexer abort any ongoing visit session, wait for it to complete normally, then exit. */
     public void shutdown() {
         phaser.forceTermination(); // All parties waiting on this phaser are immediately allowed to proceed.
     }
@@ -125,7 +126,7 @@ public class Reindexer {
                 return;
             case RUNNING:
                 log.log(WARNING, "Unexpected state 'RUNNING' of reindexing of " + type);
-            case READY: // Intentional fallthrough — must just assume we failed updating state when exiting previously.
+            case READY: // Intentional fallthrough — must just assume we failed updating state when exiting previously.
             log.log(FINE, () -> "Running reindexing of " + type);
         }
 
@@ -145,28 +146,27 @@ public class Reindexer {
             @Override
             public void onDone(CompletionCode code, String message) {
                 super.onDone(code, message);
-                phaser.arriveAndAwaitAdvance(); // Synchronize with the reindex thread.
+                phaser.arriveAndAwaitAdvance(); // Synchronize with the reindexer control thread.
             }
         };
 
         VisitorParameters parameters = createParameters(type, status.progress().orElse(null));
         parameters.setControlHandler(control);
-        Runnable sessionShutdown = visitorSessions.apply(parameters);
+        Runnable sessionShutdown = visitorSessions.apply(parameters); // Also starts the visitor session.
 
-        // Wait until done; or until termination is forced, in which case we abort the visit and wait for it to complete.
-        phaser.arriveAndAwaitAdvance(); // Synchronize with the visitor completion thread.
-        sessionShutdown.run();
+        // Wait until done; or until termination is forced, in which we shut down the visitor session immediately.
+        phaser.arriveAndAwaitAdvance(); // Synchronize with visitor completion.
+        sessionShutdown.run(); // Shutdown aborts the session, then waits for it to terminate normally.
 
-        // If we were interrupted, the result may not yet be set in the control handler.
         switch (control.getResult().getCode()) {
             default:
                 log.log(WARNING, "Unexpected visitor result '" + control.getResult().getCode() + "'");
-            case FAILURE: // Intentional fallthrough — this is an error.
+            case FAILURE: // Intentional fallthrough — this is an error.
                 log.log(WARNING, "Visiting failed: " + control.getResult().getMessage());
                 status = status.failed(clock.instant(), control.getResult().getMessage());
                 break;
             case ABORTED:
-                log.log(FINE, () -> "Halting reindexing of " + type + " due to shutdown — will continue later");
+                log.log(FINE, () -> "Halting reindexing of " + type + " due to shutdown — will continue later");
                 status = status.halted();
                 break;
             case SUCCESS:
