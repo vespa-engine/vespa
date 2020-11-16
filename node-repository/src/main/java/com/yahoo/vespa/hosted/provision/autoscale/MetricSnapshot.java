@@ -17,15 +17,15 @@ public class MetricSnapshot {
     private final double memory;
     private final double disk;
     private final long generation;
-    private final boolean inRotation;
+    private final boolean inService;
 
-    public MetricSnapshot(Instant at, double cpu, double memory, double disk, long generation, boolean inRotation) {
+    public MetricSnapshot(Instant at, double cpu, double memory, double disk, long generation, boolean inService) {
         this.at = at;
         this.cpu = cpu;
         this.memory = memory;
         this.disk = disk;
         this.generation = generation;
-        this.inRotation = inRotation;
+        this.inService = inService;
     }
 
     public Instant at() { return at; }
@@ -33,7 +33,7 @@ public class MetricSnapshot {
     public double memory() { return memory; }
     public double disk() { return disk; }
     public long generation() { return generation; }
-    public boolean inRotation() { return inRotation; }
+    public boolean inService() { return inService; }
 
     @Override
     public String toString() { return "metrics at " + at + ":" +

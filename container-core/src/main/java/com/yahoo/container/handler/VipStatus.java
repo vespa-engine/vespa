@@ -149,7 +149,7 @@ public class VipStatus {
             else if (healthState.status() == StateMonitor.Status.up)
                 healthState.status(StateMonitor.Status.down);
 
-            metric.set("in_rotation", currentlyInRotation ? 1 : 0, metric.createContext(Map.of()));
+            metric.set("in_service", currentlyInRotation ? 1 : 0, metric.createContext(Map.of()));
         }
     }
 

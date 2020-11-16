@@ -62,7 +62,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
     /** Filter out uninformative snapshots before storing */
     private Collection<Pair<String, MetricSnapshot>> filter(Collection<Pair<String, MetricSnapshot>> snapshots) {
         return snapshots.stream()
-                        .filter(snapshot -> snapshot.getSecond().inRotation())
+                        .filter(snapshot -> snapshot.getSecond().inService())
                         .collect(Collectors.toList());
     }
 

@@ -49,7 +49,7 @@ public class MetricsResponse {
                                                                 Metric.memory.from(values),
                                                                 Metric.disk.from(values),
                                                                 (long)Metric.generation.from(values),
-                                                                Metric.inRotation.from(values) > 0)));
+                                                                Metric.inService.from(values) > 0)));
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
@@ -87,8 +87,8 @@ public class MetricsResponse {
             public String metricResponseName() { return "application_generation"; }
             double convertValue(double metricValue) { return (float)metricValue; } // Really a long
         },
-        inRotation {
-            public String metricResponseName() { return "in_rotation"; }
+        inService {
+            public String metricResponseName() { return "in_service"; }
             double convertValue(double metricValue) { return (float)metricValue; } // Really a boolean
             double defaultValue() { return 1.0; }
         };

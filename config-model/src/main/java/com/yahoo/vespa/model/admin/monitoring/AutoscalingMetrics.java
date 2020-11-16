@@ -20,7 +20,7 @@ public class AutoscalingMetrics {
                                      "mem_total.util",
                                      "disk.util",
                                      "application_generation",
-                                     "in_rotation"));
+                                     "in_service"));
     }
 
     private static Set<Metric> metrics(String ... metrics) {

@@ -197,7 +197,7 @@ public class VipStatusTestCase {
 
         @Override
         public void set(String key, Number val, Context ctx) {
-            if ( ! key.equals("in_rotation"))
+            if ( ! key.equals("in_service"))
                 throw new RuntimeException("Metric.set called with unexpected key " + key);
             inRotation = val.intValue();
         }

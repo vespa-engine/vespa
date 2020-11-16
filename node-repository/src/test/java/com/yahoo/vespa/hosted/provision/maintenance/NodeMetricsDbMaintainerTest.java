@@ -73,7 +73,7 @@ public class NodeMetricsDbMaintainerTest {
                 "              \"mem_total.util\": 15,\n" +
                 "              \"disk.util\": 20,\n" +
                 "              \"application_generation\": 3,\n" +
-                "              \"in_rotation\": 1\n" +
+                "              \"in_service\": 1\n" +
                 "            },\n" +
                 "            \"dimensions\": {\n" +
                 "              \"state\": \"active\"\n" +
@@ -94,7 +94,7 @@ public class NodeMetricsDbMaintainerTest {
                 "              \"mem_total.util\": 2,\n" +
                 "              \"disk.util\": 3,\n" +
                 "              \"application_generation\": 3,\n" +
-                "              \"in_rotation\": 0\n" +
+                "              \"in_service\": 0\n" +
                 "            },\n" +
                 "            \"dimensions\": {\n" +
                 "              \"state\": \"active\"\n" +
