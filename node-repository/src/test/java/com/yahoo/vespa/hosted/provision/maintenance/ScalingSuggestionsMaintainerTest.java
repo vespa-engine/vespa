@@ -38,10 +38,10 @@ public class ScalingSuggestionsMaintainerTest {
     public void testScalingSuggestionsMaintainer() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east3"))).flavorsConfig(flavorsConfig()).build();
 
-        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.applicationId("app1");
         ClusterSpec cluster1 = ProvisioningTester.containerClusterSpec();
 
-        ApplicationId app2 = ProvisioningTester.makeApplicationId("app2");
+        ApplicationId app2 = ProvisioningTester.applicationId("app2");
         ClusterSpec cluster2 = ProvisioningTester.contentClusterSpec();
 
         MetricsDb metricsDb = MetricsDb.createTestInstance(tester.nodeRepository());
@@ -80,7 +80,8 @@ public class ScalingSuggestionsMaintainerTest {
                                                                               cpu,
                                                                               memory,
                                                                               disk,
-                                                                              generation))));
+                                                                              generation,
+                                                                              true))));
         }
     }
 

@@ -14,7 +14,6 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -62,7 +61,7 @@ public class AutoscalingMaintainerTester {
     public AutoscalingMaintainer maintainer() { return maintainer; }
     public MetricsDb nodeMetricsDb() { return metricsDb; }
 
-    public static ApplicationId makeApplicationId(String name) { return ProvisioningTester.makeApplicationId(name); }
+    public static ApplicationId makeApplicationId(String name) { return ProvisioningTester.applicationId(name); }
     public static ClusterSpec containerClusterSpec() { return ProvisioningTester.containerClusterSpec(); }
 
     public List<Node> deploy(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
@@ -77,7 +76,8 @@ public class AutoscalingMaintainerTester {
                                                                                      cpu,
                                                                                      mem,
                                                                                      disk,
-                                                                                     generation))));
+                                                                                     generation,
+                                                                                     true))));
         }
     }
 

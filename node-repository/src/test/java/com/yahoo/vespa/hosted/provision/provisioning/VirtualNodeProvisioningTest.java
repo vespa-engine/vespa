@@ -39,7 +39,7 @@ public class VirtualNodeProvisioningTest {
     private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer")).vespaVersion("6.42").build();
 
     private ProvisioningTester tester = new ProvisioningTester.Builder().build();
-    private ApplicationId applicationId = ProvisioningTester.makeApplicationId("test");
+    private ApplicationId applicationId = ProvisioningTester.applicationId("test");
 
     @Test
     public void distinct_parent_host_for_each_node_in_a_cluster() {
@@ -81,7 +81,7 @@ public class VirtualNodeProvisioningTest {
             NodeResources flavor = new NodeResources(1, 4, 10, 1);
             tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
             tester.makeReadyNodes(4, flavor, NodeType.host, 1);
-            tester.prepareAndActivateInfraApplication(ProvisioningTester.makeApplicationId(), NodeType.host);
+            tester.prepareAndActivateInfraApplication(ProvisioningTester.applicationId(), NodeType.host);
 
             List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups, flavor);
             List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups, flavor);
@@ -95,7 +95,7 @@ public class VirtualNodeProvisioningTest {
         {
             tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east"))).build();
             tester.makeReadyNodes(4, resources, NodeType.host, 1);
-            tester.prepareAndActivateInfraApplication(ProvisioningTester.makeApplicationId(), NodeType.host);
+            tester.prepareAndActivateInfraApplication(ProvisioningTester.applicationId(), NodeType.host);
 
             List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
             List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);

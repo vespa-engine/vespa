@@ -48,7 +48,8 @@ public class MetricsResponse {
                                                                 Metric.cpu.from(values),
                                                                 Metric.memory.from(values),
                                                                 Metric.disk.from(values),
-                                                                (long)Metric.generation.from(values))));
+                                                                (long)Metric.generation.from(values),
+                                                                Metric.inRotation.from(values) > 0)));
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
@@ -85,6 +86,11 @@ public class MetricsResponse {
         generation { // application config generation active on the node
             public String metricResponseName() { return "application_generation"; }
             double convertValue(double metricValue) { return (float)metricValue; } // Really a long
+        },
+        inRotation {
+            public String metricResponseName() { return "in_rotation"; }
+            double convertValue(double metricValue) { return (float)metricValue; } // Really a boolean
+            double defaultValue() { return 1.0; }
         };
 
         /** The name of this metric as emitted from its source */
@@ -93,8 +99,10 @@ public class MetricsResponse {
         /** Convert from the emitted value of this metric to the value we want to use here */
         abstract double convertValue(double metricValue);
 
+        double defaultValue() { return 0.0; }
+
         public double from(Map<String, Double> values) {
-            return convertValue(values.getOrDefault(metricResponseName(), 0.0));
+            return convertValue(values.getOrDefault(metricResponseName(), defaultValue()));
         }
 
     }

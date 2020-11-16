@@ -182,7 +182,7 @@ public class DynamicProvisioningMaintainerTest {
         tester.provisioningTester.activateTenantHosts();
 
         // Allocating nodes to a host does not result in provisioning of additional capacity
-        ApplicationId application = ProvisioningTester.makeApplicationId();
+        ApplicationId application = ProvisioningTester.applicationId();
         tester.provisioningTester.deploy(application,
                                          Capacity.from(new ClusterResources(2, 1, new NodeResources(4, 8, 50, 0.1))));
         assertEquals(2, tester.nodeRepository.list().owner(application).size());

@@ -42,7 +42,7 @@ public class MultigroupProvisioningTest {
     public void test_provisioning_of_multiple_groups() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = ProvisioningTester.makeApplicationId("app1");
+        ApplicationId application1 = ProvisioningTester.applicationId("app1");
 
         tester.makeReadyNodes(31, small);
 
@@ -75,7 +75,7 @@ public class MultigroupProvisioningTest {
     public void test_provisioning_of_groups_with_asymmetry() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = ProvisioningTester.makeApplicationId();
+        ApplicationId application1 = ProvisioningTester.applicationId();
 
         tester.makeReadyNodes(21, large);
 
@@ -88,7 +88,7 @@ public class MultigroupProvisioningTest {
     public void test_provisioning_of_multiple_groups_after_flavor_migration() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = ProvisioningTester.makeApplicationId("app1");
+        ApplicationId application1 = ProvisioningTester.applicationId("app1");
 
         tester.makeReadyNodes(10, small);
         tester.makeReadyNodes(16, large);
@@ -102,7 +102,7 @@ public class MultigroupProvisioningTest {
     public void test_one_node_and_group_to_two() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = ProvisioningTester.makeApplicationId();
+        ApplicationId application1 = ProvisioningTester.applicationId();
 
         tester.makeReadyNodes(10, small);
 
@@ -114,7 +114,7 @@ public class MultigroupProvisioningTest {
     public void test_one_node_and_group_to_two_with_resource_change() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = ProvisioningTester.makeApplicationId();
+        ApplicationId application1 = ProvisioningTester.applicationId();
 
         tester.makeReadyNodes(10, small);
         tester.makeReadyNodes(10, large);
@@ -136,7 +136,7 @@ public class MultigroupProvisioningTest {
                                                                     .build();
         tester.makeReadyHosts(6, hostFlavor.resources()).activateTenantHosts();
 
-        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.applicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         // Deploy with 1 group
@@ -162,7 +162,7 @@ public class MultigroupProvisioningTest {
                                                                     .build();
         tester.makeReadyHosts(6, hostFlavor.resources()).activateTenantHosts();
 
-        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.applicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         // Deploy with 3 groups
@@ -192,7 +192,7 @@ public class MultigroupProvisioningTest {
                                                                     .build();
         tester.makeReadyHosts(12, hostFlavor.resources()).activateTenantHosts();
 
-        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.applicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         // Deploy with 3 groups
@@ -220,7 +220,7 @@ public class MultigroupProvisioningTest {
     public void test_provisioning_of_multiple_groups_after_flavor_migration_and_exiration() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = ProvisioningTester.makeApplicationId("app1");
+        ApplicationId application1 = ProvisioningTester.applicationId("app1");
 
         tester.makeReadyNodes(10, small);
         tester.makeReadyNodes(16, large);

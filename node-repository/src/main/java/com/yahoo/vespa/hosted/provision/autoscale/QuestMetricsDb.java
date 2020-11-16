@@ -199,7 +199,8 @@ public class QuestMetricsDb implements MetricsDb {
                                                          record.getFloat(2),
                                                          record.getFloat(3),
                                                          record.getFloat(4),
-                                                         record.getLong(5)));
+                                                         record.getLong(5),
+                                                         true));
                     }
                 }
             }

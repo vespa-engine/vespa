@@ -44,8 +44,8 @@ public class LoadBalancerExpirerTest {
         // Deploy two applications with a total of three load balancers
         ClusterSpec.Id cluster1 = ClusterSpec.Id.from("qrs");
         ClusterSpec.Id cluster2 = ClusterSpec.Id.from("qrs2");
-        ApplicationId app1 = ProvisioningTester.makeApplicationId();
-        ApplicationId app2 = ProvisioningTester.makeApplicationId();
+        ApplicationId app1 = ProvisioningTester.applicationId();
+        ApplicationId app2 = ProvisioningTester.applicationId();
         LoadBalancerId lb1 = new LoadBalancerId(app1, cluster1);
         LoadBalancerId lb2 = new LoadBalancerId(app2, cluster1);
         LoadBalancerId lb3 = new LoadBalancerId(app2, cluster2);
@@ -110,7 +110,7 @@ public class LoadBalancerExpirerTest {
 
         // Prepare application
         ClusterSpec.Id cluster = ClusterSpec.Id.from("qrs");
-        ApplicationId app = ProvisioningTester.makeApplicationId();
+        ApplicationId app = ProvisioningTester.applicationId();
         LoadBalancerId lb = new LoadBalancerId(app, cluster);
         deployApplication(app, false, cluster);
 

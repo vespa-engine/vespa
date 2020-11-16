@@ -22,14 +22,14 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class MetricsFetcherDbTest {
+public class NodeMetricsDbTest {
 
     @Test
     public void testNodeMetricsDb() {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         tester.makeReadyHosts(10, new NodeResources(10, 100, 1000, 10))
               .activateTenantHosts();
-        ApplicationId app1 = ProvisioningTester.makeApplicationId("app1");
+        ApplicationId app1 = ProvisioningTester.applicationId("app1");
         var hosts =
                 tester.activate(app1,
                                 ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("7.0").build(),
@@ -40,7 +40,7 @@ public class MetricsFetcherDbTest {
         MetricsDb db = MetricsDb.createTestInstance(tester.nodeRepository());
         Collection<Pair<String, MetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0)));
+            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0, true)));
             clock.advance(Duration.ofMinutes(120));
         }
         db.add(values);

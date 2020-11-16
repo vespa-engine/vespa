@@ -45,7 +45,7 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
         this(nodeRepository, orchestrator, new ApacheHttpClient());
     }
 
-    MetricsV2MetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator, HttpClient httpClient) {
+    public MetricsV2MetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator, HttpClient httpClient) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.httpClient = httpClient;
