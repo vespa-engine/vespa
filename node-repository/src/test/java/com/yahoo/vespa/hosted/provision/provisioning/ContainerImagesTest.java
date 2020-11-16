@@ -58,7 +58,8 @@ public class ContainerImagesTest {
         var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
         tester.activateTenantHosts();
 
-        // Default image is used initially
+        // Default image is used with flag disabled
+        flagSource.withBooleanFlag(Flags.REGIONAL_CONTAINER_REGISTRY.id(), false);
         for (var host : hosts) {
             assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(host.type()));
         }
