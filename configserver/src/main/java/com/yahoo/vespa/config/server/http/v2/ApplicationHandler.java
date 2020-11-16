@@ -24,6 +24,7 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -244,9 +245,13 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse getReindexingStatus(ApplicationId applicationId) {
-        return new ReindexResponse(applicationRepository.getTenant(applicationId).getApplicationRepo().database()
-                                                        .readReindexingStatus(applicationId)
-                                                        .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)));
+        Tenant tenant = applicationRepository.getTenant(applicationId);
+        if (tenant == null)
+            throw new NotFoundException("Tenant '" + applicationId.tenant().value() + "' not found");
+
+        return new ReindexResponse(tenant.getApplicationRepo().database()
+                                         .readReindexingStatus(applicationId)
+                                         .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)));
     }
 
     private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {
