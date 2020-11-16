@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class ClusterTimeseries {
+
+    private static final Logger log = Logger.getLogger(ClusterTimeseries.class.getName());
 
     private final List<Node> clusterNodes;
     private final Map<String, Instant> startTimePerNode;
@@ -64,9 +67,9 @@ public class ClusterTimeseries {
 
     /**
      * Returns the average load of this resource in the measurement window,
-     * or empty if we are not in a position to make decisions from these measurements at this time.
+     * or empty if we do not have a reliable measurement across the cluster nodes.
      */
-    public Optional<Double> averageLoad(Resource resource) {
+    public Optional<Double> averageLoad(Resource resource, Cluster cluster) {
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
 
         List<NodeTimeseries> currentMeasurements = filterStale(nodeTimeseries, startTimePerNode);
@@ -74,8 +77,16 @@ public class ClusterTimeseries {
         // Require a total number of measurements scaling with the number of nodes,
         // but don't require that we have at least that many from every node
         int measurementCount = currentMeasurements.stream().mapToInt(m -> m.size()).sum();
-        if (measurementCount / clusterNodes.size() < Autoscaler.minimumMeasurementsPerNode(clusterType)) return Optional.empty();
-        if (currentMeasurements.size() != clusterNodes.size()) return Optional.empty();
+        if (measurementCount / clusterNodes.size() < Autoscaler.minimumMeasurementsPerNode(clusterType)) {
+            log.fine(() -> "Too few measurements per node for " + cluster.toString() + ": measurementCount " + measurementCount +
+                           " (" + nodeTimeseries.stream().mapToInt(m -> m.size()).sum() + " before filtering");
+            return Optional.empty();
+        }
+        if (currentMeasurements.size() != clusterNodes.size()) {
+            log.fine(() -> "Mssing measurements from some nodes for " + cluster.toString() + ": Has from " + currentMeasurements.size() +
+                           "but need " + clusterNodes.size() + "(before filtering: " +  nodeTimeseries.size() + ")");
+            return Optional.empty();
+        }
 
         double measurementSum = currentMeasurements.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
         return Optional.of(measurementSum / measurementCount);
