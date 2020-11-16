@@ -61,7 +61,7 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
                 .max(Comparator.naturalOrder())
                 .map(lastReboot -> Duration.between(lastReboot, clock().instant()).minus(rebootInterval));
 
-        if (overdue.isEmpty()) // should never happen as all !docker-container should have provisioned timestamp
+        if (overdue.isEmpty()) // should never happen as all hosts should have provisioned timestamp
             return random.nextDouble() < interval().getSeconds() / (double) rebootInterval.getSeconds();
 
         if (overdue.get().isNegative()) return false;
