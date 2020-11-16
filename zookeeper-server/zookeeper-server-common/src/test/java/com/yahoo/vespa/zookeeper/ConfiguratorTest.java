@@ -55,8 +55,6 @@ public class ConfiguratorTest {
     @Test
     public void config_is_written_correctly_when_one_server() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
-        builder.myidFile(idFile.getAbsolutePath());
-        builder.myid(0);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
         validateConfigFileSingleHost(cfgFile);
         validateIdFile(idFile, "0\n");
@@ -80,7 +78,7 @@ public class ConfiguratorTest {
     public void config_is_written_correctly_with_tls_for_quorum_communication_port_unification() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.PORT_UNIFICATION);
-        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.PORT_UNIFICATION);
+        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.PORT_UNIFICATION);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
         new Configurator(builder.build()).writeConfigToDisk(transportSecurityOptions);
         validateConfigFilePortUnification(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
@@ -91,7 +89,7 @@ public class ConfiguratorTest {
     public void config_is_written_correctly_with_tls_for_quorum_communication_tls_with_port_unification() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.TLS_WITH_PORT_UNIFICATION);
-        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.TLS_WITH_PORT_UNIFICATION);
+        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.TLS_WITH_PORT_UNIFICATION);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
         new Configurator(builder.build()).writeConfigToDisk(transportSecurityOptions);
         validateConfigFileTlsWithPortUnification(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
@@ -102,7 +100,7 @@ public class ConfiguratorTest {
     public void config_is_written_correctly_with_tls_for_quorum_communication_tls_only() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.TLS_ONLY);
-        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.TLS_ONLY);
+        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.TLS_ONLY);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
         new Configurator(builder.build()).writeConfigToDisk(transportSecurityOptions);
         validateConfigFileTlsOnly(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
@@ -178,7 +176,8 @@ public class ConfiguratorTest {
                "admin.enableServer=false\n" +
                "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n" +
                "quorumListenOnAllIPs=true\n" +
-               "standaloneEnabled=false\n";
+               "standaloneEnabled=false\n" +
+               "reconfigEnabled=true\n";
     }
 
     private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
