@@ -31,6 +31,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 /**
  * @author Tony Vaagenes
+ * @author bjorncs
  */
 public class JDiscFilterForServletTest extends ServletTestBase {
     @Test
@@ -79,14 +80,16 @@ public class JDiscFilterForServletTest extends ServletTestBase {
 
     private TestDriver requestFilterTestDriver() throws IOException {
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", "http://*/*", new TestRequestFilter())
+                .addRequestFilter("my-request-filter", new TestRequestFilter())
+                .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         return TestDrivers.newInstance(dummyRequestHandler, bindings(filterBindings));
     }
 
     private TestDriver responseFilterTestDriver() throws IOException {
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addResponseFilter("my-response-filter", "http://*/*", new TestResponseFilter())
+                .addResponseFilter("my-response-filter", new TestResponseFilter())
+                .addResponseFilterBinding("my-response-filter", "http://*/*")
                 .build();
         return TestDrivers.newInstance(dummyRequestHandler, bindings(filterBindings));
     }

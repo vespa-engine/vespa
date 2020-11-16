@@ -16,6 +16,7 @@ import com.yahoo.jdisc.http.core.CompletionHandlers;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 
+import javax.servlet.http.HttpServletRequest;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,10 +42,12 @@ class FilteringRequestHandler extends AbstractRequestHandler {
 
     };
 
-    private final FilterBindings filterBindings;
+    private final FilterResolver filterResolver;
+    private final HttpServletRequest servletRequest;
 
-    public FilteringRequestHandler(FilterBindings filterBindings) {
-        this.filterBindings = filterBindings;
+    public FilteringRequestHandler(FilterResolver filterResolver, HttpServletRequest servletRequest) {
+        this.filterResolver = filterResolver;
+        this.servletRequest = servletRequest;
     }
 
     @Override
@@ -52,12 +55,11 @@ class FilteringRequestHandler extends AbstractRequestHandler {
         Preconditions.checkArgument(request instanceof HttpRequest, "Expected HttpRequest, got " + request);
         Objects.requireNonNull(originalResponseHandler, "responseHandler");
 
-        RequestFilter requestFilter = filterBindings.resolveRequestFilter(request.getUri())
-                .map(filterBindings::getRequestFilter)
+        RequestFilter requestFilter = filterResolver.resolveRequestFilter(servletRequest, request.getUri())
                 .orElse(null);
-        ResponseFilter responseFilter = filterBindings.resolveResponseFilter(request.getUri())
-                .map(filterBindings::getResponseFilter)
+        ResponseFilter responseFilter = filterResolver.resolveResponseFilter(servletRequest, request.getUri())
                 .orElse(null);
+
         // Not using request.connect() here - it adds logic for error handling that we'd rather leave to the framework.
         RequestHandler resolvedRequestHandler = request.container().resolveHandler(request);
 

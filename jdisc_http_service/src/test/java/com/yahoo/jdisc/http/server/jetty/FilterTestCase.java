@@ -46,14 +46,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * @author bakksjo
+ * @author Oyvind Bakksjo
+ * @author bjorncs
  */
 public class FilterTestCase {
     @Test
     public void requireThatRequestFilterIsNotRunOnUnboundPath() throws Exception {
         RequestFilterMockBase filter = mock(RequestFilterMockBase.class);
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", "http://*/filtered/*", filter)
+                .addRequestFilter("my-request-filter", filter)
+                .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -70,7 +72,8 @@ public class FilterTestCase {
     public void requireThatRequestFilterIsRunOnBoundPath() throws Exception {
         final RequestFilter filter = mock(RequestFilterMockBase.class);
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", "http://*/filtered/*", filter)
+                .addRequestFilter("my-request-filter", filter)
+                .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -87,7 +90,8 @@ public class FilterTestCase {
     public void requireThatRequestFilterChangesAreSeenByRequestHandler() throws Exception {
         final RequestFilter filter = new HeaderRequestFilter("foo", "bar");
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", "http://*/*", filter)
+                .addRequestFilter("my-request-filter", filter)
+                .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -103,7 +107,8 @@ public class FilterTestCase {
     @Test
     public void requireThatRequestFilterCanRespond() throws Exception {
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", "http://*/*", new RespondForbiddenFilter())
+                .addRequestFilter("my-request-filter", new RespondForbiddenFilter())
+                .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -120,7 +125,8 @@ public class FilterTestCase {
         final int responseStatus = Response.Status.OK;
         final String responseMessage = "Excellent";
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", "http://*/*", new NullCompletionHandlerFilter(responseStatus, responseMessage))
+                .addRequestFilter("my-request-filter", new NullCompletionHandlerFilter(responseStatus, responseMessage))
+                .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -137,7 +143,8 @@ public class FilterTestCase {
     @Test
     public void requireThatRequestFilterExecutionIsExceptionSafe() throws Exception {
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", "http://*/*", new ThrowingRequestFilter())
+                .addRequestFilter("my-request-filter", new ThrowingRequestFilter())
+                .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -153,7 +160,8 @@ public class FilterTestCase {
     public void requireThatResponseFilterIsNotRunOnUnboundPath() throws Exception {
         final ResponseFilter filter = mock(ResponseFilterMockBase.class);
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addResponseFilter("my-response-filter", "http://*/filtered/*", filter)
+                .addResponseFilter("my-response-filter", filter)
+                .addResponseFilterBinding("my-response-filter", "http://*/filtered/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -170,7 +178,8 @@ public class FilterTestCase {
     public void requireThatResponseFilterIsRunOnBoundPath() throws Exception {
         final ResponseFilter filter = mock(ResponseFilterMockBase.class);
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addResponseFilter("my-response-filter", "http://*/filtered/*", filter)
+                .addResponseFilter("my-response-filter", filter)
+                .addResponseFilterBinding("my-response-filter", "http://*/filtered/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -186,7 +195,8 @@ public class FilterTestCase {
     @Test
     public void requireThatResponseFilterChangesAreWrittenToResponse() throws Exception {
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addResponseFilter("my-response-filter", "http://*/*", new HeaderResponseFilter("foo", "bar"))
+                .addResponseFilter("my-response-filter", new HeaderResponseFilter("foo", "bar"))
+                .addResponseFilterBinding("my-response-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -202,7 +212,8 @@ public class FilterTestCase {
     @Test
     public void requireThatResponseFilterExecutionIsExceptionSafe() throws Exception {
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addResponseFilter("my-response-filter", "http://*/*", new ThrowingResponseFilter())
+                .addResponseFilter("my-response-filter", new ThrowingResponseFilter())
+                .addResponseFilterBinding("my-response-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -220,8 +231,10 @@ public class FilterTestCase {
         final ResponseFilter responseFilter = mock(ResponseFilterMockBase.class);
         final String uriPattern = "http://*/*";
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", uriPattern, requestFilter)
-                .addResponseFilter("my-response-filter", uriPattern, responseFilter)
+                .addRequestFilter("my-request-filter", requestFilter)
+                .addRequestFilterBinding("my-request-filter", uriPattern)
+                .addResponseFilter("my-response-filter", responseFilter)
+                .addResponseFilterBinding("my-response-filter", uriPattern)
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -238,8 +251,10 @@ public class FilterTestCase {
     @Test
     public void requireThatResponseFromRequestFilterGoesThroughResponseFilter() throws Exception {
         FilterBindings filterBindings = new FilterBindings.Builder()
-                .addRequestFilter("my-request-filter", "http://*/*", new RespondForbiddenFilter())
-                .addResponseFilter("my-response-filter", "http://*/*", new HeaderResponseFilter("foo", "bar"))
+                .addRequestFilter("my-request-filter", new RespondForbiddenFilter())
+                .addRequestFilterBinding("my-request-filter", "http://*/*")
+                .addResponseFilter("my-response-filter", new HeaderResponseFilter("foo", "bar"))
+                .addResponseFilterBinding("my-response-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
@@ -380,10 +395,111 @@ public class FilterTestCase {
         assertThat(response.headers().getFirst("foo"), is("bar"));
     }
 
-    private static TestDriver newDriver(
-            final MyRequestHandler requestHandler,
-            FilterBindings filterBindings)
-            throws IOException {
+    @Test
+    public void requireThatDefaultRequestFilterChainIsRunIfNoOtherFilterChainMatches() throws IOException, InterruptedException {
+        RequestFilter filterWithBinding = mock(RequestFilter.class);
+        RequestFilter defaultFilter = mock(RequestFilter.class);
+        String defaultFilterId = "default-request-filter";
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", filterWithBinding)
+                .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
+                .addRequestFilter(defaultFilterId, defaultFilter)
+                .setRequestFilterDefaultForPort(defaultFilterId, 0)
+                .build();
+        MyRequestHandler requestHandler = new MyRequestHandler();
+        TestDriver testDriver = TestDriver.newInstance(
+                JettyHttpServer.class,
+                requestHandler,
+                newFilterModule(filterBindings));
+
+        testDriver.client().get("/status.html");
+
+        assertThat(requestHandler.awaitInvocation(), is(true));
+        verify(defaultFilter, times(1)).filter(any(HttpRequest.class), any(ResponseHandler.class));
+        verify(filterWithBinding, never()).filter(any(HttpRequest.class), any(ResponseHandler.class));
+
+        assertThat(testDriver.close(), is(true));
+    }
+
+    @Test
+    public void requireThatDefaultResponseFilterChainIsRunIfNoOtherFilterChainMatches() throws IOException, InterruptedException {
+        ResponseFilter filterWithBinding = mock(ResponseFilter.class);
+        ResponseFilter defaultFilter = mock(ResponseFilter.class);
+        String defaultFilterId = "default-response-filter";
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addResponseFilter("my-response-filter", filterWithBinding)
+                .addResponseFilterBinding("my-response-filter", "http://*/filtered/*")
+                .addResponseFilter(defaultFilterId, defaultFilter)
+                .setResponseFilterDefaultForPort(defaultFilterId, 0)
+                .build();
+        MyRequestHandler requestHandler = new MyRequestHandler();
+        TestDriver testDriver = TestDriver.newInstance(
+                JettyHttpServer.class,
+                requestHandler,
+                newFilterModule(filterBindings));
+
+        testDriver.client().get("/status.html");
+
+        assertThat(requestHandler.awaitInvocation(), is(true));
+        verify(defaultFilter, times(1)).filter(any(Response.class), any(Request.class));
+        verify(filterWithBinding, never()).filter(any(Response.class), any(Request.class));
+
+        assertThat(testDriver.close(), is(true));
+    }
+
+    @Test
+    public void requireThatRequestFilterWithBindingMatchHasPrecedenceOverDefaultFilter() throws IOException, InterruptedException {
+        RequestFilterMockBase filterWithBinding = mock(RequestFilterMockBase.class);
+        RequestFilterMockBase defaultFilter = mock(RequestFilterMockBase.class);
+        String defaultFilterId = "default-request-filter";
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", filterWithBinding)
+                .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
+                .addRequestFilter(defaultFilterId, defaultFilter)
+                .setRequestFilterDefaultForPort(defaultFilterId, 0)
+                .build();
+        MyRequestHandler requestHandler = new MyRequestHandler();
+        TestDriver testDriver = TestDriver.newInstance(
+                JettyHttpServer.class,
+                requestHandler,
+                newFilterModule(filterBindings));
+
+        testDriver.client().get("/filtered/status.html");
+
+        assertThat(requestHandler.awaitInvocation(), is(true));
+        verify(defaultFilter, never()).filter(any(HttpRequest.class), any(ResponseHandler.class));
+        verify(filterWithBinding).filter(any(HttpRequest.class), any(ResponseHandler.class));
+
+        assertThat(testDriver.close(), is(true));
+    }
+
+    @Test
+    public void requireThatResponsFilterWithBindingMatchHasPrecedenceOverDefaultFilter() throws IOException, InterruptedException {
+        ResponseFilter filterWithBinding = mock(ResponseFilter.class);
+        ResponseFilter defaultFilter = mock(ResponseFilter.class);
+        String defaultFilterId = "default-response-filter";
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addResponseFilter("my-response-filter", filterWithBinding)
+                .addResponseFilterBinding("my-response-filter", "http://*/filtered/*")
+                .addResponseFilter(defaultFilterId, defaultFilter)
+                .setResponseFilterDefaultForPort(defaultFilterId, 0)
+                .build();
+        MyRequestHandler requestHandler = new MyRequestHandler();
+        TestDriver testDriver = TestDriver.newInstance(
+                JettyHttpServer.class,
+                requestHandler,
+                newFilterModule(filterBindings));
+
+        testDriver.client().get("/filtered/status.html");
+
+        assertThat(requestHandler.awaitInvocation(), is(true));
+        verify(defaultFilter, never()).filter(any(Response.class), any(Request.class));
+        verify(filterWithBinding, times(1)).filter(any(Response.class), any(Request.class));
+
+        assertThat(testDriver.close(), is(true));
+    }
+
+    private static TestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
                 requestHandler,

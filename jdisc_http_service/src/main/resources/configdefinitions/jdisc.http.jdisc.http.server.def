@@ -27,6 +27,12 @@ filter[].id string
 # The binding of a filter
 filter[].binding string
 
+# Filter id for a default filter (chain)
+defaultFilters[].filterId string
+
+# The local port which the default filter should be applied to
+defaultFilters[].localPort int
+
 # Max number of threads in underlying Jetty pool
 maxWorkerThreads                      int    default = 200
 
