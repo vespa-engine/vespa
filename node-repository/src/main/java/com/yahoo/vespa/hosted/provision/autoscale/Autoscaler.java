@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class Autoscaler {
 
-    protected final Logger log = Logger.getLogger(this.getClass().getName());
+    private final Logger log = Logger.getLogger(this.getClass().getName());
 
     /** What cost difference factor is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
@@ -71,11 +71,10 @@ public class Autoscaler {
 
         ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
-        Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
-        Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
-        Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk);
+        Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu, cluster);
+        Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory, cluster);
+        Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk, cluster);
         if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) {
-            log.fine(() -> "Missing average load - Advice.none  " + cluster.toString());
             return Advice.none();
         }
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
@@ -83,11 +82,11 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits, exclusive);
         if (bestAllocation.isEmpty()) {
-            log.fine(() -> "bestAllocation.isEmpty - Advice.dontScale " + cluster.toString());
+            log.fine(() -> "bestAllocation.isEmpty: Advice.dontScale for " + cluster.toString());
             return Advice.dontScale();
         }
         if (similar(bestAllocation.get(), currentAllocation)) {
-            log.fine(() -> "Current allocation similar - Advice.dontScale " + cluster.toString());
+            log.fine(() -> "Current allocation similar: Advice.dontScale for " + cluster.toString());
             return Advice.dontScale();
         }
         return Advice.scaleTo(bestAllocation.get().toAdvertisedClusterResources());
