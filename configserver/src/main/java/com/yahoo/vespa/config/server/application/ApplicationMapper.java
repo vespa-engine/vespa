@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.component.Version;
@@ -24,12 +24,10 @@ public final class ApplicationMapper {
     private final Map<ApplicationId, ApplicationSet> requestHandlers = new ConcurrentHashMap<>();
 
     private ApplicationSet getApplicationSet(ApplicationId applicationId) {
-        ApplicationSet list = requestHandlers.get(applicationId);
-        if (list != null) {
-            return list;
-        }
+        ApplicationSet set = requestHandlers.get(applicationId);
+        if (set == null) throw new NotFoundException("No such application id: " + applicationId);
 
-        throw new NotFoundException("No such application id: " + applicationId);
+        return set;
     }
 
     /**

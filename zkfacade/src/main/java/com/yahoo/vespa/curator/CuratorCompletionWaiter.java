@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
 import java.util.logging.Level;
@@ -43,7 +43,8 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
             throw new RuntimeException(e);
         }
         if (respondents.size() < barrierMemberCount()) {
-            throw new CompletionTimeoutException("Timed out waiting for peer config servers to complete operation. " +
+            throw new CompletionTimeoutException("Timed out waiting for peer config servers to complete operation " +
+                                                 "(waited for barrier " + barrierPath + ")." +
                                                  "Got response from " + respondents + ", but need response from " +
                                                  "at least " + barrierMemberCount() + " server(s). " +
                                                  "Timeout passed as argument was " + timeout.toMillis() + " ms");

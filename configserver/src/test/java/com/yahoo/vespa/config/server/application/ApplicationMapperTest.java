@@ -58,7 +58,7 @@ public class ApplicationMapperTest {
 
     @Test (expected = NotFoundException.class)
     public void testGetForVersionThrows2() {
-        applicationMapper.register(appId, ApplicationSet.fromSingle(applications.get(0)));
+        applicationMapper.register(appId, ApplicationSet.from(applications.get(0)));
 
         applicationMapper.getForVersion(new ApplicationId.Builder()
                                                 .tenant("different")
