@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
@@ -11,7 +10,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,11 +49,10 @@ public class SingleNodeProvisioner implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
-        // TODO: This should fail if capacity requested is more than 1
         List<HostSpec> hosts = new ArrayList<>();
         hosts.add(new HostSpec(host.hostname(),
                                NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                               ClusterMembership.from(cluster, counter++),
+                               ClusterMembership.from(cluster.with(Optional.of(ClusterSpec.Group.from(0))), counter++),
                                Optional.empty(), Optional.empty(), Optional.empty()));
         return hosts;
     }
