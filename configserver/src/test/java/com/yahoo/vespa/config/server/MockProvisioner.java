@@ -13,7 +13,6 @@ import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
-import com.yahoo.transaction.NestedTransaction;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,6 +30,7 @@ public class MockProvisioner implements Provisioner {
     private HostFilter lastRestartFilter;
 
     private boolean transientFailureOnPrepare = false;
+    private boolean failureOnRemove = false;
     private HostProvisioner hostProvisioner = null;
 
     public MockProvisioner hostProvisioner(HostProvisioner hostProvisioner) {
@@ -41,6 +41,10 @@ public class MockProvisioner implements Provisioner {
     public MockProvisioner transientFailureOnPrepare() {
         transientFailureOnPrepare = true;
         return this;
+    }
+
+    public void failureOnRemove(boolean failureOnRemove) {
+        this.failureOnRemove = failureOnRemove;
     }
 
     @Override
@@ -63,6 +67,9 @@ public class MockProvisioner implements Provisioner {
 
     @Override
     public void remove(ApplicationTransaction transaction) {
+        if (failureOnRemove)
+            throw new IllegalStateException("Unable to remove " + transaction.application());
+
         removed = true;
         lastApplicationId = transaction.application();
     }

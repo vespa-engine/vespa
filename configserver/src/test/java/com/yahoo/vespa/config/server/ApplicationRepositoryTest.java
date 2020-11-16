@@ -77,6 +77,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author hmusum
@@ -353,6 +354,43 @@ public class ApplicationRepositoryTest {
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
+        }
+
+        // If delete fails, a retry should work if the failure is transient and zookeeper state should be constistent
+        {
+            PrepareResult result = deployApp(testApp);
+            long sessionId = result.sessionId();
+            assertNotNull(sessionRepository.getRemoteSession(sessionId));
+            assertNotNull(applicationRepository.getActiveSession(applicationId()));
+            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).getSessionId());
+            assertNotNull(applicationRepository.getApplication(applicationId()));
+
+            provisioner.failureOnRemove(true);
+            try {
+                applicationRepository.delete(applicationId());
+                fail("Should fail with RuntimeException");
+            } catch (RuntimeException e) {
+                // ignore
+            }
+            assertNotNull(sessionRepository.getRemoteSession(sessionId));
+            assertNotNull(applicationRepository.getActiveSession(applicationId()));
+            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).getSessionId());
+
+            // Delete should work when there is no failure anymore
+            provisioner.failureOnRemove(false);
+            assertTrue(applicationRepository.delete(applicationId()));
+
+            // Session should be in state DELETE
+            String sessionNode = sessionRepository.getSessionPath(sessionId).getAbsolute();
+            assertEquals(Session.Status.DELETE.name(), configCurator.getData(sessionNode + "/sessionState"));
+            assertNotNull(sessionRepository.getRemoteSession(sessionId)); // session still exists
+            assertNull(applicationRepository.getActiveSession(applicationId())); // but it is not active
+            try {
+                applicationRepository.getApplication(applicationId());
+                fail("Should fail with NotFoundException, application should not exist");
+            } catch (NotFoundException e) {
+                // ignore
+            }
         }
     }
 
