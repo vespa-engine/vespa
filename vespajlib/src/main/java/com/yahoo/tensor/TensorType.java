@@ -520,27 +520,9 @@ public class TensorType {
             }
         }
 
-        private static final boolean supportsMixedTypes = false;
-
         private void addDimensionsOf(TensorType type, boolean allowDifferentSizes) {
-            if ( ! supportsMixedTypes) {  // TODO: Support it
-                addDimensionsOfAndDisallowMixedDimensions(type, allowDifferentSizes);
-            }
-            else {
-                for (Dimension dimension : type.dimensions)
-                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name())), allowDifferentSizes));
-            }
-        }
-
-        private void addDimensionsOfAndDisallowMixedDimensions(TensorType type, boolean allowDifferentSizes) {
-            boolean containsMapped = dimensions.values().stream().anyMatch(d -> ! d.isIndexed());
-            containsMapped = containsMapped || type.dimensions().stream().anyMatch(d -> ! d.isIndexed());
-
             for (Dimension dimension : type.dimensions) {
-                if (containsMapped)
-                    dimension = new MappedDimension(dimension.name());
-                Dimension existing = dimensions.get(dimension.name());
-                set(dimension.combineWith(Optional.ofNullable(existing), allowDifferentSizes));
+                set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name())), allowDifferentSizes));
             }
         }
 

@@ -10,6 +10,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -390,6 +391,23 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
         tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");
 
+    }
+
+    @Test
+    public void testMixedTensorType() throws ParseException {
+        String expected = "tensor(x[1],y{},z[2]):{{x:0,y:a,z:0}:4.0,{x:0,y:a,z:1}:5.0,{x:0,y:b,z:0}:7.0,{x:0,y:b,z:1}:8.0}";
+        String a = "tensor(x[1],y{}):{ {x:0,y:a}:1, {x:0,y:b}:2 }";
+        String b = "tensor(y{},z[2]):{ {y:a,z:0}:3, {y:a,z:1}:4, {y:b,z:0}:5, {y:b,z:1}:6 }";
+        String expression = "a + b";
+
+        MapContext context = new MapContext();
+        context.put("a", new TensorValue(Tensor.from(a)));
+        context.put("b", new TensorValue(Tensor.from(b)));
+
+        Tensor expectedResult = Tensor.from(expected);
+        Tensor result = new RankingExpression(expression).evaluate(context).asTensor();
+        assertEquals(expectedResult, result);
+        assertEquals(expectedResult.type(), result.type());
     }
 
     @Test
