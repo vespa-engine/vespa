@@ -11,6 +11,7 @@ import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
@@ -44,6 +45,7 @@ public class Reindexer {
     private final Map<DocumentType, Instant> ready;
     private final ReindexingCurator database;
     private final Function<VisitorParameters, Runnable> visitorSessions;
+    private final ReindexingMetrics metrics;
     private final Clock clock;
     private final Phaser phaser = new Phaser(2); // Reindexer and visitor.
 
@@ -52,7 +54,7 @@ public class Reindexer {
 
     @Inject
     public Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
-                     DocumentAccess access, Clock clock) {
+                     DocumentAccess access, Metric metric, Clock clock) {
         this(cluster,
              ready,
              database,
@@ -64,11 +66,12 @@ public class Reindexer {
                      throw new IllegalStateException(e);
                  }
              },
+             metric,
              clock);
     }
 
     Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
-              Function<VisitorParameters, Runnable> visitorSessions, Clock clock) {
+              Function<VisitorParameters, Runnable> visitorSessions, Metric metric, Clock clock) {
         for (DocumentType type : ready.keySet())
             cluster.bucketSpaceOf(type); // Verifies this is known.
 
@@ -116,6 +119,7 @@ public class Reindexer {
             status = Status.ready(clock.instant()); // Need to restart, as a newer reindexing is required.
 
         database.writeReindexing(reindexing = reindexing.with(type, status));
+        metrics.dump(reindexing);
 
         switch (status.state()) {
             default:
@@ -141,6 +145,7 @@ public class Reindexer {
                 if (progressLastStored.get().isBefore(clock.instant().minusSeconds(10))) {
                     progressLastStored.set(clock.instant());
                     database.writeReindexing(reindexing = reindexing.with(type, status));
+                    metrics.dump(reindexing);
                 }
             }
             @Override
@@ -173,7 +178,8 @@ public class Reindexer {
                 log.log(INFO, "Completed reindexing of " + type + " after " + Duration.between(status.startedAt(), clock.instant()));
                 status = status.successful(clock.instant());
         }
-        database.writeReindexing(reindexing.with(type, status));
+        database.writeReindexing(reindexing = reindexing.with(type, status));
+        metrics.dump(reindexing);
     }
 
     VisitorParameters createParameters(DocumentType type, ProgressToken progress) {

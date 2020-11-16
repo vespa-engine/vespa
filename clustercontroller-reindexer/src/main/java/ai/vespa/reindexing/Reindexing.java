@@ -121,7 +121,7 @@ public class Reindexing {
         public Status failed(Instant now, String message) {
             if (state != State.RUNNING)
                 throw new IllegalStateException("Current state must be RUNNING when changing to FAILED");
-            return new Status(startedAt, requireNonNull(now), null, State.FAILED, requireNonNull(message));
+            return new Status(startedAt, requireNonNull(now), progress, State.FAILED, requireNonNull(message));
         }
 
         public Instant startedAt() {
