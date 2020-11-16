@@ -4,16 +4,12 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
-import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
-import com.yahoo.jdisc.http.filter.RequestFilter;
-import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.guiceModules.ConnectorFactoryRegistryModule;
 import com.yahoo.jdisc.http.guiceModules.ServletModule;
-import com.yahoo.jdisc.http.server.FilterBindings;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -83,10 +79,7 @@ public class TestDrivers {
                         bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
                         bind(ServerConfig.class).toInstance(new ServerConfig(serverConfig));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(connectorConfigBuilder));
-                        bind(FilterBindings.class).toInstance(
-                                new FilterBindings(
-                                        new BindingRepository<>(),
-                                        new BindingRepository<>()));
+                        bind(FilterBindings.class).toInstance(new FilterBindings.Builder().build());
                     }
                 },
                 new ConnectorFactoryRegistryModule(connectorConfigBuilder),

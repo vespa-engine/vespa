@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.jdisc.http.filter.RequestFilter;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncListener;
@@ -76,7 +75,8 @@ class JDiscFilterInvokerFilter implements Filter {
 
     private void runChainAndResponseFilters(URI uri, HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         Optional<OneTimeRunnable> responseFilterInvoker =
-                Optional.ofNullable(jDiscContext.responseFilters.resolve(uri))
+                jDiscContext.filterBindings.resolveResponseFilter(uri)
+                        .map(jDiscContext.filterBindings::getResponseFilter)
                         .map(responseFilter ->
                                 new OneTimeRunnable(() ->
                                         filterInvoker.invokeResponseFilterChain(responseFilter, uri, request, response)));
@@ -106,12 +106,12 @@ class JDiscFilterInvokerFilter implements Filter {
 
     private HttpServletRequest runRequestFilterWithMatchingBinding(AtomicReference<Boolean> responseReturned, URI uri, HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
-            RequestFilter requestFilter = jDiscContext.requestFilters.resolve(uri);
-            if (requestFilter == null)
+            String requestFilterId = jDiscContext.filterBindings.resolveRequestFilter(uri).orElse(null);
+            if (requestFilterId == null)
                 return request;
 
             ResponseHandler responseHandler = createResponseHandler(responseReturned, request, response);
-            return filterInvoker.invokeRequestFilterChain(requestFilter, uri, request, responseHandler);
+            return filterInvoker.invokeRequestFilterChain(jDiscContext.filterBindings.getRequestFilter(requestFilterId), uri, request, responseHandler);
         } catch (Exception e) {
             throw new RuntimeException("Failed running request filter chain for uri " + uri, e);
         }

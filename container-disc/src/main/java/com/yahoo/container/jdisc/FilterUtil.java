@@ -5,12 +5,11 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.http.filter.FilterChainRepository;
-import com.yahoo.jdisc.application.BindingRepository;
-import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
+import com.yahoo.jdisc.http.server.jetty.FilterBindings;
 
 import java.util.List;
 
@@ -18,18 +17,15 @@ import java.util.List;
  * Helper class to set up filter binding repositories based on config.
  *
  * @author Øyvind Bakksjø
+ * @author bjorncs
  */
 class FilterUtil {
 
     private static final ComponentId SEARCH_SERVER_COMPONENT_ID = ComponentId.fromString("SearchServer");
 
-    private final BindingRepository<RequestFilter> requestFilters;
-    private final BindingRepository<ResponseFilter> responseFilters;
+    private final FilterBindings.Builder builder = new FilterBindings.Builder();
 
-    private FilterUtil(BindingRepository<RequestFilter> requestFilters, BindingRepository<ResponseFilter> responseFilters) {
-        this.requestFilters = requestFilters;
-        this.responseFilters = responseFilters;
-    }
+    private FilterUtil() {}
 
     private void configureFilters(List<FilterSpec> filtersConfig, FilterChainRepository filterChainRepository) {
         for (FilterSpec filterConfig : filtersConfig) {
@@ -37,50 +33,48 @@ class FilterUtil {
             if (filter == null) {
                 throw new RuntimeException("No http filter with id " + filterConfig.getId());
             }
-            addFilter(filter, filterConfig.getBinding());
+            addFilter(filter, filterConfig.getBinding(), filterConfig.getId());
         }
     }
 
-    private void addFilter(Object filter, String binding) {
+    private void addFilter(Object filter, String binding, String filterId) {
         if (filter instanceof RequestFilter && filter instanceof ResponseFilter) {
             throw new RuntimeException("The filter " + filter.getClass().getName() + 
                                        " is unsupported since it's both a RequestFilter and a ResponseFilter.");
         } else if (filter instanceof RequestFilter) {
-            requestFilters.put(new UriPattern(binding), (RequestFilter) filter);
+            builder.addRequestFilter(filterId, binding, (RequestFilter) filter);
         } else if (filter instanceof ResponseFilter) {
-            responseFilters.put(new UriPattern(binding), (ResponseFilter) filter);
+            builder.addResponseFilter(filterId, binding, (ResponseFilter) filter);
         } else {
             throw new RuntimeException("Unknown filter type " + filter.getClass().getName());
         }
     }
 
-    //TVT: remove
+    // TODO(gjoranv): remove
     private void configureLegacyFilters(ComponentId id, ComponentRegistry<SecurityRequestFilter> legacyRequestFilters) {
         ComponentId serverName = id.getNamespace();
         if (SEARCH_SERVER_COMPONENT_ID.equals(serverName) && !legacyRequestFilters.allComponents().isEmpty()) {
-            requestFilters.bind("http://*/*",
-                                SecurityRequestFilterChain.newInstance(legacyRequestFilters.allComponents()));
+            builder.addRequestFilter(
+                    "legacy-filters", "http://*/*", SecurityRequestFilterChain.newInstance(legacyRequestFilters.allComponents()));
         }
     }
 
     /**
      * Populates binding repositories with filters based on config.
-     *
-     * @param requestFilters output argument that will be mutated
-     * @param responseFilters output argument that will be mutated
      */
-    public static void setupFilters(ComponentId componentId,
-                                    ComponentRegistry<SecurityRequestFilter> legacyRequestFilters,
-                                    List<FilterSpec> filtersConfig,
-                                    FilterChainRepository filterChainRepository,
-                                    BindingRepository<RequestFilter> requestFilters,
-                                    BindingRepository<ResponseFilter> responseFilters) {
-        FilterUtil filterUtil = new FilterUtil(requestFilters, responseFilters);
+    public static FilterBindings setupFilters(
+            ComponentId componentId,
+            ComponentRegistry<SecurityRequestFilter> legacyRequestFilters,
+            List<FilterSpec> filtersConfig,
+            FilterChainRepository filterChainRepository) {
+        FilterUtil filterUtil = new FilterUtil();
 
-        // TODO: remove
+        // TODO(gjoranv): remove
         filterUtil.configureLegacyFilters(componentId, legacyRequestFilters);
 
         filterUtil.configureFilters(filtersConfig, filterChainRepository);
+
+        return filterUtil.builder.build();
     }
 
     public static class FilterSpec {
