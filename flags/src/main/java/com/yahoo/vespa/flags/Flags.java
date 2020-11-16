@@ -332,9 +332,9 @@ public class Flags {
 
     public static final UnboundBooleanFlag REGIONAL_CONTAINER_REGISTRY = defineFeatureFlag(
             "regional-container-registry",
-            false,
+            true,
             "Whether host-admin should download images from the zone's regional container registry",
-            "Takes effect on host-admin restart");
+            "Takes effect immediately");
 
     public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
             "enable-automatic-reindexing",
