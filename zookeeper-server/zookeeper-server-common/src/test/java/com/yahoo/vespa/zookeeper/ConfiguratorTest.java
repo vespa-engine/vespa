@@ -178,7 +178,8 @@ public class ConfiguratorTest {
                "admin.enableServer=false\n" +
                "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n" +
                "quorumListenOnAllIPs=true\n" +
-               "standaloneEnabled=false\n";
+               "standaloneEnabled=false\n" +
+               "reconfigEnabled=true\n";
     }
 
     private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
