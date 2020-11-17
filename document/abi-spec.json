@@ -3150,9 +3150,11 @@
       "public"
     ],
     "methods": [
+      "public void <init>()",
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public void <init>(com.yahoo.tensor.Tensor)",
       "public java.util.Optional getTensor()",
+      "public java.util.Optional getTensorType()",
       "public com.yahoo.document.TensorDataType getDataType()",
       "public java.lang.String toString()",
       "public void printXml(com.yahoo.document.serialization.XmlStream)",
@@ -4379,6 +4381,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.datatypes.TensorFieldValue)",
+      "public void verifyCompatibleType(com.yahoo.tensor.TensorType)",
       "protected void checkCompatibility(com.yahoo.document.DataType)",
       "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)",
       "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",

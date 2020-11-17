@@ -116,4 +116,28 @@ TEST(PartialRemoveTest, partial_remove_returns_nullptr_on_invalid_inputs) {
     }
 }
 
+void
+expect_partial_remove(const TensorSpec& input, const TensorSpec& remove, const TensorSpec& exp)
+{
+    auto act = perform_partial_remove(input, remove);
+    EXPECT_EQ(exp, act);
+}
+
+TEST(PartialRemoveTest, remove_where_address_is_not_fully_specified) {
+    auto input = TensorSpec("tensor(x{},y{})").
+            add({{"x", "a"},{"y", "c"}}, 3.0).
+            add({{"x", "a"},{"y", "d"}}, 5.0).
+            add({{"x", "b"},{"y", "c"}}, 7.0);
+
+    expect_partial_remove(input,TensorSpec("tensor(x{})").add({{"x", "a"}}, 1.0),
+                          TensorSpec("tensor(x{},y{})").add({{"x", "b"},{"y", "c"}}, 7.0));
+
+    expect_partial_remove(input, TensorSpec("tensor(y{})").add({{"y", "c"}}, 1.0),
+                          TensorSpec("tensor(x{},y{})").add({{"x", "a"},{"y", "d"}}, 5.0));
+
+    expect_partial_remove(input, TensorSpec("tensor(y{})").add({{"y", "d"}}, 1.0),
+                          TensorSpec("tensor(x{},y{})").add({{"x", "a"},{"y", "c"}}, 3.0)
+                                  .add({{"x", "b"},{"y", "c"}}, 7.0));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
