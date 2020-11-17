@@ -149,7 +149,9 @@ public class BillingApiHandler extends LoggingRequestHandler {
     private HttpResponse patchCollectionMethod(HttpRequest request, String tenant) {
         var tenantName = TenantName.from(tenant);
         var slime = inspectorOrThrow(request);
-        String newMethod = slime.field("collectionMethod").asString().toUpperCase();
+        var newMethod = slime.field("collection").valid() ?
+                slime.field("collection").asString().toUpperCase() :
+                slime.field("collectionMethod").asString().toUpperCase();
         if (newMethod.isEmpty()) return ErrorResponse.badRequest("No collection method specified");
 
         try {
