@@ -136,7 +136,8 @@ class AutoscalingTester {
                                                                               cpu,
                                                                               memory,
                                                                               disk,
-                                                                              0))));
+                                                                              0,
+                                                                              true))));
             }
         }
     }
@@ -165,7 +166,8 @@ class AutoscalingTester {
                                                                               cpu,
                                                                               memory,
                                                                               disk,
-                                                                              0))));
+                                                                              0,
+                                                                              true))));
             }
         }
     }
@@ -179,7 +181,8 @@ class AutoscalingTester {
                                                                               cpu,
                                                                               memory,
                                                                               disk,
-                                                                              generation))));
+                                                                              generation,
+                                                                              true))));
             }
         }
     }

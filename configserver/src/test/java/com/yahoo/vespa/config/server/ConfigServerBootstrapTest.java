@@ -15,6 +15,7 @@ import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
@@ -233,7 +234,8 @@ public class ConfigServerBootstrapTest {
         return new VipStatus(new QrSearchersConfig.Builder().build(),
                              new VipStatusConfig.Builder().build(),
                              new ClustersStatus(),
-                             stateMonitor);
+                             stateMonitor,
+                             new NullMetric());
     }
 
     private VersionState createVersionState() throws IOException {

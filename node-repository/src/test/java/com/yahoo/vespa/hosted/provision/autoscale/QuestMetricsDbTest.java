@@ -120,7 +120,8 @@ public class QuestMetricsDbTest {
                                                                    i * 0.1,
                                                                    i * 0.2,
                                                                    i * 0.4,
-                                                                   i % 100)));
+                                                                   i % 100,
+                                                                   true)));
             clock.advance(sampleRate);
         }
         return timeseries;
@@ -134,7 +135,8 @@ public class QuestMetricsDbTest {
                                                                    i * 0.1,
                                                                    i * 0.2,
                                                                    i * 0.4,
-                                                                   i % 100)));
+                                                                   i % 100,
+                                                                   true)));
         }
         return timeseries;
     }

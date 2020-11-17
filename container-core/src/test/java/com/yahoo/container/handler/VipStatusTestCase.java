@@ -4,7 +4,10 @@ package com.yahoo.container.handler;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
+import com.yahoo.jdisc.Metric;
 import org.junit.Test;
+
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -26,7 +29,7 @@ public class VipStatusTestCase {
     public void testUpRequireAllDown() {
         String[] clusters = {"cluster1", "cluster2", "cluster3"};
 
-        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus());
+        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus(), new MetricMock());
         assertFalse(v.isInRotation());
         addToRotation(clusters, v);
         assertTrue(v.isInRotation());
@@ -53,15 +56,28 @@ public class VipStatusTestCase {
     @Test
     public void testNoClustersConfiguringInitiallyInRotationFalse() {
         String[] clusters = {};
-        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, false, new ClustersStatus());
+        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, false, new ClustersStatus(), new MetricMock());
         assertFalse(v.isInRotation());
     }
 
     @Test
     public void testNoClustersConfiguringInitiallyInRotationTrue() {
         String[] clusters = {};
-        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus());
+        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus(), new MetricMock());
         assertTrue(v.isInRotation());
+    }
+
+    @Test
+    public void testInRotationMetricFollowsRotationState() {
+        MetricMock metric = new MetricMock();
+        String[] clusters = {"cluster1", "cluster2", "cluster3"};
+
+        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus(), metric);
+        assertFalse(v.isInRotation());
+        assertEquals(0, metric.inRotation);
+        addToRotation(clusters, v);
+        assertTrue(v.isInRotation());
+        assertEquals(1, metric.inRotation);
     }
 
     @Test
@@ -85,7 +101,7 @@ public class VipStatusTestCase {
 
         String[] clusters = {"cluster1", "cluster2", "cluster3"};
 
-        VipStatus v = createVipStatus(clusters, true, clustersStatus, stateMonitor);
+        VipStatus v = createVipStatus(clusters, true, clustersStatus, stateMonitor, new MetricMock());
         assertFalse(v.isInRotation());
         assertEquals(StateMonitor.Status.initializing, stateMonitor.status());
 
@@ -98,7 +114,7 @@ public class VipStatusTestCase {
             v.removeFromRotation("cluster1");
         if (anotherIsDown)
             v.removeFromRotation("cluster3");
-        v = createVipStatus(newClusters, true, clustersStatus, stateMonitor);
+        v = createVipStatus(newClusters, true, clustersStatus, stateMonitor, new MetricMock());
         assertTrue(v.isInRotation());
         assertEquals(StateMonitor.Status.up, stateMonitor.status());
 
@@ -124,18 +140,21 @@ public class VipStatusTestCase {
     private static VipStatus createVipStatus(String[] clusters,
                                              StateMonitor.Status startState,
                                              boolean initiallyInRotation,
-                                             ClustersStatus clustersStatus) {
-        return createVipStatus(clusters, initiallyInRotation, clustersStatus, createStateMonitor(startState));
+                                             ClustersStatus clustersStatus,
+                                             Metric metric) {
+        return createVipStatus(clusters, initiallyInRotation, clustersStatus, createStateMonitor(startState), metric);
     }
 
     private static VipStatus createVipStatus(String[] clusters,
                                              boolean initiallyInRotation,
                                              ClustersStatus clustersStatus,
-                                             StateMonitor stateMonitor) {
+                                             StateMonitor stateMonitor,
+                                             Metric metric) {
         return new VipStatus(createSearchersConfig(clusters),
                              new VipStatusConfig.Builder().initiallyInRotation(initiallyInRotation).build(),
                              clustersStatus,
-                             stateMonitor);
+                             stateMonitor,
+                             metric);
     }
 
     private static StateMonitor createStateMonitor(StateMonitor.Status startState) {
@@ -155,7 +174,7 @@ public class VipStatusTestCase {
    }
 
     private static void verifyStatus(String[] clusters, StateMonitor.Status status) {
-        VipStatus v = createVipStatus(clusters, status, true, new ClustersStatus());
+        VipStatus v = createVipStatus(clusters, status, true, new ClustersStatus(), new MetricMock());
         removeFromRotation(clusters, v);
         // initial state
         assertFalse(v.isInRotation());
@@ -165,6 +184,29 @@ public class VipStatusTestCase {
         assertFalse(v.isInRotation());
         v.addToRotation(clusters[2]);
         assertTrue(v.isInRotation());
+    }
+
+    private static class MetricMock implements Metric {
+
+        int inRotation = 0;
+
+        @Override
+        public void add(String key, Number val, Context ctx) {
+            throw new RuntimeException("Metric.add called unexpectedly");
+        }
+
+        @Override
+        public void set(String key, Number val, Context ctx) {
+            if ( ! key.equals("in_service"))
+                throw new RuntimeException("Metric.set called with unexpected key " + key);
+            inRotation = val.intValue();
+        }
+
+        @Override
+        public Context createContext(Map<String, ?> properties) { return new EmptyContext(); }
+
+        private static class EmptyContext implements Context {}
+
     }
 
 }

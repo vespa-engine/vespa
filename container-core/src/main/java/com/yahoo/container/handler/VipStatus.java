@@ -5,7 +5,9 @@ import com.google.inject.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
+import com.yahoo.jdisc.Metric;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class VipStatus {
+
+    private final Metric metric;
 
     private final ClustersStatus clustersStatus;
 
@@ -57,12 +61,22 @@ public class VipStatus {
     public VipStatus(QrSearchersConfig dispatchers,
                      VipStatusConfig vipStatusConfig,
                      ClustersStatus clustersStatus,
-                     StateMonitor healthState) {
+                     StateMonitor healthState,
+                     Metric metric) {
         this.clustersStatus = clustersStatus;
         this.healthState = healthState;
+        this.metric = metric;
         initiallyInRotation = vipStatusConfig.initiallyInRotation();
         clustersStatus.setClusters(dispatchers.searchcluster().stream().map(c -> c.name()).collect(Collectors.toSet()));
         updateCurrentlyInRotation();
+    }
+
+    @Deprecated // TODO: Remove on Vespa 8
+    public VipStatus(QrSearchersConfig dispatchers,
+                     VipStatusConfig vipStatusConfig,
+                     ClustersStatus clustersStatus,
+                     StateMonitor healthState) {
+        this(dispatchers, vipStatusConfig, clustersStatus, healthState, new NullMetric());
     }
 
     @Deprecated // TODO: Remove on Vespa 8
@@ -134,6 +148,8 @@ public class VipStatus {
                 healthState.status(StateMonitor.Status.up);
             else if (healthState.status() == StateMonitor.Status.up)
                 healthState.status(StateMonitor.Status.down);
+
+            metric.set("in_service", currentlyInRotation ? 1 : 0, metric.createContext(Map.of()));
         }
     }
 
@@ -142,6 +158,24 @@ public class VipStatus {
         synchronized (mutex) {
             return currentlyInRotation;
         }
+    }
+
+    private static class NullMetric implements Metric {
+
+        @Override
+        public void set(String key, Number val, Context ctx) { }
+
+        @Override
+        public void add(String key, Number val, Context ctx) { }
+
+        @Override
+        public Context createContext(Map<String, ?> properties) {
+            return new NullContext();
+        }
+
+        private static class NullContext implements Context {
+        }
+
     }
 
 }
