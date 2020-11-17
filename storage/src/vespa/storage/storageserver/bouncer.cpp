@@ -4,10 +4,12 @@
 #include "bouncer_metrics.h"
 #include "config_logging.h"
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -224,12 +226,26 @@ Bouncer::rejectDueToInsufficientPriority(
     sendUp(reply);
 }
 
+void
+Bouncer::reject_due_to_too_few_bucket_bits(api::StorageMessage& msg) {
+    std::shared_ptr<api::StorageReply> reply(
+            dynamic_cast<api::StorageCommand&>(msg).makeReply());
+    reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED,
+                                     vespalib::make_string("Operation bucket %s has too few bits used (%u < minimum of %u)",
+                                                           msg.getBucketId().toString().c_str(),
+                                                           msg.getBucketId().getUsedBits(),
+                                                           spi::BucketLimits::MinUsedBits)));
+    sendUp(reply);
+}
+
 bool
 Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
     const api::MessageType& type(msg->getType());
-        // All replies can come in.
-    if (type.isReply()) return false;
+    // All replies can come in.
+    if (type.isReply()) {
+        return false;
+    }
 
     switch (type.getId()) {
         case api::MessageType::SETNODESTATE_ID:
@@ -301,6 +317,12 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     // If cluster state is not up, fail external load
     if (abortLoadWhenClusterDown && !clusterIsUp()) {
         abortCommandDueToClusterDown(*msg);
+        return true;
+    }
+
+    const auto bucket_id = msg->getBucketId();
+    if ((bucket_id.getId() != 0) && (bucket_id.getUsedBits() < spi::BucketLimits::MinUsedBits)) {
+        reject_due_to_too_few_bucket_bits(*msg);
         return true;
     }
     return false;
