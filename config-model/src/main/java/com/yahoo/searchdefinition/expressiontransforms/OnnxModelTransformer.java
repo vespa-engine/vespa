@@ -27,6 +27,7 @@ import java.util.List;
  *     onnxModel("path/to/model").output
  *     onnxModel("path/to/model", "path/to/output")
  *     onnxModel("path/to/model", "unused", "path/to/output")    // signature is unused
+ *     onnx(...)   // same as with onnxModel, onnx is an alias of onnxModel
  *
  * To the format expected by the backend:
  *
@@ -55,7 +56,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
     public static ExpressionNode transformFeature(ReferenceNode feature, RankProfile rankProfile) {
         ImmutableSearch search = rankProfile.getSearch();
         final String featureName = feature.getName();
-        if ( ! featureName.equals("onnxModel")) return feature;
+        if ( ! featureName.equals("onnxModel") && ! featureName.equals("onnx")) return feature;
 
         Arguments arguments = feature.getArguments();
         if (arguments.isEmpty())

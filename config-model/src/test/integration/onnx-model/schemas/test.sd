@@ -46,7 +46,7 @@ search test {
             expression: tensor(d0[2])(1)
         }
         first-phase {
-            expression: onnxModel(my_model).out{d0:1}
+            expression: onnx(my_model).out{d0:1}
         }
     }
 
@@ -61,7 +61,7 @@ search test {
             expression: my_function()
         }
         first-phase {
-            expression: onnxModel("files/model.onnx", "path/to/output:1"){d0:1}
+            expression: onnx("files/model.onnx", "path/to/output:1"){d0:1}
         }
     }
 
@@ -73,8 +73,8 @@ search test {
             expression: 1
         }
         summary-features {
-            onnxModel(another_model).out
-            onnxModel("files/summary_model.onnx", "path/to/output:2")
+            onnx(another_model).out
+            onnx("files/summary_model.onnx", "path/to/output:2")
         }
     }
 
@@ -83,7 +83,7 @@ search test {
             expression: tensor(d0[1],d1[2])(d1)
         }
         first-phase {
-            expression: onnxModel(dynamic_model){d0:0,d1:1}
+            expression: onnx(dynamic_model){d0:0,d1:1}
         }
     }
 
@@ -95,7 +95,7 @@ search test {
             expression: my_function_2()
         }
         first-phase {
-            expression: onnxModel(dynamic_model){d0:0,d1:2}
+            expression: onnx(dynamic_model){d0:0,d1:2}
         }
     }
 
@@ -104,7 +104,7 @@ search test {
             expression: tensor(d0[1],d1[2])(d1)
         }
         first-phase {
-            expression: onnxModel(unbound_model){d0:0,d1:1}
+            expression: onnx(unbound_model){d0:0,d1:1}
         }
     }
 
