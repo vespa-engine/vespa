@@ -131,7 +131,7 @@ public:
         return *_feed_view_ptr->getDocumentTypeRepo();
     }
     void check_serial_num(search::SerialNum serial_num) override {
-        auto exp_serial_num = _inc_serial_num.incSerialNum();
+        auto exp_serial_num = _inc_serial_num.inc_serial_num();
         if (exp_serial_num != serial_num) {
             LOG(warning, "Expected replay serial number %" PRIu64 ", got serial number %" PRIu64, exp_serial_num, serial_num);
             assert(exp_serial_num == serial_num);

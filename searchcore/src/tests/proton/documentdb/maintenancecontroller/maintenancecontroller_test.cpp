@@ -228,7 +228,7 @@ public:
 
     void setSubDBs(const std::vector<MyDocumentSubDB *> &subDBs);
 
-    SerialNum incSerialNum() {
+    SerialNum inc_serial_num() {
         return ++_serialNum;
     }
 
@@ -736,7 +736,7 @@ MyFeedHandler::setSubDBs(const std::vector<MyDocumentSubDB *> &subDBs)
 void
 MyFeedHandler::appendOperation(const FeedOperation &op, DoneCallback)
 {
-    const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
+    const_cast<FeedOperation &>(op).setSerialNum(inc_serial_num());
 }
 
 

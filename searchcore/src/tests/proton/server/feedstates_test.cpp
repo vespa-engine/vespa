@@ -59,7 +59,7 @@ struct MyIncSerialNum : IIncSerialNum {
         : _serial_num(serial_num)
     {
     }
-    SerialNum incSerialNum() override { return ++_serial_num; }
+    SerialNum inc_serial_num() override { return ++_serial_num; }
 };
 
 struct Fixture

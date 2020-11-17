@@ -13,7 +13,7 @@ namespace proton {
 class IIncSerialNum {
 public:
     virtual ~IIncSerialNum() = default;
-    virtual search::SerialNum incSerialNum() = 0;
+    virtual search::SerialNum inc_serial_num() = 0;
 };
 
 }

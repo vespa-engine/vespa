@@ -212,7 +212,7 @@ public:
     }
 
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
-    SerialNum incSerialNum() override { return ++_serialNum; }
+    SerialNum inc_serial_num() override { return ++_serialNum; }
     SerialNum getSerialNum() const override { return _serialNum; }
     // The two following methods are used when saving initial config
     SerialNum get_replay_end_serial_num() const { return _replay_end_serial_num; }

@@ -552,7 +552,7 @@ FeedHandler::initiateCommit() {
 void
 FeedHandler::appendOperation(const FeedOperation &op, TlsWriter::DoneCallback onDone) {
     if (!op.getSerialNum()) {
-        const_cast<FeedOperation &>(op).setSerialNum(incSerialNum());
+        const_cast<FeedOperation &>(op).setSerialNum(inc_serial_num());
     }
     _tlsWriter->appendOperation(op, std::move(onDone));
     if (++_numOperationsPendingCommit == 1) {

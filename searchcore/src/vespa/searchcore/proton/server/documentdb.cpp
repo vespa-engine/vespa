@@ -431,7 +431,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     FeedHandler::CommitResult commit_result;
     if (!equalReplayConfig && tlsReplayDone) {
         sync(_feedHandler->getSerialNum());
-        serialNum = _feedHandler->incSerialNum();
+        serialNum = _feedHandler->inc_serial_num();
         _config_store->saveConfig(*configSnapshot, serialNum);
         // save entry in transaction log
         NewConfigOperation op(serialNum, *_config_store);
