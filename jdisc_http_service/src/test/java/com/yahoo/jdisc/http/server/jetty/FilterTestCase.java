@@ -407,10 +407,7 @@ public class FilterTestCase {
                 .setRequestFilterDefaultForPort(defaultFilterId, 0)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = TestDriver.newInstance(
-                JettyHttpServer.class,
-                requestHandler,
-                newFilterModule(filterBindings));
+        TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -433,10 +430,7 @@ public class FilterTestCase {
                 .setResponseFilterDefaultForPort(defaultFilterId, 0)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = TestDriver.newInstance(
-                JettyHttpServer.class,
-                requestHandler,
-                newFilterModule(filterBindings));
+        TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -459,10 +453,7 @@ public class FilterTestCase {
                 .setRequestFilterDefaultForPort(defaultFilterId, 0)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = TestDriver.newInstance(
-                JettyHttpServer.class,
-                requestHandler,
-                newFilterModule(filterBindings));
+        TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/filtered/status.html");
 
@@ -474,7 +465,7 @@ public class FilterTestCase {
     }
 
     @Test
-    public void requireThatResponsFilterWithBindingMatchHasPrecedenceOverDefaultFilter() throws IOException, InterruptedException {
+    public void requireThatResponseFilterWithBindingMatchHasPrecedenceOverDefaultFilter() throws IOException, InterruptedException {
         ResponseFilter filterWithBinding = mock(ResponseFilter.class);
         ResponseFilter defaultFilter = mock(ResponseFilter.class);
         String defaultFilterId = "default-response-filter";
@@ -485,10 +476,7 @@ public class FilterTestCase {
                 .setResponseFilterDefaultForPort(defaultFilterId, 0)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = TestDriver.newInstance(
-                JettyHttpServer.class,
-                requestHandler,
-                newFilterModule(filterBindings));
+        TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/filtered/status.html");
 
@@ -499,25 +487,54 @@ public class FilterTestCase {
         assertThat(testDriver.close(), is(true));
     }
 
+    @Test
+    public void requireThatMetricAreReported() throws IOException, InterruptedException {
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", mock(RequestFilter.class))
+                .addRequestFilterBinding("my-request-filter", "http://*/*")
+                .build();
+        MetricConsumerMock metricConsumerMock = new MetricConsumerMock();
+        MyRequestHandler requestHandler = new MyRequestHandler();
+        TestDriver testDriver = newDriver(requestHandler, filterBindings, metricConsumerMock);
+
+        testDriver.client().get("/status.html");
+        assertThat(requestHandler.awaitInvocation(), is(true));
+        verify(metricConsumerMock.mockitoMock())
+                .add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        verify(metricConsumerMock.mockitoMock(), never())
+                .add(MetricDefinitions.FILTERING_REQUEST_UNHANDLED, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        verify(metricConsumerMock.mockitoMock(), never())
+                .add(MetricDefinitions.FILTERING_RESPONSE_HANDLED, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        verify(metricConsumerMock.mockitoMock())
+                .add(MetricDefinitions.FILTERING_RESPONSE_UNHANDLED, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        assertThat(testDriver.close(), is(true));
+    }
+
     private static TestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {
+        return newDriver(requestHandler, filterBindings, new MetricConsumerMock());
+    }
+
+    private static TestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings, MetricConsumerMock metricConsumer) {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
                 requestHandler,
-                newFilterModule(filterBindings));
+                newFilterModule(filterBindings, metricConsumer));
     }
 
-    private static com.google.inject.Module newFilterModule(FilterBindings filterBindings) {
+    private static com.google.inject.Module newFilterModule(FilterBindings filterBindings, MetricConsumerMock metricConsumer) {
         return Modules.combine(
                 new AbstractModule() {
                     @Override
                     protected void configure() {
+
                         bind(FilterBindings.class).toInstance(filterBindings);
                         bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder()));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(new ConnectorConfig.Builder()));
                         bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
                     }
                 },
-                new ConnectorFactoryRegistryModule());
+                new ConnectorFactoryRegistryModule(),
+                metricConsumer.asGuiceModule());
     }
 
     private static abstract class RequestFilterMockBase extends AbstractResource implements RequestFilter {}
