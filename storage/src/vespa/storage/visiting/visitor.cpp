@@ -146,8 +146,7 @@ Visitor::BucketIterationState::~BucketIterationState()
 {
     if (_iteratorId != 0) {
         // Making the assumption that this is effectively nothrow.
-        std::shared_ptr<DestroyIteratorCommand> cmd(
-                new DestroyIteratorCommand(_iteratorId));
+        auto cmd = std::make_shared<DestroyIteratorCommand>(_iteratorId);
         cmd->setLoadType(_visitor._initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_visitor._traceLevel);
         cmd->setPriority(0);
@@ -178,7 +177,7 @@ Visitor::VisitorTarget::VisitorTarget()
 {
 }
 
-Visitor::VisitorTarget::~VisitorTarget() {}
+Visitor::VisitorTarget::~VisitorTarget() = default;
 
 Visitor::Visitor(StorageComponent& component)
     : _component(component),

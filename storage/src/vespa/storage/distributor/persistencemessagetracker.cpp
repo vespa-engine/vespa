@@ -292,7 +292,7 @@ PersistenceMessageTrackerImpl::updateFromReply(
         api::BucketInfoReply& reply,
         uint16_t node)
 {
-    if ( ! reply.getTrace().getRoot().isEmpty()) {
+    if ( ! reply.getTrace().isEmpty()) {
         _trace.addChild(reply.getTrace().getRoot());
     }
 

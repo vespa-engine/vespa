@@ -799,7 +799,7 @@ TEST_F(VisitorTest, no_mbus_tracing_if_trace_level_is_zero) {
     cmd->getTrace().setLevel(0);
     std::shared_ptr<api::CreateVisitorReply> reply;
     ASSERT_NO_FATAL_FAILURE(doCompleteVisitingSession(cmd, reply));
-    EXPECT_TRUE(reply->getTrace().getRoot().isEmpty());
+    EXPECT_TRUE(reply->getTrace().isEmpty());
 }
 
 TEST_F(VisitorTest, reply_contains_trace_if_trace_level_above_zero) {
@@ -807,7 +807,7 @@ TEST_F(VisitorTest, reply_contains_trace_if_trace_level_above_zero) {
     cmd->getTrace().setLevel(1);
     std::shared_ptr<api::CreateVisitorReply> reply;
     ASSERT_NO_FATAL_FAILURE(doCompleteVisitingSession(cmd, reply));
-    EXPECT_FALSE(reply->getTrace().getRoot().isEmpty());
+    EXPECT_FALSE(reply->getTrace().isEmpty());
 }
 
 TEST_F(VisitorTest, no_more_iterators_sent_while_memory_used_above_limit) {

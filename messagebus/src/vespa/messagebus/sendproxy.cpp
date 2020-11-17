@@ -53,8 +53,7 @@ SendProxy::handleReply(Reply::UP reply)
         } else if (logger.wants(ns_log::Logger::spam)) {
             LOG(spam, "Trace for reply:\n%s", reply->getTrace().toString().c_str());
         }
-        Trace empty;
-        trace.swap(empty);
+        trace.clear();
     } else if (trace.getLevel() > 0) {
         trace.getRoot().addChild(reply->getTrace().getRoot());
         trace.getRoot().normalize();

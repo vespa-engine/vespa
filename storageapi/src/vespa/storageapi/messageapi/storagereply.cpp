@@ -14,7 +14,11 @@ StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
     if (cmd.getAddress()) {
         setAddress(*cmd.getAddress());
     }
-    setTrace(cmd.getTrace());
+    if ( ! cmd.getTrace().isEmpty()) {
+        setTrace(cmd.getTrace());
+    }  else {
+        getTrace().setLevel(cmd.getTrace().getLevel());
+    }
     setTransportContext(cmd.getTransportContext());
 }
 

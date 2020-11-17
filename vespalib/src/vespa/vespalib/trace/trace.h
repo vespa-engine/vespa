@@ -19,30 +19,32 @@ namespace vespalib {
  */
 class Trace {
 private:
-    uint32_t  _level;
     TraceNode _root;
-
+    uint32_t  _level;
 public:
 
     /**
      * Create an empty Trace with level set to 0 (no tracing)
      */
-    Trace();
-    ~Trace();
+    Trace() : Trace(0) {}
 
     /**
      * Create an empty trace with given level.
      *
      * @param level Level to set.
      */
-    explicit Trace(uint32_t level);
+    explicit Trace(uint32_t level) : _root(), _level(level) { }
 
     /**
      * Remove all trace information and set the trace level to 0.
      *
      * @return This, to allow chaining.
      */
-    Trace &clear();
+    Trace &clear() {
+        _level = 0;
+        _root.clear();
+        return *this;
+    }
 
     /**
      * Swap the internals of this with another.
@@ -50,7 +52,11 @@ public:
      * @param other The trace to swap internals with.
      * @return This, to allow chaining.
      */
-    Trace &swap(Trace &other);
+    Trace &swap(Trace &other) {
+        std::swap(_level, other._level);
+        _root.swap(other._root);
+        return *this;
+    }
 
     /**
      * Set the trace level. 0 means no tracing, 9 means enable all tracing.
@@ -58,7 +64,10 @@ public:
      * @param level The level to set.
      * @return This, to allow chaining.
      */
-    Trace &setLevel(uint32_t level);
+    Trace &setLevel(uint32_t level) {
+        _level = std::min(level, 9u);
+        return *this;
+    }
 
     /**
      * Returns the trace level.
@@ -104,6 +113,8 @@ public:
      * @return The root.
      */
     const TraceNode &getRoot() const { return _root; }
+
+    bool isEmpty() const { return _root.isEmpty(); }
 
     /**
      * Returns a string representation of the contained trace tree. This is a

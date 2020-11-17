@@ -93,7 +93,7 @@ MessageTracker::sendReply() {
               _msg->toString(true).c_str(), vespalib::to_s(duration));
     }
     if (hasReply()) {
-        if ( ! _context.getTrace().getRoot().isEmpty()) {
+        if ( ! _context.getTrace().isEmpty()) {
             getReply().getTrace().getRoot().addChild(_context.getTrace().getRoot());
         }
         if (_updateBucketInfo) {
@@ -108,7 +108,7 @@ MessageTracker::sendReply() {
             getReply().toString().c_str(), getReply().getMsgId());
         _replySender.sendReplyDirectly(std::move(_reply));
     } else {
-        if ( ! _context.getTrace().getRoot().isEmpty()) {
+        if ( ! _context.getTrace().isEmpty()) {
             _msg->getTrace().getRoot().addChild(_context.getTrace().getRoot());
         }
     }
