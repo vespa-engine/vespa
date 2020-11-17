@@ -268,12 +268,12 @@ public:
     enum Protocol { STORAGE, DOCUMENT };
 
 private:
-    mbus::Route _route;
-    Protocol    _protocol;
+    mbus::Route       _route;
+    vespalib::string  _cluster;
     // Used for internal VDS addresses only
     size_t               _precomputed_storage_hash;
-    vespalib::string     _cluster;
     const lib::NodeType* _type;
+    Protocol             _protocol;
     uint16_t             _index;
 
 public:
@@ -359,12 +359,12 @@ protected:
     static Id generateMsgId();
 
     const MessageType& _type;
-    Id _msgId;
-    Priority _priority;
+    Id                 _msgId;
     std::unique_ptr<StorageMessageAddress> _address;
     documentapi::LoadType _loadType;
     mbus::Trace _trace;
-    uint32_t _approxByteSize;
+    uint32_t    _approxByteSize;
+    Priority    _priority;
 
     StorageMessage(const MessageType& code, Id id);
     StorageMessage(const StorageMessage&, Id id);
@@ -373,7 +373,7 @@ protected:
 public:
     StorageMessage& operator=(const StorageMessage&) = delete;
     StorageMessage(const StorageMessage&) = delete;
-    virtual ~StorageMessage();
+    ~StorageMessage() override;
 
     Id getMsgId() const { return _msgId; }
 
@@ -394,7 +394,7 @@ public:
     const StorageMessageAddress* getAddress() const { return _address.get(); }
 
     void setAddress(const StorageMessageAddress& address) {
-        _address.reset(new StorageMessageAddress(address));
+        _address = std::make_unique<StorageMessageAddress>(address);
     }
 
     /**

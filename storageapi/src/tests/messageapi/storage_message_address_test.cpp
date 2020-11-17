@@ -31,6 +31,11 @@ TEST(StorageMessageAddressTest, storage_hash_covers_all_expected_fields) {
               hash_of("foo", lib::NodeType::DISTRIBUTOR, 0));
     EXPECT_NE(hash_of("foo", lib::NodeType::STORAGE, 0),
               hash_of("foo", lib::NodeType::STORAGE, 1));
+
+    EXPECT_EQ(112u, sizeof(StorageMessageAddress));
+    EXPECT_EQ(248u, sizeof(StorageMessage));
+    EXPECT_EQ(80u, sizeof(documentapi::LoadType));
+    EXPECT_EQ(120u, sizeof(mbus::Trace));
 }
 
 } // storage::api
