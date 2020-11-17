@@ -610,11 +610,13 @@ DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
     if (_config_store->getBestSerialNum() != 0)
         return;             // Initial config already present
 
-    SerialNum confSerial = _feedHandler->incSerialNum();
+    SerialNum confSerial = _feedHandler->inc_replay_end_serial_num();
+    _feedHandler->setSerialNum(confSerial);
     // Elide save of new config entry in transaction log, it would be
     // pruned at once anyway.
     // save noop entry in transaction log
     NoopOperation op;
+    op.setSerialNum(_feedHandler->inc_replay_end_serial_num());
     (void) _feedHandler->storeOperationSync(op);
     sync(op.getSerialNum());
     // Wipe everything in transaction log before initial config.
@@ -633,12 +635,14 @@ DocumentDB::resumeSaveConfig()
     SerialNum bestSerial = _config_store->getBestSerialNum();
     if (bestSerial == 0)
         return;
-    if (bestSerial != _feedHandler->getSerialNum() + 1)
+    if (bestSerial != _feedHandler->get_replay_end_serial_num() + 1)
         return;
     // proton was interrupted when saving later config.
-    SerialNum confSerial = _feedHandler->incSerialNum();
+    SerialNum confSerial = _feedHandler->inc_replay_end_serial_num();
+    _feedHandler->setSerialNum(confSerial);
     // resume operation, i.e. save config entry in transaction log
     NewConfigOperation op(confSerial, *_config_store);
+    op.setSerialNum(_feedHandler->inc_replay_end_serial_num());
     (void) _feedHandler->storeOperationSync(op);
     sync(op.getSerialNum());
 }
