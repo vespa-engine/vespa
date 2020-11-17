@@ -77,6 +77,7 @@ private:
     TlsReplayProgress::UP                  _tlsReplayProgress;
     // the serial num of the last feed operation processed by feed handler.
     SerialNum                              _serialNum;
+    // the serial num considered to be fully procssessed and flushed to stable storage. Used to prune transaction log.
     SerialNum                              _prunedSerialNum;
     // the serial num of the last feed operation in the transaction log at startup before replay
     SerialNum                              _replay_end_serial_num;
