@@ -113,7 +113,27 @@ void my_generic_reduce_op(State &state, uint64_t param_in) {
 template <typename ICT, typename OCT, typename AGGR>
 void my_full_reduce_op(State &state, uint64_t) {
     auto cells = state.peek(0).cells().typify<ICT>();
-    if (cells.size() > 0) {
+    if (cells.size() >= 8) {
+        std::array<AGGR,8> aggrs = { AGGR(cells[0]), AGGR(cells[1]), AGGR(cells[2]), AGGR(cells[3]),
+                                     AGGR(cells[4]), AGGR(cells[5]), AGGR(cells[6]), AGGR(cells[7]) };
+        size_t i = 8;
+        for (; (i + 7) < cells.size(); i += 8) {
+            for (size_t j = 0; j < 8; ++j) {
+                aggrs[j].sample(cells[i + j]);
+            }
+        }
+        for (size_t j = 0; (i + j) < cells.size(); ++j) {
+            aggrs[j].sample(cells[i + j]);
+        }
+        aggrs[0].merge(aggrs[4]);
+        aggrs[1].merge(aggrs[5]);
+        aggrs[2].merge(aggrs[6]);
+        aggrs[3].merge(aggrs[7]);
+        aggrs[0].merge(aggrs[2]);
+        aggrs[1].merge(aggrs[3]);
+        aggrs[0].merge(aggrs[1]);
+        state.pop_push(state.stash.create<ScalarValue<OCT>>(aggrs[0].result()));
+    } else if (cells.size() > 0) {
         AGGR aggr;
         for (ICT value: cells) {
             aggr.sample(value);
