@@ -486,8 +486,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
-            Session session = getRemoteSession(tenant, activeSession.get());
-            tenant.getSessionRepository().createSetStatusTransaction(session, Session.Status.DELETE).commit();
+            try {
+                Session session = getRemoteSession(tenant, activeSession.get());
+                transaction.add(tenant.getSessionRepository().createSetStatusTransaction(session, Session.Status.DELETE));
+            } catch (NotFoundException e) {
+                log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
+            }
 
             Curator curator = tenantRepository.getCurator();
             transaction.add(new ContainerEndpointsCache(tenant.getPath(), curator).delete(applicationId)); // TODO: Not unit tested
@@ -592,7 +596,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getTenant(applicationId.tenant());
     }
 
-    private Application getApplication(ApplicationId applicationId) {
+    Application getApplication(ApplicationId applicationId) {
         return getApplication(applicationId, Optional.empty());
     }
 
