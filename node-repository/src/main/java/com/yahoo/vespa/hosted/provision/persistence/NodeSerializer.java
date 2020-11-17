@@ -372,13 +372,9 @@ public class NodeSerializer {
     }
 
     private List<Address> addressesFromSlime(Inspector object) {
-        Inspector addressesField = object.field(containersKey);
-        if (addressesField.children() == 0)
-            return List.of();
-        List<Address> addresses = new ArrayList<>(addressesField.children());
-        addressesField.traverse((ArrayTraverser) (i, elem) ->
-                addresses.add(new Address(elem.field(containerHostnameKey).asString())));
-        return addresses;
+        return SlimeUtils.entriesStream(object.field(containersKey))
+                .map(elem -> new Address(elem.field(containerHostnameKey).asString()))
+                .collect(Collectors.toList());
     }
 
     private Optional<String> modelNameFromSlime(Inspector object) {
