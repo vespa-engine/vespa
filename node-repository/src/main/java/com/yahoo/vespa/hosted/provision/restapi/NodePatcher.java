@@ -15,6 +15,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -26,6 +27,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,9 +118,11 @@ public class NodePatcher {
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().with(asStringSet(value))), memoizedNodes.get());
+                return IP.Config.verify(node.with(node.ipConfig().withPrimary(asStringSet(value))), memoizedNodes.get());
             case "additionalIpAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().with(IP.Pool.of(asStringSet(value)))), memoizedNodes.get());
+                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringSet(value)))), memoizedNodes.get());
+            case "additionalHostnames" :
+                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withAddresses(asAddressList(value)))), memoizedNodes.get());
             case WANT_TO_RETIRE :
             case WANT_TO_DEPROVISION :
                 boolean wantToRetire = asOptionalBoolean(root.field(WANT_TO_RETIRE)).orElse(node.status().wantToRetire());
@@ -210,6 +214,22 @@ public class NodePatcher {
         }
 
         return strings;
+    }
+
+    private List<Address> asAddressList(Inspector field) {
+        if ( ! field.type().equals(Type.ARRAY))
+            throw new IllegalArgumentException("Expected an ARRAY value, got a " + field.type());
+
+        List<Address> addresses = new ArrayList<>(field.entries());
+        for (int i = 0; i < field.entries(); i++) {
+            Inspector entry = field.entry(i);
+            if ( ! entry.type().equals(Type.STRING))
+                throw new IllegalArgumentException("Expected a STRING value, got a " + entry.type());
+            Address address = new Address(entry.asString());
+            addresses.add(address);
+        }
+
+        return addresses;
     }
 
     private Node patchRequiredDiskSpeed(Node node, String value) {

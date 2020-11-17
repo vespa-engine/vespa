@@ -133,7 +133,7 @@ public class NodeCandidateTest {
 
     private static Node node(String hostname, Node.State state) {
         return Node.create(hostname, hostname, new Flavor(new NodeResources(2, 2, 2, 2)), state, NodeType.tenant)
-                .ipConfig(Set.of("::1"), Set.of()).build();
+                .ipConfigWithEmptyPool(Set.of("::1")).build();
     }
 
     private static NodeCandidate node(String hostname,
@@ -143,9 +143,9 @@ public class NodeCandidateTest {
                                       boolean exclusiveSwitch) {
         Node node = Node.create(hostname, hostname, new Flavor(nodeResources), Node.State.ready, NodeType.tenant)
                 .parentHostname(hostname + "parent")
-                .ipConfig(Set.of("::1"), Set.of()).build();
+                .ipConfigWithEmptyPool(Set.of("::1")).build();
         Node parent = Node.create(hostname + "parent", hostname, new Flavor(totalHostResources), Node.State.ready, NodeType.host)
-                .ipConfig(Set.of("::1"), Set.of()).build();
+                .ipConfigWithEmptyPool(Set.of("::1")).build();
         return new NodeCandidate.ConcreteNodeCandidate(node, totalHostResources.subtract(allocatedHostResources), Optional.of(parent),
                                                        false, exclusiveSwitch, false, true, false);
     }

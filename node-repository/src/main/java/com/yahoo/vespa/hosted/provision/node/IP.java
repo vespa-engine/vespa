@@ -60,15 +60,29 @@ public class IP {
     /** IP configuration of a node */
     public static class Config {
 
-        public static final Config EMPTY = new Config(Set.of(), Set.of());
+        public static final Config EMPTY = Config.ofEmptyPool(Set.of());
 
         private final Set<String> primary;
         private final Pool pool;
 
-        /** DO NOT USE in non-test code. Public for serialization purposes. */
+        public static Config ofEmptyPool(Set<String> primary) {
+            return new Config(primary, Set.of(), List.of());
+        }
+
+        public static Config of(Set<String> primary, Set<String> ipPool, List<Address> addressPool) {
+            return new Config(primary, ipPool, addressPool);
+        }
+
+        /** LEGACY TEST CONSTRUCTOR - use of() variants and/or the with- methods. */
         public Config(Set<String> primary, Set<String> pool) {
+            this(primary, pool, List.of());
+        }
+
+        /** DO NOT USE: Public for NodeSerializer. */
+        public Config(Set<String> primary, Set<String> pool, List<Address> addresses) {
             this.primary = ImmutableSet.copyOf(Objects.requireNonNull(primary, "primary must be non-null"));
-            this.pool = Pool.of(Objects.requireNonNull(pool, "pool must be non-null"));
+            this.pool = Pool.of(Objects.requireNonNull(pool, "pool must be non-null"),
+                                Objects.requireNonNull(addresses, "addresses must be non-null"));
         }
 
         /** The primary addresses of this. These addresses are used when communicating with the node itself */
@@ -82,13 +96,13 @@ public class IP {
         }
 
         /** Returns a copy of this with pool set to given value */
-        public Config with(Pool pool) {
-            return new Config(primary, pool.asSet());
+        public Config withPool(Pool pool) {
+            return new Config(primary, pool.getIpSet(), pool.getAddressList());
         }
 
         /** Returns a copy of this with pool set to given value */
-        public Config with(Set<String> primary) {
-            return new Config(primary, pool.asSet());
+        public Config withPrimary(Set<String> primary) {
+            return new Config(primary, pool.getIpSet(), pool.getAddressList());
         }
 
         @Override
@@ -107,7 +121,7 @@ public class IP {
 
         @Override
         public String toString() {
-            return String.format("ip config primary=%s pool=%s", primary, pool.asSet());
+            return String.format("ip config primary=%s pool=%s", primary, pool.getIpSet());
         }
 
         /**
@@ -124,8 +138,8 @@ public class IP {
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
                     if (node.type().isHost()) { // Addresses of a host can never overlap with any other nodes
-                        addresses.addAll(node.ipConfig().pool().asSet());
-                        otherAddresses.addAll(other.ipConfig().pool().asSet());
+                        addresses.addAll(node.ipConfig().pool().getIpSet());
+                        otherAddresses.addAll(other.ipConfig().pool().getIpSet());
                     }
                     otherAddresses.retainAll(addresses);
                     if (!otherAddresses.isEmpty())
@@ -157,18 +171,18 @@ public class IP {
     }
 
     /** A list of IP addresses and their protocol */
-    public static class Addresses {
+    public static class IpAddresses {
 
-        private final Set<String> addresses;
+        private final Set<String> ipAddresses;
         private final Protocol protocol;
 
-        private Addresses(Set<String> addresses, Protocol protocol) {
-            this.addresses = ImmutableSet.copyOf(Objects.requireNonNull(addresses, "addresses must be non-null"));
+        private IpAddresses(Set<String> ipAddresses, Protocol protocol) {
+            this.ipAddresses = ImmutableSet.copyOf(Objects.requireNonNull(ipAddresses, "addresses must be non-null"));
             this.protocol = Objects.requireNonNull(protocol, "type must be non-null");
         }
 
         public Set<String> asSet() {
-            return addresses;
+            return ipAddresses;
         }
 
         /** The protocol of addresses in this */
@@ -177,20 +191,20 @@ public class IP {
         }
 
         /** Create addresses of the given set */
-        private static Addresses of(Set<String> addresses) {
+        private static IpAddresses of(Set<String> addresses) {
             long ipv6AddrCount = addresses.stream().filter(IP::isV6).count();
             if (ipv6AddrCount == addresses.size()) { // IPv6-only
-                return new Addresses(addresses, Protocol.ipv6);
+                return new IpAddresses(addresses, Protocol.ipv6);
             }
 
             long ipv4AddrCount = addresses.stream().filter(IP::isV4).count();
             if (ipv4AddrCount == addresses.size()) { // IPv4-only
-                return new Addresses(addresses, Protocol.ipv4);
+                return new IpAddresses(addresses, Protocol.ipv4);
             }
 
             // If we're dual-stacked, we must must have an equal number of addresses of each protocol.
             if (ipv4AddrCount == ipv6AddrCount) {
-                return new Addresses(addresses, Protocol.dualStack);
+                return new IpAddresses(addresses, Protocol.dualStack);
             }
 
             throw new IllegalArgumentException(String.format("Dual-stacked IP address list must have an " +
@@ -208,15 +222,28 @@ public class IP {
     }
 
     /**
-     * A pool of IP addresses from which an allocation can be made.
+     * A pool of addresses from which an allocation can be made.
      *
      * Addresses in this are available for use by Docker containers
      */
     public static class Pool {
 
-        private final Addresses addresses;
+        private final IpAddresses ipAddresses;
+        private final List<Address> addresses;
 
-        private Pool(Addresses addresses) {
+        /** Creates an empty pool. */
+        public static Pool of() {
+            return of(Set.of(), List.of());
+        }
+
+        /** Create a new pool containing given ipAddresses */
+        public static Pool of(Set<String> ipAddresses, List<Address> addresses) {
+            IpAddresses ips = IpAddresses.of(ipAddresses);
+            return new Pool(ips, addresses);
+        }
+
+        private Pool(IpAddresses ipAddresses, List<Address> addresses) {
+            this.ipAddresses = Objects.requireNonNull(ipAddresses, "ipAddresses must be non-null");
             this.addresses = Objects.requireNonNull(addresses, "addresses must be non-null");
         }
 
@@ -227,6 +254,12 @@ public class IP {
          * @return an allocation from the pool, if any can be made
          */
         public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver) {
+            if (ipAddresses.protocol == IpAddresses.Protocol.ipv4) {
+                return findUnused(nodes).stream()
+                        .findFirst()
+                        .map(addr -> Allocation.ofIpv4(addr, resolver));
+            }
+
             var unusedAddresses = findUnused(nodes);
             var allocation = unusedAddresses.stream()
                                             .filter(IP::isV6)
@@ -248,18 +281,34 @@ public class IP {
          * @param nodes a list of all nodes in the repository
          */
         public Set<String> findUnused(NodeList nodes) {
-            var unusedAddresses = new LinkedHashSet<>(asSet());
-            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> asSet().contains(ip)))
+            var unusedAddresses = new LinkedHashSet<>(getIpSet());
+            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> getIpSet().contains(ip)))
                  .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));
             return Collections.unmodifiableSet(unusedAddresses);
         }
 
-        public Set<String> asSet() {
-            return addresses.asSet();
+        public IpAddresses.Protocol getProtocol() {
+            return ipAddresses.protocol;
+        }
+
+        public Set<String> getIpSet() {
+            return ipAddresses.asSet();
+        }
+
+        public List<Address> getAddressList() {
+            return addresses;
         }
 
         public boolean isEmpty() {
-            return asSet().isEmpty();
+            return getIpSet().isEmpty();
+        }
+
+        public Pool withIpAddresses(Set<String> ipAddresses) {
+            return Pool.of(ipAddresses, addresses);
+        }
+
+        public Pool withAddresses(List<Address> addresses) {
+            return Pool.of(ipAddresses.ipAddresses, addresses);
         }
 
         @Override
@@ -267,45 +316,12 @@ public class IP {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Pool that = (Pool) o;
-            return Objects.equals(addresses, that.addresses);
+            return Objects.equals(ipAddresses, that.ipAddresses);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(addresses);
-        }
-
-        /** Create a new pool containing given ipAddresses */
-        public static Pool of(Set<String> ipAddresses) {
-            var addresses = Addresses.of(ipAddresses);
-            if (addresses.protocol() == Addresses.Protocol.ipv4) {
-                return new Ipv4Pool(addresses);
-            }
-            return new Pool(addresses);
-        }
-
-        /** Validates and returns the given IP address pool */
-        public static Set<String> require(Set<String> pool) {
-            return of(pool).asSet();
-        }
-
-    }
-
-    /** A pool of IPv4-only addresses from which an allocation can be made. */
-    public static class Ipv4Pool extends Pool {
-
-        private Ipv4Pool(Addresses addresses) {
-            super(addresses);
-            if (addresses.protocol() != Addresses.Protocol.ipv4) {
-                throw new IllegalArgumentException("Protocol of addresses must be " + Addresses.Protocol.ipv4);
-            }
-        }
-
-        @Override
-        public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver) {
-            return findUnused(nodes).stream()
-                                    .findFirst()
-                                    .map(addr -> Allocation.ofIpv4(addr, resolver));
+            return Objects.hash(ipAddresses);
         }
 
     }

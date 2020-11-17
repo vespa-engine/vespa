@@ -66,9 +66,9 @@ public class DynamicProvisioningMaintainerTest {
         assertTrue("No IP addresses assigned",
                    Stream.of(host3, host4, host41).map(node -> node.ipConfig().primary()).allMatch(Set::isEmpty));
 
-        Node host3new = host3.with(host3.ipConfig().with(Set.of("::3:0")));
-        Node host4new = host4.with(host4.ipConfig().with(Set.of("::4:0")));
-        Node host41new = host41.with(host41.ipConfig().with(Set.of("::4:1", "::4:2")));
+        Node host3new = host3.with(host3.ipConfig().withPrimary(Set.of("::3:0")));
+        Node host4new = host4.with(host4.ipConfig().withPrimary(Set.of("::4:0")));
+        Node host41new = host41.with(host41.ipConfig().withPrimary(Set.of("::4:1", "::4:2")));
 
         tester.maintainer.maintain();
         assertEquals(host3new, tester.nodeRepository.getNode("host3").get());
@@ -290,7 +290,7 @@ public class DynamicProvisioningMaintainerTest {
                             Generation.initial(),
                             false));
             Node.Builder builder = Node.create("fake-id-" + hostname, hostname, flavor, state, nodeType)
-                    .ipConfig(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of());
+                    .ipConfigWithEmptyPool(state == Node.State.active ? Set.of("::1") : Set.of());
             parentHostname.ifPresent(builder::parentHostname);
             allocation.ifPresent(builder::allocation);
             return builder.build();
@@ -382,16 +382,18 @@ public class DynamicProvisioningMaintainerTest {
             if (node.parentHostname().isPresent()) return node;
             int hostIndex = Integer.parseInt(node.hostname().replaceAll("^[a-z]+|-\\d+$", ""));
             Set<String> addresses = Set.of("::" + hostIndex + ":0");
-            Set<String> pool = new HashSet<>();
+            Set<String> ipAddressPool = new HashSet<>();
             if (!behaviours.contains(Behaviour.failDnsUpdate)) {
                 nameResolver.addRecord(node.hostname(), addresses.iterator().next());
                 for (int i = 1; i <= 2; i++) {
                     String ip = "::" + hostIndex + ":" + i;
-                    pool.add(ip);
+                    ipAddressPool.add(ip);
                     nameResolver.addRecord(node.hostname() + "-" + i, ip);
                 }
             }
-            return node.with(node.ipConfig().with(addresses).with(IP.Pool.of(pool)));
+
+            IP.Pool pool = node.ipConfig().pool().withIpAddresses(ipAddressPool);
+            return node.with(node.ipConfig().withPrimary(addresses).withPool(pool));
         }
 
         enum Behaviour {

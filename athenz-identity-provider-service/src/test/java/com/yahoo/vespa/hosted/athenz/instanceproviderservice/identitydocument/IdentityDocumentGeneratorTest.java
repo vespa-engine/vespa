@@ -57,7 +57,7 @@ public class IdentityDocumentGeneratorTest {
                                                Generation.initial(),
                                                false);
         Node parentNode = Node.create("ostkid",
-                                      new IP.Config(Set.of("127.0.0.1"), Set.of()),
+                                      IP.Config.ofEmptyPool(Set.of("127.0.0.1")),
                                       parentHostname,
                                       new MockNodeFlavors().getFlavorOrThrow("default"),
                                       NodeType.host).build();

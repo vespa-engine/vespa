@@ -206,11 +206,11 @@ public class MockNodeRepository extends NodeRepository {
 
     private IP.Config ipConfig(int nodeIndex, int primarySize, int poolSize) {
         var primary = new LinkedHashSet<String>();
-        var pool = new LinkedHashSet<String>();
+        var ipPool = new LinkedHashSet<String>();
         for (int i = 1; i <= primarySize + poolSize; i++) {
             var set = primary;
             if (i > primarySize) {
-                set = pool;
+                set = ipPool;
             }
             var rootName = "test-node-primary";
             if (i > primarySize) {
@@ -226,7 +226,7 @@ public class MockNodeRepository extends NodeRepository {
                 set.add(ipv4Address);
             }
         }
-        return new IP.Config(primary, pool);
+        return IP.Config.of(primary, ipPool, List.of());
     }
 
     private IP.Config ipConfig(int nodeIndex) {

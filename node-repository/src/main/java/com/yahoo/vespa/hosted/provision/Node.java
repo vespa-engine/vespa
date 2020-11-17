@@ -55,7 +55,7 @@ public final class Node implements Nodelike {
     /** Creates a node builder in the initial state (reserved) */
     public static Node.Builder createDockerNode(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
         return new Node.Builder("fake-" + hostname, hostname, new Flavor(resources), State.reserved, type)
-                .ipConfig(ipAddresses, Set.of())
+                .ipConfig(IP.Config.ofEmptyPool(ipAddresses))
                 .parentHostname(parentHostname);
     }
 
@@ -573,8 +573,8 @@ public final class Node implements Nodelike {
             return this;
         }
 
-        public Builder ipConfig(Set<String> primary, Set<String> pool) {
-            this.ipConfig = new IP.Config(primary, pool);
+        public Builder ipConfigWithEmptyPool(Set<String> primary) {
+            this.ipConfig = IP.Config.ofEmptyPool(primary);
             return this;
         }
 

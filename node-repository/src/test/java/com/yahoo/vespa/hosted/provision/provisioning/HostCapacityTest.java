@@ -43,9 +43,9 @@ public class HostCapacityTest {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
 
         // Create three docker hosts
-        host1 = Node.create("host1", new IP.Config(Set.of("::1"), generateIPs(2, 4)), "host1", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
-        host2 = Node.create("host2", new IP.Config(Set.of("::11"), generateIPs(12, 3)), "host2", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
-        host3 = Node.create("host3", new IP.Config(Set.of("::21"), generateIPs(22, 1)), "host3", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host1 = Node.create("host1", IP.Config.of(Set.of("::1"), generateIPs(2, 4), List.of()), "host1", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host2 = Node.create("host2", IP.Config.of(Set.of("::11"), generateIPs(12, 3), List.of()), "host2", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host3 = Node.create("host3", IP.Config.of(Set.of("::21"), generateIPs(22, 1), List.of()), "host3", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
 
         // Add two containers to host1
         var nodeA = Node.createDockerNode(Set.of("::2"), "nodeA", "host1", resources1, NodeType.tenant).build();
