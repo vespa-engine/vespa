@@ -168,6 +168,7 @@ vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	-XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
 	-XX:ErrorFile="${VESPA_HOME}/var/crash/hs_err_pid%p.log" \
 	-XX:+ExitOnOutOfMemoryError \
+	-XX:-OmitStackTraceInFastThrow \
 	$jvmargs \
     --illegal-access=warn \
     --add-opens=java.base/java.io=ALL-UNNAMED \
