@@ -1,7 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.configserver;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Environment;
@@ -27,20 +28,22 @@ import java.util.stream.IntStream;
  */
 public class ConfigserverCluster extends AbstractConfigProducer
         implements
-        ZookeeperServerConfig.Producer,
         ConfigserverConfig.Producer,
-        StatisticsConfig.Producer,
+        CuratorConfig.Producer,
         HealthMonitorConfig.Producer,
-        VipStatusConfig.Producer {
-    private final CloudConfigOptions options;
-    private ContainerCluster containerCluster;
+        StatisticsConfig.Producer,
+        VipStatusConfig.Producer,
+        ZookeeperServerConfig.Producer {
 
-    public ConfigserverCluster(AbstractConfigProducer parent, String subId, CloudConfigOptions options) {
+    private final CloudConfigOptions options;
+    private ContainerCluster<?> containerCluster;
+
+    public ConfigserverCluster(AbstractConfigProducer<?> parent, String subId, CloudConfigOptions options) {
         super(parent, subId);
         this.options = options;
     }
 
-    public void setContainerCluster(ContainerCluster containerCluster) {
+    public void setContainerCluster(ContainerCluster<?> containerCluster) {
         this.containerCluster = containerCluster;
 
         // If we are in a config server cluster the correct zone is propagated through cloud config options,
@@ -184,4 +187,18 @@ public class ConfigserverCluster extends AbstractConfigProducer
     public void getConfig(VipStatusConfig.Builder builder) {
         builder.initiallyInRotation(false);
     }
+
+    @Override
+    public void getConfig(CuratorConfig.Builder builder) {
+        for (ConfigServer server : getConfigServers()) {
+            CuratorConfig.Server.Builder curatorBuilder = new CuratorConfig.Server.Builder();
+            curatorBuilder.hostname(server.hostName);
+            if (options.zookeeperClientPort().isPresent()) {
+                curatorBuilder.port(options.zookeeperClientPort().get());
+            }
+            builder.server(curatorBuilder);
+        }
+        builder.zookeeperLocalhostAffinity(true);
+    }
+
 }

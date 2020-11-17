@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.configserver;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.deploy.DeployState;
@@ -109,6 +110,15 @@ public class ConfigserverClusterTest {
         assertTrue(config.hostedVespa());
         assertThat(config.environment(), is("test"));
         assertThat(config.region(), is("bar"));
+    }
+
+    @Test
+    public void testCuratorConfig() {
+        CuratorConfig config = getConfig(CuratorConfig.class);
+        assertEquals(1, config.server().size());
+        assertEquals("localhost", config.server().get(0).hostname());
+        assertEquals(2181, config.server().get(0).port());
+        assertTrue(config.zookeeperLocalhostAffinity());
     }
 
     @SuppressWarnings("varargs")

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.admin;
 
 import com.google.common.collect.Collections2;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.component.Version;
@@ -207,6 +208,8 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertZookeeperServerConfig(root, 0);
         assertZookeeperServerConfig(root, 1);
         assertZookeeperServerConfig(root, 2);
+
+        assertCuratorConfig(root);
     }
 
     private void assertZookeepersConfig(TestRoot root) {
@@ -224,6 +227,17 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertThat(config.myid(), is(id));
         Collection<Integer> serverIds = Collections2.transform(config.server(), ZookeeperServerConfig.Server::id);
         assertTrue(serverIds.contains(id));
+    }
+
+    public void assertCuratorConfig(TestRoot root) {
+        CuratorConfig.Builder builder = new CuratorConfig.Builder();
+        root.getConfig(builder, "admin/standalone/cluster-controllers");
+        CuratorConfig config = builder.build();
+
+        assertEquals(3, config.server().size());
+        assertEquals("my.host1.com", config.server().get(0).hostname());
+        assertEquals(2181, config.server().get(0).port());
+        assertFalse(config.zookeeperLocalhostAffinity());
     }
 
     @Test
