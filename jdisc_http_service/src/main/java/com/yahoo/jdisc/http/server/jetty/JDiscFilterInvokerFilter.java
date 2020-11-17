@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -133,7 +134,7 @@ class JDiscFilterInvokerFilter implements Filter {
             final AccessLogEntry accessLogEntry = null; // Not used in this context.
             return new HttpRequestDispatch(jDiscContext,
                                            accessLogEntry,
-                                           getConnector(request).getRequestMetricContext(request),
+                                           getConnector(request).createRequestMetricContext(request, Map.of()),
                                            request, response);
         } catch (IOException e) {
             throw throwUnchecked(e);
