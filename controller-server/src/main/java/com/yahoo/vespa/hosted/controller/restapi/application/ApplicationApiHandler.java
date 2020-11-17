@@ -1353,33 +1353,29 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor detailsMem = details.setObject("mem");
         Cursor detailsDisk = details.setObject("disk");
 
-        history.entrySet().stream()
-                .forEach(entry -> {
-                    String instanceName = entry.getKey().instance().value();
-                    Cursor detailsCpuApp = detailsCpu.setObject(instanceName);
-                    Cursor detailsMemApp = detailsMem.setObject(instanceName);
-                    Cursor detailsDiskApp = detailsDisk.setObject(instanceName);
-                    Cursor detailsCpuData = detailsCpuApp.setArray("data");
-                    Cursor detailsMemData = detailsMemApp.setArray("data");
-                    Cursor detailsDiskData = detailsDiskApp.setArray("data");
-                    entry.getValue().stream()
-                            .forEach(resourceSnapshot -> {
+        history.forEach((applicationId, resources) -> {
+            String instanceName = applicationId.instance().value();
+            Cursor detailsCpuApp = detailsCpu.setObject(instanceName);
+            Cursor detailsMemApp = detailsMem.setObject(instanceName);
+            Cursor detailsDiskApp = detailsDisk.setObject(instanceName);
+            Cursor detailsCpuData = detailsCpuApp.setArray("data");
+            Cursor detailsMemData = detailsMemApp.setArray("data");
+            Cursor detailsDiskData = detailsDiskApp.setArray("data");
 
-                                Cursor cpu = detailsCpuData.addObject();
-                                cpu.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
-                                cpu.setDouble("value", resourceSnapshot.getCpuCores());
+            resources.forEach(resourceSnapshot -> {
+                Cursor cpu = detailsCpuData.addObject();
+                cpu.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
+                cpu.setDouble("value", resourceSnapshot.getCpuCores());
 
-                                Cursor mem = detailsMemData.addObject();
-                                mem.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
-                                mem.setDouble("value", resourceSnapshot.getMemoryGb());
+                Cursor mem = detailsMemData.addObject();
+                mem.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
+                mem.setDouble("value", resourceSnapshot.getMemoryGb());
 
-                                Cursor disk = detailsDiskData.addObject();
-                                disk.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
-                                disk.setDouble("value", resourceSnapshot.getDiskGb());
-
-                            });
-
-                });
+                Cursor disk = detailsDiskData.addObject();
+                disk.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
+                disk.setDouble("value", resourceSnapshot.getDiskGb());
+            });
+        });
 
         return new SlimeJsonResponse(slime);
     }
