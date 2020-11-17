@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 
-import javax.swing.*;
+import javax.swing.JFrame;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
