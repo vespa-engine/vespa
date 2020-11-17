@@ -1115,17 +1115,4 @@ public class HttpServerTest {
         }
     }
 
-    private static class MetricConsumerMock {
-        static final Metric.Context STATIC_CONTEXT = new Metric.Context() {};
-
-        private final MetricConsumer mockitoMock = mock(MetricConsumer.class);
-
-        MetricConsumerMock() {
-            when(mockitoMock.createContext(anyMap())).thenReturn(STATIC_CONTEXT);
-        }
-
-        MetricConsumer mockitoMock() { return mockitoMock; }
-        Module asGuiceModule() { return binder -> binder.bind(MetricConsumer.class).toInstance(mockitoMock); }
-    }
-
 }

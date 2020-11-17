@@ -15,6 +15,7 @@ class MetricDefinitions {
     static final String CLIENT_IP_DIMENSION = "clientIp";
     static final String CLIENT_AUTHENTICATED_DIMENSION = "clientAuthenticated";
     static final String REQUEST_SERVER_NAME_DIMENSION = "requestServerName";
+    static final String FILTER_CHAIN_ID_DIMENSION = "chainId";
 
     static final String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
     static final String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
@@ -68,6 +69,11 @@ class MetricDefinitions {
     static final String JETTY_THREADPOOL_IDLE_THREADS = "jdisc.http.jetty.threadpool.thread.idle";
     static final String JETTY_THREADPOOL_TOTAL_THREADS = "jdisc.http.jetty.threadpool.thread.total";
     static final String JETTY_THREADPOOL_QUEUE_SIZE = "jdisc.http.jetty.threadpool.queue.size";
+
+    static final String FILTERING_REQUEST_HANDLED = "jdisc.http.filtering.request.handled";
+    static final String FILTERING_REQUEST_UNHANDLED = "jdisc.http.filtering.request.unhandled";
+    static final String FILTERING_RESPONSE_HANDLED = "jdisc.http.filtering.response.handled";
+    static final String FILTERING_RESPONSE_UNHANDLED = "jdisc.http.filtering.response.unhandled";
 
     private MetricDefinitions() {}
 }

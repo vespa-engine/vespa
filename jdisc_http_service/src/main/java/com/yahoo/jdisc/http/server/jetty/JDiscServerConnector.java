@@ -14,9 +14,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author bjorncs
@@ -25,7 +23,6 @@ class JDiscServerConnector extends ServerConnector {
 
     public static final String REQUEST_ATTRIBUTE = JDiscServerConnector.class.getName();
     private final Metric.Context metricCtx;
-    private final Map<RequestDimensions, Metric.Context> requestMetricContextCache = new ConcurrentHashMap<>();
     private final ConnectionStatistics statistics;
     private final ConnectorConfig config;
     private final boolean tcpKeepAlive;
@@ -70,20 +67,18 @@ class JDiscServerConnector extends ServerConnector {
         return metricCtx;
     }
 
-    public Metric.Context getRequestMetricContext(HttpServletRequest request) {
+    public Metric.Context createRequestMetricContext(HttpServletRequest request, Map<String, String> extraDimensions) {
         String method = request.getMethod();
         String scheme = request.getScheme();
         boolean clientAuthenticated = request.getAttribute(com.yahoo.jdisc.http.servlet.ServletRequest.SERVLET_REQUEST_X509CERT) != null;
-        var requestDimensions = new RequestDimensions(method, scheme, clientAuthenticated);
-        return requestMetricContextCache.computeIfAbsent(requestDimensions, ignored -> {
-            Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName);
-            dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
-            dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
-            dimensions.put(MetricDefinitions.CLIENT_AUTHENTICATED_DIMENSION, Boolean.toString(clientAuthenticated));
-            String serverName = Optional.ofNullable(request.getServerName()).orElse("unknown");
-            dimensions.put(MetricDefinitions.REQUEST_SERVER_NAME_DIMENSION, serverName);
-            return metric.createContext(dimensions);
-        });
+        Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName);
+        dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
+        dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
+        dimensions.put(MetricDefinitions.CLIENT_AUTHENTICATED_DIMENSION, Boolean.toString(clientAuthenticated));
+        String serverName = Optional.ofNullable(request.getServerName()).orElse("unknown");
+        dimensions.put(MetricDefinitions.REQUEST_SERVER_NAME_DIMENSION, serverName);
+        dimensions.putAll(extraDimensions);
+        return metric.createContext(dimensions);
     }
 
     public static JDiscServerConnector fromRequest(ServletRequest request) {
@@ -103,33 +98,6 @@ class JDiscServerConnector extends ServerConnector {
         props.put(MetricDefinitions.NAME_DIMENSION, connectorName);
         props.put(MetricDefinitions.PORT_DIMENSION, listenPort);
         return props;
-    }
-
-    private static class RequestDimensions {
-        final String method;
-        final String scheme;
-        final boolean clientAuthenticated;
-
-        RequestDimensions(String method, String scheme, boolean clientAuthenticated) {
-            this.method = method;
-            this.scheme = scheme;
-            this.clientAuthenticated = clientAuthenticated;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            RequestDimensions that = (RequestDimensions) o;
-            return clientAuthenticated == that.clientAuthenticated &&
-                    Objects.equals(method, that.method) &&
-                    Objects.equals(scheme, that.scheme);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(method, scheme, clientAuthenticated);
-        }
     }
 
 }

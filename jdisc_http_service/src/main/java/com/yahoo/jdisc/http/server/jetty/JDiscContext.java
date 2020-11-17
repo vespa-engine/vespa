@@ -8,7 +8,7 @@ import com.yahoo.jdisc.service.CurrentContainer;
 import java.util.concurrent.Executor;
 
 public class JDiscContext {
-    final FilterBindings filterBindings;
+    final FilterResolver filterResolver;
     final CurrentContainer container;
     final Executor janitor;
     final Metric metric;
@@ -20,7 +20,7 @@ public class JDiscContext {
                         Metric metric,
                         ServerConfig serverConfig) {
 
-        this.filterBindings = filterBindings;
+        this.filterResolver = new FilterResolver(filterBindings, metric);
         this.container = container;
         this.janitor = janitor;
         this.metric = metric;

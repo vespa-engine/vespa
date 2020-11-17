@@ -215,6 +215,11 @@ public class VespaMetricSet {
         addMetric(metrics, "jdisc.http.jetty.threadpool.thread.total", List.of("sum", "count", "min", "max"));
         addMetric(metrics, "jdisc.http.jetty.threadpool.queue.size", List.of("sum", "count", "min", "max"));
 
+        addMetric(metrics, "jdisc.http.filtering.request.handled", List.of("rate"));
+        addMetric(metrics, "jdisc.http.filtering.request.unhandled", List.of("rate"));
+        addMetric(metrics, "jdisc.http.filtering.response.handled", List.of("rate"));
+        addMetric(metrics, "jdisc.http.filtering.response.unhandled", List.of("rate"));
+
         return metrics;
     }
 
