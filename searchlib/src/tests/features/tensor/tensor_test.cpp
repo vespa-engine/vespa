@@ -164,9 +164,9 @@ TEST_F("require that tensor attribute can be extracted as tensor in attribute fe
        ExecFixture("attribute(tensorattr)"))
 {
     EXPECT_EQUAL(*makeTensor<Value>(TensorSpec("tensor(x{})")
-                                     .add({{"x", "b"}}, 5)
-                                     .add({{"x", "c"}}, 7)
-                                     .add({{"x", "a"}}, 3)), f.execute());
+                                    .add({{"x", "b"}}, 5)
+                                    .add({{"x", "c"}}, 7)
+                                    .add({{"x", "a"}}, 3)), f.execute());
 }
 
 TEST_F("require that direct tensor attribute can be extracted in attribute feature",

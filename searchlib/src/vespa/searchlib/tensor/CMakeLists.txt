@@ -25,5 +25,8 @@ vespa_add_library(searchlib_tensor OBJECT
     tensor_attribute.cpp
     tensor_deserialize.cpp
     tensor_store.cpp
+    serialized_fast_value_attribute.cpp
+    streamed_value_saver.cpp
+    streamed_value_store.cpp
     DEPENDS
 )
