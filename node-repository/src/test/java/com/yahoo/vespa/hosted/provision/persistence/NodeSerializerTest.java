@@ -21,6 +21,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -249,15 +250,19 @@ public class NodeSerializerTest {
     public void serialize_ip_address_pool() {
         Node node = createNode();
 
-        // Test round-trip with IP address pool
-        node = node.with(node.ipConfig().with(IP.Pool.of(Set.of("::1", "::2", "::3"))));
+        // Test round-trip with address pool
+        node = node.with(node.ipConfig().withPool(IP.Pool.of(
+                Set.of("::1", "::2", "::3"),
+                List.of(new Address("a"), new Address("b"), new Address("c")))));
         Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipConfig().pool().asSet(), copy.ipConfig().pool().asSet());
+        assertEquals(node.ipConfig().pool().getIpSet(), copy.ipConfig().pool().getIpSet());
+        assertEquals(Set.copyOf(node.ipConfig().pool().getAddressList()), Set.copyOf(copy.ipConfig().pool().getAddressList()));
 
-        // Test round-trip without IP address pool (handle empty pool)
+        // Test round-trip without address pool (handle empty pool)
         node = createNode();
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipConfig().pool().asSet(), copy.ipConfig().pool().asSet());
+        assertEquals(node.ipConfig().pool().getIpSet(), copy.ipConfig().pool().getIpSet());
+        assertEquals(Set.copyOf(node.ipConfig().pool().getAddressList()), Set.copyOf(copy.ipConfig().pool().getAddressList()));
     }
 
     @Test

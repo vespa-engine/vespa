@@ -360,6 +360,23 @@ public class NodesV2ApiTest {
     }
 
     @Test
+    public void patch_hostnames() throws IOException {
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                        Utf8.toBytes("{\"additionalHostnames\": [\"a\",\"b\"]}"), Request.Method.PATCH),
+                "{\"message\":\"Updated host4.yahoo.com\"}");
+
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-with-hostnames.json");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                        Utf8.toBytes("{\"additionalHostnames\": []}"), Request.Method.PATCH),
+                "{\"message\":\"Updated host4.yahoo.com\"}");
+
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
+    }
+
+    @Test
     public void post_controller_node() throws Exception {
         String data = "[{\"hostname\":\"controller1.yahoo.com\", \"openStackId\":\"fake-controller1.yahoo.com\"," +
                       createIpAddresses("127.0.0.1") +

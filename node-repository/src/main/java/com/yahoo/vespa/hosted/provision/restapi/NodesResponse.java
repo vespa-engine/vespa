@@ -15,6 +15,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -186,7 +187,8 @@ class NodesResponse extends HttpResponse {
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
-        ipAddressesToSlime(node.ipConfig().pool().asSet(), object.setArray("additionalIpAddresses"));
+        ipAddressesToSlime(node.ipConfig().pool().getIpSet(), object.setArray("additionalIpAddresses"));
+        addressesToSlime(node.ipConfig().pool().getAddressList(), object);
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
         node.switchHostname().ifPresent(switchHostname -> object.setString("switchHostname", switchHostname));
@@ -227,6 +229,13 @@ class NodesResponse extends HttpResponse {
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {
         ipAddresses.forEach(array::addString);
+    }
+
+    private void addressesToSlime(List<Address> addresses, Cursor object) {
+        if (addresses.isEmpty()) return;
+        // When/if Address becomes richer: add another field (e.g. "addresses") and expand to array of objects
+        Cursor addressesArray = object.setArray("additionalHostnames");
+        addresses.forEach(address -> addressesArray.addString(address.hostname()));
     }
 
     private String lastElement(String path) {

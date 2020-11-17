@@ -257,7 +257,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
         Node.Builder builder = Node.create(inspector.field("openStackId").asString(),
-                                           new IP.Config(ipAddresses, ipAddressPool),
+                                           IP.Config.of(ipAddresses, ipAddressPool, List.of()),
                                            inspector.field("hostname").asString(),
                                            flavorFromSlime(inspector),
                                            nodeTypeFromSlime(inspector.field("type")));

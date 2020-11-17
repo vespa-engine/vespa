@@ -26,6 +26,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
@@ -66,6 +67,8 @@ public class NodeSerializer {
     private static final String hostnameKey = "hostname";
     private static final String ipAddressesKey = "ipAddresses";
     private static final String ipAddressPoolKey = "additionalIpAddresses";
+    private static final String containersKey = "containers";
+    private static final String containerHostnameKey = "hostname";
     private static final String idKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
@@ -146,7 +149,8 @@ public class NodeSerializer {
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
         toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey));
-        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey));
+        toSlime(node.ipConfig().pool().getIpSet(), object.setArray(ipAddressPoolKey));
+        toSlime(node.ipConfig().pool().getAddressList(), object);
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         toSlime(node.flavor(), object);
@@ -214,6 +218,14 @@ public class NodeSerializer {
         ipAddresses.stream().map(IP::parse).sorted(IP.NATURAL_ORDER).map(IP::asString).forEach(array::addString);
     }
 
+    private void toSlime(List<Address> addresses, Cursor object) {
+        if (addresses.isEmpty()) return;
+        Cursor addressCursor = object.setArray(containersKey);
+        addresses.forEach(address -> {
+            addressCursor.addObject().setString(containerHostnameKey, address.hostname());
+        });
+    }
+
     // ---------------- Deserialization --------------------------------------------------
 
     public Node fromJson(Node.State state, byte[] data) {
@@ -232,7 +244,8 @@ public class NodeSerializer {
         Flavor flavor = flavorFromSlime(object);
         return new Node(object.field(idKey).asString(),
                         new IP.Config(ipAddressesFromSlime(object, ipAddressesKey),
-                                      ipAddressesFromSlime(object, ipAddressPoolKey)),
+                                      ipAddressesFromSlime(object, ipAddressPoolKey),
+                                      addressesFromSlime(object)),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavor,
@@ -356,6 +369,16 @@ public class NodeSerializer {
         ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
         object.field(key).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
         return ipAddresses.build();
+    }
+
+    private List<Address> addressesFromSlime(Inspector object) {
+        Inspector addressesField = object.field(containersKey);
+        if (addressesField.children() == 0)
+            return List.of();
+        List<Address> addresses = new ArrayList<>(addressesField.children());
+        addressesField.traverse((ArrayTraverser) (i, elem) ->
+                addresses.add(new Address(elem.field(containerHostnameKey).asString())));
+        return addresses;
     }
 
     private Optional<String> modelNameFromSlime(Inspector object) {

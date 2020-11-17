@@ -177,7 +177,7 @@ public class IPTest {
         }
 
         IP.Pool pool = node.ipConfig().pool();
-        assertNotEquals(dualStack, pool instanceof IP.Ipv4Pool);
+        assertNotEquals(dualStack, pool.getProtocol() == IP.IpAddresses.Protocol.ipv4);
         return pool;
     }
 
