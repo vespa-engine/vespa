@@ -26,7 +26,7 @@ public:
     virtual bool supports_extract_dense_view() const = 0;
     virtual bool supports_get_tensor_ref() const = 0;
 
-    virtual vespalib::eval::ValueType getTensorType() const = 0;
+    virtual const vespalib::eval::ValueType & getTensorType() const = 0;
 
     /**
      * Gets custom state for this tensor attribute by inserting it into the given Slime inserter.

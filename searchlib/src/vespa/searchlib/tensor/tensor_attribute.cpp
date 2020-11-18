@@ -202,7 +202,7 @@ TensorAttribute::get_tensor_ref(uint32_t docid) const
     abort(); // Needed to avoid compile error
 }
 
-vespalib::eval::ValueType
+const vespalib::eval::ValueType &
 TensorAttribute::getTensorType() const
 {
     return getConfig().tensorType();
