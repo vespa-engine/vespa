@@ -49,6 +49,7 @@ import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingMod
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -389,7 +390,7 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testThatConfigChangeActionsAreActedUpon() throws IOException {
+    public void testThatDisallowedConfigChangeActionsBlockDeployment() throws IOException {
         List<Host> hosts = List.of(createHost("host1", "6.1.0"),
                                    createHost("host2", "6.1.0"),
                                    createHost("host3", "6.1.0"),
@@ -400,7 +401,28 @@ public class HostedDeployTest {
         ManualClock clock = new ManualClock(Instant.EPOCH);
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
-                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), "reindex", ValidationOverrides.empty,
+                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), "indexing-mode-change", ValidationOverrides.empty,
+                                                                          "reindex please", services, "music", clock.instant()),
+                                                    new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
+
+        DeployTester tester = createTester(hosts, modelFactories, prodZone, clock);
+        PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0");
+        assertNull("Deployment was not activated", tester.applicationRepository().getActiveSession(tester.applicationId()));
+    }
+
+    @Test
+    public void testThatAllowedConfigChangeActionsAreActedUpon() throws IOException {
+        List<Host> hosts = List.of(createHost("host1", "6.1.0"),
+                                   createHost("host2", "6.1.0"),
+                                   createHost("host3", "6.1.0"),
+                                   createHost("host4", "6.1.0"));
+        List<ServiceInfo> services = List.of(
+                new ServiceInfo("serviceName", "serviceType", null, Map.of("clustername", "cluster"), "configId", "hostName"));
+
+        ManualClock clock = new ManualClock(Instant.EPOCH);
+        List<ModelFactory> modelFactories = List.of(
+                new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
+                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), "indexing-mode-change", ValidationOverrides.all,
                                                                           "reindex please", services, "music", clock.instant()),
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
