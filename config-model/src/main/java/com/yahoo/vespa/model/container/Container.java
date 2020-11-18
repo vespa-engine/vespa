@@ -172,7 +172,7 @@ public abstract class Container extends AbstractService implements
     }
 
     private void initDefaultJettyConnector() {
-        defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", getSearchPort()));
+        defaultHttpServer.addConnector(new ConnectorFactory.Builder("SearchServer", getSearchPort()).build());
     }
 
     private ContainerServiceType myServiceType = null;

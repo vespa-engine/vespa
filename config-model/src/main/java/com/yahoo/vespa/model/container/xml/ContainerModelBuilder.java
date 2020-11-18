@@ -362,7 +362,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if(cluster.getHttp().getHttpServer().isEmpty()) {
             JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), cluster, cluster.isHostedVespa());
             cluster.getHttp().setHttpServer(defaultHttpServer);
-            defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
+            defaultHttpServer.addConnector(new ConnectorFactory.Builder("SearchServer", Defaults.getDefaults().vespaWebServicePort()).build());
         }
     }
 
