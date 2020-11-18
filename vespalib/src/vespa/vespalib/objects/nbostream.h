@@ -17,7 +17,7 @@ namespace vespalib {
  */
 class nbostream
 {
- public:
+public:
     using Buffer = Array<char>;
     using Alloc = alloc::Alloc;
     enum State { ok=0, eof=0x01, oob=0x02};
@@ -170,6 +170,8 @@ public:
     }
     void swap(Buffer & buf);
     void swap(nbostream & os);
+    /** extract the underlying Array<char>; nbostream will be empty afterwards. */
+    Buffer extract_buffer() { Buffer rv; swap(rv); return rv; }
     /**
      * This flag can be used to tell that a buffer will live at least as long as
      * any objects it will be the backing for. In those cases there is no need for
