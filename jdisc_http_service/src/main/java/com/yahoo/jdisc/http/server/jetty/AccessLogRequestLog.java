@@ -97,6 +97,14 @@ class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog {
             if (cipherSuite != null) {
                 accessLogEntry.addKeyValue("cipher-suite", cipherSuite);
             }
+            String requestFilterId = (String) request.getAttribute(ServletRequest.JDISC_REQUEST_CHAIN);
+            if (requestFilterId != null) {
+                accessLogEntry.addKeyValue("request-chain", requestFilterId);
+            }
+            String responseFilterId = (String) request.getAttribute(ServletRequest.JDISC_RESPONSE_CHAIN);
+            if (responseFilterId != null) {
+                accessLogEntry.addKeyValue("response-chain", responseFilterId);
+            }
 
             long startTime = request.getTimeStamp();
             long endTime = System.currentTimeMillis();
