@@ -308,6 +308,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
     }
 
     private void renderCurrentUsage(Cursor cursor, Invoice currentUsage) {
+        if (currentUsage == null) return;
         cursor.setString("amount", currentUsage.sum().toPlainString());
         cursor.setString("status", "accrued");
         cursor.setString("from", currentUsage.getStartTime().format(DATE_TIME_FORMATTER));
