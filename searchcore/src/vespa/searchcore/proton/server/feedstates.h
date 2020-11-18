@@ -54,7 +54,8 @@ public:
             IFeedView *& feed_view_ptr,
             bucketdb::IBucketDBHandler &bucketDBHandler,
             IReplayConfig &replay_config,
-            FeedConfigStore &config_store);
+            FeedConfigStore &config_store,
+            IIncSerialNum &inc_serial_num);
 
     ~ReplayTransactionLogState() override;
     void handleOperation(FeedToken, FeedOperationUP op) override {

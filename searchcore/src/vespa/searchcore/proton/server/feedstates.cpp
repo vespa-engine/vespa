@@ -11,6 +11,7 @@
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedstates");
@@ -68,17 +69,20 @@ class TransactionLogReplayPacketHandler : public IReplayPacketHandler {
     IBucketDBHandler &_bucketDBHandler;
     IReplayConfig &_replay_config;
     FeedConfigStore &_config_store;
+    IIncSerialNum   &_inc_serial_num;
     CommitTimeTracker _commitTimeTracker;
 
 public:
     TransactionLogReplayPacketHandler(IFeedView *& feed_view_ptr,
                                       IBucketDBHandler &bucketDBHandler,
                                       IReplayConfig &replay_config,
-                                      FeedConfigStore &config_store)
+                                      FeedConfigStore &config_store,
+                                      IIncSerialNum &inc_serial_num)
         : _feed_view_ptr(feed_view_ptr),
           _bucketDBHandler(bucketDBHandler),
           _replay_config(replay_config),
           _config_store(config_store),
+          _inc_serial_num(inc_serial_num),
           _commitTimeTracker(5ms)
     { }
 
@@ -126,6 +130,13 @@ public:
     const document::DocumentTypeRepo &getDeserializeRepo() override {
         return *_feed_view_ptr->getDocumentTypeRepo();
     }
+    void check_serial_num(search::SerialNum serial_num) override {
+        auto exp_serial_num = _inc_serial_num.inc_serial_num();
+        if (exp_serial_num != serial_num) {
+            LOG(warning, "Expected replay serial number %" PRIu64 ", got serial number %" PRIu64, exp_serial_num, serial_num);
+            assert(exp_serial_num == serial_num);
+        }
+    }
     void optionalCommit(search::SerialNum serialNum) override {
         if (_commitTimeTracker.needCommit()) {
             _feed_view_ptr->forceCommit(serialNum);
@@ -137,9 +148,11 @@ void startDispatch(IReplayPacketHandler *packet_handler, const Packet::Entry &en
     // Called by handlePacket() in executor thread.
     LOG(spam, "replay packet entry: entrySerial(%" PRIu64 "), entryType(%u)", entry.serial(), entry.type());
 
+    auto entry_serial_num = entry.serial();
+    packet_handler->check_serial_num(entry_serial_num);
     ReplayPacketDispatcher dispatcher(*packet_handler);
     dispatcher.replayEntry(entry);
-    packet_handler->optionalCommit(entry.serial());
+    packet_handler->optionalCommit(entry_serial_num);
 }
 
 }  // namespace
@@ -149,10 +162,11 @@ ReplayTransactionLogState::ReplayTransactionLogState(
         IFeedView *& feed_view_ptr,
         IBucketDBHandler &bucketDBHandler,
         IReplayConfig &replay_config,
-        FeedConfigStore &config_store)
+        FeedConfigStore &config_store,
+        IIncSerialNum& inc_serial_num)
     : FeedState(REPLAY_TRANSACTION_LOG),
       _doc_type_name(name),
-      _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(feed_view_ptr, bucketDBHandler, replay_config, config_store))
+      _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(feed_view_ptr, bucketDBHandler, replay_config, config_store, inc_serial_num))
 { }
 
 ReplayTransactionLogState::~ReplayTransactionLogState() = default;

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_inc_serial_num.h"
 #include "i_operation_storer.h"
 #include "idocumentmovehandler.h"
 #include "igetserialnum.h"
@@ -48,7 +49,8 @@ class FeedHandler: private search::transactionlog::client::Callback,
                    public IPruneRemovedDocumentsHandler,
                    public IHeartBeatHandler,
                    public IOperationStorer,
-                   public IGetSerialNum
+                   public IGetSerialNum,
+                   public IIncSerialNum
 {
 private:
     using Packet = search::transactionlog::Packet;
@@ -73,9 +75,12 @@ private:
     std::unique_ptr<TlsWriter>             _tlsMgrWriter;
     TlsWriter                             *_tlsWriter;
     TlsReplayProgress::UP                  _tlsReplayProgress;
-    // the serial num of the last message in the transaction log
+    // the serial num of the last feed operation processed by feed handler.
     SerialNum                              _serialNum;
+    // the serial num considered to be fully procssessed and flushed to stable storage. Used to prune transaction log.
     SerialNum                              _prunedSerialNum;
+    // the serial num of the last feed operation in the transaction log at startup before replay
+    SerialNum                              _replay_end_serial_num;
     uint64_t                               _prepare_serial_num;
     size_t                                 _numOperationsPendingCommit;
     size_t                                 _numOperationsCompleted;
@@ -208,8 +213,11 @@ public:
     }
 
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
-    SerialNum incSerialNum() { return ++_serialNum; }
+    SerialNum inc_serial_num() override { return ++_serialNum; }
     SerialNum getSerialNum() const override { return _serialNum; }
+    // The two following methods are used when saving initial config
+    SerialNum get_replay_end_serial_num() const { return _replay_end_serial_num; }
+    SerialNum inc_replay_end_serial_num() { return ++_replay_end_serial_num; }
     SerialNum getPrunedSerialNum() const { return _prunedSerialNum; }
     uint64_t  inc_prepare_serial_num() { return ++_prepare_serial_num; }
 

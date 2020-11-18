@@ -33,10 +33,10 @@ public:
      * @param oldestConfigSerial the serial num of the oldest config.
      * @param the pruned serial num will be set to 1 lower than
      *        the serial num of the first entry in the transaction log.
-     * @param the current serial num will be set to 1 higher than
-     *        the serial num of the last entry in the transaction log.
+     * @param replay_end_serial_num will be set to the serial num of
+     *        the last entry in the transaction log.
      **/
-    void init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &serialNum);
+    void init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &replay_end_serial_num);
 
     /**
      * Prepare replay of the transaction log.

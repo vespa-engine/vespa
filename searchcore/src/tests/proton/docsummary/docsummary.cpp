@@ -244,7 +244,7 @@ public:
         PutRes putRes(dms.put(docId.getGlobalId(), BucketFactory::getBucketId(docId),
                               Timestamp(0u), docSize, lid, 0u));
         LOG_ASSERT(putRes.ok());
-        uint64_t serialNum = _ddb->getFeedHandler().incSerialNum();
+        uint64_t serialNum = _ddb->getFeedHandler().inc_serial_num();
         _aw->put(serialNum, doc, lid, std::shared_ptr<IDestructorCallback>());
         _aw->forceCommit(serialNum, std::shared_ptr<IDestructorCallback>());
         _ddb->getReadySubDB()->getAttributeManager()->getAttributeFieldWriter().sync();

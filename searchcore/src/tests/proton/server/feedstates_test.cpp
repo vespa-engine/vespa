@@ -53,6 +53,15 @@ struct MyReplayConfig : IReplayConfig {
     void replayConfig(SerialNum) override {}
 };
 
+struct MyIncSerialNum : IIncSerialNum {
+    SerialNum _serial_num;
+    MyIncSerialNum(SerialNum serial_num)
+        : _serial_num(serial_num)
+    {
+    }
+    SerialNum inc_serial_num() override { return ++_serial_num; }
+};
+
 struct Fixture
 {
     MyFeedView feed_view1;
@@ -62,6 +71,7 @@ struct Fixture
     MemoryConfigStore config_store;
     BucketDBOwner _bucketDB;
     bucketdb::BucketDBHandler _bucketDBHandler;
+    MyIncSerialNum _inc_serial_num;
     ReplayTransactionLogState state;
 
     Fixture();
@@ -76,7 +86,8 @@ Fixture::Fixture()
       config_store(),
       _bucketDB(),
       _bucketDBHandler(_bucketDB),
-      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store)
+      _inc_serial_num(9u),
+      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store, _inc_serial_num)
 {
 }
 Fixture::~Fixture() = default;
@@ -105,17 +116,23 @@ RemoveOperationContext::RemoveOperationContext(search::SerialNum serial)
 RemoveOperationContext::~RemoveOperationContext() = default;
 TEST_F("require that active FeedView can change during replay", Fixture)
 {
-    RemoveOperationContext opCtx(10);
-    auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, nullptr);
     ForegroundThreadExecutor executor;
 
     EXPECT_EQUAL(0, f.feed_view1.remove_handled);
     EXPECT_EQUAL(0, f.feed_view2.remove_handled);
-    f.state.receive(wrap, executor);
+    {
+        RemoveOperationContext opCtx(10);
+        auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, nullptr);
+        f.state.receive(wrap, executor);
+    }
     EXPECT_EQUAL(1, f.feed_view1.remove_handled);
     EXPECT_EQUAL(0, f.feed_view2.remove_handled);
     f.feed_view_ptr = &f.feed_view2;
-    f.state.receive(wrap, executor);
+    {
+        RemoveOperationContext opCtx(11);
+        auto wrap = std::make_shared<PacketWrapper>(*opCtx.packet, nullptr);
+        f.state.receive(wrap, executor);
+    }
     EXPECT_EQUAL(1, f.feed_view1.remove_handled);
     EXPECT_EQUAL(1, f.feed_view2.remove_handled);
 }
