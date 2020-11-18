@@ -107,7 +107,7 @@ public:
      * @param child The child to add.
      * @return This, to allow chaining.
      */
-    void addChild(TraceNode child) {
+    void addChild(TraceNode && child) {
         ensureRoot().addChild(std::move(child));
     }
 

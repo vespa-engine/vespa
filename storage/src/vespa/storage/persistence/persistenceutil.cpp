@@ -94,7 +94,7 @@ MessageTracker::sendReply() {
     }
     if (hasReply()) {
         if ( ! _context.getTrace().isEmpty()) {
-            getReply().getTrace().addChild(_context.getTrace().getRoot());
+            getReply().getTrace().addChild(std::move(_context.getTrace()));
         }
         if (_updateBucketInfo) {
             if (getReply().getResult().success()) {
@@ -104,12 +104,11 @@ MessageTracker::sendReply() {
         if (getReply().getResult().success()) {
             _metric->latency.addValue(_timer.getElapsedTimeAsDouble());
         }
-        LOG(spam, "Sending reply up: %s %" PRIu64,
-            getReply().toString().c_str(), getReply().getMsgId());
+        LOG(spam, "Sending reply up: %s %" PRIu64, getReply().toString().c_str(), getReply().getMsgId());
         _replySender.sendReplyDirectly(std::move(_reply));
     } else {
         if ( ! _context.getTrace().isEmpty()) {
-            _msg->getTrace().addChild(_context.getTrace().getRoot());
+            _msg->getTrace().addChild(std::move(_context.getTrace()));
         }
     }
 }

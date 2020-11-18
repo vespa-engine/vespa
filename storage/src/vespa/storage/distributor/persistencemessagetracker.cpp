@@ -230,7 +230,7 @@ PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
     updateMetrics();
     _trace.setStrict(false);
     if ( ! _trace.isEmpty()) {
-        _reply->getTrace().addChild(_trace);
+        _reply->getTrace().addChild(std::move(_trace));
     }
     
     sender.sendReply(_reply);

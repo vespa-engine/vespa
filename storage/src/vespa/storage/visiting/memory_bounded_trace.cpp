@@ -59,7 +59,7 @@ MemoryBoundedTrace::moveTraceTo(mbus::Trace& out)
                 "containing a total of %zu bytes",
                 _omittedNodes, _omittedBytes));
     }
-    out.addChild(_node); // XXX rvalue support should be added to TraceNode.
+    out.addChild(std::move(_node)); // XXX rvalue support should be added to TraceNode.
     _node.clear();
     _currentMemoryUsed = 0;
     _omittedNodes = 0;
