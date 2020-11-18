@@ -362,7 +362,7 @@ protected:
     Id                 _msgId;
     std::unique_ptr<StorageMessageAddress> _address;
     documentapi::LoadType _loadType;
-    mbus::Trace _trace;
+    vespalib::Trace _trace;
     uint32_t    _approxByteSize;
     Priority    _priority;
 
@@ -441,7 +441,7 @@ public:
     /**
        Sets the trace object for this message.
     */
-    void setTrace(const mbus::Trace &trace) { _trace = trace; }
+    void setTrace(vespalib::Trace && trace) { _trace = std::move(trace); }
 
     /**
      * Cheap version of tostring().

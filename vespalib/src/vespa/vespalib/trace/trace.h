@@ -24,13 +24,12 @@ public:
      * Create an empty Trace with level set to 0 (no tracing)
      */
     Trace() : Trace(0) {}
-
-    /**
-     * Create an empty trace with given level.
-     *
-     * @param level Level to set.
-     */
     explicit Trace(uint32_t level) : _root(), _level(level) { }
+    Trace & operator = (Trace &&) = default;
+    Trace(Trace &&) = default;
+    Trace(const Trace &) = default;
+    Trace & operator = (const Trace &) = delete;
+    ~Trace() = default;
 
     /**
      * Remove all trace information and set the trace level to 0.

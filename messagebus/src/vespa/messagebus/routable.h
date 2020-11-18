@@ -106,7 +106,7 @@ public:
      *
      * @param trace The trace to set.
      */
-    void setTrace(const Trace &trace) { _trace = trace; }
+    void setTrace(Trace &&trace) { _trace = std::move(trace); }
 
     /**
      * Swaps the state that makes this routable unique to another routable. The
