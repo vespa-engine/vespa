@@ -38,7 +38,6 @@
         <module>clustercontroller-apputil</module>
         <module>clustercontroller-core</module>
         <module>clustercontroller-reindexer</module>
-        <module>clustercontroller-standalone</module>
         <module>clustercontroller-utils</module>
         <module>component</module>
         <module>config-application-package</module>
