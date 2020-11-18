@@ -175,7 +175,6 @@
                                         <include>com.yahoo.vespa:predicate-search-core:*:jar:provided</include>
                                         <include>com.yahoo.vespa:processing:*:jar:provided</include>
                                         <include>com.yahoo.vespa:provided-dependencies:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:provided-yahoo-dependencies:*:jar:provided</include>
                                         <include>com.yahoo.vespa:searchcore:*:jar:provided</include>
                                         <include>com.yahoo.vespa:searchlib:*:jar:provided</include>
                                         <include>com.yahoo.vespa:security-utils:*:jar:provided</include>
