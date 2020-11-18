@@ -609,7 +609,7 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply,
                         VisitorThreadMetrics& metrics)
 {
     if (shouldAddMbusTrace()) {
-        _trace.add(reply->getTrace().getRoot());
+        _trace.add(reply->getTrace()); //TODO Can it be moved ?
     }
 
     mbus::Message::UP message = reply->getMessage();
@@ -830,7 +830,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
     }
 
     if (shouldAddMbusTrace()) {
-        _trace.add(reply->getTrace().getRoot());
+        _trace.add(reply->getTrace()); //TODO Can it be moved ?
     }
 
     LOG(debug, "Continuing visitor %s.", _id.c_str());

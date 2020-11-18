@@ -32,9 +32,9 @@ Test::Main()
     TEST_FLUSH();
     {
         // test SimpleMessage
-        EXPECT_EQUAL(160u, sizeof(Routable));
-        EXPECT_EQUAL(208u, sizeof(Message));
-        EXPECT_EQUAL(288u, sizeof(SimpleMessage));
+        EXPECT_EQUAL(56u, sizeof(Routable));
+        EXPECT_EQUAL(104u, sizeof(Message));
+        EXPECT_EQUAL(184u, sizeof(SimpleMessage));
         auto msg = std::make_unique<SimpleMessage>("test");
         EXPECT_TRUE(!msg->isReply());
         EXPECT_TRUE(msg->getProtocol() == SimpleProtocol::NAME);
@@ -52,9 +52,9 @@ Test::Main()
     TEST_FLUSH();
     {
         // test SimpleReply
-        EXPECT_EQUAL(160u, sizeof(Routable));
-        EXPECT_EQUAL(200u, sizeof(Reply));
-        EXPECT_EQUAL(264u, sizeof(SimpleReply));
+        EXPECT_EQUAL(56u, sizeof(Routable));
+        EXPECT_EQUAL(96u, sizeof(Reply));
+        EXPECT_EQUAL(160u, sizeof(SimpleReply));
         auto reply = std::make_unique<SimpleReply>("reply");
         EXPECT_TRUE(reply->isReply());
         EXPECT_TRUE(reply->getProtocol() == SimpleProtocol::NAME);

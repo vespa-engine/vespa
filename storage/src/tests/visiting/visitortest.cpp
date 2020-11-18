@@ -805,6 +805,7 @@ TEST_F(VisitorTest, no_mbus_tracing_if_trace_level_is_zero) {
 TEST_F(VisitorTest, reply_contains_trace_if_trace_level_above_zero) {
     std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor());
     cmd->getTrace().setLevel(1);
+    cmd->getTrace().trace(1,"at least one trace.");
     std::shared_ptr<api::CreateVisitorReply> reply;
     ASSERT_NO_FATAL_FAILURE(doCompleteVisitingSession(cmd, reply));
     EXPECT_FALSE(reply->getTrace().isEmpty());

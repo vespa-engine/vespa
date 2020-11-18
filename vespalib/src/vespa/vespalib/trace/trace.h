@@ -27,7 +27,7 @@ public:
     explicit Trace(uint32_t level) : _root(), _level(level) { }
     Trace & operator = (Trace &&) = default;
     Trace(Trace &&) = default;
-    Trace(const Trace &) = default;
+    Trace(const Trace &);
     Trace & operator = (const Trace &) = delete;
     ~Trace() = default;
 
@@ -36,11 +36,7 @@ public:
      *
      * @return This, to allow chaining.
      */
-    Trace &clear() {
-        _level = 0;
-        _root.clear();
-        return *this;
-    }
+    void clear();
 
     /**
      * Swap the internals of this with another.
@@ -97,7 +93,9 @@ public:
     bool trace(uint32_t level, const string &note, bool addTime = true);
 
     void normalize() {
-        _root.normalize();
+        if (_root) {
+            _root->normalize();
+        }
     }
 
     /**
@@ -115,7 +113,7 @@ public:
     }
     void addChild(Trace && child) {
         if (!child.isEmpty()) {
-            addChild(std::move(child._root));
+            addChild(std::move(*child._root));
         }
     }
 
@@ -124,11 +122,11 @@ public:
      *
      * @return The root.
      */
-    const TraceNode &getRoot() const { return _root; }
+    const TraceNode &getRoot() const { return *_root; }
 
-    bool isEmpty() const { return _root.isEmpty(); }
+    bool isEmpty() const { return !_root || _root->isEmpty(); }
 
-    uint32_t getNumChildren() const { return _root.getNumChildren(); }
+    uint32_t getNumChildren() const { return _root ? _root->getNumChildren() : 0; }
     const TraceNode & getChild(uint32_t child) const { return getRoot().getChild(child); }
 
     /**
@@ -137,11 +135,11 @@ public:
      *
      * @return Readable trace string.
      */
-    string toString() const { return _root.toString(31337); }
+    string toString() const;
 private:
-    TraceNode &ensureRoot() { return _root; }
+    TraceNode &ensureRoot();
 
-    TraceNode _root;
+    std::unique_ptr<TraceNode> _root;
     uint32_t  _level;
 };
 
