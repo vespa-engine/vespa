@@ -31,7 +31,7 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
- * which send documents straight to storage — via indexing if the documenet type has "index" mode.
+ * which send documents straight to storage — via indexing if the documenet type has "index" mode.
  * The {@link #reindex} method blocks until shutdown is called, or until no more reindexing is left to do.
  *
  * @author jonmv
@@ -181,7 +181,7 @@ public class Reindexer {
         parameters.setRemoteDataHandler(cluster.name());
         parameters.setResumeToken(progress);
         parameters.setFieldSet(type.getName() + ":[document]");
-        parameters.setPriority(DocumentProtocol.Priority.LOW_1);
+        parameters.setPriority(DocumentProtocol.Priority.NORMAL_3);
         parameters.setRoute(cluster.route());
         parameters.setBucketSpace(cluster.bucketSpaceOf(type));
         // parameters.setVisitorLibrary("ReindexVisitor"); // TODO jonmv: Use when ready, or perhaps an argument to the DumpVisitor is enough?
