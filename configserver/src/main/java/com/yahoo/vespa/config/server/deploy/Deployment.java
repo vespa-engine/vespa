@@ -112,17 +112,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            Activation activation;
-            try {
-                activation = applicationRepository.activate(session, applicationId, tenant, params.force());
-            }
-            catch (RuntimeException e) {
-                throw e;
-            }
-            catch (Exception e) {
-                throw new InternalServerException("Error when activating '" + applicationId + "'", e);
-            }
-
+            Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
             activation.awaitCompletion(timeoutBudget.timeLeft());
             log.log(Level.INFO, session.logPre() + "Session " + session.getSessionId() + " activated successfully using " +
                                 provisioner.map(provisioner -> provisioner.getClass().getSimpleName()).orElse("no host provisioner") +
@@ -130,12 +120,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                 activation.sourceSessionId().stream().mapToObj(id -> ". Based on session " + id).findFirst().orElse("") +
                                 ". File references: " + applicationRepository.getFileReferences(applicationId));
 
-            if (configChangeActions != null) {
-                if (provisioner.isPresent())
-                    restartServices(applicationId);
+            if (provisioner.isPresent() && configChangeActions != null)
+                restartServices(applicationId);
 
-                storeReindexing(applicationId, session.getMetaData().getGeneration());
-            }
+            storeReindexing(applicationId, session.getMetaData().getGeneration());
 
             return session.getMetaData().getGeneration();
         }
@@ -161,8 +149,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private void storeReindexing(ApplicationId applicationId, long requiredSession) {
         applicationRepository.modifyReindexing(applicationId, reindexing -> {
-            for (ReindexActions.Entry entry : configChangeActions.getReindexActions().getEntries())
-                reindexing = reindexing.withPending(entry.getClusterName(), entry.getDocumentType(), requiredSession);
+            if (configChangeActions != null)
+                for (ReindexActions.Entry entry : configChangeActions.getReindexActions().getEntries())
+                    reindexing = reindexing.withPending(entry.getClusterName(), entry.getDocumentType(), requiredSession);
 
             return reindexing;
         });
