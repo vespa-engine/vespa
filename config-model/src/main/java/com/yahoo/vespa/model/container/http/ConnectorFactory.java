@@ -26,26 +26,17 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private volatile ComponentId defaultRequestFilterChain;
     private volatile ComponentId defaultResponseFilterChain;
 
-    protected ConnectorFactory(String name, int listenPort, SslProvider sslProviderComponent) {
-        this(name, listenPort, sslProviderComponent, null, null);
-    }
-
-    protected ConnectorFactory(
-            String name,
-            int listenPort,
-            SslProvider sslProviderComponent,
-            ComponentId defaultRequestFilterChain,
-            ComponentId defaultResponseFilterChain) {
+    protected ConnectorFactory(Builder builder) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(
-                        new ComponentId(name),
+                        new ComponentId(builder.name),
                         fromString("com.yahoo.jdisc.http.server.jetty.ConnectorFactory"),
                         fromString("jdisc_http_service"))));
-        this.name = name;
-        this.listenPort = listenPort;
-        this.sslProviderComponent = sslProviderComponent;
-        this.defaultRequestFilterChain = defaultRequestFilterChain;
-        this.defaultResponseFilterChain = defaultResponseFilterChain;
+        this.name = builder.name;
+        this.listenPort = builder.listenPort;
+        this.sslProviderComponent = builder.sslProvider != null ? builder.sslProvider : new DefaultSslProvider(name);
+        this.defaultRequestFilterChain = builder.defaultRequestFilterChain;
+        this.defaultResponseFilterChain = builder.defaultResponseFilterChain;
         addChild(sslProviderComponent);
         inject(sslProviderComponent);
     }
@@ -100,8 +91,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         }
 
         public ConnectorFactory build() {
-            SslProvider sslProvider = this.sslProvider != null ? this.sslProvider : new DefaultSslProvider(name);
-            return new ConnectorFactory(name, listenPort, sslProvider, defaultRequestFilterChain, defaultResponseFilterChain);
+            return new ConnectorFactory(this);
         }
     }
 }

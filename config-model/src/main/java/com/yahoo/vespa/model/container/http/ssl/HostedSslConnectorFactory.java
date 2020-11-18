@@ -47,7 +47,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     }
 
     private HostedSslConnectorFactory(SslProvider sslProvider, boolean enforceClientAuth, boolean enforceHandshakeClientAuth) {
-        super("tls4443", 4443, sslProvider);
+        super(new Builder("tls4443", 4443).setSslProvider(sslProvider));
         this.enforceClientAuth = enforceClientAuth;
         this.enforceHandshakeClientAuth = enforceHandshakeClientAuth;
     }
