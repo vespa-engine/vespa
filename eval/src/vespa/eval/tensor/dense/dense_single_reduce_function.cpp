@@ -89,7 +89,7 @@ template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
 void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &params = unwrap_param<Params>(param);
     const CT *src = state.peek(0).cells().typify<CT>().cbegin();
-    auto dst_cells = state.stash.create_array<CT>(params.outer_size * params.inner_size);
+    auto dst_cells = state.stash.create_uninitialized_array<CT>(params.outer_size * params.inner_size);
     CT *dst = dst_cells.begin();
     const size_t block_size = (params.dim_size * params.inner_size);
     for (size_t outer = 0; outer < params.outer_size; ++outer) {
