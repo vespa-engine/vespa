@@ -86,15 +86,12 @@ auto reduce_cells_atleast_8(const CT *src, size_t n, size_t stride) {
 }
 
 template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
-void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
-    const auto &params = unwrap_param<Params>(param);
-    const CT *src = state.peek(0).cells().typify<CT>().cbegin();
-    auto dst_cells = state.stash.create_uninitialized_array<CT>(params.outer_size * params.inner_size);
-    CT *dst = dst_cells.begin();
+void trace_reduce_impl(const Params &params, const CT *src, CT *dst) {
+    constexpr bool aggr_is_complex = is_complex(AGGR::enum_type());
     const size_t block_size = (params.dim_size * params.inner_size);
     for (size_t outer = 0; outer < params.outer_size; ++outer) {
         for (size_t inner = 0; inner < params.inner_size; ++inner) {
-            if (atleast_8) {
+            if (atleast_8 && !aggr_is_complex) {
                 if (is_inner) {
                     *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.dim_size);
                 } else {
@@ -105,6 +102,38 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
             }
         }
         src += block_size;
+    }
+}
+
+template <typename CT, typename AGGR>
+void fold_reduce_impl(const Params &params, const CT *src, CT *dst) {
+    for (size_t outer = 0; outer < params.outer_size; ++outer) {
+        auto saved_dst = dst;
+        for (size_t inner = 0; inner < params.inner_size; ++inner) {
+            *dst++ = *src++;
+        }
+        for (size_t dim = 1; dim < params.dim_size; ++dim) {
+            dst = saved_dst;
+            for (size_t inner = 0; inner < params.inner_size; ++inner) {
+                *dst = AGGR::combine(*dst, *src++);
+                ++dst;
+            }
+        }
+    }
+}
+
+template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
+void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
+    static_assert(std::is_same_v<CT,typename AGGR::value_type>);
+    constexpr bool aggr_is_simple = is_simple(AGGR::enum_type());
+    const auto &params = unwrap_param<Params>(param);
+    const CT *src = state.peek(0).cells().typify<CT>().cbegin();
+    auto dst_cells = state.stash.create_uninitialized_array<CT>(params.outer_size * params.inner_size);
+    CT *dst = dst_cells.begin();
+    if constexpr (aggr_is_simple && !is_inner) {
+        fold_reduce_impl<CT, AGGR>(params, src, dst);
+    } else {
+        trace_reduce_impl<CT,AGGR,atleast_8,is_inner>(params, src, dst);
     }
     state.pop_push(state.stash.create<DenseTensorView>(params.result_type, TypedCells(dst_cells)));
 }
@@ -136,7 +165,8 @@ DenseSingleReduceFunction::compile_self(eval::EngineOrFactory, Stash &stash) con
 {
     auto &params = stash.create<Params>(result_type(), child().result_type(), _dim_idx);
     auto op = typify_invoke<4,MyTypify,MyGetFun>(result_type().cell_type(), _aggr,
-                                                 (params.dim_size >= 8), (params.inner_size == 1));
+                                                 (params.dim_size >= 8),
+                                                 (params.inner_size == 1));
     return InterpretedFunction::Instruction(op, wrap_param<Params>(params));
 }
 
