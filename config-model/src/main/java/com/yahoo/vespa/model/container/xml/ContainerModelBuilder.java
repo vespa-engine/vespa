@@ -327,6 +327,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String serverName = server.getComponentId().getName();
 
         // If the deployment contains certificate/private key reference, setup TLS port
+        HostedSslConnectorFactory connectorFactory;
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
@@ -340,13 +341,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .map(clientAuth -> clientAuth.equals(AccessControl.ClientAuthentication.need))
                     .orElse(false);
 
-            HostedSslConnectorFactory connectorFactory = authorizeClient
+            connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
                     : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets, enforceHandshakeClientAuth);
-            server.addConnector(connectorFactory);
         } else {
-            server.addConnector(HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName));
+            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName);
         }
+        cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
+        server.addConnector(connectorFactory);
     }
 
     private static boolean isHostedTenantApplication(ConfigModelContext context) {
