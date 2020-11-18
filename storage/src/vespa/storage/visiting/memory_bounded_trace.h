@@ -33,7 +33,7 @@ public:
      *
      * If current trace is empty, no nodes are added to `out`.
      */
-    void moveTraceTo(mbus::TraceNode& out);
+    void moveTraceTo(mbus::Trace& out);
 
     size_t getApproxMemoryUsed() const noexcept {
         return _currentMemoryUsed;

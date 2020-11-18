@@ -828,8 +828,8 @@ VisitorOperation::sendReply(const api::ReturnCode& code, DistributorMessageSende
 {
     if (!_sentReply) {
         // Send create visitor reply
-        api::CreateVisitorReply::SP reply(new api::CreateVisitorReply(*_msg));
-        _trace.moveTraceTo(reply->getTrace().getRoot());
+        auto reply = std::make_shared<api::CreateVisitorReply>(*_msg);
+        _trace.moveTraceTo(reply->getTrace());
         reply->setLastBucket(getLastBucketVisited());
         reply->setResult(code);
 

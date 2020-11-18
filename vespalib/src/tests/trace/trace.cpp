@@ -261,7 +261,7 @@ TEST("testTraceDump")
             b1.addChild(b2);
         }
         for (int i = 0; i < 10; ++i) {
-            big.getRoot().addChild(b1);
+            big.addChild(b1);
         }
         string normal = big.toString();
         string full = big.getRoot().toString();

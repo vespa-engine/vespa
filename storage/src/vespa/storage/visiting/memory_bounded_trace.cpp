@@ -48,7 +48,7 @@ MemoryBoundedTrace::add(const mbus::TraceNode& node)
 }
 
 void
-MemoryBoundedTrace::moveTraceTo(mbus::TraceNode& out)
+MemoryBoundedTrace::moveTraceTo(mbus::Trace& out)
 {
     if (_node.isEmpty()) {
         return;

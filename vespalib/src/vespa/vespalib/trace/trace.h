@@ -18,9 +18,6 @@ namespace vespalib {
  * information will be traced.
  */
 class Trace {
-private:
-    TraceNode _root;
-    uint32_t  _level;
 public:
 
     /**
@@ -100,12 +97,28 @@ public:
      */
     bool trace(uint32_t level, const string &note, bool addTime = true);
 
+    void normalize() {
+        _root.normalize();
+    }
+
     /**
-     * Returns the root of the trace tree.
+     * Adds a child node to this.
      *
-     * @return The root.
+     * @param child The child to add.
+     * @return This, to allow chaining.
      */
-    TraceNode &getRoot() { return _root; }
+    void addChild(TraceNode child) {
+        ensureRoot().addChild(std::move(child));
+    }
+
+    void setStrict(bool strict) {
+        ensureRoot().setStrict(strict);
+    }
+    void addChild(Trace && child) {
+        if (!child.isEmpty()) {
+            addChild(std::move(child._root));
+        }
+    }
 
     /**
      * Returns a const reference to the root of the trace tree.
@@ -116,6 +129,9 @@ public:
 
     bool isEmpty() const { return _root.isEmpty(); }
 
+    uint32_t getNumChildren() const { return _root.getNumChildren(); }
+    const TraceNode & getChild(uint32_t child) const { return getRoot().getChild(child); }
+
     /**
      * Returns a string representation of the contained trace tree. This is a
      * readable, non-parseable string.
@@ -123,6 +139,11 @@ public:
      * @return Readable trace string.
      */
     string toString() const { return _root.toString(31337); }
+private:
+    TraceNode &ensureRoot() { return _root; }
+
+    TraceNode _root;
+    uint32_t  _level;
 };
 
 #define VESPALIB_TRACE2(ttrace, level, note, addTime) \

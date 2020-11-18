@@ -55,8 +55,8 @@ SendProxy::handleReply(Reply::UP reply)
         }
         trace.clear();
     } else if (trace.getLevel() > 0) {
-        trace.getRoot().addChild(reply->getTrace().getRoot());
-        trace.getRoot().normalize();
+        trace.addChild(reply->getTrace().getRoot());
+        trace.normalize();
     }
     reply->swapState(*_msg);
     reply->setMessage(std::move(_msg));

@@ -133,7 +133,7 @@ TwoPhaseUpdateOperation::sendReply(
 {
     assert(!_replySent);
     if (!_trace.isEmpty()) {
-        reply->getTrace().getRoot().addChild(_trace);
+        reply->getTrace().addChild(_trace);
     }
     sender.sendReply(reply);
     _replySent = true;

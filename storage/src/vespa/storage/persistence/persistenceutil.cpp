@@ -94,7 +94,7 @@ MessageTracker::sendReply() {
     }
     if (hasReply()) {
         if ( ! _context.getTrace().isEmpty()) {
-            getReply().getTrace().getRoot().addChild(_context.getTrace().getRoot());
+            getReply().getTrace().addChild(_context.getTrace().getRoot());
         }
         if (_updateBucketInfo) {
             if (getReply().getResult().success()) {
@@ -109,7 +109,7 @@ MessageTracker::sendReply() {
         _replySender.sendReplyDirectly(std::move(_reply));
     } else {
         if ( ! _context.getTrace().isEmpty()) {
-            _msg->getTrace().getRoot().addChild(_context.getTrace().getRoot());
+            _msg->getTrace().addChild(_context.getTrace().getRoot());
         }
     }
 }

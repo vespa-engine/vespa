@@ -188,7 +188,7 @@ RPCSendV2::toParams(const FRT_Values &args) const
 
 std::unique_ptr<Reply>
 RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
-                       Error & error, vespalib::TraceNode & rootTrace) const
+                       Error & error, vespalib::Trace & rootTrace) const
 {
     uint8_t encoding = ret[3]._intval8;
     uint32_t uncompressedSize = ret[4]._intval32;

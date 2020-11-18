@@ -17,7 +17,7 @@ private:
                        const PayLoadFiller &filler, duration timeRemaining) const override;
 
     std::unique_ptr<Reply> createReply(const FRT_Values & response, const string & serviceName,
-                                       Error & error, vespalib::TraceNode & rootTrace) const override;
+                                       Error & error, vespalib::Trace & trace) const override;
     void createResponse(FRT_Values & ret, const string & version, Reply & reply, Blob payload) const override;
 };
 

@@ -289,7 +289,7 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     assert(reply);
 
     if (!hdr.trace_payload().empty()) {
-        cmd.getTrace().getRoot().addChild(mbus::TraceNode::decode(hdr.trace_payload()));
+        cmd.getTrace().addChild(mbus::TraceNode::decode(hdr.trace_payload()));
     }
     if (cmd.getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         cmd.getTrace().trace(TraceLevel::SEND_RECEIVE,

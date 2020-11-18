@@ -371,10 +371,9 @@ Visitor::sendReplyOnce()
         std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
 
         _hitCounter->updateVisitorStatistics(_visitorStatistics);
-        static_cast<api::CreateVisitorReply*>(reply.get())
-            ->setVisitorStatistics(_visitorStatistics);
+        static_cast<api::CreateVisitorReply*>(reply.get())->setVisitorStatistics(_visitorStatistics);
         if (shouldAddMbusTrace()) {
-            _trace.moveTraceTo(reply->getTrace().getRoot());
+            _trace.moveTraceTo(reply->getTrace());
         }
         reply->setResult(_result);
         LOG(debug, "Sending %s", reply->toString(true).c_str());

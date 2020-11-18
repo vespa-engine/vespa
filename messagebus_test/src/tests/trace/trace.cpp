@@ -100,12 +100,12 @@ Test::Main()
     Reply::UP reply;
     SourceSession::UP ss = mb.getMessageBus().createSourceSession(src, SourceSessionParams());
     for (int i = 0; i < 50; ++i) {
-        Message::UP msg(new SimpleMessage("test"));
+        auto msg = std::make_unique<SimpleMessage>("test");
         msg->getTrace().setLevel(1);
         ss->send(std::move(msg), "test");
         reply = src.getReply(10s);
         if (reply) {
-            reply->getTrace().getRoot().normalize();
+            reply->getTrace().normalize();
             // resending breaks the trace, so retry until it has expected form
             if (!reply->hasErrors() && reply->getTrace().getRoot().encode() == expect.encode()) {
                 break;
