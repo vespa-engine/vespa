@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.jrt.ListenFailedException;
-import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -28,7 +27,6 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageRespon
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
-import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayDeque;
@@ -44,6 +42,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,7 +50,7 @@ import java.util.stream.Stream;
 public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAddedOrRemovedListener, SystemStateListener,
                                         Runnable, RemoteClusterControllerTaskScheduler {
 
-    private static Logger log = Logger.getLogger(FleetController.class.getName());
+    private static final Logger log = Logger.getLogger(FleetController.class.getName());
 
     private final Timer timer;
     private final Object monitor;
@@ -171,13 +170,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                                                      MetricReporter metricReporter) throws Exception {
         Timer timer = new RealTimer();
         return create(options, timer, statusPageServer, null, metricReporter);
-    }
-
-    public static FleetController createForStandAlone(FleetControllerOptions options) throws Exception {
-        Timer timer = new RealTimer();
-        RpcServer rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
-        StatusPageServer statusPageServer = new StatusPageServer(timer, timer, options.httpPort);
-        return create(options, timer, statusPageServer, rpcServer, new NoMetricReporter());
     }
 
     private static FleetController create(FleetControllerOptions options,
