@@ -35,7 +35,7 @@ public:
     bool fastSearch()                     const { return _fastSearch; }
     bool huge()                           const { return _huge; }
     const PredicateParams &predicateParams() const { return _predicateParams; }
-    vespalib::eval::ValueType tensorType() const { return _tensorType; }
+    const vespalib::eval::ValueType & tensorType() const { return _tensorType; }
     DistanceMetric distance_metric() const { return _distance_metric; }
     const std::optional<HnswIndexParams>& hnsw_index_params() const { return _hnsw_index_params; }
 
