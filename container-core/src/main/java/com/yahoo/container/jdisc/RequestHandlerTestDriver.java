@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @Beta
 public class RequestHandlerTestDriver implements AutoCloseable {
 
-    private TestDriver driver;
+    private final TestDriver driver;
 
     private MockResponseHandler responseHandler = null;
 
@@ -152,7 +152,7 @@ public class RequestHandlerTestDriver implements AutoCloseable {
             StringBuilder b = new StringBuilder();
             while (content.available()>0) {
                 ByteBuffer nextBuffer = content.read();
-                b.append(Charset.forName("utf-8").decode(nextBuffer).toString());
+                b.append(Charset.forName("utf-8").decode(nextBuffer));
             }
             return b.toString();
         }

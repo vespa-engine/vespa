@@ -167,7 +167,7 @@ public class ProcessingRenderer extends AsynchronousSectionedRenderer<Response> 
 
     private static class TraceRenderingVisitor extends TraceVisitor {
 
-        private JSONWriter jsonWriter;
+        private final JSONWriter jsonWriter;
 
         public TraceRenderingVisitor(JSONWriter jsonWriter) {
             this.jsonWriter = jsonWriter;
@@ -226,4 +226,5 @@ public class ProcessingRenderer extends AsynchronousSectionedRenderer<Response> 
             return (IOException) super.getCause();
         }
     }
+
 }

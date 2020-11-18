@@ -10,7 +10,7 @@ import javax.xml.validation.SchemaFactory;
  * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class SchemaFactoryProvider implements Provider<SchemaFactory> {
 
     public static final String FACTORY_CLASS = "com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory";

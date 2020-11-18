@@ -20,6 +20,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 
+/**
+ * @author Oracien
+ */
 public class PrometheusV1Handler extends HttpHandlerBase{
 
     public static final String V1_PATH = "/prometheus/v1";

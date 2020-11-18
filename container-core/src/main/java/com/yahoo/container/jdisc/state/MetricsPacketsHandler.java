@@ -43,6 +43,7 @@ import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotPreprocess
  * @author gjoranv
  */
 public class MetricsPacketsHandler extends AbstractRequestHandler {
+
     static final String APPLICATION_KEY = "application";
     static final String TIMESTAMP_KEY   = "timestamp";
     static final String STATUS_CODE_KEY = "status_code";

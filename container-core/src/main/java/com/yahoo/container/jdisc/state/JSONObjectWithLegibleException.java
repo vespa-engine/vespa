@@ -13,6 +13,7 @@ import java.util.Map;
  * @author gjoranv
  */
 class JSONObjectWithLegibleException extends JSONObject {
+
     @Override
     public JSONObject put(String s, boolean b) {
         try {
@@ -80,7 +81,7 @@ class JSONObjectWithLegibleException extends JSONObject {
 
     private String getErrorMessage(String key, Object value, JSONException e) {
         return "Trying to add invalid JSON object with key '" + key +
-                "' and value '" + value +
-                "' - " + e.getMessage();
+                "' and value '" + value + "' - " + e.getMessage();
     }
+
 }

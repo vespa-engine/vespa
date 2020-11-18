@@ -14,7 +14,6 @@ import java.util.Map;
  * A Response may contain multiple such data objects, and all of them will be added to the response.
  *
  * @author bratseth
- * @since  5.1.23
  */
 public class ResponseHeaders extends AbstractData {
 

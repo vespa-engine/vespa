@@ -32,13 +32,9 @@ public abstract class AsyncHttpResponse extends HttpResponse {
      * output (using the provided channel and completion handler) when (async)
      * rendering is completed.
      *
-     * @param output
-     *            the stream to which content should be rendered
-     * @param networkChannel
-     *            the channel which must be closed on completion
-     * @param handler
-     *            the completion handler to submit when closing the channel, may
-     *            be null
+     * @param output the stream to which content should be rendered
+     * @param networkChannel the channel which must be closed on completion
+     * @param handler the completion handler to submit when closing the channel, may be null
      */
     public abstract void render(OutputStream output, ContentChannel networkChannel, CompletionHandler handler)
             throws IOException;

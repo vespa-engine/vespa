@@ -17,21 +17,18 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
 
-
-
     volatile long lastThreadAssignmentTimeMillis = System.currentTimeMillis();
     private final AtomicLong startedCount = new AtomicLong(0);
     private final AtomicLong completedCount = new AtomicLong(0);
     private final ThreadPoolMetric metric;
 
-    WorkerCompletionTimingThreadPoolExecutor(
-            int corePoolSize,
-            int maximumPoolSize,
-            long keepAliveTime,
-            TimeUnit unit,
-            BlockingQueue<Runnable> workQueue,
-            ThreadFactory threadFactory,
-            ThreadPoolMetric metric) {
+    WorkerCompletionTimingThreadPoolExecutor(int corePoolSize,
+                                             int maximumPoolSize,
+                                             long keepAliveTime,
+                                             TimeUnit unit,
+                                             BlockingQueue<Runnable> workQueue,
+                                             ThreadFactory threadFactory,
+                                             ThreadPoolMetric metric) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
         this.metric = metric;
     }
@@ -56,5 +53,6 @@ class WorkerCompletionTimingThreadPoolExecutor extends ThreadPoolExecutor {
     public int getActiveCount() {
         return (int)(startedCount.get() - completedCount.get());
     }
+
 }
 

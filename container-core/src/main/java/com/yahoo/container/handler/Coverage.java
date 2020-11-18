@@ -92,7 +92,7 @@ public class Coverage {
     }
 
     /**
-     * The number of documents searched for this result. If the final result
+     * Returns the number of documents searched for this result. If the final result
      * set is produced through several queries, this number will be the sum
      * for all the queries.
      */
@@ -100,18 +100,12 @@ public class Coverage {
         return docs;
     }
 
-    /**
-     * Total number of documents that could be searched.
-     *
-     * @return Total number of active documents
-     */
+    /** Returns the total number of documents that could be searched. */
     public long getActive() { return active; }
 
     /**
-     * Total number of documents that will be searchable once redistribution has settled.
-     * Still in beta, sematics not finalized yet.
-     *
-     * @return Total number of documents that will soon be available.
+     * Returns the total number of documents that will be searchable once redistribution has settled.
+     * Still in beta, semantics not finalized yet.
      */
     @Beta
     public long getSoonActive() { return soonActive; }
@@ -122,9 +116,7 @@ public class Coverage {
     public boolean isDegradedByAdapativeTimeout() { return (degradedReason & DEGRADED_BY_ADAPTIVE_TIMEOUT) != 0; }
     public boolean isDegradedByNonIdealState() { return (degradedReason == 0) && (getResultPercentage() != 100);}
 
-    /**
-     * @return whether the search had full coverage or not
-     */
+    /** Returns whether the search had full coverage or not */
     public boolean getFull() {
         switch (fullReason) {
             case EXPLICITLY_FULL:
@@ -138,16 +130,12 @@ public class Coverage {
         }
     }
 
-    /**
-     * @return the number of search instances which participated successfully in the search.
-     */
+    /** Returns the number of search instances which participated successfully in the search. */
     public int getNodes() {
         return nodes;
     }
 
-    /**
-     * @return the number of search instances which tried to participate in the search.
-     */
+    /** Returns the number of search instances which tried to participate in the search. */
     public int getNodesTried() {
         return nodesTried;
     }

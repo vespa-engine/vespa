@@ -69,9 +69,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
 
     @Override
     public final void handleRequest(Request request, BufferedContentChannel requestContent, ResponseHandler responseHandler) {
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "In " + this.getClass() + ".handleRequest()");
-        }
+        log.log(Level.FINE, () -> "In " + this.getClass() + ".handleRequest()");
         com.yahoo.jdisc.http.HttpRequest jdiscRequest = asHttpRequest(request);
         HttpRequest httpRequest = new HttpRequest(jdiscRequest, new UnsafeContentInputStream(requestContent.toReadable()));
         LazyContentChannel channel = null;
@@ -95,8 +93,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     }
 
     /** Render and return whether the channel was closed */
-    private void render(HttpRequest request, HttpResponse httpResponse,
-                        LazyContentChannel channel, long startTime) {
+    private void render(HttpRequest request, HttpResponse httpResponse, LazyContentChannel channel, long startTime) {
         LoggingCompletionHandler logOnCompletion = null;
         ContentChannelOutputStream output = null;
         try {
@@ -139,7 +136,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         private boolean closed = false;
 
         // Fields needed to lazily create or close the channel */
-        private HttpRequest httpRequest;
+        private final HttpRequest httpRequest;
         private HttpResponse httpResponse;
         private final ResponseHandler responseHandler;
         private final Metric metric;
@@ -227,29 +224,27 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     /**
      * Override this to implement custom access logging.
      *
-     * @param startTime
-     *            execution start
-     * @param renderStartTime
-     *            start of output rendering
-     * @param response
-     *            the response which the log entry regards
-     * @param httpRequest
-     *            the incoming HTTP request
-     * @param rendererWiring
-     *            the stream the rendered response is written to, used for
-     *            fetching length of rendered response
+     * @param startTime execution start
+     * @param renderStartTime start of output rendering
+     * @param response the response which the log entry regards
+     * @param httpRequest the incoming HTTP request
+     * @param rendererWiring the stream the rendered response is written to, used for
+     *                       fetching length of rendered response
      */
-    protected LoggingCompletionHandler createLoggingCompletionHandler(
-            long startTime, long renderStartTime, HttpResponse response,
-            HttpRequest httpRequest, ContentChannelOutputStream rendererWiring) {
+    protected LoggingCompletionHandler createLoggingCompletionHandler(long startTime,
+                                                                      long renderStartTime,
+                                                                      HttpResponse response,
+                                                                      HttpRequest httpRequest,
+                                                                      ContentChannelOutputStream rendererWiring) {
         return null;
     }
 
     protected com.yahoo.jdisc.http.HttpRequest asHttpRequest(Request request) {
         if (!(request instanceof com.yahoo.jdisc.http.HttpRequest)) {
-            throw new IllegalArgumentException("Expected "
-                    + com.yahoo.jdisc.http.HttpRequest.class.getName() + ", got " + request.getClass().getName());
+            throw new IllegalArgumentException("Expected " + com.yahoo.jdisc.http.HttpRequest.class.getName() +
+                                               ", got " + request.getClass().getName());
         }
         return (com.yahoo.jdisc.http.HttpRequest) request;
     }
+
 }

@@ -37,4 +37,5 @@ public class MockOsgiWrapper implements OsgiWrapper {
 
     @Override
     public void allowDuplicateBundles(Collection<Bundle> bundles) {  }
+
 }

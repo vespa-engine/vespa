@@ -11,14 +11,11 @@ import org.eclipse.jetty.servlet.ServletHolder;
  */
 public class ServletProvider implements Provider<ServletHolder> {
 
-    private ServletHolder servletHolder;
+    private final ServletHolder servletHolder;
 
     public ServletProvider(Servlet servlet, ServletConfigConfig servletConfigConfig) {
         servletHolder = new ServletHolder(servlet);
-
-        servletConfigConfig.map().forEach( (key, value) ->
-                servletHolder.setInitParameter(key, value)
-        );
+        servletConfigConfig.map().forEach( (key, value) -> servletHolder.setInitParameter(key, value));
     }
 
     @Override

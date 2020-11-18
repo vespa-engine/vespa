@@ -44,4 +44,5 @@ public class HostLifeGatherer {
 
         return jsonObject;
     }
+
 }

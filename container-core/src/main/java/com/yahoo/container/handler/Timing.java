@@ -70,4 +70,5 @@ public class Timing {
     public long getTimeout() {
         return timeout;
     }
+
 }

@@ -19,8 +19,8 @@ import java.util.logging.Logger;
 public class JacksonJsonResponse<T> extends HttpResponse {
 
     private static final Logger log = Logger.getLogger(JacksonJsonResponse.class.getName());
-    private static final ObjectMapper defaultJsonMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule()).registerModule(new Jdk8Module());
+    private static final ObjectMapper defaultJsonMapper =
+            new ObjectMapper().registerModule(new JavaTimeModule()).registerModule(new Jdk8Module());
 
     private final ObjectMapper jsonMapper;
     private final T entity;
@@ -48,4 +48,5 @@ public class JacksonJsonResponse<T> extends HttpResponse {
 
     @Override public String getContentType() { return "application/json"; }
     public T getEntity() { return entity; }
+
 }

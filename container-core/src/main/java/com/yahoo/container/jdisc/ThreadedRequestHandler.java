@@ -269,6 +269,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         private static class NullFeedContext implements Context {
             private static final NullFeedContext INSTANCE = new NullFeedContext();
         }
+
     }
 
 }

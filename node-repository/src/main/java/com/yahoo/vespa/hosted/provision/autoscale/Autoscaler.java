@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class Autoscaler {
 
-    private final Logger log = Logger.getLogger(this.getClass().getName());
+    private static final Logger log = Logger.getLogger(Autoscaler.class.getName());
 
     /** What cost difference factor is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
@@ -74,9 +74,8 @@ public class Autoscaler {
         Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu, cluster);
         Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory, cluster);
         Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk, cluster);
-        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) {
-            return Advice.none();
-        }
+        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Advice.none();
+
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =

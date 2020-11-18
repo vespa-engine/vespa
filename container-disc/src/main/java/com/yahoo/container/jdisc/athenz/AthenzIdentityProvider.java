@@ -11,6 +11,7 @@ import java.util.List;
  * @author mortent
  */
 public interface AthenzIdentityProvider {
+
     String domain();
     String service();
     SSLContext getIdentitySslContext();
@@ -22,4 +23,5 @@ public interface AthenzIdentityProvider {
     List<X509Certificate> getIdentityCertificate();
     PrivateKey getPrivateKey();
     Path trustStorePath();
+
 }

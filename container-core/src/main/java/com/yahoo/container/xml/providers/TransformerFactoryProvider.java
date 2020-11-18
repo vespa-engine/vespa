@@ -9,7 +9,7 @@ import javax.xml.transform.TransformerFactory;
  * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class TransformerFactoryProvider implements Provider<TransformerFactory> {
 
     public static final String FACTORY_CLASS = "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";

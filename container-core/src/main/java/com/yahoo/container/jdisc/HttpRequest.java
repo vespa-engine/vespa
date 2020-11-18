@@ -55,7 +55,7 @@ public class HttpRequest {
         InputStream requestData = null;
         URI uri = null;
         CurrentContainer container = null;
-        private String nag = " must be set before the attempted operation.";
+        private final String nag = " must be set before the attempted operation.";
         SocketAddress remoteAddress;
 
         private void boom(Object ref, String what) {
@@ -99,9 +99,7 @@ public class HttpRequest {
          * {@link #jdiscRequest(com.yahoo.jdisc.http.HttpRequest)} before
          * instantiating any HTTP request.
          *
-         * @param request
-         *            source for defaults and parent JDisc request, may be null
-         *
+         * @param request source for defaults and parent JDisc request, may be null
          * @see HttpRequest#createTestRequest(String, com.yahoo.jdisc.http.HttpRequest.Method)
          */
         public Builder(HttpRequest request) {
@@ -111,9 +109,7 @@ public class HttpRequest {
         /**
          * Instantiate a request builder with defaults from an existing request.
          *
-         * @param request
-         *            parent JDisc request
-         *
+         * @param request parent JDisc request
          * @see HttpRequest#createTestRequest(String, com.yahoo.jdisc.http.HttpRequest.Method)
          */
         public Builder(com.yahoo.jdisc.http.HttpRequest request) {
@@ -216,8 +212,7 @@ public class HttpRequest {
         }
 
         /**
-         * Start of API for synchronous HTTP request dispatch. Not yet ready for
-         * use.
+         * Start of API for synchronous HTTP request dispatch. Not yet ready for use.
          *
          * @return a new client request
          */
@@ -244,8 +239,7 @@ public class HttpRequest {
         }
 
         /**
-         * Start of API for synchronous HTTP request dispatch. Not yet ready for
-         * use.
+         * Start of API for synchronous HTTP request dispatch. Not yet ready for use.
          *
          * @return a new server request
          */
@@ -277,8 +271,7 @@ public class HttpRequest {
             return new HttpRequest(serverRequest, requestData, properties);
         }
 
-        private void setParameters(
-                com.yahoo.jdisc.http.HttpRequest request) {
+        private void setParameters(com.yahoo.jdisc.http.HttpRequest request) {
             for (Map.Entry<String, String> entry : properties.entrySet()) {
                 request.parameters().put(entry.getKey(), wrap(entry.getValue()));
             }
@@ -290,10 +283,8 @@ public class HttpRequest {
      * Wrap a JDisc HTTP request in a synchronous API. The properties from the
      * JDisc request will be copied into the HTTP request.
      *
-     * @param jdiscHttpRequest
-     *            the JDisc request
-     * @param requestData
-     *            the associated input stream, e.g. with POST request
+     * @param jdiscHttpRequest the JDisc request
+     * @param requestData the associated input stream, e.g. with POST request
      */
     public HttpRequest(com.yahoo.jdisc.http.HttpRequest jdiscHttpRequest, InputStream requestData) {
         this(jdiscHttpRequest, requestData, null);
@@ -308,13 +299,10 @@ public class HttpRequest {
      * will obviously not be reflected by the request. The same applies for
      * JDisc parameters.
      *
-     * @param jdiscHttpRequest
-     *            the JDisc request
-     * @param requestData
-     *            the associated input stream, e.g. with POST request
-     * @param propertyOverrides
-     *            properties which should not have the same settings as in the
-     *            parent JDisc request, may be null
+     * @param jdiscHttpRequest the JDisc request
+     * @param requestData the associated input stream, e.g. with POST request
+     * @param propertyOverrides properties which should not have the same settings as in the
+     *                          parent JDisc request, may be null
      */
     public HttpRequest(com.yahoo.jdisc.http.HttpRequest jdiscHttpRequest,
                        InputStream requestData, Map<String, String> propertyOverrides) {
@@ -495,8 +483,7 @@ public class HttpRequest {
      * Helper method to parse boolean request flags, using
      * Boolean.parseBoolean(String). Unset values are regarded as false.
      *
-     * @param name
-     *            the name of a request property
+     * @param name the name of a request property
      * @return whether the property has been explicitly set to true
      */
     public boolean getBooleanProperty(String name) {

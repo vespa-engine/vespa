@@ -57,7 +57,7 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
             @Override
             protected com.yahoo.jdisc.Response newResponse() {
                 com.yahoo.jdisc.Response response = new com.yahoo.jdisc.Response(statusToReturn);
-                response.headers().add("Content-Type", Arrays.asList(new String[]{"application/json"}));
+                response.headers().add("Content-Type", List.of("application/json"));
                 return response;
             }
         }.connect(handler));
@@ -110,12 +110,10 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
     }
 
     private static JSONArray renderBindings(List<String> bindings) {
-        JSONArray ret = new JSONArray();
-
+        JSONArray array = new JSONArray();
         for (String binding : bindings)
-            ret.put(binding);
-
-        return ret;
+            array.put(binding);
+        return array;
     }
 
     private static JSONObject renderComponent(Object component, ComponentId id) {
@@ -136,9 +134,9 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
         try {
             Bundle bundle = FrameworkUtil.getBundle(component.getClass());
 
-            String bundleName = bundle != null ?
-                    bundle.getSymbolicName() + ":" + bundle.getVersion() :
-                    "From classpath";
+            String bundleName = bundle != null
+                                ? bundle.getSymbolicName() + ":" + bundle.getVersion()
+                                : "From classpath";
             return new BundleInfo(component.getClass().getName(), bundleName);
         } catch (Exception | NoClassDefFoundError e) {
             return new BundleInfo("Unavailable, reconfiguration in progress.", "");
@@ -155,12 +153,15 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
     }
 
     static final class BundleInfo {
+
         public final String className;
         public final String bundleName;
+
         BundleInfo(String className, String bundleName) {
             this.className = className;
             this.bundleName = bundleName;
         }
+
     }
 
     static final class StatusResponse {
@@ -182,7 +183,8 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
 
     }
 
-    private class IgnoredContent implements ContentChannel {
+    private static class IgnoredContent implements ContentChannel {
+
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
             handler.completed();
@@ -192,5 +194,7 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
         public void close(CompletionHandler handler) {
             handler.completed();
         }
+
     }
+
 }
