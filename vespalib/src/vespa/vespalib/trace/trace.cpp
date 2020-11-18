@@ -36,6 +36,11 @@ Trace::toString() const {
     return _root ? _root->toString(31337) : "";
 }
 
+string
+Trace::encode() const {
+    return isEmpty() ? "" : getRoot().encode();
+}
+
 void
 Trace::clear() {
     _level = 0;

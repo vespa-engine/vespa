@@ -33,8 +33,10 @@ computeTraceTreeMemoryUsage(const mbus::TraceNode& node)
 } // anon ns
 
 bool
-MemoryBoundedTrace::add(const mbus::TraceNode& node)
+MemoryBoundedTrace::add(const mbus::Trace& trace)
 {
+    if (trace.isEmpty()) return false;
+    const vespalib::TraceNode & node = trace.getRoot();
     const size_t nodeFootprint = computeTraceTreeMemoryUsage(node);
 
     if (_currentMemoryUsed >= _softMemoryUpperBound) {

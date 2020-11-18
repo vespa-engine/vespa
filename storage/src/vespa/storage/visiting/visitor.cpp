@@ -601,7 +601,7 @@ bool
 Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
     mbus::Trace tempTrace;
     tempTrace.trace(level, message);
-    return _trace.add(tempTrace.getRoot());
+    return _trace.add(tempTrace);
 }
 
 void

@@ -55,7 +55,7 @@ TEST(MemoryBoundedTraceTest, moved_trace_tree_is_marked_as_strict) {
     mbus::Trace target;
     trace.moveTraceTo(target);
     EXPECT_EQ(1, target.getNumChildren());
-    EXPECT_TRUE(target.getRoot().getChild(0).isStrict());
+    EXPECT_TRUE(target.getChild(0).isStrict());
 }
 
 TEST(MemoryBoundedTraceTest, can_not_add_more_nodes_when_memory_used_exceeds_upper_bound) {

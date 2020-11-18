@@ -107,7 +107,7 @@ Test::Main()
         if (reply) {
             reply->getTrace().normalize();
             // resending breaks the trace, so retry until it has expected form
-            if (!reply->hasErrors() && reply->getTrace().getRoot().encode() == expect.encode()) {
+            if (!reply->hasErrors() && reply->getTrace().encode() == expect.encode()) {
                 break;
             }
         }
@@ -116,7 +116,7 @@ Test::Main()
     }
 
     EXPECT_TRUE(!reply->hasErrors());
-    EXPECT_EQUAL(reply->getTrace().getRoot().encode(), expect.encode());
+    EXPECT_EQUAL(reply->getTrace().encode(), expect.encode());
     EXPECT_TRUE(system((ctl_script + " stop all").c_str()) == 0);
     TEST_DONE();
 }

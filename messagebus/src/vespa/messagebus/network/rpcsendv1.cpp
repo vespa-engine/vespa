@@ -163,7 +163,7 @@ RPCSendV1::createResponse(FRT_Values & ret, const string & version, Reply & repl
     ret.AddString(reply.getProtocol().c_str());
     ret.AddData(std::move(payload.payload()), payload.size());
     if (reply.getTrace().getLevel() > 0) {
-        ret.AddString(reply.getTrace().getRoot().encode().c_str());
+        ret.AddString(reply.getTrace().encode().c_str());
     } else {
         ret.AddString("");
     }

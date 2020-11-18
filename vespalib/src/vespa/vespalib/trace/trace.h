@@ -50,22 +50,10 @@ public:
         return *this;
     }
 
-    /**
-     * Set the trace level. 0 means no tracing, 9 means enable all tracing.
-     *
-     * @param level The level to set.
-     * @return This, to allow chaining.
-     */
-    Trace &setLevel(uint32_t level) {
+    void setLevel(uint32_t level) {
         _level = std::min(level, 9u);
-        return *this;
     }
 
-    /**
-     * Returns the trace level.
-     *
-     * @return The trace level.
-     */
     uint32_t getLevel() const { return _level; }
 
     /**
@@ -98,36 +86,31 @@ public:
         }
     }
 
-    /**
-     * Adds a child node to this.
-     *
-     * @param child The child to add.
-     * @return This, to allow chaining.
-     */
-    void addChild(TraceNode && child) {
-        ensureRoot().addChild(std::move(child));
-    }
-
     void setStrict(bool strict) {
         ensureRoot().setStrict(strict);
+    }
+    void addChild(TraceNode && child) {
+        ensureRoot().addChild(std::move(child));
     }
     void addChild(Trace && child) {
         if (!child.isEmpty()) {
             addChild(std::move(*child._root));
         }
     }
+    //TODO This one should go away as we should prefer moving
+    void addChild(const Trace & child) {
+        if (!child.isEmpty()) {
+            addChild(TraceNode(*child._root));
+        }
+    }
 
-    /**
-     * Returns a const reference to the root of the trace tree.
-     *
-     * @return The root.
-     */
     const TraceNode &getRoot() const { return *_root; }
 
     bool isEmpty() const { return !_root || _root->isEmpty(); }
 
     uint32_t getNumChildren() const { return _root ? _root->getNumChildren() : 0; }
     const TraceNode & getChild(uint32_t child) const { return getRoot().getChild(child); }
+    string encode() const;
 
     /**
      * Returns a string representation of the contained trace tree. This is a
