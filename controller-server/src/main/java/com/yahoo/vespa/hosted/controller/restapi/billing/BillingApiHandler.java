@@ -179,6 +179,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
                 var tc = tenants.addObject();
                 tc.setString("tenant", tenant.value());
                 getPlanForTenant(tc, tenant);
+                getCollectionForTenant(tc, tenant);
                 renderCurrentUsage(tc.setObject("current"), invoice);
                 renderAdditionalItems(tc.setObject("additional").setArray("items"), billingController.getUnusedLineItems(tenant));
 
@@ -191,6 +192,11 @@ public class BillingApiHandler extends LoggingRequestHandler {
         } catch (DateTimeParseException e) {
             return ErrorResponse.badRequest("Could not parse date: " + until);
         }
+    }
+
+    private void getCollectionForTenant(Cursor tc, TenantName tenant) {
+        var collection = billingController.getCollectionMethod(tenant);
+        tc.setString("collection", collection.name());
     }
 
     private HttpResponse addLineItem(HttpRequest request, String tenant) {

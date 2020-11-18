@@ -5,6 +5,7 @@
             "tenant":"tenant2",
             "plan":"some-plan",
             "planName":"Plan with id: some-plan",
+            "collection": "AUTO",
             "current":{
                 "amount":"123.00",
                 "status":"accrued",
@@ -25,6 +26,7 @@
             "tenant":"tenant1",
             "plan":"some-plan",
             "planName":"Plan with id: some-plan",
+            "collection": "AUTO",
             "current":{
                 "amount":"123.00",
                 "status":"accrued",
