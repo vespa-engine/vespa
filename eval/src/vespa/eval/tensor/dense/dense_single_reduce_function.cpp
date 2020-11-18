@@ -111,7 +111,8 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
 
 struct MyGetFun {
     template <typename R1, typename R2, typename R3, typename R4> static auto invoke() {
-        return my_single_reduce_op<R1, typename R2::template templ<R1>, R3::value, R4::value>;
+        using AggrType = typename R2::template templ<R1>;
+        return my_single_reduce_op<R1, AggrType, R3::value, R4::value>;
     }
 };
 

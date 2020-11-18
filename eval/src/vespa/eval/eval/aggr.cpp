@@ -17,6 +17,7 @@ struct Wrapper : Aggregator {
     virtual void first(double value) final override { aggr = T{value}; }
     virtual void next(double value) final override { aggr.sample(value); }
     virtual double result() const final override { return aggr.result(); }
+    virtual Aggr enum_type() const final override { return T::enum_type(); }
 };
 
 } // namespace vespalib::eval::<unnamed>

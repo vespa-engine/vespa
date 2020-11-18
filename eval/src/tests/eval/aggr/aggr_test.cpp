@@ -19,6 +19,26 @@ TEST("require that aggregator list returns appropriate entries") {
     EXPECT_EQUAL(int(list[6]), int(Aggr::MIN));
 }
 
+TEST("require that aggr::is_simple works as expected") {
+    EXPECT_FALSE(aggr::is_simple(Aggr::AVG));
+    EXPECT_FALSE(aggr::is_simple(Aggr::COUNT));
+    EXPECT_TRUE (aggr::is_simple(Aggr::PROD));
+    EXPECT_TRUE (aggr::is_simple(Aggr::SUM));
+    EXPECT_TRUE (aggr::is_simple(Aggr::MAX));
+    EXPECT_FALSE(aggr::is_simple(Aggr::MEDIAN));
+    EXPECT_TRUE (aggr::is_simple(Aggr::MIN));
+}
+
+TEST("require that aggr::is_complex works as expected") {
+    EXPECT_FALSE(aggr::is_complex(Aggr::AVG));
+    EXPECT_FALSE(aggr::is_complex(Aggr::COUNT));
+    EXPECT_FALSE(aggr::is_complex(Aggr::PROD));
+    EXPECT_FALSE(aggr::is_complex(Aggr::SUM));
+    EXPECT_FALSE(aggr::is_complex(Aggr::MAX));
+    EXPECT_TRUE (aggr::is_complex(Aggr::MEDIAN));
+    EXPECT_FALSE(aggr::is_complex(Aggr::MIN));
+}
+
 TEST("require that AVG aggregator works as expected") {
     Stash stash;
     Aggregator &aggr = Aggregator::create(Aggr::AVG, stash);
@@ -28,6 +48,7 @@ TEST("require that AVG aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 20.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 150.0);
+    EXPECT_TRUE(aggr.enum_type() == Aggr::AVG);
 }
 
 TEST("require that COUNT aggregator works as expected") {
@@ -39,6 +60,7 @@ TEST("require that COUNT aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 3.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 1.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 2.0);
+    EXPECT_TRUE(aggr.enum_type() == Aggr::COUNT);
 }
 
 TEST("require that PROD aggregator works as expected") {
@@ -50,6 +72,13 @@ TEST("require that PROD aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 6000.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 20000.0);
+    EXPECT_TRUE(aggr.enum_type() == Aggr::PROD);
+}
+
+TEST("require that Prod combine works as expected") {
+    using Type = Prod<double>;
+    EXPECT_EQUAL(Type::combine(3,7), 21.0);
+    EXPECT_EQUAL(Type::combine(5,4), 20.0);
 }
 
 TEST("require that SUM aggregator works as expected") {
@@ -61,6 +90,13 @@ TEST("require that SUM aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 60.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 300.0);
+    EXPECT_TRUE(aggr.enum_type() == Aggr::SUM);
+}
+
+TEST("require that Sum combine works as expected") {
+    using Type = Sum<double>;
+    EXPECT_EQUAL(Type::combine(3,7), 10.0);
+    EXPECT_EQUAL(Type::combine(5,4), 9.0);
 }
 
 TEST("require that MAX aggregator works as expected") {
@@ -72,6 +108,13 @@ TEST("require that MAX aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 30.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 200.0);
+    EXPECT_TRUE(aggr.enum_type() == Aggr::MAX);
+}
+
+TEST("require that Max combine works as expected") {
+    using Type = Max<double>;
+    EXPECT_EQUAL(Type::combine(3,7), 7.0);
+    EXPECT_EQUAL(Type::combine(5,4), 5.0);
 }
 
 TEST("require that MEDIAN aggregator works as expected") {
@@ -85,6 +128,7 @@ TEST("require that MEDIAN aggregator works as expected") {
     aggr.next(16.0),   EXPECT_EQUAL(aggr.result(), 16.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 150.0);
+    EXPECT_TRUE(aggr.enum_type() == Aggr::MEDIAN);
 }
 
 TEST("require that MEDIAN aggregator handles NaN values") {
@@ -108,6 +152,13 @@ TEST("require that MIN aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 10.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 100.0);
+    EXPECT_TRUE(aggr.enum_type() == Aggr::MIN);
+}
+
+TEST("require that Min combine works as expected") {
+    using Type = Min<double>;
+    EXPECT_EQUAL(Type::combine(3,7), 3.0);
+    EXPECT_EQUAL(Type::combine(5,4), 4.0);
 }
 
 template <template <typename T> typename A>
