@@ -321,11 +321,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return deploy(applicationPackage, prepareParams, DeployHandlerLogger.forPrepareParams(prepareParams));
     }
 
-    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, DeployHandlerLogger logger) {
+    private PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, DeployHandlerLogger logger) {
         ApplicationId applicationId = prepareParams.getApplicationId();
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
-        deployment.activate();
+
+        if (deployment.configChangeActions().getRefeedActions().getEntries().stream().anyMatch(entry -> ! entry.allowed()))
+            logger.log(Level.WARNING, "Activation rejected because of disallowed re-feed actions");
+        else if (deployment.configChangeActions().getReindexActions().getEntries().stream().anyMatch(entry -> ! entry.allowed()))
+            logger.log(Level.WARNING, "Activation rejected because of disallowed re-index actions");
+        else
+            deployment.activate();
 
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
