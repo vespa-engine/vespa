@@ -67,7 +67,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final DatabaseHandler database;
     private final MasterElectionHandler masterElectionHandler;
     private Thread runner = null;
-    private AtomicBoolean running = new AtomicBoolean(true);
+    private final AtomicBoolean running = new AtomicBoolean(true);
     private FleetControllerOptions options;
     private FleetControllerOptions nextOptions;
     private final List<SystemStateListener> systemStateListeners = new CopyOnWriteArrayList<>();
@@ -78,12 +78,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private Long controllerThreadId = null;
 
     private boolean waitingForCycle = false;
-    private StatusPageServer.PatternRequestRouter statusRequestRouter = new StatusPageServer.PatternRequestRouter();
+    private final StatusPageServer.PatternRequestRouter statusRequestRouter = new StatusPageServer.PatternRequestRouter();
     private final List<ClusterStateBundle> newStates = new ArrayList<>();
     private final List<ClusterStateBundle> convergedStates = new ArrayList<>();
     private long configGeneration = -1;
     private long nextConfigGeneration = -1;
-    private Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
+    private final Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
     private final MetricUpdater metricUpdater;
 
     private boolean isMaster = false;
@@ -91,9 +91,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private long firstAllowedStateBroadcast = Long.MAX_VALUE;
     private long tickStartTime = Long.MAX_VALUE;
 
-    private List<RemoteClusterControllerTask> tasksPendingStateRecompute = new ArrayList<>();
+    private final List<RemoteClusterControllerTask> tasksPendingStateRecompute = new ArrayList<>();
     // Invariant: queued task versions are monotonically increasing with queue position
-    private Queue<VersionDependentTaskCompletion> taskCompletionQueue = new ArrayDeque<>();
+    private final Queue<VersionDependentTaskCompletion> taskCompletionQueue = new ArrayDeque<>();
 
     // Legacy behavior is an empty set of explicitly configured bucket spaces, which means that
     // only a baseline cluster state will be sent from the controller and no per-space state
@@ -165,19 +165,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         propagateOptions();
     }
 
-    public static FleetController createForContainer(FleetControllerOptions options,
-                                                     StatusPageServerInterface statusPageServer,
-                                                     MetricReporter metricReporter) throws Exception {
+    public static FleetController create(FleetControllerOptions options,
+                                         StatusPageServerInterface statusPageServer,
+                                         MetricReporter metricReporter) throws Exception {
         Timer timer = new RealTimer();
-        return create(options, timer, statusPageServer, null, metricReporter);
-    }
-
-    private static FleetController create(FleetControllerOptions options,
-                                          Timer timer,
-                                          StatusPageServerInterface statusPageServer,
-                                          RpcServer rpcServer,
-                                          MetricReporter metricReporter) throws Exception
-    {
         MetricUpdater metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex);
         EventLog log = new EventLog(timer, metricUpdater);
         ContentCluster cluster = new ContentCluster(
@@ -201,7 +192,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
         MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
         FleetController controller = new FleetController(
-                timer, log, cluster, stateGatherer, communicator, statusPageServer, rpcServer, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
+                timer, log, cluster, stateGatherer, communicator, statusPageServer, null, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
         controller.start();
         return controller;
     }
