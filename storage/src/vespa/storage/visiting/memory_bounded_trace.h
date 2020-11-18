@@ -22,7 +22,13 @@ public:
      * Returns true if `node` was added to internal trace state, false
      * otherwise.
      */
-    bool add(const mbus::Trace& node);
+    bool add(const mbus::TraceNode& node);
+    bool add(const mbus::Trace& trace) {
+        if (!trace.isEmpty()) {
+            return add(trace.getRoot());
+        }
+        return false;
+    }
 
     /**
      * Append current trace tree to the output trace node and clear internal
