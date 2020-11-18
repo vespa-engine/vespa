@@ -34,12 +34,12 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
         ConnectorFactory.Builder builder = new ConnectorFactory.Builder(name, port);
         XmlHelper.getOptionalAttribute(serverSpec, "default-request-chain")
                 .map(ComponentId::new)
-                .ifPresent(builder::setDefaultRequestFilterChain);
+                .ifPresent(builder::defaultRequestFilterChain);
         XmlHelper.getOptionalAttribute(serverSpec, "default-response-chain")
                 .map(ComponentId::new)
-                .ifPresent(builder::setDefaultResponseFilterChain);
+                .ifPresent(builder::defaultResponseFilterChain);
         SslProvider sslProviderComponent = getSslConfigComponents(name, serverSpec);
-        return builder.setSslProvider(sslProviderComponent).build();
+        return builder.sslProvider(sslProviderComponent).build();
     }
 
     SslProvider getSslConfigComponents(String serverName, Element serverSpec) {

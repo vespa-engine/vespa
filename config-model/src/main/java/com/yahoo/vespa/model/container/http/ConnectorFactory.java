@@ -77,17 +77,16 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
             this.listenPort = listenPort;
         }
 
-        public Builder setSslProvider(SslProvider sslProvider) {
+        public Builder sslProvider(SslProvider sslProvider) {
             this.sslProvider = sslProvider; return this;
         }
 
-        public Builder setDefaultRequestFilterChain(ComponentId filterChain) {
+        public Builder defaultRequestFilterChain(ComponentId filterChain) {
             this.defaultRequestFilterChain = filterChain; return this;
         }
 
-        public Builder setDefaultResponseFilterChain(ComponentId filterChain) {
-            this.defaultResponseFilterChain = filterChain;
-            return this;
+        public Builder defaultResponseFilterChain(ComponentId filterChain) {
+            this.defaultResponseFilterChain = filterChain; return this;
         }
 
         public ConnectorFactory build() {
