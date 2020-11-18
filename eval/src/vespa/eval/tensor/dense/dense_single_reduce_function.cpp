@@ -52,7 +52,40 @@ CT reduce_cells(const CT *src, size_t dim_size, size_t stride) {
     return aggr.result();
 }
 
+template <typename AGGR, typename GET>
+auto reduce_cells_atleast_8(size_t n, GET &&get) {
+    std::array<AGGR,8> aggrs = { AGGR{get(0)}, AGGR{get(1)}, AGGR{get(2)}, AGGR{get(3)},
+                                 AGGR{get(4)}, AGGR{get(5)}, AGGR{get(6)}, AGGR{get(7)} };
+    size_t i = 8;
+    for (; (i + 7) < n; i += 8) {
+        for (size_t j = 0; j < 8; ++j) {
+            aggrs[j].sample(get(i + j));
+        }
+    }
+    for (size_t j = 0; (i + j) < n; ++j) {
+        aggrs[j].sample(get(i + j));
+    }
+    aggrs[0].merge(aggrs[4]);
+    aggrs[1].merge(aggrs[5]);
+    aggrs[2].merge(aggrs[6]);
+    aggrs[3].merge(aggrs[7]);
+    aggrs[0].merge(aggrs[2]);
+    aggrs[1].merge(aggrs[3]);
+    aggrs[0].merge(aggrs[1]);
+    return aggrs[0].result();
+}
+
 template <typename CT, typename AGGR>
+auto reduce_cells_atleast_8(const CT *src, size_t n) {
+    return reduce_cells_atleast_8<AGGR>(n, [&](size_t idx) { return src[idx]; });
+}
+
+template <typename CT, typename AGGR>
+auto reduce_cells_atleast_8(const CT *src, size_t n, size_t stride) {
+    return reduce_cells_atleast_8<AGGR>(n, [&](size_t idx) { return src[idx * stride]; });
+}
+
+template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
 void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &params = unwrap_param<Params>(param);
     const CT *src = state.peek(0).cells().typify<CT>().cbegin();
@@ -61,7 +94,15 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     const size_t block_size = (params.dim_size * params.inner_size);
     for (size_t outer = 0; outer < params.outer_size; ++outer) {
         for (size_t inner = 0; inner < params.inner_size; ++inner) {
-            *dst++ = reduce_cells<CT, AGGR>(src + inner, params.dim_size, params.inner_size);
+            if (atleast_8) {
+                if (is_inner) {
+                    *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.dim_size);
+                } else {
+                    *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.dim_size, params.inner_size);
+                }
+            } else {
+                *dst++ = reduce_cells<CT, AGGR>(src + inner, params.dim_size, params.inner_size);
+            }
         }
         src += block_size;
     }
@@ -69,16 +110,12 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
 }
 
 struct MyGetFun {
-    template <typename R1, typename R2> static auto invoke() {
-        return my_single_reduce_op<R1, typename R2::template templ<R1>>;
+    template <typename R1, typename R2, typename R3, typename R4> static auto invoke() {
+        return my_single_reduce_op<R1, typename R2::template templ<R1>, R3::value, R4::value>;
     }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,TypifyAggr>;
-
-bool check_input_type(const ValueType &type) {
-    return (type.is_dense() && ((type.cell_type() == CellType::FLOAT) || (type.cell_type() == CellType::DOUBLE)));
-}
+using MyTypify = TypifyValue<TypifyCellType,TypifyAggr,TypifyBool>;
 
 } // namespace vespalib::tensor::<unnamed>
 
@@ -96,8 +133,9 @@ DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 InterpretedFunction::Instruction
 DenseSingleReduceFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
 {
-    auto op = typify_invoke<2,MyTypify,MyGetFun>(result_type().cell_type(), _aggr);
     auto &params = stash.create<Params>(result_type(), child().result_type(), _dim_idx);
+    auto op = typify_invoke<4,MyTypify,MyGetFun>(result_type().cell_type(), _aggr,
+                                                 (params.dim_size >= 8), (params.inner_size == 1));
     return InterpretedFunction::Instruction(op, wrap_param<Params>(params));
 }
 
@@ -106,7 +144,7 @@ DenseSingleReduceFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     auto reduce = as<Reduce>(expr);
     if (reduce && (reduce->dimensions().size() == 1) &&
-        check_input_type(reduce->child().result_type()) &&
+        reduce->child().result_type().is_dense() &&
         expr.result_type().is_dense())
     {
         size_t dim_idx = reduce->child().result_type().dimension_index(reduce->dimensions()[0]);
