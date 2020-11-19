@@ -5,6 +5,7 @@ vespa_add_library(eval_eval OBJECT
     array_array_map.cpp
     basic_nodes.cpp
     call_nodes.cpp
+    cell_type.cpp
     compile_tensor_function.cpp
     delete_node.cpp
     double_value_builder.cpp
