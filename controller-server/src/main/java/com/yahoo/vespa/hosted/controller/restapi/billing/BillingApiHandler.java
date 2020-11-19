@@ -18,12 +18,14 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import javax.ws.rs.BadRequestException;
@@ -37,6 +39,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -53,6 +56,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
 
     private final BillingController billingController;
     private final ApplicationController applicationController;
+    private final TenantController tenantController;
 
     public BillingApiHandler(Executor executor,
                              AccessLog accessLog,
@@ -60,6 +64,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
         super(executor, accessLog);
         this.billingController = controller.serviceRegistry().billingController();
         this.applicationController = controller.applications();
+        this.tenantController = controller.tenants();
     }
 
     @Override
@@ -175,15 +180,16 @@ public class BillingApiHandler extends LoggingRequestHandler {
             root.setString("until", untilDate.format(DateTimeFormatter.ISO_DATE));
             var tenants = root.setArray("tenants");
 
-            uncommittedInvoices.forEach((tenant, invoice) -> {
+            tenantController.asList().stream().sorted(Comparator.comparing(Tenant::name)).forEach(tenant -> {
+                var invoice = uncommittedInvoices.get(tenant.name());
                 var tc = tenants.addObject();
-                tc.setString("tenant", tenant.value());
-                getPlanForTenant(tc, tenant);
-                getCollectionForTenant(tc, tenant);
+                tc.setString("tenant", tenant.name().value());
+                getPlanForTenant(tc, tenant.name());
+                getCollectionForTenant(tc, tenant.name());
                 renderCurrentUsage(tc.setObject("current"), invoice);
-                renderAdditionalItems(tc.setObject("additional").setArray("items"), billingController.getUnusedLineItems(tenant));
+                renderAdditionalItems(tc.setObject("additional").setArray("items"), billingController.getUnusedLineItems(tenant.name()));
 
-                billingController.getDefaultInstrument(tenant).ifPresent(card ->
+                billingController.getDefaultInstrument(tenant.name()).ifPresent(card ->
                         renderInstrument(tc.setObject("payment"), card)
                 );
             });
@@ -302,6 +308,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
     }
 
     private void renderCurrentUsage(Cursor cursor, Invoice currentUsage) {
+        if (currentUsage == null) return;
         cursor.setString("amount", currentUsage.sum().toPlainString());
         cursor.setString("status", "accrued");
         cursor.setString("from", currentUsage.getStartTime().format(DATE_TIME_FORMATTER));

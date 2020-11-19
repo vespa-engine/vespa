@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
@@ -9,12 +10,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
+import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
+import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
+import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -165,13 +171,15 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
 
     @Test
     public void list_all_uninvoiced_items() {
+        tester.controller().tenants().create(new CloudTenantSpec(tenant, ""), new Auth0Credentials(() -> "foo", Set.of(Role.hostedOperator())));
+        tester.controller().tenants().create(new CloudTenantSpec(tenant2, ""), new Auth0Credentials(() -> "foo", Set.of(Role.hostedOperator())));
+
         var invoice = createInvoice();
         billingController.setPlan(tenant, PlanId.from("some-plan"), true);
         billingController.setPlan(tenant2, PlanId.from("some-plan"), true);
         billingController.addInvoice(tenant, invoice, false);
         billingController.addLineItem(tenant, "support", new BigDecimal("42"), "Smith");
         billingController.addInvoice(tenant2, invoice, false);
-
 
         var request = request("/billing/v1/billing?until=2020-05-28").roles(financeAdmin);
 
