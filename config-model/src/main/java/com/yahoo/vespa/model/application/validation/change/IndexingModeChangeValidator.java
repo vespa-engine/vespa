@@ -78,7 +78,7 @@ public class IndexingModeChangeValidator implements ChangeValidator {
                         .collect(Collectors.toList());
                 actions.add(VespaReindexAction.of(
                         nextCluster.id(),
-                        ValidationId.indexModeChange.value(),
+                        ValidationId.indexModeChange,
                         overrides,
                         String.format(
                                 "Document type '%s' in cluster '%s' changed indexing mode from '%s' to '%s'",

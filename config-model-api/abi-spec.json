@@ -529,15 +529,14 @@
       "public static final enum com.yahoo.config.application.api.ValidationId indexModeChange",
       "public static final enum com.yahoo.config.application.api.ValidationId fieldTypeChange",
       "public static final enum com.yahoo.config.application.api.ValidationId clusterSizeReduction",
+      "public static final enum com.yahoo.config.application.api.ValidationId tensorTypeChange",
       "public static final enum com.yahoo.config.application.api.ValidationId resourcesReduction",
       "public static final enum com.yahoo.config.application.api.ValidationId contentTypeRemoval",
       "public static final enum com.yahoo.config.application.api.ValidationId contentClusterRemoval",
       "public static final enum com.yahoo.config.application.api.ValidationId deploymentRemoval",
-      "public static final enum com.yahoo.config.application.api.ValidationId skipAutomaticTenantUpgradeTests",
       "public static final enum com.yahoo.config.application.api.ValidationId globalDocumentChange",
       "public static final enum com.yahoo.config.application.api.ValidationId configModelVersionMismatch",
       "public static final enum com.yahoo.config.application.api.ValidationId skipOldConfigModels",
-      "public static final enum com.yahoo.config.application.api.ValidationId forceAutomaticTenantUpgradeTests",
       "public static final enum com.yahoo.config.application.api.ValidationId accessControl",
       "public static final enum com.yahoo.config.application.api.ValidationId globalEndpointChange"
     ]

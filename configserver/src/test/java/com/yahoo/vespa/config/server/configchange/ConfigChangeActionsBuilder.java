@@ -44,20 +44,20 @@ public class ConfigChangeActionsBuilder {
     }
 
 
-    ConfigChangeActionsBuilder refeed(String name, boolean allowed, String message, String documentType, String clusterName, String serviceName) {
-        actions.add(new MockRefeedAction(name,
+    ConfigChangeActionsBuilder refeed(ValidationId validationId, boolean allowed, String message, String documentType, String clusterName, String serviceName) {
+        actions.add(new MockRefeedAction(validationId,
                                          allowed,
                                          message,
                                          List.of(createService(clusterName, "myclustertype", "myservicetype", serviceName)), documentType));
         return this;
     }
 
-    ConfigChangeActionsBuilder reindex(String name, boolean allowed, String message, String documentType, String clusterName, String serviceName) {
+    ConfigChangeActionsBuilder reindex(ValidationId validationId, boolean allowed, String message, String documentType, String clusterName, String serviceName) {
         List<ServiceInfo> services = List.of(createService(clusterName, "myclustertype", "myservicetype", serviceName));
         ValidationOverrides overrides = mock(ValidationOverrides.class);
         when(overrides.allows((String) any(), any())).thenReturn(allowed);
         when(overrides.allows((ValidationId) any(), any())).thenReturn(allowed);
-        actions.add(VespaReindexAction.of(ClusterSpec.Id.from(clusterName), name, overrides, message, services, documentType, Instant.now()));
+        actions.add(VespaReindexAction.of(ClusterSpec.Id.from(clusterName), validationId, overrides, message, services, documentType, Instant.now()));
         return this;
     }
 

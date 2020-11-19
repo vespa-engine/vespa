@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
@@ -53,12 +54,12 @@ public class DocumentDatabaseChangeValidatorTest {
                 newRestartAction(ClusterSpec.Id.from("test"),
                                  "Field 'f4.s1' changed: add attribute aspect"),
                 newReindexAction(ClusterSpec.Id.from("test"),
-                                "indexing-change",
-                                ValidationOverrides.empty,
+                                 ValidationId.indexingChange,
+                                 ValidationOverrides.empty,
                                 "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +
                                 "'{ input f2 | tokenize normalize stem:\"BEST\" | index f2 | summary f2; }'", Instant.now()),
                 newRefeedAction(ClusterSpec.Id.from("test"),
-                                "field-type-change",
+                                ValidationId.fieldTypeChange,
                                 ValidationOverrides.empty,
                                 "Field 'f3' changed: data type: 'int' -> 'string'", Instant.now())));
     }

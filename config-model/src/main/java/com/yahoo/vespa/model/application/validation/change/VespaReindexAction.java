@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeReindexAction;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -22,34 +23,34 @@ public class VespaReindexAction extends VespaConfigChangeAction implements Confi
      * the validation ids belong to the Vespa model while these names are exposed to the config server,
      * which is model version independent.
      */
-    private final String name;
+    private final ValidationId validationId;
     private final String documentType;
     private final boolean allowed;
 
-    private VespaReindexAction(ClusterSpec.Id id, String name, String message, List<ServiceInfo> services, String documentType, boolean allowed) {
+    private VespaReindexAction(ClusterSpec.Id id, ValidationId validationId, String message, List<ServiceInfo> services, String documentType, boolean allowed) {
         super(id, message, services);
-        this.name = name;
+        this.validationId = validationId;
         this.documentType = documentType;
         this.allowed = allowed;
     }
 
     public static VespaReindexAction of(
-            ClusterSpec.Id id, String name, ValidationOverrides overrides, String message, Instant now) {
-        return new VespaReindexAction(id, name, message, List.of(), /*documentType*/null, overrides.allows(name, now));
+            ClusterSpec.Id id, ValidationId validationId, ValidationOverrides overrides, String message, Instant now) {
+        return new VespaReindexAction(id, validationId, message, List.of(), /*documentType*/null, overrides.allows(validationId, now));
     }
 
     public static VespaReindexAction of(
-            ClusterSpec.Id id, String name, ValidationOverrides overrides, String message,
+            ClusterSpec.Id id, ValidationId validationId, ValidationOverrides overrides, String message,
             List<ServiceInfo> services, String documentType, Instant now) {
-        return new VespaReindexAction(id, name, message, services, documentType, overrides.allows(name, now));
+        return new VespaReindexAction(id, validationId, message, services, documentType, overrides.allows(validationId, now));
     }
 
     @Override
     public VespaConfigChangeAction modifyAction(String newMessage, List<ServiceInfo> newServices, String documentType) {
-        return new VespaReindexAction(clusterId(), name, newMessage, newServices, documentType, allowed);
+        return new VespaReindexAction(clusterId(), validationId, newMessage, newServices, documentType, allowed);
     }
 
-    @Override public String name() { return name; }
+    @Override public ValidationId validationId() { return validationId; }
     @Override public String getDocumentType() { return documentType; }
     @Override public boolean allowed() { return allowed; }
     @Override public boolean ignoreForInternalRedeploy() { return false; }
@@ -62,9 +63,9 @@ public class VespaReindexAction extends VespaConfigChangeAction implements Confi
         if (!super.equals(o)) return false;
         VespaReindexAction that = (VespaReindexAction) o;
         return allowed == that.allowed &&
-                Objects.equals(name, that.name) &&
+                Objects.equals(validationId, that.validationId) &&
                 Objects.equals(documentType, that.documentType);
     }
 
-    @Override public int hashCode() { return Objects.hash(super.hashCode(), name, documentType, allowed); }
+    @Override public int hashCode() { return Objects.hash(super.hashCode(), validationId, documentType, allowed); }
 }

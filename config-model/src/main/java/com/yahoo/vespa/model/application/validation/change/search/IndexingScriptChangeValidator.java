@@ -55,7 +55,7 @@ public class IndexingScriptChangeValidator {
             ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
             new IndexingScriptChangeMessageBuilder(currentSearch, currentField, nextSearch, nextField).populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
-            return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange.value(), overrides, messageBuilder.build(), now));
+            return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange, overrides, messageBuilder.build(), now));
         }
         return Optional.empty();
     }

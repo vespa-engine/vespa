@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.document.StructDataType;
 import com.yahoo.documentmodel.NewDocumentType;
@@ -141,7 +142,7 @@ public class DocumentTypeChangeValidator {
                 map(field -> createFieldChange(field, nextDocType)).
                 filter(fieldChange -> fieldChange.valid() && fieldChange.changedType()).
                 map(fieldChange -> VespaRefeedAction.of(id,
-                                                        "field-type-change",
+                                                        ValidationId.fieldTypeChange,
                                                         overrides,
                                                         new ChangeMessageBuilder(fieldChange.fieldName()).
                                                                                  addChange("data type", fieldChange.currentTypeName(),

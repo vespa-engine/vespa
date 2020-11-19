@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ModelContext;
@@ -401,7 +402,7 @@ public class HostedDeployTest {
         ManualClock clock = new ManualClock(Instant.EPOCH);
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
-                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), "indexing-mode-change", ValidationOverrides.empty,
+                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), ValidationId.indexModeChange, ValidationOverrides.empty,
                                                                           "reindex please", services, "music", clock.instant()),
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
@@ -422,7 +423,7 @@ public class HostedDeployTest {
         ManualClock clock = new ManualClock(Instant.EPOCH);
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
-                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), "indexing-mode-change", ValidationOverrides.all,
+                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), ValidationId.indexModeChange, ValidationOverrides.all,
                                                                           "reindex please", services, "music", clock.instant()),
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 

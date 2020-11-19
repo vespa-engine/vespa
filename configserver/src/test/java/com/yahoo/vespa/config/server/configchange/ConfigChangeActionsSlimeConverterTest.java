@@ -97,7 +97,7 @@ public class ConfigChangeActionsSlimeConverterTest {
                         "  ],\n" +
                         "  \"refeed\": [\n" +
                         "   {\n" +
-                        "    \"name\": \"change-id\",\n" +
+                        "    \"name\": \"field-type-change\",\n" +
                         "    \"allowed\": true,\n" +
                         "    \"documentType\": \"music\",\n" +
                         "    \"clusterName\": \"foo\",\n" +
@@ -114,7 +114,7 @@ public class ConfigChangeActionsSlimeConverterTest {
                         "    ]\n" +
                         "   },\n" +
                         "   {\n" +
-                        "    \"name\": \"other-change-id\",\n" +
+                        "    \"name\": \"indexing-change\",\n" +
                         "    \"allowed\": false,\n" +
                         "    \"documentType\": \"book\",\n" +
                         "    \"clusterName\": \"foo\",\n" +
@@ -151,7 +151,7 @@ public class ConfigChangeActionsSlimeConverterTest {
                             "  ],\n" +
                             "  \"reindex\": [\n" +
                             "   {\n" +
-                            "    \"name\": \"change-id\",\n" +
+                            "    \"name\": \"field-type-change\",\n" +
                             "    \"allowed\": true,\n" +
                             "    \"documentType\": \"music\",\n" +
                             "    \"clusterName\": \"foo\",\n" +

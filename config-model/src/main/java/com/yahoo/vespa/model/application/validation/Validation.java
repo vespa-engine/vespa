@@ -2,8 +2,11 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ConfigChangeRefeedAction;
+import com.yahoo.config.model.api.ConfigChangeReindexAction;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
@@ -100,8 +103,16 @@ public class Validation {
                 new NodeResourceChangeValidator()
         };
         return Arrays.stream(validators)
-                .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
-                .collect(toList());
+                     .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
+                     .collect(toList());
+    }
+
+    private static void throwIfDisallowedAction(ConfigChangeAction action, ValidationOverrides overrides, Instant now) {
+        if (action instanceof ConfigChangeRefeedAction)
+            overrides.invalid(((ConfigChangeRefeedAction) action).validationId(), action.getMessage(), now);
+
+        if (action instanceof ConfigChangeReindexAction)
+            overrides.invalid(((ConfigChangeReindexAction) action).validationId(), action.getMessage(), now);
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
