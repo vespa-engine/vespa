@@ -11,6 +11,7 @@ import java.nio.charset.Charset;
  * @author gjoranv
  */
 public class JsonResponse extends HttpResponse {
+
     private final byte[] data;
 
     public JsonResponse(int code, String data) {
@@ -27,4 +28,5 @@ public class JsonResponse extends HttpResponse {
     public void render(OutputStream outputStream) throws IOException {
         outputStream.write(data);
     }
+
 }

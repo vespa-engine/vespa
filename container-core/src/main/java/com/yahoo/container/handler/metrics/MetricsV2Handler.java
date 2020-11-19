@@ -74,4 +74,5 @@ public class MetricsV2Handler extends HttpHandlerBase {
     static String consumerQuery(String consumer) {
         return (consumer == null || consumer.isEmpty()) ? "" : "?consumer=" + consumer;
     }
+
 }

@@ -19,9 +19,12 @@ public class SystemInfoProvider extends AbstractComponent implements Provider<Sy
 
     private final SystemInfo instance;
 
-    @Inject public SystemInfoProvider(ConfigserverConfig config) {
+    @Inject
+    public SystemInfoProvider(ConfigserverConfig config) {
         this.instance = new SystemInfo(new Zone(Environment.valueOf(config.environment()), config.region()));
     }
 
-    @Override public SystemInfo get() { return instance; }
+    @Override
+    public SystemInfo get() { return instance; }
+
 }

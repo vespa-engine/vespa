@@ -35,12 +35,13 @@ import java.util.concurrent.Executors;
  *
 */
 public class HandlersConfigurerTestWrapper {
-    private ConfigSourceSet configSources =
+
+    private final ConfigSourceSet configSources =
             new ConfigSourceSet(this.getClass().getSimpleName() + ": " + new Random().nextLong());
-    private HandlersConfigurerDi configurer;
+    private final HandlersConfigurerDi configurer;
 
     // TODO: Remove once tests use ConfigSet rather than dir:
-    private final static String testFiles[] = {
+    private final static String[] testFiles = {
             "components.cfg",
             "handlers.cfg",
             "platform-bundles.cfg",
@@ -143,8 +144,11 @@ public class HandlersConfigurerTestWrapper {
     }
 
     private static class SimpleContainerThreadpool implements ContainerThreadPool {
+
         private final Executor executor = Executors.newCachedThreadPool();
+
         @Override public Executor executor() { return executor; }
+
     }
 
 }

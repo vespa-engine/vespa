@@ -53,10 +53,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      * stream to be used throughput the rendering. Subsequent calls must use the
      * same stream.
      *
-     * @param stream
-     *            the stream to render to in this and all subsequent calls.
-     * @throws IOException
-     *             passed on from the stream
+     * @param stream the stream to render to in this and all subsequent calls.
+     * @throws IOException passed on from the stream
      */
     public abstract void beginResponse(OutputStream stream) throws IOException;
 

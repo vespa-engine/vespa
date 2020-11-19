@@ -29,7 +29,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     private boolean failed = false;
     private final Object failLock = new Object();
 
-    public ContentChannelOutputStream(final ContentChannel endpoint) {
+    public ContentChannelOutputStream(ContentChannel endpoint) {
         this.endpoint = endpoint;
         buffer = new BufferChain(this);
     }
@@ -38,7 +38,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * Buffered write of a single byte.
      */
     @Override
-    public void write(final int b) throws IOException {
+    public void write(int b) throws IOException {
         try {
             buffer.append((byte) b);
         } catch (RuntimeException e) {
@@ -74,8 +74,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * It is in other words safe to recycle the array {@code b}.
      */
     @Override
-    public void write(final byte[] b, final int off, final int len)
-            throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         nonCopyingWrite(Arrays.copyOfRange(b, off, off + len));
     }
 
@@ -85,7 +84,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * It is in other words safe to recycle the array {@code b}.
      */
     @Override
-    public void write(final byte[] b) throws IOException {
+    public void write(byte[] b) throws IOException {
             nonCopyingWrite(Arrays.copyOf(b, b.length));
     }
 
@@ -94,8 +93,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * <i>transferring</i> ownership of that array to this stream. It is in
      * other words <i>not</i> safe to recycle the array {@code b}.
      */
-    public void nonCopyingWrite(final byte[] b, final int off, final int len)
-            throws IOException {
+    public void nonCopyingWrite(byte[] b, int off, int len) throws IOException {
         try {
             buffer.append(b, off, len);
         } catch (RuntimeException e) {
@@ -108,7 +106,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * <i>transferring</i> ownership of that array to this stream. It is in
      * other words <i>not</i> safe to recycle the array {@code b}.
      */
-    public void nonCopyingWrite(final byte[] b) throws IOException {
+    public void nonCopyingWrite(byte[] b) throws IOException {
         try {
             buffer.append(b);
         } catch (RuntimeException e) {
@@ -125,27 +123,23 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      * the ByteBuffer to this stream.
      */
     @Override
-    public void send(final ByteBuffer src) throws IOException {
-        // Don't do a buffer.flush() from here, this method is used by the
-        // buffer itself
+    public void send(ByteBuffer src) throws IOException {
+        // Don't do a buffer.flush() from here, this method is used by the buffer itself
         try {
-            byteBufferData += (long) src.remaining();
+            byteBufferData += src.remaining();
             endpoint.write(src, new LoggingCompletionHandler());
         } catch (RuntimeException e) {
             throw new IOException(Exceptions.toMessageString(e), e);
         }
     }
 
-    /**
-     * Give the number of bytes written.
-     *
-     * @return the number of bytes written to this stream
-     */
+    /** Returns the number of bytes written to this stream */
     public long written() {
         return buffer.appended() + byteBufferData;
     }
 
     class LoggingCompletionHandler implements CompletionHandler {
+
         @Override
         public void completed() {
         }
@@ -166,4 +160,5 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
             }
         }
     }
+
 }

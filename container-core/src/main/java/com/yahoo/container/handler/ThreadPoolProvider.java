@@ -58,7 +58,7 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
     public Executor get() { return threadpool.executor(); }
 
     /**
-     * Shutdown the thread pool, give a grace period of 1 second before forcibly
+     * Shut down the thread pool, give a grace period of 1 second before forcibly
      * shutting down all worker threads.
      */
     @Override

@@ -32,7 +32,7 @@ public class Container {
     private volatile FileAcquirer fileAcquirer;
     private volatile UrlDownloader urlDownloader;
 
-    private static Logger logger = Logger.getLogger(Container.class.getName());
+    private static final Logger logger = Logger.getLogger(Container.class.getName());
 
     // TODO: Make this final again.
     private static Container instance = new Container();
@@ -52,7 +52,7 @@ public class Container {
     }
 
     /**
-     * Hack. For internal use only, will be removed later
+     * Hack. For internal use only, will be removed later.
      *
      * Used by Application to be able to repeatedly set up containers.
      */
@@ -93,7 +93,7 @@ public class Container {
         this.componentRegistry = registry;
     }
 
-    //Only intended for use by the Server instance.
+    // Only intended for use by the Server instance.
     public void setupFileAcquirer(QrConfig.Filedistributor filedistributorConfig) {
         if (usingCustomFileAcquirer)
             return;
@@ -109,9 +109,7 @@ public class Container {
         setPathAcquirer(fileAcquirer);
     }
 
-    /**
-     * Only for internal use.
-     */
+    /** Only for internal use. */
     public void setCustomFileAcquirer(FileAcquirer fileAcquirer) {
         if (this.fileAcquirer != null) {
             throw new RuntimeException("Can't change file acquirer. Is " +

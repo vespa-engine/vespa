@@ -34,4 +34,5 @@ public class SecretStoreProvider implements Provider<SecretStore> {
             throw new SecretNotFoundException("A secret store is not available");
         }
     }
+
 }

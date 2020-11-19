@@ -14,6 +14,7 @@ import java.util.List;
  * @author mortent
  */
 public class AthenzIdentityProviderProvider implements Provider<AthenzIdentityProvider> {
+
     private static final ThrowingAthenzIdentityProvider instance = new ThrowingAthenzIdentityProvider();
 
     @Override
@@ -84,4 +85,5 @@ public class AthenzIdentityProviderProvider implements Provider<AthenzIdentityPr
             throw new UnsupportedOperationException(message);
         }
     }
+
 }

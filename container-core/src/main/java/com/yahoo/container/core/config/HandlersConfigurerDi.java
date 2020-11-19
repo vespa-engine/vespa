@@ -37,7 +37,6 @@ import java.util.logging.Logger;
 
 import static com.yahoo.collections.CollectionUtil.first;
 
-
 /**
  * For internal use only.
  *

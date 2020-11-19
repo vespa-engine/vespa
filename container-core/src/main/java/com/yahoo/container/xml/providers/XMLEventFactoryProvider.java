@@ -9,7 +9,7 @@ import javax.xml.stream.XMLEventFactory;
  * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class XMLEventFactoryProvider implements Provider<XMLEventFactory> {
 
     public static final String FACTORY_CLASS = "com.sun.xml.internal.stream.events.XMLEventFactoryImpl";

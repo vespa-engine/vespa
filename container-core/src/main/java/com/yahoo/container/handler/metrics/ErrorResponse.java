@@ -13,9 +13,10 @@ import static java.util.logging.Level.WARNING;
  * @author gjoranv
  */
 public class ErrorResponse extends JsonResponse {
-    private static Logger log = Logger.getLogger(ErrorResponse.class.getName());
 
-    private static ObjectMapper objectMapper = new ObjectMapper();
+    private static final Logger log = Logger.getLogger(ErrorResponse.class.getName());
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public ErrorResponse(int code, String message) {
         super(code, asErrorJson(message != null ? message : "<null>"));
@@ -29,4 +30,5 @@ public class ErrorResponse extends JsonResponse {
             return "Could not encode error message to json, check the log for details.";
         }
     }
+
 }

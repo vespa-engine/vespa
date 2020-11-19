@@ -21,9 +21,11 @@ import java.util.stream.Collectors;
  * @author Tony Vaagenes
  */
 public class ApplicationBundleLoader {
+
     private static final Logger log = Logger.getLogger(ApplicationBundleLoader.class.getName());
 
-    /* Map of file refs of active bundles (not scheduled for uninstall) to the installed bundle.
+    /**
+     * Map of file refs of active bundles (not scheduled for uninstall) to the installed bundle.
      *
      * Used to:
      * 1. Avoid installing already installed bundles. Just an optimization, installing the same bundle location is a NOP

@@ -20,6 +20,7 @@ import java.util.logging.Logger;
  * @author gjoranv
  */
 public class PlatformBundleLoader {
+
     private static final Logger log = Logger.getLogger(PlatformBundleLoader.class.getName());
 
     private final Osgi osgi;

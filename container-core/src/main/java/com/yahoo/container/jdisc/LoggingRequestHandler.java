@@ -37,24 +37,30 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
     }
 
     public static class Context {
+
         final Executor executor;
         final AccessLog accessLog;
         final Metric metric;
+
         @Inject
         public Context(Executor executor, AccessLog accessLog, Metric metric) {
             this.executor = executor;
             this.accessLog = accessLog;
             this.metric = metric;
         }
+
         public Context(Context other) {
             this.executor = other.executor;
             this.accessLog = other.accessLog;
             this.metric = other.metric;
         }
+
         public Executor getExecutor() { return executor; }
         public AccessLog getAccessLog() { return accessLog; }
         public Metric getMetric() { return metric; }
+
     }
+
     public static Context testOnlyContext() {
         return new Context(new Executor() {
                 @Override
@@ -254,15 +260,14 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
             } else {
                 // Not running on JDisc http layer (Jetty), e.g unit tests
                 AccessLogEntry accessLogEntry = new AccessLogEntry();
-                populateAccessLogEntryNotCreatedByHttpServer(
-                        accessLogEntry,
-                        jdiscRequest,
-                        extendedResponse.getTiming(),
-                        httpRequest.getUri().toString(),
-                        commitStartTime,
-                        startTime,
-                        rendererWiring.written(),
-                        httpResponse.getStatus());
+                populateAccessLogEntryNotCreatedByHttpServer(accessLogEntry,
+                                                             jdiscRequest,
+                                                             extendedResponse.getTiming(),
+                                                             httpRequest.getUri().toString(),
+                                                             commitStartTime,
+                                                             startTime,
+                                                             rendererWiring.written(),
+                                                             httpResponse.getStatus());
                 accessLog.log(accessLogEntry);
                 entry = accessLogEntry;
             }

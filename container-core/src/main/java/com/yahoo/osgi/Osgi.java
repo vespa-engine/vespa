@@ -27,4 +27,5 @@ public interface Osgi {
     default boolean hasFelixFramework() {
        return false;
     }
+
 }

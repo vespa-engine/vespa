@@ -57,7 +57,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
     private void autoscale(ApplicationId application, List<Node> applicationNodes) {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-            if ( ! deployment.isValid()) return; // Another config server will consider this application
+            if ( ! deployment.isValid()) return;
             nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, clusterNodes, deployment));
         }
     }

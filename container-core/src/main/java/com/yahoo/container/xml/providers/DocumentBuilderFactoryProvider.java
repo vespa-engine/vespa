@@ -9,7 +9,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class DocumentBuilderFactoryProvider implements Provider<DocumentBuilderFactory> {
 
     public static final String FACTORY_CLASS = "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl";

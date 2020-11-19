@@ -46,16 +46,11 @@ public abstract class Renderer<RESPONSE extends Response> extends AbstractCompon
      * exception causing failure wrapped in an ExecutionException if rendering
      * was not successful.
      *
-     * @param stream
-     *            a stream API bridge to JDisc
-     * @param response
-     *            the response to render
-     * @param execution
-     *            the execution which created this response
-     * @param request
-     *            the request matching the response
-     * @return a ListenableFuture containing a boolean where true indicates a
-     *         successful rendering
+     * @param stream a stream API bridge to JDisc
+     * @param response the response to render
+     * @param execution the execution which created this response
+     * @param request the request matching the response
+     * @return a ListenableFuture containing a boolean where true indicates a successful rendering
      */
     public abstract ListenableFuture<Boolean> render(OutputStream stream, RESPONSE response,
                                                      Execution execution, Request request);
@@ -63,17 +58,14 @@ public abstract class Renderer<RESPONSE extends Response> extends AbstractCompon
     /**
      * Name of the output encoding, if applicable.
      *
-     *<p>TODO: ensure null is OK
-     *
-     * @return The encoding of the output if applicable, e.g. "utf-8"
+     * @return the encoding of the output if applicable, e.g. "utf-8"
      */
     public abstract String getEncoding();
 
     /**
      * The MIME type of the rendered content sent to the client.
      *
-     * @return The mime type of the data written to the writer, e.g.
-     *         "text/plain"
+     * @return The mime type of the data written to the writer, e.g. "text/plain"
      */
     public abstract String getMimeType();
 

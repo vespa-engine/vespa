@@ -10,7 +10,7 @@ import javax.xml.xpath.XPathFactoryConfigurationException;
  * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
-@Deprecated
+@Deprecated // TODO: Remove on Vespa 8
 public class XPathFactoryProvider implements Provider<XPathFactory> {
 
     public static final String FACTORY_CLASS = "com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl";

@@ -70,8 +70,7 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
                 stream.write(data);
             }
             else {
-                throw new IllegalStateException(
-                        "Neither file nor hardcoded data. This is a bug, please notify the Vespa team.");
+                throw new IllegalStateException("Neither file nor hardcoded data. This is a bug.");
             }
             stream.close();
         }
@@ -158,7 +157,6 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
      * out of capacity. This is the default behavior.
      */
     @Inject
-    @SuppressWarnings("unused") // injected
     public VipStatusHandler(VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
         // One thread should be enough for status handling - otherwise something else is completely wrong,
         // in which case this will eventually start returning a 503 (due to work rejection) as the bounded

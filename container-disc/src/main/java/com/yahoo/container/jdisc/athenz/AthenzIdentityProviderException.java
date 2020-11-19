@@ -13,4 +13,5 @@ public class AthenzIdentityProviderException extends RuntimeException {
     public AthenzIdentityProviderException(String message, Throwable cause) {
         super(message, cause);
     }
+
 }

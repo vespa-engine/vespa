@@ -18,7 +18,8 @@ import java.util.logging.Logger;
  * @author gjoranv
  */
 public class FileAcquirerBundleInstaller {
-    private static Logger log = Logger.getLogger(FileAcquirerBundleInstaller.class.getName());
+
+    private static final Logger log = Logger.getLogger(FileAcquirerBundleInstaller.class.getName());
 
     private final FileAcquirer fileAcquirer;
 
@@ -39,8 +40,8 @@ public class FileAcquirerBundleInstaller {
                 retries++;
             }
             if (notReadable(file)) {
-                com.yahoo.protect.Process.logAndDie("Shutting down - unable to read bundle file with reference '" + reference
-                                                            + "' and path " + file.getAbsolutePath());
+                com.yahoo.protect.Process.logAndDie("Shutting down - unable to read bundle file with reference '" +
+                                                    reference + "' and path " + file.getAbsolutePath());
             }
         }
 

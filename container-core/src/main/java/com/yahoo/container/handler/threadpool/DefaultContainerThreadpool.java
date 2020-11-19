@@ -50,7 +50,9 @@ public class DefaultContainerThreadpool extends AbstractComponent implements Aut
     }
 
     @Override public Executor executor() { return threadpool; }
+
     @Override public void close() { closeInternal(); }
+
     @Override public void deconstruct() { closeInternal(); super.deconstruct(); }
 
     /**

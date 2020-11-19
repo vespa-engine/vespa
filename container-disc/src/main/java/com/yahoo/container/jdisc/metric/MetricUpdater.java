@@ -20,7 +20,6 @@ import java.util.TimerTask;
  *
  * @author bjorncs
  * @author vegardh
- *
  */
 public class MetricUpdater extends AbstractComponent {
 
@@ -139,5 +138,6 @@ public class MetricUpdater extends AbstractComponent {
         void schedule(Runnable runnable, Duration frequency);
         void cancel();
     }
+
 }
 

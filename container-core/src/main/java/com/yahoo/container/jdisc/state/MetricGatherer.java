@@ -7,8 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Gathers metrics regarding currently processing coredumps and host life.
+ *
  * @author olaa
- * Gathers metrics regarding currently processing coredumps and host life
  */
 public class MetricGatherer {
 
@@ -17,7 +18,8 @@ public class MetricGatherer {
         List<JSONObject> packetList = new ArrayList<>();
         packetList.add(CoredumpGatherer.gatherCoredumpMetrics(fileWrapper));
         if (System.getProperty("os.name").contains("nux"))
-                packetList.add(HostLifeGatherer.getHostLifePacket(fileWrapper));
+            packetList.add(HostLifeGatherer.getHostLifePacket(fileWrapper));
         return packetList;
     }
+
 }

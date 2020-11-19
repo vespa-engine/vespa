@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
  * Create an instance of this to test making processing requests and get the response or response data.
  *
  * @author bratseth
- * @since 5.21
  */
 @Beta
 public class ProcessingTestDriver extends RequestHandlerTestDriver {
@@ -31,20 +30,20 @@ public class ProcessingTestDriver extends RequestHandlerTestDriver {
     private final ProcessingHandler processingHandler;
 
     public ProcessingTestDriver(Collection<Chain<Processor>> chains) {
-        this(chains, new ComponentRegistry<Renderer>());
+        this(chains, new ComponentRegistry<>());
     }
     public ProcessingTestDriver(String binding, Collection<Chain<Processor>> chains) {
-        this(chains, new ComponentRegistry<Renderer>());
+        this(chains, new ComponentRegistry<>());
     }
     @SafeVarargs
     @SuppressWarnings("varargs")
     public ProcessingTestDriver(Chain<Processor> ... chains) {
-        this(Arrays.asList(chains), new ComponentRegistry<Renderer>());
+        this(Arrays.asList(chains), new ComponentRegistry<>());
     }
     @SafeVarargs
     @SuppressWarnings("varargs")
     public ProcessingTestDriver(String binding, Chain<Processor> ... chains) {
-        this(binding, Arrays.asList(chains), new ComponentRegistry<Renderer>());
+        this(binding, Arrays.asList(chains), new ComponentRegistry<>());
     }
     public ProcessingTestDriver(Collection<Chain<Processor>> chains, ComponentRegistry<Renderer> renderers) {
         this(createProcessingHandler(chains, renderers, AccessLog.voidAccessLog()));
@@ -64,7 +63,7 @@ public class ProcessingTestDriver extends RequestHandlerTestDriver {
     public ProcessingTestDriver(Chain<Processor> chain, AccessLogInterface accessLogInterface) {
         this(createProcessingHandler(
                 Collections.singleton(chain),
-                new ComponentRegistry<Renderer>(),
+                new ComponentRegistry<>(),
                 createAccessLog(accessLogInterface)));
     }
 
@@ -76,10 +75,9 @@ public class ProcessingTestDriver extends RequestHandlerTestDriver {
         return new AccessLog(componentRegistry);
     }
 
-    private static ProcessingHandler createProcessingHandler(
-            Collection<Chain<Processor>> chains,
-            ComponentRegistry<Renderer> renderers,
-            AccessLog accessLog) {
+    private static ProcessingHandler createProcessingHandler(Collection<Chain<Processor>> chains,
+                                                             ComponentRegistry<Renderer> renderers,
+                                                             AccessLog accessLog) {
         Executor executor = Executors.newSingleThreadExecutor();
 
         ChainRegistry<Processor> registry = new ChainRegistry<>();
