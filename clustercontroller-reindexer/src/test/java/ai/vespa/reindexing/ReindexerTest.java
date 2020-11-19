@@ -148,7 +148,7 @@ class ReindexerTest {
         assertTrue(shutDown.get(), "Session was shut down");
         assertEquals(Map.of("reindexing.progress", Map.of(Map.of("documenttype", "music",
                                                                  "clusterid", "cluster",
-                                                                 "state", "ready"),
+                                                                 "state", "pending"),
                                                           1.0)), // new ProgressToken() is 100% done.
                      metric.metrics());
 

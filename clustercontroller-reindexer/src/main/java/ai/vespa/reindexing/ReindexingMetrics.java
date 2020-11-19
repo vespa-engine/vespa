@@ -37,7 +37,7 @@ class ReindexingMetrics {
 
     private static String toString(Reindexing.State state) {
         switch (state) {
-            case READY: return "ready";
+            case READY: return "pending";
             case RUNNING: return "running";
             case FAILED: return "failed";
             case SUCCESSFUL: return "successful";
