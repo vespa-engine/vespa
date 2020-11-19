@@ -9,11 +9,10 @@ namespace proton {
 
 RemoveDoneContext::RemoveDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
                                      IDocumentMetaStore &documentMetaStore,
-                                     PendingNotifyRemoveDone &&pendingNotifyRemoveDone, uint32_t lid)
+                                     uint32_t lid)
     : OperationDoneContext(std::move(token)),
       _executor(executor),
       _task(),
-      _pendingNotifyRemoveDone(std::move(pendingNotifyRemoveDone)),
       _uncommitted(std::move(uncommitted))
 {
     if (lid != 0) {
@@ -23,7 +22,6 @@ RemoveDoneContext::RemoveDoneContext(FeedToken token, IPendingLidTracker::Token 
 
 RemoveDoneContext::~RemoveDoneContext()
 {
-    _pendingNotifyRemoveDone.invoke();
     ack();
     if (_task) {
         vespalib::Executor::Task::UP res = _executor.execute(std::move(_task));
