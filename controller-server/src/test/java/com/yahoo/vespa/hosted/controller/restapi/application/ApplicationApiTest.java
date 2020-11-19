@@ -584,14 +584,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST a 'reindex application' command with cluster filter
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindex", POST)
-                                      .properties(Map.of("cluster", "boo,moo"))
+                                      .properties(Map.of("clusterId", "boo,moo"))
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Requested reindexing of tenant1.application1.instance1 in prod.us-central-1, on clusters boo, moo\"}");
 
         // POST a 'reindex application' command with cluster and document type filters
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindex", POST)
-                                      .properties(Map.of("cluster", "boo,moo",
-                                                         "type", "foo,boo"))
+                                      .properties(Map.of("clusterId", "boo,moo",
+                                                         "documentType", "foo,boo"))
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Requested reindexing of tenant1.application1.instance1 in prod.us-central-1, on clusters boo, moo, for types foo, boo\"}");
 
