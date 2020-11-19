@@ -48,7 +48,7 @@ TEST("require that AVG aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 20.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 150.0);
-    EXPECT_TRUE(aggr.enum_type() == Aggr::AVG);
+    EXPECT_TRUE(aggr.enum_value() == Aggr::AVG);
 }
 
 TEST("require that COUNT aggregator works as expected") {
@@ -60,7 +60,7 @@ TEST("require that COUNT aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 3.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 1.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 2.0);
-    EXPECT_TRUE(aggr.enum_type() == Aggr::COUNT);
+    EXPECT_TRUE(aggr.enum_value() == Aggr::COUNT);
 }
 
 TEST("require that PROD aggregator works as expected") {
@@ -72,7 +72,7 @@ TEST("require that PROD aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 6000.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 20000.0);
-    EXPECT_TRUE(aggr.enum_type() == Aggr::PROD);
+    EXPECT_TRUE(aggr.enum_value() == Aggr::PROD);
 }
 
 TEST("require that Prod combine works as expected") {
@@ -90,7 +90,7 @@ TEST("require that SUM aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 60.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 300.0);
-    EXPECT_TRUE(aggr.enum_type() == Aggr::SUM);
+    EXPECT_TRUE(aggr.enum_value() == Aggr::SUM);
 }
 
 TEST("require that Sum combine works as expected") {
@@ -108,7 +108,7 @@ TEST("require that MAX aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 30.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 200.0);
-    EXPECT_TRUE(aggr.enum_type() == Aggr::MAX);
+    EXPECT_TRUE(aggr.enum_value() == Aggr::MAX);
 }
 
 TEST("require that Max combine works as expected") {
@@ -128,7 +128,7 @@ TEST("require that MEDIAN aggregator works as expected") {
     aggr.next(16.0),   EXPECT_EQUAL(aggr.result(), 16.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 150.0);
-    EXPECT_TRUE(aggr.enum_type() == Aggr::MEDIAN);
+    EXPECT_TRUE(aggr.enum_value() == Aggr::MEDIAN);
 }
 
 TEST("require that MEDIAN aggregator handles NaN values") {
@@ -152,7 +152,7 @@ TEST("require that MIN aggregator works as expected") {
     aggr.next(30.0),   EXPECT_EQUAL(aggr.result(), 10.0);
     aggr.first(100.0), EXPECT_EQUAL(aggr.result(), 100.0);
     aggr.next(200.0),  EXPECT_EQUAL(aggr.result(), 100.0);
-    EXPECT_TRUE(aggr.enum_type() == Aggr::MIN);
+    EXPECT_TRUE(aggr.enum_value() == Aggr::MIN);
 }
 
 TEST("require that Min combine works as expected") {

@@ -87,7 +87,7 @@ auto reduce_cells_atleast_8(const CT *src, size_t n, size_t stride) {
 
 template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
 void trace_reduce_impl(const Params &params, const CT *src, CT *dst) {
-    constexpr bool aggr_is_complex = is_complex(AGGR::enum_type());
+    constexpr bool aggr_is_complex = is_complex(AGGR::enum_value());
     const size_t block_size = (params.dim_size * params.inner_size);
     for (size_t outer = 0; outer < params.outer_size; ++outer) {
         for (size_t inner = 0; inner < params.inner_size; ++inner) {
@@ -125,7 +125,7 @@ void fold_reduce_impl(const Params &params, const CT *src, CT *dst) {
 template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
 void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     static_assert(std::is_same_v<CT,typename AGGR::value_type>);
-    constexpr bool aggr_is_simple = is_simple(AGGR::enum_type());
+    constexpr bool aggr_is_simple = is_simple(AGGR::enum_value());
     const auto &params = unwrap_param<Params>(param);
     const CT *src = state.peek(0).cells().typify<CT>().cbegin();
     auto dst_cells = state.stash.create_uninitialized_array<CT>(params.outer_size * params.inner_size);

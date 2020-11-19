@@ -53,7 +53,7 @@ struct Aggregator {
     virtual void first(double value) = 0;
     virtual void next(double value) = 0;
     virtual double result() const = 0;
-    virtual Aggr enum_type() const = 0;
+    virtual Aggr enum_value() const = 0;
     virtual ~Aggregator();
     static Aggregator &create(Aggr aggr, Stash &stash);
     static std::vector<Aggr> list();
@@ -93,7 +93,7 @@ public:
         _cnt += rhs._cnt;
     };
     constexpr T result() const { return (_sum / _cnt); }
-    static constexpr Aggr enum_type() { return Aggr::AVG; }
+    static constexpr Aggr enum_value() { return Aggr::AVG; }
 };
 
 template <typename T> class Count {
@@ -106,7 +106,7 @@ public:
     constexpr void sample(T) { ++_cnt; }
     constexpr void merge(const Count &rhs) { _cnt += rhs._cnt; }
     constexpr T result() const { return _cnt; }
-    static constexpr Aggr enum_type() { return Aggr::COUNT; }
+    static constexpr Aggr enum_value() { return Aggr::COUNT; }
 };
 
 template <typename T> class Prod {
@@ -119,8 +119,8 @@ public:
     constexpr void sample(T value) { _prod *= value; }
     constexpr void merge(const Prod &rhs) { _prod *= rhs._prod; }
     constexpr T result() const { return _prod; }
-    static constexpr Aggr enum_type() { return Aggr::PROD; }
-    static T combine(T a, T b) { return (a * b); }
+    static constexpr Aggr enum_value() { return Aggr::PROD; }
+    static constexpr T combine(T a, T b) { return (a * b); }
 };
 
 template <typename T> class Sum {
@@ -133,8 +133,8 @@ public:
     constexpr void sample(T value) { _sum += value; }
     constexpr void merge(const Sum &rhs) { _sum += rhs._sum; }
     constexpr T result() const { return _sum; }
-    static constexpr Aggr enum_type() { return Aggr::SUM; }
-    static T combine(T a, T b) { return (a += b); }
+    static constexpr Aggr enum_value() { return Aggr::SUM; }
+    static constexpr T combine(T a, T b) { return (a + b); }
 };
 
 template <typename T> class Max {
@@ -147,8 +147,8 @@ public:
     constexpr void sample(T value) { _max = std::max(_max, value); }
     constexpr void merge(const Max &rhs) { _max = std::max(_max, rhs._max); }
     constexpr T result() const { return _max; }
-    static constexpr Aggr enum_type() { return Aggr::MAX; }
-    static T combine(T a, T b) { return std::max(a,b); }
+    static constexpr Aggr enum_value() { return Aggr::MAX; }
+    static constexpr T combine(T a, T b) { return std::max(a,b); }
 };
 
 template <typename T> class Median {
@@ -186,7 +186,7 @@ public:
         }
         return result;
     }
-    static constexpr Aggr enum_type() { return Aggr::MEDIAN; }
+    static constexpr Aggr enum_value() { return Aggr::MEDIAN; }
 };
 
 template <typename T> class Min {
@@ -199,11 +199,11 @@ public:
     constexpr void sample(T value) { _min = std::min(_min, value); }
     constexpr void merge(const Min &rhs) { _min = std::min(_min, rhs._min); }
     constexpr T result() const { return _min; }
-    static constexpr Aggr enum_type() { return Aggr::MIN; }
-    static T combine(T a, T b) { return std::min(a,b); }
+    static constexpr Aggr enum_value() { return Aggr::MIN; }
+    static constexpr T combine(T a, T b) { return std::min(a,b); }
 };
 
-} // namespave vespalib::eval::aggr
+} // namespace vespalib::eval::aggr
 
 struct TypifyAggr {
     template <template<typename> typename TT> using Result = TypifyResultSimpleTemplate<TT>;
