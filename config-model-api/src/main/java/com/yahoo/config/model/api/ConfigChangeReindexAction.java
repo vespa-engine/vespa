@@ -8,12 +8,9 @@ import com.yahoo.config.application.api.ValidationId;
  *
  * @author bjorncs
  */
-public interface ConfigChangeReindexAction extends ConfigChangeAction {
+public interface ConfigChangeReindexAction extends DisallowableConfigChangeAction {
 
     @Override default Type getType() { return Type.REINDEX; }
-
-    /** Returns the validation ID used to allow deployment when this action is required. */
-    ValidationId validationId();
 
     /** @return name identifying this kind of change, used to identify names which should be allowed */
     default String name() { return validationId().value(); }

@@ -38,7 +38,10 @@ public interface ConfigChangeAction {
     /** Returns the list of services where the action must be performed */
     List<ServiceInfo> getServices();
 
-    /** Returns whether this change should be allowed */
+    /**
+     * Returns whether this change should be allowed.
+     * Implementations which allow this to return false should inherit {@link DisallowableConfigChangeAction}
+     */
     boolean allowed();
 
     /** The id of the cluster that needs this action applied */

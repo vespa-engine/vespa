@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.model.api.ConfigChangeReindexAction;
+import com.yahoo.config.model.api.DisallowableConfigChangeAction;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
@@ -35,6 +36,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -102,17 +105,17 @@ public class Validation {
                 new ContainerRestartValidator(),
                 new NodeResourceChangeValidator()
         };
-        return Arrays.stream(validators)
-                     .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
-                     .collect(toList());
-    }
-
-    private static void throwIfDisallowedAction(ConfigChangeAction action, ValidationOverrides overrides, Instant now) {
-        if (action instanceof ConfigChangeRefeedAction)
-            overrides.invalid(((ConfigChangeRefeedAction) action).validationId(), action.getMessage(), now);
-
-        if (action instanceof ConfigChangeReindexAction)
-            overrides.invalid(((ConfigChangeReindexAction) action).validationId(), action.getMessage(), now);
+        List<ConfigChangeAction> actions = Arrays.stream(validators)
+                                                 .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
+                                                 .collect(toList());
+        overrides.invalid(actions.stream()
+                                 .filter(DisallowableConfigChangeAction.class::isInstance)
+                                 .map(DisallowableConfigChangeAction.class::cast)
+                                 .filter(action -> ! action.allowed())
+                                 .collect(groupingBy(DisallowableConfigChangeAction::validationId,
+                                                     mapping(ConfigChangeAction::getMessage, toList()))),
+                          now);
+        return actions;
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {

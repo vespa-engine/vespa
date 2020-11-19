@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides.ValidationException;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeReindexAction;
 import com.yahoo.config.provision.Environment;
@@ -10,15 +12,37 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
  * @author bjorncs
  */
 public class IndexingModeChangeValidatorTest {
+
+    @Test
+    public void testChangingIndexModeFromIndexedToStreamingWhenDisallowed() {
+        ValidationTester tester = new ValidationTester();
+
+        VespaModel oldModel =
+                tester.deploy(null, getServices("index"), Environment.prod, "<validation-overrides />").getFirst();
+        try {
+            List<ConfigChangeAction> changeActions =
+                    tester.deploy(oldModel, getServices("streaming"), Environment.prod, "<calidation-overrides />").getSecond();
+            fail("Should throw on disallowed config change action");
+        }
+        catch (ValidationException e) {
+            assertEquals("indexing-mode-change:\n" +
+                         "\tDocument type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'\n" +
+                         "To allow this add <allow until='yyyy-mm-dd'>indexing-mode-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/documentation/reference/validation-overrides.html",
+                         e.getMessage());
+        }
+    }
 
     @Test
     public void testChangingIndexModeFromIndexedToStreaming() {
@@ -59,7 +83,7 @@ public class IndexingModeChangeValidatorTest {
         assertEquals(message, reindexingActions.get(0).getMessage());
     }
 
-    private static final String getServices(String indexingMode) {
+    private static String getServices(String indexingMode) {
         return "<services version='1.0'>" +
                "  <content id='default' version='1.0'>" +
                "    <redundancy>1</redundancy>" +

@@ -326,12 +326,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
 
-        if (deployment.configChangeActions().getRefeedActions().getEntries().stream().anyMatch(entry -> ! entry.allowed()))
-            logger.log(Level.WARNING, "Activation rejected because of disallowed re-feed actions");
-        else if (deployment.configChangeActions().getReindexActions().getEntries().stream().anyMatch(entry -> ! entry.allowed()))
-            logger.log(Level.WARNING, "Activation rejected because of disallowed re-index actions");
-        else
-            deployment.activate();
+        deployment.activate();
 
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
