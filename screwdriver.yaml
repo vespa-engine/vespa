@@ -1,0 +1,17 @@
+---
+version: 4
+
+jobs:
+  main:
+    requires: [~pr]
+    image: vespaengine/vespa-build-centos7:latest
+    annotations:
+      screwdriver.cd/cpu: TURBO
+      screwdriver.cd/ram: TURBO
+      screwdriver.cd/timeout: 60
+
+    steps:
+      - inspect: |
+          cat /proc/cpuinfo
+          cat /proc/meminfo
+          df -h
