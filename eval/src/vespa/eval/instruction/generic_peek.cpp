@@ -46,12 +46,12 @@ struct DimSpec {
         return std::get<size_t>(child_or_label);
     }
     vespalib::stringref get_label_name() const {
-        auto label = std::get<TensorSpec::Label>(child_or_label);
+        auto & label = std::get<TensorSpec::Label>(child_or_label);
         assert(label.is_mapped());
         return label.name;
     }
     size_t get_label_index() const {
-        auto label = std::get<TensorSpec::Label>(child_or_label);
+        auto & label = std::get<TensorSpec::Label>(child_or_label);
         assert(label.is_indexed());
         return label.index;
     }
