@@ -9,7 +9,6 @@ import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
@@ -22,7 +21,7 @@ import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlobrokClient;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
+import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
@@ -40,9 +39,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -149,6 +150,7 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
+        Objects.requireNonNull(status, "status server cannot be null");
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex);
         EventLog log = new EventLog(timer, metricUpdater);
@@ -169,9 +171,6 @@ public abstract class FleetControllerTest implements Waiter {
                 options.nodeStateRequestRoundTripTimeMaxSeconds);
         SlobrokClient lookUp = new SlobrokClient(timer);
         lookUp.setSlobrokConnectionSpecs(new String[0]);
-        if (status == null) {
-            status = new StatusPageServer(timer, timer, options.httpPort);
-        }
         RpcServer rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
         DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
         StateChangeHandler stateGenerator = new StateChangeHandler(timer, log, metricUpdater);
@@ -189,7 +188,7 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
-        setUpFleetController(useFakeTimer, options, startThread, null);
+        setUpFleetController(useFakeTimer, options, startThread, new StatusHandler.ContainerStatusPageServer());
     }
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
         if (slobrok == null) setUpSystem(useFakeTimer, options);
@@ -209,7 +208,7 @@ public abstract class FleetControllerTest implements Waiter {
 
     void startFleetController() throws Exception {
         if (fleetController == null) {
-            fleetController = createFleetController(usingFakeTimer, options, true, null);
+            fleetController = createFleetController(usingFakeTimer, options, true, new StatusHandler.ContainerStatusPageServer());
         } else {
             log.log(Level.WARNING, "already started fleetcontroller, not starting another");
         }

@@ -1,16 +1,20 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizone Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 
-import java.time.Duration;
-import java.util.*;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.Duration;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * This class represents all the options that can be set in the fleetcontroller.
@@ -30,7 +34,7 @@ public class FleetControllerOptions implements Cloneable {
     public int stateGatherCount = 2;
 
     // TODO: This cannot be null but nonnull is not verified
-    public String slobrokConnectionSpecs[];
+    public String[] slobrokConnectionSpecs;
     public int rpcPort = 0;
     public int httpPort = 0;
     public int distributionBits = 16;
@@ -189,7 +193,7 @@ public class FleetControllerOptions implements Cloneable {
 
     static DecimalFormat DecimalDot2 = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.ENGLISH));
 
-    public void writeHtmlState(StringBuilder sb, StatusPageServer.HttpRequest request) {
+    public void writeHtmlState(StringBuilder sb) {
         String slobrokspecs = "";
         for (int i=0; i<slobrokConnectionSpecs.length; ++i) {
             if (i != 0) slobrokspecs += "<br>";

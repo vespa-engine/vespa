@@ -12,6 +12,7 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -60,7 +61,7 @@ public class MasterElectionTest extends FleetControllerTest {
         for (int i=0; i<count; ++i) {
             FleetControllerOptions nodeOptions = options.clone();
             nodeOptions.fleetControllerIndex = i;
-            fleetControllers.add(createFleetController(usingFakeTimer, nodeOptions, true, null));
+            fleetControllers.add(createFleetController(usingFakeTimer, nodeOptions, true, new StatusHandler.ContainerStatusPageServer()));
         }
     }
 
@@ -143,14 +144,15 @@ public class MasterElectionTest extends FleetControllerTest {
             assertFalse("Fleet controller " + i, fleetControllers.get(i).isMaster());
         }
 
+        StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
         log.log(Level.INFO, "STARTING FLEET CONTROLLER 2");
-        fleetControllers.set(2, createFleetController(usingFakeTimer, fleetControllers.get(2).getOptions(), true, null));
+        fleetControllers.set(2, createFleetController(usingFakeTimer, fleetControllers.get(2).getOptions(), true, statusPageServer));
         waitForMaster(2);
         log.log(Level.INFO, "STARTING FLEET CONTROLLER 0");
-        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, null));
+        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, statusPageServer));
         waitForMaster(0);
         log.log(Level.INFO, "STARTING FLEET CONTROLLER 1");
-        fleetControllers.set(1, createFleetController(usingFakeTimer, fleetControllers.get(1).getOptions(), true, null));
+        fleetControllers.set(1, createFleetController(usingFakeTimer, fleetControllers.get(1).getOptions(), true, statusPageServer));
         waitForMaster(0);
 
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 4");
@@ -538,7 +540,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
         waitForCompleteCycle(1);
 
-        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, null));
+        fleetControllers.set(0, createFleetController(usingFakeTimer, fleetControllers.get(0).getOptions(), true, new StatusHandler.ContainerStatusPageServer()));
         waitForMaster(0);
         waitForCompleteCycle(0);
 
