@@ -23,6 +23,7 @@ public class TensorDataType extends DataType {
         this.tensorType = tensorType;
     }
 
+    @Override
     public TensorDataType clone() {
         return (TensorDataType)super.clone();
     }
