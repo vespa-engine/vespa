@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -71,6 +72,9 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
 
     /** Returns the items in this as an immutable list. */
     public final List<Type> asList() { return items; }
+
+    /** Returns the items in this as a set. */
+    public final Set<Type> asSet() { return new HashSet<>(items); }
 
     /** Returns the items in this as an immutable list after mapping with the given function. */
     public final <OtherType> List<OtherType> mapToList(Function<Type, OtherType> mapper) {

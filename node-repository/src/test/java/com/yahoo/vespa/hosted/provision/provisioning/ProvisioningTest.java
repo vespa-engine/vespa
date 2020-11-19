@@ -103,9 +103,13 @@ public class ProvisioningTest {
         assertEquals(5, tester.getNodes(application1, Node.State.inactive).size());
 
         // delete app
+        NodeList previouslyActive = tester.getNodes(application1, Node.State.active);
+        NodeList previouslyInactive = tester.getNodes(application1, Node.State.inactive);
         tester.remove(application1);
-        assertEquals(tester.toHostNames(state1.allHosts), tester.toHostNames(tester.nodeRepository().getNodes(application1, Node.State.inactive)));
+        assertEquals(tester.toHostNames(previouslyActive.asList()), tester.toHostNames(tester.nodeRepository().getNodes(application1, Node.State.inactive)));
+        assertEquals(tester.toHostNames(previouslyInactive.asList()), tester.toHostNames(tester.nodeRepository().getNodes(Node.State.dirty)));
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
+        assertTrue(tester.nodeRepository().applications().get(application1).isEmpty());
 
         // other application is unaffected
         assertEquals(state1App2.hostNames(), tester.toHostNames(tester.nodeRepository().getNodes(application2, Node.State.active)));
@@ -121,6 +125,7 @@ public class ProvisioningTest {
         tester.activate(application2, state2App2.allHosts);
 
         // deploy first app again
+        tester.nodeRepository().setReady(tester.nodeRepository().getNodes(Node.State.dirty), Agent.system, "recycled");
         SystemState state7 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         state7.assertEquals(state1);
         tester.activate(application1, state7.allHosts);
