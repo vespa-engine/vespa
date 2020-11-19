@@ -53,6 +53,7 @@ struct Aggregator {
     virtual void first(double value) = 0;
     virtual void next(double value) = 0;
     virtual double result() const = 0;
+    virtual Aggr enum_value() const = 0;
     virtual ~Aggregator();
     static Aggregator &create(Aggr aggr, Stash &stash);
     static std::vector<Aggr> list();
@@ -60,11 +61,27 @@ struct Aggregator {
 
 namespace aggr {
 
+// can we start by picking any value from the set to be reduced and
+// use the templated aggregator 'combine' function in arbitrary order
+// to end up with (approximately) the correct result?
+constexpr bool is_simple(Aggr aggr) {
+    return ((aggr == Aggr::PROD) ||
+            (aggr == Aggr::SUM)  ||
+            (aggr == Aggr::MAX)  ||
+            (aggr == Aggr::MIN));
+}
+
+// should we avoid doing clever stuff with this aggregator?
+constexpr bool is_complex(Aggr aggr) {
+    return (aggr == Aggr::MEDIAN);
+}
+
 template <typename T> class Avg {
 private:
     T _sum;
     size_t _cnt;
 public:
+    using value_type = T;
     constexpr Avg() : _sum{0}, _cnt{0} {}
     constexpr Avg(T value) : _sum{value}, _cnt{1} {}
     constexpr void sample(T value) {
@@ -76,56 +93,69 @@ public:
         _cnt += rhs._cnt;
     };
     constexpr T result() const { return (_sum / _cnt); }
+    static constexpr Aggr enum_value() { return Aggr::AVG; }
 };
 
 template <typename T> class Count {
 private:
     size_t _cnt;
 public:
+    using value_type = T;
     constexpr Count() : _cnt{0} {}
     constexpr Count(T) : _cnt{1} {}
     constexpr void sample(T) { ++_cnt; }
     constexpr void merge(const Count &rhs) { _cnt += rhs._cnt; }
     constexpr T result() const { return _cnt; }
+    static constexpr Aggr enum_value() { return Aggr::COUNT; }
 };
 
 template <typename T> class Prod {
 private:
     T _prod;
 public:
+    using value_type = T;
     constexpr Prod() : _prod{1} {}
     constexpr Prod(T value) : _prod{value} {}
     constexpr void sample(T value) { _prod *= value; }
     constexpr void merge(const Prod &rhs) { _prod *= rhs._prod; }
     constexpr T result() const { return _prod; }
+    static constexpr Aggr enum_value() { return Aggr::PROD; }
+    static constexpr T combine(T a, T b) { return (a * b); }
 };
 
 template <typename T> class Sum {
 private:
     T _sum;
 public:
+    using value_type = T;
     constexpr Sum() : _sum{0} {}
     constexpr Sum(T value) : _sum{value} {}
     constexpr void sample(T value) { _sum += value; }
     constexpr void merge(const Sum &rhs) { _sum += rhs._sum; }
     constexpr T result() const { return _sum; }
+    static constexpr Aggr enum_value() { return Aggr::SUM; }
+    static constexpr T combine(T a, T b) { return (a + b); }
 };
 
 template <typename T> class Max {
 private:
     T _max;
 public:
+    using value_type = T;
     constexpr Max() : _max{-std::numeric_limits<T>::infinity()} {}
     constexpr Max(T value) : _max{value} {}
     constexpr void sample(T value) { _max = std::max(_max, value); }
     constexpr void merge(const Max &rhs) { _max = std::max(_max, rhs._max); }
     constexpr T result() const { return _max; }
+    static constexpr Aggr enum_value() { return Aggr::MAX; }
+    static constexpr T combine(T a, T b) { return std::max(a,b); }
 };
 
 template <typename T> class Median {
 private:
     std::vector<T> _seen;
 public:
+    using value_type = T;
     constexpr Median() : _seen() {}
     constexpr Median(T value) : _seen({value}) {}
     constexpr void sample(T value) { _seen.push_back(value); }
@@ -156,20 +186,24 @@ public:
         }
         return result;
     }
+    static constexpr Aggr enum_value() { return Aggr::MEDIAN; }
 };
 
 template <typename T> class Min {
 private:
     T _min;
 public:
+    using value_type = T;
     constexpr Min() : _min{std::numeric_limits<T>::infinity()} {}
     constexpr Min(T value) : _min{value} {}
     constexpr void sample(T value) { _min = std::min(_min, value); }
     constexpr void merge(const Min &rhs) { _min = std::min(_min, rhs._min); }
     constexpr T result() const { return _min; }
+    static constexpr Aggr enum_value() { return Aggr::MIN; }
+    static constexpr T combine(T a, T b) { return std::min(a,b); }
 };
 
-} // namespave vespalib::eval::aggr
+} // namespace vespalib::eval::aggr
 
 struct TypifyAggr {
     template <template<typename> typename TT> using Result = TypifyResultSimpleTemplate<TT>;
