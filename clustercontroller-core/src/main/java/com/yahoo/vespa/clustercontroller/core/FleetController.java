@@ -124,8 +124,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                            SystemStateBroadcaster systemStateBroadcaster,
                            MasterElectionHandler masterElectionHandler,
                            MetricUpdater metricUpdater,
-                           FleetControllerOptions options) throws Exception
-    {
+                           FleetControllerOptions options) {
         log.info("Starting up cluster controller " + options.fleetControllerIndex + " for cluster " + cluster.getName());
         this.timer = timer;
         this.monitor = timer;
@@ -452,7 +451,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     /** This is called when the options field has been set to a new set of options */
-    private void propagateOptions() throws java.io.IOException, ListenFailedException {
+    private void propagateOptions() {
         verifyInControllerThread();
 
         if (changesConfiguredNodeSet(options.nodes)) {
@@ -530,7 +529,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (Exception e) {
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
-            hiddenMessage = ExceptionUtils.getStackTraceAsString(e);;
+            hiddenMessage = ExceptionUtils.getStackTraceAsString(e);
             log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() +
                     ": " + hiddenMessage);
         }
