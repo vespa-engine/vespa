@@ -49,14 +49,11 @@ public class DefaultContainerThreadpool extends AbstractComponent implements Aut
                 config.name(), config.queueSize());
     }
 
-    @Override
-    public Executor executor() { return threadpool; }
+    @Override public Executor executor() { return threadpool; }
 
-    @Override
-    public void close() { closeInternal(); }
+    @Override public void close() { closeInternal(); }
 
-    @Override
-    public void deconstruct() { closeInternal(); super.deconstruct(); }
+    @Override public void deconstruct() { closeInternal(); super.deconstruct(); }
 
     /**
      * Shutdown the thread pool, give a grace period of 1 second before forcibly

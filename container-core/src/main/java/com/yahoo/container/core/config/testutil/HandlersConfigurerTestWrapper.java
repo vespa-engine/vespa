@@ -147,8 +147,7 @@ public class HandlersConfigurerTestWrapper {
 
         private final Executor executor = Executors.newCachedThreadPool();
 
-        @Override
-        public Executor executor() { return executor; }
+        @Override public Executor executor() { return executor; }
 
     }
 
