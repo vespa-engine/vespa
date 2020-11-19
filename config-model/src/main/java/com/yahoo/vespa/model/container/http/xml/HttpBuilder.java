@@ -40,11 +40,14 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         FilterChains filterChains;
         List<FilterBinding> bindings = new ArrayList<>();
         AccessControl accessControl = null;
+        Optional<Boolean> strictFiltering = Optional.empty();
 
         Element filteringElem = XML.getChild(spec, "filtering");
         if (filteringElem != null) {
             filterChains = new FilterChainsBuilder().build(deployState, ancestor, filteringElem);
             bindings = readFilterBindings(filteringElem);
+            strictFiltering = XmlHelper.getOptionalAttribute(filteringElem, "strict-mode")
+                    .map(Boolean::valueOf);
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
@@ -55,6 +58,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         }
 
         Http http = new Http(filterChains);
+        strictFiltering.ifPresent(http::setStrictFiltering);
         http.getBindings().addAll(bindings);
         ApplicationContainerCluster cluster = getContainerCluster(ancestor).orElse(null);
         http.setHttpServer(new JettyHttpServerBuilder(cluster).build(deployState, ancestor, spec));

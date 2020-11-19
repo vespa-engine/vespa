@@ -2,6 +2,12 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.NoopSharedResource;
+import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.handler.FastContentWriter;
+import com.yahoo.jdisc.handler.ResponseDispatch;
+import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
@@ -22,10 +28,12 @@ class FilterResolver {
 
     private final FilterBindings bindings;
     private final Metric metric;
+    private final boolean strictFiltering;
 
-    FilterResolver(FilterBindings bindings, Metric metric) {
+    FilterResolver(FilterBindings bindings, Metric metric, boolean strictFiltering) {
         this.bindings = bindings;
         this.metric = metric;
+        this.strictFiltering = strictFiltering;
     }
 
     Optional<RequestFilter> resolveRequestFilter(HttpServletRequest servletRequest, URI jdiscUri) {
@@ -33,8 +41,13 @@ class FilterResolver {
         if (maybeFilterId.isPresent()) {
             metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(servletRequest, maybeFilterId.get()));
             servletRequest.setAttribute(ServletRequest.JDISC_REQUEST_CHAIN, maybeFilterId.get());
-        } else {
+        } else if (!strictFiltering) {
             metric.add(MetricDefinitions.FILTERING_REQUEST_UNHANDLED, 1L, createMetricContext(servletRequest, null));
+        } else {
+            String syntheticFilterId = RejectingRequestFilter.SYNTHETIC_FILTER_CHAIN_ID;
+            metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(servletRequest, syntheticFilterId));
+            servletRequest.setAttribute(ServletRequest.JDISC_REQUEST_CHAIN, syntheticFilterId);
+            return Optional.of(RejectingRequestFilter.INSTANCE);
         }
         return maybeFilterId.map(bindings::getRequestFilter);
     }
@@ -56,4 +69,20 @@ class FilterResolver {
                 : Map.of();
         return JDiscHttpServlet.getConnector(request).createRequestMetricContext(request, extraDimensions);
     }
+
+    private static class RejectingRequestFilter extends NoopSharedResource implements RequestFilter {
+
+        private static final RejectingRequestFilter INSTANCE = new RejectingRequestFilter();
+        private static final String SYNTHETIC_FILTER_CHAIN_ID = "strict-reject";
+
+        @Override
+        public void filter(HttpRequest request, ResponseHandler handler) {
+            Response response = new Response(Response.Status.FORBIDDEN);
+            response.headers().add("Content-Type", "text/plain");
+            try (FastContentWriter writer = ResponseDispatch.newInstance(response).connectFastWriter(handler)) {
+                writer.write("Request did not match any request filter chain");
+            }
+        }
+    }
+
 }

@@ -33,6 +33,9 @@ defaultFilters[].filterId string
 # The local port which the default filter should be applied to
 defaultFilters[].localPort int
 
+# Reject all requests not handled by a request filter (chain)
+strictFiltering                       bool   default = false
+
 # Max number of threads in underlying Jetty pool
 maxWorkerThreads                      int    default = 200
 
