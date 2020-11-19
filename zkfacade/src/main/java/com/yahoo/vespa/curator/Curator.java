@@ -35,6 +35,7 @@ import java.util.function.Function;
  * @author bratseth
  */
 // TODO: Remove this on Vespa 8
+@Deprecated // Use com.yahoo.vespa.curator.impl.VespaCurator instead
 public class Curator implements AutoCloseable {
 
     protected final RetryPolicy retryPolicy = VespaCurator.RETRY_POLICY;

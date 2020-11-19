@@ -144,6 +144,7 @@
                 <configuration>
                     <compilerArgs>
                         <arg>-Xlint:all</arg>
+                        <arg>-Xlint:-deprecation</arg>
                         <arg>-Xlint:-try</arg>
                         <arg>-Xlint:-serial</arg>
                         <arg>-Werror</arg>
