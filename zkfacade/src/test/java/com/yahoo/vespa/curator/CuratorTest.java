@@ -8,7 +8,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -39,12 +38,8 @@ public class CuratorTest {
         spec2 = localhost + ":" + port2;
     }
 
-    private int allocatePort() {
-        return PortAllocator.findAvailablePort();
-    }
-
     @After
-    public void teardownServers() throws IOException {
+    public void teardownServers() throws Exception {
         test1.stop();
         test1.close();
         test2.close();
@@ -60,29 +55,20 @@ public class CuratorTest {
     }
 
     @Test
-    public void require_that_server_count_is_correct() {
+    public void localhost_affinity() {
+        String localhostHostName = "myhost";
+        int localhostPort = 123;
+
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-        builder.zookeeperserver(createZKBuilder(localhost, port1));
-        try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
-            assertEquals(1, curator.zooKeeperEnsembleCount());
-        }
-    }
+        builder.zookeeperserver(createZKBuilder(localhostHostName, localhostPort));
+        builder.zookeeperserver(createZKBuilder("otherhost", 345));
+        ConfigserverConfig config = new ConfigserverConfig(builder);
 
-    @Test
-     public void localhost_affinity() {
-         String localhostHostName = "myhost";
-         int localhostPort = 123;
-
-         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-         builder.zookeeperserver(createZKBuilder(localhostHostName, localhostPort));
-         builder.zookeeperserver(createZKBuilder("otherhost", 345));
-         ConfigserverConfig config = new ConfigserverConfig(builder);
-
-         HostName.setHostNameForTestingOnly(localhostHostName);
+        HostName.setHostNameForTestingOnly(localhostHostName);
 
         String localhostSpec = localhostHostName + ":" + localhostPort;
-         assertEquals(localhostSpec, Curator.createConnectionSpecForLocalhost(config));
-     }
+        assertEquals(localhostSpec, Curator.createConnectionSpecForLocalhost(config));
+    }
 
     private ConfigserverConfig createTestConfig() {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
@@ -98,8 +84,14 @@ public class CuratorTest {
         return zkBuilder;
     }
 
-    private Curator createCurator(ConfigserverConfig configserverConfig)  {
-        return new Curator(configserverConfig, Optional.empty());
+    private Curator createCurator(ConfigserverConfig configserverConfig) {
+        return new Curator(Curator.createConnectionSpec(configserverConfig),
+                           Curator.createEnsembleConnectionSpec(configserverConfig),
+                           Optional.empty());
+    }
+
+    private int allocatePort() {
+        return PortAllocator.findAvailablePort();
     }
 
     private static class PortAllocator {

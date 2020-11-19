@@ -1,13 +1,15 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.curator;
+package com.yahoo.vespa.curator.impl;
 
-import java.util.logging.Level;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.curator.CompletionTimeoutException;
+import com.yahoo.vespa.curator.Curator;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Implementation of a Barrier that handles the case where more than number of members can call synchronize. If

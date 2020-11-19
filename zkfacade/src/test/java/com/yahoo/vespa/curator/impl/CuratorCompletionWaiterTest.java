@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.curator;
+package com.yahoo.vespa.curator.impl;
 
 import com.yahoo.path.Path;
+import com.yahoo.vespa.curator.CompletionTimeoutException;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Test;
 
