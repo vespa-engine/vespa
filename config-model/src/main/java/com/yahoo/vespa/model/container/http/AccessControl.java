@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chain;
+import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -114,6 +115,10 @@ public class AccessControl {
         removeDuplicateBindingsFromAccessControlChain(http);
     }
 
+    public void configureHostedConnector(HostedSslConnectorFactory connectorFactory) {
+        connectorFactory.setDefaultRequestFilterChain(ACCESS_CONTROL_CHAIN_ID);
+    }
+
     /** returns the excluded bindings as specified in 'access-control' in services.xml **/
     public Set<BindingPattern> excludedBindings() { return excludedBindings; }
 
@@ -127,7 +132,6 @@ public class AccessControl {
 
     private void addAccessControlFilterChain(Http http) {
         http.getFilterChains().add(createChain(ACCESS_CONTROL_CHAIN_ID));
-        http.getBindings().addAll(List.of(createAccessControlBinding("/"), createAccessControlBinding("/*")));
     }
 
     private void addAccessControlExcludedChain(Http http) {
@@ -146,7 +150,6 @@ public class AccessControl {
 
     // Remove bindings from access control chain that have binding pattern as a different filter chain
     private void removeDuplicateBindingsFromAccessControlChain(Http http) {
-        removeDuplicateBindingsFromChain(http, ACCESS_CONTROL_CHAIN_ID);
         removeDuplicateBindingsFromChain(http, ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
     }
 
@@ -171,13 +174,6 @@ public class AccessControl {
                 || (accessControlBinding.binding().path().equals(other.binding().path()) && other.binding().matchesAnyPort());
     }
 
-
-    private static FilterBinding createAccessControlBinding(String path) {
-        return FilterBinding.create(
-                FilterBinding.Type.REQUEST,
-                new ComponentSpecification(ACCESS_CONTROL_CHAIN_ID.stringValue()),
-                SystemBindingPattern.fromHttpPortAndPath(Integer.toString(HOSTED_CONTAINER_PORT), path));
-    }
 
     private static FilterBinding createAccessControlExcludedBinding(BindingPattern excludedBinding) {
         BindingPattern rewrittenBinding = SystemBindingPattern.fromHttpPortAndPath(
