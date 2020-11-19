@@ -569,8 +569,10 @@ public class SessionRepository {
     }
 
     private void copyApp(File sourceDir, File destinationDir) throws IOException {
-        if (destinationDir.exists())
-            throw new RuntimeException("Destination dir " + destinationDir + " already exists");
+        if (destinationDir.exists()) {
+            log.log(Level.INFO, "Destination dir " + destinationDir + " already exists, app has already been copied");
+            return;
+        }
         if (! sourceDir.isDirectory())
             throw new IllegalArgumentException(sourceDir.getAbsolutePath() + " is not a directory");
 
