@@ -26,8 +26,9 @@ class ReindexingMetrics {
 
     void dump(Reindexing reindexing) {
         reindexing.status().forEach((type, status) -> {
-            metric.set("reindexing.percent.done",
-                       status.progress().map(ProgressToken::percentFinished).orElse(status.state() == SUCCESSFUL ? 100.0 : 0.0),
+            metric.set("reindexing.progress",
+                       status.progress().map(ProgressToken::percentFinished).map(percentage -> percentage * 1e-2)
+                             .orElse(status.state() == SUCCESSFUL ? 1.0 : 0.0),
                        metric.createContext(Map.of("clusterid", cluster,
                                                    "documenttype", type.getName(),
                                                    "state", toString(status.state()))));

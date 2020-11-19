@@ -103,10 +103,10 @@ class ReindexerTest {
         new Reindexer(cluster, Map.of(music, Instant.EPOCH), database, failIfCalled, metric, clock).reindex();
         Reindexing reindexing = Reindexing.empty().with(music, Status.ready(Instant.EPOCH).running().successful(Instant.EPOCH));
         assertEquals(reindexing, database.readReindexing());
-        assertEquals(Map.of("reindexing.percent.done", Map.of(Map.of("documenttype", "music",
-                                                                    "clusterid", "cluster",
-                                                                    "state", "successful"),
-                                                             100.0)),
+        assertEquals(Map.of("reindexing.progress", Map.of(Map.of("documenttype", "music",
+                                                                 "clusterid", "cluster",
+                                                                 "state", "successful"),
+                                                          1.0)),
                      metric.metrics());
 
         // New config tells reindexer to reindex "music" documents no earlier than at 10 millis after EPOCH, which isn't yet.
@@ -146,10 +146,10 @@ class ReindexerTest {
         reindexing = reindexing.with(music, Status.ready(clock.instant()).running().progressed(new ProgressToken()).halted());
         assertEquals(reindexing, database.readReindexing());
         assertTrue(shutDown.get(), "Session was shut down");
-        assertEquals(Map.of("reindexing.percent.done", Map.of(Map.of("documenttype", "music",
-                                                                     "clusterid", "cluster",
-                                                                     "state", "ready"),
-                                                              100.0)), // new ProgressToken() is 100% done.
+        assertEquals(Map.of("reindexing.progress", Map.of(Map.of("documenttype", "music",
+                                                                 "clusterid", "cluster",
+                                                                 "state", "ready"),
+                                                          1.0)), // new ProgressToken() is 100% done.
                      metric.metrics());
 
         // Last reindexing fails.
