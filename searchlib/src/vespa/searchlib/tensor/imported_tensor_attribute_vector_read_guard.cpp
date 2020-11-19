@@ -60,7 +60,7 @@ ImportedTensorAttributeVectorReadGuard::get_tensor_ref(uint32_t docid) const
     return _target_tensor_attribute.get_tensor_ref(getTargetLid(docid));
 }
 
-vespalib::eval::ValueType
+const vespalib::eval::ValueType &
 ImportedTensorAttributeVectorReadGuard::getTensorType() const
 {
     return _target_tensor_attribute.getTensorType();

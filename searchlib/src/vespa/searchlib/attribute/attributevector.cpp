@@ -310,9 +310,7 @@ AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
     return attribute::AttributeHeader(fileName,
                                       getConfig().basicType(),
                                       getConfig().collectionType(),
-                                      (getConfig().basicType().type() == BasicType::Type::TENSOR
-                                       ? getConfig().tensorType()
-                                       : vespalib::eval::ValueType::error_type()),
+                                      getConfig().tensorType(),
                                       getEnumeratedSave(),
                                       getConfig().predicateParams(),
                                       getConfig().hnsw_index_params(),
