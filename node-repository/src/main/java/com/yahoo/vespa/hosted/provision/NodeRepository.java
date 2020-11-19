@@ -503,18 +503,25 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    /** Deactivate nodes owned by application guarded by given lock */
-    public void deactivate(ApplicationTransaction transaction) {
-        deactivate(db.readNodes(transaction.application(), State.reserved, State.active), transaction);
-        applications.remove(transaction);
-    }
-
     /**
      * Deactivates these nodes in a transaction and returns the nodes in the new state which will hold if the
      * transaction commits.
      */
     public List<Node> deactivate(List<Node> nodes, ApplicationTransaction transaction) {
         return db.writeTo(State.inactive, nodes, Agent.application, Optional.empty(), transaction.nested());
+    }
+
+    /** Removes this application: Active nodes are deactivated while all non-active nodes are set dirty. */
+    public void remove(ApplicationTransaction transaction) {
+        NodeList applicationNodes = list(transaction.application());
+        NodeList activeNodes = applicationNodes.state(State.active);
+        deactivate(activeNodes.asList(), transaction);
+        db.writeTo(State.dirty,
+                   applicationNodes.except(activeNodes.asSet()).asList(),
+                   Agent.system,
+                   Optional.of("Application is removed"),
+                   transaction.nested());
+        applications.remove(transaction);
     }
 
     /** Move nodes to the dirty state */
@@ -531,6 +538,7 @@ public class NodeRepository extends AbstractComponent {
     public Node setDirty(Node node, Agent agent, String reason) {
         return db.writeTo(State.dirty, node, agent, Optional.of(reason));
     }
+
 
     public List<Node> dirtyRecursively(String hostname, Agent agent, String reason) {
         Node nodeToDirty = getNode(hostname).orElseThrow(() ->

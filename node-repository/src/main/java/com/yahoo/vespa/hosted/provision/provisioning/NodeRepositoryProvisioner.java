@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocationOptimizer;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
 import com.yahoo.vespa.hosted.provision.autoscale.ResourceTarget;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -132,7 +133,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Override
     public void remove(ApplicationTransaction transaction) {
-        nodeRepository.deactivate(transaction);
+        nodeRepository.remove(transaction);
         loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(transaction));
     }
 
