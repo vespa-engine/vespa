@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +28,8 @@ public class NodeRepositoryNode {
     private Set<String> ipAddresses;
     @JsonProperty("additionalIpAddresses")
     private Set<String> additionalIpAddresses;
+    @JsonProperty("additionalHostnames")
+    private List<String> additionalHostnames;
     @JsonProperty("openStackId")
     private String openStackId;
     @JsonProperty("flavor")
@@ -140,6 +141,14 @@ public class NodeRepositoryNode {
 
     public void setAdditionalIpAddresses(Set<String> additionalIpAddresses) {
         this.additionalIpAddresses = additionalIpAddresses;
+    }
+
+    public List<String> getAdditionalHostnames() {
+        return additionalHostnames;
+    }
+
+    public void setAdditionalHostnames(List<String> additionalHostnames) {
+        this.additionalHostnames = additionalHostnames;
     }
 
     public String getOpenStackId() {
@@ -397,6 +406,7 @@ public class NodeRepositoryNode {
                ", hostname='" + hostname + '\'' +
                ", ipAddresses=" + ipAddresses +
                ", additionalIpAddresses=" + additionalIpAddresses +
+               ", additionalHostnames=" + additionalHostnames +
                ", openStackId='" + openStackId + '\'' +
                ", flavor='" + flavor + '\'' +
                ", resources=" + resources +
