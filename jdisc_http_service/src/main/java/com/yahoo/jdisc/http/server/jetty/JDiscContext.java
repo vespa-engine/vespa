@@ -20,7 +20,7 @@ public class JDiscContext {
                         Metric metric,
                         ServerConfig serverConfig) {
 
-        this.filterResolver = new FilterResolver(filterBindings, metric);
+        this.filterResolver = new FilterResolver(filterBindings, metric, serverConfig.strictFiltering());
         this.container = container;
         this.janitor = janitor;
         this.metric = metric;

@@ -35,6 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -495,7 +496,7 @@ public class FilterTestCase {
                 .build();
         MetricConsumerMock metricConsumerMock = new MetricConsumerMock();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = newDriver(requestHandler, filterBindings, metricConsumerMock);
+        TestDriver testDriver = newDriver(requestHandler, filterBindings, metricConsumerMock, false);
 
         testDriver.client().get("/status.html");
         assertThat(requestHandler.awaitInvocation(), is(true));
@@ -510,25 +511,47 @@ public class FilterTestCase {
         assertThat(testDriver.close(), is(true));
     }
 
-    private static TestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {
-        return newDriver(requestHandler, filterBindings, new MetricConsumerMock());
+    @Test
+    public void requireThatStrictFilteringRejectsRequestsNotMatchingFilterChains() throws IOException {
+        RequestFilter filter = mock(RequestFilter.class);
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", filter)
+                .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
+                .build();
+        MyRequestHandler requestHandler = new MyRequestHandler();
+        TestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock(), true);
+
+        testDriver.client().get("/unfiltered/")
+                .expectStatusCode(is(Response.Status.FORBIDDEN))
+                .expectContent(containsString("Request did not match any request filter chain"));
+        verify(filter, never()).filter(any(), any());
+        assertThat(testDriver.close(), is(true));
     }
 
-    private static TestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings, MetricConsumerMock metricConsumer) {
+    private static TestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {
+        return newDriver(requestHandler, filterBindings, new MetricConsumerMock(), false);
+    }
+
+    private static TestDriver newDriver(
+            MyRequestHandler requestHandler,
+            FilterBindings filterBindings,
+            MetricConsumerMock metricConsumer,
+            boolean strictFiltering) {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
                 requestHandler,
-                newFilterModule(filterBindings, metricConsumer));
+                newFilterModule(filterBindings, metricConsumer, strictFiltering));
     }
 
-    private static com.google.inject.Module newFilterModule(FilterBindings filterBindings, MetricConsumerMock metricConsumer) {
+    private static com.google.inject.Module newFilterModule(
+            FilterBindings filterBindings, MetricConsumerMock metricConsumer, boolean strictFiltering) {
         return Modules.combine(
                 new AbstractModule() {
                     @Override
                     protected void configure() {
 
                         bind(FilterBindings.class).toInstance(filterBindings);
-                        bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder()));
+                        bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder().strictFiltering(strictFiltering)));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(new ConnectorConfig.Builder()));
                         bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
                     }
