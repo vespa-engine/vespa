@@ -227,14 +227,6 @@ public class DocumentTypeChangeValidatorTest {
                         "Field 'f1' changed: data type: 'tensor(x[5])' -> 'tensor(x[3])'", Instant.now()));
     }
 
-    @Test
-    public void not_changing_tensor_type_of_tensor_field_is_ok() throws Exception {
-        new Fixture(
-                "field f1 type tensor(x[2]) { indexing: attribute }",
-                "field f1 type tensor(x[2]) { indexing: attribute }")
-                .assertValidation();
-    }
-
     private static NewDocumentType createDocumentTypeWithReferenceField(String nameReferencedDocumentType) {
         StructDataType headerfields = new StructDataType("headerfields");
         headerfields.addField(new Field("ref", new ReferenceDataType(new DocumentType(nameReferencedDocumentType), 0)));
