@@ -122,6 +122,32 @@ MyPeekSpec verbatim_peek() { return MyPeekSpec(false); }
 
 //-----------------------------------------------------------------------------
 
+struct MultiOpParam {
+    std::vector<Instruction> list;
+};
+
+void my_multi_instruction_op(InterpretedFunction::State &state, uint64_t param_in) {
+    const auto &param = *(MultiOpParam*)(param_in);
+    for (const auto &item: param.list) {
+        item.perform(state);
+    }
+}
+
+void collect_op1_chain(const TensorFunction &node, const EngineOrFactory &engine, Stash &stash, std::vector<Instruction> &list) {
+    if (auto op1 = as<tensor_function::Op1>(node)) {
+        collect_op1_chain(op1->child(), engine, stash, list);
+        list.push_back(node.compile_self(engine, stash));
+    }
+}
+
+Instruction compile_op1_chain(const TensorFunction &node, const EngineOrFactory &engine, Stash &stash) {
+    auto &param = stash.create<MultiOpParam>();
+    collect_op1_chain(node, engine, stash, param.list);
+    return {my_multi_instruction_op,(uint64_t)(&param)};
+}
+
+//-----------------------------------------------------------------------------
+
 struct Impl {
     size_t order;
     vespalib::string name;
@@ -145,7 +171,10 @@ struct Impl {
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &reduce_node = tensor_function::reduce(lhs_node, aggr, dims, stash);
         const auto &node = optimize ? optimize_tensor_function(engine, reduce_node, stash) : reduce_node;
-        return node.compile_self(engine, stash);
+        // since reduce might be optimized into multiple chained
+        // instructions, we need some extra magic to package these
+        // instructions into a single compound instruction.
+        return compile_op1_chain(node, engine, stash);
     }
     Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction

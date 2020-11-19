@@ -71,6 +71,16 @@ constexpr bool is_simple(Aggr aggr) {
             (aggr == Aggr::MIN));
 }
 
+// will a single value reduce to itself?
+constexpr bool is_ident(Aggr aggr) {
+    return ((aggr == Aggr::AVG)    ||
+            (aggr == Aggr::PROD)   ||
+            (aggr == Aggr::SUM)    ||
+            (aggr == Aggr::MAX)    ||
+            (aggr == Aggr::MEDIAN) ||
+            (aggr == Aggr::MIN));
+}
+
 // should we avoid doing clever stuff with this aggregator?
 constexpr bool is_complex(Aggr aggr) {
     return (aggr == Aggr::MEDIAN);
