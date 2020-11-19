@@ -84,6 +84,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
         this.dataTypeId = dataTypeId;
     }
 
+    @Override
     public DataType clone() {
         return (DataType)super.clone();
     }
@@ -248,14 +249,17 @@ public abstract class DataType extends Identifiable implements Serializable, Com
         manager.registerSingleType(this);
     }
 
+    @Override
     public int hashCode() {
         return name.hashCode();
     }
 
+    @Override
     public boolean equals(Object other) {
         return (other instanceof DataType) && (dataTypeId == ((DataType)other).dataTypeId);
     }
 
+    @Override
     public String toString() {
         return "datatype " + name + " (code: " + dataTypeId + ")";
     }
