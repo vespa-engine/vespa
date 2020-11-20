@@ -7,6 +7,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,6 +16,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -32,8 +35,8 @@ public class HostCapacityTest {
     private HostCapacity capacity;
     private List<Node> nodes;
     private Node host1, host2, host3;
-    private final NodeResources resources1 = new NodeResources(1, 30, 20, 1.5);
-    private final NodeResources resources2 = new NodeResources(2, 40, 40, 0.5);
+    private final NodeResources dockerResources = new NodeResources(1, 30, 20, 1.5);
+    private final NodeResources docker2Resources = new NodeResources(2, 40, 40, 0.5);
 
     @Before
     public void setup() {
@@ -48,15 +51,15 @@ public class HostCapacityTest {
         host3 = Node.create("host3", IP.Config.of(Set.of("::21"), generateIPs(22, 1), List.of()), "host3", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
 
         // Add two containers to host1
-        var nodeA = Node.createDockerNode(Set.of("::2"), "nodeA", "host1", resources1, NodeType.tenant).build();
-        var nodeB = Node.createDockerNode(Set.of("::3"), "nodeB", "host1", resources1, NodeType.tenant).build();
+        var nodeA = Node.createDockerNode(Set.of("::2"), "nodeA", "host1", dockerResources, NodeType.tenant).build();
+        var nodeB = Node.createDockerNode(Set.of("::3"), "nodeB", "host1", dockerResources, NodeType.tenant).build();
 
         // Add two containers to host 2 (same as host 1)
-        var nodeC = Node.createDockerNode(Set.of("::12"), "nodeC", "host2", resources1, NodeType.tenant).build();
-        var nodeD = Node.createDockerNode(Set.of("::13"), "nodeD", "host2", resources1, NodeType.tenant).build();
+        var nodeC = Node.createDockerNode(Set.of("::12"), "nodeC", "host2", dockerResources, NodeType.tenant).build();
+        var nodeD = Node.createDockerNode(Set.of("::13"), "nodeD", "host2", dockerResources, NodeType.tenant).build();
 
         // Add a larger container to host3
-        var nodeE = Node.createDockerNode(Set.of("::22"), "nodeE", "host3", resources2, NodeType.tenant).build();
+        var nodeE = Node.createDockerNode(Set.of("::22"), "nodeE", "host3", docker2Resources, NodeType.tenant).build();
 
         // init docker host capacity
         nodes = new ArrayList<>(List.of(host1, host2, host3, nodeA, nodeB, nodeC, nodeD, nodeE));
@@ -65,19 +68,19 @@ public class HostCapacityTest {
 
     @Test
     public void hasCapacity() {
-        assertTrue(capacity.hasCapacity(host1, resources1));
-        assertTrue(capacity.hasCapacity(host1, resources2));
-        assertTrue(capacity.hasCapacity(host2, resources1));
-        assertTrue(capacity.hasCapacity(host2, resources2));
-        assertFalse(capacity.hasCapacity(host3, resources1));  // No ip available
-        assertFalse(capacity.hasCapacity(host3, resources2)); // No ip available
+        assertTrue(capacity.hasCapacity(host1, dockerResources));
+        assertTrue(capacity.hasCapacity(host1, docker2Resources));
+        assertTrue(capacity.hasCapacity(host2, dockerResources));
+        assertTrue(capacity.hasCapacity(host2, docker2Resources));
+        assertFalse(capacity.hasCapacity(host3, dockerResources));  // No ip available
+        assertFalse(capacity.hasCapacity(host3, docker2Resources)); // No ip available
 
         // Add a new node to host1 to deplete the memory resource
-        Node nodeF = Node.createDockerNode(Set.of("::6"), "nodeF", "host1", resources1, NodeType.tenant).build();
+        Node nodeF = Node.createDockerNode(Set.of("::6"), "nodeF", "host1", dockerResources, NodeType.tenant).build();
         nodes.add(nodeF);
         capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
-        assertFalse(capacity.hasCapacity(host1, resources1));
-        assertFalse(capacity.hasCapacity(host1, resources2));
+        assertFalse(capacity.hasCapacity(host1, dockerResources));
+        assertFalse(capacity.hasCapacity(host1, docker2Resources));
     }
 
     @Test
@@ -112,17 +115,76 @@ public class HostCapacityTest {
         var nodeFlavors = FlavorConfigBuilder.createDummies("devhost", "container");
         var devHost = Node.create("devhost", new IP.Config(Set.of("::1"), generateIPs(2, 10)), "devhost", nodeFlavors.getFlavorOrThrow("devhost"), NodeType.devhost).build();
 
-        var cfg = Node.createDockerNode(Set.of("::2"), "cfg", "devhost", resources1, NodeType.config).build();
+        var cfg = Node.createDockerNode(Set.of("::2"), "cfg", "devhost", dockerResources, NodeType.config).build();
 
         var nodes = new ArrayList<>(List.of(cfg));
         var capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
-        assertTrue(capacity.hasCapacity(devHost, resources1));
+        assertTrue(capacity.hasCapacity(devHost, dockerResources));
 
-        var container1 = Node.createDockerNode(Set.of("::3"), "container1", "devhost", resources1, NodeType.tenant).build();
+        var container1 = Node.createDockerNode(Set.of("::3"), "container1", "devhost", dockerResources, NodeType.tenant).build();
         nodes = new ArrayList<>(List.of(cfg, container1));
         capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
-        assertFalse(capacity.hasCapacity(devHost, resources1));
+        assertFalse(capacity.hasCapacity(devHost, dockerResources));
 
+    }
+
+    @Test
+    public void verifyCapacityFromAddresses() {
+        Node nodeA = Node.createDockerNode(Set.of("::2"), "nodeA", "host1", dockerResources, NodeType.tenant).build();
+        Node nodeB = Node.createDockerNode(Set.of("::3"), "nodeB", "host1", dockerResources, NodeType.tenant).build();
+        Node nodeC = Node.createDockerNode(Set.of("::4"), "nodeC", "host1", dockerResources, NodeType.tenant).build();
+
+        // host1 is a host with resources = 7-100-120-5 (7 vcpus, 100G memory, 120G disk, and 5Gbps),
+        // while nodeA-C have resources = dockerResources = 1-30-20-1.5
+
+        Node host1 = setupHostWithAdditionalHostnames("host1", "nodeA");
+        // Allocating nodeA should be OK
+        assertTrue(hasCapacity(dockerResources, host1));
+        // then, the second node lacks hostname address
+        assertFalse(hasCapacity(dockerResources, host1, nodeA));
+
+        host1 = setupHostWithAdditionalHostnames("host1", "nodeA", "nodeB");
+        // Allocating nodeA and nodeB should be OK
+        assertTrue(hasCapacity(dockerResources, host1));
+        assertTrue(hasCapacity(dockerResources, host1, nodeA));
+        // but the third node lacks hostname address
+        assertFalse(hasCapacity(dockerResources, host1, nodeA, nodeB));
+
+        host1 = setupHostWithAdditionalHostnames("host1", "nodeA", "nodeB", "nodeC");
+        // Allocating nodeA, nodeB, and nodeC should be OK
+        assertTrue(hasCapacity(dockerResources, host1));
+        assertTrue(hasCapacity(dockerResources, host1, nodeA));
+        assertTrue(hasCapacity(dockerResources, host1, nodeA, nodeB));
+        // but the fourth node lacks hostname address
+        assertFalse(hasCapacity(dockerResources, host1, nodeA, nodeB, nodeC));
+
+        host1 = setupHostWithAdditionalHostnames("host1", "nodeA", "nodeB", "nodeC", "nodeD");
+        // Allocating nodeA, nodeB, and nodeC should be OK
+        assertTrue(hasCapacity(dockerResources, host1));
+        assertTrue(hasCapacity(dockerResources, host1, nodeA));
+        assertTrue(hasCapacity(dockerResources, host1, nodeA, nodeB));
+        // but the fourth lacks memory (host has 100G, while 4x30G = 120G
+        assertFalse(hasCapacity(dockerResources, host1, nodeA, nodeB, nodeC));
+    }
+
+    private Node setupHostWithAdditionalHostnames(String hostHostname, String... additionalHostnames) {
+        List<Address> addresses = Stream.of(additionalHostnames).map(Address::new).collect(Collectors.toList());
+
+        doAnswer(invocation -> ((Flavor)invocation.getArguments()[0]).resources())
+                .when(hostResourcesCalculator).advertisedResourcesOf(any());
+
+        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies(
+                "host",     // 7-100-120-5
+                "docker"); // 2- 40- 40-0.5 = docker2Resources
+
+        return Node.create(hostHostname, IP.Config.of(Set.of("::1"), Set.of(), addresses), hostHostname,
+                nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+    }
+
+    private boolean hasCapacity(NodeResources requestedCapacity, Node host, Node... remainingNodes) {
+        List<Node> nodes = Stream.concat(Stream.of(host), Stream.of(remainingNodes)).collect(Collectors.toList());
+        var capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
+        return capacity.hasCapacity(host, requestedCapacity);
     }
 
     private Set<String> generateIPs(int start, int count) {
