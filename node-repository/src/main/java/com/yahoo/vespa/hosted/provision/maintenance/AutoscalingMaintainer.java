@@ -100,11 +100,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     }
 
     static String toString(ClusterResources r) {
-        return String.format(Locale.US, "%d%s * [vcpu: %.1f, memory: %.1f Gb, disk %.1f Gb]" +
-                             " (total: [vcpu: %.1f, memory: %.1f Gb, disk: %.1f Gb])",
-                             r.nodes(), r.groups() > 1 ? " (in " + r.groups() + " groups)" : "",
-                             r.nodeResources().vcpu(), r.nodeResources().memoryGb(), r.nodeResources().diskGb(),
-                             r.nodes() * r.nodeResources().vcpu(), r.nodes() * r.nodeResources().memoryGb(), r.nodes() * r.nodeResources().diskGb());
+        return r + " (total: " + r.totalResources() + ")";
     }
 
     private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {

@@ -73,6 +73,11 @@ public class Cluster {
     /** Returns the recent scaling events in this cluster */
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
 
+    public Optional<ScalingEvent> lastScalingEvent() {
+        if (scalingEvents.isEmpty()) return Optional.empty();
+        return Optional.of(scalingEvents.get(scalingEvents.size() - 1));
+    }
+
     public Cluster withConfiguration(boolean exclusive, ClusterResources min, ClusterResources max) {
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents);
     }

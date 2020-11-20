@@ -3,11 +3,13 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -60,10 +62,10 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        log.fine(() -> "Autoscale " + cluster.toString());
+        log.fine(() -> "Autoscaling " + cluster);
 
         if (unstable(clusterNodes, nodeRepository)) {
-            log.fine(() -> "Unstable - Advice.none " + cluster.toString());
+            log.fine(() -> "Unstable: Advice.none for " + cluster);
             return Advice.none();
         }
 
@@ -81,13 +83,18 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits, exclusive);
         if (bestAllocation.isEmpty()) {
-            log.fine(() -> "bestAllocation.isEmpty: Advice.dontScale for " + cluster.toString());
+            log.fine(() -> "bestAllocation.isEmpty: Advice.dontScale for " + cluster);
             return Advice.dontScale();
         }
         if (similar(bestAllocation.get(), currentAllocation)) {
-            log.fine(() -> "Current allocation similar: Advice.dontScale for " + cluster.toString());
+            log.fine(() -> "Current allocation similar: Advice.dontScale for " + cluster);
             return Advice.dontScale();
         }
+        if (isDownscaling(bestAllocation.get(), currentAllocation) && recentlyScaled(cluster, clusterNodes)) {
+            log.fine(() -> "Too soon to downscale: Advice.dontScale for " + cluster);
+            return Advice.dontScale();
+        }
+
         return Advice.scaleTo(bestAllocation.get().toAdvertisedClusterResources());
     }
 
@@ -106,10 +113,23 @@ public class Autoscaler {
         return Math.abs(r1 - r2) / (( r1 + r2) / 2) < threshold;
     }
 
+    /** Returns true if this reduces total resources in any dimension */
+    private boolean isDownscaling(AllocatableClusterResources target, AllocatableClusterResources current) {
+        NodeResources targetTotal = target.toAdvertisedClusterResources().totalResources();
+        NodeResources currentTotal = current.toAdvertisedClusterResources().totalResources();
+        return ! targetTotal.justNumbers().satisfies(currentTotal.justNumbers());
+    }
+
+    private boolean recentlyScaled(Cluster cluster, List<Node> clusterNodes) {
+        Duration downscalingDelay = downscalingDelay(clusterNodes.get(0).allocation().get().membership().cluster().type());
+        return cluster.lastScalingEvent().map(event -> event.at()).orElse(Instant.MIN)
+                      .isAfter(nodeRepository.clock().instant().minus(downscalingDelay));
+    }
+
     /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */
     static Duration scalingWindow(ClusterSpec.Type clusterType) {
         if (clusterType.isContent()) return Duration.ofHours(12);
-        return Duration.ofHours(1);
+        return Duration.ofMinutes(30);
     }
 
     static Duration maxScalingWindow() {
@@ -120,6 +140,15 @@ public class Autoscaler {
     static int minimumMeasurementsPerNode(ClusterSpec.Type clusterType) {
         if (clusterType.isContent()) return 60;
         return 20;
+    }
+
+    /**
+     * We should wait a while before scaling down after a scaling event as a peak in usage
+     * indicates more peaks may arrive in the near future.
+     */
+    static Duration downscalingDelay(ClusterSpec.Type clusterType) {
+        if (clusterType.isContent()) return Duration.ofHours(12);
+        return Duration.ofHours(1);
     }
 
     public static boolean unstable(List<Node> nodes, NodeRepository nodeRepository) {
