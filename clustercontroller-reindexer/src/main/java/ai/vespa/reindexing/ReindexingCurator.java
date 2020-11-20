@@ -28,6 +28,14 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class ReindexingCurator {
 
+    private static final String STATUS = "status";
+    private static final String TYPE =  "type";
+    private static final String STARTED_MILLIS = "startedMillis";
+    private static final String ENDED_MILLIS = "endedMillis";
+    private static final String PROGRESS = "progress";
+    private static final String STATE = "state";
+    private static final String MESSAGE = "message";
+
     private final Curator curator;
     private final String clusterName;
     private final ReindexingSerializer serializer;
@@ -69,14 +77,6 @@ public class ReindexingCurator {
 
 
     private static class ReindexingSerializer {
-
-        private static final String STATUS = "status";
-        private static final String TYPE =  "type";
-        private static final String STARTED_MILLIS = "startedMillis";
-        private static final String ENDED_MILLIS = "endedMillis";
-        private static final String PROGRESS = "progress";
-        private static final String STATE = "state";
-        private static final String MESSAGE = "message";
 
         private final DocumentTypeManager types;
 
