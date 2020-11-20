@@ -14,6 +14,7 @@ namespace vespalib::tensor {
 
 using vespalib::ArrayRef;
 
+using eval::CellType;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
@@ -106,11 +107,11 @@ using MyTypify = TypifyValue<TypifyCellType,TypifyOp2,TypifyBool,TypifyOverlap>;
 
 //-----------------------------------------------------------------------------
 
-bool can_use_as_output(const TensorFunction &fun, ValueType::CellType result_cell_type) {
+bool can_use_as_output(const TensorFunction &fun, CellType result_cell_type) {
     return (fun.result_is_mutable() && (fun.result_type().cell_type() == result_cell_type));
 }
 
-Primary select_primary(const TensorFunction &lhs, const TensorFunction &rhs, ValueType::CellType result_cell_type) {
+Primary select_primary(const TensorFunction &lhs, const TensorFunction &rhs, CellType result_cell_type) {
     size_t lhs_size = lhs.result_type().dense_subspace_size();
     size_t rhs_size = rhs.result_type().dense_subspace_size();
     if (lhs_size > rhs_size) {

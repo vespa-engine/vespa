@@ -12,8 +12,8 @@
 #include <cassert>
 
 using vespalib::nbostream;
+using vespalib::eval::CellType;
 using vespalib::eval::ValueType;
-using CellType = vespalib::eval::ValueType::CellType;
 
 namespace vespalib::tensor {
 

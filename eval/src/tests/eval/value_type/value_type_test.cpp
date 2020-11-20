@@ -8,8 +8,6 @@
 
 using namespace vespalib::eval;
 
-using CellType = ValueType::CellType;
-
 const size_t npos = ValueType::Dimension::npos;
 
 ValueType type(const vespalib::string &type_str) {

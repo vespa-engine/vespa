@@ -9,7 +9,7 @@ using vespalib::datastore::Handle;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using CellType = vespalib::eval::ValueType::CellType;
+using CellType = vespalib::eval::CellType;
 
 namespace search::tensor {
 

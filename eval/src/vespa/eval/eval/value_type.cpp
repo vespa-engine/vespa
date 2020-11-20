@@ -8,7 +8,6 @@ namespace vespalib::eval {
 
 namespace {
 
-using CellType = ValueType::CellType;
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
 

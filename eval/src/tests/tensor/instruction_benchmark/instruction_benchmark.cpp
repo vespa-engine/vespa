@@ -95,7 +95,7 @@ template <typename ...Ds> void add_cells(TensorSpec &spec, double &seq, TensorSp
 }
 
 template <typename ...Ds> TensorSpec make_spec(double seq, const Ds &...ds) {
-    TensorSpec spec(ValueType::tensor_type({ds...}, ValueType::CellType::FLOAT).to_spec());
+    TensorSpec spec(ValueType::tensor_type({ds...}, CellType::FLOAT).to_spec());
     add_cells(spec, seq, TensorSpec::Address(), ds...);
     return spec;
 }

@@ -18,7 +18,6 @@ using Cells = SimpleTensor::Cells;
 using IndexList = std::vector<size_t>;
 using Label = SimpleTensor::Label;
 using CellRef = std::reference_wrapper<const Cell>;
-using CellType = ValueType::CellType;
 
 namespace {
 
