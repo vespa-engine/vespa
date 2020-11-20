@@ -1,6 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -73,23 +75,25 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentContext {
 
-    public static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+    // Application packages are expensive to construct, and a given test typically only needs to the test in the context
+    // of a single system. Construct them lazily.
+    private static final Supplier<ApplicationPackage> applicationPackage = Suppliers.memoize(() -> new ApplicationPackageBuilder()
             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
             .upgradePolicy("default")
             .region("us-central-1")
             .parallel("us-west-1", "us-east-3")
             .emailRole("author")
             .emailAddress("b@a")
-            .build();
+            .build());
 
-    public static final ApplicationPackage publicCdApplicationPackage = new ApplicationPackageBuilder()
+    private static final Supplier<ApplicationPackage> publicCdApplicationPackage = Suppliers.memoize(() -> new ApplicationPackageBuilder()
             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
             .upgradePolicy("default")
             .region("aws-us-east-1c")
             .emailRole("author")
             .emailAddress("b@a")
             .trust(generateCertificate())
-            .build();
+            .build());
 
     public static final SourceRevision defaultSourceRevision = new SourceRevision("repository1", "master", "commit1");
 
@@ -111,6 +115,14 @@ public class DeploymentContext {
         this.runner = tester.runner();
         this.tester = tester;
         createTenantAndApplication();
+    }
+
+    public static ApplicationPackage applicationPackage() {
+        return applicationPackage.get();
+    }
+
+    public static ApplicationPackage publicApplicationPackage() {
+        return publicCdApplicationPackage.get();
     }
 
     private void createTenantAndApplication() {
@@ -251,7 +263,7 @@ public class DeploymentContext {
 
     /** Submit the default application package for deployment */
     public DeploymentContext submit() {
-        return submit(tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage);
+        return submit(tester.controller().system().isPublic() ? publicApplicationPackage() : applicationPackage());
     }
 
     /** Trigger all outstanding jobs, if any */
