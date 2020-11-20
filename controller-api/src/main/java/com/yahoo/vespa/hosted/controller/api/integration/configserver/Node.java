@@ -59,8 +59,8 @@ public class Node {
     private final Optional<ApplicationId> exclusiveTo;
     private final Map<String, JsonNode> reports;
     private final List<NodeHistory> history;
-    public Set<String> additionalIpAddresses;
-    public String openStackId;
+    private final Set<String> additionalIpAddresses;
+    private final String openStackId;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
