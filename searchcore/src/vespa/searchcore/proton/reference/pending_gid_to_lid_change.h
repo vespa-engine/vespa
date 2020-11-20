@@ -18,17 +18,17 @@ class PendingGidToLidChange
     using SerialNum = search::SerialNum;
 
     Context   _context;
+    SerialNum _serial_num;
     GlobalId  _gid;
     uint32_t  _lid;
-    SerialNum _serial_num;
     bool      _is_remove;
 public:
     PendingGidToLidChange();
     PendingGidToLidChange(Context context, const GlobalId& gid, uint32_t lid, SerialNum serial_num, bool is_remove_) noexcept
         : _context(std::move(context)),
+          _serial_num(serial_num),
           _gid(gid),
           _lid(lid),
-          _serial_num(serial_num),
           _is_remove(is_remove_)
     {
     }
