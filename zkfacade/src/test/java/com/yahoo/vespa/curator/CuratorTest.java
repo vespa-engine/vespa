@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.net.HostName;
 import org.apache.curator.test.TestingServer;
 import org.junit.After;
@@ -61,29 +61,33 @@ public class CuratorTest {
 
     @Test
     public void require_that_server_count_is_correct() {
-        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-        builder.zookeeperserver(createZKBuilder(localhost, port1));
-        try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
+        CuratorConfig.Builder builder = new CuratorConfig.Builder();
+        builder.server(createZKBuilder(localhost, port1));
+        try (Curator curator = createCurator(new CuratorConfig(builder))) {
             assertEquals(1, curator.zooKeeperEnsembleCount());
         }
     }
 
-    private ConfigserverConfig createTestConfig() {
-        ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-        builder.zookeeperserver(createZKBuilder(localhost, port1));
-        builder.zookeeperserver(createZKBuilder(localhost, port2));
-        return new ConfigserverConfig(builder);
+    private CuratorConfig createTestConfig() {
+        CuratorConfig.Builder builder = new CuratorConfig.Builder();
+        builder.server(createZKBuilder(localhost, port1));
+        builder.server(createZKBuilder(localhost, port2));
+        return new CuratorConfig(builder);
     }
 
-    private ConfigserverConfig.Zookeeperserver.Builder createZKBuilder(String hostname, int port) {
-        ConfigserverConfig.Zookeeperserver.Builder zkBuilder = new ConfigserverConfig.Zookeeperserver.Builder();
+    private CuratorConfig.Server.Builder createZKBuilder(String hostname, int port) {
+        CuratorConfig.Server.Builder zkBuilder = new CuratorConfig.Server.Builder();
         zkBuilder.hostname(hostname);
         zkBuilder.port(port);
         return zkBuilder;
     }
 
-    private Curator createCurator(ConfigserverConfig configserverConfig)  {
-        return new Curator(configserverConfig, Optional.empty());
+    private Curator createCurator(CuratorConfig curatorConfig)  {
+        return new Curator(ConnectionSpec.create(curatorConfig.server(),
+                                                 CuratorConfig.Server::hostname,
+                                                 CuratorConfig.Server::port,
+                                                 curatorConfig.zookeeperLocalhostAffinity()),
+                           Optional.empty());
     }
 
     private static class PortAllocator {

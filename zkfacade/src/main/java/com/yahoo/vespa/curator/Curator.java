@@ -3,6 +3,7 @@ package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -74,19 +75,23 @@ public class Curator implements AutoCloseable {
         return new Curator(ConnectionSpec.create(connectionSpec), clientConfigFile);
     }
 
-    // Depend on ZooKeeperServer to make sure it is started first
-    // TODO: This can be removed when this package is no longer public API.
     @Inject
-    public Curator(ConfigserverConfig configserverConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
-        this(configserverConfig, Optional.of(ZK_CLIENT_CONFIG_FILE));
+    public Curator(CuratorConfig curatorConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
+        // Depends on ZooKeeperServer to make sure it is started first
+        this(ConnectionSpec.create(curatorConfig.server(),
+                                   CuratorConfig.Server::hostname,
+                                   CuratorConfig.Server::port,
+                                   curatorConfig.zookeeperLocalhostAffinity()),
+             Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
-    Curator(ConfigserverConfig configserverConfig, Optional<File> clientConfigFile) {
+    // TODO: This can be removed when this package is no longer public API.
+    public Curator(ConfigserverConfig configserverConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
         this(ConnectionSpec.create(configserverConfig.zookeeperserver(),
                                    ConfigserverConfig.Zookeeperserver::hostname,
                                    ConfigserverConfig.Zookeeperserver::port,
                                    configserverConfig.zookeeperLocalhostAffinity()),
-             clientConfigFile);
+             Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
     protected Curator(String connectionSpec,
@@ -95,7 +100,7 @@ public class Curator implements AutoCloseable {
         this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory, DEFAULT_RETRY_POLICY);
     }
 
-    private Curator(ConnectionSpec connectionSpec, Optional<File> clientConfigFile) {
+    Curator(ConnectionSpec connectionSpec, Optional<File> clientConfigFile) {
         this(connectionSpec,
              (retryPolicy) -> CuratorFrameworkFactory
                      .builder()
