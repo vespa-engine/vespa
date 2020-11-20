@@ -68,6 +68,7 @@
     "methods": [
       "public static com.yahoo.vespa.curator.Curator create(java.lang.String)",
       "public static com.yahoo.vespa.curator.Curator create(java.lang.String, java.util.Optional)",
+      "public void <init>(com.yahoo.cloud.config.CuratorConfig, com.yahoo.vespa.zookeeper.VespaZooKeeperServer)",
       "public void <init>(com.yahoo.cloud.config.ConfigserverConfig, com.yahoo.vespa.zookeeper.VespaZooKeeperServer)",
       "protected void <init>(java.lang.String, java.lang.String, java.util.function.Function)",
       "public java.lang.String connectionSpec()",
