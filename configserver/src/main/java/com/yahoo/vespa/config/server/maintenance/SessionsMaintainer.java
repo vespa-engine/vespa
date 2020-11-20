@@ -27,7 +27,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
     @Override
     protected boolean maintain() {
         if (iteration % 10 == 0)
-            log.log(LogLevel.INFO, () -> "Running " + SessionsMaintainer.class.getSimpleName());
+            log.log(LogLevel.INFO, () -> "Running " + SessionsMaintainer.class.getSimpleName() + ", iteration "  + iteration);
 
         applicationRepository.deleteExpiredLocalSessions();
 
