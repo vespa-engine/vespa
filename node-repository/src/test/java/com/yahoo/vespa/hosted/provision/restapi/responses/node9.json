@@ -25,5 +25,6 @@
     "127.0.9.1",
     "::9:1"
   ],
-  "additionalIpAddresses": []
+  "additionalIpAddresses": [],
+  "additionalHostnames": ["node9-1.yahoo.com"]
 }
