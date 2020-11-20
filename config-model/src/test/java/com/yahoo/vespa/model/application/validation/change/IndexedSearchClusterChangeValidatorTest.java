@@ -148,8 +148,7 @@ public class IndexedSearchClusterChangeValidatorTest {
         Fixture f = Fixture.newOneDocFixture(STRING_FIELD, INT_FIELD);
         f.assertValidation(List.of(newRefeedAction(ClusterSpec.Id.from("test"),
                                                    ValidationId.fieldTypeChange,
-                                                   ValidationOverrides.empty,
-                                                   "Document type 'd1': " + FIELD_TYPE_CHANGE_MSG, FOO_SERVICE, "d1", Instant.now())));
+                                                   "Document type 'd1': " + FIELD_TYPE_CHANGE_MSG, FOO_SERVICE, "d1")));
     }
 
 }

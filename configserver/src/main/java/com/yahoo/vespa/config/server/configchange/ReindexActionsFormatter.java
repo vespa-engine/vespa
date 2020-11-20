@@ -17,8 +17,6 @@ class ReindexActionsFormatter {
     String format() {
         StringBuilder builder = new StringBuilder();
         for (ReindexActions.Entry entry : actions.getEntries()) {
-            if (entry.allowed())
-                builder.append("(allowed) ");
             builder.append(entry.name() + ": Consider re-indexing document type '" + entry.getDocumentType() +
                            "' in cluster '" + entry.getClusterName() + "' because:\n");
             int counter = 1;

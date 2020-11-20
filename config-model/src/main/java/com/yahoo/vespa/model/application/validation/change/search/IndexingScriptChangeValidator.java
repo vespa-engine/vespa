@@ -41,21 +41,20 @@ public class IndexingScriptChangeValidator {
             String fieldName = nextField.getName();
             ImmutableSDField currentField = currentSearch.getConcreteField(fieldName);
             if (currentField != null) {
-                validateScripts(currentField, nextField, overrides, now).ifPresent(r -> result.add(r));
+                validateScripts(currentField, nextField).ifPresent(r -> result.add(r));
             }
         }
         return result;
     }
 
-    private Optional<VespaConfigChangeAction> validateScripts(ImmutableSDField currentField, ImmutableSDField nextField,
-                                                              ValidationOverrides overrides, Instant now) {
+    private Optional<VespaConfigChangeAction> validateScripts(ImmutableSDField currentField, ImmutableSDField nextField) {
         ScriptExpression currentScript = currentField.getIndexingScript();
         ScriptExpression nextScript = nextField.getIndexingScript();
         if ( ! equalScripts(currentScript, nextScript)) {
             ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
             new IndexingScriptChangeMessageBuilder(currentSearch, currentField, nextSearch, nextField).populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
-            return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange, overrides, messageBuilder.build(), now));
+            return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange, messageBuilder.build()));
         }
         return Optional.empty();
     }

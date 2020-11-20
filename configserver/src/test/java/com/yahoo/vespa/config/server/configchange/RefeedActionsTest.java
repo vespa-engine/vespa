@@ -33,8 +33,8 @@ public class RefeedActionsTest {
     @Test
     public void action_with_multiple_reasons() {
         List<RefeedActions.Entry> entries = new ConfigChangeActionsBuilder().
-                refeed(ValidationId.indexModeChange, false, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
-                refeed(ValidationId.indexModeChange, false, CHANGE_MSG_2, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(ValidationId.indexModeChange, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(ValidationId.indexModeChange, CHANGE_MSG_2, DOC_TYPE, CLUSTER, SERVICE_NAME).
                 build().getRefeedActions().getEntries();
         assertThat(entries.size(), is(1));
         assertThat(toString(entries.get(0)), equalTo("music.foo:[baz][change,other change]"));
@@ -43,8 +43,8 @@ public class RefeedActionsTest {
     @Test
     public void actions_with_multiple_services() {
         List<RefeedActions.Entry> entries = new ConfigChangeActionsBuilder().
-                refeed(ValidationId.indexModeChange, false, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
-                refeed(ValidationId.indexModeChange, false, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME_2).
+                refeed(ValidationId.indexModeChange, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(ValidationId.indexModeChange, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME_2).
                 build().getRefeedActions().getEntries();
         assertThat(entries.size(), is(1));
         assertThat(toString(entries.get(0)), equalTo("music.foo:[baz,qux][change]"));
@@ -53,8 +53,8 @@ public class RefeedActionsTest {
     @Test
     public void actions_with_multiple_document_types() {
         List<RefeedActions.Entry> entries = new ConfigChangeActionsBuilder().
-                refeed(ValidationId.indexModeChange, false, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
-                refeed(ValidationId.indexModeChange, false, CHANGE_MSG, DOC_TYPE_2, CLUSTER, SERVICE_NAME).
+                refeed(ValidationId.indexModeChange, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(ValidationId.indexModeChange, CHANGE_MSG, DOC_TYPE_2, CLUSTER, SERVICE_NAME).
                 build().getRefeedActions().getEntries();
         assertThat(entries.size(), is(2));
         assertThat(toString(entries.get(0)), equalTo("book.foo:[baz][change]"));
@@ -64,8 +64,8 @@ public class RefeedActionsTest {
     @Test
     public void actions_with_multiple_clusters() {
         List<RefeedActions.Entry> entries = new ConfigChangeActionsBuilder().
-                refeed(ValidationId.indexModeChange, false, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
-                refeed(ValidationId.indexModeChange, false, CHANGE_MSG, DOC_TYPE, CLUSTER_2, SERVICE_NAME).
+                refeed(ValidationId.indexModeChange, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(ValidationId.indexModeChange, CHANGE_MSG, DOC_TYPE, CLUSTER_2, SERVICE_NAME).
                 build().getRefeedActions().getEntries();
         assertThat(entries.size(), is(2));
         assertThat(toString(entries.get(0)), equalTo("music.bar:[baz][change]"));

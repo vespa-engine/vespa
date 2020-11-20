@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.deploy;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -27,7 +26,6 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
@@ -404,8 +402,8 @@ public class HostedDeployTest {
         ManualClock clock = new ManualClock(Instant.EPOCH);
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
-                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), ValidationId.indexModeChange, ValidationOverrides.all,
-                                                                          "reindex please", services, "music", clock.instant()),
+                                                    VespaReindexAction.of(ClusterSpec.Id.from("test"), ValidationId.indexModeChange,
+                                                                          "reindex please", services, "music"),
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone, clock);

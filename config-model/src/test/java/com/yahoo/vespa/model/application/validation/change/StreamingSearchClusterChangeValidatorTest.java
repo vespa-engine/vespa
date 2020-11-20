@@ -166,9 +166,8 @@ public class StreamingSearchClusterChangeValidatorTest {
     private static VespaConfigChangeAction createFieldTypeChangeRefeedAction(String docType, List<ServiceInfo> service) {
         return ConfigChangeTestUtils.newRefeedAction(ClusterSpec.Id.from("test"),
                                                      ValidationId.fieldTypeChange,
-                                                     ValidationOverrides.empty,
-                "Document type '" + docType + "': Field 'f1' changed: data type: 'string' -> 'int'",
-                                                     service, docType, Instant.now());
+                                                     "Document type '" + docType + "': Field 'f1' changed: data type: 'string' -> 'int'",
+                                                     service, docType);
     }
 
     private static VespaConfigChangeAction createAddFastAccessRestartAction() {

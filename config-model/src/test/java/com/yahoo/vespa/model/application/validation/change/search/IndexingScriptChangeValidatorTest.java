@@ -58,11 +58,9 @@ public class IndexingScriptChangeValidatorTest {
     private static VespaConfigChangeAction expectedReindexingAction(String field, String changedMsg, String fromScript, String toScript) {
         return VespaReindexAction.of(ClusterSpec.Id.from("test"),
                                      ValidationId.indexingChange,
-                                    ValidationOverrides.empty,
-                                    "Field '" + field + "' changed: " +
+                                     "Field '" + field + "' changed: " +
                                     (changedMsg.isEmpty() ? "" : changedMsg + ", ") +
-                                    "indexing script: '" + fromScript + "' -> '" + toScript + "'", 
-                                    Instant.now());
+                                    "indexing script: '" + fromScript + "' -> '" + toScript + "'");
     }
 
     @Test

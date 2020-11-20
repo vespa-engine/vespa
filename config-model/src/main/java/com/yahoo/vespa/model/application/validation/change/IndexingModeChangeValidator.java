@@ -46,22 +46,22 @@ public class IndexingModeChangeValidator implements ChangeValidator {
         ContentSearchCluster currentSearchCluster = currentCluster.getSearch();
         ContentSearchCluster nextSearchCluster = nextCluster.getSearch();
         findDocumentTypesWithActionableIndexingModeChange(
-                actions, overrides, nextCluster, now,
+                actions, nextCluster,
                 toDocumentTypeNames(currentSearchCluster.getDocumentTypesWithStreamingCluster()),
                 toDocumentTypeNames(nextSearchCluster.getDocumentTypesWithIndexedCluster()),
                 "streaming", "indexed");
         findDocumentTypesWithActionableIndexingModeChange(
-                actions, overrides, nextCluster, now,
+                actions, nextCluster,
                 toDocumentTypeNames(currentSearchCluster.getDocumentTypesWithIndexedCluster()),
                 toDocumentTypeNames(nextSearchCluster.getDocumentTypesWithStreamingCluster()),
                 "indexed", "streaming");
         findDocumentTypesWithActionableIndexingModeChange(
-                actions, overrides, nextCluster, now,
+                actions, nextCluster,
                 toDocumentTypeNames(currentSearchCluster.getDocumentTypesWithStoreOnly()),
                 toDocumentTypeNames(nextSearchCluster.getDocumentTypesWithIndexedCluster()),
                 "store-only", "indexed");
         findDocumentTypesWithActionableIndexingModeChange(
-                actions, overrides, nextCluster, now,
+                actions, nextCluster,
                 toDocumentTypeNames(currentSearchCluster.getDocumentTypesWithIndexedCluster()),
                 toDocumentTypeNames(nextSearchCluster.getDocumentTypesWithStoreOnly()),
                 "indexed", "store-only");
@@ -69,7 +69,7 @@ public class IndexingModeChangeValidator implements ChangeValidator {
     }
 
     private static void findDocumentTypesWithActionableIndexingModeChange(
-            List<ConfigChangeAction> actions, ValidationOverrides overrides, ContentCluster nextCluster, Instant now,
+            List<ConfigChangeAction> actions, ContentCluster nextCluster,
             Set<String> currentTypes, Set<String> nextTypes, String currentIndexMode, String nextIndexingMode) {
         for (String type : nextTypes) {
             if (currentTypes.contains(type)) {
@@ -79,13 +79,12 @@ public class IndexingModeChangeValidator implements ChangeValidator {
                 actions.add(VespaReindexAction.of(
                         nextCluster.id(),
                         ValidationId.indexModeChange,
-                        overrides,
                         String.format(
                                 "Document type '%s' in cluster '%s' changed indexing mode from '%s' to '%s'",
                                 type, nextCluster.getName(), currentIndexMode, nextIndexingMode),
                         services,
-                        type,
-                        now));
+                        type
+                ));
             }
         }
     }

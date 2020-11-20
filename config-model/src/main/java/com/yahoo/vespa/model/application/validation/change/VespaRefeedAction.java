@@ -26,30 +26,28 @@ public class VespaRefeedAction extends VespaConfigChangeAction implements Config
      */
     private final ValidationId validationId;
     private final String documentType;
-    private final boolean allowed;
 
-    private VespaRefeedAction(ClusterSpec.Id id, ValidationId validationId, String message, List<ServiceInfo> services, String documentType, boolean allowed) {
+    private VespaRefeedAction(ClusterSpec.Id id, ValidationId validationId, String message, List<ServiceInfo> services, String documentType) {
         super(id, message, services);
         this.validationId = validationId;
         this.documentType = documentType;
-        this.allowed = allowed;
     }
 
     /** Creates a refeed action with some missing information */
     // TODO: We should require document type or model its absence properly
-    public static VespaRefeedAction of(ClusterSpec.Id id, ValidationId validationId, ValidationOverrides overrides, String message, Instant now) {
-        return new VespaRefeedAction(id, validationId, message, List.of(), "", overrides.allows(validationId, now));
+    public static VespaRefeedAction of(ClusterSpec.Id id, ValidationId validationId, String message) {
+        return new VespaRefeedAction(id, validationId, message, List.of(), "");
     }
 
     /** Creates a refeed action */
-    public static VespaRefeedAction of(ClusterSpec.Id id, ValidationId validationId, ValidationOverrides overrides, String message,
-                                       List<ServiceInfo> services, String documentType, Instant now) {
-        return new VespaRefeedAction(id, validationId, message, services, documentType, overrides.allows(validationId, now));
+    public static VespaRefeedAction of(ClusterSpec.Id id, ValidationId validationId, String message,
+                                       List<ServiceInfo> services, String documentType) {
+        return new VespaRefeedAction(id, validationId, message, services, documentType);
     }
 
     @Override
     public VespaConfigChangeAction modifyAction(String newMessage, List<ServiceInfo> newServices, String documentType) {
-        return new VespaRefeedAction(clusterId(), validationId, newMessage, newServices, documentType, allowed);
+        return new VespaRefeedAction(clusterId(), validationId, newMessage, newServices, documentType);
     }
 
     @Override
@@ -57,9 +55,6 @@ public class VespaRefeedAction extends VespaConfigChangeAction implements Config
 
     @Override
     public String getDocumentType() { return documentType; }
-
-    @Override
-    public boolean allowed() { return allowed; }
 
     @Override
     public boolean ignoreForInternalRedeploy() {
@@ -78,7 +73,6 @@ public class VespaRefeedAction extends VespaConfigChangeAction implements Config
         VespaRefeedAction other = (VespaRefeedAction)o;
         if ( ! this.documentType.equals(other.documentType)) return false;
         if ( ! this.validationId.equals(other.validationId)) return false;
-        if ( ! this.allowed == other.allowed) return false;
         return true;
     }
 

@@ -6,11 +6,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.document.StructDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -137,17 +135,16 @@ public class DocumentTypeChangeValidator {
         this.nextDocType = nextDocType;
     }
 
-    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
+    public List<VespaConfigChangeAction> validate() {
         return currentDocType.getAllFields().stream().
                 map(field -> createFieldChange(field, nextDocType)).
                 filter(fieldChange -> fieldChange.valid() && fieldChange.changedType()).
                 map(fieldChange -> VespaRefeedAction.of(id,
                                                         ValidationId.fieldTypeChange,
-                                                        overrides,
                                                         new ChangeMessageBuilder(fieldChange.fieldName()).
                                                                                  addChange("data type", fieldChange.currentTypeName(),
-                                                                                 fieldChange.nextTypeName()).build(), 
-                                                        now)).
+                                                                                 fieldChange.nextTypeName()).build()
+                )).
                 collect(Collectors.toList());
     }
 

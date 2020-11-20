@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.configchange;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,13 +15,11 @@ import java.util.Optional;
 public class MockRefeedAction extends MockConfigChangeAction implements ConfigChangeRefeedAction {
 
     private final ValidationId validationId;
-    private final boolean allowed;
     private final String documentType;
 
-    public MockRefeedAction(ValidationId validationId, boolean allowed, String message, List<ServiceInfo> services, String documentType) {
+    public MockRefeedAction(ValidationId validationId, String message, List<ServiceInfo> services, String documentType) {
         super(message, services);
         this.validationId = validationId;
-        this.allowed = allowed;
         this.documentType = documentType;
     }
 
@@ -28,7 +27,9 @@ public class MockRefeedAction extends MockConfigChangeAction implements ConfigCh
     public Optional<ValidationId> validationId() { return Optional.of(validationId); }
 
     @Override
-    public boolean allowed() { return allowed; }
+    public ClusterSpec.Id clusterId() {
+        return null;
+    }
 
     @Override
     public boolean ignoreForInternalRedeploy() {

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.application.api.ValidationOverrides.ValidationException;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeReindexAction;
@@ -12,7 +11,6 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
@@ -53,9 +51,9 @@ public class IndexingModeChangeValidatorTest {
         List<ConfigChangeAction> changeActions =
                 tester.deploy(oldModel, getServices("streaming"), Environment.prod, validationOverrides).getSecond();
 
-        assertReindexingChange(true, // allowed=true due to validation override
-                           "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
-                           changeActions);
+        assertReindexingChange( // allowed=true due to validation override
+                                "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'",
+                                changeActions);
     }
 
     @Test
@@ -67,17 +65,16 @@ public class IndexingModeChangeValidatorTest {
         List<ConfigChangeAction> changeActions =
                 tester.deploy(oldModel, getServices("store-only"), Environment.prod, validationOverrides).getSecond();
 
-        assertReindexingChange(true, // allowed=true due to validation override
-                           "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'store-only'",
-                           changeActions);
+        assertReindexingChange( // allowed=true due to validation override
+                                "Document type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'store-only'",
+                                changeActions);
     }
 
-    private void assertReindexingChange(boolean allowed, String message, List<ConfigChangeAction> changeActions) {
+    private void assertReindexingChange(String message, List<ConfigChangeAction> changeActions) {
         List<ConfigChangeAction> reindexingActions = changeActions.stream()
                                                               .filter(a -> a instanceof ConfigChangeReindexAction)
                                                               .collect(Collectors.toList());
         assertEquals(1, reindexingActions.size());
-        assertEquals(allowed, reindexingActions.get(0).allowed());
         assertTrue(reindexingActions.get(0) instanceof ConfigChangeReindexAction);
         assertEquals("indexing-mode-change", ((ConfigChangeReindexAction)reindexingActions.get(0)).name());
         assertEquals(message, reindexingActions.get(0).getMessage());
