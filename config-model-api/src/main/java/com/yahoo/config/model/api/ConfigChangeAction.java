@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Contains the action to be performed on the given services to handle a config change
@@ -38,11 +39,12 @@ public interface ConfigChangeAction {
     /** Returns the list of services where the action must be performed */
     List<ServiceInfo> getServices();
 
-    /**
-     * Returns whether this change should be allowed.
-     * Implementations which allow this to return false should inherit {@link DisallowableConfigChangeAction}
-     */
+    /** Returns whether this change should be allowed. */
+    // TODO jonmv: remove in 2021.
     boolean allowed();
+
+    /** When this is non-empty, validation may fail unless this validation id is allowed by validation overrides. */
+    default Optional<ValidationId> validationId() { return Optional.empty(); }
 
     /** The id of the cluster that needs this action applied */
     // TODO: Remove this default implementation after October 2020

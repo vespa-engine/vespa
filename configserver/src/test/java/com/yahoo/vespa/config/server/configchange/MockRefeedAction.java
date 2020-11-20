@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.model.api.ServiceInfo;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author geirst
@@ -24,7 +25,7 @@ public class MockRefeedAction extends MockConfigChangeAction implements ConfigCh
     }
 
     @Override
-    public ValidationId validationId() { return validationId; }
+    public Optional<ValidationId> validationId() { return Optional.of(validationId); }
 
     @Override
     public boolean allowed() { return allowed; }

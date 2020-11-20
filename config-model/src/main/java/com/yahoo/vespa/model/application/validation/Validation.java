@@ -5,9 +5,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.api.ConfigChangeRefeedAction;
-import com.yahoo.config.model.api.ConfigChangeReindexAction;
-import com.yahoo.config.model.api.DisallowableConfigChangeAction;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
@@ -32,10 +29,10 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -110,14 +107,11 @@ public class Validation {
                                                  .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
                                                  .collect(toList());
 
-        Stream<DisallowableConfigChangeAction> disallowedActions = actions.stream()
-                                                                          .filter(DisallowableConfigChangeAction.class::isInstance)
-                                                                          .map(DisallowableConfigChangeAction.class::cast)
-                                                                          .filter(action -> ! action.allowed());
-
-        overrides.invalid(disallowedActions.collect(groupingBy(DisallowableConfigChangeAction::validationId,
-                                                               mapping(ConfigChangeAction::getMessage, toList()))),
-                          now);
+        Map<ValidationId, List<String>> disallowableActions = actions.stream()
+                                                                     .filter(action -> action.validationId().isPresent())
+                                                                     .collect(groupingBy(action -> action.validationId().orElseThrow(),
+                                                                                         mapping(ConfigChangeAction::getMessage, toList())));
+        overrides.invalid(disallowableActions, now);
         return actions;
     }
 

@@ -8,13 +8,13 @@ import com.yahoo.config.application.api.ValidationId;
  *
  * @author geirst
  */
-public interface ConfigChangeRefeedAction extends DisallowableConfigChangeAction {
+public interface ConfigChangeRefeedAction extends ConfigChangeAction {
 
     @Override
     default Type getType() { return Type.REFEED; }
 
     /** Returns the name identifying this kind of change, used to identify names which should be allowed */
-    default String name() { return validationId().value(); }
+    default String name() { return validationId().orElseThrow().value(); }
 
     /** Returns the name of the document type that one must re-feed to handle this config change */
     String getDocumentType();

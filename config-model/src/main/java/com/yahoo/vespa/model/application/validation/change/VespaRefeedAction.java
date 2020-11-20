@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents an action to re-feed a document type in order to handle a config change.
@@ -52,7 +53,7 @@ public class VespaRefeedAction extends VespaConfigChangeAction implements Config
     }
 
     @Override
-    public ValidationId validationId() { return validationId; }
+    public Optional<ValidationId> validationId() { return Optional.of(validationId); }
 
     @Override
     public String getDocumentType() { return documentType; }
