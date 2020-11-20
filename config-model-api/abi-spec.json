@@ -576,10 +576,7 @@
     "attributes": [
       "public"
     ],
-    "methods": [
-      "public com.yahoo.config.application.api.ValidationId validationId()",
-      "public java.lang.String getMessage()"
-    ],
+    "methods": [],
     "fields": []
   },
   "com.yahoo.config.application.api.ValidationOverrides": {
@@ -590,6 +587,7 @@
     ],
     "methods": [
       "public void <init>(java.util.List)",
+      "public void invalid(java.util.Map, java.time.Instant)",
       "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
       "public boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
