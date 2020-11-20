@@ -110,7 +110,7 @@ GidToLidChangeHandler::grab_pending_changes()
 {
     lock_guard guard(_lock);
     if (_pending_changes.empty()) {
-        return std::unique_ptr<IPendingGidToLidChanges>();
+        return {};
     }
     return std::make_unique<PendingGidToLidChanges>(*this, std::move(_pending_changes));
 }

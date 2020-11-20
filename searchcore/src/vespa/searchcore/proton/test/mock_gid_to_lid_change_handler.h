@@ -45,7 +45,7 @@ public:
 
     void notifyPut(IDestructorCallbackSP, document::GlobalId, uint32_t, SerialNum)  override { }
     void notifyRemove(IDestructorCallbackSP, document::GlobalId, SerialNum)  override { }
-    std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override { return std::unique_ptr<IPendingGidToLidChanges>(); }
+    std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override { return {}; }
 
     void assertAdds(const std::vector<AddEntry> &expAdds)
     {

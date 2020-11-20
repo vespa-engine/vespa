@@ -22,7 +22,7 @@ DummyGidToLidChangeHandler::notifyRemove(IDestructorCallbackSP , GlobalId, Seria
 std::unique_ptr<IPendingGidToLidChanges>
 DummyGidToLidChangeHandler::grab_pending_changes()
 {
-    return std::unique_ptr<IPendingGidToLidChanges>();
+    return {};
 }
 
 void
