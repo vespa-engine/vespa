@@ -14,10 +14,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeHist
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A node in hosted Vespa.
@@ -57,6 +59,8 @@ public class Node {
     private final Optional<ApplicationId> exclusiveTo;
     private final Map<String, JsonNode> reports;
     private final List<NodeHistory> history;
+    public Set<String> additionalIpAddresses;
+    public String openStackId;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
@@ -64,7 +68,8 @@ public class Node {
                 Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
                 int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
                 Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
-                DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports, List<NodeHistory> history) {
+                DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports, List<NodeHistory> history,
+                Set<String> additionalIpAddresses, String openStackId) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -95,6 +100,8 @@ public class Node {
         this.currentDockerImage = currentDockerImage;
         this.reports = reports;
         this.history = history;
+        this.openStackId = openStackId;
+        this.additionalIpAddresses = additionalIpAddresses;
     }
 
     public HostName hostname() {
@@ -211,6 +218,14 @@ public class Node {
         return history;
     }
 
+    public Set<String> additionalIpAddresses() {
+        return additionalIpAddresses;
+    }
+
+    public String openStackId() {
+        return openStackId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -285,6 +300,8 @@ public class Node {
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
         private Map<String, JsonNode> reports = new HashMap<>();
         private List<NodeHistory> history = new ArrayList<>();
+        private Set<String> additionalIpAddresses = new HashSet<>();
+        private String openStackId;
 
         public Builder() { }
 
@@ -319,6 +336,8 @@ public class Node {
             this.exclusiveTo = node.exclusiveTo;
             this.reports = node.reports;
             this.history = node.history;
+            this.additionalIpAddresses = node.additionalIpAddresses;
+            this.openStackId = node.openStackId;
         }
 
         public Builder hostname(HostName hostname) {
@@ -466,12 +485,22 @@ public class Node {
             return this;
         }
 
+        public Builder additionalIpAddresses(Set<String> additionalIpAddresses) {
+            this.additionalIpAddresses = additionalIpAddresses;
+            return this;
+        }
+
+        public Builder openStackId(String openStackId) {
+            this.openStackId = openStackId;
+            return this;
+        }
+
         public Node build() {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
                             cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo, exclusiveTo,
-                            wantedDockerImage, currentDockerImage, reports, history);
+                            wantedDockerImage, currentDockerImage, reports, history, additionalIpAddresses, openStackId);
         }
 
     }
