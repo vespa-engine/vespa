@@ -448,10 +448,11 @@ public class UpgraderTest {
 
         // Multiple application changes are triggered and fail, but does not affect version confidence as upgrade has
         // completed successfully
-        default0.submit(applicationPackage("default")).failDeployment(systemTest);
-        default1.submit(applicationPackage("default")).failDeployment(stagingTest);
-        default2.submit(applicationPackage("default")).failDeployment(systemTest);
-        default3.submit(applicationPackage("default")).failDeployment(stagingTest);
+        ApplicationPackage applicationPackage = applicationPackage("default");
+        default0.submit(applicationPackage).failDeployment(systemTest);
+        default1.submit(applicationPackage).failDeployment(stagingTest);
+        default2.submit(applicationPackage).failDeployment(systemTest);
+        default3.submit(applicationPackage).failDeployment(stagingTest);
         tester.controllerTester().computeVersionStatus();
         assertEquals(VespaVersion.Confidence.high, tester.controller().readVersionStatus().systemVersion().get().confidence());
     }
