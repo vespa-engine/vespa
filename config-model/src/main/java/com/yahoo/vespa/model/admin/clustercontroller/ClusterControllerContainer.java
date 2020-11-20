@@ -119,6 +119,10 @@ public class ClusterControllerContainer extends Container implements
             addFileBundle(ReindexingController.REINDEXING_CONTROLLER_BUNDLE);
             addComponent(new ReindexingController(context));
             addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
+            addHandler(new Handler(createComponentModel("reindexing-status",
+                                                        "ai.vespa.reindexing.http.ReindexingV1ApiHandler",
+                                                        new ComponentSpecification(ReindexingController.REINDEXING_CONTROLLER_BUNDLE))),
+                       "/reindexing/v1/*");
         }
     }
 
