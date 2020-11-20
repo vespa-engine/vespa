@@ -181,7 +181,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     //---------------- Tracing ----------------------------------------------------
 
-    private static Logger log = Logger.getLogger(Query.class.getName());
+    private static final Logger log = Logger.getLogger(Query.class.getName());
 
     /** The time this query was created */
     private long startTime;
@@ -200,7 +200,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static final CompoundName TIMEOUT = new CompoundName("timeout");
 
 
-    private static QueryProfileType argumentType;
+    private static final QueryProfileType argumentType;
     static {
         argumentType = new QueryProfileType("native");
         argumentType.setBuiltin(true);
@@ -226,7 +226,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     /** The aliases of query properties */
-    private static Map<String, CompoundName> propertyAliases;
+    private static final Map<String, CompoundName> propertyAliases;
     static {
         Map<String,CompoundName> propertyAliasesBuilder = new HashMap<>();
         addAliases(Query.getArgumentType(), propertyAliasesBuilder);
@@ -316,7 +316,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * Creates a query from a request
      *
      * @param request the HTTP request from which this is created
-     * @param queryProfile the query profile to use for this query, or null if none.
+     * @param queryProfile the query profile to use for this query, or null if none
      */
     public Query(HttpRequest request, CompiledQueryProfile queryProfile) {
         this(request, request.propertyMap(), queryProfile);
@@ -325,9 +325,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /**
      * Creates a query from a request
      *
-     * @param request the HTTP request from which this is created.
-     * @param requestMap the property map of the query.
-     * @param queryProfile the query profile to use for this query, or null if none.
+     * @param request the HTTP request from which this is created
+     * @param requestMap the property map of the query
+     * @param queryProfile the query profile to use for this query, or null if none
      */
     public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         super(new QueryPropertyAliases(propertyAliases));
