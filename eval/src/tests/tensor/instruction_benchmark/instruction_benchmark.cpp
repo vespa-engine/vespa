@@ -354,6 +354,7 @@ MyParam::~MyParam() = default;
 
 struct EvalOp {
     using UP = std::unique_ptr<EvalOp>;
+    Stash                    my_stash;
     const Impl              &impl;
     MyParam                  my_param;
     std::vector<Value::UP>   values;
@@ -361,8 +362,8 @@ struct EvalOp {
     EvalSingle               single;
     EvalOp(const EvalOp &) = delete;
     EvalOp &operator=(const EvalOp &) = delete;
-    EvalOp(Instruction op, const std::vector<CREF<TensorSpec>> &stack_spec, const Impl &impl_in)
-        : impl(impl_in), my_param(), values(), stack(), single(impl.engine, op)
+    EvalOp(Stash &&stash_in, Instruction op, const std::vector<CREF<TensorSpec>> &stack_spec, const Impl &impl_in)
+        : my_stash(std::move(stash_in)), impl(impl_in), my_param(), values(), stack(), single(impl.engine, op)
     {
         for (const TensorSpec &spec: stack_spec) {
             values.push_back(impl.create_value(spec));
@@ -371,8 +372,8 @@ struct EvalOp {
             stack.push_back(*value.get());
         }
     }
-    EvalOp(Instruction op, const TensorSpec &p0, const Impl &impl_in)
-        : impl(impl_in), my_param(p0, impl), values(), stack(), single(impl.engine, op, my_param)
+    EvalOp(Stash &&stash_in, Instruction op, const TensorSpec &p0, const Impl &impl_in)
+        : my_stash(std::move(stash_in)), impl(impl_in), my_param(p0, impl), values(), stack(), single(impl.engine, op, my_param)
     {
     }
     TensorSpec result() { return impl.create_spec(single.eval(stack)); }
@@ -420,9 +421,10 @@ void benchmark_join(const vespalib::string &desc, const TensorSpec &lhs,
     ASSERT_FALSE(res_type.is_error());
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_join(lhs_type, rhs_type, function, stash);
+        Stash my_stash;
+        auto op = impl.create_join(lhs_type, rhs_type, function, my_stash);
         std::vector<CREF<TensorSpec>> stack_spec({lhs, rhs});
-        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, stack_spec, impl));
     }
     benchmark(desc, list);
 }
@@ -439,9 +441,10 @@ void benchmark_reduce(const vespalib::string &desc, const TensorSpec &lhs,
     ASSERT_FALSE(res_type.is_error());
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_reduce(lhs_type, aggr, dims, stash);
+        Stash my_stash;
+        auto op = impl.create_reduce(lhs_type, aggr, dims, my_stash);
         std::vector<CREF<TensorSpec>> stack_spec({lhs});
-        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, stack_spec, impl));
     }
     benchmark(desc, list);
 }
@@ -459,9 +462,10 @@ void benchmark_rename(const vespalib::string &desc, const TensorSpec &lhs,
     ASSERT_FALSE(res_type.is_error());
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_rename(lhs_type, from, to, stash);
+        Stash my_stash;
+        auto op = impl.create_rename(lhs_type, from, to, my_stash);
         std::vector<CREF<TensorSpec>> stack_spec({lhs});
-        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, stack_spec, impl));
     }
     benchmark(desc, list);
 }
@@ -480,9 +484,10 @@ void benchmark_merge(const vespalib::string &desc, const TensorSpec &lhs,
     ASSERT_FALSE(res_type.is_error());
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_merge(lhs_type, rhs_type, function, stash);
+        Stash my_stash;
+        auto op = impl.create_merge(lhs_type, rhs_type, function, my_stash);
         std::vector<CREF<TensorSpec>> stack_spec({lhs, rhs});
-        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, stack_spec, impl));
     }
     benchmark(desc, list);
 }
@@ -496,9 +501,10 @@ void benchmark_map(const vespalib::string &desc, const TensorSpec &lhs, operatio
     ASSERT_FALSE(lhs_type.is_error());
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_map(lhs_type, function, stash);
+        Stash my_stash;
+        auto op = impl.create_map(lhs_type, function, my_stash);
         std::vector<CREF<TensorSpec>> stack_spec({lhs});
-        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, stack_spec, impl));
     }
     benchmark(desc, list);
 }
@@ -517,9 +523,10 @@ void benchmark_concat(const vespalib::string &desc, const TensorSpec &lhs,
     ASSERT_FALSE(res_type.is_error());
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_concat(lhs_type, rhs_type, dimension, stash);
+        Stash my_stash;
+        auto op = impl.create_concat(lhs_type, rhs_type, dimension, my_stash);
         std::vector<CREF<TensorSpec>> stack_spec({lhs, rhs});
-        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, stack_spec, impl));
     }
     benchmark(desc, list);
 }
@@ -536,10 +543,11 @@ void benchmark_tensor_create(const vespalib::string &desc, const TensorSpec &pro
     }
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_tensor_create(proto_type, proto, stash);
-        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+        Stash my_stash;
+        auto op = impl.create_tensor_create(proto_type, proto, my_stash);
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, stack_spec, impl));
     }
-    benchmark(desc, list);    
+    benchmark(desc, list);
 }
 
 //-----------------------------------------------------------------------------
@@ -550,8 +558,9 @@ void benchmark_tensor_lambda(const vespalib::string &desc, const ValueType &type
     ASSERT_FALSE(p0_type.is_error());
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_tensor_lambda(type, function, p0_type, stash);
-        list.push_back(std::make_unique<EvalOp>(op, p0, impl));
+        Stash my_stash;
+        auto op = impl.create_tensor_lambda(type, function, p0_type, my_stash);
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, p0, impl));
     }
     benchmark(desc, list);
 }
@@ -571,8 +580,9 @@ void benchmark_tensor_peek(const vespalib::string &desc, const TensorSpec &lhs, 
     }
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
-        auto op = impl.create_tensor_peek(type, peek_spec, stash);
-        list.push_back(std::make_unique<EvalOp>(op, stack_spec, impl));
+        Stash my_stash;
+        auto op = impl.create_tensor_peek(type, peek_spec, my_stash);
+        list.push_back(std::make_unique<EvalOp>(std::move(my_stash), op, stack_spec, impl));
     }
     benchmark(desc, list);
 }
