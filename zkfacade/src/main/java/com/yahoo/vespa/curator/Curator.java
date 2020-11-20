@@ -31,6 +31,7 @@ import java.io.File;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -57,7 +58,7 @@ public class Curator implements AutoCloseable {
     private static final int MAX_RETRIES = 10;
     private static final RetryPolicy DEFAULT_RETRY_POLICY = new ExponentialBackoffRetry((int) BASE_SLEEP_TIME.toMillis(), MAX_RETRIES);
 
-    protected final RetryPolicy retryPolicy;
+    protected final RetryPolicy retryPolicy = DEFAULT_RETRY_POLICY;
 
     private final CuratorFramework curatorFramework;
     private final ConnectionSpec connectionSpec;
@@ -94,36 +95,28 @@ public class Curator implements AutoCloseable {
              Optional.of(ZK_CLIENT_CONFIG_FILE));
     }
 
-    protected Curator(String connectionSpec,
-                      String zooKeeperEnsembleConnectionSpec,
-                      Function<RetryPolicy, CuratorFramework> curatorFactory) {
-        this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory, DEFAULT_RETRY_POLICY);
+    protected Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Function<RetryPolicy, CuratorFramework> curatorFactory) {
+        this(ConnectionSpec.create(connectionSpec, zooKeeperEnsembleConnectionSpec), curatorFactory.apply(DEFAULT_RETRY_POLICY));
     }
 
     Curator(ConnectionSpec connectionSpec, Optional<File> clientConfigFile) {
         this(connectionSpec,
-             (retryPolicy) -> CuratorFrameworkFactory
+             CuratorFrameworkFactory
                      .builder()
-                     .retryPolicy(retryPolicy)
+                     .retryPolicy(DEFAULT_RETRY_POLICY)
                      .sessionTimeoutMs((int) ZK_SESSION_TIMEOUT.toMillis())
                      .connectionTimeoutMs((int) ZK_CONNECTION_TIMEOUT.toMillis())
                      .connectString(connectionSpec.local())
                      .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
                      .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
-                     .build(),
-             DEFAULT_RETRY_POLICY);
+                     .build());
     }
 
-    private Curator(ConnectionSpec connectionSpec,
-                    Function<RetryPolicy, CuratorFramework> curatorFactory,
-                    RetryPolicy retryPolicy) {
-        this.connectionSpec = connectionSpec;
-        this.retryPolicy = retryPolicy;
-        this.curatorFramework = curatorFactory.apply(retryPolicy);
-        if (this.curatorFramework != null) {
-            addLoggingListener();
-            curatorFramework.start();
-        }
+    private Curator(ConnectionSpec connectionSpec, CuratorFramework curatorFramework) {
+        this.connectionSpec = Objects.requireNonNull(connectionSpec);
+        this.curatorFramework = Objects.requireNonNull(curatorFramework);
+        addLoggingListener();
+        curatorFramework.start();
     }
 
     private static ZKClientConfig createClientConfig(Optional<File> clientConfigFile) {
