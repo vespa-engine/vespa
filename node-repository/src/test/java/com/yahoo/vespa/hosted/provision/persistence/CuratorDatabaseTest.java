@@ -149,6 +149,7 @@ public class CuratorDatabaseTest {
             this.task = task;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public org.apache.curator.framework.api.transaction.CuratorTransaction and(org.apache.curator.framework.api.transaction.CuratorTransaction transaction) {
             task.run();
