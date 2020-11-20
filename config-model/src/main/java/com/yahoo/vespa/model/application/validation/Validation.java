@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -108,12 +109,14 @@ public class Validation {
         List<ConfigChangeAction> actions = Arrays.stream(validators)
                                                  .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
                                                  .collect(toList());
-        overrides.invalid(actions.stream()
-                                 .filter(DisallowableConfigChangeAction.class::isInstance)
-                                 .map(DisallowableConfigChangeAction.class::cast)
-                                 .filter(action -> ! action.allowed())
-                                 .collect(groupingBy(DisallowableConfigChangeAction::validationId,
-                                                     mapping(ConfigChangeAction::getMessage, toList()))),
+
+        Stream<DisallowableConfigChangeAction> disallowedActions = actions.stream()
+                                                                          .filter(DisallowableConfigChangeAction.class::isInstance)
+                                                                          .map(DisallowableConfigChangeAction.class::cast)
+                                                                          .filter(action -> ! action.allowed());
+
+        overrides.invalid(disallowedActions.collect(groupingBy(DisallowableConfigChangeAction::validationId,
+                                                               mapping(ConfigChangeAction::getMessage, toList()))),
                           now);
         return actions;
     }
