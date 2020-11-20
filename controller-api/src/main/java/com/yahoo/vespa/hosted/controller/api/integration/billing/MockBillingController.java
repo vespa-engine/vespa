@@ -53,6 +53,7 @@ public class MockBillingController implements BillingController {
         committedInvoices.computeIfAbsent(tenant, l -> new ArrayList<>())
                 .add(new Invoice(
                         invoiceId,
+                        tenant,
                         Invoice.StatusHistory.open(),
                         List.of(),
                         startTime,
@@ -177,6 +178,6 @@ public class MockBillingController implements BillingController {
     }
 
     private Invoice emptyInvoice() {
-        return new Invoice(Invoice.Id.of("empty"), Invoice.StatusHistory.open(), List.of(), ZonedDateTime.now(), ZonedDateTime.now());
+        return new Invoice(Invoice.Id.of("empty"), TenantName.defaultName(), Invoice.StatusHistory.open(), List.of(), ZonedDateTime.now(), ZonedDateTime.now());
     }
 }
