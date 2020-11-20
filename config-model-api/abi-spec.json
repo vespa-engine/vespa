@@ -529,15 +529,14 @@
       "public static final enum com.yahoo.config.application.api.ValidationId indexModeChange",
       "public static final enum com.yahoo.config.application.api.ValidationId fieldTypeChange",
       "public static final enum com.yahoo.config.application.api.ValidationId clusterSizeReduction",
+      "public static final enum com.yahoo.config.application.api.ValidationId tensorTypeChange",
       "public static final enum com.yahoo.config.application.api.ValidationId resourcesReduction",
       "public static final enum com.yahoo.config.application.api.ValidationId contentTypeRemoval",
       "public static final enum com.yahoo.config.application.api.ValidationId contentClusterRemoval",
       "public static final enum com.yahoo.config.application.api.ValidationId deploymentRemoval",
-      "public static final enum com.yahoo.config.application.api.ValidationId skipAutomaticTenantUpgradeTests",
       "public static final enum com.yahoo.config.application.api.ValidationId globalDocumentChange",
       "public static final enum com.yahoo.config.application.api.ValidationId configModelVersionMismatch",
       "public static final enum com.yahoo.config.application.api.ValidationId skipOldConfigModels",
-      "public static final enum com.yahoo.config.application.api.ValidationId forceAutomaticTenantUpgradeTests",
       "public static final enum com.yahoo.config.application.api.ValidationId accessControl",
       "public static final enum com.yahoo.config.application.api.ValidationId globalEndpointChange"
     ]
@@ -577,10 +576,7 @@
     "attributes": [
       "public"
     ],
-    "methods": [
-      "public com.yahoo.config.application.api.ValidationId validationId()",
-      "public java.lang.String getMessage()"
-    ],
+    "methods": [],
     "fields": []
   },
   "com.yahoo.config.application.api.ValidationOverrides": {
@@ -591,6 +587,7 @@
     ],
     "methods": [
       "public void <init>(java.util.List)",
+      "public void invalid(java.util.Map, java.time.Instant)",
       "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
       "public boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",

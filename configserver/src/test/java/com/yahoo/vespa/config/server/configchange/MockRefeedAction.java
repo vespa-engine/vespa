@@ -1,32 +1,35 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.configchange;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author geirst
  */
 public class MockRefeedAction extends MockConfigChangeAction implements ConfigChangeRefeedAction {
 
-    private final String name;
-    private final boolean allowed;
+    private final ValidationId validationId;
     private final String documentType;
 
-    public MockRefeedAction(String name, boolean allowed, String message, List<ServiceInfo> services, String documentType) {
+    public MockRefeedAction(ValidationId validationId, String message, List<ServiceInfo> services, String documentType) {
         super(message, services);
-        this.name = name;
-        this.allowed = allowed;
+        this.validationId = validationId;
         this.documentType = documentType;
     }
 
     @Override
-    public String name() { return name; }
+    public Optional<ValidationId> validationId() { return Optional.of(validationId); }
 
     @Override
-    public boolean allowed() { return allowed; }
+    public ClusterSpec.Id clusterId() {
+        return null;
+    }
 
     @Override
     public boolean ignoreForInternalRedeploy() {

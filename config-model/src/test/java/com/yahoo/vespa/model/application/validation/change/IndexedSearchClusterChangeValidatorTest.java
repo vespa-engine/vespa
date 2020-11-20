@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
@@ -146,9 +147,8 @@ public class IndexedSearchClusterChangeValidatorTest {
     public void requireThatChangingFieldTypeIsDiscovered() {
         Fixture f = Fixture.newOneDocFixture(STRING_FIELD, INT_FIELD);
         f.assertValidation(List.of(newRefeedAction(ClusterSpec.Id.from("test"),
-                                                   "field-type-change",
-                                                   ValidationOverrides.empty,
-                                                   "Document type 'd1': " + FIELD_TYPE_CHANGE_MSG, FOO_SERVICE, "d1", Instant.now())));
+                                                   ValidationId.fieldTypeChange,
+                                                   "Document type 'd1': " + FIELD_TYPE_CHANGE_MSG, FOO_SERVICE, "d1")));
     }
 
 }

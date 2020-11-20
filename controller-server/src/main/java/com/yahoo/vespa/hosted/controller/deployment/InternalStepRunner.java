@@ -219,43 +219,11 @@ public class InternalStepRunner implements StepRunner {
                                                                             LogEntry.typeOf(LogLevel.parse(entry.level)),
                                                                             entry.message))
                                                  .collect(toList()));
-            if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {
-                List<String> messages = new ArrayList<>();
-                messages.add("Deploy failed due to non-compatible changes that require re-feed.");
-                messages.add("Your options are:");
-                messages.add("1. Revert the incompatible changes.");
-                messages.add("2. If you think it is safe in your case, you can override this validation, see");
-                messages.add("   http://docs.vespa.ai/documentation/reference/validation-overrides.html");
-                messages.add("3. Deploy as a new application under a different name.");
-                messages.add("Illegal actions:");
-                prepareResponse.configChangeActions.refeedActions.stream()
-                                                                 .filter(action -> ! action.allowed)
-                                                                 .flatMap(action -> action.messages.stream())
-                                                                 .forEach(messages::add);
-                logger.log(messages);
-                return Optional.of(deploymentFailed);
-            }
-
-            if ( ! prepareResponse.configChangeActions.reindexActions.stream().allMatch(action -> action.allowed)) {
-                List<String> messages = new ArrayList<>();
-                messages.add("Deploy failed due to non-compatible changes that require re-index.");
-                messages.add("Your options are:");
-                messages.add("1. Revert the incompatible changes.");
-                messages.add("2. If you think it is safe in your case, you can override this validation, see");
-                messages.add("   http://docs.vespa.ai/documentation/reference/validation-overrides.html");
-                messages.add("3. Deploy as a new application under a different name.");
-                messages.add("Illegal actions:");
-                prepareResponse.configChangeActions.reindexActions.stream()
-                                                                 .filter(action -> ! action.allowed)
-                                                                 .flatMap(action -> action.messages.stream())
-                                                                 .forEach(messages::add);
-                logger.log(messages);
-                return Optional.of(deploymentFailed);
-            }
 
             logger.log("Deployment successful.");
             if (prepareResponse.message != null)
                 logger.log(prepareResponse.message);
+
             return Optional.of(running);
         }
         catch (ConfigServerException e) {

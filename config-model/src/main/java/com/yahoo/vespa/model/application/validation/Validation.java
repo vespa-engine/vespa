@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.Model;
@@ -28,10 +29,13 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -99,9 +103,16 @@ public class Validation {
                 new ContainerRestartValidator(),
                 new NodeResourceChangeValidator()
         };
-        return Arrays.stream(validators)
-                .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
-                .collect(toList());
+        List<ConfigChangeAction> actions = Arrays.stream(validators)
+                                                 .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
+                                                 .collect(toList());
+
+        Map<ValidationId, List<String>> disallowableActions = actions.stream()
+                                                                     .filter(action -> action.validationId().isPresent())
+                                                                     .collect(groupingBy(action -> action.validationId().orElseThrow(),
+                                                                                         mapping(ConfigChangeAction::getMessage, toList())));
+        overrides.invalid(disallowableActions, now);
+        return actions;
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {

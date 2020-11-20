@@ -2054,7 +2054,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (RefeedAction refeedAction : result.prepareResponse().configChangeActions.refeedActions) {
             Cursor refeedActionObject = refeedActionsArray.addObject();
             refeedActionObject.setString("name", refeedAction.name);
-            refeedActionObject.setBool("allowed", refeedAction.allowed);
             refeedActionObject.setString("documentType", refeedAction.documentType);
             refeedActionObject.setString("clusterName", refeedAction.clusterName);
             serviceInfosToSlime(refeedAction.services, refeedActionObject.setArray("services"));
