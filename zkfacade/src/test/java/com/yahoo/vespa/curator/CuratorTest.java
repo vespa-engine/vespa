@@ -68,22 +68,6 @@ public class CuratorTest {
         }
     }
 
-    @Test
-     public void localhost_affinity() {
-         String localhostHostName = "myhost";
-         int localhostPort = 123;
-
-         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
-         builder.zookeeperserver(createZKBuilder(localhostHostName, localhostPort));
-         builder.zookeeperserver(createZKBuilder("otherhost", 345));
-         ConfigserverConfig config = new ConfigserverConfig(builder);
-
-         HostName.setHostNameForTestingOnly(localhostHostName);
-
-        String localhostSpec = localhostHostName + ":" + localhostPort;
-         assertEquals(localhostSpec, Curator.createConnectionSpecForLocalhost(config));
-     }
-
     private ConfigserverConfig createTestConfig() {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         builder.zookeeperserver(createZKBuilder(localhost, port1));
