@@ -243,13 +243,14 @@ public class Curator implements AutoCloseable {
      * A convenience method which sets some content at a path.
      * If the path and any of its parents does not exists they are created.
      */
+    // TODO: Use create().orSetData() in Curator 4 and later
     public void set(Path path, byte[] data) {
+        if ( ! exists(path))
+            create(path);
+
         String absolutePath = path.getAbsolute();
         try {
-            if ( ! exists(path))
-                framework().create().creatingParentsIfNeeded().forPath(absolutePath, data);
-            else
-                framework().setData().forPath(absolutePath, data);
+            framework().setData().forPath(absolutePath, data);
         } catch (Exception e) {
             throw new RuntimeException("Could not set data at " + absolutePath, e);
         }
