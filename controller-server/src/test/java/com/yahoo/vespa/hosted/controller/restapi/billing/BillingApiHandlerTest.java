@@ -2,7 +2,6 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
@@ -12,15 +11,12 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
-import com.yahoo.vespa.hosted.controller.security.Credentials;
-import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -110,7 +106,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
 
     @Test
     public void test_invoice_creation() {
-        var invoices = billingController.getInvoices(tenant);
+        var invoices = billingController.getInvoicesForTenant(tenant);
         assertEquals(0, invoices.size());
 
         String requestBody = "{\"tenant\":\"tenant1\", \"startTime\":\"2020-04-20\", \"endTime\":\"2020-05-20\"}";
@@ -122,7 +118,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         request.roles(financeAdmin);
         tester.assertResponse(request, new File("invoice-creation-response"));
 
-        invoices = billingController.getInvoices(tenant);
+        invoices = billingController.getInvoicesForTenant(tenant);
         assertEquals(1, invoices.size());
         Invoice invoice = invoices.get(0);
         assertEquals(invoice.getStartTime().toString(), "2020-04-20T00:00Z[UTC]");
@@ -165,7 +161,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
                 .roles(financeAdmin);
         tester.assertResponse(request, "{\"message\":\"Updated status of invoice id-1\"}");
 
-        var invoice = billingController.getInvoices(tenant).get(0);
+        var invoice = billingController.getInvoicesForTenant(tenant).get(0);
         assertEquals("DONE", invoice.status());
     }
 
@@ -222,6 +218,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         var statusHistory = new Invoice.StatusHistory(new TreeMap<>(Map.of(start, "OPEN")));
         return new Invoice(
                 Invoice.Id.of("id-1"),
+                TenantName.defaultName(),
                 statusHistory,
                 List.of(createLineItem(start)),
                 start,

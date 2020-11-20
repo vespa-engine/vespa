@@ -8,11 +8,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author olaa
@@ -135,8 +137,13 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public List<Invoice> getInvoices(TenantName tenant) {
+    public List<Invoice> getInvoicesForTenant(TenantName tenant) {
         return committedInvoices.getOrDefault(tenant, List.of());
+    }
+
+    @Override
+    public List<Invoice> getInvoices() {
+        return committedInvoices.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
 
     @Override

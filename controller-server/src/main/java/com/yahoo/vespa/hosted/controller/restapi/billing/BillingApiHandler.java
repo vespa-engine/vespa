@@ -330,7 +330,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
     }
 
     private List<Invoice> getInvoicesForTenant(TenantName tenant) {
-        return billingController.getInvoices(tenant);
+        return billingController.getInvoicesForTenant(tenant);
     }
 
     private void renderInvoices(Cursor cursor, List<Invoice> invoices) {
