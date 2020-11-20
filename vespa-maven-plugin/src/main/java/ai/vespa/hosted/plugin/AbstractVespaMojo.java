@@ -4,6 +4,7 @@ package ai.vespa.hosted.plugin;
 import ai.vespa.hosted.api.ControllerHttpClient;
 import ai.vespa.hosted.api.Properties;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.yolean.Exceptions;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -15,6 +16,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * Base class for hosted Vespa plugin mojos.
@@ -61,7 +66,11 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
             throw e;
         }
         catch (Exception e) {
-            throw new MojoExecutionException("Execution failed for application " + name(), e);
+            String message = "Execution failed for application " + name() + ":\n" + Exceptions.toMessageString(e);
+            if (e.getSuppressed().length > 0)
+                message += "\nSuppressed:\n" + Stream.of(e.getSuppressed()).map(Exceptions::toMessageString).collect(joining("\n"));
+
+            throw new MojoExecutionException(message, e);
         }
     }
 
