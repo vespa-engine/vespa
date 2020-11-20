@@ -12,6 +12,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.DocumentAccess;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
@@ -52,13 +53,14 @@ public class ReindexingMaintainer extends AbstractComponent {
 
     @Inject
     public ReindexingMaintainer(@SuppressWarnings("unused") VespaZooKeeperServer ensureZkHasStarted,
+                                Metric metric,
                                 DocumentAccess access, ZookeepersConfig zookeepersConfig,
                                 ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig allClustersBucketSpacesConfig,
                                 ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
-        this(Clock.systemUTC(), access, zookeepersConfig, clusterListConfig, allClustersBucketSpacesConfig, reindexingConfig, documentmanagerConfig);
+        this(Clock.systemUTC(), metric, access, zookeepersConfig, clusterListConfig, allClustersBucketSpacesConfig, reindexingConfig, documentmanagerConfig);
     }
 
-    ReindexingMaintainer(Clock clock, DocumentAccess access, ZookeepersConfig zookeepersConfig,
+    ReindexingMaintainer(Clock clock, Metric metric, DocumentAccess access, ZookeepersConfig zookeepersConfig,
                          ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig allClustersBucketSpacesConfig,
                          ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
         DocumentTypeManager manager = new DocumentTypeManager(documentmanagerConfig);
@@ -68,6 +70,7 @@ public class ReindexingMaintainer extends AbstractComponent {
                                                              reindexingConfig.clusterName(),
                                                              manager),
                                        access,
+                                       metric,
                                        clock);
         this.executor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("reindexer-"));
         if (reindexingConfig.enabled())
