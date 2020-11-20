@@ -6,7 +6,7 @@
 
 namespace vespalib::tensor {
 
-using CellType = vespalib::eval::ValueType::CellType;
+using vespalib::eval::CellType;
 using TypedCells = vespalib::eval::TypedCells;
 
 template <typename TGT, typename... Args>

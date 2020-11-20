@@ -46,7 +46,6 @@ using eval::TensorFunction;
 using eval::TensorSpec;
 using eval::Value;
 using eval::ValueType;
-using CellType = eval::ValueType::CellType;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 

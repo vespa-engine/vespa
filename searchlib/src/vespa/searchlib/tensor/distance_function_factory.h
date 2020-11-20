@@ -14,6 +14,6 @@ namespace search::tensor {
  **/
 DistanceFunction::UP
 make_distance_function(search::attribute::DistanceMetric variant,
-                       vespalib::eval::ValueType::CellType cell_type);
+                       vespalib::eval::CellType cell_type);
 
 }

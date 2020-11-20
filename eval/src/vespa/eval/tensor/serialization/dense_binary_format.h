@@ -18,7 +18,7 @@ class DenseTensorView;
 class DenseBinaryFormat
 {
 public:
-    using CellType = eval::ValueType::CellType;
+    using CellType = vespalib::eval::CellType;
 
     static void serialize(nbostream &stream, const DenseTensorView &tensor);
     static std::unique_ptr<DenseTensorView> deserialize(nbostream &stream, CellType cell_type);

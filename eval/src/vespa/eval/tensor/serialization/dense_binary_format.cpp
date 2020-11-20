@@ -8,7 +8,7 @@
 
 using vespalib::nbostream;
 using vespalib::eval::ValueType;
-using CellType = vespalib::eval::ValueType::CellType;
+using vespalib::eval::CellType;
 
 namespace vespalib::tensor {
 
