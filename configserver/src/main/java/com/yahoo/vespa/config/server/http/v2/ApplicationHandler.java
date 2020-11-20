@@ -220,11 +220,11 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private void triggerReindexing(HttpRequest request, ApplicationId applicationId) {
-        List<String> clusters = Optional.ofNullable(request.getProperty("cluster")).stream()
+        List<String> clusters = Optional.ofNullable(request.getProperty("clusterId")).stream()
                                         .flatMap(value -> Stream.of(value.split(",")))
                                         .filter(cluster -> ! cluster.isBlank())
                                         .collect(toList());
-        List<String> types = Optional.ofNullable(request.getProperty("type")).stream()
+        List<String> types = Optional.ofNullable(request.getProperty("documentType")).stream()
                                      .flatMap(value -> Stream.of(value.split(",")))
                                      .filter(type -> ! type.isBlank())
                                      .collect(toList());
