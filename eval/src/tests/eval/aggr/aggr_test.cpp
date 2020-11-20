@@ -29,6 +29,16 @@ TEST("require that aggr::is_simple works as expected") {
     EXPECT_TRUE (aggr::is_simple(Aggr::MIN));
 }
 
+TEST("require that aggr::is_ident works as expected") {
+    EXPECT_TRUE (aggr::is_ident(Aggr::AVG));
+    EXPECT_FALSE(aggr::is_ident(Aggr::COUNT));
+    EXPECT_TRUE (aggr::is_ident(Aggr::PROD));
+    EXPECT_TRUE (aggr::is_ident(Aggr::SUM));
+    EXPECT_TRUE (aggr::is_ident(Aggr::MAX));
+    EXPECT_TRUE (aggr::is_ident(Aggr::MEDIAN));
+    EXPECT_TRUE (aggr::is_ident(Aggr::MIN));
+}
+
 TEST("require that aggr::is_complex works as expected") {
     EXPECT_FALSE(aggr::is_complex(Aggr::AVG));
     EXPECT_FALSE(aggr::is_complex(Aggr::COUNT));
