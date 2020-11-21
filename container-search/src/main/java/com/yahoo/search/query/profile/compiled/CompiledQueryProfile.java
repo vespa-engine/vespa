@@ -182,6 +182,11 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
         if (value == null) return null;
         return substitute(value.value(), context, substitution);
     }
+    
+    /** Returns all the entries from the profile **/ 
+    public final DimensionalMap<ValueWithSource> getEntries() {
+        return this.entries;
+    }    
 
     private Object substitute(Object value, Map<String, String> context, Properties substitution) {
         if (value == null) return value;
