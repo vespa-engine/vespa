@@ -82,7 +82,11 @@ public class HostCapacity {
      * Number of free (not allocated) IP addresses assigned to the dockerhost.
      */
     int freeIPs(Node dockerHost) {
-        return dockerHost.ipConfig().pool().findUnused(allNodes).size();
+        if (dockerHost.type() == NodeType.host) {
+            return dockerHost.ipConfig().pool().eventuallyUnusedAddressCount(allNodes);
+        } else {
+            return dockerHost.ipConfig().pool().findUnusedIpAddresses(allNodes).size();
+        }
     }
 
     /**

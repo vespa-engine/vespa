@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.NodeType.confighost;
 import static com.yahoo.config.provision.NodeType.controllerhost;
@@ -254,18 +255,25 @@ public class IP {
          * @return an allocation from the pool, if any can be made
          */
         public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver) {
+            if (ipAddresses.asSet().isEmpty()) {
+                // IP addresses have not yet been resolved and should be done later.
+                return findUnusedAddressStream(nodes)
+                        .map(Allocation::ofAddress)
+                        .findFirst();
+            }
+
             if (ipAddresses.protocol == IpAddresses.Protocol.ipv4) {
-                return findUnused(nodes).stream()
+                return findUnusedIpAddresses(nodes).stream()
                         .findFirst()
                         .map(addr -> Allocation.ofIpv4(addr, resolver));
             }
 
-            var unusedAddresses = findUnused(nodes);
+            var unusedAddresses = findUnusedIpAddresses(nodes);
             var allocation = unusedAddresses.stream()
                                             .filter(IP::isV6)
                                             .findFirst()
                                             .map(addr -> Allocation.ofIpv6(addr, resolver));
-            allocation.flatMap(Allocation::secondary).ifPresent(ipv4Address -> {
+            allocation.flatMap(Allocation::ipv4Address).ifPresent(ipv4Address -> {
                 if (!unusedAddresses.contains(ipv4Address)) {
                     throw new IllegalArgumentException("Allocation resolved " + ipv4Address + " from hostname " +
                                                        allocation.get().hostname +
@@ -276,15 +284,41 @@ public class IP {
         }
 
         /**
-         * Finds all unused addresses in this pool
+         * Finds all unused IP addresses in this pool
          *
          * @param nodes a list of all nodes in the repository
          */
-        public Set<String> findUnused(NodeList nodes) {
+        public Set<String> findUnusedIpAddresses(NodeList nodes) {
             var unusedAddresses = new LinkedHashSet<>(getIpSet());
             nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> getIpSet().contains(ip)))
                  .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));
             return Collections.unmodifiableSet(unusedAddresses);
+        }
+
+        /**
+         * Returns the number of unused IP addresses in the pool, assuming any and all unaccounted for hostnames
+         * in the pool are resolved to exactly 1 IP address (or 2 with {@link IpAddresses.Protocol#dualStack}).
+         */
+        public int eventuallyUnusedAddressCount(NodeList nodes) {
+            // The address pool is filled immediately upon provisioning in dynamically provisioned zones,
+            // and within short time the IP address pool is filled.  For all other cases, the IP address
+            // pool is already filled.
+            //
+            // The count in this method relies on the size of the IP address pool if that's non-empty,
+            // otherwise fall back to the address/hostname pool.
+
+
+            Set<String> currentIpAddresses = this.ipAddresses.asSet();
+            if (!currentIpAddresses.isEmpty()) {
+                return findUnusedIpAddresses(nodes).size();
+            }
+
+            return (int) findUnusedAddressStream(nodes).count();
+        }
+
+        private Stream<Address> findUnusedAddressStream(NodeList nodes) {
+            Set<String> hostnames = nodes.stream().map(Node::hostname).collect(Collectors.toSet());
+            return addresses.stream().filter(address -> !hostnames.contains(address.hostname()));
         }
 
         public IpAddresses.Protocol getProtocol() {
@@ -297,10 +331,6 @@ public class IP {
 
         public List<Address> getAddressList() {
             return addresses;
-        }
-
-        public boolean isEmpty() {
-            return getIpSet().isEmpty();
         }
 
         public Pool withIpAddresses(Set<String> ipAddresses) {
@@ -326,22 +356,17 @@ public class IP {
 
     }
 
-    /** An IP address allocation from a pool */
+    /** An address allocation from a pool */
     public static class Allocation {
 
         private final String hostname;
-        private final String primary;
-        private final Optional<String> secondary;
+        private final Optional<String> ipv4Address;
+        private final Optional<String> ipv6Address;
 
-        private Allocation(String hostname, String primary, Optional<String> secondary) {
-            Objects.requireNonNull(primary, "primary must be non-null");
-            Objects.requireNonNull(secondary, "ipv4Address must be non-null");
-            if (secondary.isPresent() && !isV4(secondary.get())) { // Secondary must be IPv4, if present
-                throw new IllegalArgumentException("Invalid IPv4 address '" + secondary + "'");
-            }
+        private Allocation(String hostname, Optional<String> ipv4Address, Optional<String> ipv6Address) {
             this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
-            this.primary = primary;
-            this.secondary = secondary;
+            this.ipv4Address = Objects.requireNonNull(ipv4Address, "ipv4Address must be non-null");
+            this.ipv6Address = Objects.requireNonNull(ipv6Address, "ipv6Address must be non-null");
         }
 
         /**
@@ -350,13 +375,17 @@ public class IP {
          * A successful allocation is guaranteed to have an IPv6 address, but may also have an IPv4 address if the
          * hostname of the IPv6 address has an A record.
          *
-         * @param ipAddress Unassigned IPv6 address
+         * @param ipv6Address Unassigned IPv6 address
          * @param resolver DNS name resolver to use
          * @throws IllegalArgumentException if DNS is misconfigured
          * @return An allocation containing 1 IPv6 address and 1 IPv4 address (if hostname is dual-stack)
          */
-        private static Allocation ofIpv6(String ipAddress, NameResolver resolver) {
-            String hostname6 = resolver.resolveHostname(ipAddress).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipAddress));
+        private static Allocation ofIpv6(String ipv6Address, NameResolver resolver) {
+            if (!isV6(ipv6Address)) {
+                throw new IllegalArgumentException("Invalid IPv6 address '" + ipv6Address + "'");
+            }
+
+            String hostname6 = resolver.resolveHostname(ipv6Address).orElseThrow(() -> new IllegalArgumentException("Could not resolve IP address: " + ipv6Address));
             List<String> ipv4Addresses = resolver.resolveAll(hostname6).stream()
                                                  .filter(IP::isV4)
                                                  .collect(Collectors.toList());
@@ -369,10 +398,10 @@ public class IP {
                 if (!hostname6.equals(hostname4)) {
                     throw new IllegalArgumentException(String.format("Hostnames resolved from each IP address do not " +
                                                                      "point to the same hostname [%s -> %s, %s -> %s]",
-                                                                     ipAddress, hostname6, addr, hostname4));
+                                                                     ipv6Address, hostname6, addr, hostname4));
                 }
             });
-            return new Allocation(hostname6, ipAddress, ipv4Address);
+            return new Allocation(hostname6, ipv4Address, Optional.of(ipv6Address));
         }
 
         /**
@@ -391,7 +420,11 @@ public class IP {
                 throw new IllegalArgumentException("Hostname " + hostname4 + " did not resolve to exactly 1 address. " +
                                                    "Resolved: " + addresses);
             }
-            return new Allocation(hostname4, addresses.get(0), Optional.empty());
+            return new Allocation(hostname4, Optional.of(addresses.get(0)), Optional.empty());
+        }
+
+        private static Allocation ofAddress(Address address) {
+            return new Allocation(address.hostname(), Optional.empty(), Optional.empty());
         }
 
         /** Hostname pointing to the IP addresses in this */
@@ -399,27 +432,28 @@ public class IP {
             return hostname;
         }
 
-        /** Primary address of this allocation */
-        public String primary() {
-            return primary;
+        /** IPv4 address of this allocation */
+        public Optional<String> ipv4Address() {
+            return ipv4Address;
         }
 
-        /** Secondary address of this allocation */
-        public Optional<String> secondary() {
-            return secondary;
+        /** IPv6 address of this allocation */
+        public Optional<String> ipv6Address() {
+            return ipv6Address;
         }
 
         /** All IP addresses in this */
         public Set<String> addresses() {
             ImmutableSet.Builder<String> builder = ImmutableSet.builder();
-            secondary.ifPresent(builder::add);
-            builder.add(primary);
+            ipv4Address.ifPresent(builder::add);
+            ipv6Address.ifPresent(builder::add);
             return builder.build();
         }
 
         @Override
         public String toString() {
-            return String.format("IP allocation [primary=%s, secondary=%s]", primary, secondary.orElse("<none>"));
+            return String.format("Address allocation [hostname=%s, IPv4=%s, IPv6=%s]",
+                    hostname, ipv4Address.orElse("<none>"), ipv6Address.orElse("<none>"));
         }
 
     }
