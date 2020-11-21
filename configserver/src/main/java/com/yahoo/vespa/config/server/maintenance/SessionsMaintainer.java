@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.log.LogLevel;
@@ -17,6 +17,7 @@ import java.time.Duration;
  */
 public class SessionsMaintainer extends ConfigServerMaintainer {
     private final boolean hostedVespa;
+    private int iteration = 0;
 
     SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, FlagSource flagSource) {
         super(applicationRepository, curator, flagSource, Duration.ofMinutes(1), interval);
@@ -25,6 +26,9 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
 
     @Override
     protected boolean maintain() {
+        if (iteration % 10 == 0)
+            log.log(LogLevel.INFO, () -> "Running " + SessionsMaintainer.class.getSimpleName() + ", iteration "  + iteration);
+
         applicationRepository.deleteExpiredLocalSessions();
 
         if (hostedVespa) {
@@ -33,6 +37,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
             log.log(LogLevel.FINE, () -> "Deleted " + deleted + " expired remote sessions older than " + expiryTime);
         }
 
+        iteration++;
         return true;
     }
 
