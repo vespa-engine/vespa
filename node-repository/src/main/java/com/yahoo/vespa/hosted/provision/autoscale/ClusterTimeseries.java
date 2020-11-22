@@ -77,16 +77,8 @@ public class ClusterTimeseries {
         // Require a total number of measurements scaling with the number of nodes,
         // but don't require that we have at least that many from every node
         int measurementCount = currentMeasurements.stream().mapToInt(m -> m.size()).sum();
-        if (measurementCount / clusterNodes.size() < Autoscaler.minimumMeasurementsPerNode(clusterType)) {
-            log.fine(() -> "Too few measurements per node for " + cluster + ": measurementCount " + measurementCount +
-                           " (" + nodeTimeseries.stream().mapToInt(m -> m.size()).sum() + " before filtering");
-            return Optional.empty();
-        }
-        if (currentMeasurements.size() != clusterNodes.size()) {
-            log.fine(() -> "Missing measurements from some nodes for " + cluster + ": Has from " + currentMeasurements.size() +
-                           "but need " + clusterNodes.size() + "(before filtering: " +  nodeTimeseries.size() + ")");
-            return Optional.empty();
-        }
+        if (measurementCount / clusterNodes.size() < Autoscaler.minimumMeasurementsPerNode(clusterType)) return Optional.empty();
+        if (currentMeasurements.size() != clusterNodes.size()) return Optional.empty();
 
         double measurementSum = currentMeasurements.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
         return Optional.of(measurementSum / measurementCount);
