@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
@@ -72,23 +72,22 @@ public class ConfigVerification {
             for (Map.Entry<String, Stack<String>> entry : mappings.entrySet()) {
                 recurseUrls.add(entry.getValue().pop());
             }
-            int ret = compareOutputs(performRequests(recurseUrls, httpClient));
-            if (ret != 0) {
-                return ret;
-            }
+            if ( ! equalOutputs(performRequests(recurseUrls, httpClient)))
+                return -1;
         }
         return 0;
     }
 
-    private static int compareOutputs(Map<String, String> outputs) {
+    private static boolean equalOutputs(Map<String, String> outputs) {
         Map.Entry<String, String> firstEntry = outputs.entrySet().iterator().next();
         for (Map.Entry<String, String> entry : outputs.entrySet()) {
             if (!entry.getValue().equals(firstEntry.getValue())) {
-                System.out.println("output from '" + entry.getKey() + "' did not equal output from '" + firstEntry.getKey() + "'");
-                return -1;
+                System.out.println("output from '" + entry.getKey() + "': '" + entry.getValue() +
+                                   "' did not equal output from '" + firstEntry.getKey() + "': '" + firstEntry.getValue() + "'");
+                return false;
             }
         }
-        return 0;
+        return true;
     }
 
     private static String performRequest(String url, CloseableHttpClient httpClient) throws IOException {
