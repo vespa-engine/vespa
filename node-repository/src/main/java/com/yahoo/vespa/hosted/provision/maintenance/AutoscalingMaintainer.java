@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -70,13 +69,13 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
 
-        log.fine(() -> "Autoscale " + application.toString());
-
         var advice = autoscaler.autoscale(cluster.get(), clusterNodes);
 
-        if (advice.isEmpty()) return;
-
-        if ( ! cluster.get().targetResources().equals(advice.target())) {
+        application = application.with(cluster.get().withAutoscalingStatus(advice.reason()));
+        if (advice.isEmpty()) {
+            applications().put(application, deployment.applicationLock().get());
+        }
+        else if ( ! cluster.get().targetResources().equals(advice.target())) {
             applications().put(application.with(cluster.get().withTarget(advice.target())), deployment.applicationLock().get());
             if (advice.target().isPresent()) {
                 logAutoscaling(advice.target().get(), applicationId, cluster.get(), clusterNodes);

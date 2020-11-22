@@ -47,6 +47,7 @@ public class ApplicationSerializer {
     private static final String groupsKey = "groups";
     private static final String nodeResourcesKey = "resources";
     private static final String scalingEventsKey = "scalingEvents";
+    private static final String autoscalingStatusKey = "autoscalingStatus";
     private static final String fromKey = "from";
     private static final String toKey = "to";
     private static final String generationKey = "generation";
@@ -95,6 +96,7 @@ public class ApplicationSerializer {
         cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject(suggestedResourcesKey)));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject(targetResourcesKey)));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray(scalingEventsKey));
+        clusterObject.setString(autoscalingStatusKey, cluster.autoscalingStatus());
     }
 
     private static Cluster clusterFromSlime(String id, Inspector clusterObject) {
@@ -104,7 +106,8 @@ public class ApplicationSerializer {
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
                            optionalClusterResourcesFromSlime(clusterObject.field(suggestedResourcesKey)),
                            optionalClusterResourcesFromSlime(clusterObject.field(targetResourcesKey)),
-                           scalingEventsFromSlime(clusterObject.field(scalingEventsKey)));
+                           scalingEventsFromSlime(clusterObject.field(scalingEventsKey)),
+                           clusterObject.field(autoscalingStatusKey).asString());
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {

@@ -25,6 +25,7 @@ public class Cluster {
     private final Optional<ClusterResources> suggested;
     private final Optional<ClusterResources> target;
     private final List<ScalingEvent> scalingEvents;
+    private final String autoscalingStatus;
 
     public Cluster(ClusterSpec.Id id,
                    boolean exclusive,
@@ -32,7 +33,8 @@ public class Cluster {
                    ClusterResources maxResources,
                    Optional<ClusterResources> suggestedResources,
                    Optional<ClusterResources> targetResources,
-                   List<ScalingEvent> scalingEvents) {
+                   List<ScalingEvent> scalingEvents,
+                   String autoscalingStatus) {
         this.id = Objects.requireNonNull(id);
         this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
@@ -44,6 +46,7 @@ public class Cluster {
         else
             this.target = targetResources;
         this.scalingEvents = scalingEvents;
+        this.autoscalingStatus = autoscalingStatus;
     }
 
     public ClusterSpec.Id id() { return id; }
@@ -78,21 +81,28 @@ public class Cluster {
         return Optional.of(scalingEvents.get(scalingEvents.size() - 1));
     }
 
+    /** The latest autoscaling status of this cluster, or empty (never null) if none */
+    public String autoscalingStatus() { return autoscalingStatus; }
+
     public Cluster withConfiguration(boolean exclusive, ClusterResources min, ClusterResources max) {
-        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     public Cluster withSuggested(Optional<ClusterResources> suggested) {
-        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     public Cluster withTarget(Optional<ClusterResources> target) {
-        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     public Cluster with(ScalingEvent scalingEvent) {
         // NOTE: We're just storing the latest scaling event so far
-        return new Cluster(id, exclusive, min, max, suggested, target, List.of(scalingEvent));
+        return new Cluster(id, exclusive, min, max, suggested, target, List.of(scalingEvent), autoscalingStatus);
+    }
+
+    public Cluster withAutoscalingStatus(String autoscalingStatus) {
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     @Override

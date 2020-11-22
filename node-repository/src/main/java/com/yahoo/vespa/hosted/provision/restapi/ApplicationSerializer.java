@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 
 import java.net.URI;
@@ -51,12 +52,23 @@ public class ApplicationSerializer {
         toSlime(currentResources, clusterObject.setObject("current"));
         cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
+        scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
+        clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
         clusterResourcesObject.setLong("nodes", resources.nodes());
         clusterResourcesObject.setLong("groups", resources.groups());
         NodeResourcesSerializer.toSlime(resources.nodeResources(), clusterResourcesObject.setObject("resources"));
+    }
+
+    private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {
+        for (ScalingEvent scalingEvent : scalingEvents) {
+            Cursor scalingEventObject = scalingEventsArray.addObject();
+            toSlime(scalingEvent.from(), scalingEventObject.setObject("from"));
+            toSlime(scalingEvent.to(), scalingEventObject.setObject("to"));
+            scalingEventObject.setLong("at", scalingEvent.at().toEpochMilli());
+        }
     }
 
 }

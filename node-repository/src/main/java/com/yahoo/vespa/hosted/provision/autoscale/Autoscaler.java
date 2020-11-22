@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * The autoscaler makes decisions about the flavor and node count that should be allocated to a cluster
@@ -21,8 +21,6 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public class Autoscaler {
-
-    private static final Logger log = Logger.getLogger(Autoscaler.class.getName());
 
     /** What cost difference factor is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
@@ -57,43 +55,36 @@ public class Autoscaler {
      * @return scaling advice for this cluster
      */
     public Advice autoscale(Cluster cluster, List<Node> clusterNodes) {
-        if (cluster.minResources().equals(cluster.maxResources())) return Advice.none(); // Shortcut
+        if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is disabled"); // Shortcut
         return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive());
     }
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        log.fine(() -> "Autoscaling " + cluster);
+        if (unstable(clusterNodes, nodeRepository))
+            return Advice.none("Cluster change in progress");
 
-        if (unstable(clusterNodes, nodeRepository)) {
-            log.fine(() -> "Unstable: Advice.none for " + cluster);
-            return Advice.none();
-        }
-
-        AllocatableClusterResources currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository, cluster.exclusive());
+        AllocatableClusterResources currentAllocation =
+                new AllocatableClusterResources(clusterNodes, nodeRepository, cluster.exclusive());
 
         ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
         Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu, cluster);
         Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory, cluster);
         Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk, cluster);
-        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty()) return Advice.none();
+        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty())
+            return Advice.none("Collecting more data before making new scaling decisions");
 
         var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits, exclusive);
-        if (bestAllocation.isEmpty()) {
-            log.fine(() -> "bestAllocation.isEmpty: Advice.dontScale for " + cluster);
-            return Advice.dontScale();
-        }
-        if (similar(bestAllocation.get(), currentAllocation)) {
-            log.fine(() -> "Current allocation similar: Advice.dontScale for " + cluster);
-            return Advice.dontScale();
-        }
-        if (isDownscaling(bestAllocation.get(), currentAllocation) && recentlyScaled(cluster, clusterNodes)) {
-            log.fine(() -> "Too soon to downscale: Advice.dontScale for " + cluster);
-            return Advice.dontScale();
-        }
+        if (bestAllocation.isEmpty())
+            return Advice.dontScale("No allocation changes are possible within configured limits");
+
+        if (similar(bestAllocation.get(), currentAllocation))
+            return Advice.dontScale("Cluster is ideally scaled (within configured limits)");
+        if (isDownscaling(bestAllocation.get(), currentAllocation) && recentlyScaled(cluster, clusterNodes))
+            return Advice.dontScale("Waiting a while before scaling down");
 
         return Advice.scaleTo(bestAllocation.get().toAdvertisedClusterResources());
     }
@@ -169,10 +160,12 @@ public class Autoscaler {
 
         private final boolean present;
         private final Optional<ClusterResources> target;
+        private final String reason;
 
-        private Advice(Optional<ClusterResources> target, boolean present) {
+        private Advice(Optional<ClusterResources> target, boolean present, String reason) {
             this.target = target;
             this.present = present;
+            this.reason = Objects.requireNonNull(reason);
         }
 
         /**
@@ -187,10 +180,14 @@ public class Autoscaler {
         /** True if this provides advice (which may be to keep the current allocation) */
         public boolean isPresent() { return present; }
 
-        private static Advice none() { return new Advice(Optional.empty(), false); }
-        private static Advice dontScale() { return new Advice(Optional.empty(), true); }
-        private static Advice scaleTo(ClusterResources target) { return new Advice(Optional.of(target), true); }
+        /** The reason for this advice */
+        public String reason() { return reason; }
 
+        private static Advice none(String reason) { return new Advice(Optional.empty(), false, reason); }
+        private static Advice dontScale(String reason) { return new Advice(Optional.empty(), true, reason); }
+        private static Advice scaleTo(ClusterResources target) {
+            return new Advice(Optional.of(target), true, "Scaling due to load changes");
+        }
     }
 
 }
