@@ -16,7 +16,6 @@
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 #include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
-#include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
@@ -169,7 +168,7 @@ private:
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
     }
 
-    PendingNotifyRemoveDone adjustMetaStore(const DocumentOperation &op, const document::GlobalId & gid, const document::DocumentId &docId);
+    void adjustMetaStore(const DocumentOperation &op, const document::GlobalId & gid, const document::DocumentId &docId);
     void internalPut(FeedToken token, const PutOperation &putOp);
     void internalUpdate(FeedToken token, const UpdateOperation &updOp);
 
@@ -182,7 +181,6 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields);
 
     void internalRemove(FeedToken token, IPendingLidTracker::Token uncommitted, SerialNum serialNum,
-                        PendingNotifyRemoveDone &&pendingNotifyRemoveDone,
                         Lid lid, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);

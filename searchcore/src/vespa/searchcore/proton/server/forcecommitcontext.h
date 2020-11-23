@@ -12,6 +12,7 @@ namespace proton {
 class ForceCommitDoneTask;
 struct IDocumentMetaStore;
 class DocIdLimit;
+class IPendingGidToLidChanges;
 
 /**
  * Context class for forced commits that schedules a task when
@@ -34,6 +35,7 @@ public:
     ForceCommitContext(vespalib::Executor &executor,
                        IDocumentMetaStore &documentMetaStore,
                        PendingLidTrackerBase::Snapshot lidsToCommit,
+                       std::unique_ptr<IPendingGidToLidChanges> pending_gid_to_lid_changes,
                        std::shared_ptr<IDestructorCallback> onDone);
 
     ~ForceCommitContext() override;

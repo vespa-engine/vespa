@@ -12,7 +12,6 @@ namespace document { class Document; }
 namespace proton {
 
 class DocIdLimit;
-class IGidToLidChangeHandler;
 
 /**
  * Context class for document put operations that acks operation when
@@ -26,16 +25,12 @@ class PutDoneContext : public OperationDoneContext
     IPendingLidTracker::Token _uncommitted;
     uint32_t                  _lid;
     DocIdLimit               *_docIdLimit;
-    IGidToLidChangeHandler   &_gidToLidChangeHandler;
-    document::GlobalId        _gid;
-    search::SerialNum         _serialNum;
-    bool                      _enableNotifyPut;
     std::shared_ptr<const document::Document> _doc;
 
 public:
-    PutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, IGidToLidChangeHandler &gidToLidChangeHandler,
+    PutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted,
                    std::shared_ptr<const document::Document> doc,
-                   const document::GlobalId &gid, uint32_t lid, search::SerialNum serialNum, bool enableNotifyPut);
+                   uint32_t lid);
     ~PutDoneContext() override;
 
     void registerPutLid(DocIdLimit *docIdLimit) { _docIdLimit = docIdLimit; }

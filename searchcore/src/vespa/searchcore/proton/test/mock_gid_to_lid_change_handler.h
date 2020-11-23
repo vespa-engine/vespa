@@ -3,6 +3,7 @@
 
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
+#include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
@@ -42,9 +43,9 @@ public:
         _removes.emplace_back(docTypeName, keepNames);
     }
 
-    void notifyPutDone(IDestructorCallbackSP, document::GlobalId, uint32_t, SerialNum)  override { }
+    void notifyPut(IDestructorCallbackSP, document::GlobalId, uint32_t, SerialNum)  override { }
     void notifyRemove(IDestructorCallbackSP, document::GlobalId, SerialNum)  override { }
-    void notifyRemoveDone(document::GlobalId, SerialNum)  override { }
+    std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override { return {}; }
 
     void assertAdds(const std::vector<AddEntry> &expAdds)
     {

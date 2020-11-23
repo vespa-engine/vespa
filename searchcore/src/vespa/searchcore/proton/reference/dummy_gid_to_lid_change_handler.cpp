@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dummy_gid_to_lid_change_handler.h"
+#include "i_pending_gid_to_lid_changes.h"
 
 namespace proton {
 
@@ -9,7 +10,7 @@ DummyGidToLidChangeHandler::DummyGidToLidChangeHandler() = default;
 DummyGidToLidChangeHandler::~DummyGidToLidChangeHandler() = default;
 
 void
-DummyGidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP , GlobalId, uint32_t, SerialNum)
+DummyGidToLidChangeHandler::notifyPut(IDestructorCallbackSP, GlobalId, uint32_t, SerialNum)
 {
 }
 
@@ -18,9 +19,10 @@ DummyGidToLidChangeHandler::notifyRemove(IDestructorCallbackSP , GlobalId, Seria
 {
 }
 
-void
-DummyGidToLidChangeHandler::notifyRemoveDone(GlobalId, SerialNum)
+std::unique_ptr<IPendingGidToLidChanges>
+DummyGidToLidChangeHandler::grab_pending_changes()
 {
+    return {};
 }
 
 void
