@@ -1,17 +1,85 @@
 ---
-version: 4
+cache:
+   job:
+       main: [/main_job_cache]
+
+shared:
+  image: vespaengine/vespa-build-centos7
 
 jobs:
   main:
-    requires: [~pr]
-    image: vespaengine/vespa-build-centos7:latest
+    requires: [~pr, ~commit]
     annotations:
       screwdriver.cd/cpu: TURBO
       screwdriver.cd/ram: TURBO
-      screwdriver.cd/timeout: 60
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 600
+
+      #screwdriver.cd/dockerEnabled: true
+    environment:
+      MVN: "mvn"
+      LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
+      MVN_OPTS: "-nsu -T1C -XX:-DoEscapeAnalysis -Dfile.encoding=UTF-8 -Xms3g -Xmx3g -Xss1m -XX:MaxJavaStackTraceDepth=1000000 -Dsurefire.exitTimeout=120"
+      MAVEN_EXTRA_OPTS: "-B -Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.javadoc.skip=true -Dmaven.source.skip=true"
+      CCACHE_DIR: "/tmp/vespa/ccache"
+      CCACHE_TMP_DIR: "/tmp/ccache_tmp"
+      CCACHE_COMPRESS: "1"
+      MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"
 
     steps:
       - inspect: |
+          env | grep -v TOKEN
           cat /proc/cpuinfo
           cat /proc/meminfo
+          df -h
+          #docker --version
+          #docker images
+      - checkout: |
+          git clone --depth 1 https://github.com/vespa-engine/vespa
+      - restore-cache: |
+          (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
+
+          mkdir -p $CCACHE_DIR
+          mkdir -p $CCACHE_TMP_DIR
+          rm -f $CCACHE_DIR/ccache.conf
+          ccache -M 20G
+          ccache -o log_file=$SD_ARTIFACTS_DIR/ccache_log.txt
+          ccache -o temporary_dir=$CCACHE_TMP_DIR
+          ccache -p
+          ccache -z
+
+      - compile: |
+          export JAVA_HOME=$(dirname $(dirname $(readlink -f /usr/bin/java)))
+
+          source /opt/rh/devtoolset-9/enable
+          source /opt/rh/rh-maven35/enable
+          cd vespa
+          ./bootstrap.sh full
+          cmake3 -DVESPA_UNPRIVILEGED=no -DVALGRIND_UNIT_TESTS=true -DVESPA_CPU_ARCH_FLAGS="-march=sandybridge -mtune=skylake" .
+          make -j10
+          make test ARGS="--output-on-failure -j $10"
+          $MVN $MAVEN_OPTS $MAVEN_EXTRA_OPTS clean install
+
+      - save-cache: |
+          # Print ccache stats
+          ccache -s
+
+          # Remove what we have produced
+          rm -rf $LOCAL_MVN_REPO/com/yahoo
+          rm -rf $LOCAL_MVN_REPO/ai/vespa
+
+          # Tar toghether the /tmp/vespa folder containing ccache and cleaned mvn repo
+          mkdir -p $(dirname $MAIN_CACHE_FILE)
+          (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
+
+          # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
+          if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2*1000*1000*1000 )) )); then
+            tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
+            echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
+          fi
+          du -sh /tmp/vespa/*
+          ls -la /main_job_cache
+          rm -rf /tmp/vespa
+
+      - inspect-after: |
           df -h
