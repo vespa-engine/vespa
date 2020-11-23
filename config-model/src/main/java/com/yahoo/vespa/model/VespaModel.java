@@ -97,7 +97,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     private static final long serialVersionUID = 1L;
 
-    public static final Logger log = Logger.getLogger(VespaModel.class.getPackage().toString());
+    public static final Logger log = Logger.getLogger(VespaModel.class.getName());
 
     private final Version version;
     private final ConfigModelRepo configModelRepo = new ConfigModelRepo();
