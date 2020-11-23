@@ -198,7 +198,8 @@ public class Reindexer {
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_3);
         parameters.setRoute(cluster.route());
         parameters.setBucketSpace(cluster.bucketSpaceOf(type));
-        // parameters.setVisitorLibrary("ReindexVisitor"); // TODO jonmv: Use when ready, or perhaps an argument to the DumpVisitor is enough?
+        parameters.setMaxBucketsPerVisitor(1);
+        parameters.setVisitorLibrary("ReindexingVisitor");
         return parameters;
     }
 
