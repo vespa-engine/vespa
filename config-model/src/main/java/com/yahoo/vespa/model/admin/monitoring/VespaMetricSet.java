@@ -239,6 +239,8 @@ public class VespaMetricSet {
         // DO NOT RELY ON THIS METRIC YET.
         metrics.add(new Metric("cluster-controller.node-event.count"));
 
+        metrics.add(new Metric("cluster-controller.reindexing.progress.last"));
+
         return metrics;
     }
 
