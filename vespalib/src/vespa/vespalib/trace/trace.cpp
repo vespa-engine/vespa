@@ -32,8 +32,8 @@ Trace::trace(uint32_t level, const string &note, bool addTime)
 }
 
 string
-Trace::toString() const {
-    return _root ? _root->toString(31337) : "";
+Trace::toString(size_t limit) const {
+    return _root ? _root->toString(limit) : "";
 }
 
 string

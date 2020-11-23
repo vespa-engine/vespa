@@ -646,7 +646,7 @@ TwoPhaseUpdateOperation::satisfiesUpdateTimestampConstraint(api::Timestamp ts) c
 void
 TwoPhaseUpdateOperation::addTraceFromReply(const api::StorageReply& reply)
 {
-    _trace.addChild(std::move(reply.getTrace()));
+    _trace.addChild(reply.steal_trace());
 }
 
 void

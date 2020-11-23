@@ -73,7 +73,7 @@ private:
     DistributorComponent& _manager;
     api::Timestamp _revertTimestamp;
     std::vector<BucketNodePair> _revertNodes;
-    mbus::TraceNode _trace;
+    mbus::Trace _trace;
     framework::MilliSecTimer _requestTimer;
     uint32_t _n_persistence_replies_total;
     uint32_t _n_successful_persistence_replies;

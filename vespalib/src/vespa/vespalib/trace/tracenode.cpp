@@ -342,4 +342,17 @@ TraceNode::accept(TraceVisitor & visitor) const
     return visitor;
 }
 
+size_t
+TraceNode::computeMemoryUsage() const
+{
+    if (isLeaf()) {
+        return getNote().size();
+    }
+    size_t childSum = 0;
+    for (const TraceNode & child : _children) {
+        childSum += child.computeMemoryUsage();
+    }
+    return childSum;
+}
+
 } // namespace vespalib

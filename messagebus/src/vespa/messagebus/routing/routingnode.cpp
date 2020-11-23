@@ -184,7 +184,7 @@ RoutingNode::setReply(Reply::UP reply)
 {
     if (reply) {
         _shouldRetry = _resender != nullptr && _resender->shouldRetry(*reply);
-        _trace.addChild(std::move(reply->getTrace()));
+        _trace.addChild(reply->steal_trace());
     }
     _reply = std::move(reply);
 }

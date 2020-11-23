@@ -253,6 +253,8 @@ public:
      */
     TraceVisitor & accept(TraceVisitor & visitor) const;
 
+    size_t computeMemoryUsage() const;
+
 };
 
 } // namespace vespalib

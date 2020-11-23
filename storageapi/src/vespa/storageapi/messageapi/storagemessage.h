@@ -361,8 +361,8 @@ protected:
     const MessageType& _type;
     Id                 _msgId;
     std::unique_ptr<StorageMessageAddress> _address;
-    documentapi::LoadType _loadType;
-    vespalib::Trace       _trace;
+    documentapi::LoadType    _loadType;
+    mutable vespalib::Trace  _trace;
     uint32_t    _approxByteSize;
     Priority    _priority;
 
@@ -435,6 +435,7 @@ public:
     const documentapi::LoadType& getLoadType() const { return _loadType; }
     void setLoadType(const documentapi::LoadType& type) { _loadType = type; }
 
+    mbus::Trace && steal_trace() const { return std::move(_trace); }
     mbus::Trace& getTrace() { return _trace; }
     const mbus::Trace& getTrace() const { return _trace; }
 

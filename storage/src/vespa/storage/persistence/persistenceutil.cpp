@@ -93,7 +93,7 @@ MessageTracker::sendReply() {
               _msg->toString(true).c_str(), vespalib::to_s(duration));
     }
     if (hasReply()) {
-        getReply().getTrace().addChild(std::move(_context.getTrace()));
+        getReply().getTrace().addChild(_context.steal_trace());
         if (_updateBucketInfo) {
             if (getReply().getResult().success()) {
                 _env.setBucketInfo(*this, _bucketLock->getBucket());
@@ -105,7 +105,7 @@ MessageTracker::sendReply() {
         LOG(spam, "Sending reply up: %s %" PRIu64, getReply().toString().c_str(), getReply().getMsgId());
         _replySender.sendReplyDirectly(std::move(_reply));
     } else {
-        _msg->getTrace().addChild(std::move(_context.getTrace()));
+        _msg->getTrace().addChild(_context.steal_trace());
     }
 }
 

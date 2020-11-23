@@ -171,7 +171,7 @@ VisitorOperation::onReceive(
 {
     api::CreateVisitorReply& reply = static_cast<api::CreateVisitorReply&>(*r);
 
-    _trace.add(reply.getTrace());
+    _trace.add(reply.steal_trace());
 
     SentMessagesMap::iterator iter = _sentMessages.find(reply.getMsgId());
     assert(iter != _sentMessages.end());

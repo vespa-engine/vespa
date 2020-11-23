@@ -76,6 +76,7 @@ public:
         return _readConsistency;
     }
 
+    vespalib::Trace && steal_trace() { return std::move(_trace); }
     vespalib::Trace& getTrace() { return _trace; }
     const vespalib::Trace& getTrace() const { return _trace; }
 

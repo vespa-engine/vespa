@@ -23,12 +23,7 @@ public:
      * otherwise.
      */
     bool add(const mbus::TraceNode& node);
-    bool add(const mbus::Trace& trace) {
-        if (!trace.isEmpty()) {
-            return add(trace.getRoot());
-        }
-        return false;
-    }
+    bool add(mbus::Trace && trace);
 
     /**
      * Append current trace tree to the output trace node and clear internal
@@ -46,7 +41,7 @@ public:
     }
 
 private:
-    mbus::TraceNode _node;
+    mbus::Trace _trace;
     size_t _currentMemoryUsed;
     size_t _omittedNodes;
     size_t _omittedBytes;

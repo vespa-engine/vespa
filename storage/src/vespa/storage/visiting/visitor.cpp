@@ -601,15 +601,14 @@ bool
 Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
     mbus::Trace tempTrace;
     tempTrace.trace(level, message);
-    return _trace.add(tempTrace);
+    return _trace.add(std::move(tempTrace));
 }
 
 void
-Visitor::handleDocumentApiReply(mbus::Reply::UP reply,
-                        VisitorThreadMetrics& metrics)
+Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics)
 {
     if (shouldAddMbusTrace()) {
-        _trace.add(reply->getTrace()); //TODO Can it be moved ?
+        _trace.add(reply->steal_trace());
     }
 
     mbus::Message::UP message = reply->getMessage();
@@ -830,7 +829,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
     }
 
     if (shouldAddMbusTrace()) {
-        _trace.add(reply->getTrace()); //TODO Can it be moved ?
+        _trace.add(reply->steal_trace());
     }
 
     LOG(debug, "Continuing visitor %s.", _id.c_str());

@@ -22,6 +22,7 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
       _reply(std::move(reply)),
       _manager(link),
       _revertTimestamp(revertTimestamp),
+      _trace(_reply->getTrace().getLevel()),
       _requestTimer(link.getClock()),
       _n_persistence_replies_total(0),
       _n_successful_persistence_replies(0),
@@ -163,25 +164,18 @@ PersistenceMessageTrackerImpl::addBucketInfoFromReply(
             bucket.toString().c_str(),
             bucketInfo.toString().c_str(),
             node);
-        _remapBucketInfo[bucket].push_back(
-                BucketCopy(_manager.getUniqueTimestamp(),
-                           node,
-                           bucketInfo));
+        _remapBucketInfo[bucket].emplace_back(_manager.getUniqueTimestamp(), node, bucketInfo);
     } else {
         LOG(debug, "Bucket %s: Received bucket info %s from node %d",
             bucket.toString().c_str(),
             bucketInfo.toString().c_str(),
             node);
-        _bucketInfo[bucket].push_back(
-                BucketCopy(_manager.getUniqueTimestamp(),
-                           node,
-                           bucketInfo));
+        _bucketInfo[bucket].emplace_back(_manager.getUniqueTimestamp(), node, bucketInfo);
     }
 }
 
 void
-PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, 
-                                              const api::BucketInfoReply& reply) const
+PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const
 {
     LOG(spam, "Bucket %s: Received successful reply %s",
         reply.getBucketId().toString().c_str(),
@@ -292,9 +286,7 @@ PersistenceMessageTrackerImpl::updateFromReply(
         api::BucketInfoReply& reply,
         uint16_t node)
 {
-    if ( ! reply.getTrace().isEmpty()) {
-        _trace.addChild(reply.getTrace().getRoot());
-    }
+    _trace.addChild(reply.steal_trace());
 
     if (reply.getType() == api::MessageType::CREATEBUCKET_REPLY) {
         handleCreateBucketReply(reply, node);

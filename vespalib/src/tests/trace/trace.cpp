@@ -264,7 +264,7 @@ TEST("testTraceDump")
             big.addChild(TraceNode(b1));
         }
         string normal = big.toString();
-        string full = big.getRoot().toString();
+        string full = big.toString(100000);
         EXPECT_GREATER(normal.size(), 30000u);
         EXPECT_LESS(normal.size(), 32000u);
         EXPECT_GREATER(full.size(), 50000u);

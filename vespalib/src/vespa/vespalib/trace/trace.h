@@ -95,15 +95,6 @@ public:
             addChild(std::move(*child._root));
         }
     }
-    //TODO This one should go away as we should prefer moving
-    void addChild(const Trace & child) {
-        if (!child.isEmpty()) {
-            addChild(TraceNode(*child._root));
-        }
-    }
-
-    //TODO This one should go away
-    const TraceNode &getRoot() const { return *_root; }
 
     bool isEmpty() const { return !_root || _root->isEmpty(); }
 
@@ -117,8 +108,12 @@ public:
      *
      * @return Readable trace string.
      */
-    string toString() const;
+    string toString(size_t limit=31337) const;
+    size_t computeMemoryUsage() const {
+        return _root ? _root->computeMemoryUsage() : 0;
+    }
 private:
+    const TraceNode &getRoot() const { return *_root; }
     TraceNode &ensureRoot();
 
     std::unique_ptr<TraceNode> _root;

@@ -583,7 +583,7 @@ CommunicationManager::sendCommand(
             cmd->setContext(mbus::Context(msg->getMsgId()));
             cmd->setRetryEnabled(false);
             cmd->setTimeRemaining(msg->getTimeout());
-            cmd->setTrace(vespalib::Trace(msg->getTrace()));  //TODO Refactor so that we can move instead
+            cmd->setTrace(std::move(msg->getTrace()));
             sendMessageBusMessage(msg, std::move(cmd), address.getRoute());
         }
         break;
@@ -596,7 +596,7 @@ CommunicationManager::sendCommand(
 
         if (mbusMsg) {
             MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converted OK");
-            mbusMsg->setTrace(vespalib::Trace(msg->getTrace())); //TODO Refactor so that we can move instead
+            mbusMsg->setTrace(std::move(msg->getTrace()));
             mbusMsg->setRetryEnabled(false);
 
             {
