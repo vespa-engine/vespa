@@ -144,6 +144,9 @@ public enum JobType {
                             Map.of(Public,   ZoneId.from("dev", "aws-us-east-1c"),
                                    PublicCd, ZoneId.from("dev", "aws-us-east-1c"))),
 
+    perfAwsUsEast1c         ("perf-aws-us-east-1c",
+                            Map.of(Public,   ZoneId.from("perf", "aws-us-east-1c"))),
+
     perfUsEast3            ("perf-us-east-3",
                             Map.of(main, ZoneId.from("perf"   , "us-east-3")));
 
