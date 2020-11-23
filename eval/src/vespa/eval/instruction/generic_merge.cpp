@@ -127,9 +127,19 @@ void my_sparse_merge_op(State &state, uint64_t param_in) {
     if (auto indexes = detect_type<FastValueIndex>(lhs.index(), rhs.index())) {
         auto lhs_cells = lhs.cells().typify<LCT>();
         auto rhs_cells = rhs.cells().typify<RCT>();
-        return state.pop_pop_push(
+        if (lhs_cells.size() < rhs_cells.size()) {
+            return state.pop_pop_push(
+                FastValueIndex::sparse_only_merge<RCT,LCT,OCT,Fun>(
+                    param.res_type, Fun(param.function),
+                    indexes.get<1>(), indexes.get<0>(),
+                    rhs_cells, lhs_cells, state.stash));
+        } else {
+            return state.pop_pop_push(
                 FastValueIndex::sparse_only_merge<LCT,RCT,OCT,Fun>(
-                        param.res_type, Fun(param.function), indexes.get<0>(), indexes.get<1>(), lhs_cells, rhs_cells, state.stash));
+                    param.res_type, Fun(param.function),
+                    indexes.get<0>(), indexes.get<1>(),
+                    lhs_cells, rhs_cells, state.stash));
+        }
     }
     auto up = generic_mixed_merge<LCT, RCT, OCT, Fun>(lhs, rhs, param);
     auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
