@@ -7,7 +7,7 @@
 #include <memory>
 
 namespace vespalib { class nbostream; }
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 
 namespace document {
 class DocumentId;
