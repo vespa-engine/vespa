@@ -102,7 +102,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
             return;
         }
 
-        cmd->setTrace(vespalib::Trace(docMsgPtr->getTrace())); // Can it be moved ?
+        cmd->setTrace(std::move(docMsgPtr->getTrace()));
         cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(docMsgPtr)));
 
         enqueue_or_process(std::move(cmd));
@@ -114,7 +114,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         //TODO: Can it be moved ?
         std::shared_ptr<api::StorageCommand> cmd = storMsgPtr->getCommand();
         cmd->setTimeout(storMsgPtr->getTimeRemaining());
-        cmd->setTrace(vespalib::Trace(storMsgPtr->getTrace())); // Can it be moved ?
+        cmd->setTrace(std::move(storMsgPtr->getTrace()));
         cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(storMsgPtr)));
 
         enqueue_or_process(std::move(cmd));
@@ -203,12 +203,12 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
                     _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentReply&>(*reply), *originalCommand));
 
             if (sar) {
-                sar->setTrace(vespalib::Trace(reply->getTrace())); // Can it be moved ?
+                sar->setTrace(std::move(reply->getTrace()));
                 receiveStorageReply(sar);
             }
         } else if (protocolName == mbusprot::StorageProtocol::NAME) {
             mbusprot::StorageReply* sr(static_cast<mbusprot::StorageReply*>(reply.get()));
-            sr->getReply()->setTrace(vespalib::Trace(reply->getTrace()));
+            sr->getReply()->setTrace(std::move(reply->getTrace()));
             receiveStorageReply(sr->getReply());
         } else {
             LOGBM(warning, "Received unsupported reply type %d for protocol '%s'.",
