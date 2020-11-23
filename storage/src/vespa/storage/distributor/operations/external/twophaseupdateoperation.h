@@ -125,7 +125,7 @@ private:
             DistributorMessageSender& sender,
             const document::Document& candidateDoc);
     bool satisfiesUpdateTimestampConstraint(api::Timestamp) const;
-    void addTraceFromReply(const api::StorageReply& reply);
+    void addTraceFromReply(api::StorageReply& reply);
     bool hasTasCondition() const noexcept;
     void replyWithTasFailure(DistributorMessageSender& sender,
                              vespalib::stringref message);
