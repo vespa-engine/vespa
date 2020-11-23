@@ -33,8 +33,6 @@ public:
 
     /**
      * Remove all trace information and set the trace level to 0.
-     *
-     * @return This, to allow chaining.
      */
     void clear();
 
@@ -104,6 +102,7 @@ public:
         }
     }
 
+    //TODO This one should go away
     const TraceNode &getRoot() const { return *_root; }
 
     bool isEmpty() const { return !_root || _root->isEmpty(); }
