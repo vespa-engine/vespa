@@ -401,7 +401,11 @@ Messages60Test::testPutDocumentMessage()
     msg.setTimestamp(666);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQUAL(280u, sizeof(PutDocumentMessage));
+    EXPECT_EQUAL(64u, sizeof(vespalib::string));
+    EXPECT_EQUAL(sizeof(std::string), sizeof(TestAndSetCondition));
+    EXPECT_EQUAL(192u, sizeof(DocumentMessage));
+    EXPECT_EQUAL(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
+    EXPECT_EQUAL(sizeof(TestAndSetMessage) + 24, sizeof(PutDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH +
                  45u +
                  serializedLength(msg.getCondition().getSelection()),
@@ -489,7 +493,7 @@ Messages60Test::testRemoveDocumentMessage()
 
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQUAL(360u, sizeof(RemoveDocumentMessage));
+    EXPECT_EQUAL(sizeof(TestAndSetMessage) + 104, sizeof(RemoveDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(20) + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -669,7 +673,7 @@ Messages60Test::testUpdateDocumentMessage()
     msg.setNewTimestamp(777u);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQUAL(288u, sizeof(UpdateDocumentMessage));
+    EXPECT_EQUAL(sizeof(TestAndSetMessage) + 32, sizeof(UpdateDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 93u + serializedLength(msg.getCondition().getSelection()), serialize("UpdateDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -892,6 +896,7 @@ Messages60Test::testGetDocumentReply()
         createDoc(getTypeRepo(), "testdoc", "id:ns:testdoc::");
     GetDocumentReply tmp(doc);
 
+    EXPECT_EQUAL(128u, sizeof(GetDocumentReply));
     EXPECT_EQUAL((size_t)47, serialize("GetDocumentReply", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
