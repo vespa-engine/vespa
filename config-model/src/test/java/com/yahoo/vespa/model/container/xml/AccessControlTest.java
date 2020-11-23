@@ -6,8 +6,10 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.http.AccessControl;
+import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
@@ -50,6 +52,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         FilterChains filterChains = http.getFilterChains();
         assertTrue(filterChains.hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
         assertTrue(filterChains.hasChain(AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID));
+        assertTrue(filterChains.hasChain(AccessControl.DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID));
     }
 
     @Test
@@ -295,6 +298,28 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
         assertTrue(http.getAccessControl().isPresent());
         assertEquals(AccessControl.ClientAuthentication.want, http.getAccessControl().get().clientAuthentication);
+    }
+
+    @Test
+    public void local_connector_has_default_chain() {
+        Http http = createModelAndGetHttp(
+                "  <http>",
+                "    <filtering>",
+                "      <access-control/>",
+                "    </filtering>",
+                "  </http>");
+
+        Set<String> actualBindings = getFilterBindings(http, AccessControl.DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID);
+        assertThat(actualBindings, empty());
+
+        ConnectorFactory connectorFactory = http.getHttpServer().get().getConnectorFactories().stream()
+                .filter(cf -> cf.getListenPort() == Defaults.getDefaults().vespaWebServicePort())
+                .findAny()
+                .get();
+
+        Optional<ComponentId> defaultChain = connectorFactory.getDefaultRequestFilterChain();
+        assertTrue(defaultChain.isPresent());
+        assertEquals(AccessControl.DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID, defaultChain.get());
     }
 
     private Http createModelAndGetHttp(String... httpElement) {
