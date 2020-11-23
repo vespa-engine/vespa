@@ -58,7 +58,7 @@ public class ClusterController extends AbstractComponent
 
             if (controller == null) {
                 StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
-                controller = FleetController.createForContainer(options, statusPageServer, metricWrapper);
+                controller = FleetController.create(options, statusPageServer, metricWrapper);
                 controllers.put(clusterName, controller);
                 status.put(clusterName, statusPageServer);
             } else {

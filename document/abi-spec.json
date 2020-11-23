@@ -1911,6 +1911,8 @@
       "public java.lang.Class getValueClass()",
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.tensor.TensorType getTensorType()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public bridge synthetic com.yahoo.document.DataType clone()",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"

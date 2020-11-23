@@ -14,15 +14,6 @@ using namespace eval::tensor_function;
 
 namespace {
 
-bool is_ident_aggr(Aggr aggr) {
-    return ((aggr == Aggr::AVG)    ||
-            (aggr == Aggr::PROD)   ||
-            (aggr == Aggr::SUM)    ||
-            (aggr == Aggr::MAX)    ||
-            (aggr == Aggr::MEDIAN) ||
-            (aggr == Aggr::MIN));
-}
-
 bool is_trivial_dim_list(const ValueType &type, const std::vector<vespalib::string> &dim_list) {
     size_t npos = ValueType::Dimension::npos;
     for (const vespalib::string &dim: dim_list) {
@@ -43,7 +34,7 @@ DenseRemoveDimensionOptimizer::optimize(const eval::TensorFunction &expr, Stash 
         const TensorFunction &child = reduce->child();
         if (expr.result_type().is_dense() &&
             child.result_type().is_dense() &&
-            is_ident_aggr(reduce->aggr()) &&
+            eval::aggr::is_ident(reduce->aggr()) &&
             is_trivial_dim_list(child.result_type(), reduce->dimensions()))
         {
             assert(expr.result_type().cell_type() == child.result_type().cell_type());

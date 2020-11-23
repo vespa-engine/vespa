@@ -4,6 +4,7 @@
 #include "dense_tensor_view.h"
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/eval/eval/value.h>
+#include <cassert>
 
 namespace vespalib::tensor {
 
@@ -25,27 +26,16 @@ namespace {
 struct Params {
     const ValueType &result_type;
     size_t outer_size;
-    size_t dim_size;
+    size_t reduce_size;
     size_t inner_size;
-    Params(const ValueType &result_type_in, const ValueType &child_type, size_t dim_idx)
-        : result_type(result_type_in), outer_size(1), dim_size(1), inner_size(1)
-    {
-        for (size_t i = 0; i < child_type.dimensions().size(); ++i) {
-            if (i < dim_idx) {
-                outer_size *= child_type.dimensions()[i].size;
-            } else if (i == dim_idx) {
-                dim_size *= child_type.dimensions()[i].size;
-            } else {
-                inner_size *= child_type.dimensions()[i].size;
-            }
-        }
-    }
+    Params(const ValueType &result_type_in, size_t outer_size_in, size_t reduce_size_in, size_t inner_size_in)
+        : result_type(result_type_in), outer_size(outer_size_in), reduce_size(reduce_size_in), inner_size(inner_size_in) {}
 };
 
 template <typename CT, typename AGGR>
-CT reduce_cells(const CT *src, size_t dim_size, size_t stride) {
+CT reduce_cells(const CT *src, size_t reduce_size, size_t stride) {
     AGGR aggr(*src);
-    for (size_t i = 1; i < dim_size; ++i) {
+    for (size_t i = 1; i < reduce_size; ++i) {
         src += stride;
         aggr.sample(*src);
     }
@@ -88,17 +78,17 @@ auto reduce_cells_atleast_8(const CT *src, size_t n, size_t stride) {
 template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
 void trace_reduce_impl(const Params &params, const CT *src, CT *dst) {
     constexpr bool aggr_is_complex = is_complex(AGGR::enum_value());
-    const size_t block_size = (params.dim_size * params.inner_size);
+    const size_t block_size = (params.reduce_size * params.inner_size);
     for (size_t outer = 0; outer < params.outer_size; ++outer) {
         for (size_t inner = 0; inner < params.inner_size; ++inner) {
             if (atleast_8 && !aggr_is_complex) {
                 if (is_inner) {
-                    *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.dim_size);
+                    *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.reduce_size);
                 } else {
-                    *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.dim_size, params.inner_size);
+                    *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.reduce_size, params.inner_size);
                 }
             } else {
-                *dst++ = reduce_cells<CT, AGGR>(src + inner, params.dim_size, params.inner_size);
+                *dst++ = reduce_cells<CT, AGGR>(src + inner, params.reduce_size, params.inner_size);
             }
         }
         src += block_size;
@@ -112,7 +102,7 @@ void fold_reduce_impl(const Params &params, const CT *src, CT *dst) {
         for (size_t inner = 0; inner < params.inner_size; ++inner) {
             *dst++ = *src++;
         }
-        for (size_t dim = 1; dim < params.dim_size; ++dim) {
+        for (size_t dim = 1; dim < params.reduce_size; ++dim) {
             dst = saved_dst;
             for (size_t inner = 0; inner < params.inner_size; ++inner) {
                 *dst = AGGR::combine(*dst, *src++);
@@ -147,14 +137,99 @@ struct MyGetFun {
 
 using MyTypify = TypifyValue<TypifyCellType,TypifyAggr,TypifyBool>;
 
+std::pair<std::vector<vespalib::string>,ValueType> sort_and_drop_trivial(const std::vector<vespalib::string> &list_in, const ValueType &type_in) {
+    std::vector<vespalib::string> dropped;
+    std::vector<vespalib::string> list_out;
+    for (const auto &dim_name: list_in) {
+        auto dim_idx = type_in.dimension_index(dim_name);
+        assert(dim_idx != ValueType::Dimension::npos);
+        const auto &dim = type_in.dimensions()[dim_idx];
+        assert(dim.is_indexed());
+        if (dim.is_trivial()) {
+            dropped.push_back(dim_name);
+        } else {
+            list_out.push_back(dim_name);
+        }
+    }
+    std::sort(list_out.begin(), list_out.end());
+    ValueType type_out = dropped.empty() ? type_in : type_in.reduce(dropped);
+    assert(!type_out.is_error());
+    return {list_out, type_out};
+}
+
+template <typename T> struct VectorLookupLoop {
+    const std::vector<T> &list;
+    size_t index;
+    VectorLookupLoop(const std::vector<T> &list_in) : list(list_in), index(0) {}
+    bool valid() const { return (index < list.size()); }
+    void next() { ++index; }
+    const T &get() const { return list[index]; }
+};
+
+DenseSingleReduceSpec extract_next(const eval::ValueType &type, eval::Aggr aggr,
+                                   std::vector<vespalib::string> &todo)
+{
+    size_t outer_size = 1;
+    size_t reduce_size = 1;
+    size_t inner_size = 1;
+    auto dims = type.nontrivial_indexed_dimensions();
+    std::vector<vespalib::string> do_now;
+    std::vector<vespalib::string> do_later;
+    auto a = VectorLookupLoop(dims);
+    auto b = VectorLookupLoop(todo);
+    while (a.valid() && b.valid() && (a.get().name < b.get())) {
+        outer_size *= a.get().size;
+        a.next();
+    }
+    while (a.valid() && b.valid() && (a.get().name == b.get())) {
+        reduce_size *= a.get().size;
+        do_now.push_back(b.get());
+        a.next();
+        b.next();
+    }
+    while (a.valid()) {
+        inner_size *= a.get().size;
+        a.next();
+    }
+    while (b.valid()) {
+        do_later.push_back(b.get());
+        b.next();
+    }
+    todo = do_later;
+    assert(!do_now.empty());
+    return {type.reduce(do_now), outer_size, reduce_size, inner_size, aggr};
+}
+
 } // namespace vespalib::tensor::<unnamed>
 
-DenseSingleReduceFunction::DenseSingleReduceFunction(const ValueType &result_type,
-                                                     const TensorFunction &child,
-                                                     size_t dim_idx, Aggr aggr)
-    : Op1(result_type, child),
-      _dim_idx(dim_idx),
-      _aggr(aggr)
+std::vector<DenseSingleReduceSpec>
+make_dense_single_reduce_list(const eval::ValueType &type, eval::Aggr aggr,
+                              const std::vector<vespalib::string> &reduce_dims)
+{
+    auto res_type = type.reduce(reduce_dims);
+    if (reduce_dims.empty() || !type.is_dense() || !res_type.is_dense()) {
+        return {};
+    }
+    std::vector<DenseSingleReduceSpec> list;
+    auto [todo, curr_type] = sort_and_drop_trivial(reduce_dims, type);
+    while (!todo.empty()) {
+        list.push_back(extract_next(curr_type, aggr, todo));
+        curr_type = list.back().result_type;
+    }
+    assert(curr_type == res_type);
+    if ((list.size() > 1) && !eval::aggr::is_simple(aggr)) {
+        return {};
+    }
+    return list;
+}
+
+DenseSingleReduceFunction::DenseSingleReduceFunction(const DenseSingleReduceSpec &spec,
+                                                     const TensorFunction &child)
+    : Op1(spec.result_type, child),
+      _outer_size(spec.outer_size),
+      _reduce_size(spec.reduce_size),
+      _inner_size(spec.inner_size),
+      _aggr(spec.aggr)
 {
 }
 
@@ -163,25 +238,25 @@ DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 InterpretedFunction::Instruction
 DenseSingleReduceFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
 {
-    auto &params = stash.create<Params>(result_type(), child().result_type(), _dim_idx);
     auto op = typify_invoke<4,MyTypify,MyGetFun>(result_type().cell_type(), _aggr,
-                                                 (params.dim_size >= 8),
-                                                 (params.inner_size == 1));
+                                                 (_reduce_size >= 8), (_inner_size == 1));
+    auto &params = stash.create<Params>(result_type(), _outer_size, _reduce_size, _inner_size);
     return InterpretedFunction::Instruction(op, wrap_param<Params>(params));
 }
 
 const TensorFunction &
 DenseSingleReduceFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
-    auto reduce = as<Reduce>(expr);
-    if (reduce && (reduce->dimensions().size() == 1) &&
-        reduce->child().result_type().is_dense() &&
-        expr.result_type().is_dense())
-    {
-        size_t dim_idx = reduce->child().result_type().dimension_index(reduce->dimensions()[0]);
-        assert(dim_idx != ValueType::Dimension::npos);
-        assert(expr.result_type().cell_type() == reduce->child().result_type().cell_type());
-        return stash.create<DenseSingleReduceFunction>(expr.result_type(), reduce->child(), dim_idx, reduce->aggr());
+    if (auto reduce = as<Reduce>(expr)) {
+        const auto &child = reduce->child();
+        auto spec_list = make_dense_single_reduce_list(child.result_type(), reduce->aggr(), reduce->dimensions()); 
+        if (!spec_list.empty()) {
+            const auto *prev = &child;
+            for (const auto &spec: spec_list) {
+                prev = &stash.create<DenseSingleReduceFunction>(spec, *prev);
+            }
+            return *prev;
+        }
     }
     return expr;
 }

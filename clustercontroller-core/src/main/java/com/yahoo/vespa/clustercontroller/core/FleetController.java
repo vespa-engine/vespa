@@ -1,10 +1,9 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.jrt.ListenFailedException;
-import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -28,7 +27,6 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageRespon
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
-import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayDeque;
@@ -44,6 +42,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,7 +50,7 @@ import java.util.stream.Stream;
 public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAddedOrRemovedListener, SystemStateListener,
                                         Runnable, RemoteClusterControllerTaskScheduler {
 
-    private static Logger log = Logger.getLogger(FleetController.class.getName());
+    private static final Logger log = Logger.getLogger(FleetController.class.getName());
 
     private final Timer timer;
     private final Object monitor;
@@ -68,7 +67,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final DatabaseHandler database;
     private final MasterElectionHandler masterElectionHandler;
     private Thread runner = null;
-    private AtomicBoolean running = new AtomicBoolean(true);
+    private final AtomicBoolean running = new AtomicBoolean(true);
     private FleetControllerOptions options;
     private FleetControllerOptions nextOptions;
     private final List<SystemStateListener> systemStateListeners = new CopyOnWriteArrayList<>();
@@ -79,12 +78,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private Long controllerThreadId = null;
 
     private boolean waitingForCycle = false;
-    private StatusPageServer.PatternRequestRouter statusRequestRouter = new StatusPageServer.PatternRequestRouter();
+    private final StatusPageServer.PatternRequestRouter statusRequestRouter = new StatusPageServer.PatternRequestRouter();
     private final List<ClusterStateBundle> newStates = new ArrayList<>();
     private final List<ClusterStateBundle> convergedStates = new ArrayList<>();
     private long configGeneration = -1;
     private long nextConfigGeneration = -1;
-    private Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
+    private final Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
     private final MetricUpdater metricUpdater;
 
     private boolean isMaster = false;
@@ -92,9 +91,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private long firstAllowedStateBroadcast = Long.MAX_VALUE;
     private long tickStartTime = Long.MAX_VALUE;
 
-    private List<RemoteClusterControllerTask> tasksPendingStateRecompute = new ArrayList<>();
+    private final List<RemoteClusterControllerTask> tasksPendingStateRecompute = new ArrayList<>();
     // Invariant: queued task versions are monotonically increasing with queue position
-    private Queue<VersionDependentTaskCompletion> taskCompletionQueue = new ArrayDeque<>();
+    private final Queue<VersionDependentTaskCompletion> taskCompletionQueue = new ArrayDeque<>();
 
     // Legacy behavior is an empty set of explicitly configured bucket spaces, which means that
     // only a baseline cluster state will be sent from the controller and no per-space state
@@ -125,8 +124,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                            SystemStateBroadcaster systemStateBroadcaster,
                            MasterElectionHandler masterElectionHandler,
                            MetricUpdater metricUpdater,
-                           FleetControllerOptions options) throws Exception
-    {
+                           FleetControllerOptions options) {
         log.info("Starting up cluster controller " + options.fleetControllerIndex + " for cluster " + cluster.getName());
         this.timer = timer;
         this.monitor = timer;
@@ -166,26 +164,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         propagateOptions();
     }
 
-    public static FleetController createForContainer(FleetControllerOptions options,
-                                                     StatusPageServerInterface statusPageServer,
-                                                     MetricReporter metricReporter) throws Exception {
+    public static FleetController create(FleetControllerOptions options,
+                                         StatusPageServerInterface statusPageServer,
+                                         MetricReporter metricReporter) throws Exception {
         Timer timer = new RealTimer();
-        return create(options, timer, statusPageServer, null, metricReporter);
-    }
-
-    public static FleetController createForStandAlone(FleetControllerOptions options) throws Exception {
-        Timer timer = new RealTimer();
-        RpcServer rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
-        StatusPageServer statusPageServer = new StatusPageServer(timer, timer, options.httpPort);
-        return create(options, timer, statusPageServer, rpcServer, new NoMetricReporter());
-    }
-
-    private static FleetController create(FleetControllerOptions options,
-                                          Timer timer,
-                                          StatusPageServerInterface statusPageServer,
-                                          RpcServer rpcServer,
-                                          MetricReporter metricReporter) throws Exception
-    {
         MetricUpdater metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex);
         EventLog log = new EventLog(timer, metricUpdater);
         ContentCluster cluster = new ContentCluster(
@@ -209,7 +191,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
         MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
         FleetController controller = new FleetController(
-                timer, log, cluster, stateGatherer, communicator, statusPageServer, rpcServer, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
+                timer, log, cluster, stateGatherer, communicator, statusPageServer, null, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
         controller.start();
         return controller;
     }
@@ -469,7 +451,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     /** This is called when the options field has been set to a new set of options */
-    private void propagateOptions() throws java.io.IOException, ListenFailedException {
+    private void propagateOptions() {
         verifyInControllerThread();
 
         if (changesConfiguredNodeSet(options.nodes)) {
@@ -547,7 +529,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (Exception e) {
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
-            hiddenMessage = ExceptionUtils.getStackTraceAsString(e);;
+            hiddenMessage = ExceptionUtils.getStackTraceAsString(e);
             log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() +
                     ": " + hiddenMessage);
         }

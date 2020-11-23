@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/typify.h>
+#include "cell_type.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
@@ -16,7 +16,7 @@ namespace vespalib::eval {
 class ValueType
 {
 public:
-    enum class CellType : char { FLOAT, DOUBLE };
+    using CellType = vespalib::eval::CellType;
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;
@@ -109,32 +109,5 @@ public:
 };
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);
-
-// utility templates
-
-template <typename CT> inline bool check_cell_type(ValueType::CellType type);
-template <> inline bool check_cell_type<double>(ValueType::CellType type) { return (type == ValueType::CellType::DOUBLE); }
-template <> inline bool check_cell_type<float>(ValueType::CellType type) { return (type == ValueType::CellType::FLOAT); }
-
-template <typename LCT, typename RCT> struct UnifyCellTypes{};
-template <> struct UnifyCellTypes<double, double> { using type = double; };
-template <> struct UnifyCellTypes<double, float>  { using type = double; };
-template <> struct UnifyCellTypes<float,  double> { using type = double; };
-template <> struct UnifyCellTypes<float,  float>  { using type = float; };
-
-template <typename CT> inline ValueType::CellType get_cell_type();
-template <> inline ValueType::CellType get_cell_type<double>() { return ValueType::CellType::DOUBLE; }
-template <> inline ValueType::CellType get_cell_type<float>() { return ValueType::CellType::FLOAT; }
-
-struct TypifyCellType {
-    template <typename T> using Result = TypifyResultType<T>;
-    template <typename F> static decltype(auto) resolve(ValueType::CellType value, F &&f) {
-        switch(value) {
-        case ValueType::CellType::DOUBLE: return f(Result<double>());
-        case ValueType::CellType::FLOAT:  return f(Result<float>());
-        }
-        abort();
-    }
-};
 
 } // namespace

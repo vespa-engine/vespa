@@ -1539,11 +1539,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse reindex(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
-        List<String> clusterNames = Optional.ofNullable(request.getProperty("cluster")).stream()
+        List<String> clusterNames = Optional.ofNullable(request.getProperty("clusterId")).stream()
                                             .flatMap(clusters -> Stream.of(clusters.split(",")))
                                             .filter(cluster -> ! cluster.isBlank())
                                             .collect(toUnmodifiableList());
-        List<String> documentTypes = Optional.ofNullable(request.getProperty("type")).stream()
+        List<String> documentTypes = Optional.ofNullable(request.getProperty("documentType")).stream()
                                              .flatMap(types -> Stream.of(types.split(",")))
                                              .filter(type -> ! type.isBlank())
                                              .collect(toUnmodifiableList());

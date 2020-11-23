@@ -24,6 +24,7 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -220,11 +221,11 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private void triggerReindexing(HttpRequest request, ApplicationId applicationId) {
-        List<String> clusters = Optional.ofNullable(request.getProperty("cluster")).stream()
+        List<String> clusters = Optional.ofNullable(request.getProperty("clusterId")).stream()
                                         .flatMap(value -> Stream.of(value.split(",")))
                                         .filter(cluster -> ! cluster.isBlank())
                                         .collect(toList());
-        List<String> types = Optional.ofNullable(request.getProperty("type")).stream()
+        List<String> types = Optional.ofNullable(request.getProperty("documentType")).stream()
                                      .flatMap(value -> Stream.of(value.split(",")))
                                      .filter(type -> ! type.isBlank())
                                      .collect(toList());
@@ -244,9 +245,13 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse getReindexingStatus(ApplicationId applicationId) {
-        return new ReindexResponse(applicationRepository.getTenant(applicationId).getApplicationRepo().database()
-                                                        .readReindexingStatus(applicationId)
-                                                        .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)));
+        Tenant tenant = applicationRepository.getTenant(applicationId);
+        if (tenant == null)
+            throw new NotFoundException("Tenant '" + applicationId.tenant().value() + "' not found");
+
+        return new ReindexResponse(tenant.getApplicationRepo().database()
+                                         .readReindexingStatus(applicationId)
+                                         .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)));
     }
 
     private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {

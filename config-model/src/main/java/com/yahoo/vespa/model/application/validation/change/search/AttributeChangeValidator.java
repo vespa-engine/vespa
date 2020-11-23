@@ -6,13 +6,10 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.IndexSchema;
 import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
-import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -51,12 +48,11 @@ public class AttributeChangeValidator {
         this.nextDocType = nextDocType;
     }
 
-    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
+    public List<VespaConfigChangeAction> validate() {
         List<VespaConfigChangeAction> result = new ArrayList<>();
         result.addAll(validateAddAttributeAspect());
         result.addAll(validateRemoveAttributeAspect());
         result.addAll(validateAttributeSettings());
-        result.addAll(validateTensorTypes(overrides, now));
         return result;
     }
 
@@ -142,38 +138,6 @@ public class AttributeChangeValidator {
             String message = String.format("change hnsw index property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
             result.add(new VespaRestartAction(id, new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
         }
-    }
-
-    private List<VespaConfigChangeAction> validateTensorTypes(ValidationOverrides overrides, Instant now) {
-        List<VespaConfigChangeAction> result = new ArrayList<>();
-
-        for (Attribute nextAttr : nextFields.attributes()) {
-            Attribute currentAttr = currentFields.getAttribute(nextAttr.getName());
-
-            if (currentAttr != null && currentAttr.tensorType().isPresent()) {
-                // If the tensor attribute is not present on the new attribute, it means that the data type of the attribute
-                // has been changed. This is already handled by DocumentTypeChangeValidator, so we can ignore it here
-                if (!nextAttr.tensorType().isPresent()) {
-                    continue;
-                }
-
-                // Tensor attribute has changed type
-                if (!nextAttr.tensorType().get().equals(currentAttr.tensorType().get())) {
-                    result.add(createTensorTypeChangedRefeedAction(id, currentAttr, nextAttr, overrides, now));
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static VespaRefeedAction createTensorTypeChangedRefeedAction(ClusterSpec.Id id, Attribute currentAttr, Attribute nextAttr, ValidationOverrides overrides, Instant now) {
-        return VespaRefeedAction.of(id,
-                                    "tensor-type-change",
-                                    overrides,
-                                    new ChangeMessageBuilder(nextAttr.getName()).addChange("tensor type",
-                                                                                           currentAttr.tensorType().get().toString(),
-                                                                                           nextAttr.tensorType().get().toString()).build(), now);
     }
 
 }

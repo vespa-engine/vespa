@@ -6,6 +6,8 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.objects.Ids;
 
+import java.util.Objects;
+
 /**
  * A DataType containing a tensor type
  *
@@ -23,6 +25,7 @@ public class TensorDataType extends DataType {
         this.tensorType = tensorType;
     }
 
+    @Override
     public TensorDataType clone() {
         return (TensorDataType)super.clone();
     }
@@ -48,4 +51,17 @@ public class TensorDataType extends DataType {
     /** Returns the type of the tensor this field can hold */
     public TensorType getTensorType() { return tensorType; }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        TensorDataType that = (TensorDataType) o;
+        return Objects.equals(tensorType, that.tensorType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), tensorType);
+    }
 }

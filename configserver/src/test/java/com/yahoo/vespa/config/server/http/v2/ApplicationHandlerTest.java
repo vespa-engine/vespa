@@ -225,25 +225,25 @@ public class ApplicationHandlerTest {
 
         clock.advance(Duration.ofSeconds(1));
         expected = expected.withReady(clock.instant());
-        reindex(applicationId, "?cluster=");
+        reindex(applicationId, "?clusterId=");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         expected = expected.withReady(clock.instant());
-        reindex(applicationId, "?type=moo");
+        reindex(applicationId, "?documentType=moo");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?cluster=foo,boo");
+        reindex(applicationId, "?clusterId=foo,boo");
         expected = expected.withReady("foo", clock.instant())
                            .withReady("boo", clock.instant());
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?cluster=foo,boo&type=bar,baz");
+        reindex(applicationId, "?clusterId=foo,boo&documentType=bar,baz");
         expected = expected.withReady("foo", "bar", clock.instant())
                            .withReady("foo", "baz", clock.instant())
                            .withReady("boo", "bar", clock.instant())

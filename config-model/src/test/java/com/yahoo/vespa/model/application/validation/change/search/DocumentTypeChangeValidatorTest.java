@@ -208,6 +208,25 @@ public class DocumentTypeChangeValidatorTest {
                 action.toString());
     }
 
+    @Test
+    public void changing_tensor_type_of_tensor_field_requires_refeed() throws Exception {
+        new Fixture(
+                "field f1 type tensor(x[2]) { indexing: attribute }",
+                "field f1 type tensor(x[3]) { indexing: attribute }")
+                .assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                        "field-type-change",
+                        ValidationOverrides.empty,
+                        "Field 'f1' changed: data type: 'tensor(x[2])' -> 'tensor(x[3])'", Instant.now()));
+
+        new Fixture(
+                "field f1 type tensor(x[5]) { indexing: attribute }",
+                "field f1 type tensor(x[3]) { indexing: attribute }")
+                .assertValidation(newRefeedAction(ClusterSpec.Id.from("test"),
+                        "field-type-change",
+                        ValidationOverrides.empty,
+                        "Field 'f1' changed: data type: 'tensor(x[5])' -> 'tensor(x[3])'", Instant.now()));
+    }
+
     private static NewDocumentType createDocumentTypeWithReferenceField(String nameReferencedDocumentType) {
         StructDataType headerfields = new StructDataType("headerfields");
         headerfields.addField(new Field("ref", new ReferenceDataType(new DocumentType(nameReferencedDocumentType), 0)));

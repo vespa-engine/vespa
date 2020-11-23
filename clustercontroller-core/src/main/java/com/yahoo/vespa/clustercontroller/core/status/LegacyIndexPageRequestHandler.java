@@ -22,7 +22,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
     private final EventLog eventLog;
     private final long startedTime;
     private final RunDataExtractor data;
-    private boolean showLocalSystemStatesInLog = true;
+    private final boolean showLocalSystemStatesInLog;
 
     public LegacyIndexPageRequestHandler(Timer timer, boolean showLocalSystemStatesInLog, ContentCluster cluster,
                                          MasterElectionHandler masterElectionHandler,
@@ -72,12 +72,12 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                     eventLog
             );
             // Overview of current config
-            data.getOptions().writeHtmlState(content, request);
+            data.getOptions().writeHtmlState(content);
             // Current cluster state and cluster state history
             writeHtmlState(stateVersionTracker, content, request);
         } else {
             // Overview of current config
-            data.getOptions().writeHtmlState(content, request);
+            data.getOptions().writeHtmlState(content);
         }
         // Event log
         eventLog.writeHtmlState(content, null);

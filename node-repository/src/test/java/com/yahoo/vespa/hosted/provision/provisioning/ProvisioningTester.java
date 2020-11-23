@@ -242,8 +242,8 @@ public class ProvisioningTester {
     public void deactivate(ApplicationId applicationId) {
         try (var lock = nodeRepository.lock(applicationId)) {
             NestedTransaction deactivateTransaction = new NestedTransaction();
-            nodeRepository.deactivate(new ApplicationTransaction(new ProvisionLock(applicationId, lock),
-                                                                 deactivateTransaction));
+            nodeRepository.remove(new ApplicationTransaction(new ProvisionLock(applicationId, lock),
+                                                             deactivateTransaction));
             deactivateTransaction.commit();
         }
     }
