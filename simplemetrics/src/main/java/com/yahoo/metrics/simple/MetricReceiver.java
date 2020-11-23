@@ -29,6 +29,7 @@ public class MetricReceiver {
     private volatile Map<String, MetricSettings> metricSettings;
 
     private static final class NullCounter extends Counter {
+
         NullCounter() {
             super(null, null, null);
         }
@@ -72,18 +73,23 @@ public class MetricReceiver {
         public PointBuilder builder() {
             return super.builder();
         }
+
     }
 
     public static final class MockReceiver extends MetricReceiver {
+
         private final ThreadLocalDirectory<Bucket, Sample> collection;
+
         private MockReceiver(ThreadLocalDirectory<Bucket, Sample> collection) {
             super(collection, null);
             this.collection = collection;
         }
+
         public MockReceiver() {
             this(new ThreadLocalDirectory<>(new MetricUpdater()));
         }
-        /** gathers all data since last snapshot */
+
+        /** Gathers all data since last snapshot */
         public Bucket getSnapshot() {
             final Bucket merged = new Bucket();
             for (Bucket b : collection.fetch()) {
@@ -91,13 +97,16 @@ public class MetricReceiver {
             }
             return merged;
         }
-        /** utility method for testing */
+
+        /** Utility method for testing */
         public Point point(String dim, String val) {
             return pointBuilder().set(dim, val).build();
         }
+
     }
 
     private static final class NullReceiver extends MetricReceiver {
+
         NullReceiver() {
             super(null, null);
         }
@@ -164,21 +173,18 @@ public class MetricReceiver {
      * {@link #declareGauge(String)}, or {@link #declareGauge(String, Point)}
      * instead.
      *
-     * @param s
-     *            a single simple containing all meta data necessary to update a
-     *            metric
+     * @param sample a single simple containing all meta data necessary to update a metric
      */
-    public void update(Sample s) {
+    public void update(Sample sample) {
         // pass around the receiver instead of histogram settings to avoid reading any volatile if unnecessary
-        s.setReceiver(this);
-        metricsCollection.update(s);
+        sample.setReceiver(this);
+        metricsCollection.update(sample);
     }
 
     /**
      * Declare a counter metric without setting any default position.
      *
-     * @param name
-     *            the name of the metric
+     * @param name the name of the metric
      * @return a thread-safe counter
      */
     public Counter declareCounter(String name) {
@@ -189,11 +195,8 @@ public class MetricReceiver {
      * Declare a counter metric, with default dimension values as given. Create
      * the point argument by using a builder from {@link #pointBuilder()}.
      *
-     * @param name
-     *            the name of the metric
-     * @param boundDimensions
-     *            dimensions which have a fixed value in the life cycle of the
-     *            metric object or null
+     * @param name the name of the metric
+     * @param boundDimensions dimensions which have a fixed value in the life cycle of the metric object or null
      * @return a thread-safe counter with given default values
      */
     public Counter declareCounter(String name, Point boundDimensions) {
@@ -203,8 +206,7 @@ public class MetricReceiver {
     /**
      * Declare a gauge metric with any default position.
      *
-     * @param name
-     *            the name of the metric
+     * @param name the name of the metric
      * @return a thread-safe gauge instance
      */
     public Gauge declareGauge(String name) {
@@ -215,21 +217,12 @@ public class MetricReceiver {
      * Declare a gauge metric, with default dimension values as given. Create
      * the point argument by using a builder from {@link #pointBuilder()}.
      *
-     * @param name
-     *            the name of the metric
-     * @param boundDimensions
-     *            dimensions which have a fixed value in the life cycle of the
-     *            metric object or null
+     * @param name the name of the metric
+     * @param boundDimensions dimensions which have a fixed value in the life cycle of the metric object or null
      * @return a thread-safe gauge metric
      */
     public Gauge declareGauge(String name, Point boundDimensions) {
-        Optional<Point> optionalOfBoundDimensions;
-        if (boundDimensions == null) {
-            optionalOfBoundDimensions = Optional.empty();
-        } else {
-            optionalOfBoundDimensions = Optional.of(boundDimensions);
-        }
-        return declareGauge(name, optionalOfBoundDimensions, null);
+        return declareGauge(name, Optional.ofNullable(boundDimensions), null);
     }
 
     /**
@@ -238,13 +231,9 @@ public class MetricReceiver {
      * MetricSettings instances are built using
      * {@link MetricSettings.Builder}.
      *
-     * @param name
-     *            the name of the metric
-     * @param boundDimensions
-     *            an optional of dimensions which have a fixed value in the life
-     *            cycle of the metric object
-     * @param customSettings
-     *            any optional settings
+     * @param name the name of the metric
+     * @param boundDimensions an optional of dimensions which have a fixed value in the life cycle of the metric object
+     * @param customSettings any optional settings
      * @return a thread-safe gauge metric
      */
     public Gauge declareGauge(String name, Optional<Point> boundDimensions, MetricSettings customSettings) {
@@ -283,14 +272,8 @@ public class MetricReceiver {
     /**
      * Add how to build a histogram for a given metric.
      *
-     * <p>
-     * Do note, this is not part of the public API.
-     * </p>
-     *
-     * @param metricName
-     *            the metric where samples should be put in a histogram
-     * @param definition
-     *            settings for a histogram
+     * @param metricName the metric where samples should be put in a histogram
+     * @param definition settings for a histogram
      */
     void addMetricDefinition(String metricName, MetricSettings definition) {
         synchronized (histogramDefinitionsLock) {
@@ -304,15 +287,9 @@ public class MetricReceiver {
     }
 
     /**
-     * Get how to build a histogram for a given metric, or null if no histogram
-     * should be created.
+     * Get how to build a histogram for a given metric, or null if no histogram should be created.
      *
-     * <p>
-     * Do note, this is not part of the public API.
-     * </p>
-     *
-     * @param metricName
-     *            the name of an arbitrary metric
+     * @param metricName the name of an arbitrary metric
      * @return the corresponding histogram definition or null
      */
     MetricSettings getMetricDefinition(String metricName) {
