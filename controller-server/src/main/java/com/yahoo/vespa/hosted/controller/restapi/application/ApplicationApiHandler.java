@@ -701,6 +701,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(cluster.current(), clusterObject.setObject("current"));
             cluster.target().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
             cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
+            scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
+            clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -1912,6 +1914,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         toSlime(resources.nodeResources(), object.setObject("nodeResources"));
         if ( ! controller.zoneRegistry().system().isPublic())
             object.setDouble("cost", Math.round(resources.nodes() * resources.nodeResources().cost() * 100.0 / 3.0) / 100.0);
+    }
+
+    private void scalingEventsToSlime(List<Cluster.ScalingEvent> scalingEvents, Cursor scalingEventsArray) {
+        for (Cluster.ScalingEvent scalingEvent : scalingEvents) {
+            Cursor scalingEventObject = scalingEventsArray.addObject();
+            toSlime(scalingEvent.from(), scalingEventObject.setObject("from"));
+            toSlime(scalingEvent.to(), scalingEventObject.setObject("to"));
+            scalingEventObject.setLong("at", scalingEvent.at().toEpochMilli());
+        }
     }
 
     private void toSlime(NodeResources resources, Cursor object) {
