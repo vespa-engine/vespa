@@ -103,7 +103,7 @@ void my_interpreted_lambda_op(eval::InterpretedFunction::State &state, uint64_t 
     std::vector<double> labels(params.result_type.dimensions().size(), 0.0);
     ParamProxy param_proxy(labels, *state.params, params.bindings);
     InterpretedFunction::Context ctx(params.fun);
-    ArrayRef<CT> dst_cells = state.stash.create_array<CT>(params.num_cells);
+    ArrayRef<CT> dst_cells = state.stash.create_uninitialized_array<CT>(params.num_cells);
     CT *dst = &dst_cells[0];
     do {
         *dst++ = params.fun.eval(ctx, param_proxy).as_double();

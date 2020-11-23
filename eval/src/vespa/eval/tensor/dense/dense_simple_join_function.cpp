@@ -59,7 +59,7 @@ ArrayRef<OCT> make_dst_cells(ConstArrayRef<PCT> pri_cells, Stash &stash) {
     if constexpr (pri_mut && std::is_same<PCT,OCT>::value) {
         return unconstify(pri_cells);
     } else {
-        return stash.create_array<OCT>(pri_cells.size());
+        return stash.create_uninitialized_array<OCT>(pri_cells.size());
     }
 }
 
