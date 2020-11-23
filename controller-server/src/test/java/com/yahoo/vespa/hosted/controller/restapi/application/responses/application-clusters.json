@@ -52,7 +52,39 @@
           "storageType": "remote"
         },
         "cost": "(ignore)"
-      }
+      },
+      "scalingEvents": [
+        {
+          "from": {
+            "nodes": 0,
+            "groups": 0,
+            "nodeResources": {
+              "vcpu": 0.0,
+              "memoryGb": 0.0,
+              "diskGb": 0.0,
+              "bandwidthGbps": 0.0,
+              "diskSpeed": "fast",
+              "storageType": "any"
+            },
+            "cost": "(ignore)"
+          },
+          "to": {
+            "nodes": 2,
+            "groups": 1,
+            "nodeResources": {
+              "vcpu": 2.0,
+              "memoryGb": 8.0,
+              "diskGb": 50.0,
+              "bandwidthGbps": 1.0,
+              "diskSpeed": "slow",
+              "storageType": "remote"
+            },
+            "cost": "(ignore)"
+          },
+          "at": 1234
+        }
+      ],
+      "autoscalingStatus": "the autoscaling status"
     }
   }
 }

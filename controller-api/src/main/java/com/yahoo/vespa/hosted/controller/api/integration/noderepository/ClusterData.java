@@ -7,7 +7,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -26,6 +28,10 @@ public class ClusterData {
     public ClusterResourcesData suggested;
     @JsonProperty("target")
     public ClusterResourcesData target;
+    @JsonProperty("scalingEvents")
+    public List<ScalingEventData> scalingEvents;
+    @JsonProperty("autoscalingStatus")
+    public String autoscalingStatus;
 
     public Cluster toCluster(String id) {
         return new Cluster(ClusterSpec.Id.from(id),
@@ -33,7 +39,10 @@ public class ClusterData {
                            max.toClusterResources(),
                            current.toClusterResources(),
                            target == null ? Optional.empty() : Optional.of(target.toClusterResources()),
-                           suggested == null ? Optional.empty() : Optional.of(suggested.toClusterResources()));
+                           suggested == null ? Optional.empty() : Optional.of(suggested.toClusterResources()),
+                           scalingEvents == null ? List.of()
+                                                 : scalingEvents.stream().map(data -> data.toScalingEvent()).collect(Collectors.toList()),
+                           autoscalingStatus);
     }
 
 }
