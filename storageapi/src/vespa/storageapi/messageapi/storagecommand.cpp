@@ -11,12 +11,6 @@ StorageCommand::StorageCommand(const StorageCommand& other)
       _timeout(other._timeout),
       _sourceIndex(other._sourceIndex)
 {
-    // TODD do we really need copy construction, seems only use by CreateVisitorCommand ?
-    if ( !other.getTrace().isEmpty()) {
-        setTrace(vespalib::Trace(other.getTrace()));
-    } else {
-        getTrace().setLevel(other.getTrace().getLevel());
-    }
 }
 
 StorageCommand::StorageCommand(const MessageType& type, Priority p)

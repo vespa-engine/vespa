@@ -282,7 +282,7 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id)
       _msgId(id),
       _address(),
       _loadType(other._loadType),
-      _trace(),
+      _trace(other.getTrace().getLevel()),
       _approxByteSize(other._approxByteSize),
       _priority(other._priority)
 {

@@ -362,7 +362,7 @@ protected:
     Id                 _msgId;
     std::unique_ptr<StorageMessageAddress> _address;
     documentapi::LoadType _loadType;
-    vespalib::Trace _trace;
+    vespalib::Trace       _trace;
     uint32_t    _approxByteSize;
     Priority    _priority;
 
