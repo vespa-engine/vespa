@@ -4,6 +4,7 @@
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
 #include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/frt/reflection.h>
 

@@ -4,7 +4,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/routing/verbatimdirective.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>

@@ -10,6 +10,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/storage/storageserver/documentapiconverter.h>
 #include <vespa/storageapi/message/datagram.h>

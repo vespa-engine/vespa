@@ -7,8 +7,7 @@
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/storageapi/message/persistence.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class ProtocolSerialization5_2 : public ProtocolSerialization5_1
 {
@@ -31,5 +30,4 @@ protected:
     static void encodeTasCondition(GBBuf & buf, const api::StorageCommand & cmd);
 };
 
-} // mbusprot
-} // storage
+}
