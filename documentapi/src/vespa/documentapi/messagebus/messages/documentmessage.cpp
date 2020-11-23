@@ -7,7 +7,6 @@ namespace documentapi {
 
 DocumentMessage::DocumentMessage() :
     mbus::Message(),
-    _loadType(LoadType::DEFAULT),
     _priority(Priority::PRI_NORMAL_3),
     _approxSize(1024)
 {}

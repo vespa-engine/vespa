@@ -68,8 +68,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     case DocumentProtocol::MESSAGE_GETDOCUMENT:
     {
         documentapi::GetDocumentMessage& from(static_cast<documentapi::GetDocumentMessage&>(fromMsg));
-        auto to = std::make_unique<api::GetCommand>(bucketResolver()->bucketFromId(from.getDocumentId()), from.getDocumentId(), from.getFieldSet());
-        toMsg.reset(to.release());
+        toMsg = std::make_unique<api::GetCommand>(bucketResolver()->bucketFromId(from.getDocumentId()), from.getDocumentId(), from.getFieldSet());
         break;
     }
     case DocumentProtocol::MESSAGE_CREATEVISITOR:
@@ -131,8 +130,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     {
         documentapi::RemoveLocationMessage& from(static_cast<documentapi::RemoveLocationMessage&>(fromMsg));
         document::Bucket bucket(bucketResolver()->bucketSpaceFromName(from.getBucketSpace()), document::BucketId(0));
-        api::RemoveLocationCommand::UP to(new api::RemoveLocationCommand(from.getDocumentSelection(), bucket));
-        toMsg.reset(to.release());
+        toMsg = std::make_unique<api::RemoveLocationCommand>(from.getDocumentSelection(), bucket);
         break;
     }
     default:
@@ -146,7 +144,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
                 : 1ms*INT_MAX;
         toMsg->setTimeout(cappedTimeout);
         toMsg->setPriority(_priConverter->toStoragePriority(fromMsg.getPriority()));
-        toMsg->setLoadType(fromMsg.getLoadType());
+        toMsg->setLoadType(documentapi::LoadType::DEFAULT);
 
         LOG(spam, "Converted command %s, loadtype %d, mapped priority %d to %d",
             toMsg->toString().c_str(), toMsg->getLoadType().getId(),

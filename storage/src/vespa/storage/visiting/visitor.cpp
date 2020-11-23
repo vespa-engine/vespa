@@ -225,7 +225,6 @@ Visitor::sendMessage(documentapi::DocumentMessage::UP cmd)
     cmd->setRoute(_dataDestination->getRoute());
 
     cmd->setPriority(_documentPriority);
-    cmd->setLoadType(_initiatingCmd->getLoadType());
 
     framework::MicroSecTime time(_component.getClock().getTimeInMicros());
 
