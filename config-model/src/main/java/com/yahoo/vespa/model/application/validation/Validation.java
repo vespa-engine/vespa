@@ -27,7 +27,9 @@ import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDe
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +38,9 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Executor of validators. This defines the right order of validator execution.
@@ -107,10 +111,11 @@ public class Validation {
                                                  .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
                                                  .collect(toList());
 
-        Map<ValidationId, List<String>> disallowableActions = actions.stream()
-                                                                     .filter(action -> action.validationId().isPresent())
-                                                                     .collect(groupingBy(action -> action.validationId().orElseThrow(),
-                                                                                         mapping(ConfigChangeAction::getMessage, toList())));
+        Map<ValidationId, Collection<String>> disallowableActions = actions.stream()
+                                                                           .filter(action -> action.validationId().isPresent())
+                                                                           .collect(groupingBy(action -> action.validationId().orElseThrow(),
+                                                                                               mapping(ConfigChangeAction::getMessage,
+                                                                                                       toCollection(LinkedHashSet::new))));
         overrides.invalid(disallowableActions, now);
         return actions;
     }

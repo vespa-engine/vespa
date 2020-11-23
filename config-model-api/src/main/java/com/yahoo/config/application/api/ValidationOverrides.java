@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +52,8 @@ public class ValidationOverrides {
     }
 
     /** Throws a ValidationException unless all given validation is overridden at this time */
-    public void invalid(Map<ValidationId, List<String>> messagesByValidationId, Instant now) {
-        Map<ValidationId, List<String>> disallowed = new HashMap<>(messagesByValidationId);
+    public void invalid(Map<ValidationId, ? extends Collection<String>> messagesByValidationId, Instant now) {
+        Map<ValidationId, Collection<String>> disallowed = new HashMap<>(messagesByValidationId);
         disallowed.keySet().removeIf(id -> allows(id, now));
         if ( ! disallowed.isEmpty())
             throw new ValidationException(disallowed);
@@ -166,7 +167,7 @@ public class ValidationOverrides {
             super(validationId + ": " + message + ". " + toAllowMessage(validationId));
         }
 
-        private ValidationException(Map<ValidationId, List<String>> messagesById) {
+        private ValidationException(Map<ValidationId, Collection<String>> messagesById) {
             super(messagesById.entrySet().stream()
                               .map(messages -> messages.getKey() + ":\n\t" +
                                                String.join("\n\t", messages.getValue()) + "\n" +
