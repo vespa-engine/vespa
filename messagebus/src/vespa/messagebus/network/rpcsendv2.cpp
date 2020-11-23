@@ -188,7 +188,7 @@ RPCSendV2::toParams(const FRT_Values &args) const
 
 std::unique_ptr<Reply>
 RPCSendV2::createReply(const FRT_Values & ret, const string & serviceName,
-                       Error & error, vespalib::TraceNode & rootTrace) const
+                       Error & error, vespalib::Trace & rootTrace) const
 {
     uint8_t encoding = ret[3]._intval8;
     uint32_t uncompressedSize = ret[4]._intval32;
@@ -240,7 +240,7 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
     root.setString(PROTOCOL_F, reply.getProtocol());
     root.setData(BLOB_F, vespalib::Memory(payload.data(), payload.size()));
     if (reply.getTrace().getLevel() > 0) {
-        root.setString(TRACE_F, reply.getTrace().getRoot().encode());
+        root.setString(TRACE_F, reply.getTrace().encode());
     }
 
     if (reply.getNumErrors() > 0) {

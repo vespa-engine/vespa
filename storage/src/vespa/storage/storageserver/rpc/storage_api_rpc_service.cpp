@@ -208,7 +208,7 @@ void StorageApiRpcService::encode_rpc_v1_response(FRT_RPCRequest& request, api::
     // TODO skip encoding header altogether if no relevant fields set?
     protobuf::ResponseHeader hdr;
     if (reply.getTrace().getLevel() > 0) {
-        hdr.set_trace_payload(reply.getTrace().getRoot().encode());
+        hdr.set_trace_payload(reply.getTrace().encode());
     }
     // TODO consistent naming...
     encode_header_into_rpc_params(hdr, *ret);
@@ -289,7 +289,7 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     assert(reply);
 
     if (!hdr.trace_payload().empty()) {
-        cmd.getTrace().getRoot().addChild(mbus::TraceNode::decode(hdr.trace_payload()));
+        cmd.getTrace().addChild(mbus::TraceNode::decode(hdr.trace_payload()));
     }
     if (cmd.getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         cmd.getTrace().trace(TraceLevel::SEND_RECEIVE,

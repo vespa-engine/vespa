@@ -93,9 +93,7 @@ MessageTracker::sendReply() {
               _msg->toString(true).c_str(), vespalib::to_s(duration));
     }
     if (hasReply()) {
-        if ( ! _context.getTrace().getRoot().isEmpty()) {
-            getReply().getTrace().getRoot().addChild(_context.getTrace().getRoot());
-        }
+        getReply().getTrace().addChild(_context.steal_trace());
         if (_updateBucketInfo) {
             if (getReply().getResult().success()) {
                 _env.setBucketInfo(*this, _bucketLock->getBucket());
@@ -104,13 +102,10 @@ MessageTracker::sendReply() {
         if (getReply().getResult().success()) {
             _metric->latency.addValue(_timer.getElapsedTimeAsDouble());
         }
-        LOG(spam, "Sending reply up: %s %" PRIu64,
-            getReply().toString().c_str(), getReply().getMsgId());
+        LOG(spam, "Sending reply up: %s %" PRIu64, getReply().toString().c_str(), getReply().getMsgId());
         _replySender.sendReplyDirectly(std::move(_reply));
     } else {
-        if ( ! _context.getTrace().getRoot().isEmpty()) {
-            _msg->getTrace().getRoot().addChild(_context.getTrace().getRoot());
-        }
+        _msg->getTrace().addChild(_context.steal_trace());
     }
 }
 

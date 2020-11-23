@@ -146,8 +146,7 @@ Visitor::BucketIterationState::~BucketIterationState()
 {
     if (_iteratorId != 0) {
         // Making the assumption that this is effectively nothrow.
-        std::shared_ptr<DestroyIteratorCommand> cmd(
-                new DestroyIteratorCommand(_iteratorId));
+        auto cmd = std::make_shared<DestroyIteratorCommand>(_iteratorId);
         cmd->setLoadType(_visitor._initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_visitor._traceLevel);
         cmd->setPriority(0);
@@ -178,7 +177,7 @@ Visitor::VisitorTarget::VisitorTarget()
 {
 }
 
-Visitor::VisitorTarget::~VisitorTarget() {}
+Visitor::VisitorTarget::~VisitorTarget() = default;
 
 Visitor::Visitor(StorageComponent& component)
     : _component(component),
@@ -372,10 +371,9 @@ Visitor::sendReplyOnce()
         std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
 
         _hitCounter->updateVisitorStatistics(_visitorStatistics);
-        static_cast<api::CreateVisitorReply*>(reply.get())
-            ->setVisitorStatistics(_visitorStatistics);
+        static_cast<api::CreateVisitorReply*>(reply.get())->setVisitorStatistics(_visitorStatistics);
         if (shouldAddMbusTrace()) {
-            _trace.moveTraceTo(reply->getTrace().getRoot());
+            _trace.moveTraceTo(reply->getTrace());
         }
         reply->setResult(_result);
         LOG(debug, "Sending %s", reply->toString(true).c_str());
@@ -603,15 +601,14 @@ bool
 Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
     mbus::Trace tempTrace;
     tempTrace.trace(level, message);
-    return _trace.add(tempTrace.getRoot());
+    return _trace.add(std::move(tempTrace));
 }
 
 void
-Visitor::handleDocumentApiReply(mbus::Reply::UP reply,
-                        VisitorThreadMetrics& metrics)
+Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics)
 {
     if (shouldAddMbusTrace()) {
-        _trace.add(reply->getTrace().getRoot());
+        _trace.add(reply->steal_trace());
     }
 
     mbus::Message::UP message = reply->getMessage();
@@ -832,7 +829,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
     }
 
     if (shouldAddMbusTrace()) {
-        _trace.add(reply->getTrace().getRoot());
+        _trace.add(reply->steal_trace());
     }
 
     LOG(debug, "Continuing visitor %s.", _id.c_str());

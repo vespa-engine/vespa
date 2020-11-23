@@ -27,21 +27,22 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
         DistributorMetricSet& metrics,
         SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
-    _updateMetric(metrics.updates[msg->getLoadType()]),
-    _putMetric(metrics.update_puts[msg->getLoadType()]),
-    _getMetric(metrics.update_gets[msg->getLoadType()]),
-    _metadata_get_metrics(metrics.update_metadata_gets[msg->getLoadType()]),
-    _updateCmd(std::move(msg)),
-    _updateReply(),
-    _manager(manager),
-    _bucketSpace(bucketSpace),
-    _sendState(SendState::NONE_SENT),
-    _mode(Mode::FAST_PATH),
-    _single_get_latency_timer(),
-    _fast_path_repair_source_node(0xffff),
-    _use_initial_cheap_metadata_fetch_phase(
+      _updateMetric(metrics.updates[msg->getLoadType()]),
+      _putMetric(metrics.update_puts[msg->getLoadType()]),
+      _getMetric(metrics.update_gets[msg->getLoadType()]),
+      _metadata_get_metrics(metrics.update_metadata_gets[msg->getLoadType()]),
+      _updateCmd(std::move(msg)),
+      _updateReply(),
+      _manager(manager),
+      _bucketSpace(bucketSpace),
+      _sendState(SendState::NONE_SENT),
+      _mode(Mode::FAST_PATH),
+      _trace(_updateCmd->getTrace().getLevel()),
+      _single_get_latency_timer(),
+      _fast_path_repair_source_node(0xffff),
+      _use_initial_cheap_metadata_fetch_phase(
             _manager.getDistributor().getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates()),
-    _replySent(false)
+      _replySent(false)
 {
     document::BucketIdFactory idFactory;
     _updateDocBucketId = idFactory.getBucketId(_updateCmd->getDocumentId());
@@ -132,9 +133,7 @@ TwoPhaseUpdateOperation::sendReply(
         std::shared_ptr<api::StorageReply>& reply)
 {
     assert(!_replySent);
-    if (!_trace.isEmpty()) {
-        reply->getTrace().getRoot().addChild(_trace);
-    }
+    reply->getTrace().addChild(std::move(_trace));
     sender.sendReply(reply);
     _replySent = true;
 }
@@ -645,11 +644,9 @@ TwoPhaseUpdateOperation::satisfiesUpdateTimestampConstraint(api::Timestamp ts) c
 }
 
 void
-TwoPhaseUpdateOperation::addTraceFromReply(const api::StorageReply& reply)
+TwoPhaseUpdateOperation::addTraceFromReply(api::StorageReply & reply)
 {
-    if ( ! reply.getTrace().getRoot().isEmpty()) {
-        _trace.addChild(reply.getTrace().getRoot());
-    }
+    _trace.addChild(reply.steal_trace());
 }
 
 void
