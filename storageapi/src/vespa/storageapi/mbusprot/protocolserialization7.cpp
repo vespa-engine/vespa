@@ -253,7 +253,6 @@ public:
         dest.forceMsgId(_hdr.message_id());
         dest.setPriority(static_cast<uint8_t>(_hdr.priority()));
         dest.setSourceIndex(static_cast<uint16_t>(_hdr.source_index()));
-        dest.setLoadType(_load_types[_hdr.loadtype_id()]);
     }
 
     ProtobufType& request() noexcept { return *_proto_obj; }

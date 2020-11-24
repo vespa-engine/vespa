@@ -144,10 +144,9 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
                 : 1ms*INT_MAX;
         toMsg->setTimeout(cappedTimeout);
         toMsg->setPriority(_priConverter->toStoragePriority(fromMsg.getPriority()));
-        toMsg->setLoadType(documentapi::LoadType::DEFAULT);
 
-        LOG(spam, "Converted command %s, loadtype %d, mapped priority %d to %d",
-            toMsg->toString().c_str(), toMsg->getLoadType().getId(),
+        LOG(spam, "Converted command %s, mapped priority %d to %d",
+            toMsg->toString().c_str(),
             fromMsg.getPriority(), toMsg->getPriority());
     }
     return toMsg;

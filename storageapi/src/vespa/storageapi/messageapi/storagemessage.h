@@ -12,7 +12,6 @@
 #pragma once
 
 #include "messagehandler.h"
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/messagebus/trace.h>
 #include <vespa/vdslib/state/nodetype.h>
@@ -21,9 +20,8 @@
 #include <map>
 #include <iosfwd>
 
-namespace vespalib {
-    class asciistream;
-}
+namespace vespalib { class asciistream; }
+namespace documentapi { class LoadType; }
 // The following macros are provided as a way to write storage messages simply.
 // They implement the parts of the code that can easily be automaticly
 // generated.
@@ -361,7 +359,6 @@ protected:
     const MessageType& _type;
     Id                 _msgId;
     std::unique_ptr<StorageMessageAddress> _address;
-    documentapi::LoadType  _loadType;
     vespalib::Trace        _trace;
     uint32_t    _approxByteSize;
     Priority    _priority;
@@ -432,8 +429,7 @@ public:
      */
     virtual bool callHandler(MessageHandler&, const StorageMessage::SP&) const = 0;
 
-    const documentapi::LoadType& getLoadType() const { return _loadType; }
-    void setLoadType(const documentapi::LoadType& type) { _loadType = type; }
+    const documentapi::LoadType& getLoadType() const;
 
     mbus::Trace && steal_trace() { return std::move(_trace); }
     mbus::Trace& getTrace() { return _trace; }

@@ -6,6 +6,7 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/document/select/node.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -147,7 +148,6 @@ Visitor::BucketIterationState::~BucketIterationState()
     if (_iteratorId != 0) {
         // Making the assumption that this is effectively nothrow.
         auto cmd = std::make_shared<DestroyIteratorCommand>(_iteratorId);
-        cmd->setLoadType(_visitor._initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_visitor._traceLevel);
         cmd->setPriority(0);
 
@@ -732,7 +732,6 @@ Visitor::onCreateIteratorReply(
     LOG(debug, "Visitor '%s' starting to visit bucket %s.",
         _id.c_str(), bucketId.toString().c_str());
     auto cmd = std::make_shared<GetIterCommand>(bucket, bucketState.getIteratorId(), _docBlockSize);
-    cmd->setLoadType(_initiatingCmd->getLoadType());
     cmd->getTrace().setLevel(_traceLevel);
     cmd->setPriority(_priority);
     ++bucketState._pendingIterators;
@@ -1138,7 +1137,6 @@ Visitor::getIterators()
         }
         auto cmd = std::make_shared<GetIterCommand>(
                 bucketState.getBucket(), bucketState.getIteratorId(), _docBlockSize);
-        cmd->setLoadType(_initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_traceLevel);
         cmd->setPriority(_priority);
         _messageHandler->send(cmd, *this);
@@ -1184,7 +1182,6 @@ Visitor::getIterators()
                                           spi::NEWEST_DOCUMENT_OR_REMOVE :
                                           spi::NEWEST_DOCUMENT_ONLY));
 
-        cmd->setLoadType(_initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_traceLevel);
         cmd->setPriority(_initiatingCmd->getPriority());
         cmd->setReadConsistency(getRequiredReadConsistency());

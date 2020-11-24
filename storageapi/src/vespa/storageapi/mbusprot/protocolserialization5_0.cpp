@@ -102,7 +102,7 @@ ProtocolSerialization5_0::onDecodeCommand(BBuf& buf, api::StorageCommand& msg) c
     uint8_t priority = SH::getByte(buf);
     msg.setPriority(priority);
     msg.setSourceIndex(SH::getShort(buf));
-    msg.setLoadType(_loadTypes[SH::getInt(buf)]);
+    (void)SH::getInt(buf);
 }
 
 
