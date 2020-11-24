@@ -85,7 +85,6 @@ import org.w3c.dom.Node;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -724,43 +723,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
-    /**
-     * This is used in case we are on hosted Vespa and no nodes tag is supplied:
-     * If there are content clusters this will pick the first host in the first cluster as the container node.
-     * If there are no content clusters this will return empty (such that the node can be created by the container here).
-     */
-    private Optional<HostResource> getHostResourceFromContentClusters(ApplicationContainerCluster cluster, Element containersElement, ConfigModelContext context) {
-        Optional<Element> services = servicesRootOf(containersElement);
-        if ( ! services.isPresent())
-            return Optional.empty();
-        List<Element> contentServices = XML.getChildren(services.get(), "content");
-        if ( contentServices.isEmpty() ) return Optional.empty();
-        Element contentNodesElementOrNull = XML.getChild(contentServices.get(0), "nodes");
-        
-        NodesSpecification nodesSpec;
-        if (contentNodesElementOrNull == null)
-            nodesSpec = NodesSpecification.nonDedicated(1, context);
-        else
-            nodesSpec = NodesSpecification.from(new ModelElement(contentNodesElementOrNull), context);
-
-        Map<HostResource, ClusterMembership> hosts =
-                StorageGroup.provisionHosts(nodesSpec,
-                                            contentServices.get(0).getAttribute("id"),
-                                            cluster.getRoot().hostSystem(),
-                                            context.getDeployLogger());
-        return Optional.of(hosts.keySet().iterator().next());
-    }
-
-    /** Returns the services element above the given Element, or empty if there is no services element */
-    private Optional<Element> servicesRootOf(Element element) {
-        Node parent = element.getParentNode();
-        if (parent == null) return Optional.empty();
-        if ( ! (parent instanceof Element)) return Optional.empty();
-        Element parentElement = (Element)parent;
-        if (parentElement.getTagName().equals("services")) return Optional.of(parentElement);
-        return servicesRootOf(parentElement);
-    }
-    
     private List<ApplicationContainer> createNodesFromHosts(DeployLogger deployLogger, Map<HostResource, ClusterMembership> hosts, ApplicationContainerCluster cluster) {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
