@@ -7,6 +7,9 @@
 
 namespace vespalib::eval {
 
+ /**
+  *  Builder for StreamedValue objects.
+  **/
 template <typename T>
 class StreamedValueBuilder : public ValueBuilder<T>
 {

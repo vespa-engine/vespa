@@ -8,6 +8,12 @@
 
 namespace vespalib::eval {
 
+/**
+ *  A very simple Value implementation.
+ *  Cheap to construct from serialized data,
+ *  and cheap to serialize or iterate through.
+ *  Slow for full or partial lookups.
+ **/
 template <typename T>
 class StreamedValue : public Value
 {

@@ -6,6 +6,10 @@
 
 namespace vespalib::eval {
 
+ /**
+  *  Implements Value::Index by reading a stream of serialized
+  *  labels.
+  **/
 class StreamedValueIndex : public Value::Index
 {
 public:

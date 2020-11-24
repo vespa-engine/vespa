@@ -7,6 +7,11 @@
 
 namespace vespalib::eval {
 
+/**
+ *  Reads a stream of serialized labels.
+ *  Reading more labels than available will
+ *  throw an exception.
+ **/
 struct LabelStream {
     nbostream_longlivedbuf source;
     LabelStream(ConstArrayRef<char> data) : source(data.begin(), data.size()) {}
@@ -19,6 +24,9 @@ struct LabelStream {
     void reset() { source.rp(0); }
 };
 
+/**
+ *  Represents an address (set of labels) mapping to a subspace index
+ **/
 struct LabelBlock {
     static constexpr size_t npos = -1;
     size_t ss_idx;
@@ -26,6 +34,10 @@ struct LabelBlock {
     operator bool() const { return ss_idx != npos; }
 };
 
+/**
+ * Utility for reading a buffer with serialized labels
+ * as a stream of LabelBlock objects.
+ **/
 class LabelBlockStream {
 private:
     size_t _num_subspaces;

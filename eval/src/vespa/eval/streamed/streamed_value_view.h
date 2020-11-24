@@ -8,6 +8,11 @@
 
 namespace vespalib::eval {
 
+ /**
+  *  Same characteristics as StreamedValue, but does not
+  *  own its data - refers to type, cells and serialized
+  *  labels that must be kept outside the Value.
+  **/
 class StreamedValueView : public Value
 {
 private:
