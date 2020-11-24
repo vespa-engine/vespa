@@ -7,7 +7,6 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/error.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
 #include <vespa/fastos/app.h>
@@ -77,7 +76,7 @@ Client::handleReply(Reply::UP reply) {
         for (uint32_t i = 0; i < reply->getNumErrors(); ++i) {
             fprintf(stderr, "ERR[%d]: code=%d, msg=%s\n", i,
                     reply->getError(i).getCode(),
-                    reply->getError(i).getMessage().data());
+                    reply->getError(i).getMessage().c_str());
         }
         std::lock_guard guard(_lock);
         ++_failCnt;
