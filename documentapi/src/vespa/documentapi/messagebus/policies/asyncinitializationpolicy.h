@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <vespa/messagebus/error.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/documentapi/common.h>
 #include <map>
@@ -42,8 +41,6 @@ public:
     void needAsynchronousInit() { _syncInit = false; }
 
 private:
-    mbus::Error currentPolicyInitError() const;
-
     class Task : public vespalib::Executor::Task
     {
     public:

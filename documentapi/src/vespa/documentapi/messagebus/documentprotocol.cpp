@@ -8,6 +8,7 @@
 #include <vespa/document/util/stringutil.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/messagebus/error.h>
 #include <sstream>
 #include <cassert>
 
@@ -31,16 +32,16 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     string cfg = (configId.empty() ? "client" : configId);
 
     // When adding factories to this list, please KEEP THEM ORDERED alphabetically like they are now.
-    putRoutingPolicyFactory("AND", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::AndPolicyFactory()));
-    putRoutingPolicyFactory("Content", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::ContentPolicyFactory()));
-    putRoutingPolicyFactory("MessageType", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::MessageTypePolicyFactory()));
-    putRoutingPolicyFactory("DocumentRouteSelector", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::DocumentRouteSelectorPolicyFactory(*_repo, cfg)));
-    putRoutingPolicyFactory("Extern", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::ExternPolicyFactory()));
-    putRoutingPolicyFactory("LocalService", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::LocalServicePolicyFactory()));
-    putRoutingPolicyFactory("RoundRobin", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::RoundRobinPolicyFactory()));
-    putRoutingPolicyFactory("Storage", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::StoragePolicyFactory()));
-    putRoutingPolicyFactory("SubsetService", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::SubsetServicePolicyFactory()));
-    putRoutingPolicyFactory("LoadBalancer", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::LoadBalancerPolicyFactory()));
+    putRoutingPolicyFactory("AND", std::make_shared<RoutingPolicyFactories::AndPolicyFactory>());
+    putRoutingPolicyFactory("Content", std::make_shared<RoutingPolicyFactories::ContentPolicyFactory>());
+    putRoutingPolicyFactory("MessageType", std::make_shared<RoutingPolicyFactories::MessageTypePolicyFactory>());
+    putRoutingPolicyFactory("DocumentRouteSelector", std::make_shared<RoutingPolicyFactories::DocumentRouteSelectorPolicyFactory>(*_repo, cfg));
+    putRoutingPolicyFactory("Extern", std::make_shared<RoutingPolicyFactories::ExternPolicyFactory>());
+    putRoutingPolicyFactory("LocalService", std::make_shared<RoutingPolicyFactories::LocalServicePolicyFactory>());
+    putRoutingPolicyFactory("RoundRobin", std::make_shared<RoutingPolicyFactories::RoundRobinPolicyFactory>());
+    putRoutingPolicyFactory("Storage", std::make_shared<RoutingPolicyFactories::StoragePolicyFactory>());
+    putRoutingPolicyFactory("SubsetService", std::make_shared<RoutingPolicyFactories::SubsetServicePolicyFactory>());
+    putRoutingPolicyFactory("LoadBalancer", std::make_shared<RoutingPolicyFactories::LoadBalancerPolicyFactory>());
 
     // Prepare version specifications to use when adding routable factories.
     vespalib::VersionSpecification version6(6, 221);
@@ -48,42 +49,42 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     std::vector<vespalib::VersionSpecification> from6  = { version6 };
 
     // Add 6.x serialization
-    putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories60::DestroyVisitorMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories60::DocumentListMessageFactory(*_repo)), from6);
-    putRoutableFactory(MESSAGE_DOCUMENTSUMMARY, IRoutableFactory::SP(new RoutableFactories60::DocumentSummaryMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_EMPTYBUCKETS, IRoutableFactory::SP(new RoutableFactories60::EmptyBucketsMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_GETBUCKETLIST, IRoutableFactory::SP(new RoutableFactories60::GetBucketListMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories60::GetBucketStateMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::GetDocumentMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories60::MapVisitorMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::PutDocumentMessageFactory(*_repo)), from6);
-    putRoutableFactory(MESSAGE_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories60::QueryResultMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::RemoveDocumentMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_REMOVELOCATION, IRoutableFactory::SP(new RoutableFactories60::RemoveLocationMessageFactory(*_repo)), from6);
-    putRoutableFactory(MESSAGE_SEARCHRESULT, IRoutableFactory::SP(new RoutableFactories60::SearchResultMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_STATBUCKET, IRoutableFactory::SP(new RoutableFactories60::StatBucketMessageFactory()), from6);
-    putRoutableFactory(MESSAGE_UPDATEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::UpdateDocumentMessageFactory(*_repo)), from6);
-    putRoutableFactory(MESSAGE_VISITORINFO, IRoutableFactory::SP(new RoutableFactories60::VisitorInfoMessageFactory()), from6);
-    putRoutableFactory(REPLY_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorReplyFactory()), from6);
-    putRoutableFactory(REPLY_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories60::DestroyVisitorReplyFactory()), from6);
-    putRoutableFactory(REPLY_DOCUMENTIGNORED, IRoutableFactory::SP(new RoutableFactories60::DocumentIgnoredReplyFactory()), from6);
-    putRoutableFactory(REPLY_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories60::DocumentListReplyFactory()), from6);
-    putRoutableFactory(REPLY_DOCUMENTSUMMARY, IRoutableFactory::SP(new RoutableFactories60::DocumentSummaryReplyFactory()), from6);
-    putRoutableFactory(REPLY_EMPTYBUCKETS, IRoutableFactory::SP(new RoutableFactories60::EmptyBucketsReplyFactory()), from6);
-    putRoutableFactory(REPLY_GETBUCKETLIST, IRoutableFactory::SP(new RoutableFactories60::GetBucketListReplyFactory()), from6);
-    putRoutableFactory(REPLY_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories60::GetBucketStateReplyFactory()), from6);
-    putRoutableFactory(REPLY_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::GetDocumentReplyFactory(*_repo)), from6);
-    putRoutableFactory(REPLY_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories60::MapVisitorReplyFactory()), from6);
-    putRoutableFactory(REPLY_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::PutDocumentReplyFactory()), from6);
-    putRoutableFactory(REPLY_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories60::QueryResultReplyFactory()), from6);
-    putRoutableFactory(REPLY_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::RemoveDocumentReplyFactory()), from6);
-    putRoutableFactory(REPLY_REMOVELOCATION, IRoutableFactory::SP(new RoutableFactories60::RemoveLocationReplyFactory()), from6);
-    putRoutableFactory(REPLY_SEARCHRESULT, IRoutableFactory::SP(new RoutableFactories60::SearchResultReplyFactory()), from6);
-    putRoutableFactory(REPLY_STATBUCKET, IRoutableFactory::SP(new RoutableFactories60::StatBucketReplyFactory()), from6);
-    putRoutableFactory(REPLY_UPDATEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::UpdateDocumentReplyFactory()), from6);
-    putRoutableFactory(REPLY_VISITORINFO, IRoutableFactory::SP(new RoutableFactories60::VisitorInfoReplyFactory()), from6);
-    putRoutableFactory(REPLY_WRONGDISTRIBUTION, IRoutableFactory::SP(new RoutableFactories60::WrongDistributionReplyFactory()), from6);
+    putRoutableFactory(MESSAGE_CREATEVISITOR, std::make_shared<RoutableFactories60::CreateVisitorMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_DESTROYVISITOR, std::make_shared<RoutableFactories60::DestroyVisitorMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_DOCUMENTLIST, std::make_shared<RoutableFactories60::DocumentListMessageFactory>(*_repo), from6);
+    putRoutableFactory(MESSAGE_DOCUMENTSUMMARY, std::make_shared<RoutableFactories60::DocumentSummaryMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_EMPTYBUCKETS, std::make_shared<RoutableFactories60::EmptyBucketsMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_GETBUCKETLIST, std::make_shared<RoutableFactories60::GetBucketListMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_GETBUCKETSTATE, std::make_shared<RoutableFactories60::GetBucketStateMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_GETDOCUMENT, std::make_shared<RoutableFactories60::GetDocumentMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_MAPVISITOR, std::make_shared<RoutableFactories60::MapVisitorMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_PUTDOCUMENT, std::make_shared<RoutableFactories60::PutDocumentMessageFactory>(*_repo), from6);
+    putRoutableFactory(MESSAGE_QUERYRESULT, std::make_shared<RoutableFactories60::QueryResultMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_REMOVEDOCUMENT, std::make_shared<RoutableFactories60::RemoveDocumentMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_REMOVELOCATION, std::make_shared<RoutableFactories60::RemoveLocationMessageFactory>(*_repo), from6);
+    putRoutableFactory(MESSAGE_SEARCHRESULT, std::make_shared<RoutableFactories60::SearchResultMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_STATBUCKET, std::make_shared<RoutableFactories60::StatBucketMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_UPDATEDOCUMENT, std::make_shared<RoutableFactories60::UpdateDocumentMessageFactory>(*_repo), from6);
+    putRoutableFactory(MESSAGE_VISITORINFO, std::make_shared<RoutableFactories60::VisitorInfoMessageFactory>(), from6);
+    putRoutableFactory(REPLY_CREATEVISITOR, std::make_shared<RoutableFactories60::CreateVisitorReplyFactory>(), from6);
+    putRoutableFactory(REPLY_DESTROYVISITOR, std::make_shared<RoutableFactories60::DestroyVisitorReplyFactory>(), from6);
+    putRoutableFactory(REPLY_DOCUMENTIGNORED, std::make_shared<RoutableFactories60::DocumentIgnoredReplyFactory>(), from6);
+    putRoutableFactory(REPLY_DOCUMENTLIST, std::make_shared<RoutableFactories60::DocumentListReplyFactory>(), from6);
+    putRoutableFactory(REPLY_DOCUMENTSUMMARY, std::make_shared<RoutableFactories60::DocumentSummaryReplyFactory>(), from6);
+    putRoutableFactory(REPLY_EMPTYBUCKETS, std::make_shared<RoutableFactories60::EmptyBucketsReplyFactory>(), from6);
+    putRoutableFactory(REPLY_GETBUCKETLIST, std::make_shared<RoutableFactories60::GetBucketListReplyFactory>(), from6);
+    putRoutableFactory(REPLY_GETBUCKETSTATE, std::make_shared<RoutableFactories60::GetBucketStateReplyFactory>(), from6);
+    putRoutableFactory(REPLY_GETDOCUMENT, std::make_shared<RoutableFactories60::GetDocumentReplyFactory>(*_repo), from6);
+    putRoutableFactory(REPLY_MAPVISITOR, std::make_shared<RoutableFactories60::MapVisitorReplyFactory>(), from6);
+    putRoutableFactory(REPLY_PUTDOCUMENT, std::make_shared<RoutableFactories60::PutDocumentReplyFactory>(), from6);
+    putRoutableFactory(REPLY_QUERYRESULT, std::make_shared<RoutableFactories60::QueryResultReplyFactory>(), from6);
+    putRoutableFactory(REPLY_REMOVEDOCUMENT, std::make_shared<RoutableFactories60::RemoveDocumentReplyFactory>(), from6);
+    putRoutableFactory(REPLY_REMOVELOCATION, std::make_shared<RoutableFactories60::RemoveLocationReplyFactory>(), from6);
+    putRoutableFactory(REPLY_SEARCHRESULT, std::make_shared<RoutableFactories60::SearchResultReplyFactory>(), from6);
+    putRoutableFactory(REPLY_STATBUCKET, std::make_shared<RoutableFactories60::StatBucketReplyFactory>(), from6);
+    putRoutableFactory(REPLY_UPDATEDOCUMENT, std::make_shared<RoutableFactories60::UpdateDocumentReplyFactory>(), from6);
+    putRoutableFactory(REPLY_VISITORINFO, std::make_shared<RoutableFactories60::VisitorInfoReplyFactory>(), from6);
+    putRoutableFactory(REPLY_WRONGDISTRIBUTION, std::make_shared<RoutableFactories60::WrongDistributionReplyFactory>(), from6);
 }
 
 DocumentProtocol::~DocumentProtocol() = default;

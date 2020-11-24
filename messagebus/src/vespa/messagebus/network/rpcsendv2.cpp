@@ -4,6 +4,7 @@
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
 #include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -249,7 +250,7 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
             Cursor & error = array.addObject();
             error.setLong(CODE_F, reply.getError(i).getCode());
             error.setString(MSG_F, reply.getError(i).getMessage());
-            error.setString(SERVICE_F, reply.getError(i).getService().c_str());
+            error.setString(SERVICE_F, reply.getError(i).getService());
         }
     }
 
@@ -263,7 +264,6 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
     ret.AddInt32(toCompress.size());
     assert(buf.getDataLen() <= INT32_MAX);
     ret.AddData(std::move(buf));
-
 }
 
 } // namespace mbus

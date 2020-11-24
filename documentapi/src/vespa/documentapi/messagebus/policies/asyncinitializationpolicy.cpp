@@ -9,6 +9,7 @@
 #include "asyncinitializationpolicy.h"
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
@@ -50,18 +51,21 @@ AsyncInitializationPolicy::initSynchronous()
     _state = State::DONE;
 }
 
+namespace {
+
 mbus::Error
-AsyncInitializationPolicy::currentPolicyInitError() const
-{
+currentPolicyInitError(vespalib::stringref error) {
     // If an init error has been recorded for the last init attempt, report
     // it back until we've managed to successfully complete the init step.
-    if (_error.empty()) {
+    if (error.empty()) {
         return mbus::Error(DocumentProtocol::ERROR_NODE_NOT_READY,
                            "Waiting to initialize policy");
     } else {
         return mbus::Error(DocumentProtocol::ERROR_POLICY_FAILURE,
-                           "Error when creating policy: " + _error);
+                           "Error when creating policy: " + error);
     }
+}
+
 }
 
 void
@@ -87,7 +91,7 @@ AsyncInitializationPolicy::select(mbus::RoutingContext& context)
 
         if (_state != State::DONE) {
             auto reply = std::make_unique<mbus::EmptyReply>();
-            reply->addError(currentPolicyInitError());
+            reply->addError(currentPolicyInitError(_error));
             context.setReply(std::move(reply));
             return;
         }
@@ -96,7 +100,7 @@ AsyncInitializationPolicy::select(mbus::RoutingContext& context)
         // deadlock (executor will stall until all its tasks have finished
         // executing, and any queued tasks would attempt to take the mutex
         // we're currently holding, deadlocking both threads).
-        _executor.reset(nullptr);
+        _executor.reset();
     }
 
     doSelect(context);

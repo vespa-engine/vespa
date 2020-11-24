@@ -14,6 +14,7 @@
 #include <vespa/storageapi/message/searchresult.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/messagebus/error.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documentapiconverter");

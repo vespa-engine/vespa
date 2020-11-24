@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
@@ -24,6 +23,9 @@ Test::Main()
     SimpleProtocol protocol;
     EXPECT_TRUE(protocol.getName() == "Simple");
 
+    EXPECT_EQUAL(152u, sizeof(Result));
+    EXPECT_EQUAL(136u, sizeof(Error));
+    EXPECT_EQUAL(56u, sizeof(Routable));
     {
         // test protocol
         IRoutingPolicy::UP bogus = protocol.createPolicy("bogus", "");
@@ -32,7 +34,6 @@ Test::Main()
     TEST_FLUSH();
     {
         // test SimpleMessage
-        EXPECT_EQUAL(56u, sizeof(Routable));
         EXPECT_EQUAL(104u, sizeof(Message));
         EXPECT_EQUAL(184u, sizeof(SimpleMessage));
         auto msg = std::make_unique<SimpleMessage>("test");
@@ -52,7 +53,6 @@ Test::Main()
     TEST_FLUSH();
     {
         // test SimpleReply
-        EXPECT_EQUAL(56u, sizeof(Routable));
         EXPECT_EQUAL(96u, sizeof(Reply));
         EXPECT_EQUAL(160u, sizeof(SimpleReply));
         auto reply = std::make_unique<SimpleReply>("reply");
