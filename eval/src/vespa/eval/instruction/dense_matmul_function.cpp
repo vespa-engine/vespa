@@ -51,7 +51,7 @@ void my_cblas_double_matmul_op(InterpretedFunction::State &state, uint64_t param
     const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
     auto lhs_cells = state.peek(1).cells().typify<double>();
     auto rhs_cells = state.peek(0).cells().typify<double>();
-    auto dst_cells = state.stash.create_uninitialized_array<double>(self.lhs_size * self.rhs_size);
+    auto dst_cells = state.stash.create_array<double>(self.lhs_size * self.rhs_size);
     cblas_dgemm(CblasRowMajor, lhs_common_inner ? CblasNoTrans : CblasTrans, rhs_common_inner ? CblasTrans : CblasNoTrans,
                 self.lhs_size, self.rhs_size, self.common_size, 1.0,
                 lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
@@ -65,7 +65,7 @@ void my_cblas_float_matmul_op(InterpretedFunction::State &state, uint64_t param)
     const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
     auto lhs_cells = state.peek(1).cells().typify<float>();
     auto rhs_cells = state.peek(0).cells().typify<float>();
-    auto dst_cells = state.stash.create_uninitialized_array<float>(self.lhs_size * self.rhs_size);
+    auto dst_cells = state.stash.create_array<float>(self.lhs_size * self.rhs_size);
     cblas_sgemm(CblasRowMajor, lhs_common_inner ? CblasNoTrans : CblasTrans, rhs_common_inner ? CblasTrans : CblasNoTrans,
                 self.lhs_size, self.rhs_size, self.common_size, 1.0,
                 lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,

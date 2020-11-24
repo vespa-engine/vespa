@@ -48,7 +48,7 @@ void my_cblas_double_xw_product_op(InterpretedFunction::State &state, uint64_t p
     const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
     auto vector_cells = state.peek(1).cells().typify<double>();
     auto matrix_cells = state.peek(0).cells().typify<double>();
-    auto dst_cells = state.stash.create_uninitialized_array<double>(self.result_size);
+    auto dst_cells = state.stash.create_array<double>(self.result_size);
     cblas_dgemv(CblasRowMajor, common_inner ? CblasNoTrans : CblasTrans,
                 common_inner ? self.result_size : self.vector_size,
                 common_inner ? self.vector_size : self.result_size,
@@ -62,7 +62,7 @@ void my_cblas_float_xw_product_op(InterpretedFunction::State &state, uint64_t pa
     const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
     auto vector_cells = state.peek(1).cells().typify<float>();
     auto matrix_cells = state.peek(0).cells().typify<float>();
-    auto dst_cells = state.stash.create_uninitialized_array<float>(self.result_size);
+    auto dst_cells = state.stash.create_array<float>(self.result_size);
     cblas_sgemv(CblasRowMajor, common_inner ? CblasNoTrans : CblasTrans,
                 common_inner ? self.result_size : self.vector_size,
                 common_inner ? self.vector_size : self.result_size,

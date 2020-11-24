@@ -27,7 +27,7 @@ void my_cblas_double_multi_matmul_op(InterpretedFunction::State &state, uint64_t
     size_t num_blocks = self.matmul_cnt();
     const CT *lhs = state.peek(1).cells().typify<CT>().cbegin();
     const CT *rhs = state.peek(0).cells().typify<CT>().cbegin();
-    auto dst_cells = state.stash.create_uninitialized_array<CT>(dst_block_size * num_blocks);
+    auto dst_cells = state.stash.create_array<CT>(dst_block_size * num_blocks);
     CT *dst = dst_cells.begin();
     for (size_t i = 0; i < num_blocks; ++i, lhs += lhs_block_size, rhs += rhs_block_size, dst += dst_block_size) {
         cblas_dgemm(CblasRowMajor, self.lhs_common_inner() ? CblasNoTrans : CblasTrans, self.rhs_common_inner() ? CblasTrans : CblasNoTrans,
@@ -48,7 +48,7 @@ void my_cblas_float_multi_matmul_op(InterpretedFunction::State &state, uint64_t 
     size_t num_blocks = self.matmul_cnt();
     const CT *lhs = state.peek(1).cells().typify<CT>().cbegin();
     const CT *rhs = state.peek(0).cells().typify<CT>().cbegin();
-    auto dst_cells = state.stash.create_uninitialized_array<CT>(dst_block_size * num_blocks);
+    auto dst_cells = state.stash.create_array<CT>(dst_block_size * num_blocks);
     CT *dst = dst_cells.begin();
     for (size_t i = 0; i < num_blocks; ++i, lhs += lhs_block_size, rhs += rhs_block_size, dst += dst_block_size) {
         cblas_sgemm(CblasRowMajor, self.lhs_common_inner() ? CblasNoTrans : CblasTrans, self.rhs_common_inner() ? CblasTrans : CblasNoTrans,
