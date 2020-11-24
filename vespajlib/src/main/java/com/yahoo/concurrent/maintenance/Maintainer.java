@@ -57,6 +57,7 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
         } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
         }
+        log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }
 
     @Override
