@@ -16,9 +16,9 @@ class BucketOwnership
           _owned(false)
     { }
 
+public:
     BucketOwnership() : _checkedState(nullptr), _owned(true) {}
 
-public:
     bool isOwned() const { return _owned; }
     /**
      * Cluster state in which the ownership check failed. Lifetime of returned
