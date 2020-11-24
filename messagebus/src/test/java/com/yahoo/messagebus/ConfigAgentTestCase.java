@@ -3,21 +3,16 @@ package com.yahoo.messagebus;
 
 import com.yahoo.config.subscription.ConfigSet;
 import com.yahoo.config.subscription.ConfigURI;
-import com.yahoo.messagebus.routing.HopSpec;
-import com.yahoo.messagebus.routing.RouteSpec;
 import com.yahoo.messagebus.routing.RoutingSpec;
-import com.yahoo.messagebus.routing.RoutingTableSpec;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -28,7 +23,7 @@ public class ConfigAgentTestCase {
     public TemporaryFolder tmpFolder = new TemporaryFolder();
 
     @Test
-    public void testRoutingConfig() throws InterruptedException, IOException {
+    public void testRoutingConfig() throws InterruptedException {
         LocalHandler handler = new LocalHandler();
         assertFalse(testHalf(handler.spec));
         assertFalse(testFull(handler.spec));
@@ -174,26 +169,23 @@ public class ConfigAgentTestCase {
 
     private static class LocalHandler implements ConfigHandler {
 
-        volatile RoutingSpec spec = new RoutingSpec();
+        RoutingSpec spec = new RoutingSpec();
 
-        public void setupRouting(RoutingSpec spec) {
+        public synchronized void setupRouting(RoutingSpec spec) {
             this.spec = spec;
+            notify();
         }
 
-        public void reset() {
+        public synchronized void reset() {
             spec = null;
         }
 
-        public boolean await(int timeout, TimeUnit unit) throws InterruptedException {
-            long millis = System.currentTimeMillis() + unit.toMillis(timeout);
-            while (spec == null) {
-                long now = System.currentTimeMillis();
-                if (now >= millis) {
-                    return false;
-                }
-                Thread.sleep(1000);
-            }
-            return true;
+        public synchronized boolean await(int timeout, TimeUnit unit) throws InterruptedException {
+            long remaining, doom = System.currentTimeMillis() + unit.toMillis(timeout);
+            while (spec == null && (remaining = doom - System.currentTimeMillis()) > 0)
+                wait(remaining);
+
+            return spec != null;
         }
     }
 }
