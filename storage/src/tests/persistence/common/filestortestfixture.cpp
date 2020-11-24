@@ -15,7 +15,6 @@ using document::test::makeDocumentBucket;
 
 namespace storage {
 
-spi::LoadType FileStorTestFixture::defaultLoadType = spi::LoadType(0, "default");
 const uint32_t FileStorTestFixture::MSG_WAIT_TIME;
 
 void
@@ -51,10 +50,8 @@ FileStorTestFixture::TearDown()
 void
 FileStorTestFixture::createBucket(const document::BucketId& bid)
 {
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
-    _node->getPersistenceProvider().createBucket(
-            makeSpiBucket(bid), context);
+    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
+    _node->getPersistenceProvider().createBucket(makeSpiBucket(bid), context);
 
     StorBucketDatabase::WrappedEntry entry(
             _node->getStorageBucketDatabase().get(bid, "foo",

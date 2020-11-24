@@ -9,12 +9,12 @@ LOG_SETUP(".mergestatus");
 
 namespace storage {
 
-MergeStatus::MergeStatus(const framework::Clock& clock, const metrics::LoadType& lt,
+MergeStatus::MergeStatus(const framework::Clock& clock, const metrics::LoadType&,
                          api::StorageMessage::Priority priority,
                          uint32_t traceLevel)
     : reply(), full_node_list(), nodeList(), maxTimestamp(0), diff(), pendingId(0),
       pendingGetDiff(), pendingApplyDiff(), timeout(0), startTime(clock),
-      context(lt, priority, traceLevel)
+      context(priority, traceLevel)
 {}
 
 MergeStatus::~MergeStatus() = default;

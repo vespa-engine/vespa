@@ -16,10 +16,6 @@ using namespace ::testing;
 
 namespace storage {
 
-namespace {
-spi::LoadType defaultLoadType(0, "default");
-}
-
 struct SplitBitDetectorTest : Test {
     document::TestDocMan testDocMan;
     spi::dummy::DummyPersistence provider;
@@ -30,8 +26,7 @@ struct SplitBitDetectorTest : Test {
         : testDocMan(),
           provider(testDocMan.getTypeRepoSP()),
           bucket(makeSpiBucket(document::BucketId(1, 1))),
-          context(defaultLoadType, spi::Priority(0),
-                  spi::Trace::TraceLevel(0))
+          context(spi::Priority(0), spi::Trace::TraceLevel(0))
     {
         provider.initialize();
         provider.createBucket(bucket, context);

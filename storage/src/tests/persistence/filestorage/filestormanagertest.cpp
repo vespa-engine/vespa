@@ -56,7 +56,7 @@ namespace storage {
 
 namespace {
 
-spi::LoadType defaultLoadType(0, "default");
+metrics::LoadType defaultLoadType(0, "default");
 
 struct TestFileStorComponents;
 
@@ -86,7 +86,7 @@ struct FileStorTestBase : Test {
     void TearDown() override;
 
     void createBucket(document::BucketId bid) {
-        spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
+        spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
         _node->getPersistenceProvider().createBucket(makeSpiBucket(bid), context);
 
         StorBucketDatabase::WrappedEntry entry(
@@ -728,7 +728,7 @@ TEST_F(FileStorManagerTest, priority) {
     for (uint32_t i=0; i<documents.size(); ++i) {
         document::BucketId bucket(16, factory.getBucketId(documents[i]->getId()).getRawId());
 
-        spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
+        spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
 
         _node->getPersistenceProvider().createBucket(makeSpiBucket(bucket), context);
     }
@@ -790,8 +790,7 @@ TEST_F(FileStorManagerTest, split1) {
         documents.push_back(doc);
     }
     document::BucketIdFactory factory;
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
+    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     {
         // Populate bucket with the given data
         for (uint32_t i=0; i<documents.size(); ++i) {
@@ -905,7 +904,7 @@ TEST_F(FileStorManagerTest, split_single_group) {
     auto& top = c.top;
 
     setClusterState("storage:2 distributor:1");
-    spi::Context context(defaultLoadType, spi::Priority(0), spi::Trace::TraceLevel(0));
+    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     for (uint32_t j=0; j<1; ++j) {
         // Test this twice, once where all the data ends up in file with
         // splitbit set, and once where all the data ends up in file with
@@ -984,8 +983,7 @@ FileStorTestBase::putDoc(DummyStorageLink& top,
                          uint32_t docNum)
 {
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
+    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     document::BucketIdFactory factory;
     document::DocumentId docId(vespalib::make_string("id:ns:testdoctype1:n=%" PRIu64 ":%d", target.getId(), docNum));
     document::BucketId bucket(16, factory.getBucketId(docId).getRawId());

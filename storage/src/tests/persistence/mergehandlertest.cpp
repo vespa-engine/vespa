@@ -176,7 +176,7 @@ MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::~HandleApplyBucketDiffReply
 
 void
 MergeHandlerTest::SetUp() {
-    _context.reset(new spi::Context(documentapi::LoadType::DEFAULT, 0, 0));
+    _context = std::make_unique<spi::Context>(0, 0);
     SingleDiskPersistenceTestUtils::SetUp();
 
     _location = 1234;

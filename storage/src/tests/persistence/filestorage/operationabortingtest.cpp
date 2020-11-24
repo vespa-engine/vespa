@@ -72,7 +72,7 @@ public:
     }
 };
 
-spi::LoadType defaultLoadType(0, "default");
+metrics::LoadType defaultLoadType(0, "default");
 
 }
 
