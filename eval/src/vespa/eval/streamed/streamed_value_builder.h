@@ -15,7 +15,8 @@ class StreamedValueBuilder : public ValueBuilder<T>
 {
 private:
     ValueType _type;
-    size_t _dsss;
+    size_t _num_mapped_dimensions;
+    size_t _dense_subspace_size;
     std::vector<T> _cells;
     size_t _num_subspaces;
     nbostream _labels;
@@ -25,7 +26,8 @@ public:
                          size_t subspace_size_in,
                          size_t expected_subspaces)
       : _type(type),
-        _dsss(subspace_size_in),
+        _num_mapped_dimensions(num_mapped_in),
+        _dense_subspace_size(subspace_size_in),
         _cells(),
         _num_subspaces(0),
         _labels()
@@ -42,18 +44,18 @@ public:
             _labels.writeSmallString(label);
         }
         size_t old_sz = _cells.size();
-        _cells.resize(old_sz + _dsss);
+        _cells.resize(old_sz + _dense_subspace_size);
         _num_subspaces++;
-        return ArrayRef<T>(&_cells[old_sz], _dsss);
+        return ArrayRef<T>(&_cells[old_sz], _dense_subspace_size);
     }
 
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>>) override {
-        if (_num_subspaces == 0 && _type.count_mapped_dimensions() == 0) {
-            // add required dense subspace
-            add_subspace({});
+        if (_num_mapped_dimensions == 0) {
+            assert(_num_subspaces == 1);
         }
-        // note: _num_subspaces * _dsss == _cells.size()
+        // note: _num_subspaces * _dense_subspace_size == _cells.size()
         return std::make_unique<StreamedValue<T>>(std::move(_type),
+                                                  _num_mapped_dimensions,
                                                   std::move(_cells),
                                                   _num_subspaces,
                                                   _labels.extract_buffer());

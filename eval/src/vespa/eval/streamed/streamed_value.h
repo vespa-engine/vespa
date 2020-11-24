@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
 #include "streamed_value_index.h"
+#include <cassert>
 
 namespace vespalib::eval {
 
@@ -24,15 +25,16 @@ private:
     StreamedValueIndex _my_index;
 
 public:
-    StreamedValue(ValueType type, std::vector<T> cells, size_t num_ss, Array<char> && label_buf)
+    StreamedValue(ValueType type, size_t num_mapped_dimensions,
+                  std::vector<T> cells, size_t num_subspaces, Array<char> && label_buf)
       : _type(std::move(type)),
         _my_cells(std::move(cells)),
         _label_buf(std::move(label_buf)),
-        _my_index(_type.count_mapped_dimensions(),
-                  num_ss,
+        _my_index(num_mapped_dimensions,
+                  num_subspaces,
                   ConstArrayRef<char>(_label_buf.begin(), _label_buf.size()))
     {
-        if (num_ss * _type.dense_subspace_size() != _my_cells.size()) abort();
+        assert(num_subspaces * _type.dense_subspace_size() == _my_cells.size());
     }
 
     ~StreamedValue();
