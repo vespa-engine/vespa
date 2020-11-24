@@ -242,7 +242,8 @@ public class TenantRepository {
                                        componentRegistry.getReloadListener(),
                                        componentRegistry.getConfigserverConfig(),
                                        componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
-                                       new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName));
+                                       new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
+                                       componentRegistry.getClock());
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     componentRegistry,
                                                                     applicationRepo,

@@ -73,11 +73,12 @@ public class ApplicationCuratorDatabase {
     /**
      * Creates a node for the given application, marking its existence.
      */
-    public void createApplication(ApplicationId id) {
+    public void createApplication(ApplicationId id, Instant now) {
         if ( ! id.tenant().equals(tenant))
             throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
         try (Lock lock = lock(id)) {
             curator.create(applicationPath(id));
+            modifyReindexing(id, ApplicationReindexing.ready(now), UnaryOperator.identity());
         }
     }
 

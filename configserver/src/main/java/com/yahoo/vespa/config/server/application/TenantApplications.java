@@ -64,13 +64,13 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     private final HostRegistry<ApplicationId> hostRegistry;
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
-    private final Clock clock = Clock.systemUTC();
+    private final Clock clock;
     private final TenantFileSystemDirs tenantFileSystemDirs;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
                               ConfigserverConfig configserverConfig, HostRegistry<ApplicationId> hostRegistry,
-                              TenantFileSystemDirs tenantFileSystemDirs) {
+                              TenantFileSystemDirs tenantFileSystemDirs, Clock clock) {
         this.database = new ApplicationCuratorDatabase(tenant, curator);
         this.tenant = tenant;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
@@ -83,6 +83,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
         this.hostRegistry = hostRegistry;
         this.tenantFileSystemDirs = tenantFileSystemDirs;
+        this.clock = clock;
     }
 
     // For testing only
@@ -95,7 +96,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),
                                       componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
-                                      new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName));
+                                      new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
+                                      componentRegistry.getClock());
     }
 
     /** The curator backed ZK storage of this. */
@@ -140,7 +142,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
-        database().createApplication(id);
+        database().createApplication(id, clock.instant());
     }
 
     /**
