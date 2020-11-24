@@ -9,7 +9,7 @@
 using namespace vespalib::eval;
 using namespace vespalib::tensor;
 
-TEST(EngineOrFactoryTest, default_is_default_tensor_engine) {
+TEST(EngineOrFactoryTest, default_is_fast_value_builder_factory) {
     EXPECT_EQ(EngineOrFactory::get().to_string(), "FastValueBuilderFactory");
 }
 
