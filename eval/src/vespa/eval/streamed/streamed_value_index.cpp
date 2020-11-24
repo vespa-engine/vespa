@@ -45,10 +45,7 @@ struct StreamedFilterView : Value::Index::View
             size_t vdm_idx = 0;
             for (size_t dim = 0; dim < block.address.size(); ++dim) {
                 if (vdm_idx < view_dims.size() && (view_dims[vdm_idx] == dim)) {
-                    if (block.address[dim] != to_match[vdm_idx]) {
-                        matches = false;
-                    }
-                    ++vdm_idx;
+                    matches &= (block.address[dim] == to_match[vdm_idx++]);
                 } else {
                     *addr_out[out_idx++] = block.address[dim];
                 }
@@ -78,10 +75,10 @@ struct StreamedIterationView : Value::Index::View
         if (auto block = label_blocks.next_block()) {
             idx_out = block.ss_idx;
             size_t i = 0;
+            assert(addr_out.size() == block.address.size());
             for (auto ptr : addr_out) {
                 *ptr = block.address[i++];
             }
-            assert(i == block.address.size());
             return true;
         }
         return false;
