@@ -140,7 +140,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
-        database().createApplication(id);
+        database().createApplication(id, clock.instant());
     }
 
     /**
