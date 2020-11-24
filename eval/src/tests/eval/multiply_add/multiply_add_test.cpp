@@ -1,14 +1,12 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
-
-using Engine = vespalib::tensor::DefaultTensorEngine;
 
 double gcc_fun(double a, double b) {
     return (a * 3) + b;
@@ -18,7 +16,7 @@ TEST(MultiplyAddTest, multiply_add_gives_same_result) {
     auto fun = Function::parse("a*3+b");
     CompiledFunction cfun(*fun, PassParams::ARRAY);
     NodeTypes node_types = NodeTypes(*fun, {ValueType::double_type(), ValueType::double_type()});
-    InterpretedFunction ifun(Engine::ref(), *fun, node_types);
+    InterpretedFunction ifun(FastValueBuilderFactory::get(), *fun, node_types);
     auto llvm_fun = cfun.get_function();
     //-------------------------------------------------------------------------
     double a = -1.0/3.0;
