@@ -26,7 +26,7 @@ using namespace vespalib::eval::instruction;
 
 namespace vespalib::eval {
 
-EngineOrFactory EngineOrFactory::_default{tensor::DefaultTensorEngine::ref()};
+EngineOrFactory EngineOrFactory::_default{FastValueBuilderFactory::get()};
 
 
 EngineOrFactory
