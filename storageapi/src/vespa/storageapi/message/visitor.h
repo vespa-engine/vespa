@@ -205,18 +205,19 @@ public:
     VisitorInfoCommand();
     ~VisitorInfoCommand() override;
 
-    void setErrorCode(const ReturnCode& code) { _error = code; }
+    void setErrorCode(ReturnCode && code) { _error = std::move(code); }
     void setCompleted() { _completed = true; }
-    void setBucketCompleted(const document::BucketId& id, Timestamp lastVisited)
-    {
+    void setBucketCompleted(const document::BucketId& id, Timestamp lastVisited) {
         _bucketsCompleted.push_back(BucketTimestampPair(id, lastVisited));
     }
-    void setBucketsCompleted(const std::vector<BucketTimestampPair>& bc)
-        { _bucketsCompleted = bc; }
+    void setBucketsCompleted(const std::vector<BucketTimestampPair>& bc) {
+        _bucketsCompleted = bc;
+    }
 
     const ReturnCode& getErrorCode() const { return _error; }
-    const std::vector<BucketTimestampPair>& getCompletedBucketsList() const
-        { return _bucketsCompleted; }
+    const std::vector<BucketTimestampPair>& getCompletedBucketsList() const {
+        return _bucketsCompleted;
+    }
     bool visitorCompleted() const { return _completed; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

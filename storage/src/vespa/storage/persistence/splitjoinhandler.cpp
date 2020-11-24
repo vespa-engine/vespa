@@ -298,19 +298,19 @@ bool
 SplitJoinHandler::validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker)
 {
     if (cmd.getSourceBuckets().size() != 2) {
-        tracker.fail(ReturnCode::ILLEGAL_PARAMETERS,
+        tracker.fail(api::ReturnCode::ILLEGAL_PARAMETERS,
                      "Join needs exactly two buckets to be joined together" + cmd.getBucketId().toString());
         return false;
     }
     // Verify that source and target buckets look sane.
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
         if (cmd.getSourceBuckets()[i] == cmd.getBucketId()) {
-            tracker.fail(ReturnCode::ILLEGAL_PARAMETERS,
+            tracker.fail(api::ReturnCode::ILLEGAL_PARAMETERS,
                          "Join had both source and target bucket " + cmd.getBucketId().toString());
             return false;
         }
         if (!cmd.getBucketId().contains(cmd.getSourceBuckets()[i])) {
-            tracker.fail(ReturnCode::ILLEGAL_PARAMETERS,
+            tracker.fail(api::ReturnCode::ILLEGAL_PARAMETERS,
                          "Source bucket " + cmd.getSourceBuckets()[i].toString()
                          + " is not contained in target " + cmd.getBucketId().toString());
             return false;

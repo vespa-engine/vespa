@@ -161,7 +161,7 @@ VisitorOperation::markOperationAsFailedDueToNodeError(
             result.getResult(),
             vespalib::make_string("[from content node %u] %s",
                                   fromFailingNodeIndex,
-                                  result.getMessage().c_str()));
+                                  vespalib::string(result.getMessage()).c_str()));
 }
 
 void

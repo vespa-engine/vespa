@@ -845,7 +845,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
 
     if (cmd.getNodes().size() < 2) {
         LOG(debug, "Attempt to merge a single instance of a bucket");
-        tracker->fail(ReturnCode::ILLEGAL_PARAMETERS, "Cannot merge a single copy");
+        tracker->fail(api::ReturnCode::ILLEGAL_PARAMETERS, "Cannot merge a single copy");
         return tracker;
     }
 
@@ -854,7 +854,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
     for (uint16_t i = 0; i < cmd.getNodes().size(); ++i) {
         if (i == 0) {
             if (cmd.getNodes()[i].sourceOnly) {
-                tracker->fail(ReturnCode::ILLEGAL_PARAMETERS,
+                tracker->fail(api::ReturnCode::ILLEGAL_PARAMETERS,
                              "Attempted to merge a chain where the first node "
                              "in the chain is source only.");
                 return tracker;
@@ -863,7 +863,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
             if (!cmd.getNodes()[i].sourceOnly
                 && cmd.getNodes()[i-1].sourceOnly)
             {
-                tracker->fail(ReturnCode::ILLEGAL_PARAMETERS,
+                tracker->fail(api::ReturnCode::ILLEGAL_PARAMETERS,
                              "Attempted to merge a chain where the source only "
                              "copies are not in end of chain.");
                 return tracker;
@@ -874,7 +874,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
         const char* err = "A merge is already running on this bucket.";
         LOG(debug, "%s", err);
-        tracker->fail(ReturnCode::BUSY, err);
+        tracker->fail(api::ReturnCode::BUSY, err);
         return tracker;
     }
     checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
@@ -891,7 +891,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
     auto cmd2 = std::make_shared<api::GetBucketDiffCommand>(bucket.getBucket(), s->nodeList, s->maxTimestamp.getTime());
     if (!buildBucketInfoList(bucket, s->maxTimestamp, 0, cmd2->getDiff(), tracker->context())) {
         LOG(debug, "Bucket non-existing in db. Failing merge.");
-        tracker->fail(ReturnCode::BUCKET_DELETED, "Bucket not found in buildBucketInfo step");
+        tracker->fail(api::ReturnCode::BUCKET_DELETED, "Bucket not found in buildBucketInfo step");
         return tracker;
     }
     _env._metrics.merge_handler_metrics.mergeMetadataReadLatency.addValue(s->startTime.getElapsedTimeAsDouble());
@@ -1053,7 +1053,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
     checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
-        tracker->fail(ReturnCode::BUSY, "A merge is already running on this bucket.");
+        tracker->fail(api::ReturnCode::BUSY, "A merge is already running on this bucket.");
         return tracker;
     }
     uint8_t index = findOwnIndex(cmd.getNodes(), _env._nodeIndex);
@@ -1065,7 +1065,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
                              index, local, tracker->context()))
     {
         LOG(debug, "Bucket non-existing in db. Failing merge.");
-        tracker->fail(ReturnCode::BUCKET_DELETED, "Bucket not found in buildBucketInfo step");
+        tracker->fail(api::ReturnCode::BUCKET_DELETED, "Bucket not found in buildBucketInfo step");
         return tracker;
     }
     if (!mergeLists(remote, local, local)) {
@@ -1234,8 +1234,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     LOG(debug, "%s", cmd.toString().c_str());
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
-        tracker->fail(ReturnCode::BUSY,
-                      "A merge is already running on this bucket.");
+        tracker->fail(api::ReturnCode::BUSY, "A merge is already running on this bucket.");
         return tracker;
     }
 
@@ -1248,10 +1247,8 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     } else {
         LOG(spam, "Merge(%s): Moving %zu entries, didn't need "
                   "local data on node %u (%u).",
-            bucket.toString().c_str(),
-            cmd.getDiff().size(),
-            _env._nodeIndex,
-            index);
+            bucket.toString().c_str(), cmd.getDiff().size(),
+            _env._nodeIndex, index);
     }
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
        framework::MilliSecTimer startTime(_clock);

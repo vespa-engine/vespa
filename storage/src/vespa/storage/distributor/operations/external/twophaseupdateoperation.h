@@ -2,7 +2,6 @@
 #pragma once
 
 #include "newest_replica.h"
-#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/document/update/documentupdate.h>
@@ -18,6 +17,7 @@ namespace storage {
 namespace api {
 class UpdateCommand;
 class CreateBucketReply;
+class ReturnCode;
 }
 
 class UpdateMetricSet;
