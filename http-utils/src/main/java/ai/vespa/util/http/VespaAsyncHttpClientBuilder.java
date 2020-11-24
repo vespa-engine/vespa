@@ -63,6 +63,8 @@ public class VespaAsyncHttpClientBuilder {
         }
         clientBuilder.disableConnectionState(); // Share connections between subsequent requests
         clientBuilder.disableCookieManagement();
+        clientBuilder.disableAuthCaching();
+        clientBuilder.disableRedirectHandling();
         clientBuilder.setConnectionManager(factory.create(tlsStrategy));
         return clientBuilder;
     }
