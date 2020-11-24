@@ -7,6 +7,7 @@ import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
@@ -48,7 +49,7 @@ import java.util.logging.Logger;
  * @author vegardh
  * @author bratseth
  */
-public class Curator implements AutoCloseable {
+public class Curator implements VespaCurator, AutoCloseable {
 
     private static final Logger LOG = Logger.getLogger(Curator.class.getName());
     private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
