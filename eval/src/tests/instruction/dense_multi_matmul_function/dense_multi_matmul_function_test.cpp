@@ -6,7 +6,6 @@
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/instruction/dense_multi_matmul_function.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -16,7 +15,6 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 
-const TensorEngine &old_engine = tensor::DefaultTensorEngine::ref();
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
@@ -54,20 +52,6 @@ void verify_optimized(const vespalib::string &expr,
     EXPECT_EQUAL(info[0]->matmul_cnt(), matmul_cnt);
     EXPECT_EQUAL(info[0]->lhs_common_inner(), lhs_inner);
     EXPECT_EQUAL(info[0]->rhs_common_inner(), rhs_inner);
-
-    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
-    EvalFixture old_fixture(old_engine, expr, param_repo, true);
-    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(old_fixture.result(), old_slow_fixture.result());
-    info = old_fixture.find_all<DenseMultiMatMulFunction>();
-    ASSERT_EQUAL(info.size(), 1u);
-    EXPECT_TRUE(info[0]->result_is_mutable());
-    EXPECT_EQUAL(info[0]->lhs_size(), lhs_size);
-    EXPECT_EQUAL(info[0]->common_size(), common_size);
-    EXPECT_EQUAL(info[0]->rhs_size(), rhs_size);
-    EXPECT_EQUAL(info[0]->matmul_cnt(), matmul_cnt);
-    EXPECT_EQUAL(info[0]->lhs_common_inner(), lhs_inner);
-    EXPECT_EQUAL(info[0]->rhs_common_inner(), rhs_inner);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
@@ -76,13 +60,6 @@ void verify_not_optimized(const vespalib::string &expr) {
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseMultiMatMulFunction>();
-    EXPECT_TRUE(info.empty());
-
-    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
-    EvalFixture old_fixture(old_engine, expr, param_repo, true);
-    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(old_fixture.result(), old_slow_fixture.result());
-    info = old_fixture.find_all<DenseMultiMatMulFunction>();
     EXPECT_TRUE(info.empty());
 }
 

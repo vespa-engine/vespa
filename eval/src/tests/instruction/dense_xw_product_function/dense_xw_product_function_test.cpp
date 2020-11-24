@@ -7,7 +7,6 @@
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
@@ -17,7 +16,6 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 
-const TensorEngine &old_engine = tensor::DefaultTensorEngine::ref();
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 struct First {
@@ -78,17 +76,6 @@ void verify_optimized(const vespalib::string &expr, size_t vec_size, size_t res_
     EXPECT_EQUAL(info[0]->vector_size(), vec_size);
     EXPECT_EQUAL(info[0]->result_size(), res_size);
     EXPECT_EQUAL(info[0]->common_inner(), happy);
-
-    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
-    EvalFixture old_fixture(old_engine, expr, param_repo, true);
-    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(old_fixture.result(), old_slow_fixture.result());
-    info = old_fixture.find_all<DenseXWProductFunction>();
-    ASSERT_EQUAL(info.size(), 1u);
-    EXPECT_TRUE(info[0]->result_is_mutable());
-    EXPECT_EQUAL(info[0]->vector_size(), vec_size);
-    EXPECT_EQUAL(info[0]->result_size(), res_size);
-    EXPECT_EQUAL(info[0]->common_inner(), happy);
 }
 
 vespalib::string make_expr(const vespalib::string &a, const vespalib::string &b, const vespalib::string &common,
@@ -118,13 +105,6 @@ void verify_not_optimized(const vespalib::string &expr) {
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseXWProductFunction>();
-    EXPECT_TRUE(info.empty());
-
-    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
-    EvalFixture old_fixture(old_engine, expr, param_repo, true);
-    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQUAL(old_fixture.result(), old_slow_fixture.result());
-    info = old_fixture.find_all<DenseXWProductFunction>();
     EXPECT_TRUE(info.empty());
 }
 

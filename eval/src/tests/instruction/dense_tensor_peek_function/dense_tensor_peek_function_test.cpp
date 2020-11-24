@@ -5,7 +5,6 @@
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/instruction/dense_tensor_peek_function.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -15,7 +14,6 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 
-const TensorEngine &old_engine = tensor::DefaultTensorEngine::ref();
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
@@ -43,15 +41,6 @@ void verify(const vespalib::string &expr, double expect, size_t expect_optimized
         EXPECT_TRUE(info[i]->result_is_mutable());
     }
     EXPECT_EQUAL(fixture.find_all<Peek>().size(), expect_not_optimized_cnt);
-
-    EvalFixture old_fixture(old_engine, expr, param_repo, true);
-    EXPECT_EQUAL(old_fixture.result(), expect_spec);
-    info = old_fixture.find_all<DenseTensorPeekFunction>();
-    EXPECT_EQUAL(info.size(), expect_optimized_cnt);
-    for (size_t i = 0; i < info.size(); ++i) {
-        EXPECT_TRUE(info[i]->result_is_mutable());
-    }
-    EXPECT_EQUAL(old_fixture.find_all<Peek>().size(), expect_not_optimized_cnt);
 }
 
 //-----------------------------------------------------------------------------

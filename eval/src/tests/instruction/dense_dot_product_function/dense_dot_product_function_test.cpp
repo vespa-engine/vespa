@@ -5,7 +5,6 @@
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/instruction/dense_dot_product_function.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -17,7 +16,6 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-const TensorEngine &old_engine = tensor::DefaultTensorEngine::ref();
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 struct MyVecSeq : Sequence {
@@ -50,12 +48,6 @@ void check_gen_with_result(size_t l, size_t r, double wanted) {
     EXPECT_EQUAL(spec(wanted), evaluator.result());
     EXPECT_EQUAL(evaluator.result(), EvalFixture::ref(expr, param_repo));
     auto info = evaluator.find_all<DenseDotProductFunction>();
-    EXPECT_EQUAL(info.size(), 1u);
-
-    EvalFixture old_evaluator(old_engine, expr, param_repo, true);
-    EXPECT_EQUAL(spec(wanted), old_evaluator.result());
-    EXPECT_EQUAL(old_evaluator.result(), EvalFixture::ref(expr, param_repo));
-    info = old_evaluator.find_all<DenseDotProductFunction>();
     EXPECT_EQUAL(info.size(), 1u);
 };
 
@@ -120,23 +112,12 @@ void assertOptimized(const vespalib::string &expr) {
     auto info = fixture.find_all<DenseDotProductFunction>();
     ASSERT_EQUAL(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
-
-    EvalFixture old_fixture(old_engine, expr, param_repo, true);
-    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    info = old_fixture.find_all<DenseDotProductFunction>();
-    ASSERT_EQUAL(info.size(), 1u);
-    EXPECT_TRUE(info[0]->result_is_mutable());
 }
 
 void assertNotOptimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<DenseDotProductFunction>();
-    EXPECT_TRUE(info.empty());
-
-    EvalFixture old_fixture(old_engine, expr, param_repo, true);
-    EXPECT_EQUAL(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    info = old_fixture.find_all<DenseDotProductFunction>();
     EXPECT_TRUE(info.empty());
 }
 
