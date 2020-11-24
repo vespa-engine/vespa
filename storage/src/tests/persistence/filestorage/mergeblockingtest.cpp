@@ -2,7 +2,7 @@
 
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/persistence/messages.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <vector>

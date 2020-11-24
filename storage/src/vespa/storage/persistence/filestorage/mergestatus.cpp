@@ -9,7 +9,7 @@ LOG_SETUP(".mergestatus");
 
 namespace storage {
 
-MergeStatus::MergeStatus(const framework::Clock& clock, const metrics::LoadType&,
+MergeStatus::MergeStatus(const framework::Clock& clock,
                          api::StorageMessage::Priority priority,
                          uint32_t traceLevel)
     : reply(), full_node_list(), nodeList(), maxTimestamp(0), diff(), pendingId(0),
@@ -30,8 +30,7 @@ MergeStatus::removeFromDiff(
         const std::vector<api::MergeBucketCommand::Node> &nodes)
 {
     std::deque<api::GetBucketDiffCommand::Entry>::iterator it(diff.begin());
-    std::vector<api::ApplyBucketDiffCommand::Entry>::const_iterator it2(
-            part.begin());
+    std::vector<api::ApplyBucketDiffCommand::Entry>::const_iterator it2(part.begin());
     bool altered = false;
     HasMaskRemapper remap_mask(nodeList, nodes);
     // We expect part array to be sorted in the same order as in the diff,

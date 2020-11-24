@@ -7,6 +7,7 @@
 #include "messages.h"
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/storageapi/message/bucket.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.splitjoinhandler");

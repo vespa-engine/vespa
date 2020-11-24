@@ -2,6 +2,7 @@
 
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <vespa/document/repo/documenttyperepo.h>
