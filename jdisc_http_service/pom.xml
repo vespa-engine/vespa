@@ -152,6 +152,7 @@
             jetty-servlet-${jetty.version}.jar,
             jetty-servlets-${jetty.version}.jar,
             jetty-util-${jetty.version}.jar,
+            jetty-util-ajax-${jetty.version}.jar,
             component-jar-with-dependencies.jar
           </discPreInstallBundle>
         </configuration>
