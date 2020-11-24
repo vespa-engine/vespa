@@ -13,7 +13,7 @@ namespace vespalib::eval {
  *  throw an exception.
  **/
 struct LabelStream {
-    nbostream_longlivedbuf source;
+    nbostream source;
     LabelStream(ConstArrayRef<char> data) : source(data.begin(), data.size()) {}
     vespalib::stringref next_label() {
         size_t str_size = source.getInt1_4Bytes();
@@ -66,7 +66,7 @@ public:
                      uint32_t num_mapped_dims)
       : _num_subspaces(num_subspaces),
         _labels(label_buf),
-        _subspace_index(-1),
+        _subspace_index(std::numeric_limits<size_t>::max()),
         _current_address(num_mapped_dims)
     {}
 
