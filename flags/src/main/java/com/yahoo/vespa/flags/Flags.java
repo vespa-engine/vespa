@@ -330,12 +330,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag REGIONAL_CONTAINER_REGISTRY = defineFeatureFlag(
-            "regional-container-registry",
-            true,
-            "Whether host-admin should download images from the zone's regional container registry",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
             "enable-automatic-reindexing",
             false,

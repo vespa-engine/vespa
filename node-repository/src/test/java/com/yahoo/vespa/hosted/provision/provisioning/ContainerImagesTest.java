@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 
@@ -52,22 +51,22 @@ public class ContainerImagesTest {
     @Test
     public void image_replacement() {
         var flagSource = new InMemoryFlagSource();
-        var defaultImage = DockerImage.fromString("foo.example.com/vespa/vespa")
-                                      .withReplacedBy(DockerImage.fromString("bar.example.com/vespa/vespa"));
+        var defaultImage = DockerImage.fromString("foo.example.com/vespa/vespa");
         var tester = new ProvisioningTester.Builder().defaultImage(defaultImage).flagSource(flagSource).build();
         var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
         tester.activateTenantHosts();
 
-        // Default image is used with flag disabled
-        flagSource.withBooleanFlag(Flags.REGIONAL_CONTAINER_REGISTRY.id(), false);
+        // Default image is used when there is no replacement
         for (var host : hosts) {
             assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(host.type()));
         }
 
-        // Enabling flag switches to replacement
-        flagSource.withBooleanFlag(Flags.REGIONAL_CONTAINER_REGISTRY.id(), true);
+        // Replacement image is preferred
+        DockerImage imageWithReplacement = defaultImage.withReplacedBy(DockerImage.fromString("bar.example.com/vespa/vespa"));
+        tester = new ProvisioningTester.Builder().defaultImage(imageWithReplacement).flagSource(flagSource).build();
+        hosts = tester.makeReadyNodes(2, "default", NodeType.host);
         for (var host : hosts) {
-            assertEquals(defaultImage.replacedBy().get().asString(),
+            assertEquals(imageWithReplacement.replacedBy().get().asString(),
                          tester.nodeRepository().containerImages().imageFor(host.type()).asString());
         }
     }

@@ -165,7 +165,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.containerImages = new ContainerImages(db, containerImage, flagSource);
+        this.containerImages = new ContainerImages(db, containerImage);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.spareCount = spareCount;
