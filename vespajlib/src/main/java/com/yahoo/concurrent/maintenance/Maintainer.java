@@ -47,6 +47,7 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
 
     @Override
     public void run() {
+        log.log(Level.FINE, "Running " + this.getClass().getSimpleName());
         try {
             if (jobControl.isActive(name())) {
                 lockAndMaintain();
