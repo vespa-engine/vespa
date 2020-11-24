@@ -14,7 +14,11 @@ template <typename T>
 MemoryUsage
 StreamedValue<T>::get_memory_usage() const
 {
-    return self_memory_usage<StreamedValue<T>>();
+    MemoryUsage usage = self_memory_usage<StreamedValue<T>>();
+    usage.merge(vector_extra_memory_usage(_my_cells));
+    usage.incUsedBytes(_label_buf.byteSize());
+    usage.incAllocatedBytes(_label_buf.byteCapacity());
+    return usage;
 }
 
 template class StreamedValue<double>;
