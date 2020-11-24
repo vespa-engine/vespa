@@ -32,7 +32,7 @@ IdealStateManager::IdealStateManager(
         bool manageActiveBucketCopies)
     : HtmlStatusReporter("idealstateman", "Ideal state manager"),
       _metrics(new IdealStateMetricSet),
-      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
+      _distributorComponent(owner, owner.get_ideal_state_calculator(), bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
       _bucketSpaceRepo(bucketSpaceRepo),
       _has_logged_phantom_replica_warning(false)
 {

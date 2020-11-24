@@ -260,6 +260,7 @@ private:
                                         document::BucketSpace::hash>;
     DbGuards _explicit_transition_read_guard;
     mutable std::mutex _distribution_context_mutex;
+    IdealStateCalculator&       _ideal_state_calculator;
 };
 
 }

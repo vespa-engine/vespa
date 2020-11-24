@@ -56,7 +56,7 @@ ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
                                                    DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                                                    const MaintenanceOperationGenerator& gen,
                                                    DistributorComponentRegister& compReg)
-    : DistributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "External operation handler"),
+    : DistributorComponent(owner, owner.get_ideal_state_calculator(), bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "External operation handler"),
       _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(owner)),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached(), // At epoch

@@ -75,6 +75,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _component(compReg, "distributor"),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
       _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
+      _ideal_state_calculator(*this, *_bucketSpaceRepo),
       _metrics(new DistributorMetricSet(_component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
@@ -601,6 +602,7 @@ Distributor::propagateDefaultDistribution(
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
         repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
     }
+    _ideal_state_calculator.distribution_changed();
 }
 
 void
@@ -611,6 +613,7 @@ Distributor::propagateClusterStates()
             iter.second->setClusterState(_clusterStateBundle.getDerivedClusterState(iter.first));
         }
     }
+    _ideal_state_calculator.cluster_state_changed();
 }
 
 void

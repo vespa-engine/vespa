@@ -17,6 +17,7 @@ vespa_add_library(storage_distributor
     distributormessagesender.cpp
     distributormetricsset.cpp
     externaloperationhandler.cpp
+    ideal_state_calculator.cpp
     idealstatemanager.cpp
     idealstatemetricsset.cpp
     messagetracker.cpp

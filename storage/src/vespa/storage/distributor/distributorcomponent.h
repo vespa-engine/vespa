@@ -21,6 +21,8 @@ struct DatabaseUpdate {
     };  
 };
 
+class IdealStateCalculator;
+
 /**
  * Takes care of subscribing to document manager config and
  * making those values available to other subcomponents.
@@ -29,6 +31,7 @@ class DistributorComponent : public storage::DistributorComponent
 {
 public:
     DistributorComponent(DistributorInterface& distributor,
+                         IdealStateCalculator& ideal_state_calculator,
                          DistributorBucketSpaceRepo& bucketSpaceRepo,
                          DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                          DistributorComponentRegister& compReg,
@@ -41,11 +44,6 @@ public:
      * distribution and cluster state -and- that of the pending cluster
      * state and distribution (if any pending exists).
      */
-    BucketOwnership checkOwnershipInPendingAndGivenState(
-            const lib::Distribution& distribution,
-            const lib::ClusterState& clusterState,
-            const document::Bucket &bucket) const;
-
     BucketOwnership checkOwnershipInPendingAndCurrentState(
             const document::Bucket &bucket) const;
 
@@ -186,6 +184,7 @@ protected:
 
     DistributorBucketSpaceRepo& _bucketSpaceRepo;
     DistributorBucketSpaceRepo& _readOnlyBucketSpaceRepo;
+    IdealStateCalculator&       _ideal_state_calculator;
 };
 
 }

@@ -7,6 +7,7 @@
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
 #include "simpleclusterinformation.h"
+#include "ideal_state_calculator.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -29,13 +30,14 @@ BucketDBUpdater::BucketDBUpdater(Distributor& owner,
                                  DistributorMessageSender& sender,
                                  DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
+      _distributorComponent(owner, owner.get_ideal_state_calculator(), bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
       _sender(sender),
       _transitionTimer(_distributorComponent.getClock()),
       _stale_reads_enabled(false),
       _active_distribution_contexts(),
       _explicit_transition_read_guard(),
-      _distribution_context_mutex()
+      _distribution_context_mutex(),
+      _ideal_state_calculator(owner.get_ideal_state_calculator())
 {
     for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
         _active_distribution_contexts.emplace(
@@ -317,6 +319,7 @@ BucketDBUpdater::storageDistributionChanged()
             _distributorComponent.getBucketSpaceRepo(),
             _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
+    _ideal_state_calculator.pending_cluster_state_changed();
 }
 
 void
@@ -435,6 +438,7 @@ BucketDBUpdater::onSetSystemState(
     _distributorComponent.getDistributor().getMetrics().set_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 
+    _ideal_state_calculator.pending_cluster_state_changed();
     if (isPendingClusterStateCompleted()) {
         processCompletedPendingClusterState();
     }
@@ -782,6 +786,7 @@ BucketDBUpdater::activatePendingClusterState()
     update_read_snapshot_after_activation(_pendingClusterState->getNewClusterStateBundle());
     _pendingClusterState.reset();
     _outdatedNodesMap.clear();
+    _ideal_state_calculator.pending_cluster_state_changed();
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
     clearReadOnlyBucketRepoDatabases();

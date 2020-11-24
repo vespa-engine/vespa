@@ -7,6 +7,7 @@
 #include "distributor_host_info_reporter.h"
 #include "distributorinterface.h"
 #include "externaloperationhandler.h"
+#include "ideal_state_calculator.h"
 #include "idealstatemanager.h"
 #include "min_replica_provider.h"
 #include "pendingmessagetracker.h"
@@ -193,6 +194,8 @@ public:
         return _db_memory_sample_interval;
     }
 
+    IdealStateCalculator& get_ideal_state_calculator() { return _ideal_state_calculator; }
+
 private:
     friend struct DistributorTest;
     friend class BucketDBUpdaterTest;
@@ -269,6 +272,7 @@ private:
     // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
     // and the DBs are empty during non-transition phases.
     std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
+    IdealStateCalculator _ideal_state_calculator;
     std::shared_ptr<DistributorMetricSet> _metrics;
 
     OperationOwner _operationOwner;
