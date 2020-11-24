@@ -105,7 +105,6 @@ IdealStateOperation::setCommandMeta(api::MaintenanceCommand& cmd) const
 {
     cmd.setPriority(_priority);
     cmd.setReason(_detailedReason);
-    cmd.setLoadType((*_manager->getLoadTypes())["maintenance"]);
 }
 
 std::string

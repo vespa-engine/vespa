@@ -41,7 +41,7 @@ struct TestAndSetTest : SingleDiskPersistenceTestUtils {
     TestAndSetTest()
         : persistenceHandler(),
           asyncHandler(nullptr),
-          context(spi::LoadType(0, "default"), 0, 0)
+          context(0, 0)
     {}
 
     void SetUp() override {

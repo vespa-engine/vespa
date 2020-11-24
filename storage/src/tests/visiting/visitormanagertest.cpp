@@ -3,9 +3,9 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>

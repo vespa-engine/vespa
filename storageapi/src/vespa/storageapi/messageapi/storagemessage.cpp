@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagemessage.h"
-
+#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -270,7 +270,6 @@ StorageMessage::StorageMessage(const MessageType& type, Id id)
     : _type(type),
       _msgId(id),
       _address(),
-      _loadType(documentapi::LoadType::DEFAULT),
       _trace(),
       _approxByteSize(50),
       _priority(NORMAL)
@@ -281,7 +280,6 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id)
     : _type(other._type),
       _msgId(id),
       _address(),
-      _loadType(other._loadType),
       _trace(other.getTrace().getLevel()),
       _approxByteSize(other._approxByteSize),
       _priority(other._priority)
@@ -290,7 +288,13 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id)
 
 StorageMessage::~StorageMessage() = default;
 
-void StorageMessage::setNewMsgId()
+const documentapi::LoadType&
+StorageMessage::getLoadType() const {
+    return documentapi::LoadType::DEFAULT;
+}
+
+void
+StorageMessage::setNewMsgId()
 {
     _msgId = generateMsgId();
 }
@@ -300,7 +304,8 @@ StorageMessage::getSummary() const {
     return toString();
 }
 
-const char* to_string(LockingRequirements req) noexcept {
+const char*
+to_string(LockingRequirements req) noexcept {
     switch (req) {
     case LockingRequirements::Exclusive: return "Exclusive";
     case LockingRequirements::Shared:    return "Shared";
@@ -308,12 +313,14 @@ const char* to_string(LockingRequirements req) noexcept {
     }
 }
 
-std::ostream& operator<<(std::ostream& os, LockingRequirements req) {
+std::ostream&
+operator<<(std::ostream& os, LockingRequirements req) {
     os << to_string(req);
     return os;
 }
 
-const char* to_string(InternalReadConsistency consistency) noexcept {
+const char*
+to_string(InternalReadConsistency consistency) noexcept {
     switch (consistency) {
     case InternalReadConsistency::Strong: return "Strong";
     case InternalReadConsistency::Weak:   return "Weak";
@@ -321,7 +328,8 @@ const char* to_string(InternalReadConsistency consistency) noexcept {
     }
 }
 
-std::ostream& operator<<(std::ostream& os, InternalReadConsistency consistency) {
+std::ostream&
+operator<<(std::ostream& os, InternalReadConsistency consistency) {
     os << to_string(consistency);
     return os;
 }

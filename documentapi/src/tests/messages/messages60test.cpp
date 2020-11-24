@@ -89,16 +89,13 @@ bool
 Messages60Test::testGetBucketListMessage()
 {
     GetBucketListMessage msg(document::BucketId(16, 123));
-    msg.setLoadType(_loadTypes["foo"]);
     msg.setBucketSpace("beartato");
-    EXPECT_EQUAL(string("foo"), msg.getLoadType().getName());
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 12u + serializedLength("beartato"), serialize("GetBucketListMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("GetBucketListMessage", DocumentProtocol::MESSAGE_GETBUCKETLIST, lang);
         if (EXPECT_TRUE(obj)) {
             GetBucketListMessage &ref = static_cast<GetBucketListMessage&>(*obj);
-            EXPECT_EQUAL(string("foo"), ref.getLoadType().getName());
             EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
             EXPECT_EQUAL("beartato", ref.getBucketSpace());
         }
@@ -323,7 +320,7 @@ Messages60Test::testGetDocumentMessage()
 {
     GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
-    EXPECT_EQUAL(360u, sizeof(GetDocumentMessage));
+    EXPECT_EQUAL(280u, sizeof(GetDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + (size_t)31, serialize("GetDocumentMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -403,7 +400,7 @@ Messages60Test::testPutDocumentMessage()
 
     EXPECT_EQUAL(64u, sizeof(vespalib::string));
     EXPECT_EQUAL(sizeof(std::string), sizeof(TestAndSetCondition));
-    EXPECT_EQUAL(192u, sizeof(DocumentMessage));
+    EXPECT_EQUAL(112u, sizeof(DocumentMessage));
     EXPECT_EQUAL(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
     EXPECT_EQUAL(sizeof(TestAndSetMessage) + 24, sizeof(PutDocumentMessage));
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH +

@@ -2,14 +2,12 @@
 #pragma once
 
 #include "documentreply.h"
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/message.h>
 
 namespace documentapi {
 
 class DocumentMessage : public mbus::Message {
 private:
-    LoadType        _loadType;
     Priority::Value _priority;
     uint32_t        _approxSize; // Not sent on wire; set by deserializer or by caller.
 
@@ -56,16 +54,6 @@ public:
      * @param priority The priority to set.
      */
     void setPriority(Priority::Value p) { _priority = p; };
-
-    /**
-     * @return Returns the load type for this message.
-     */
-    const LoadType& getLoadType() const { return _loadType; }
-
-    /**
-     * Sets the load type for this message.
-     */
-    void setLoadType(const LoadType& loadType) { _loadType = loadType; }
 
     uint32_t getApproxSize() const override;
 

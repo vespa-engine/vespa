@@ -15,8 +15,6 @@ namespace storage {
 class FileStorTestFixture : public ::testing::Test
 {
 public:
-    static spi::LoadType defaultLoadType;
-
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<vdstestlib::DirConfig> _config;
     const document::DocumentType* _testdoctype1;

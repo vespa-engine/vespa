@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistenceutil.h"
+#include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -42,7 +43,7 @@ MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
       _updateBucketInfo(updateBucketInfo && hasBucketInfo(msg->getType().getId())),
       _bucketLock(std::move(bucketLock)),
       _msg(std::move(msg)),
-      _context(_msg->getLoadType(), _msg->getPriority(), _msg->getTrace().getLevel()),
+      _context(_msg->getPriority(), _msg->getTrace().getLevel()),
       _env(env),
       _replySender(replySender),
       _metric(nullptr),
