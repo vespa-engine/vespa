@@ -575,6 +575,11 @@
                 <version>${apache.httpcore.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>${apache.httpclient5.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpmime</artifactId>
                 <version>4.3.6</version>
@@ -749,6 +754,7 @@
         <antlr4.version>4.5</antlr4.version>
         <apache.httpclient.version>4.5.12</apache.httpclient.version>
         <apache.httpcore.version>4.4.13</apache.httpcore.version>
+        <apache.httpclient5.version>5.0.3</apache.httpclient5.version>
         <asm.version>7.0</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.8.49</athenz.version>
