@@ -326,12 +326,10 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
     _metrics->pendingMerges.addValue(_mergeStates.size());
     _metrics->queueSize.addValue(getQueueSize());
 
-    for (auto & entry : _metrics->averageQueueWaitingTime.getMetricMap()) {
-        metrics::LoadType loadType(entry.first, "ignored");
-        for (const auto & stripe : _metrics->stripes) {
-            const auto & m = stripe->averageQueueWaitingTime[loadType];
-            entry.second->addTotalValueWithCount(m.getTotal(), m.getCount());
-        }
+    metrics::LoadType loadType(0, "ignored");
+    for (const auto & stripe : _metrics->stripes) {
+        const auto & m = stripe->averageQueueWaitingTime[loadType];
+        _metrics->averageQueueWaitingTime.addTotalValueWithCount(m.getTotal(), m.getCount());
     }
 }
 
