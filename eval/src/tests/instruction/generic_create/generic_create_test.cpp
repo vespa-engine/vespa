@@ -94,12 +94,15 @@ void test_generic_create_with(const ValueBuilderFactory &factory) {
     for (const auto & layout : create_layouts) {
         TensorSpec full = spec(layout, N());
         auto actual = perform_generic_create(full, factory);
-        auto expect = reference_create(full);
+        auto ref_spec = reference_create(full);
+        // use SimpleValue to add implicit cells with default value
+        auto expect = spec_from_value(*value_from_spec(ref_spec, SimpleValueBuilderFactory::get()));
         EXPECT_EQ(actual, expect);
         for (size_t n : {2, 3, 4, 5}) {
             TensorSpec partial = remove_each(full, n);
             actual = perform_generic_create(partial, factory);
-            expect = reference_create(partial);
+            ref_spec = reference_create(partial);
+            expect = spec_from_value(*value_from_spec(ref_spec, SimpleValueBuilderFactory::get()));
             EXPECT_EQ(actual, expect);
         }
     }

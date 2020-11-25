@@ -1,8 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "reference_operations.h"
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/util/stash.h>
@@ -115,9 +113,7 @@ TensorSpec ReferenceOperations::create(const vespalib::string &type, const Creat
         double val = value_from_child(child);
         result.add(addr, val);
     }
-    // use SimpleValue to add implicit cells with default value
-    const auto &factory = SimpleValueBuilderFactory::get();
-    return spec_from_value(*value_from_spec(result, factory));
+    return result;
 }
 
 
@@ -236,9 +232,7 @@ TensorSpec ReferenceOperations::peek(const TensorSpec &param, const PeekSpec &pe
             result.add(my_addr, cell.second);
         }
     }
-    // use SimpleValue to add implicit cells with default value
-    const auto &factory = SimpleValueBuilderFactory::get();
-    return spec_from_value(*value_from_spec(result, factory));
+    return result;
 }
 
 
@@ -268,9 +262,7 @@ TensorSpec ReferenceOperations::reduce(const TensorSpec &a, const std::vector<ve
     for (const auto &my_entry: my_map) {
         result.add(my_entry.first, my_entry.second.value()->result());
     }
-    // use SimpleValue to add implicit cells with default value
-    const auto &factory = SimpleValueBuilderFactory::get();
-    return spec_from_value(*value_from_spec(result, factory));
+    return result;
 }
 
 

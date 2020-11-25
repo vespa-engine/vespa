@@ -71,11 +71,14 @@ void test_generic_reduce_with(const ValueBuilderFactory &factory) {
         TensorSpec input = spec(layout, Div16(N()));
         for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
             for (const Domain &domain: layout) {
-                auto expect = ReferenceOperations::reduce(input, {domain.dimension}, aggr);
+                auto ref_spec = ReferenceOperations::reduce(input, {domain.dimension}, aggr);
+                // use SimpleValue to add implicit cells with default value
+                auto expect = spec_from_value(*value_from_spec(ref_spec, SimpleValueBuilderFactory::get()));
                 auto actual = perform_generic_reduce(input, {domain.dimension}, aggr, factory);
                 EXPECT_EQ(actual, expect);
             }
-            auto expect = ReferenceOperations::reduce(input, {}, aggr);
+            auto ref_spec = ReferenceOperations::reduce(input, {}, aggr);
+            auto expect = spec_from_value(*value_from_spec(ref_spec, SimpleValueBuilderFactory::get()));
             auto actual = perform_generic_reduce(input, {}, aggr, factory);
             EXPECT_EQ(actual, expect);
         }
@@ -102,11 +105,13 @@ TEST(GenericReduceTest, immediate_generic_reduce_works) {
         TensorSpec input = spec(layout, Div16(N()));
         for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
             for (const Domain &domain: layout) {
-                auto expect = ReferenceOperations::reduce(input, {domain.dimension}, aggr);
+                auto ref_spec = ReferenceOperations::reduce(input, {domain.dimension}, aggr);
+                auto expect = spec_from_value(*value_from_spec(ref_spec, SimpleValueBuilderFactory::get()));
                 auto actual = immediate_generic_reduce(input, {domain.dimension}, aggr);
                 EXPECT_EQ(actual, expect);
             }
-            auto expect = ReferenceOperations::reduce(input, {}, aggr);
+            auto ref_spec = ReferenceOperations::reduce(input, {}, aggr);
+            auto expect = spec_from_value(*value_from_spec(ref_spec, SimpleValueBuilderFactory::get()));
             auto actual = immediate_generic_reduce(input, {}, aggr);
             EXPECT_EQ(actual, expect);
         }
