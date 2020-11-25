@@ -3,14 +3,15 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
@@ -46,6 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,6 +60,8 @@ import static org.mockito.Mockito.when;
  * @author smorgrav
  */
 public class MetricsReporterTest {
+
+    private static final Duration LONG_INTERVAL = Duration.ofDays(1);
 
     private final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private final ApplicationInstanceReference reference = mock(ApplicationInstanceReference.class);
@@ -138,7 +142,7 @@ public class MetricsReporterTest {
                                                               orchestrator,
                                                               serviceMonitor,
                                                               () -> 42,
-                                                              Duration.ofMinutes(1));
+                                                              LONG_INTERVAL);
         metricsReporter.maintain();
 
         // Verify sum of values across dimensions, and remove these metrics to avoid checking against
@@ -222,7 +226,7 @@ public class MetricsReporterTest {
                                                               orchestrator,
                                                               serviceMonitor,
                                                               () -> 42,
-                                                              Duration.ofMinutes(1));
+                                                              LONG_INTERVAL);
         metricsReporter.maintain();
 
         assertEquals(0, metric.values.get("hostedVespa.readyHosts")); // Only tenants counts
@@ -245,6 +249,53 @@ public class MetricsReporterTest {
         assertEquals(4.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityDisk", app2context), 0.01d);
         assertEquals(4.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityMem", app2context), 0.01d);
         assertEquals(2.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityCpu", app2context), 0.01d);
+    }
+
+    @Test
+    public void non_active_metric() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().build();
+        tester.makeReadyHosts(5, new NodeResources(64, 256, 2000, 10));
+        tester.activateTenantHosts();
+        TestMetric metric = new TestMetric();
+        MetricsReporter metricsReporter = new MetricsReporter(tester.nodeRepository(),
+                                                              metric,
+                                                              tester.orchestrator(),
+                                                              serviceMonitor,
+                                                              () -> 42,
+                                                              LONG_INTERVAL);
+
+
+        // Application is deployed
+        ApplicationId application = ApplicationId.from("t1", "a1", "default");
+        Map<String, String> dimensions = Map.of("applicationId", application.toFullString());
+        NodeResources resources = new NodeResources(2, 8, 100, 1);
+        List<Node> activeNodes = tester.deploy(application, Capacity.from(new ClusterResources(4, 1, resources)));
+        metricsReporter.maintain();
+        assertEquals(0D, getMetric("nodes.nonActiveFraction", metric, dimensions));
+        assertEquals(4, getMetric("nodes.active", metric, dimensions));
+        assertEquals(0, getMetric("nodes.nonActive", metric, dimensions));
+
+        // One node fails
+        tester.fail(activeNodes.get(0).hostname());
+        metricsReporter.maintain();
+        assertEquals(0.33D, getMetric("nodes.nonActiveFraction", metric, dimensions).doubleValue(), 0.005);
+        assertEquals(3, getMetric("nodes.active", metric, dimensions));
+        assertEquals(1, getMetric("nodes.nonActive", metric, dimensions));
+
+        // Cluster is removed
+        tester.deactivate(application);
+        metricsReporter.maintain();
+        assertEquals(1D, getMetric("nodes.nonActiveFraction", metric, dimensions).doubleValue(), Double.MIN_VALUE);
+        assertEquals(0, getMetric("nodes.active", metric, dimensions));
+        assertEquals(3, getMetric("nodes.nonActive", metric, dimensions));
+    }
+
+    private Number getMetric(String name, TestMetric metric, Map<String, String> dimensions) {
+        List<TestMetric.TestContext> metrics = metric.context.get(name).stream()
+                                                             .filter(ctx -> ctx.properties.entrySet().containsAll(dimensions.entrySet()))
+                                                             .collect(Collectors.toList());
+        if (metrics.isEmpty()) throw new IllegalArgumentException("No value found for metric " + name + " with dimensions " + dimensions);
+        return metrics.get(metrics.size() - 1).value;
     }
 
     private ApplicationId app(String tenant) {
