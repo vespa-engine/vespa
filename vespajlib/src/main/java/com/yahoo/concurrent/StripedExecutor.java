@@ -68,7 +68,7 @@ public class StripedExecutor<Key> {
                 command.run();
             }
             catch (RuntimeException e) {
-                logger.log(Level.WARNING, () -> "Exception caught: " + Exceptions.toMessageString(e));
+                logger.log(Level.WARNING, e, () -> "Exception caught: " + Exceptions.toMessageString(e));
             }
         }
     }
