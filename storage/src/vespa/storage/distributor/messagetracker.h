@@ -2,9 +2,9 @@
 #pragma once
 
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <map>
-#include <string>
 
 namespace storage::api {
     class BucketCommand;
@@ -50,7 +50,7 @@ protected:
 
     // Keeps track of which node a message was sent to.
     std::map<uint64_t, uint16_t> _sentMessages;
-    std::string _clusterName;
+    vespalib::string _clusterName;
 };
 
 }

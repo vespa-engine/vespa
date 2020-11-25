@@ -24,6 +24,8 @@ using namespace ::testing;
 
 namespace storage {
 
+vespalib::string _Storage("storage");
+
 struct CommunicationManagerTest : Test {
 
     static constexpr uint32_t MESSAGE_WAIT_TIME_SEC = 60;
@@ -36,7 +38,7 @@ struct CommunicationManagerTest : Test {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
                                                      document::DocumentId("id:ns:mytype::mydoc"),
                                                      document::AllFields::NAME);
-        cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
+        cmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
         cmd->setPriority(priority);
         return cmd;
     }
@@ -72,7 +74,7 @@ TEST_F(CommunicationManagerTest, simple) {
     // Send a message through from distributor to storage
     auto cmd = std::make_shared<api::GetCommand>(
             makeDocumentBucket(document::BucketId(0)), document::DocumentId("id:ns:mytype::mydoc"), document::AllFields::NAME);
-    cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
+    cmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
     distributorLink->sendUp(cmd);
     storageLink->waitForMessages(1, MESSAGE_WAIT_TIME_SEC);
     ASSERT_GT(storageLink->getNumCommands(), 0);

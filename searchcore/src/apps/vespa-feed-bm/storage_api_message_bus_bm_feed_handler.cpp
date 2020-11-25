@@ -17,11 +17,14 @@ using storage::lib::NodeType;
 
 namespace feedbm {
 
+namespace {
+    vespalib::string _Storage("storage");
+}
 StorageApiMessageBusBmFeedHandler::StorageApiMessageBusBmFeedHandler(BmMessageBus &message_bus, bool distributor)
     : IBmFeedHandler(),
       _name(vespalib::string("StorageApiMessageBusBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
-      _storage_address(std::make_unique<StorageMessageAddress>("storage", distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
+      _storage_address(std::make_unique<StorageMessageAddress>(&_Storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
       _message_bus(message_bus),
       _route(_storage_address->to_mbus_route())
 {

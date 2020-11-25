@@ -49,6 +49,8 @@ public:
     }
 };
 
+vespalib::string _my_cluster("my_cluster");
+
 class CachingRpcTargetResolverTest : public ::testing::Test {
 public:
     MockMirror mirror;
@@ -66,8 +68,8 @@ public:
         : mirror(),
           factory(),
           resolver(mirror, factory, 2),
-          address_0("my_cluster", NodeType::STORAGE, 5),
-          address_1("my_cluster", NodeType::DISTRIBUTOR, 7),
+          address_0(&_my_cluster, NodeType::STORAGE, 5),
+          address_1(&_my_cluster, NodeType::DISTRIBUTOR, 7),
           spec_0("tcp/my:41"),
           spec_1("tcp/my:42"),
           bucket_id_0(3),

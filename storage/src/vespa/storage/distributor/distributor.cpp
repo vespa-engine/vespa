@@ -132,7 +132,7 @@ Distributor::getDistributorIndex() const
     return _component.getIndex();
 }
 
-const std::string&
+const vespalib::string&
 Distributor::getClusterName() const
 {
     return _clusterName;

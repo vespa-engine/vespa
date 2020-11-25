@@ -74,7 +74,7 @@ struct IntermediateMessageSender : DistributorMessageSender {
         return forward.getDistributorIndex();
     }
 
-    const std::string& getClusterName() const override {
+    const vespalib::string& getClusterName() const override {
         return forward.getClusterName();
     }
 

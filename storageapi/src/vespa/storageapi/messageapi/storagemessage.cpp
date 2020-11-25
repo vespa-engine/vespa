@@ -143,39 +143,47 @@ std::ostream & operator << (std::ostream & os, const StorageMessageAddress & add
     return os << addr.toString();
 }
 
-static vespalib::string
-createAddress(vespalib::stringref cluster, const lib::NodeType& type, uint16_t index)
-{
+namespace {
+
+vespalib::string
+createAddress(vespalib::stringref cluster, const lib::NodeType &type, uint16_t index) {
     vespalib::asciistream os;
     os << STORAGEADDRESS_PREFIX << cluster << '/' << type.toString() << '/' << index << "/default";
     return os.str();
 }
 
-size_t
-calculate_node_hash(const lib::NodeType& type, uint16_t index)
-{
-    uint16_t buf[] = { type, index };
-    return vespalib::hashValue(&buf, sizeof(buf));
+uint32_t
+calculate_node_hash(const lib::NodeType &type, uint16_t index) {
+    uint16_t buf[] = {type, index};
+    size_t hash =  vespalib::hashValue(&buf, sizeof(buf));
+    return uint32_t(hash & 0xffffffffl) ^ uint32_t(hash >> 32);
+}
+
+vespalib::string Empty;
+
 }
 
 // TODO we ideally want this removed. Currently just in place to support usage as map key when emplacement not available
 StorageMessageAddress::StorageMessageAddress()
-    : _cluster(),
+    : _cluster(&Empty),
       _precomputed_storage_hash(0),
-      _type(nullptr),
+      _type(lib::NodeType::Type::UNKNOWN),
       _protocol(Protocol::STORAGE),
       _index(0)
 {}
 
-StorageMessageAddress::StorageMessageAddress(vespalib::stringref cluster, const lib::NodeType& type,
+StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index)
+    : StorageMessageAddress(cluster, type, index, Protocol::STORAGE)
+{ }
+
+StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type,
                                              uint16_t index, Protocol protocol)
     : _cluster(cluster),
       _precomputed_storage_hash(calculate_node_hash(type, index)),
-      _type(&type),
+      _type(type.getType()),
       _protocol(protocol),
       _index(index)
-{
-}
+{ }
 
 StorageMessageAddress::~StorageMessageAddress() = default;
 
@@ -183,38 +191,11 @@ mbus::Route
 StorageMessageAddress::to_mbus_route() const
 {
     mbus::Route result;
-    auto address_as_str = createAddress(_cluster, *_type, _index);
+    auto address_as_str = createAddress(getCluster(), lib::NodeType::get(_type), _index);
     std::vector<mbus::IHopDirective::SP> directives;
     directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(std::move(address_as_str)));
     result.addHop(mbus::Hop(std::move(directives), false));
     return result;
-}
-
-uint16_t
-StorageMessageAddress::getIndex() const
-{
-    if (!_type) {
-        throw vespalib::IllegalStateException("Cannot retrieve node index out of external address", VESPA_STRLOC);
-    }
-    return _index;
-}
-
-const lib::NodeType&
-StorageMessageAddress::getNodeType() const
-{
-    if (!_type) {
-        throw vespalib::IllegalStateException("Cannot retrieve node type out of external address", VESPA_STRLOC);
-    }
-    return *_type;
-}
-
-const vespalib::string&
-StorageMessageAddress::getCluster() const
-{
-    if (!_type) {
-        throw vespalib::IllegalStateException("Cannot retrieve cluster out of external address", VESPA_STRLOC);
-    }
-    return _cluster;
 }
 
 bool
@@ -222,11 +203,8 @@ StorageMessageAddress::operator==(const StorageMessageAddress& other) const
 {
     if (_protocol != other._protocol) return false;
     if (_type != other._type) return false;
-    if (_type) {
-        if (_index != other._index) return false;
-        if (_type != other._type) return false;
-        if (_cluster != other._cluster) return false;
-    }
+    if (_index != other._index) return false;
+    if (getCluster() != other.getCluster()) return false;
     return true;
 }
 
@@ -242,15 +220,15 @@ void
 StorageMessageAddress::print(vespalib::asciistream & out) const
 {
     out << "StorageMessageAddress(";
-    if (_protocol == STORAGE) {
+    if (_protocol == Protocol::STORAGE) {
         out << "Storage protocol";
     } else {
         out << "Document protocol";
     }
-    if (!_type) {
+    if (_type == lib::NodeType::Type::UNKNOWN) {
         out << ", " << to_mbus_route().toString() << ")";
     } else {
-        out << ", cluster " << _cluster << ", nodetype " << *_type
+        out << ", cluster " << getCluster() << ", nodetype " << lib::NodeType::get(_type)
             << ", index " << _index << ")";
     }
 }

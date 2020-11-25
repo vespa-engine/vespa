@@ -562,8 +562,8 @@ CommunicationManager::sendCommand(
     api::StorageMessageAddress address(*msg->getAddress());
     switch (msg->getType().getId()) {
         case api::MessageType::STATBUCKET_ID: {
-            if (address.getProtocol() == api::StorageMessageAddress::STORAGE) {
-                address.setProtocol(api::StorageMessageAddress::DOCUMENT);
+            if (address.getProtocol() == api::StorageMessageAddress::Protocol::STORAGE) {
+                address.setProtocol(api::StorageMessageAddress::Protocol::DOCUMENT);
             }
         }
         default:
@@ -572,7 +572,7 @@ CommunicationManager::sendCommand(
 
     framework::MilliSecTimer startTime(_component.getClock());
     switch (address.getProtocol()) {
-    case api::StorageMessageAddress::STORAGE:
+        case api::StorageMessageAddress::Protocol::STORAGE:
     {
         LOG(debug, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
         if (_use_direct_storageapi_rpc && _storage_api_rpc_service->target_supports_direct_rpc(address)) {
@@ -588,7 +588,7 @@ CommunicationManager::sendCommand(
         }
         break;
     }
-    case api::StorageMessageAddress::DOCUMENT:
+        case api::StorageMessageAddress::Protocol::DOCUMENT:
     {
         MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converting storageapi message to documentapi");
 

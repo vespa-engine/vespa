@@ -43,7 +43,7 @@ public:
     int getDistributorIndex() const override {
         return _distributor.getDistributorIndex(); // Thread safe
     }
-    const std::string& getClusterName() const override {
+    const vespalib::string& getClusterName() const override {
         return _distributor.getClusterName(); // Thread safe
     }
     const PendingMessageTracker& getPendingMessageTracker() const override {

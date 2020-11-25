@@ -263,40 +263,44 @@ public:
  */
 class StorageMessageAddress {
 public:
-    enum Protocol { STORAGE, DOCUMENT };
+    enum class Protocol : uint8_t { STORAGE, DOCUMENT };
 
 private:
-    vespalib::string  _cluster;
+    const vespalib::string  *_cluster;
     // Used for internal VDS addresses only
-    size_t               _precomputed_storage_hash;
-    const lib::NodeType* _type;
-    Protocol             _protocol;
-    uint16_t             _index;
+    uint32_t                 _precomputed_storage_hash;
+    lib::NodeType::Type      _type;
+    Protocol                 _protocol;
+    uint16_t                 _index;
 
 public:
     StorageMessageAddress(); // Only to be used when transient default ctor semantics are needed by containers
-    StorageMessageAddress(vespalib::stringref clusterName,
-                          const lib::NodeType& type, uint16_t index,
-                          Protocol protocol = STORAGE);
+    StorageMessageAddress(const vespalib::string * clusterName, const lib::NodeType& type, uint16_t index);
+    StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index, Protocol protocol);
     ~StorageMessageAddress();
 
     void setProtocol(Protocol p) { _protocol = p; }
 
     mbus::Route to_mbus_route() const;
     Protocol getProtocol() const { return _protocol; }
-    uint16_t getIndex() const;
-    const lib::NodeType& getNodeType() const;
-    const vespalib::string& getCluster() const;
+    uint16_t getIndex() const { return _index; }
+    lib::NodeType::Type getNodeType() const { return _type; }
+    const vespalib::string& getCluster() const { return *_cluster; }
 
     // Returns precomputed hash over <type, index> pair. Other fields not included.
-    [[nodiscard]] size_t internal_storage_hash() const noexcept {
+    [[nodiscard]] uint32_t internal_storage_hash() const noexcept {
         return _precomputed_storage_hash;
     }
 
     bool operator==(const StorageMessageAddress& other) const;
     vespalib::string toString() const;
     friend std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr);
-
+    static StorageMessageAddress create(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) {
+        return api::StorageMessageAddress(cluster, type, index);
+    }
+    static StorageMessageAddress createDocApi(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) {
+        return api::StorageMessageAddress(cluster, type, index, Protocol::DOCUMENT);
+    }
 private:
     void print(vespalib::asciistream & out) const;
 };
@@ -354,12 +358,12 @@ private:
 protected:
     static Id generateMsgId();
 
-    const MessageType& _type;
-    Id                 _msgId;
-    std::unique_ptr<StorageMessageAddress> _address;
-    vespalib::Trace        _trace;
-    uint32_t    _approxByteSize;
-    Priority    _priority;
+    const MessageType&    _type;
+    Id                    _msgId;
+    StorageMessageAddress _address;
+    vespalib::Trace       _trace;
+    uint32_t              _approxByteSize;
+    Priority              _priority;
 
     StorageMessage(const MessageType& code, Id id);
     StorageMessage(const StorageMessage&, Id id);
@@ -386,10 +390,10 @@ public:
     void setPriority(Priority p) { _priority = p; }
     Priority getPriority() const { return _priority; }
 
-    const StorageMessageAddress* getAddress() const { return _address.get(); }
+    const StorageMessageAddress* getAddress() const { return (_address.getNodeType() != lib::NodeType::Type::UNKNOWN) ? &_address : nullptr; }
 
     void setAddress(const StorageMessageAddress& address) {
-        _address = std::make_unique<StorageMessageAddress>(address);
+        _address = address;
     }
 
     /**

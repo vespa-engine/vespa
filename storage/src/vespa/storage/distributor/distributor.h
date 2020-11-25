@@ -150,7 +150,7 @@ public:
     }
 
     int getDistributorIndex() const override;
-    const std::string& getClusterName() const override;
+    const vespalib::string& getClusterName() const override;
     const PendingMessageTracker& getPendingMessageTracker() const override;
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
@@ -319,7 +319,7 @@ private:
     MaintenanceScheduler::SchedulingMode _schedulingMode;
     framework::MilliSecTimer _recoveryTimeStarted;
     framework::ThreadWaitInfo _tickResult;
-    const std::string _clusterName;
+    const vespalib::string _clusterName;
     BucketDBMetricUpdater _bucketDBMetricUpdater;
     std::unique_ptr<BucketGcTimeCalculator::BucketIdHasher> _bucketIdHasher;
     MetricUpdateHook _metricUpdateHook;

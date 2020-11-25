@@ -250,7 +250,8 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
     // at will.
     auto msg = std::make_shared<api::SetBucketStateCommand>(
             makeDocumentBucket(bucket), api::SetBucketStateCommand::ACTIVE);
-    msg->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
+    vespalib::string storage("storage");
+    msg->setAddress(api::StorageMessageAddress::create(&storage, lib::NodeType::STORAGE, 1));
     _pendingTracker->insert(msg);
 
     sendReply(op);

@@ -40,7 +40,7 @@ public:
             return _sender.getDistributorIndex();
         }
         
-        const std::string& getClusterName() const override {
+        const vespalib::string& getClusterName() const override {
             return _sender.getClusterName();
         }
 
