@@ -260,7 +260,7 @@ convert_to_rpc_compression_config(const vespa::config::content::core::StorCommun
 CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
     : StorageLink("Communication manager"),
       _component(compReg, "communicationmanager"),
-      _metrics(_component.getLoadTypes()->getMetricLoadTypes()),
+      _metrics(),
       _shared_rpc_resources(),    // Created upon initial configuration
       _storage_api_rpc_service(), // (ditto)
       _cc_rpc_service(),          // (ditto)
@@ -466,11 +466,11 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
         }
 
         LOG(spam, "Done processing: %s", msg->toString().c_str());
-        _metrics.messageProcessTime[msg->getLoadType()].addValue(startTime.getElapsedTimeAsDouble());
+        _metrics.messageProcessTime.addValue(startTime.getElapsedTimeAsDouble());
     } catch (std::exception& e) {
         LOGBP(error, "When running command %s, caught exception %s. Discarding message",
               msg->toString().c_str(), e.what());
-        _metrics.exceptionMessageProcessTime[msg->getLoadType()].addValue(startTime.getElapsedTimeAsDouble());
+        _metrics.exceptionMessageProcessTime.addValue(startTime.getElapsedTimeAsDouble());
     }
 }
 
