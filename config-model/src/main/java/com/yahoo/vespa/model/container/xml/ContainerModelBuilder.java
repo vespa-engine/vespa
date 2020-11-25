@@ -112,6 +112,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String DEPRECATED_CONTAINER_TAG = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
+    // The node count to enforce in a cluster running ZooKeeper
+    private static final int MIN_ZOOKEEPER_NODE_COUNT = 3;
+    private static final int MAX_ZOOKEEPER_NODE_COUNT = 7;
+
     public enum Networking { disable, enable }
 
     private ApplicationPackage app;
@@ -195,7 +199,26 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
 
-        addAthensCopperArgos(cluster, context);  // Must be added after nodes.
+        // Must be added after nodes:
+        addAthensCopperArgos(cluster, context);
+        addZooKeeper(cluster, spec);
+    }
+
+    private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
+        Element zkElement = XML.getChild(spec, "zookeeper");
+        if (zkElement == null) return;
+        Element nodesElement = XML.getChild(spec, "nodes");
+        boolean isCombined = nodesElement != null && nodesElement.hasAttribute("of");
+        if (isCombined) {
+            throw new IllegalArgumentException("A combined cluster cannot run ZooKeeper");
+        }
+        int nodeCount = cluster.getContainers().size();
+        if (nodeCount < MIN_ZOOKEEPER_NODE_COUNT || nodeCount > MAX_ZOOKEEPER_NODE_COUNT || nodeCount % 2 == 0) {
+            throw new IllegalArgumentException("Clusters running ZooKeeper must have an odd number of nodes, between " +
+                                               MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT);
+        }
+        cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
+        // TODO: Add server component
     }
 
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec) {
