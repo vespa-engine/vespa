@@ -52,6 +52,10 @@ public class Invoice {
         return id;
     }
 
+    public TenantName tenant() {
+        return tenant;
+    }
+
     public String status() {
         return statusHistory.current();
     }

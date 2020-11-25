@@ -27,11 +27,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingControll
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
+import org.apache.commons.csv.CSVFormat;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
@@ -44,6 +47,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * @author andreer
@@ -101,8 +105,26 @@ public class BillingApiHandler extends LoggingRequestHandler {
         if (path.matches("/billing/v1/tenant/{tenant}/billing")) return getBilling(path.get("tenant"), request.getProperty("until"));
         if (path.matches("/billing/v1/tenant/{tenant}/plan")) return getPlan(path.get("tenant"));
         if (path.matches("/billing/v1/billing")) return getBillingAllTenants(request.getProperty("until"));
+        if (path.matches("/billing/v1/invoice/export")) return getAllInvoices();
         if (path.matches("/billing/v1/invoice/tenant/{tenant}/line-item")) return getLineItems(path.get("tenant"));
         return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse getAllInvoices() {
+        var invoices = billingController.getInvoices();
+        var headers = new String[]{ "ID", "Tenant", "From", "To", "CpuHours", "MemoryHours", "DiskHours", "Cpu", "Memory", "Disk" };
+        var rows = invoices.stream()
+                .map(invoice -> {
+                    return new Object[] {
+                            invoice.id().value(), invoice.tenant().value(),
+                            invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                            invoice.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                            invoice.sumCpuHours(), invoice.sumMemoryHours(), invoice.sumDiskHours(),
+                            invoice.sumCpuCost(), invoice.sumMemoryCost(), invoice.sumDiskCost()
+                    };
+                })
+                .collect(Collectors.toList());
+        return new CsvResponse(headers, rows);
     }
 
     private HttpResponse handlePATCH(HttpRequest request, Path path, String userId) {
@@ -462,4 +484,27 @@ public class BillingApiHandler extends LoggingRequestHandler {
                 .count() > 0;
     }
 
+    private static class CsvResponse extends HttpResponse {
+        private final String[] header;
+        private final List<Object[]> rows;
+
+        CsvResponse(String[] header, List<Object[]> rows) {
+            super(200);
+            this.header = header;
+            this.rows = rows;
+        }
+
+        @Override
+        public void render(OutputStream outputStream) throws IOException {
+            var writer = new OutputStreamWriter(outputStream);
+            var printer = CSVFormat.DEFAULT.withRecordSeparator('\n').withHeader(this.header).print(writer);
+            for (var row : this.rows) printer.printRecord(row);
+            printer.flush();
+        }
+
+        @Override
+        public String getContentType() {
+            return "text/csv; encoding=utf-8";
+        }
+    }
 }

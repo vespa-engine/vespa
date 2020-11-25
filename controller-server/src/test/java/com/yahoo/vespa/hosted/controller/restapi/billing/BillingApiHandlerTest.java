@@ -192,6 +192,14 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
+    public void csv_export() {
+        var invoice = createInvoice();
+        billingController.addInvoice(tenant, invoice, true);
+        var csvRequest = request("/billing/v1/invoice", GET).roles(financeAdmin);
+        tester.assertResponse(csvRequest.get(), new File("billing-all-invoices"), 200, false);
+    }
+
+    @Test
     public void patch_collection_method() {
         test_patch_collection_with_field_name("collectionMethod");
         test_patch_collection_with_field_name("collection");
