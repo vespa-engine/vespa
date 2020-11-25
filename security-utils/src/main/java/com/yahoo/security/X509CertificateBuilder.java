@@ -125,6 +125,11 @@ public class X509CertificateBuilder {
         return this;
     }
 
+    public X509CertificateBuilder addSubjectAlternativeName(SubjectAlternativeName.Type type, String value) {
+        this.subjectAlternativeNames.add(new SubjectAlternativeName(type, value));
+        return this;
+    }
+
     public X509CertificateBuilder setBasicConstraints(boolean isCritical, boolean isCertAuthorityCertificate) {
         this.basicConstraintsExtension = new BasicConstraintsExtension(isCritical, isCertAuthorityCertificate);
         return this;
