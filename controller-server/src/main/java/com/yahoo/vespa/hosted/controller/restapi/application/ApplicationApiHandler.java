@@ -1595,7 +1595,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     void setStatus(Cursor statusObject, ApplicationReindexing.Status status) {
-        statusObject.setLong("readyAtMillis", status.readyAt().toEpochMilli());
+        status.readyAt().ifPresent(readyAt -> statusObject.setLong("readyAtMillis", readyAt.toEpochMilli()));
+        status.startedAt().ifPresent(startedAt -> statusObject.setLong("startedAtMillis", startedAt.toEpochMilli()));
+        status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedAtMillis", endedAt.toEpochMilli()));
+        status.state().map(ApplicationApiHandler::toString).ifPresent(state -> statusObject.setString("state", state));
+        status.message().ifPresent(message -> statusObject.setString("message", message));
+        status.progress().ifPresent(progress -> statusObject.setString("progress", progress));
+    }
+
+    private static String toString(ApplicationReindexing.State state) {
+        switch (state) {
+            case PENDING: return "pending";
+            case RUNNING: return "running";
+            case FAILED: return "failed";
+            case SUCCESSFUL: return "successful";
+            default: return null;
+        }
     }
 
     /** Enables reindexing of an application in a zone. */
