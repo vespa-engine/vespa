@@ -53,7 +53,7 @@ public:
         if (_num_mapped_dimensions == 0) {
             assert(_num_subspaces == 1);
         }
-        // note: _num_subspaces * _dense_subspace_size == _cells.size()
+        assert(_num_subspaces * _dense_subspace_size == _cells.size());
         return std::make_unique<StreamedValue<T>>(std::move(_type),
                                                   _num_mapped_dimensions,
                                                   std::move(_cells),

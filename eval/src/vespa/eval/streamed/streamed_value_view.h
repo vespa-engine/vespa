@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
 #include "streamed_value_index.h"
+#include <cassert>
 
 namespace vespalib::eval {
 
@@ -21,23 +22,24 @@ private:
     StreamedValueIndex _my_index;
 
 public:
-    StreamedValueView(const ValueType &type, TypedCells cells,
-                      size_t num_ss, ConstArrayRef<char> labels_buf)
+    StreamedValueView(const ValueType &type, size_t num_mapped_dimensions,
+                      TypedCells cells, size_t num_subspaces,
+                      ConstArrayRef<char> labels_buf)
       : _type(type),
         _cells_ref(cells),
-        _my_index(_type.count_mapped_dimensions(), num_ss, labels_buf)
+        _my_index(num_mapped_dimensions, num_subspaces, labels_buf)
     {
-        if (num_ss * _type.dense_subspace_size() != _cells_ref.size) abort();
+        assert(num_subspaces * _type.dense_subspace_size() == _cells_ref.size);
     }
 
     ~StreamedValueView();
     const ValueType &type() const final override { return _type; }
     TypedCells cells() const final override { return _cells_ref; }
-    const Value::Index &index() const override { return _my_index; }
+    const Value::Index &index() const final override { return _my_index; }
     MemoryUsage get_memory_usage() const final override {
         return self_memory_usage<StreamedValueView>();
     }
-    auto serialize_index() const { return _my_index.serialize(); }
+    auto get_data_reference() const { return _my_index.get_data_reference(); }
 };
 
 } // namespace

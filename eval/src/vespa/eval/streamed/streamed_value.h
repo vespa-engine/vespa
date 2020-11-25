@@ -40,9 +40,9 @@ public:
     ~StreamedValue();
     const ValueType &type() const final override { return _type; }
     TypedCells cells() const final override { return TypedCells(_my_cells); }
-    const Value::Index &index() const override { return _my_index; }
+    const Value::Index &index() const final override { return _my_index; }
     MemoryUsage get_memory_usage() const final override;
-    auto serialize_index() const { return _my_index.serialize(); }
+    auto get_data_reference() const { return _my_index.get_data_reference(); }
 };
 
 } // namespace

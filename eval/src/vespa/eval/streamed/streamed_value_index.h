@@ -13,7 +13,7 @@ namespace vespalib::eval {
 class StreamedValueIndex : public Value::Index
 {
 public:
-    struct SerializedForm {
+    struct SerializedDataRef {
         uint32_t num_mapped_dims;
         uint32_t num_subspaces;
         ConstArrayRef<char> labels_buffer;
@@ -26,10 +26,10 @@ public:
     size_t size() const override { return _data.num_subspaces; }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 
-    SerializedForm serialize() const { return _data; }
+    SerializedDataRef get_data_reference() const { return _data; }
 
 private:
-    SerializedForm _data;
+    SerializedDataRef _data;
 };
 
 } // namespace

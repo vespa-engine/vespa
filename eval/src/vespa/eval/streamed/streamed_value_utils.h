@@ -66,7 +66,7 @@ public:
                      uint32_t num_mapped_dims)
       : _num_subspaces(num_subspaces),
         _labels(label_buf),
-        _subspace_index(std::numeric_limits<size_t>::max()),
+        _subspace_index(num_subspaces),
         _current_address(num_mapped_dims)
     {}
 
