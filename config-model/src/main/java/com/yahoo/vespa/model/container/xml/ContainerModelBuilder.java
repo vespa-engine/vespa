@@ -85,7 +85,6 @@ import org.w3c.dom.Node;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +111,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String CONTAINER_TAG = "container";
     private static final String DEPRECATED_CONTAINER_TAG = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
+
+    // The node count to enforce in a cluster running ZooKeeper
+    private static final int MIN_ZOOKEEPER_NODE_COUNT = 3;
+    private static final int MAX_ZOOKEEPER_NODE_COUNT = 7;
 
     public enum Networking { disable, enable }
 
@@ -196,7 +199,26 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
 
-        addAthensCopperArgos(cluster, context);  // Must be added after nodes.
+        // Must be added after nodes:
+        addAthensCopperArgos(cluster, context);
+        addZooKeeper(cluster, spec);
+    }
+
+    private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
+        Element zkElement = XML.getChild(spec, "zookeeper");
+        if (zkElement == null) return;
+        Element nodesElement = XML.getChild(spec, "nodes");
+        boolean isCombined = nodesElement != null && nodesElement.hasAttribute("of");
+        if (isCombined) {
+            throw new IllegalArgumentException("A combined cluster cannot run ZooKeeper");
+        }
+        int nodeCount = cluster.getContainers().size();
+        if (nodeCount < MIN_ZOOKEEPER_NODE_COUNT || nodeCount > MAX_ZOOKEEPER_NODE_COUNT || nodeCount % 2 == 0) {
+            throw new IllegalArgumentException("Clusters running ZooKeeper must have an odd number of nodes, between " +
+                                               MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT);
+        }
+        cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
+        // TODO: Add server component
     }
 
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec) {
@@ -724,43 +746,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
-    /**
-     * This is used in case we are on hosted Vespa and no nodes tag is supplied:
-     * If there are content clusters this will pick the first host in the first cluster as the container node.
-     * If there are no content clusters this will return empty (such that the node can be created by the container here).
-     */
-    private Optional<HostResource> getHostResourceFromContentClusters(ApplicationContainerCluster cluster, Element containersElement, ConfigModelContext context) {
-        Optional<Element> services = servicesRootOf(containersElement);
-        if ( ! services.isPresent())
-            return Optional.empty();
-        List<Element> contentServices = XML.getChildren(services.get(), "content");
-        if ( contentServices.isEmpty() ) return Optional.empty();
-        Element contentNodesElementOrNull = XML.getChild(contentServices.get(0), "nodes");
-        
-        NodesSpecification nodesSpec;
-        if (contentNodesElementOrNull == null)
-            nodesSpec = NodesSpecification.nonDedicated(1, context);
-        else
-            nodesSpec = NodesSpecification.from(new ModelElement(contentNodesElementOrNull), context);
-
-        Map<HostResource, ClusterMembership> hosts =
-                StorageGroup.provisionHosts(nodesSpec,
-                                            contentServices.get(0).getAttribute("id"),
-                                            cluster.getRoot().hostSystem(),
-                                            context.getDeployLogger());
-        return Optional.of(hosts.keySet().iterator().next());
-    }
-
-    /** Returns the services element above the given Element, or empty if there is no services element */
-    private Optional<Element> servicesRootOf(Element element) {
-        Node parent = element.getParentNode();
-        if (parent == null) return Optional.empty();
-        if ( ! (parent instanceof Element)) return Optional.empty();
-        Element parentElement = (Element)parent;
-        if (parentElement.getTagName().equals("services")) return Optional.of(parentElement);
-        return servicesRootOf(parentElement);
-    }
-    
     private List<ApplicationContainer> createNodesFromHosts(DeployLogger deployLogger, Map<HostResource, ClusterMembership> hosts, ApplicationContainerCluster cluster) {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
