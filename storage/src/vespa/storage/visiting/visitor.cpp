@@ -222,7 +222,7 @@ Visitor::sendMessage(documentapi::DocumentMessage::UP cmd)
 {
     assert(cmd.get());
     if (!isRunning()) return;
-    cmd->setRoute(_dataDestination->getRoute());
+    cmd->setRoute(*_dataDestination);
 
     cmd->setPriority(_documentPriority);
 
@@ -291,7 +291,7 @@ Visitor::sendInfoMessage(documentapi::VisitorInfoMessage::UP cmd)
     if (!isRunning()) return;
 
     if (_controlDestination->toString().length()) {
-        cmd->setRoute(_controlDestination->getRoute());
+        cmd->setRoute(*_controlDestination);
         cmd->setPriority(_documentPriority);
         cmd->setTimeRemaining(std::chrono::milliseconds(_visitorInfoTimeout.getTime()));
         auto& msgMeta = _visitorTarget.insertMessage(std::move(cmd));
@@ -554,8 +554,8 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
 
 void
 Visitor::attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
-                const api::StorageMessageAddress& controlAddress,
-                const api::StorageMessageAddress& dataAddress,
+                const mbus::Route& controlAddress,
+                const mbus::Route& dataAddress,
                 framework::MilliSecTime timeout)
 {
     _priority = initiatingCmd->getPriority();
@@ -569,9 +569,8 @@ Visitor::attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
     _traceLevel = _initiatingCmd->getTrace().getLevel();
     {
         // Set new address
-        _controlDestination.reset(
-                new api::StorageMessageAddress(controlAddress));
-        _dataDestination.reset(new api::StorageMessageAddress(dataAddress));
+        _controlDestination = std::make_unique<mbus::Route>(controlAddress);
+        _dataDestination = std::make_unique<mbus::Route>(dataAddress);
     }
     LOG(debug, "Visitor '%s' has control destination %s and data "
                "destination %s.",
