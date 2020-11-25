@@ -117,7 +117,7 @@ namespace {
 TEST_F(StorageProtocolTest, testAddress50) {
     StorageMessageAddress address("foo", lib::NodeType::STORAGE, 3);
     EXPECT_EQ(vespalib::string("storage/cluster.foo/storage/3/default"),
-                         address.getRoute().toString());
+                         address.to_mbus_route().toString());
 }
 
 template<typename Command> std::shared_ptr<Command>

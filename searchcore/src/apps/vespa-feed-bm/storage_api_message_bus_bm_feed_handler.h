@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_bm_feed_handler.h"
+#include <vespa/messagebus/routing/route.h>
 
 namespace document { class DocumentTypeRepo; }
 namespace documentapi { class DocumentMessage; };
@@ -25,6 +26,7 @@ class StorageApiMessageBusBmFeedHandler : public IBmFeedHandler
     bool             _distributor;
     std::unique_ptr<storage::api::StorageMessageAddress> _storage_address;
     BmMessageBus&                                        _message_bus;
+    mbus::Route _route;
     void send_msg(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& tracker);
 public:
     StorageApiMessageBusBmFeedHandler(BmMessageBus &message_bus, bool distributor);

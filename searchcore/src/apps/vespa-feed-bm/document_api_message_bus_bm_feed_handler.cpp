@@ -23,7 +23,8 @@ DocumentApiMessageBusBmFeedHandler::DocumentApiMessageBusBmFeedHandler(BmMessage
     : IBmFeedHandler(),
       _name(vespalib::string("DocumentApiMessageBusBmFeedHandler(distributor)")),
       _storage_address(std::make_unique<StorageMessageAddress>("storage", NodeType::DISTRIBUTOR, 0)),
-      _message_bus(message_bus)
+      _message_bus(message_bus),
+      _route(_storage_address->to_mbus_route())
 {
 }
 
@@ -32,7 +33,7 @@ DocumentApiMessageBusBmFeedHandler::~DocumentApiMessageBusBmFeedHandler() = defa
 void
 DocumentApiMessageBusBmFeedHandler::send_msg(std::unique_ptr<documentapi::DocumentMessage> msg, PendingTracker& pending_tracker)
 {
-    _message_bus.send_msg(std::move(msg), _storage_address->getRoute(), pending_tracker);
+    _message_bus.send_msg(std::move(msg), _route, pending_tracker);
 }
 
 void
