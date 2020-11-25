@@ -28,7 +28,7 @@ public:
     vespalib::string md5;
     int64_t generation;
     bool internalRedeploy;
-    booln applyOnRestart;
+    bool applyOnRestart;
 
     bool isNewerGenerationThan(const ConfigState & other) const {
         return isGenerationNewer(generation, other.generation);
