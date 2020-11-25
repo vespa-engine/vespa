@@ -10,7 +10,6 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
@@ -42,6 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
@@ -130,7 +130,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                 temporaryResult.put(service, result);
                             } else {
                                 log.log(
-                                        LogLevel.DEBUG,
+                                        Level.FINE,
                                         error,
                                         () -> String.format("Failed to retrieve service config generation for '%s': %s", service, error.getMessage()));
                                 temporaryResult.put(service, -1L);
