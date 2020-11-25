@@ -40,13 +40,11 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainer;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
-import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
@@ -61,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -874,46 +871,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
     }
 
-    @Test
-    public void cluster_with_zookeeper() {
-        Function<Integer, String> servicesXml = (nodeCount) -> "<container version='1.0' id='default'>" +
-                                                               "<nodes count='" + nodeCount + "'/>" +
-                                                               "<zookeeper/>" +
-                                                               "</container>";
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(3);
-        {
-            VespaModel model = tester.createModel(servicesXml.apply(3), true);
-            String componentId = "com.yahoo.vespa.curator.Curator";
-            ApplicationContainerCluster cluster = model.getContainerClusters().get("default");
-            assertNotNull(cluster);
-            Component<?, ?> curatorComponent = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
-            assertNotNull(curatorComponent);
-        }
-        {
-            try {
-                tester.createModel(servicesXml.apply(1), true);
-                fail("Expected exception");
-            } catch (IllegalArgumentException ignored) {}
-        }
-        {
-            String xmlWithNodes =
-                    "<?xml version='1.0' encoding='utf-8' ?>" +
-                    "<services>" +
-                    "  <container version='1.0' id='container1'>" +
-                    "     <zookeeper/>" +
-                    "     <nodes of='content1'/>" +
-                    "  </container>" +
-                    "  <content version='1.0' id='content1'>" +
-                    "     <nodes count='3'/>" +
-                    "   </content>" +
-                    "</services>";
-            try {
-                tester.createModel(xmlWithNodes, true);
-                fail("Expected exception");
-            } catch (IllegalArgumentException ignored) {}
-        }
-    }
 
     private Element generateContainerElementWithRenderer(String rendererId) {
         return DomBuilderTest.parse(
@@ -923,5 +880,4 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  </search>",
                 "</container>");
     }
-
 }

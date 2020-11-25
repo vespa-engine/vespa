@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -35,7 +34,6 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -102,8 +100,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer,
-        CuratorConfig.Producer
+        ConfigserverConfig.Producer
 {
 
     /**
@@ -150,7 +147,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final List<String> endpointAliases = new ArrayList<>();
     private final ComponentGroup<Component<?, ?>> componentGroup;
     private final boolean isHostedVespa;
-    private final boolean zooKeeperLocalhostAffinity;
 
     private final Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
 
@@ -165,12 +161,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private boolean deferChangesUntilRestart = false;
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
+    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
-        this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
 
         componentGroup = new ComponentGroup<>(this, "component");
 
@@ -565,16 +560,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         builder.system(zone.system().value());
         builder.environment(zone.environment().value());
         builder.region(zone.region().value());
-    }
-
-    @Override
-    public void getConfig(CuratorConfig.Builder builder) {
-        for (var container : containers) {
-            HostResource hostResource = container.getHostResource();
-            if (hostResource == null) continue;
-            builder.server(new CuratorConfig.Server.Builder().hostname(hostResource.getHostname()));
-        }
-        builder.zookeeperLocalhostAffinity(zooKeeperLocalhostAffinity);
     }
 
     private List<ClusterInfoConfig.Services.Ports.Builder> getPorts(Service service) {

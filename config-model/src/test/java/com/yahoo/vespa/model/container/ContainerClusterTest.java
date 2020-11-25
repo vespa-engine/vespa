@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
@@ -43,7 +42,6 @@ import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInA
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -320,20 +318,6 @@ public class ContainerClusterTest {
         Zone publicZone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
         verifyTesterApplicationInstalledBundles(publicZone, expectedPublicBundles);
         
-    }
-
-    @Test
-    public void requireCuratorConfig() {
-        DeployState state = new DeployState.Builder().build();
-        MockRoot root = new MockRoot("foo", state);
-        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
-        addContainer(root.deployLogger(), cluster, "c2", "host-c2");
-        CuratorConfig.Builder configBuilder = new CuratorConfig.Builder();
-        cluster.getConfig(configBuilder);
-        CuratorConfig config = configBuilder.build();
-        assertEquals(List.of("host-c1", "host-c2"), config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
-        assertTrue(config.zookeeperLocalhostAffinity());
     }
 
     private void verifyTesterApplicationInstalledBundles(Zone zone, List<String> expectedBundleNames) {

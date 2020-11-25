@@ -8,6 +8,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
@@ -82,7 +83,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private Integer memoryPercentage = null;
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
-        super(parent, configSubId, clusterId, deployState, true);
+        super(parent, configSubId, clusterId, deployState);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
