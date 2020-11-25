@@ -154,13 +154,8 @@ createAddress(vespalib::stringref cluster, const lib::NodeType& type, uint16_t i
 size_t
 calculate_node_hash(const lib::NodeType& type, uint16_t index)
 {
-    struct NodeValue {
-        uint16_t type;
-        uint16_t index;
-        NodeValue(const lib::NodeType& type_in, uint16_t index_in) : type(type_in), index(index_in) {}
-    };
-    NodeValue value(type, index);
-    return vespalib::hashValue(&value, sizeof(NodeValue));
+    uint16_t buf[] = { type, index };
+    return vespalib::hashValue(&buf, sizeof(buf));
 }
 
 // TODO we ideally want this removed. Currently just in place to support usage as map key when emplacement not available
