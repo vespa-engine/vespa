@@ -17,6 +17,7 @@ env
 cat /proc/cpuinfo
 cat /proc/meminfo
 df -h
+echo "Rotating disk: $(cat /sys/block/sda/queue/rotational)"
 
 bell &
 docker run --rm -v ${HOME}/.m2:/root/.m2 -v ${HOME}/.ccache:/root/.ccache -v $(pwd):/source \
