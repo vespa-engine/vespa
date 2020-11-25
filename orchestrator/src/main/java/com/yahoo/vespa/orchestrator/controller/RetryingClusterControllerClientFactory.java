@@ -14,7 +14,6 @@ import java.util.List;
 /**
  * @author bakksjo
  */
-@SuppressWarnings("removal") // VespaJerseyJaxRsClientFactory
 public class RetryingClusterControllerClientFactory extends AbstractComponent implements ClusterControllerClientFactory {
 
     // TODO: Figure this port out dynamically.
