@@ -85,7 +85,7 @@ DenseTensorCreateFunction::optimize(const eval::TensorFunction &expr, Stash &sta
             const auto &zero_value = stash.create<DoubleValue>(0.0);
             const auto &zero_node = const_value(zero_value, stash);
             std::vector<Child> children(num_cells, zero_node);
-            for (const auto &cell: create->spec()) {
+            for (const auto &cell: create->map()) {
                 size_t cell_idx = get_index(cell.first, expr.result_type());
                 children[cell_idx] = cell.second;
             }

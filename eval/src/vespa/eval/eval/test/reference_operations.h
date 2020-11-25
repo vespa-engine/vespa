@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/tensor_function.h>
 
 #include <vector>
 #include <map>
@@ -17,13 +18,11 @@ struct ReferenceOperations {
     using map_fun_t = vespalib::eval::operation::op1_t;
     using join_fun_t = vespalib::eval::operation::op2_t;
 
-    // for create: mapping from cell address to index of child that computes the cell value
-    using CreateSpec = std::map<TensorSpec::Address, size_t>;
+    // mapping from cell address to index of child that computes the cell value
+    using CreateSpec = tensor_function::Create::Spec;
 
-    // for Peek: a verbatim label or the index of a child that computes the label value
-    using LabelOrChildIndex = std::variant<TensorSpec::Label, size_t>;
-    // for Peek: mapping from dimension name to verbatim label or child
-    using PeekSpec = std::map<vespalib::string, LabelOrChildIndex>;
+    // mapping from dimension name to verbatim label or child
+    using PeekSpec = tensor_function::Peek::Spec;
 
     static TensorSpec concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim);
     static TensorSpec create(const vespalib::string &type, const CreateSpec &spec, const std::vector<TensorSpec> &children);
