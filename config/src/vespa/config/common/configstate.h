@@ -18,11 +18,11 @@ public:
           internalRedeploy(false),
           applyOnRestart(false)
     { }
-    ConfigState(const vespalib::string & md5sum, int64_t gen, bool internalRedeploy, bool applyOnRestart)
+    ConfigState(const vespalib::string & md5sum, int64_t gen, bool _internalRedeploy, bool _applyOnRestart)
         : md5(md5sum),
           generation(gen),
-          internalRedeploy(internalRedeploy),
-          applyOnRestart(applyOnRestart)
+          internalRedeploy(_internalRedeploy),
+          applyOnRestart(_applyOnRestart)
     { }
 
     vespalib::string md5;
