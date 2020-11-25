@@ -12,6 +12,12 @@ function bell() {
 
 DOCKER_IMAGE=vespaengine/vespa-build-centos7:latest
 
+pwd
+env
+cat /proc/cpuinfo
+cat /proc/meminfo
+df -h
+
 bell &
 docker run --rm -v ${HOME}/.m2:/root/.m2 -v ${HOME}/.ccache:/root/.ccache -v $(pwd):/source \
            --entrypoint /source/travis/travis-build-full.sh ${DOCKER_IMAGE}
