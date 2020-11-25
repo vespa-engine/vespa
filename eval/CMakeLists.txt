@@ -53,6 +53,7 @@ vespa_define_module(
     src/tests/instruction/dense_tensor_peek_function
     src/tests/instruction/index_lookup_table
     src/tests/instruction/join_with_number
+    src/tests/streamed/value
     src/tests/tensor/dense_add_dimension_optimizer
     src/tests/tensor/dense_dimension_combiner
     src/tests/tensor/dense_fast_rename_optimizer
@@ -90,6 +91,7 @@ vespa_define_module(
     src/vespa/eval/eval/value_cache
     src/vespa/eval/gp
     src/vespa/eval/instruction
+    src/vespa/eval/streamed
     src/vespa/eval/tensor
     src/vespa/eval/tensor/dense
     src/vespa/eval/tensor/serialization
