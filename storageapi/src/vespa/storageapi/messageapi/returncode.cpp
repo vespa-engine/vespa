@@ -167,12 +167,12 @@ ReturnCode::isBucketDisappearance() const
             return false;
     }
 }
-namespace {
-    vespalib::stringref Empty("");
-}
+
 vespalib::stringref
 ReturnCode::getMessage() const {
-    return _message ? _message->operator vespalib::stringref() : Empty;
+    return _message
+           ? _message->operator vespalib::stringref()
+           : vespalib::stringref();
 }
 
 bool
