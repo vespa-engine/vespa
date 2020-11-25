@@ -8,7 +8,6 @@ import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.CredentialFiel
 import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.Files;
 import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.RequiredCredential;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.Role;
@@ -119,7 +118,7 @@ public class TransportSecurityOptionsJsonSerializer {
         if (requiredCredential.matchExpression == null) {
             throw missingFieldException("must-match");
         }
-        return new RequiredPeerCredential(toField(requiredCredential.field), new HostGlobPattern(requiredCredential.matchExpression));
+        return RequiredPeerCredential.of(toField(requiredCredential.field), requiredCredential.matchExpression);
     }
 
     private static RequiredPeerCredential.Field toField(CredentialField field) {

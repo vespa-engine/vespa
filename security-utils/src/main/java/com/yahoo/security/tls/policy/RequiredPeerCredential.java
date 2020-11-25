@@ -11,18 +11,32 @@ public class RequiredPeerCredential {
     public enum Field { CN, SAN_DNS }
 
     private final Field field;
-    private final HostGlobPattern pattern;
+    private final Pattern pattern;
 
-    public RequiredPeerCredential(Field field, HostGlobPattern pattern) {
+    private RequiredPeerCredential(Field field, Pattern pattern) {
         this.field = field;
         this.pattern = pattern;
+    }
+
+    public static RequiredPeerCredential of(Field field, String pattern) {
+        return new RequiredPeerCredential(field, createPattern(field, pattern));
+    }
+
+    private static Pattern createPattern(Field field, String pattern) {
+        switch (field) {
+            case CN:
+            case SAN_DNS:
+                return new HostGlobPattern(pattern);
+            default:
+                throw new IllegalArgumentException("Unknown field: " + field);
+        }
     }
 
     public Field field() {
         return field;
     }
 
-    public HostGlobPattern pattern() {
+    public Pattern pattern() {
         return pattern;
     }
 
@@ -46,5 +60,10 @@ public class RequiredPeerCredential {
     @Override
     public int hashCode() {
         return Objects.hash(field, pattern);
+    }
+
+    public interface Pattern {
+        String asString();
+        boolean matches(String fieldValue);
     }
 }

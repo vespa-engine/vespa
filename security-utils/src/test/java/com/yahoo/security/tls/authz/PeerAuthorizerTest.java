@@ -5,7 +5,6 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.RequiredPeerCredential.Field;
@@ -112,7 +111,7 @@ public class PeerAuthorizerTest {
     }
 
     private static RequiredPeerCredential createRequiredCredential(Field field, String pattern) {
-        return new RequiredPeerCredential(field, new HostGlobPattern(pattern));
+        return RequiredPeerCredential.of(field, pattern);
     }
 
     private static Set<Role> createRoles(String... roleNames) {
