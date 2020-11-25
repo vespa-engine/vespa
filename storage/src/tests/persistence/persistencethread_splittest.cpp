@@ -11,9 +11,6 @@ using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage {
-namespace {
-spi::LoadType defaultLoadType(0, "default");
-}
 
 struct PersistenceThreadSplitTest : public SingleDiskPersistenceTestUtils {
     enum SplitCase {
@@ -182,8 +179,7 @@ PersistenceThreadSplitTest::doTest(SplitCase splitCase)
 
     uint64_t location = 0;
     uint64_t splitMask = 1ULL << (splitLevelToDivide - 1);
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
+    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
     spi::Bucket bucket(makeSpiBucket(document::BucketId(currentSplitLevel, 1)));
     spi::PersistenceProvider& spi(getPersistenceProvider());
     spi.deleteBucket(bucket, context);

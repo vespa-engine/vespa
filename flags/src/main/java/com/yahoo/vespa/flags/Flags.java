@@ -330,12 +330,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag REGIONAL_CONTAINER_REGISTRY = defineFeatureFlag(
-            "regional-container-registry",
-            true,
-            "Whether host-admin should download images from the zone's regional container registry",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
             "enable-automatic-reindexing",
             false,
@@ -348,6 +342,13 @@ public class Flags {
             false,
             "Whether to use Power of two load balancing algorithm for application",
             "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag DYNAMIC_RECONFIGURATION_OF_ZOOKEEPER_CLUSTER = defineFeatureFlag(
+            "dynamic-reconfiguration-of-zookeeper-cluster",
+            false,
+            "Whether to allow dynamic reconfiguration of zookeeper cluster",
+            "Takes effect on next deployment",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

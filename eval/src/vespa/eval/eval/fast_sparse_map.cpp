@@ -7,6 +7,12 @@ namespace vespalib::eval {
 
 FastSparseMap::~FastSparseMap() = default;
 
+FastSparseMap&
+FastSparseMap::operator=(const FastSparseMap& rhs) = default;
+
+FastSparseMap&
+FastSparseMap::operator=(FastSparseMap&& rhs) = default;
+
 const FastSparseMap::HashedLabel FastSparseMap::empty_label;
 
 }

@@ -6,43 +6,13 @@
 
 namespace vespalib {
 
-Trace::Trace() :
-    _level(0),
-    _root()
+Trace::Trace(const Trace &rhs)
+    : _root(),
+      _level(rhs._level)
 {
-    // empty
-}
-
-Trace::Trace(uint32_t level) :
-    _level(level),
-    _root()
-{
-    // empty
-}
-
-Trace::~Trace() = default;
-
-Trace &
-Trace::clear()
-{
-    _level = 0;
-    _root.clear();
-    return *this;
-}
-
-Trace &
-Trace::swap(Trace &other)
-{
-    std::swap(_level, other._level);
-    _root.swap(other._root);
-    return *this;
-}
-
-Trace &
-Trace::setLevel(uint32_t level)
-{
-    _level = std::min(level, 9u);
-    return *this;
+    if (!rhs.isEmpty()) {
+        _root = std::make_unique<TraceNode>(rhs.getRoot());
+    }
 }
 
 bool
@@ -53,12 +23,36 @@ Trace::trace(uint32_t level, const string &note, bool addTime)
     }
     if (addTime) {
         struct timeval tv;
-        gettimeofday(&tv, NULL);
-        _root.addChild(make_string("[%ld.%06ld] %s", tv.tv_sec, static_cast<long>(tv.tv_usec), note.c_str()));
+        gettimeofday(&tv, nullptr);
+        ensureRoot().addChild(make_string("[%ld.%06ld] %s", tv.tv_sec, static_cast<long>(tv.tv_usec), note.c_str()));
     } else {
-        _root.addChild(note);
+        ensureRoot().addChild(note);
     }
     return true;
+}
+
+string
+Trace::toString(size_t limit) const {
+    return _root ? _root->toString(limit) : "";
+}
+
+string
+Trace::encode() const {
+    return isEmpty() ? "" : getRoot().encode();
+}
+
+void
+Trace::clear() {
+    _level = 0;
+    _root.reset();
+}
+
+TraceNode &
+Trace::ensureRoot() {
+    if (!_root) {
+        _root = std::make_unique<TraceNode>();
+    }
+    return *_root;
 }
 
 } // namespace vespalib

@@ -11,7 +11,6 @@ StorageCommand::StorageCommand(const StorageCommand& other)
       _timeout(other._timeout),
       _sourceIndex(other._sourceIndex)
 {
-    setTrace(other.getTrace());
 }
 
 StorageCommand::StorageCommand(const MessageType& type, Priority p)

@@ -16,9 +16,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
-#include <vespa/vespalib/objects/nbostream.h>
 
-#include <iomanip>
 #include <sstream>
 
 #include <vespa/vespalib/gtest/gtest.h>
@@ -162,11 +160,9 @@ StorageProtocolTest::copyReply(const std::shared_ptr<Reply>& m)
 TEST_P(StorageProtocolTest, put) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
     cmd->setUpdateTimestamp(Timestamp(13));
-    cmd->setLoadType(_loadTypes["foo"]);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_bucket, cmd2->getBucket());
     EXPECT_EQ(*_testDoc, *cmd2->getDocument());
-    EXPECT_EQ(vespalib::string("foo"), cmd2->getLoadType().getName());
     EXPECT_EQ(Timestamp(14), cmd2->getTimestamp());
     EXPECT_EQ(Timestamp(13), cmd2->getUpdateTimestamp());
 
@@ -221,12 +217,10 @@ TEST_P(StorageProtocolTest, request_metadata_is_propagated) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
     cmd->forceMsgId(12345);
     cmd->setPriority(50);
-    cmd->setLoadType(_loadTypes["foo"]);
     cmd->setSourceIndex(321);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(12345, cmd2->getMsgId());
     EXPECT_EQ(50, cmd2->getPriority());
-    EXPECT_EQ(_loadTypes["foo"].getId(), cmd2->getLoadType().getId());
     EXPECT_EQ(321, cmd2->getSourceIndex());
 }
 
@@ -819,6 +813,28 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
     } else { // Legacy encoding
         EXPECT_EQ(181u, cmd2->getApproxByteSize());
     }
+}
+
+TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
+    EXPECT_EQ(64u, sizeof(StorageMessage));
+    EXPECT_EQ(80u, sizeof(StorageReply));
+    EXPECT_EQ(104u, sizeof(BucketReply));
+    EXPECT_EQ(8u, sizeof(document::BucketId));
+    EXPECT_EQ(16u, sizeof(document::Bucket));
+    EXPECT_EQ(32u, sizeof(BucketInfo));
+    EXPECT_EQ(136u, sizeof(BucketInfoReply));
+    EXPECT_EQ(280u, sizeof(PutReply));
+    EXPECT_EQ(264u, sizeof(UpdateReply));
+    EXPECT_EQ(256u, sizeof(RemoveReply));
+    EXPECT_EQ(344u, sizeof(GetReply));
+    EXPECT_EQ(80u, sizeof(StorageCommand));
+    EXPECT_EQ(104u, sizeof(BucketCommand));
+    EXPECT_EQ(104u, sizeof(BucketInfoCommand));
+    EXPECT_EQ(112u, sizeof(TestAndSetCommand));
+    EXPECT_EQ(144u, sizeof(PutCommand));
+    EXPECT_EQ(144u, sizeof(UpdateCommand));
+    EXPECT_EQ(224u, sizeof(RemoveCommand));
+    EXPECT_EQ(288u, sizeof(GetCommand));
 }
 
 } // storage::api

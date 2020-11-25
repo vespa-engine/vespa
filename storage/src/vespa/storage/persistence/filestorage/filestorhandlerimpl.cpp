@@ -2,6 +2,7 @@
 
 #include "filestorhandlerimpl.h"
 #include "filestormetrics.h"
+#include "mergestatus.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -77,7 +78,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
 FileStorHandlerImpl::~FileStorHandlerImpl() = default;
 
 void
-FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, MergeStatus::SP status)
+FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, std::shared_ptr<MergeStatus> status)
 {
     std::lock_guard mlock(_mergeStatesLock);
     if (_mergeStates.find(bucket) != _mergeStates.end()) {
@@ -90,7 +91,7 @@ MergeStatus&
 FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 {
     std::lock_guard mlock(_mergeStatesLock);
-    MergeStatus::SP status = _mergeStates[bucket];
+    std::shared_ptr<MergeStatus> status = _mergeStates[bucket];
     if ( ! status ) {
         throw vespalib::IllegalStateException("No merge state exist for " + bucket.toString(), VESPA_STRLOC);
     }
@@ -140,7 +141,7 @@ FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api:
         return;
     }
     if (code != 0) {
-        MergeStatus::SP statusPtr(it->second);
+        std::shared_ptr<MergeStatus> statusPtr(it->second);
         assert(statusPtr.get());
         MergeStatus& status(*statusPtr);
         if (status.reply.get()) {

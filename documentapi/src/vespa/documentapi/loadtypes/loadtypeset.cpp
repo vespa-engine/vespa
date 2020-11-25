@@ -38,7 +38,7 @@ LoadTypeSet::LoadTypeSet(const LoadTypeConfig& config)
     configure(config);
 }
 
-LoadTypeSet::~LoadTypeSet() { }
+LoadTypeSet::~LoadTypeSet() = default;
 
 void
 LoadTypeSet::addLoadType(uint32_t id, const string& name, Priority::Value priority) {

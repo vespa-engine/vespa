@@ -3,6 +3,10 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.component.chain.dependencies.Dependencies;
+import com.yahoo.component.chain.model.ChainedComponentModel;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
@@ -27,11 +31,13 @@ import java.util.Set;
  */
 public class AccessControl {
 
-    public enum ClientAuthentication { want, need }
 
+
+    public enum ClientAuthentication { want, need;}
     public static final ComponentId ACCESS_CONTROL_CHAIN_ID = ComponentId.fromString("access-control-chain");
-    public static final ComponentId ACCESS_CONTROL_EXCLUDED_CHAIN_ID = ComponentId.fromString("access-control-excluded-chain");
 
+    public static final ComponentId ACCESS_CONTROL_EXCLUDED_CHAIN_ID = ComponentId.fromString("access-control-excluded-chain");
+    public static final ComponentId DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID = ComponentId.fromString("default-connector-hosted-request-chain");
     private static final int HOSTED_CONTAINER_PORT = 4443;
 
     // Handlers that are excluded from access control
@@ -44,7 +50,6 @@ public class AccessControl {
             ApplicationContainerCluster.METRICS_V2_HANDLER_CLASS,
             ApplicationContainerCluster.PROMETHEUS_V1_HANDLER_CLASS
     );
-
     public static class Builder {
         private final String domain;
         private boolean readEnabled = false;
@@ -52,7 +57,6 @@ public class AccessControl {
         private ClientAuthentication clientAuthentication = ClientAuthentication.need;
         private final Set<BindingPattern> excludeBindings = new LinkedHashSet<>();
         private Collection<Handler<?>> handlers = Collections.emptyList();
-
         public Builder(String domain) {
             this.domain = domain;
         }
@@ -112,11 +116,24 @@ public class AccessControl {
         http.setAccessControl(this);
         addAccessControlFilterChain(http);
         addAccessControlExcludedChain(http);
+        addDefaultHostedRequestChain(http);
         removeDuplicateBindingsFromAccessControlChain(http);
     }
 
     public void configureHostedConnector(HostedSslConnectorFactory connectorFactory) {
         connectorFactory.setDefaultRequestFilterChain(ACCESS_CONTROL_CHAIN_ID);
+    }
+
+    public void configureDefaultHostedConnector(Http http) {
+        // Set default filter chain on local port
+        http.getHttpServer()
+                .get()
+                .getConnectorFactories()
+                .stream()
+                .filter(cf -> cf.getListenPort() == Defaults.getDefaults().vespaWebServicePort())
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Could not find default connector"))
+                .setDefaultRequestFilterChain(DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID);
     }
 
     /** returns the excluded bindings as specified in 'access-control' in services.xml **/
@@ -146,6 +163,12 @@ public class AccessControl {
                 }
             }
         }
+    }
+
+    // Add a filter chain used by default hosted connector
+    private void addDefaultHostedRequestChain(Http http) {
+        Chain<Filter> chain = createChain(DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID);
+        http.getFilterChains().add(chain);
     }
 
     // Remove bindings from access control chain that have binding pattern as a different filter chain

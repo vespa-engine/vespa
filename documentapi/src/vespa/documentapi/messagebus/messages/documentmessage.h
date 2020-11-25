@@ -2,17 +2,14 @@
 #pragma once
 
 #include "documentreply.h"
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/message.h>
-#include <vespa/messagebus/reply.h>
 
 namespace documentapi {
 
 class DocumentMessage : public mbus::Message {
 private:
     Priority::Value _priority;
-    LoadType _loadType;
-    uint32_t _approxSize; // Not sent on wire; set by deserializer or by caller.
+    uint32_t        _approxSize; // Not sent on wire; set by deserializer or by caller.
 
 protected:
     /**
@@ -30,15 +27,8 @@ public:
     typedef std::unique_ptr<DocumentMessage> UP;
     typedef std::shared_ptr<DocumentMessage> SP;
 
-    /**
-     * Constructs a new document message with no content.
-     */
     DocumentMessage();
-
-    /**
-     * Virtual destructor required for inheritance.
-     */
-    virtual ~DocumentMessage() { }
+    ~DocumentMessage() override;
 
     /**
      * Creates and returns a reply to this message. This method uses the internal {@link #doCreateReply()} to
@@ -47,7 +37,7 @@ public:
      *
      * @return The created reply.
      */
-    mbus::Reply::UP createReply() const;
+    std::unique_ptr<mbus::Reply> createReply() const;
 
     /**
      * Returns the priority of this message.
@@ -64,16 +54,6 @@ public:
      * @param priority The priority to set.
      */
     void setPriority(Priority::Value p) { _priority = p; };
-
-    /**
-     * @return Returns the load type for this message.
-     */
-    const LoadType& getLoadType() const { return _loadType; }
-
-    /**
-     * Sets the load type for this message.
-     */
-    void setLoadType(const LoadType& loadType) { _loadType = loadType; }
 
     uint32_t getApproxSize() const override;
 

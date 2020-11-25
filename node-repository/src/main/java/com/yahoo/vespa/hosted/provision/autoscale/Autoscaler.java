@@ -130,7 +130,7 @@ public class Autoscaler {
     /** Measurements are currently taken once a minute. See also scalingWindow */
     static int minimumMeasurementsPerNode(ClusterSpec.Type clusterType) {
         if (clusterType.isContent()) return 60;
-        return 20;
+        return 7;
     }
 
     /**

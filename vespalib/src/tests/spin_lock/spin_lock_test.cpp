@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <array>
 
 using namespace vespalib;
 

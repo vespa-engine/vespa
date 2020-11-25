@@ -34,6 +34,7 @@ namespace storage {
 namespace api {
     class ReturnCode;
     class StorageReply;
+    class BucketCommand;
 }
 
 struct FileStorManagerTest;

@@ -12,7 +12,6 @@
 #pragma once
 
 #include "messagehandler.h"
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/messagebus/trace.h>
 #include <vespa/vdslib/state/nodetype.h>
@@ -21,9 +20,8 @@
 #include <map>
 #include <iosfwd>
 
-namespace vespalib {
-    class asciistream;
-}
+namespace vespalib { class asciistream; }
+namespace documentapi { class LoadType; }
 // The following macros are provided as a way to write storage messages simply.
 // They implement the parts of the code that can easily be automaticly
 // generated.
@@ -268,12 +266,12 @@ public:
     enum Protocol { STORAGE, DOCUMENT };
 
 private:
-    mbus::Route _route;
-    Protocol    _protocol;
+    mbus::Route       _route;
+    vespalib::string  _cluster;
     // Used for internal VDS addresses only
     size_t               _precomputed_storage_hash;
-    vespalib::string     _cluster;
     const lib::NodeType* _type;
+    Protocol             _protocol;
     uint16_t             _index;
 
 public:
@@ -359,12 +357,11 @@ protected:
     static Id generateMsgId();
 
     const MessageType& _type;
-    Id _msgId;
-    Priority _priority;
+    Id                 _msgId;
     std::unique_ptr<StorageMessageAddress> _address;
-    documentapi::LoadType _loadType;
-    mbus::Trace _trace;
-    uint32_t _approxByteSize;
+    vespalib::Trace        _trace;
+    uint32_t    _approxByteSize;
+    Priority    _priority;
 
     StorageMessage(const MessageType& code, Id id);
     StorageMessage(const StorageMessage&, Id id);
@@ -373,7 +370,7 @@ protected:
 public:
     StorageMessage& operator=(const StorageMessage&) = delete;
     StorageMessage(const StorageMessage&) = delete;
-    virtual ~StorageMessage();
+    ~StorageMessage() override;
 
     Id getMsgId() const { return _msgId; }
 
@@ -394,7 +391,7 @@ public:
     const StorageMessageAddress* getAddress() const { return _address.get(); }
 
     void setAddress(const StorageMessageAddress& address) {
-        _address.reset(new StorageMessageAddress(address));
+        _address = std::make_unique<StorageMessageAddress>(address);
     }
 
     /**
@@ -432,16 +429,16 @@ public:
      */
     virtual bool callHandler(MessageHandler&, const StorageMessage::SP&) const = 0;
 
-    const documentapi::LoadType& getLoadType() const { return _loadType; }
-    void setLoadType(const documentapi::LoadType& type) { _loadType = type; }
+    const documentapi::LoadType& getLoadType() const;
 
+    mbus::Trace && steal_trace() { return std::move(_trace); }
     mbus::Trace& getTrace() { return _trace; }
     const mbus::Trace& getTrace() const { return _trace; }
 
     /**
        Sets the trace object for this message.
     */
-    void setTrace(const mbus::Trace &trace) { _trace = trace; }
+    void setTrace(vespalib::Trace && trace) { _trace = std::move(trace); }
 
     /**
      * Cheap version of tostring().

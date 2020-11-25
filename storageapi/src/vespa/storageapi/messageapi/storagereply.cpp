@@ -14,7 +14,12 @@ StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
     if (cmd.getAddress()) {
         setAddress(*cmd.getAddress());
     }
-    setTrace(cmd.getTrace());
+    // TODD do we really need copy construction
+    if ( ! cmd.getTrace().isEmpty()) {
+        setTrace(vespalib::Trace(cmd.getTrace()));
+    }  else {
+        getTrace().setLevel(cmd.getTrace().getLevel());
+    }
     setTransportContext(cmd.getTransportContext());
 }
 

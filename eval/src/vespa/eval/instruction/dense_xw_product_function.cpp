@@ -33,7 +33,7 @@ void my_xw_product_op(InterpretedFunction::State &state, uint64_t param) {
     using OCT = typename UnifyCellTypes<LCT,RCT>::type;
     auto vector_cells = state.peek(1).cells().typify<LCT>();
     auto matrix_cells = state.peek(0).cells().typify<RCT>();
-    auto dst_cells = state.stash.create_array<OCT>(self.result_size);
+    auto dst_cells = state.stash.create_uninitialized_array<OCT>(self.result_size);
     OCT *dst = dst_cells.begin();
     const RCT *matrix = matrix_cells.cbegin();
     for (size_t i = 0; i < self.result_size; ++i) {

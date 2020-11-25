@@ -2,7 +2,6 @@
 
 #include "operation.h"
 #include <vespa/storage/common/distributorcomponent.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -17,9 +16,7 @@ Operation::Operation()
 {
 }
 
-Operation::~Operation()
-{
-}
+Operation::~Operation() = default;
 
 std::string
 Operation::getStatus() const
@@ -42,7 +39,6 @@ Operation::copyMessageSettings(const api::StorageCommand& source, api::StorageCo
     target.getTrace().setLevel(source.getTrace().getLevel());
     target.setTimeout(source.getTimeout());
     target.setPriority(source.getPriority());
-    target.setLoadType(source.getLoadType());
 }
 
 }

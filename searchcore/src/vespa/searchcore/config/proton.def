@@ -499,4 +499,4 @@ bucketdb.checksumtype enum {LEGACY, XXHASH64} default = LEGACY restart
 ## TENSOR_ENGINE (default) uses DefaultTensorEngine, which has been the production implementation for years.
 ## FAST_VALUE uses the new and optimized FastValueBuilderFactory instead.
 ## TODO: Remove when default has been switched to FAST_VALUE.
-tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = TENSOR_ENGINE
+tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = FAST_VALUE

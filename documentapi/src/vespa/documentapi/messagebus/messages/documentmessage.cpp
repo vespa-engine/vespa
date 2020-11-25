@@ -2,23 +2,21 @@
 
 #include "documentmessage.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <cassert>
 
 namespace documentapi {
 
 DocumentMessage::DocumentMessage() :
     mbus::Message(),
     _priority(Priority::PRI_NORMAL_3),
-    _loadType(LoadType::DEFAULT),
     _approxSize(1024)
 {}
+
+DocumentMessage::~DocumentMessage() = default;
 
 mbus::Reply::UP
 DocumentMessage::createReply() const
 {
-    mbus::Reply::UP ret(doCreateReply().release());
-    assert(ret.get() != nullptr);
-    return ret;
+    return doCreateReply();
 }
 
 const mbus::string&

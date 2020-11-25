@@ -6,7 +6,7 @@
 namespace storage {
 
 MemoryBoundedTrace::MemoryBoundedTrace(size_t softMemoryUpperBound)
-    : _node(),
+    : _trace(),
       _currentMemoryUsed(0),
       _omittedNodes(0),
       _omittedBytes(0),
@@ -14,53 +14,49 @@ MemoryBoundedTrace::MemoryBoundedTrace(size_t softMemoryUpperBound)
 {
 }
 
-namespace {
-
-size_t
-computeTraceTreeMemoryUsage(const mbus::TraceNode& node)
-{
-    if (node.isLeaf()) {
-        return node.getNote().size();
-    }
-    size_t childSum = 0;
-    const uint32_t childCount = node.getNumChildren();
-    for (uint32_t i = 0; i < childCount; ++i) {
-        childSum += computeTraceTreeMemoryUsage(node.getChild(i));
-    }
-    return childSum;
-}
-
-} // anon ns
-
 bool
 MemoryBoundedTrace::add(const mbus::TraceNode& node)
 {
-    const size_t nodeFootprint = computeTraceTreeMemoryUsage(node);
+    const size_t nodeFootprint = node.computeMemoryUsage();
 
     if (_currentMemoryUsed >= _softMemoryUpperBound) {
         ++_omittedNodes;
         _omittedBytes += nodeFootprint;
         return false;
     }
-    _node.addChild(node);
+    _trace.addChild(vespalib::TraceNode(node));
+    _currentMemoryUsed += nodeFootprint;
+    return true;
+}
+
+bool
+MemoryBoundedTrace::add(mbus::Trace && node)
+{
+    const size_t nodeFootprint = node.computeMemoryUsage();
+
+    if (_currentMemoryUsed >= _softMemoryUpperBound) {
+        ++_omittedNodes;
+        _omittedBytes += nodeFootprint;
+        return false;
+    }
+    _trace.addChild(std::move(node));
     _currentMemoryUsed += nodeFootprint;
     return true;
 }
 
 void
-MemoryBoundedTrace::moveTraceTo(mbus::TraceNode& out)
+MemoryBoundedTrace::moveTraceTo(mbus::Trace& out)
 {
-    if (_node.isEmpty()) {
+    if (_trace.isEmpty()) {
         return;
     }
     if (_omittedNodes > 0) {
-        _node.addChild(vespalib::make_string(
+        _trace.trace(0, vespalib::make_string(
                 "Trace too large; omitted %zu subsequent trace trees "
                 "containing a total of %zu bytes",
-                _omittedNodes, _omittedBytes));
+                _omittedNodes, _omittedBytes), false);
     }
-    out.addChild(_node); // XXX rvalue support should be added to TraceNode.
-    _node.clear();
+    out.addChild(std::move(_trace));
     _currentMemoryUsed = 0;
     _omittedNodes = 0;
     _omittedBytes = 0;

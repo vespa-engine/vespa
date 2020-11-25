@@ -2,6 +2,7 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/persistence/mergehandler.h>
+#include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/common/message_sender_stub.h>
@@ -176,7 +177,7 @@ MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::~HandleApplyBucketDiffReply
 
 void
 MergeHandlerTest::SetUp() {
-    _context.reset(new spi::Context(documentapi::LoadType::DEFAULT, 0, 0));
+    _context = std::make_unique<spi::Context>(0, 0);
     SingleDiskPersistenceTestUtils::SetUp();
 
     _location = 1234;
@@ -1066,7 +1067,7 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_reply_spi_failures) {
 
 TEST_F(MergeHandlerTest, remove_from_diff) {
     framework::defaultimplementation::FakeClock clock;
-    MergeStatus status(clock, documentapi::LoadType::DEFAULT, 0, 0);
+    MergeStatus status(clock, 0, 0);
 
     std::vector<api::GetBucketDiffCommand::Entry> diff(2);
     diff[0]._timestamp = 1234;

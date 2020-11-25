@@ -108,12 +108,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
     public void provision(ZoneId zone, ApplicationId application, ClusterSpec.Id clusterId) {
+        var current = new ClusterResources(2, 1, new NodeResources(2,  8, 50, 1, slow, remote));
         Cluster cluster = new Cluster(clusterId,
                                       new ClusterResources(2, 1, new NodeResources(1,  4, 20, 1, slow, remote)),
                                       new ClusterResources(2, 1, new NodeResources(4, 16, 90, 1, slow, remote)),
-                                      new ClusterResources(2, 1, new NodeResources(2,  8, 50, 1, slow, remote)),
+                                      current,
                                       Optional.of(new ClusterResources(2, 1, new NodeResources(3, 8, 50, 1, slow, remote))),
-                                      Optional.empty());
+                                      Optional.empty(),
+                                      List.of(new Cluster.ScalingEvent(new ClusterResources(0, 0, NodeResources.unspecified()),
+                                                                       current,
+                                                                       Instant.ofEpochMilli(1234))),
+                                      "the autoscaling status");
         nodeRepository.putApplication(zone,
                                       new com.yahoo.vespa.hosted.controller.api.integration.configserver.Application(application,
                                                                                                                      List.of(cluster)));

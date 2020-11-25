@@ -60,6 +60,7 @@
   "com.yahoo.vespa.curator.Curator": {
     "superClass": "java.lang.Object",
     "interfaces": [
+      "com.yahoo.vespa.curator.api.VespaCurator",
       "java.lang.AutoCloseable"
     ],
     "attributes": [
@@ -90,7 +91,8 @@
       "public org.apache.curator.framework.CuratorFramework framework()",
       "public void close()",
       "public java.lang.String zooKeeperEnsembleConnectionSpec()",
-      "public int zooKeeperEnsembleCount()"
+      "public int zooKeeperEnsembleCount()",
+      "public bridge synthetic java.lang.AutoCloseable lock(com.yahoo.path.Path, java.time.Duration)"
     ],
     "fields": [
       "protected final org.apache.curator.RetryPolicy retryPolicy"
@@ -109,6 +111,19 @@
       "public void <init>(java.lang.String, org.apache.curator.framework.recipes.locks.InterProcessLock)",
       "public void acquire(java.time.Duration)",
       "public void close()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.vespa.curator.api.VespaCurator": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.lang.AutoCloseable lock(com.yahoo.path.Path, java.time.Duration)"
     ],
     "fields": []
   }

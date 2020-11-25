@@ -85,6 +85,7 @@ import org.w3c.dom.Node;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -318,8 +319,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (isHostedTenantApplication(context)) {
             addHostedImplicitHttpIfNotPresent(cluster);
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
+            addDefaultConnectorHostedFilterBinding(cluster);
             addAdditionalHostedConnector(deployState, cluster, context);
         }
+    }
+
+    private void addDefaultConnectorHostedFilterBinding(ApplicationContainerCluster cluster) {
+        cluster.getHttp().getAccessControl()
+                .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));                                 ;
     }
 
     private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster, ConfigModelContext context) {
@@ -361,10 +368,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if(cluster.getHttp() == null) {
             cluster.setHttp(new Http(new FilterChains(cluster)));
         }
-        if(cluster.getHttp().getHttpServer().isEmpty()) {
-            JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), cluster, cluster.isHostedVespa());
-            cluster.getHttp().setHttpServer(defaultHttpServer);
-            defaultHttpServer.addConnector(new ConnectorFactory.Builder("SearchServer", Defaults.getDefaults().vespaWebServicePort()).build());
+        JettyHttpServer httpServer = cluster.getHttp().getHttpServer().orElse(null);
+        if (httpServer == null) {
+            httpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), cluster, cluster.isHostedVespa());
+            cluster.getHttp().setHttpServer(httpServer);
+        }
+        int defaultPort = Defaults.getDefaults().vespaWebServicePort();
+        boolean defaultConnectorPresent = httpServer.getConnectorFactories().stream().anyMatch(connector -> connector.getListenPort() == defaultPort);
+        if (!defaultConnectorPresent) {
+            httpServer.addConnector(new ConnectorFactory.Builder("SearchServer", defaultPort).build());
         }
     }
 

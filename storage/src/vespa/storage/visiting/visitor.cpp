@@ -6,6 +6,7 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/document/select/node.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -146,9 +147,7 @@ Visitor::BucketIterationState::~BucketIterationState()
 {
     if (_iteratorId != 0) {
         // Making the assumption that this is effectively nothrow.
-        std::shared_ptr<DestroyIteratorCommand> cmd(
-                new DestroyIteratorCommand(_iteratorId));
-        cmd->setLoadType(_visitor._initiatingCmd->getLoadType());
+        auto cmd = std::make_shared<DestroyIteratorCommand>(_iteratorId);
         cmd->getTrace().setLevel(_visitor._traceLevel);
         cmd->setPriority(0);
 
@@ -178,7 +177,7 @@ Visitor::VisitorTarget::VisitorTarget()
 {
 }
 
-Visitor::VisitorTarget::~VisitorTarget() {}
+Visitor::VisitorTarget::~VisitorTarget() = default;
 
 Visitor::Visitor(StorageComponent& component)
     : _component(component),
@@ -226,7 +225,6 @@ Visitor::sendMessage(documentapi::DocumentMessage::UP cmd)
     cmd->setRoute(_dataDestination->getRoute());
 
     cmd->setPriority(_documentPriority);
-    cmd->setLoadType(_initiatingCmd->getLoadType());
 
     framework::MicroSecTime time(_component.getClock().getTimeInMicros());
 
@@ -372,10 +370,9 @@ Visitor::sendReplyOnce()
         std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
 
         _hitCounter->updateVisitorStatistics(_visitorStatistics);
-        static_cast<api::CreateVisitorReply*>(reply.get())
-            ->setVisitorStatistics(_visitorStatistics);
+        static_cast<api::CreateVisitorReply*>(reply.get())->setVisitorStatistics(_visitorStatistics);
         if (shouldAddMbusTrace()) {
-            _trace.moveTraceTo(reply->getTrace().getRoot());
+            _trace.moveTraceTo(reply->getTrace());
         }
         reply->setResult(_result);
         LOG(debug, "Sending %s", reply->toString(true).c_str());
@@ -603,15 +600,14 @@ bool
 Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
     mbus::Trace tempTrace;
     tempTrace.trace(level, message);
-    return _trace.add(tempTrace.getRoot());
+    return _trace.add(std::move(tempTrace));
 }
 
 void
-Visitor::handleDocumentApiReply(mbus::Reply::UP reply,
-                        VisitorThreadMetrics& metrics)
+Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics)
 {
     if (shouldAddMbusTrace()) {
-        _trace.add(reply->getTrace().getRoot());
+        _trace.add(reply->steal_trace());
     }
 
     mbus::Message::UP message = reply->getMessage();
@@ -736,7 +732,6 @@ Visitor::onCreateIteratorReply(
     LOG(debug, "Visitor '%s' starting to visit bucket %s.",
         _id.c_str(), bucketId.toString().c_str());
     auto cmd = std::make_shared<GetIterCommand>(bucket, bucketState.getIteratorId(), _docBlockSize);
-    cmd->setLoadType(_initiatingCmd->getLoadType());
     cmd->getTrace().setLevel(_traceLevel);
     cmd->setPriority(_priority);
     ++bucketState._pendingIterators;
@@ -832,7 +827,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
     }
 
     if (shouldAddMbusTrace()) {
-        _trace.add(reply->getTrace().getRoot());
+        _trace.add(reply->steal_trace());
     }
 
     LOG(debug, "Continuing visitor %s.", _id.c_str());
@@ -1142,7 +1137,6 @@ Visitor::getIterators()
         }
         auto cmd = std::make_shared<GetIterCommand>(
                 bucketState.getBucket(), bucketState.getIteratorId(), _docBlockSize);
-        cmd->setLoadType(_initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_traceLevel);
         cmd->setPriority(_priority);
         _messageHandler->send(cmd, *this);
@@ -1188,7 +1182,6 @@ Visitor::getIterators()
                                           spi::NEWEST_DOCUMENT_OR_REMOVE :
                                           spi::NEWEST_DOCUMENT_ONLY));
 
-        cmd->setLoadType(_initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_traceLevel);
         cmd->setPriority(_initiatingCmd->getPriority());
         cmd->setReadConsistency(getRequiredReadConsistency());

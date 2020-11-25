@@ -102,7 +102,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
             return;
         }
 
-        cmd->setTrace(docMsgPtr->getTrace());
+        cmd->setTrace(docMsgPtr->steal_trace());
         cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(docMsgPtr)));
 
         enqueue_or_process(std::move(cmd));
@@ -114,7 +114,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         //TODO: Can it be moved ?
         std::shared_ptr<api::StorageCommand> cmd = storMsgPtr->getCommand();
         cmd->setTimeout(storMsgPtr->getTimeRemaining());
-        cmd->setTrace(storMsgPtr->getTrace());
+        cmd->setTrace(storMsgPtr->steal_trace());
         cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(storMsgPtr)));
 
         enqueue_or_process(std::move(cmd));
@@ -203,12 +203,12 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
                     _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentReply&>(*reply), *originalCommand));
 
             if (sar) {
-                sar->setTrace(reply->getTrace());
+                sar->setTrace(reply->steal_trace());
                 receiveStorageReply(sar);
             }
         } else if (protocolName == mbusprot::StorageProtocol::NAME) {
             mbusprot::StorageReply* sr(static_cast<mbusprot::StorageReply*>(reply.get()));
-            sr->getReply()->setTrace(reply->getTrace());
+            sr->getReply()->setTrace(reply->steal_trace());
             receiveStorageReply(sr->getReply());
         } else {
             LOGBM(warning, "Received unsupported reply type %d for protocol '%s'.",
@@ -583,7 +583,7 @@ CommunicationManager::sendCommand(
             cmd->setContext(mbus::Context(msg->getMsgId()));
             cmd->setRetryEnabled(false);
             cmd->setTimeRemaining(msg->getTimeout());
-            cmd->setTrace(msg->getTrace());
+            cmd->setTrace(msg->steal_trace());
             sendMessageBusMessage(msg, std::move(cmd), address.getRoute());
         }
         break;
@@ -596,7 +596,7 @@ CommunicationManager::sendCommand(
 
         if (mbusMsg) {
             MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converted OK");
-            mbusMsg->setTrace(msg->getTrace());
+            mbusMsg->setTrace(msg->steal_trace());
             mbusMsg->setRetryEnabled(false);
 
             {
@@ -660,7 +660,8 @@ CommunicationManager::sendDirectRPCReply(
                      activate_reply.activateVersion(), activate_reply.actualVersion());
     } else {
         request.addReturnInt(reply->getResult().getResult());
-        request.addReturnString(reply->getResult().getMessage().c_str());
+        vespalib::stringref m = reply->getResult().getMessage();
+        request.addReturnString(m.data(), m.size());
 
         if (reply->getType() == api::MessageType::GETNODESTATE_REPLY) {
             api::GetNodeStateReply& gns(static_cast<api::GetNodeStateReply&>(*reply));
@@ -690,13 +691,13 @@ CommunicationManager::sendMessageBusReply(
         if (reply->getResult().getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
             replyUP = std::make_unique<documentapi::WrongDistributionReply>(reply->getResult().getMessage());
             replyUP->swapState(*context._docAPIMsg);
-            replyUP->setTrace(reply->getTrace());
+            replyUP->setTrace(reply->steal_trace());
             replyUP->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_WRONG_DISTRIBUTION,
                                           reply->getResult().getMessage()));
         } else {
             replyUP = context._docAPIMsg->createReply();
             replyUP->swapState(*context._docAPIMsg);
-            replyUP->setTrace(reply->getTrace());
+            replyUP->setTrace(reply->steal_trace());
             replyUP->setMessage(std::move(context._docAPIMsg));
             _docApiConverter.transferReplyState(*reply, *replyUP);
         }
@@ -707,7 +708,7 @@ CommunicationManager::sendMessageBusReply(
         }
 
         replyUP->swapState(*context._storageProtocolMsg);
-        replyUP->setTrace(reply->getTrace());
+        replyUP->setTrace(reply->steal_trace());
         replyUP->setMessage(std::move(context._storageProtocolMsg));
     }
 

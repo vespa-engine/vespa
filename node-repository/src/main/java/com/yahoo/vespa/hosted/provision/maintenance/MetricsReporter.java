@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -70,6 +71,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         updateLockMetrics();
         updateDockerMetrics(nodes);
         updateTenantUsageMetrics(nodes);
+        updateRepairTicketMetrics(nodes);
         return true;
     }
 
@@ -295,6 +297,15 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                             metric.set("hostedVespa.docker.allocatedCapacityDisk", allocatedCapacity.diskGb(), context);
                         }
                 );
+    }
+
+    private void updateRepairTicketMetrics(NodeList nodes) {
+        nodes.nodeType(NodeType.host).stream()
+                .map(node -> node.reports().getReport("repairTicket"))
+                .flatMap(Optional::stream)
+                .map(report -> report.getInspector().field("status").asString())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .forEach((status, number) -> metric.set("hostedVespa.breakfixedHosts", number, getContextAt("status", status)));
     }
 
     private static NodeResources getCapacityTotal(NodeList nodes) {

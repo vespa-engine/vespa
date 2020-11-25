@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
-#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
 namespace document {

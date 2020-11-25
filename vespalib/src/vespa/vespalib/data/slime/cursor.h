@@ -5,8 +5,7 @@
 #include "inspector.h"
 #include "external_memory.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 struct Cursor : public Inspector {
     virtual Cursor &operator[](size_t idx) const override = 0;
@@ -46,6 +45,4 @@ struct Cursor : public Inspector {
     virtual Symbol resolve(Memory symbol_name) = 0;
 };
 
-} // namespace vespalib::slime
-} // namespace vespalib
-
+}

@@ -146,25 +146,25 @@ TEST("testTraceLevel")
     t.setLevel(4);
     EXPECT_EQUAL(4u, t.getLevel());
     t.trace(9, "no");
-    EXPECT_EQUAL(0u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(0u, t.getNumChildren());
     t.trace(8, "no");
-    EXPECT_EQUAL(0u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(0u, t.getNumChildren());
     t.trace(7, "no");
-    EXPECT_EQUAL(0u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(0u, t.getNumChildren());
     t.trace(6, "no");
-    EXPECT_EQUAL(0u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(0u, t.getNumChildren());
     t.trace(5, "no");
-    EXPECT_EQUAL(0u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(0u, t.getNumChildren());
     t.trace(4, "yes");
-    EXPECT_EQUAL(1u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(1u, t.getNumChildren());
     t.trace(3, "yes");
-    EXPECT_EQUAL(2u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(2u, t.getNumChildren());
     t.trace(2, "yes");
-    EXPECT_EQUAL(3u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(3u, t.getNumChildren());
     t.trace(1, "yes");
-    EXPECT_EQUAL(4u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(4u, t.getNumChildren());
     t.trace(0, "yes");
-    EXPECT_EQUAL(5u, t.getRoot().getNumChildren());
+    EXPECT_EQUAL(5u, t.getNumChildren());
 }
 
 TEST("testCompact")
@@ -261,10 +261,10 @@ TEST("testTraceDump")
             b1.addChild(b2);
         }
         for (int i = 0; i < 10; ++i) {
-            big.getRoot().addChild(b1);
+            big.addChild(TraceNode(b1));
         }
         string normal = big.toString();
-        string full = big.getRoot().toString();
+        string full = big.toString(100000);
         EXPECT_GREATER(normal.size(), 30000u);
         EXPECT_LESS(normal.size(), 32000u);
         EXPECT_GREATER(full.size(), 50000u);

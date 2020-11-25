@@ -184,10 +184,7 @@ RoutingNode::setReply(Reply::UP reply)
 {
     if (reply) {
         _shouldRetry = _resender != nullptr && _resender->shouldRetry(*reply);
-        if ( ! reply->getTrace().getRoot().isEmpty()) {
-            _trace.getRoot().addChild(std::move(reply->getTrace().getRoot()));
-            reply->getTrace().clear();
-        }
+        _trace.addChild(reply->steal_trace());
     }
     _reply = std::move(reply);
 }
@@ -268,14 +265,12 @@ RoutingNode::notifyMerge()
     // Merges the trace information from all children into this. This method takes care not to spend cycles
     // manipulating the trace in case tracing is disabled.
     if (_trace.getLevel() > 0) {
-        TraceNode tail;
+        Trace tail;
         for (auto * child : _children) {
-            TraceNode &root = child->_trace.getRoot();
-            tail.addChild(root);
-            root.clear();
+            tail.addChild(std::move(child->_trace));
         }
         tail.setStrict(false);
-        _trace.getRoot().addChild(tail);
+        _trace.addChild(std::move(tail));
     }
 
     // Execute the {@link RoutingPolicy#merge(RoutingContext)} method of the current routing policy. If a

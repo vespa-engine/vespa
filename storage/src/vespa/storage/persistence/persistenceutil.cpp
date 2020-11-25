@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistenceutil.h"
+#include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -42,7 +43,7 @@ MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
       _updateBucketInfo(updateBucketInfo && hasBucketInfo(msg->getType().getId())),
       _bucketLock(std::move(bucketLock)),
       _msg(std::move(msg)),
-      _context(_msg->getLoadType(), _msg->getPriority(), _msg->getTrace().getLevel()),
+      _context(_msg->getPriority(), _msg->getTrace().getLevel()),
       _env(env),
       _replySender(replySender),
       _metric(nullptr),
@@ -93,9 +94,7 @@ MessageTracker::sendReply() {
               _msg->toString(true).c_str(), vespalib::to_s(duration));
     }
     if (hasReply()) {
-        if ( ! _context.getTrace().getRoot().isEmpty()) {
-            getReply().getTrace().getRoot().addChild(_context.getTrace().getRoot());
-        }
+        getReply().getTrace().addChild(_context.steal_trace());
         if (_updateBucketInfo) {
             if (getReply().getResult().success()) {
                 _env.setBucketInfo(*this, _bucketLock->getBucket());
@@ -104,13 +103,10 @@ MessageTracker::sendReply() {
         if (getReply().getResult().success()) {
             _metric->latency.addValue(_timer.getElapsedTimeAsDouble());
         }
-        LOG(spam, "Sending reply up: %s %" PRIu64,
-            getReply().toString().c_str(), getReply().getMsgId());
+        LOG(spam, "Sending reply up: %s %" PRIu64, getReply().toString().c_str(), getReply().getMsgId());
         _replySender.sendReplyDirectly(std::move(_reply));
     } else {
-        if ( ! _context.getTrace().getRoot().isEmpty()) {
-            _msg->getTrace().getRoot().addChild(_context.getTrace().getRoot());
-        }
+        _msg->getTrace().addChild(_context.steal_trace());
     }
 }
 
@@ -128,7 +124,7 @@ MessageTracker::checkForError(const spi::Result& response)
 }
 
 void
-MessageTracker::fail(const ReturnCode& result)
+MessageTracker::fail(const api::ReturnCode& result)
 {
     _result = result;
     LOG(debug, "Failing operation with error: %s", _result.toString().c_str());
