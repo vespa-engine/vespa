@@ -23,6 +23,8 @@ import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.application.ClusterReindexing;
+import com.yahoo.vespa.config.server.application.ClusterReindexing.Status;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
@@ -31,6 +33,7 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.StaticResponse;
+import com.yahoo.vespa.config.server.http.v2.ApplicationHandler.ReindexingResponse;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -51,7 +54,10 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
@@ -435,6 +441,80 @@ public class ApplicationHandlerTest {
         HttpResponse response = mockHandler.handle(testRequest);
         assertEquals(200, response.getStatus());
         assertEquals("report", getRenderedString(response));
+    }
+
+    @Test
+    public void testClusterReindexingStateSerialization() {
+        Stream.of(ClusterReindexing.State.values()).forEach(ReindexingResponse::toString);
+    }
+
+    @Test
+    public void testReindexingSerialization() throws IOException {
+        Instant now = Instant.ofEpochMilli(123456);
+        ApplicationReindexing applicationReindexing = ApplicationReindexing.ready(now.minusSeconds(10))
+                                                                           .withPending("foo", "bar", 123L)
+                                                                           .withReady("moo", now.minusSeconds(1))
+                                                                           .withReady("moo", "baz", now);
+        ClusterReindexing clusterReindexing = new ClusterReindexing(Map.of("bax", new Status(now, null, null, null, null),
+                                                                           "baz", new Status(now.plusSeconds(1),
+                                                                                             now.plusSeconds(2),
+                                                                                             ClusterReindexing.State.FAILED,
+                                                                                             "message",
+                                                                                             "some")));
+        assertJsonEquals(getRenderedString(new ReindexingResponse(applicationReindexing,
+                                                                  Map.of("boo", clusterReindexing,
+                                                                         "moo", clusterReindexing))),
+                         "{\n" +
+                         "  \"enabled\": true,\n" +
+                         "  \"status\": {\n" +
+                         "    \"readyMillis\": 113456\n" +
+                         "  },\n" +
+                         "  \"clusters\": {\n" +
+                         "    \"boo\": {\n" +
+                         "      \"pending\": {},\n" +
+                         "      \"ready\": {\n" +
+                         "        \"bax\": {\n" +
+                         "          \"startedMillis\": 123456\n" +
+                         "        },\n" +
+                         "        \"baz\": {\n" +
+                         "          \"startedMillis\": 124456,\n" +
+                         "          \"endedMillis\": 125456,\n" +
+                         "          \"state\": \"failed\",\n" +
+                         "          \"message\": \"message\",\n" +
+                         "          \"progress\": \"some\"\n" +
+                         "        }\n" +
+                         "      }\n" +
+                         "    },\n" +
+                         "    \"foo\": {\n" +
+                         "      \"pending\": {\n" +
+                         "        \"bar\": 123\n" +
+                         "      },\n" +
+                         "      \"ready\": {},\n" +
+                         "      \"status\": {\n" +
+                         "        \"readyMillis\": 113456\n" +
+                         "      }\n" +
+                         "    },\n" +
+                         "    \"moo\": {\n" +
+                         "      \"pending\": {},\n" +
+                         "      \"ready\": {\n" +
+                         "        \"baz\": {\n" +
+                         "          \"readyMillis\": 123456,\n" +
+                         "          \"startedMillis\": 124456,\n" +
+                         "          \"endedMillis\": 125456,\n" +
+                         "          \"state\": \"failed\",\n" +
+                         "          \"message\": \"message\",\n" +
+                         "          \"progress\": \"some\"\n" +
+                         "        },\n" +
+                         "        \"bax\": {\n" +
+                         "          \"startedMillis\": 123456\n" +
+                         "        }\n" +
+                         "      },\n" +
+                         "      \"status\": {\n" +
+                         "        \"readyMillis\": 122456\n" +
+                         "      }\n" +
+                         "    }\n" +
+                         "  }\n" +
+                         "}\n");
     }
 
     private void assertNotAllowed(Method method) throws IOException {
