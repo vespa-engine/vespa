@@ -608,7 +608,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET to get reindexing status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindexing", GET)
                                       .userIdentity(USER_ID),
-                              "{\"enabled\":true,\"status\":{\"readyAtMillis\":123},\"clusters\":[{\"name\":\"cluster\",\"status\":{\"readyAtMillis\":234},\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345}]}]}");
+                              "{\"enabled\":true,\"status\":{\"readyAtMillis\":123},\"clusters\":[{\"name\":\"cluster\",\"status\":{\"readyAtMillis\":234},\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345,\"startedAtMillis\":456,\"endedAtMillis\":567,\"state\":\"failed\",\"message\":\"(＃｀д´)ﾉ\",\"progress\":\"AAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}]}]}");
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)

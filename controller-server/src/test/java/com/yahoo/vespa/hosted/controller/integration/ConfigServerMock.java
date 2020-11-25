@@ -13,6 +13,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -430,8 +431,16 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                      Map.of("cluster",
                                                             new ApplicationReindexing.Cluster(new Status(Instant.ofEpochMilli(234)),
                                                                                               Map.of("type", 100L),
-                                                                                              Map.of("type", new Status(Instant.ofEpochMilli(345)))))));
+                                                                                              Map.of("type", new Status(Instant.ofEpochMilli(345),
+                                                                                                                        Instant.ofEpochMilli(456),
+                                                                                                                        Instant.ofEpochMilli(567),
+                                                                                                                        ApplicationReindexing.State.FAILED,
+                                                                                                                        "(＃｀д´)ﾉ",
+                                                                                                                        new ProgressToken().serializeToString()))))));
+
+
     }
+
 
     @Override
     public void disableReindexing(DeploymentId deployment) { }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -115,30 +116,68 @@ public class ApplicationReindexing {
     public static class Status {
 
         private final Instant readyAt;
+        private final Instant startedAt;
+        private final Instant endedAt;
+        private final State state;
+        private final String message;
+        private final String progress;
 
-        public Status(Instant readyAt) {
-            this.readyAt = requireNonNull(readyAt);
+        public Status(Instant readyAt, Instant startedAt, Instant endedAt, State state, String message, String progress) {
+            this.readyAt = readyAt;
+            this.startedAt = startedAt;
+            this.endedAt = endedAt;
+            this.state = state;
+            this.message = message;
+            this.progress = progress;
         }
 
-        public Instant readyAt() { return readyAt; }
+        public Status(Instant readyAt) {
+            this(readyAt, null, null, null, null, null);
+        }
+
+        public Optional<Instant> readyAt() { return Optional.ofNullable(readyAt); }
+        public Optional<Instant> startedAt() { return Optional.ofNullable(startedAt); }
+        public Optional<Instant> endedAt() { return Optional.ofNullable(endedAt); }
+        public Optional<State> state() { return Optional.ofNullable(state); }
+        public Optional<String> message() { return Optional.ofNullable(message); }
+        public Optional<String> progress() { return Optional.ofNullable(progress); }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Status status = (Status) o;
-            return readyAt.equals(status.readyAt);
+            return Objects.equals(readyAt, status.readyAt) &&
+                   Objects.equals(startedAt, status.startedAt) &&
+                   Objects.equals(endedAt, status.endedAt) &&
+                   state == status.state &&
+                   Objects.equals(message, status.message) &&
+                   Objects.equals(progress, status.progress);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(readyAt);
+            return Objects.hash(readyAt, startedAt, endedAt, state, message, progress);
         }
 
         @Override
         public String toString() {
-            return "ready at " + readyAt;
+            return "Status{" +
+                   "readyAt=" + readyAt +
+                   ", startedAt=" + startedAt +
+                   ", endedAt=" + endedAt +
+                   ", state=" + state +
+                   ", message='" + message + '\'' +
+                   ", progress='" + progress + '\'' +
+                   '}';
         }
+
+    }
+
+
+    public enum State {
+
+        PENDING, RUNNING, FAILED, SUCCESSFUL;
 
     }
 
