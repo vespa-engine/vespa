@@ -124,7 +124,7 @@ MessageTracker::checkForError(const spi::Result& response)
 }
 
 void
-MessageTracker::fail(const ReturnCode& result)
+MessageTracker::fail(const api::ReturnCode& result)
 {
     _result = result;
     LOG(debug, "Failing operation with error: %s", _result.toString().c_str());

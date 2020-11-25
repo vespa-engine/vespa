@@ -121,7 +121,7 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
         LOGBP(debug, "Split failed for %s: bucket not found. Storage and "
                      "distributor bucket databases might be out of sync: %s",
               getBucketId().toString().c_str(),
-              rep.getResult().getMessage().c_str());
+              vespalib::string(rep.getResult().getMessage()).c_str());
         _ok = false;
     } else if (rep.getResult().isBusy()) {
         LOG(debug, "Split failed for %s, node was busy. Will retry later",

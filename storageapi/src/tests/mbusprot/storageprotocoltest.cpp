@@ -816,13 +816,17 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
 }
 
 TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
-    EXPECT_EQ(136u, sizeof(StorageReply));
-    EXPECT_EQ(160u, sizeof(BucketReply));
-    EXPECT_EQ(192u, sizeof(BucketInfoReply));
-    EXPECT_EQ(336u, sizeof(PutReply));
-    EXPECT_EQ(320u, sizeof(UpdateReply));
-    EXPECT_EQ(312u, sizeof(RemoveReply));
-    EXPECT_EQ(400u, sizeof(GetReply));
+    EXPECT_EQ(64u, sizeof(StorageMessage));
+    EXPECT_EQ(80u, sizeof(StorageReply));
+    EXPECT_EQ(104u, sizeof(BucketReply));
+    EXPECT_EQ(8u, sizeof(document::BucketId));
+    EXPECT_EQ(16u, sizeof(document::Bucket));
+    EXPECT_EQ(32u, sizeof(BucketInfo));
+    EXPECT_EQ(136u, sizeof(BucketInfoReply));
+    EXPECT_EQ(280u, sizeof(PutReply));
+    EXPECT_EQ(264u, sizeof(UpdateReply));
+    EXPECT_EQ(256u, sizeof(RemoveReply));
+    EXPECT_EQ(344u, sizeof(GetReply));
     EXPECT_EQ(80u, sizeof(StorageCommand));
     EXPECT_EQ(104u, sizeof(BucketCommand));
     EXPECT_EQ(104u, sizeof(BucketInfoCommand));

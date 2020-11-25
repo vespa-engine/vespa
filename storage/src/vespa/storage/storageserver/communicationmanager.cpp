@@ -660,7 +660,8 @@ CommunicationManager::sendDirectRPCReply(
                      activate_reply.activateVersion(), activate_reply.actualVersion());
     } else {
         request.addReturnInt(reply->getResult().getResult());
-        request.addReturnString(reply->getResult().getMessage().c_str());
+        vespalib::stringref m = reply->getResult().getMessage();
+        request.addReturnString(m.data(), m.size());
 
         if (reply->getType() == api::MessageType::GETNODESTATE_REPLY) {
             api::GetNodeStateReply& gns(static_cast<api::GetNodeStateReply&>(*reply));

@@ -7,6 +7,7 @@
 #include <vespa/storage/persistence/filestorage/filestorhandler.h>
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storageframework/generic/clock/timer.h>
+#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/storageutil/utils.h>
 
@@ -42,10 +43,10 @@ public:
 
     /** Utility function to be able to write a bit less in client. */
     void fail(uint32_t result, const String& message = "") {
-        fail(ReturnCode((api::ReturnCode::Result)result, message));
+        fail(api::ReturnCode((api::ReturnCode::Result)result, message));
     }
     /** Set the request to fail with the given failure. */
-    void fail(const ReturnCode&);
+    void fail(const api::ReturnCode&);
 
     /** Don't send reply for the command being processed. Used by multi chain
      * commands like merge. */
