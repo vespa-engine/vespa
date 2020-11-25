@@ -436,7 +436,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                                                                         Instant.ofEpochMilli(567),
                                                                                                                         ApplicationReindexing.State.FAILED,
                                                                                                                         "(＃｀д´)ﾉ",
-                                                                                                                        new ProgressToken().serializeToString()))))));
+                                                                                                                        "some"))))));
 
 
     }
