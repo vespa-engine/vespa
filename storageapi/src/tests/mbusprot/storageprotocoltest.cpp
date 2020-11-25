@@ -830,10 +830,10 @@ TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     EXPECT_EQ(80u, sizeof(StorageCommand));
     EXPECT_EQ(104u, sizeof(BucketCommand));
     EXPECT_EQ(104u, sizeof(BucketInfoCommand));
-    EXPECT_EQ(112u, sizeof(TestAndSetCommand));
-    EXPECT_EQ(144u, sizeof(PutCommand));
-    EXPECT_EQ(144u, sizeof(UpdateCommand));
-    EXPECT_EQ(224u, sizeof(RemoveCommand));
+    EXPECT_EQ(104u + sizeof(std::string), sizeof(TestAndSetCommand));
+    EXPECT_EQ(136u + sizeof(std::string), sizeof(PutCommand));
+    EXPECT_EQ(136u + sizeof(std::string), sizeof(UpdateCommand));
+    EXPECT_EQ(216u + sizeof(std::string), sizeof(RemoveCommand));
     EXPECT_EQ(288u, sizeof(GetCommand));
 }
 
