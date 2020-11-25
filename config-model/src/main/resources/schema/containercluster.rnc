@@ -27,7 +27,6 @@ ContainerServices =
     Http? &
     AccessLog* &
     SecretStore? &
-    ZooKeeper? &
     GenericConfig*
 
 # TODO(ogronnesby): Change this configuration syntax
@@ -90,10 +89,6 @@ SecretStore = element secret-store {
       attribute name { string } &
       attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
     } +
-}
-
-ZooKeeper = element zookeeper {
-    empty
 }
 
 ModelEvaluation = element model-evaluation {

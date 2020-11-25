@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.google.common.base.Joiner;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -19,10 +20,11 @@ import java.util.Collection;
  * @author Ulf Lilleengen
  */
 public class ClusterControllerCluster extends AbstractConfigProducer<ClusterControllerContainerCluster> implements
+        CuratorConfig.Producer,
         ZookeeperServerConfig.Producer,
         ZookeepersConfig.Producer {
 
-    private static final int ZK_CLIENT_PORT = 2181; // Must match the default in CuratorConfig
+    private static final int ZK_CLIENT_PORT = 2181;
     private ClusterControllerContainerCluster containerCluster = null;
 
     public ClusterControllerCluster(AbstractConfigProducer<?> parent, String subId) {
@@ -70,6 +72,16 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
                     throw new IllegalArgumentException("Error validating cluster controller cluster: cluster controllers '" + c1.getConfigId() + "' and '" + c2.getConfigId() + "' share the same host");
                 }
             }
+        }
+    }
+
+    @Override
+    public void getConfig(CuratorConfig.Builder builder) {
+        for (ClusterControllerContainer container : containerCluster.getContainers()) {
+            CuratorConfig.Server.Builder serverBuilder = new CuratorConfig.Server.Builder();
+            serverBuilder.hostname(container.getHostName()).port(ZK_CLIENT_PORT);
+            builder.server(serverBuilder);
+            builder.zookeeperLocalhostAffinity(false);
         }
     }
 
