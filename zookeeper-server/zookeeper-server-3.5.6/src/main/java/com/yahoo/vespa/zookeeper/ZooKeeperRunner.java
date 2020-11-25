@@ -1,9 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
-import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.security.tls.TransportSecurityUtils;
 
 import java.util.logging.Level;
@@ -14,23 +12,21 @@ import static com.yahoo.vespa.zookeeper.Configurator.zookeeperServerHostnames;
 /**
  * Writes zookeeper config and starts zookeeper server.
  *
- * @author Ulf Lilleengen
  * @author Harald Musum
  */
-public class VespaZooKeeperServerImpl extends AbstractComponent implements Runnable, VespaZooKeeperServer {
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(VespaZooKeeperServerImpl.class.getName());
+public class ZooKeeperRunner implements Runnable {
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperRunner.class.getName());
     private final Thread zkServerThread;
     private final ZookeeperServerConfig zookeeperServerConfig;
 
-    @Inject
-    public VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig) {
+    public ZooKeeperRunner(ZookeeperServerConfig zookeeperServerConfig) {
         this.zookeeperServerConfig = zookeeperServerConfig;
         new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getOptions());
         zkServerThread = new Thread(this, "zookeeper server");
         zkServerThread.start();
     }
 
-    private void shutdown() {
+    void shutdown() {
         zkServerThread.interrupt();
         try {
             zkServerThread.join();
@@ -47,10 +43,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }
 
-    @Override
-    public void deconstruct() {
-        shutdown();
-        super.deconstruct();
+    public ZookeeperServerConfig zookeeperServerConfig() {
+        return zookeeperServerConfig;
     }
-
 }
