@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/test/reference_operations.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -33,35 +34,6 @@ std::vector<Layout> layouts = {
     {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
     float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
 };
-
-TensorSpec reference_reduce(const TensorSpec &a, const std::vector<vespalib::string> &dims, Aggr aggr) {
-    Stash stash;
-    ValueType res_type = ValueType::from_spec(a.type()).reduce(dims);
-    EXPECT_FALSE(res_type.is_error());
-    std::map<TensorSpec::Address,std::optional<Aggregator*>> my_map;
-    for (const auto &cell: a.cells()) {
-        TensorSpec::Address addr;
-        for (const auto &dim: cell.first) {
-            if (res_type.dimension_index(dim.first) != ValueType::Dimension::npos) {
-                addr.insert_or_assign(dim.first, dim.second);
-            }
-        }
-        auto [pos, is_empty] = my_map.emplace(addr, std::nullopt);
-        if (is_empty) {
-            pos->second = &Aggregator::create(aggr, stash);
-            pos->second.value()->first(cell.second);
-        } else {
-            pos->second.value()->next(cell.second);
-        }
-    }
-    TensorSpec result(res_type.to_spec());
-    for (const auto &my_entry: my_map) {
-        result.add(my_entry.first, my_entry.second.value()->result());
-    }
-    // use SimpleValue to add implicit cells with default value
-    const auto &factory = SimpleValueBuilderFactory::get();
-    return spec_from_value(*value_from_spec(result, factory));
-}
 
 TensorSpec perform_generic_reduce(const TensorSpec &a, const std::vector<vespalib::string> &dims,
                                   Aggr aggr, const ValueBuilderFactory &factory)
@@ -99,11 +71,11 @@ void test_generic_reduce_with(const ValueBuilderFactory &factory) {
         TensorSpec input = spec(layout, Div16(N()));
         for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
             for (const Domain &domain: layout) {
-                auto expect = reference_reduce(input, {domain.dimension}, aggr);
+                auto expect = ReferenceOperations::reduce(input, {domain.dimension}, aggr);
                 auto actual = perform_generic_reduce(input, {domain.dimension}, aggr, factory);
                 EXPECT_EQ(actual, expect);
             }
-            auto expect = reference_reduce(input, {}, aggr);
+            auto expect = ReferenceOperations::reduce(input, {}, aggr);
             auto actual = perform_generic_reduce(input, {}, aggr, factory);
             EXPECT_EQ(actual, expect);
         }
@@ -130,11 +102,11 @@ TEST(GenericReduceTest, immediate_generic_reduce_works) {
         TensorSpec input = spec(layout, Div16(N()));
         for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
             for (const Domain &domain: layout) {
-                auto expect = reference_reduce(input, {domain.dimension}, aggr);
+                auto expect = ReferenceOperations::reduce(input, {domain.dimension}, aggr);
                 auto actual = immediate_generic_reduce(input, {domain.dimension}, aggr);
                 EXPECT_EQ(actual, expect);
             }
-            auto expect = reference_reduce(input, {}, aggr);
+            auto expect = ReferenceOperations::reduce(input, {}, aggr);
             auto actual = immediate_generic_reduce(input, {}, aggr);
             EXPECT_EQ(actual, expect);
         }
