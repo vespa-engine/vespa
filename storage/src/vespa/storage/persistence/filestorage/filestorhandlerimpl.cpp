@@ -326,9 +326,8 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
     _metrics->pendingMerges.addValue(_mergeStates.size());
     _metrics->queueSize.addValue(getQueueSize());
 
-    metrics::LoadType loadType(0, "ignored");
     for (const auto & stripe : _metrics->stripes) {
-        const auto & m = stripe->averageQueueWaitingTime[loadType];
+        const auto & m = stripe->averageQueueWaitingTime;
         _metrics->averageQueueWaitingTime.addTotalValueWithCount(m.getTotal(), m.getCount());
     }
 }
@@ -943,8 +942,7 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
 FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx, PriorityIdx::iterator iter) {
 
-    api::StorageMessage & m(*iter->_command);
-    std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()])));
+    std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(_metrics->averageQueueWaitingTime)));
 
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
     document::Bucket bucket(iter->_bucket);

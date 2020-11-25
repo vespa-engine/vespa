@@ -189,13 +189,9 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
 
 FileStorThreadMetrics::~FileStorThreadMetrics() = default;
 
-FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std::string& description,
-                                             const LoadTypeSet& loadTypes)
+FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std::string& description)
     : MetricSet(name, {{"partofsum"}}, description),
-      averageQueueWaitingTime(loadTypes,
-                              metrics::DoubleAverageMetric("averagequeuewait", {},
-                                                           "Average time an operation spends in input queue."),
-                              this)
+      averageQueueWaitingTime("averagequeuewait", {}, "Average time an operation spends in input queue.", this)
 {
 }
 
@@ -240,7 +236,7 @@ FileStorDiskMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t numS
         std::ostringstream name;
         name << "stripe" << i;
         desc << "Stripe " << i << '/' << numStripes;
-        stripes[i] = std::make_shared<FileStorStripeMetrics>(name.str(), desc.str(), loadTypes);
+        stripes[i] = std::make_shared<FileStorStripeMetrics>(name.str(), desc.str());
         registerMetric(*stripes[i]);
         sumStripes.addMetricToSum(*stripes[i]);
     }

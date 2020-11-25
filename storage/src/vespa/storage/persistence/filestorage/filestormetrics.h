@@ -129,9 +129,8 @@ class FileStorStripeMetrics : public metrics::MetricSet
 {
 public:
     using SP = std::shared_ptr<FileStorStripeMetrics>;
-    metrics::LoadMetric<metrics::DoubleAverageMetric> averageQueueWaitingTime;
-    FileStorStripeMetrics(const std::string& name, const std::string& description,
-                          const metrics::LoadTypeSet& loadTypes);
+    metrics::DoubleAverageMetric averageQueueWaitingTime;
+    FileStorStripeMetrics(const std::string& name, const std::string& description);
     ~FileStorStripeMetrics() override;
 };
 
