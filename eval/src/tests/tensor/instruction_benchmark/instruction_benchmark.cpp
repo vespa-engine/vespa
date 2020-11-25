@@ -36,7 +36,6 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/optimize_tensor_function.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/default_value_builder_factory.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>

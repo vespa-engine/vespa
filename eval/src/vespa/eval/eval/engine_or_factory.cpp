@@ -12,8 +12,6 @@
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/default_value_builder_factory.h>
-#include <vespa/eval/tensor/mixed/packed_mixed_tensor_builder_factory.h>
 #include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -172,12 +170,6 @@ EngineOrFactory::to_string() const
         }
         if (&factory() == &SimpleValueBuilderFactory::get()) {
             return "SimpleValueBuilderFactory";
-        }
-        if (&factory() == &tensor::DefaultValueBuilderFactory::get()) {
-            return "DefaultValueBuilderFactory";
-        }
-        if (&factory() == &PackedMixedTensorBuilderFactory::get()) {
-            return "PackedMixedTensorBuilderFactory";
         }
     }
     return "???";

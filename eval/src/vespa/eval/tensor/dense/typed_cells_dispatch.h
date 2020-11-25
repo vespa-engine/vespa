@@ -30,7 +30,7 @@ decltype(auto) dispatch_2(A1 &&a, const TypedCells &b, Args &&...args) {
 struct GetCell {
     template<typename T>
     static double call(ConstArrayRef<T> arr, size_t idx) {
-	return arr[idx];
+        return arr[idx];
     }
     static double from(TypedCells src, size_t idx) {
         return dispatch_1<GetCell>(src, idx);
