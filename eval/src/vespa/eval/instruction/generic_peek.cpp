@@ -35,7 +35,7 @@ size_t count_children(const Spec &spec)
 
 struct DimSpec {
     vespalib::stringref name;
-    GenericPeek::MyLabel child_or_label;
+    GenericPeek::SpecMap::mapped_type child_or_label;
     bool has_child() const {
         return std::holds_alternative<size_t>(child_or_label);
     }

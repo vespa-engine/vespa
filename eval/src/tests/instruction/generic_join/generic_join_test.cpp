@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/test/reference_operations.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -51,23 +52,6 @@ bool join_address(const TensorSpec::Address &a, const TensorSpec::Address &b, Te
         addr.insert_or_assign(dim_a.first, dim_a.second);
     }
     return true;
-}
-
-TensorSpec reference_join(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
-    ValueType res_type = ValueType::join(ValueType::from_spec(a.type()), ValueType::from_spec(b.type()));
-    EXPECT_FALSE(res_type.is_error());
-    TensorSpec result(res_type.to_spec());
-    for (const auto &cell_a: a.cells()) {
-        for (const auto &cell_b: b.cells()) {
-            TensorSpec::Address addr;
-            if (join_address(cell_a.first, cell_b.first, addr) &&
-                join_address(cell_b.first, cell_a.first, addr))
-            {
-                result.add(addr, function(cell_a.second, cell_b.second));
-            }
-        }
-    }
-    return result;
 }
 
 TensorSpec perform_generic_join(const TensorSpec &a, const TensorSpec &b,
@@ -130,7 +114,7 @@ TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
         TensorSpec rhs = spec(join_layouts[i + 1], Div16(N()));
         for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
             SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-            auto expect = reference_join(lhs, rhs, fun);
+            auto expect = ReferenceOperations::join(lhs, rhs, fun);
             auto simple = perform_generic_join(lhs, rhs, fun, SimpleValueBuilderFactory::get());
             auto fast = perform_generic_join(lhs, rhs, fun, FastValueBuilderFactory::get());
             EXPECT_EQ(simple, expect);
@@ -154,7 +138,7 @@ TEST(GenericJoinTest, immediate_generic_join_works) {
         TensorSpec rhs = spec(join_layouts[i + 1], Div16(N()));
         for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
             SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-            auto expect = reference_join(lhs, rhs, fun);
+            auto expect = ReferenceOperations::join(lhs, rhs, fun);
             auto actual = immediate_generic_join(lhs, rhs, fun);
             EXPECT_EQ(actual, expect);
         }
