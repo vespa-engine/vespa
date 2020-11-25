@@ -30,8 +30,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -183,10 +183,15 @@ public class ConfigConvergenceCheckerTest {
                                                                                 .withBody("response too slow")));
         HttpResponse response = checker.getServiceConfigGenerationResponse(application, hostAndPort(service), requestUrl, Duration.ofMillis(1));
         // Message contained in a SocketTimeoutException may differ across platforms, so we do a partial match of the response here
-        assertResponse((responseBody) -> assertTrue("Response matches", responseBody.startsWith(
-                "{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
-                "\",\"wantedGeneration\":3,\"error\":\"java.net.SocketTimeoutException") &&
-                                      responseBody.endsWith("\"}")), 404, response);
+        assertResponse(
+                responseBody ->
+                        assertThat(responseBody)
+                                .startsWith("{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
+                                        "\",\"wantedGeneration\":3,\"error\":\"")
+                                .contains("java.net.SocketTimeoutException: 1 MILLISECONDS")
+                                .endsWith("\"}"),
+                404,
+                response);
     }
 
     private URI testServer() {

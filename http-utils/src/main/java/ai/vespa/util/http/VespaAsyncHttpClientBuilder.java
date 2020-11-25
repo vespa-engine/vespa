@@ -66,6 +66,7 @@ public class VespaAsyncHttpClientBuilder {
         clientBuilder.disableAuthCaching();
         clientBuilder.disableRedirectHandling();
         clientBuilder.setConnectionManager(factory.create(tlsStrategy));
+        clientBuilder.setConnectionManagerShared(false);
         return clientBuilder;
     }
 
