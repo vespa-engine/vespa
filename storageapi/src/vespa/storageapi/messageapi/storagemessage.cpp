@@ -139,15 +139,6 @@ MessageType::print(std::ostream& out, bool verbose, const std::string& indent) c
     out << ")";
 }
 
-StorageMessageAddress::StorageMessageAddress(const mbus::Route& route)
-    : _route(route),
-      _cluster(),
-      _precomputed_storage_hash(0),
-      _type(nullptr),
-      _protocol(DOCUMENT),
-      _index(0xFFFF)
-{ }
-
 std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr) {
     return os << addr.toString();
 }
@@ -160,38 +151,44 @@ createAddress(vespalib::stringref cluster, const lib::NodeType& type, uint16_t i
     return os.str();
 }
 
+size_t
+calculate_node_hash(const lib::NodeType& type, uint16_t index)
+{
+    uint16_t buf[] = { type, index };
+    return vespalib::hashValue(&buf, sizeof(buf));
+}
+
 // TODO we ideally want this removed. Currently just in place to support usage as map key when emplacement not available
 StorageMessageAddress::StorageMessageAddress()
-    : _route(),
-      _cluster(),
+    : _cluster(),
       _precomputed_storage_hash(0),
       _type(nullptr),
       _protocol(Protocol::STORAGE),
       _index(0)
 {}
 
-
 StorageMessageAddress::StorageMessageAddress(vespalib::stringref cluster, const lib::NodeType& type,
                                              uint16_t index, Protocol protocol)
-    : _route(),
-      _cluster(cluster),
-      _precomputed_storage_hash(0),
+    : _cluster(cluster),
+      _precomputed_storage_hash(calculate_node_hash(type, index)),
       _type(&type),
       _protocol(protocol),
       _index(index)
 {
-    std::vector<mbus::IHopDirective::SP> directives;
-    auto address_as_str = createAddress(cluster, type, index);
-    // We reuse the string representation and pass it to vespalib's hashValue instead of
-    // explicitly combining a running hash over the individual fields. This is because
-    // hashValue internally uses xxhash, which offers great dispersion of bits even for
-    // minimal changes in the input (such as single bit differences in the index).
-    _precomputed_storage_hash = vespalib::hashValue(address_as_str.data(), address_as_str.size());
-    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(std::move(address_as_str)));
-    _route.addHop(mbus::Hop(std::move(directives), false));
 }
 
 StorageMessageAddress::~StorageMessageAddress() = default;
+
+mbus::Route
+StorageMessageAddress::to_mbus_route() const
+{
+    mbus::Route result;
+    auto address_as_str = createAddress(_cluster, *_type, _index);
+    std::vector<mbus::IHopDirective::SP> directives;
+    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(std::move(address_as_str)));
+    result.addHop(mbus::Hop(std::move(directives), false));
+    return result;
+}
 
 uint16_t
 StorageMessageAddress::getIndex() const
@@ -251,7 +248,7 @@ StorageMessageAddress::print(vespalib::asciistream & out) const
         out << "Document protocol";
     }
     if (!_type) {
-        out << ", " << _route.toString() << ")";
+        out << ", " << to_mbus_route().toString() << ")";
     } else {
         out << ", cluster " << _cluster << ", nodetype " << *_type
             << ", index " << _index << ")";

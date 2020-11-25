@@ -266,7 +266,6 @@ public:
     enum Protocol { STORAGE, DOCUMENT };
 
 private:
-    mbus::Route       _route;
     vespalib::string  _cluster;
     // Used for internal VDS addresses only
     size_t               _precomputed_storage_hash;
@@ -276,7 +275,6 @@ private:
 
 public:
     StorageMessageAddress(); // Only to be used when transient default ctor semantics are needed by containers
-    StorageMessageAddress(const mbus::Route& route);
     StorageMessageAddress(vespalib::stringref clusterName,
                           const lib::NodeType& type, uint16_t index,
                           Protocol protocol = STORAGE);
@@ -284,13 +282,13 @@ public:
 
     void setProtocol(Protocol p) { _protocol = p; }
 
-    const mbus::Route& getRoute() const { return _route; }
+    mbus::Route to_mbus_route() const;
     Protocol getProtocol() const { return _protocol; }
     uint16_t getIndex() const;
     const lib::NodeType& getNodeType() const;
     const vespalib::string& getCluster() const;
 
-    // Returns precomputed hash over <cluster, type, index> tuple. Other fields not included.
+    // Returns precomputed hash over <type, index> pair. Other fields not included.
     [[nodiscard]] size_t internal_storage_hash() const noexcept {
         return _precomputed_storage_hash;
     }

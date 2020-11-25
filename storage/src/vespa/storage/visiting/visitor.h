@@ -330,8 +330,8 @@ protected:
     documentapi::Priority::Value _documentPriority;
 
     std::string _id;
-    std::unique_ptr<api::StorageMessageAddress> _controlDestination;
-    std::unique_ptr<api::StorageMessageAddress> _dataDestination;
+    std::unique_ptr<mbus::Route> _controlDestination;
+    std::unique_ptr<mbus::Route> _dataDestination;
     std::shared_ptr<document::select::Node> _documentSelection;
     std::string _documentSelectionString;
     vdslib::VisitorStatistics _visitorStatistics;
@@ -355,10 +355,12 @@ public:
     framework::MicroSecTime getStartTime() const { return _startTime; }
     api::VisitorId getVisitorId() const { return _visitorId; }
     const std::string& getVisitorName() const { return _id; }
-    const api::StorageMessageAddress* getControlDestination() const
-        { return _controlDestination.get(); }  // Can't be null if attached
-    const api::StorageMessageAddress* getDataDestination() const
-        { return _dataDestination.get(); }  // Can't be null if attached
+    const mbus::Route* getControlDestination() const {
+        return _controlDestination.get(); // Can't be null if attached
+    }
+    const mbus::Route* getDataDestination() const {
+        return _dataDestination.get(); // Can't be null if attached
+    }
 
     void setMaxPending(unsigned int maxPending)
         { _visitorOptions._maxPending = maxPending; }
@@ -471,8 +473,8 @@ public:
                documentapi::Priority::Value);
 
     void attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
-                const api::StorageMessageAddress& controlAddress,
-                const api::StorageMessageAddress& dataAddress,
+                const mbus::Route& controlAddress,
+                const mbus::Route& dataAddress,
                 framework::MilliSecTime timeout);
 
     void handleDocumentApiReply(mbus::Reply::UP reply,

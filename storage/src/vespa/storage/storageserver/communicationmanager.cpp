@@ -584,7 +584,7 @@ CommunicationManager::sendCommand(
             cmd->setRetryEnabled(false);
             cmd->setTimeRemaining(msg->getTimeout());
             cmd->setTrace(msg->steal_trace());
-            sendMessageBusMessage(msg, std::move(cmd), address.getRoute());
+            sendMessageBusMessage(msg, std::move(cmd), address.to_mbus_route());
         }
         break;
     }
@@ -603,7 +603,7 @@ CommunicationManager::sendCommand(
                 std::lock_guard lock(_messageBusSentLock);
                 _messageBusSent[msg->getMsgId()] = msg;
             }
-            sendMessageBusMessage(msg, std::move(mbusMsg), address.getRoute());
+            sendMessageBusMessage(msg, std::move(mbusMsg), address.to_mbus_route());
             break;
         } else {
             LOGBM(warning, "This type of message can't be sent via messagebus");
