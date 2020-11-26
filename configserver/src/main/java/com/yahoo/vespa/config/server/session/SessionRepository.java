@@ -171,7 +171,9 @@ public class SessionRepository {
      * @param timeoutBudget timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSessionFromExisting(Session existingSession, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
+    public LocalSession createSessionFromExisting(Session existingSession,
+                                                  boolean internalRedeploy,
+                                                  TimeoutBudget timeoutBudget) {
         ApplicationId existingApplicationId = existingSession.getApplicationId();
         File existingApp = getSessionAppDir(existingSession.getSessionId());
         LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, internalRedeploy, timeoutBudget);
