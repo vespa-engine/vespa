@@ -22,11 +22,14 @@ enum Policy {
 
     /** Full access to everything. */
     operator(Privilege.grant(Action.all())
-                      .on(PathGroup.allExcept(PathGroup.hostedAccountant))
+                      .on(PathGroup.allExcept(PathGroup.billingPaths()))
                       .in(SystemName.all()),
-            Privilege.grant(Action.read)
-                    .on(PathGroup.hostedAccountant)
-                    .in(SystemName.PublicCd)),
+             Privilege.grant(Action.read)
+                      .on(PathGroup.billingPathsNoToken())
+                      .in(SystemName.all()),
+             Privilege.grant(Action.read)
+                      .on(PathGroup.billingToken)
+                      .in(SystemName.PublicCd)),
 
     /** Full access to everything. */
     supporter(Privilege.grant(Action.read)

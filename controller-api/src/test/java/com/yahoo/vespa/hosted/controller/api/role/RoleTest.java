@@ -201,7 +201,7 @@ public class RoleTest {
 
         tester.on("/billing/v1/tenant/t1/token")
                 .assertAction(accountant)
-                .assertAction(operator, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator, Action.read)
                 .assertAction(reader)
                 .assertAction(developer)
                 .assertAction(admin,    Action.read)
@@ -209,7 +209,7 @@ public class RoleTest {
 
         tester.on("/billing/v1/tenant/t1/instrument")
                 .assertAction(accountant)
-                .assertAction(operator,  Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,                 Action.read)
                 .assertAction(reader,                   Action.read,                Action.delete)
                 .assertAction(developer,                Action.read,                Action.delete)
                 .assertAction(admin,                    Action.read, Action.update, Action.delete)
@@ -217,31 +217,31 @@ public class RoleTest {
 
         tester.on("/billing/v1/tenant/t1/instrument/i1")
                 .assertAction(accountant)
-                .assertAction(operator,   Action.create, Action.read, Action.update, Action.delete)
-                .assertAction(reader,                    Action.read,                Action.delete)
-                .assertAction(developer,                 Action.read,                Action.delete)
-                .assertAction(admin,                     Action.read, Action.update, Action.delete)
+                .assertAction(operator,  Action.read)
+                .assertAction(reader,    Action.read,                Action.delete)
+                .assertAction(developer, Action.read,                Action.delete)
+                .assertAction(admin,     Action.read, Action.update, Action.delete)
                 .assertAction(otherAdmin);
 
         tester.on("/billing/v1/tenant/t1/billing")
                 .assertAction(accountant)
-                .assertAction(operator,  Action.create, Action.read, Action.update, Action.delete)
-                .assertAction(reader,                   Action.read)
-                .assertAction(developer,                Action.read)
-                .assertAction(admin,                    Action.read)
+                .assertAction(operator,  Action.read)
+                .assertAction(reader,    Action.read)
+                .assertAction(developer, Action.read)
+                .assertAction(admin,     Action.read)
                 .assertAction(otherAdmin);
 
         tester.on("/billing/v1/tenant/t1/plan")
-                .assertAction(accountant,                             Action.update)
-                .assertAction(operator,   Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(accountant, Action.update)
+                .assertAction(operator,   Action.read)
                 .assertAction(reader)
                 .assertAction(developer)
-                .assertAction(admin,                                  Action.update)
+                .assertAction(admin,      Action.update)
                 .assertAction(otherAdmin);
 
         tester.on("/billing/v1/tenant/t1/collection")
                 .assertAction(accountant, Action.update)
-                .assertAction(operator,   Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,   Action.read)
                 .assertAction(reader)
                 .assertAction(developer)
                 .assertAction(admin)
