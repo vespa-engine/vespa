@@ -44,5 +44,5 @@ class TransportSecurityOptionsEntity {
         @JsonProperty("must-match") String matchExpression;
     }
 
-    enum CredentialField { CN, SAN_DNS, SAN_URI }
+    enum CredentialField { CN, SAN_DNS }
 }

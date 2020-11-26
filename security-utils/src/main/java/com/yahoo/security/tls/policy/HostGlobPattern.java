@@ -7,22 +7,20 @@ import java.util.regex.Pattern;
 /**
  * @author bjorncs
  */
-class HostGlobPattern implements RequiredPeerCredential.Pattern {
+public class HostGlobPattern {
 
     private final String pattern;
     private final Pattern regexPattern;
 
-    HostGlobPattern(String pattern) {
+    public HostGlobPattern(String pattern) {
         this.pattern = pattern;
         this.regexPattern = toRegexPattern(pattern);
     }
 
-    @Override
     public String asString() {
         return pattern;
     }
 
-    @Override
     public boolean matches(String hostString) {
         return regexPattern.matcher(hostString).matches();
     }

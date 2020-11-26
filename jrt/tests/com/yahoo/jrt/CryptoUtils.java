@@ -9,6 +9,7 @@ import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.PeerAuthentication;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.RequiredPeerCredential.Field;
@@ -45,7 +46,8 @@ class CryptoUtils {
                             singleton(
                                     new Role("localhost-role")),
                             singletonList(
-                                    RequiredPeerCredential.of(Field.CN, "localhost")))));
+                                    new RequiredPeerCredential(
+                                            Field.CN, new HostGlobPattern("localhost"))))));
 
     static TlsContext createTestTlsContext() {
         return new DefaultTlsContext(

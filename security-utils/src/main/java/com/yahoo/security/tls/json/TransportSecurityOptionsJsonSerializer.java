@@ -8,6 +8,7 @@ import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.CredentialFiel
 import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.Files;
 import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.RequiredCredential;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.HostGlobPattern;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.Role;
@@ -118,14 +119,13 @@ public class TransportSecurityOptionsJsonSerializer {
         if (requiredCredential.matchExpression == null) {
             throw missingFieldException("must-match");
         }
-        return RequiredPeerCredential.of(toField(requiredCredential.field), requiredCredential.matchExpression);
+        return new RequiredPeerCredential(toField(requiredCredential.field), new HostGlobPattern(requiredCredential.matchExpression));
     }
 
     private static RequiredPeerCredential.Field toField(CredentialField field) {
         switch (field) {
             case CN: return RequiredPeerCredential.Field.CN;
             case SAN_DNS: return RequiredPeerCredential.Field.SAN_DNS;
-            case SAN_URI: return RequiredPeerCredential.Field.SAN_URI;
             default: throw new IllegalArgumentException("Invalid field type: " + field);
         }
     }
@@ -172,7 +172,6 @@ public class TransportSecurityOptionsJsonSerializer {
         switch (field) {
             case CN: return CredentialField.CN;
             case SAN_DNS: return CredentialField.SAN_DNS;
-            case SAN_URI: return CredentialField.SAN_URI;
             default: throw new IllegalArgumentException("Invalid field type: " + field);
         }
     }
