@@ -3,10 +3,7 @@
 #include <vespa/eval/eval/test/reference_operations.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <iostream>
-
-using vespalib::make_string_short::fmt;
 
 using namespace vespalib;
 using namespace vespalib::eval;
@@ -54,7 +51,7 @@ TensorSpec sparse_1d_all_two() {
 //-----------------------------------------------------------------------------
 
 
-TEST(ReferenceOperationsTest, concat_gives_expected_results) {
+TEST(ReferenceConcatTest, concat_gives_expected_results) {
     auto a = TensorSpec("double").add({}, 7.0);
     auto b = TensorSpec("double").add({}, 4.0);
     auto output = ReferenceOperations::concat(a, b, "x");
@@ -92,7 +89,9 @@ TEST(ReferenceOperationsTest, concat_gives_expected_results) {
     EXPECT_EQ(output.type(), "error");
 }
 
-TEST(ReferenceOperationsTest, create_gives_expected_results) {
+//-----------------------------------------------------------------------------
+
+TEST(ReferenceCreateTest, simple_create_works) {
     auto a = TensorSpec("double").add({}, 1.5);
     auto b = TensorSpec("tensor(z[2])").add({{"z",0}}, 2.0).add({{"z",1}}, 3.0);
     auto c = TensorSpec("tensor()").add({{}}, 4.0);
@@ -108,7 +107,9 @@ TEST(ReferenceOperationsTest, create_gives_expected_results) {
     EXPECT_EQ(output, expect);
 }
 
-TEST(ReferenceOperationsTest, join_gives_expected_results) {
+//-----------------------------------------------------------------------------
+
+TEST(ReferenceJoinTest, join_gives_expected_results) {
     auto a = TensorSpec("tensor()").add({}, 7.0);
     auto b = TensorSpec("tensor()").add({}, 4.0);
     auto output = ReferenceOperations::join(a, b, operation::Sub::f);
@@ -131,7 +132,9 @@ TEST(ReferenceOperationsTest, join_gives_expected_results) {
     EXPECT_EQ(output, expect_sq);
 }
 
-TEST(ReferenceOperationsTest, map_gives_expected_results) {
+//-----------------------------------------------------------------------------
+
+TEST(ReferenceMapTest, map_gives_expected_results) {
     auto input = TensorSpec("tensor()").add({}, 0.0);
     auto output = ReferenceOperations::map(input, operation::Exp::f);
     EXPECT_EQ(output, TensorSpec("double").add({}, 1.0));
@@ -151,8 +154,9 @@ TEST(ReferenceOperationsTest, map_gives_expected_results) {
     EXPECT_EQ(output, mixed_5d_some_cells(true));
 }
 
+//-----------------------------------------------------------------------------
 
-TEST(ReferenceOperationsTest, merge_gives_expected_results) {
+TEST(ReferenceMergeTest, mixed_merge_works) {
     auto a = mixed_5d_some_cells(false);
     auto b = TensorSpec("tensor(a[3],b[1],c{},d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"c", "foo"}, {"d", 4}, {"e", "foo"}}, 0.0)
@@ -171,7 +175,7 @@ TEST(ReferenceOperationsTest, merge_gives_expected_results) {
 
 //-----------------------------------------------------------------------------
 
-TEST(ReferenceOperationsTest, peek_verbatim_labels) {
+TEST(ReferencePeekTest, verbatim_labels) {
     auto input = sparse_2d_some_cells(true);
     ReferenceOperations::PeekSpec spec;
     spec.emplace("c", "qux");
@@ -215,7 +219,7 @@ TEST(ReferenceOperationsTest, peek_verbatim_labels) {
     EXPECT_EQ(output, expect);    
 }    
 
-TEST(ReferenceOperationsTest, peek_labels_from_children) {
+TEST(ReferencePeekTest, labels_from_children) {
     auto pos_ch = TensorSpec("double").add({}, 1.0);
     auto zero_ch = TensorSpec("double").add({}, 0.0);
     auto neg_ch = TensorSpec("double").add({}, -2.0);
@@ -286,7 +290,7 @@ TEST(ReferenceOperationsTest, peek_labels_from_children) {
     EXPECT_EQ(output, expect);
 }
 
-TEST(ReferenceOperationsTest, peek_mixed) {
+TEST(ReferencePeekTest, peek_mixed) {
     auto pos_ch = TensorSpec("double").add({}, 1.0);
     auto zero_ch = TensorSpec("double").add({}, 0.0);
     auto neg_ch = TensorSpec("double").add({}, -2.0);
@@ -330,7 +334,7 @@ TEST(ReferenceOperationsTest, peek_mixed) {
 
 //-----------------------------------------------------------------------------
 
-TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
+TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
     auto input = TensorSpec("tensor(a[3],b[1],c{},d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"c", "bar"}, {"d", 1}, {"e", "foo"}},  5.0)
         .add({{"a", 0}, {"b", 0}, {"c", "bar"}, {"d", 4}, {"e", "foo"}},  3.0)
@@ -416,8 +420,9 @@ TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
     EXPECT_EQ(output, expect);
 }
 
+//-----------------------------------------------------------------------------
 
-TEST(ReferenceOperationsTest, rename_gives_expected_results) {
+TEST(ReferenceRenameTest, swap_and_rename_dimensions) {
     auto input = mixed_5d_some_cells(false);
     auto output = ReferenceOperations::rename(input,
                                               {"a","b","c","e"},
@@ -430,6 +435,8 @@ TEST(ReferenceOperationsTest, rename_gives_expected_results) {
         .add({{"e", 2}, {"x", 0}, {"b", "qux"}, {"d", 1}, {"a", "foo"}}, 6.0);
     EXPECT_EQ(output, expect);
 }
+
+//-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()
 
