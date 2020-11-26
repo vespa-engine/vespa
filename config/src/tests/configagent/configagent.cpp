@@ -36,7 +36,7 @@ public:
           _value(value),
           _fillCalled(false),
           _valid(valid),
-          _state(md5, timestamp, false),
+          _state(md5, timestamp, false, false),
           _errorMessage(errorMsg),
           _errorCode(errorC0de),
           _isError(iserror)
