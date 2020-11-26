@@ -185,6 +185,7 @@ public:
             return *this;
         }
         bool operator==(const Handle &rhs) const { return (_id == rhs._id); }
+        uint32_t id() const { return _id; }
         vespalib::string as_string() const { return SharedStringRepo::get(_id); }
         ~Handle() { reclaim(_id); }
     };

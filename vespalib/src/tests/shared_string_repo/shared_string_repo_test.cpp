@@ -10,6 +10,7 @@
 
 using namespace vespalib;
 using make_string_short::fmt;
+using Handle = SharedStringRepo::Handle;
 
 bool verbose = false;
 double budget = 0.10;
@@ -26,17 +27,8 @@ std::vector<vespalib::string> make_strings(size_t cnt) {
     return strings;
 }
 
-std::vector<vespalib::string> copy_strings(const std::vector<vespalib::string> &strings) {
-    std::vector<vespalib::string> copy;
-    copy.reserve(strings.size());
-    for (size_t i = 0; i < strings.size(); ++i) {
-        copy.push_back(strings[i]);
-    }
-    return copy;
-}
-
-std::vector<SharedStringRepo::Handle> resolve_strings(const std::vector<vespalib::string> &strings) {
-    std::vector<SharedStringRepo::Handle> handles;
+std::vector<Handle> resolve_strings(const std::vector<vespalib::string> &strings) {
+    std::vector<Handle> handles;
     handles.reserve(strings.size());
     for (size_t i = 0; i < strings.size(); ++i) {
         handles.emplace_back(strings[i]);
@@ -44,16 +36,7 @@ std::vector<SharedStringRepo::Handle> resolve_strings(const std::vector<vespalib
     return handles;
 }
 
-std::vector<SharedStringRepo::Handle> copy_handles(const std::vector<SharedStringRepo::Handle> &handles) {
-    std::vector<SharedStringRepo::Handle> copy;
-    copy.reserve(handles.size());
-    for (size_t i = 0; i < handles.size(); ++i) {
-        copy.push_back(handles[i]);
-    }
-    return copy;    
-}
-
-std::vector<vespalib::string> get_strings(const std::vector<SharedStringRepo::Handle> &handles) {
+std::vector<vespalib::string> get_strings(const std::vector<Handle> &handles) {
     std::vector<vespalib::string> strings;
     strings.reserve(handles.size());
     for (size_t i = 0; i < handles.size(); ++i) {
@@ -61,8 +44,6 @@ std::vector<vespalib::string> get_strings(const std::vector<SharedStringRepo::Ha
     }
     return strings;
 }
-
-void reclaim_handles(std::vector<SharedStringRepo::Handle>) {}
 
 //-----------------------------------------------------------------------------
 
@@ -150,13 +131,13 @@ struct Fixture {
     void benchmark(bool is_master) {
         for (bool once_more = true; vote(once_more); once_more = has_budget()) {
             std::vector<vespalib::string> copy_strings_result;
-            std::vector<SharedStringRepo::Handle> resolve_result;
-            std::vector<SharedStringRepo::Handle> copy_handles_result;
-            std::vector<SharedStringRepo::Handle> resolve_again_result;
+            std::vector<Handle> resolve_result;
+            std::vector<Handle> copy_handles_result;
+            std::vector<Handle> resolve_again_result;
             std::vector<vespalib::string> get_result;
-            auto copy_strings_task = [&](){ copy_strings_result = copy_strings(work); };
+            auto copy_strings_task = [&](){ copy_strings_result = work; };
             auto resolve_task = [&](){ resolve_result = resolve_strings(work); };
-            auto copy_handles_task = [&](){ copy_handles_result = copy_handles(resolve_result); };
+            auto copy_handles_task = [&](){ copy_handles_result = resolve_result; };
             auto resolve_again_task = [&](){ resolve_again_result = resolve_strings(work); };
             auto get_task = [&](){ get_result = get_strings(resolve_result); };
             auto reclaim_task = [&]() { resolve_again_result.clear(); };
@@ -174,6 +155,29 @@ struct Fixture {
         }
     }
 };
+
+//-----------------------------------------------------------------------------
+
+TEST("require that basic usage works") {
+    Handle empty;
+    Handle foo("foo");
+    Handle bar("bar");
+    Handle empty2;
+    Handle foo2("foo");
+    Handle bar2(bar);
+    EXPECT_EQUAL(empty.id(), 0u);
+    EXPECT_TRUE(empty.id() != foo.id());
+    EXPECT_TRUE(empty.id() != bar.id());
+    EXPECT_TRUE(foo.id() != bar.id());
+    EXPECT_EQUAL(empty.id(), empty2.id());
+    EXPECT_EQUAL(foo.id(), foo2.id());
+    EXPECT_EQUAL(bar.id(), bar2.id());
+    EXPECT_EQUAL(empty.as_string(), vespalib::string(""));
+    EXPECT_EQUAL(foo.as_string(), vespalib::string("foo"));
+    EXPECT_EQUAL(bar.as_string(), vespalib::string("bar"));
+    EXPECT_EQUAL(foo2.as_string(), vespalib::string("foo"));
+    EXPECT_EQUAL(bar2.as_string(), vespalib::string("bar"));
+}
 
 //-----------------------------------------------------------------------------
 
