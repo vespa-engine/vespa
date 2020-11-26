@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * A class that holds a representation of a config payload.
+ * A config payload.
  *
  * @author Ulf Lilleengen
  */
