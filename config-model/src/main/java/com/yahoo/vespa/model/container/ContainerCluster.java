@@ -35,7 +35,6 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -52,6 +51,7 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
+import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.Http;
@@ -569,10 +569,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(CuratorConfig.Builder builder) {
+        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
         for (var container : containers) {
-            HostResource hostResource = container.getHostResource();
-            if (hostResource == null) continue;
-            builder.server(new CuratorConfig.Server.Builder().hostname(hostResource.getHostname()));
+            builder.server(new CuratorConfig.Server.Builder().hostname(container.getHostResource().getHostname()));
         }
         builder.zookeeperLocalhostAffinity(zooKeeperLocalhostAffinity);
     }

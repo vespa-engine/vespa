@@ -13,6 +13,9 @@ import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import com.yahoo.vespa.model.container.xml.ConfigServerContainerModelBuilder;
 import org.junit.Test;
@@ -167,10 +170,17 @@ public class ConfigserverClusterTest {
                 + "    <server port='1337' id='configserver' />"
                 + "  </http>"
                 + "</container>";
-        new ConfigServerContainerModelBuilder(testOptions)
+        ContainerModel containerModel = new ConfigServerContainerModelBuilder(testOptions)
                 .build(new DeployState.Builder().build(), null, null, root, XML.getDocument(services).getDocumentElement());
-        root.freezeModelTopology();
 
+        // Simulate the behaviour of StandaloneContainer
+        List<? extends Container> containers = containerModel.getCluster().getContainers();
+        assertEquals("Standalone container", 1, containers.size());
+        HostResource hostResource = root.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
+        containers.get(0).setHostResource(hostResource);
+
+        root.freezeModelTopology();
         return root.getConfig(clazz, "configserver/standalone");
     }
+
 }
