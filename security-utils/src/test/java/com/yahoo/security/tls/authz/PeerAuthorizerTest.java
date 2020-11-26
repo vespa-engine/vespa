@@ -111,6 +111,8 @@ public class PeerAuthorizerTest {
         assertAuthorized(result);
         assertThat(result.assumedRoles()).extracting(Role::name).containsOnly(ROLE_1);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1);
+
+        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", emptyList(), singletonList("myscheme://my/nonmatching/uri"))));
     }
 
     private static X509Certificate createCertificate(String subjectCn, List<String> sanDns, List<String> sanUri) {
