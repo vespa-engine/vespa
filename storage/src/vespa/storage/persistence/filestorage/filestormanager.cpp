@@ -91,9 +91,8 @@ FileStorManager::~FileStorManager()
 }
 
 void
-FileStorManager::print(std::ostream& out, bool verbose, const std::string& indent) const
+FileStorManager::print(std::ostream& out, bool , const std::string& ) const
 {
-    (void) verbose; (void) indent;
     out << "FileStorManager";
 }
 
@@ -123,6 +122,14 @@ selectSequencer(vespa::config::content::StorFilestorConfig::ResponseSequencerTyp
 #endif
 
 thread_local PersistenceHandler * _G_threadLocalHandler TLS_LINKAGE = nullptr;
+
+size_t
+computeAllPossibleHandlerThreads(const vespa::config::content::StorFilestorConfig & cfg) {
+    return cfg.numThreads +
+           computeNumResponseThreads(cfg.numResponseThreads) +
+           cfg.numNetworkThreads +
+           cfg.numVisitorThreads;
+}
 
 }
 
@@ -165,7 +172,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         size_t numThreads = _config->numThreads;
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
         _metrics->initDiskMetrics(_component.getLoadTypes()->getMetricLoadTypes(), numStripes,
-                                  numThreads + _config->numResponseThreads + _config->numNetworkThreads);
+                                  computeAllPossibleHandlerThreads(*_config));
 
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics, _compReg);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
