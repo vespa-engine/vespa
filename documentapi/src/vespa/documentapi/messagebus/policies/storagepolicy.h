@@ -38,7 +38,7 @@ private:
 
 public:
     StoragePolicy(const string& param);
-    ~StoragePolicy();
+    ~StoragePolicy() override;
     void doSelect(mbus::RoutingContext &context) override;
     void merge(mbus::RoutingContext &context) override;
 

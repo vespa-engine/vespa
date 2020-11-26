@@ -8,10 +8,4 @@ ContentPolicy::ContentPolicy(const string& param)
         : StoragePolicy(param)
 { }
 
-string
-ContentPolicy::createConfigId(const string & clusterName) const
-{
-    return clusterName;
-}
-
 } // documentapi

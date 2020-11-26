@@ -9,8 +9,6 @@ class ContentPolicy : public StoragePolicy
 {
 public:
     ContentPolicy(const string& param);
-private:
-    string createConfigId(const string & clusterName) const override;
 };
 
 }
