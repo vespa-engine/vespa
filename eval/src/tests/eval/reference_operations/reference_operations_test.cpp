@@ -401,7 +401,7 @@ TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
         .add({{"a", 2}, {"b", 0}, {"c", "foo"}, {"d", 3}, {"e", "foo"}},  11.0)
         .add({{"a", 2}, {"b", 0}, {"c", "qux"}, {"d", 1}, {"e", "foo"}},  14.0);
 
-    auto output = ReferenceOperations::reduce(input, {"a"}, Aggr::SUM);
+    auto output = ReferenceOperations::reduce(input, Aggr::SUM, {"a"});
     auto expect = TensorSpec("tensor(b[1],c{},d[5],e{})")
         .add({{"b", 0}, {"c", "bar"}, {"d", 0}, {"e", "qux"}},  7.0)
         .add({{"b", 0}, {"c", "bar"}, {"d", 1}, {"e", "foo"}},  5.0)
@@ -418,7 +418,7 @@ TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
         .add({{"b", 0}, {"c", "qux"}, {"d", 1}, {"e", "foo"}},  14.0);
     EXPECT_EQ(output, expect);
 
-    output = ReferenceOperations::reduce(input, {"a", "b", "d"}, Aggr::SUM);
+    output = ReferenceOperations::reduce(input, Aggr::SUM, {"a", "b", "d"});
     expect = TensorSpec("tensor(c{},e{})")
         .add({{"c", "bar"}, {"e", "bar"}},  25.0)
         .add({{"c", "bar"}, {"e", "foo"}},   8.0)
@@ -429,7 +429,7 @@ TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
         .add({{"c", "qux"}, {"e", "foo"}},  14.0);
     EXPECT_EQ(output, expect);
 
-    output = ReferenceOperations::reduce(input, {"c"}, Aggr::SUM);
+    output = ReferenceOperations::reduce(input, Aggr::SUM, {"c"});
     expect = TensorSpec("tensor(a[3],b[1],d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"d", 1}, {"e", "foo"}},  9.0)
         .add({{"a", 0}, {"b", 0}, {"d", 2}, {"e", "foo"}},  6.0)
@@ -444,7 +444,7 @@ TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
         .add({{"a", 2}, {"b", 0}, {"d", 3}, {"e", "foo"}},  11.0);
     EXPECT_EQ(output, expect);
     
-    output = ReferenceOperations::reduce(input, {"a", "c"}, Aggr::SUM);
+    output = ReferenceOperations::reduce(input, Aggr::SUM, {"a", "c"});
     expect = TensorSpec("tensor(b[1],d[5],e{})")
         .add({{"b", 0}, {"d", 0}, {"e", "qux"}},  7.0)
         .add({{"b", 0}, {"d", 1}, {"e", "foo"}},  23.0)
@@ -457,17 +457,17 @@ TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
         .add({{"b", 0}, {"d", 4}, {"e", "foo"}},  5.0);
     EXPECT_EQ(output, expect);
 
-    output = ReferenceOperations::reduce(input, {"a", "c", "d"}, Aggr::SUM);
+    output = ReferenceOperations::reduce(input, Aggr::SUM, {"a", "c", "d"});
     expect = TensorSpec("tensor(b[1],e{})")
         .add({{"b", 0}, {"e", "bar"}},  35.0)
         .add({{"b", 0}, {"e", "foo"}},  45.0)
         .add({{"b", 0}, {"e", "qux"}},  24.0);
     EXPECT_EQ(output, expect);
 
-    output = ReferenceOperations::reduce(input, {"a", "b", "c", "d", "e"}, Aggr::SUM);
+    output = ReferenceOperations::reduce(input, Aggr::SUM, {"a", "b", "c", "d", "e"});
     expect = TensorSpec("double").add({}, 104);
     EXPECT_EQ(output, expect);
-    output = ReferenceOperations::reduce(input, {}, Aggr::SUM);
+    output = ReferenceOperations::reduce(input, Aggr::SUM, {});
     EXPECT_EQ(output, expect);
 }
 
