@@ -6,6 +6,8 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
+
+import java.util.Objects;
 import java.util.logging.Level;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
@@ -226,15 +228,12 @@ public class StoragePolicy extends SlobrokPolicy {
         protected final SlobrokHostPatternGenerator slobrokHostPatternGenerator;
 
         public Parameters(Map<String, String> params) {
-            clusterName = params.get("cluster");
-            distributionConfigId = params.get("clusterconfigid");
+            clusterName = Objects.requireNonNull(params.get("cluster"), "Required parameter cluster with clustername not set");
+            distributionConfigId = clusterName;
             slobrokHostPatternGenerator = createPatternGenerator();
-            if (clusterName == null) throw new IllegalArgumentException("Required parameter cluster with clustername not set");
         }
 
-        String getDistributionConfigId() {
-            return (distributionConfigId == null ? "storage/cluster." + clusterName : distributionConfigId);
-        }
+        String getDistributionConfigId() { return clusterName; }
         public String getClusterName() {
             return clusterName;
         }

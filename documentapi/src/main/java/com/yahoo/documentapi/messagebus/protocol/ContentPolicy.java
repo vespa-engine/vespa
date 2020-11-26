@@ -15,14 +15,6 @@ public class ContentPolicy extends StoragePolicy {
         }
 
         @Override
-        public String getDistributionConfigId() {
-            if (distributionConfigId != null) {
-                return distributionConfigId;
-            }
-            return clusterName;
-        }
-
-        @Override
         public SlobrokHostPatternGenerator createPatternGenerator() {
             return new SlobrokHostPatternGenerator(getClusterName()) {
                 public String getDistributorHostPattern(Integer distributor) {
