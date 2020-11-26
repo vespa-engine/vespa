@@ -12,7 +12,7 @@ StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
 {
     setPriority(cmd.getPriority());
     if (cmd.getAddress()) {
-        setAddress(*cmd.getAddress()); // Hmm, could we steal the address ?
+        setAddress(*cmd.getAddress());
     }
     // TODD do we really need copy construction
     if ( ! cmd.getTrace().isEmpty()) {
