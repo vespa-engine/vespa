@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +35,8 @@ public class NodePrioritizer {
     private final NodeSpec requestedNodes;
     private final ApplicationId application;
     private final ClusterSpec clusterSpec;
-    private final NodeRepository nodeRepository;
+    private final NameResolver nameResolver;
+    private final boolean dynamicProvisioning;
     /** Whether node specification allows new nodes to be allocated. */
     private final boolean canAllocateNew;
     private final boolean canAllocateToSpareHosts;
@@ -42,19 +44,19 @@ public class NodePrioritizer {
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
 
-    NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int wantedGroups, NodeRepository nodeRepository) {
-        boolean dynamicProvisioning = nodeRepository.zone().getCloud().dynamicProvisioning();
-
+    public NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
+                           int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver,
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount) {
         this.allNodes = allNodes;
-        this.capacity = new HostCapacity(allNodes, nodeRepository.resourcesCalculator());
+        this.capacity = new HostCapacity(allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.application = application;
+        this.dynamicProvisioning = dynamicProvisioning;
         this.spareHosts = dynamicProvisioning ?
                 capacity.findSpareHostsInDynamicallyProvisionedZones(allNodes.asList()) :
-                capacity.findSpareHosts(allNodes.asList(), nodeRepository.spareCount());
-        this.nodeRepository = nodeRepository;
+                capacity.findSpareHosts(allNodes.asList(), spareCount);
+        this.nameResolver = nameResolver;
 
         NodeList nodesInCluster = allNodes.owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
@@ -81,7 +83,7 @@ public class NodePrioritizer {
     }
 
     /** Collects all node candidates for this application and returns them in the most-to-least preferred order */
-    List<NodeCandidate> collect(List<Node> surplusActiveNodes) {
+    public List<NodeCandidate> collect(List<Node> surplusActiveNodes) {
         addApplicationNodes();
         addSurplusNodes(surplusActiveNodes);
         addReadyNodes();
@@ -131,7 +133,7 @@ public class NodePrioritizer {
         if ( !canAllocateNew) return;
 
         for (Node host : allNodes) {
-            if ( ! nodeRepository.canAllocateTenantNodeTo(host)) continue;
+            if ( ! NodeRepository.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
             if (host.exclusiveTo().isPresent()) continue; // Never allocate new nodes to exclusive hosts
@@ -143,7 +145,7 @@ public class NodePrioritizer {
                                                    host,
                                                    spareHosts.contains(host),
                                                    allNodes,
-                                                   nodeRepository));
+                                                   nameResolver));
         }
     }
 
@@ -209,7 +211,7 @@ public class NodePrioritizer {
         if (node.type() != NodeType.tenant || node.parentHostname().isEmpty()) return true;
         Optional<Node> parent = allNodes.parentOf(node);
         if (parent.isEmpty()) return false;
-        return nodeRepository.canAllocateTenantNodeTo(parent.get());
+        return NodeRepository.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning);
     }
 
 }

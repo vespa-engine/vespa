@@ -3,7 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.HostCapacity;
+import com.yahoo.vespa.flags.custom.ClusterCapacity;
 import com.yahoo.vespa.flags.custom.SharedHost;
 
 import java.util.List;
@@ -83,11 +83,17 @@ public class Flags {
             "Takes effect on the next run of RetiredExpirer.",
             HOSTNAME);
 
-    public static final UnboundListFlag<HostCapacity> TARGET_CAPACITY = defineListFlag(
-            "preprovision-capacity", List.of(), HostCapacity.class,
-            "List of node resources and their count that should be provisioned." +
-            "In a dynamically provisioned zone this specifies the unallocated (i.e. pre-provisioned) capacity. " +
-            "Otherwise it specifies the total (unallocated or not) capacity.",
+    public static final UnboundListFlag<ClusterCapacity> PREPROVISION_CAPACITY = defineListFlag(
+            "preprovision-capacity", List.of(), ClusterCapacity.class,
+            "Specifies the resources that ought to be immediately available for additional cluster " +
+            "allocations.  If the resources are not available, additional hosts will be provisioned. " +
+            "Only applies to dynamically provisioned zones.",
+            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
+
+    public static final UnboundBooleanFlag COMPACT_PREPROVISION_CAPACITY = defineFeatureFlag(
+            "compact-preprovision-capacity", true,
+            "Whether preprovision capacity can be satisfied with available capacity on hosts with " +
+            "existing allocations.  Historically preprovision-capacity referred to empty hosts.",
             "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
     public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
