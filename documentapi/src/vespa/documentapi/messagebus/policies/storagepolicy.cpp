@@ -32,9 +32,6 @@ StoragePolicy::StoragePolicy(const string& param)
         _error = "Required parameter clustername not set";
     }
 
-    if (params.find("clusterconfigid") != params.end()) {
-        _clusterConfigId = params.find("clusterconfigid")->second;
-    }
 }
 
 namespace {
@@ -56,12 +53,8 @@ string StoragePolicy::init()
         return error;
     }
 
-    if (_clusterConfigId.empty()) {
-        _clusterConfigId = createConfigId(_clusterName);
-    }
-
     using storage::lib::Distribution;
-    config::ConfigUri uri(_clusterConfigId);
+    config::ConfigUri uri(_clusterName);
     if (!_configSources.empty()) {
         _configFetcher.reset(new config::ConfigFetcher(config::ServerSpec(_configSources)));
     } else {
@@ -74,12 +67,6 @@ string StoragePolicy::init()
 }
 
 StoragePolicy::~StoragePolicy() = default;
-
-string
-StoragePolicy::createConfigId(const string & clusterName) const
-{
-    return "storage/cluster." + clusterName;
-}
 
 string
 StoragePolicy::createPattern(const string & clusterName, int distributor) const
@@ -103,7 +90,7 @@ StoragePolicy::configure(std::unique_ptr<vespa::config::content::StorDistributio
     try {
         _nextDistribution = std::make_unique<storage::lib::Distribution>(*config);
     } catch (const std::exception& e) {
-        LOG(warning, "Got exception when configuring distribution, config id was %s", _clusterConfigId.c_str());
+        LOG(warning, "Got exception when configuring distribution, config id was %s", _clusterName.c_str());
         throw e;
     }
 }

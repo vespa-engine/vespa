@@ -29,7 +29,6 @@ private:
     document::BucketIdFactory _bucketIdFactory;
     std::unique_ptr<storage::lib::ClusterState> _state;
     string _clusterName;
-    string _clusterConfigId;
     std::unique_ptr<config::ICallback>          _callBack;
     std::unique_ptr<config::ConfigFetcher>      _configFetcher;
     std::unique_ptr<storage::lib::Distribution> _distribution;
@@ -55,7 +54,6 @@ public:
     string init() override;
 
 private:
-    virtual string createConfigId(const string & clusterName) const;
     string createPattern(const string & clusterName, int distributor) const;
 };
 
