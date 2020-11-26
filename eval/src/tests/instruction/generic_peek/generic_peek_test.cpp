@@ -151,9 +151,7 @@ void verify_peek_equal(const TensorSpec &input,
     }
     if (reduce_dims.empty()) return;
     ValueType result_type = param_type.reduce(reduce_dims);
-    auto ref_spec = reference_peek(input, spec);
-    // use SimpleValue to add implicit cells with default value
-    auto expect = spec_from_value(*value_from_spec(ref_spec, SimpleValueBuilderFactory::get()));
+    auto expect = reference_peek(input, spec).normalize();
     SCOPED_TRACE(fmt("peek input: %s\n  peek spec: %s\n  peek result %s\n",
                      input.to_string().c_str(),
                      to_str(spec).c_str(),
