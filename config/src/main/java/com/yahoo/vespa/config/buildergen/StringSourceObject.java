@@ -10,9 +10,7 @@ import java.net.URI;
  * @author Ulf Lilleengen
  */
 class StringSourceObject extends SimpleJavaFileObject {
-
     private final String code;
-
     StringSourceObject(String name, String code) {
         super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),Kind.SOURCE);
         this.code = code;
@@ -22,5 +20,4 @@ class StringSourceObject extends SimpleJavaFileObject {
     public CharSequence getCharContent(boolean ignoreEncodingErrors) {
         return code;
     }
-
 }
