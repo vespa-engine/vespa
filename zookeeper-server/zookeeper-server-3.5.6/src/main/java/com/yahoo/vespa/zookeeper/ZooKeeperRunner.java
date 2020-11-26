@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.security.tls.TransportSecurityUtils;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.zookeeper.Configurator.zookeeperServerHostnames;
@@ -15,7 +16,8 @@ import static com.yahoo.vespa.zookeeper.Configurator.zookeeperServerHostnames;
  * @author Harald Musum
  */
 public class ZooKeeperRunner implements Runnable {
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperRunner.class.getName());
+    private static final Logger log = java.util.logging.Logger.getLogger(ZooKeeperRunner.class.getName());
+
     private final Thread zkServerThread;
     private final ZookeeperServerConfig zookeeperServerConfig;
 
@@ -46,4 +48,5 @@ public class ZooKeeperRunner implements Runnable {
     public ZookeeperServerConfig zookeeperServerConfig() {
         return zookeeperServerConfig;
     }
+
 }
