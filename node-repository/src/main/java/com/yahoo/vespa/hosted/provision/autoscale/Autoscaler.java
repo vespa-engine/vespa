@@ -60,6 +60,7 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
+        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
         if (unstable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
@@ -68,13 +69,21 @@ public class Autoscaler {
 
         ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
-        Optional<Double> cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu, cluster);
-        Optional<Double> memoryLoad = clusterTimeseries.averageLoad(Resource.memory, cluster);
-        Optional<Double> diskLoad   = clusterTimeseries.averageLoad(Resource.disk, cluster);
-        if (cpuLoad.isEmpty() || memoryLoad.isEmpty() || diskLoad.isEmpty())
-            return Advice.none("Collecting more data before making new scaling decisions");
+        int measurementsPerNode = clusterTimeseries.measurementsPerNode();
+        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterType))
+            return Advice.none("Collecting more data before making new scaling decisions" +
+                               ": Has " + measurementsPerNode + " data points per node");
 
-        var target = ResourceTarget.idealLoad(cpuLoad.get(), memoryLoad.get(), diskLoad.get(), currentAllocation);
+        int nodesMeasured = clusterTimeseries.nodesMeasured();
+        if (nodesMeasured != clusterNodes.size())
+            return Advice.none("Collecting more data before making new scaling decisions" +
+                               ": Has measurements from " + nodesMeasured + " but need from " + clusterNodes.size());
+
+        double cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
+        double memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
+        double diskLoad   = clusterTimeseries.averageLoad(Resource.disk);
+
+        var target = ResourceTarget.idealLoad(cpuLoad, memoryLoad, diskLoad, currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits, exclusive);
