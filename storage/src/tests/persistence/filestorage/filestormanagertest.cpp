@@ -1347,7 +1347,7 @@ TEST_F(FileStorManagerTest, delete_bucket) {
     // Putting it
     {
         auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 105);
-        cmd->setAddress(_Storage3);
+        cmd->setAddress(_Storage2);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         ASSERT_EQ(1, top.getNumReplies());
@@ -1363,7 +1363,7 @@ TEST_F(FileStorManagerTest, delete_bucket) {
     // Delete bucket
     {
         auto cmd = std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bid));
-        cmd->setAddress(_Storage3);
+        cmd->setAddress(_Storage2);
         cmd->setBucketInfo(bucketInfo);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);

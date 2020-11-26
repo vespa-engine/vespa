@@ -36,7 +36,7 @@ namespace storage {
 namespace {
 
 using msg_ptr_vector = std::vector<api::StorageMessage::SP>;
-vespalib::string _Storage;
+vespalib::string _Storage("storage");
 api::StorageMessageAddress _Address(&_Storage, lib::NodeType::STORAGE, 0);
 }
 

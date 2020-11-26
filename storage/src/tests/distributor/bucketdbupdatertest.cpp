@@ -392,7 +392,7 @@ public:
     }
 
     api::StorageMessageAddress storageAddress(uint16_t node) {
-        static vespalib::string _storage;
+        static vespalib::string _storage("storage");
         return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, node);
     }
 

@@ -42,7 +42,7 @@ BmClusterController::BmClusterController(SharedRpcResources& shared_rpc_resource
 void
 BmClusterController::set_cluster_up(bool distributor)
 {
-    static vespalib::string _storage;
+    static vespalib::string _storage("storage");
     StorageMessageAddress storage_address(&_storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0);
     auto req = make_set_cluster_state_request();
     auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(_shared_rpc_resources.slobrok_mirror(),

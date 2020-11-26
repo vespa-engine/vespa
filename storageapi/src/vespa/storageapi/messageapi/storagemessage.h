@@ -275,7 +275,7 @@ private:
 
 public:
     StorageMessageAddress(); // Only to be used when transient default ctor semantics are needed by containers
-    StorageMessageAddress(const vespalib::string * clusterName, const lib::NodeType& type, uint16_t index);
+    StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index);
     StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index, Protocol protocol);
     ~StorageMessageAddress();
 
