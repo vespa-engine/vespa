@@ -8,7 +8,7 @@ import com.yahoo.component.AbstractComponent;
 /**
  * Starts or reconfigures zookeeper cluster
  *
- * @author Harald Musum
+ * @author hmusum
  */
 public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implements VespaZooKeeperServer {
 

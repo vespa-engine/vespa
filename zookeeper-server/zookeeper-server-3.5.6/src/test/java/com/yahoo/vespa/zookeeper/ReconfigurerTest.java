@@ -16,6 +16,8 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Tests dynamic reconfiguration of zookeeper cluster.
+ *
+ * @author hmusum
  */
 public class ReconfigurerTest {
 

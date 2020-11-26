@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -22,7 +23,8 @@ import java.util.stream.Collectors;
  * @author hmusum
  */
 public class Reconfigurer extends AbstractComponent {
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
+    private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
+    private static final int sessionTimeoutInSeconds = 30;
 
     private ZooKeeperRunner zooKeeperRunner;
 
@@ -31,7 +33,6 @@ public class Reconfigurer extends AbstractComponent {
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
-    // For testing only
     void startOrReconfigure(ZookeeperServerConfig newConfig) {
         if (zooKeeperRunner == null)
             zooKeeperRunner = startServer(newConfig);
@@ -48,7 +49,6 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     private ZooKeeperRunner startServer(ZookeeperServerConfig zookeeperServerConfig) {
-        //System.out.println("Starting server with config " + zookeeperServerConfig);
         return new ZooKeeperRunner(zookeeperServerConfig);
     }
 
@@ -65,8 +65,6 @@ public class Reconfigurer extends AbstractComponent {
         log.log(Level.INFO, "Will reconfigure zookeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers +
                             ", new members" + addedServers);
-
-        int sessionTimeoutInSeconds = 30;
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(existingConfig), sessionTimeoutInSeconds, null);
 
@@ -77,13 +75,9 @@ public class Reconfigurer extends AbstractComponent {
         }
     }
 
-    List<String> currentServers() {
-        if (zooKeeperRunner == null) return List.of();
-
-        return servers(zooKeeperRunner.zookeeperServerConfig());
-    }
-
-    // Returns items in set a that are not in set b
+    /**
+     * Returns items in set a that are not in set b
+     */
     List<String> setDifference(List<String> a, List<String> b) {
         Set<String> ret = new HashSet<>(a);
         ret.removeAll(b);
