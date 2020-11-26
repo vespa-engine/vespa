@@ -8,7 +8,7 @@ import java.util.Objects;
  */
 public class RequiredPeerCredential {
 
-    public enum Field { CN, SAN_DNS }
+    public enum Field { CN, SAN_DNS, SAN_URI }
 
     private final Field field;
     private final Pattern pattern;
@@ -27,6 +27,8 @@ public class RequiredPeerCredential {
             case CN:
             case SAN_DNS:
                 return new HostGlobPattern(pattern);
+            case SAN_URI:
+                return new UriPattern(pattern);
             default:
                 throw new IllegalArgumentException("Unknown field: " + field);
         }

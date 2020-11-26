@@ -24,6 +24,7 @@ import java.util.HashSet;
 
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
+import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_URI;
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
@@ -38,7 +39,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
     private static final Path TEST_CONFIG_FILE = Paths.get("src/test/resources/transport-security-options.json");
 
     @Test
-    public void can_serialize_and_deserialize_transport_security_options() {
+    public void can_serialize_and_deserialize_transport_security_options() throws IOException {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCaCertificates(Paths.get("/path/to/ca-certs.pem"))
                 .withCertificates(Paths.get("/path/to/cert.pem"), Paths.get("/path/to/key.pem"))
@@ -48,7 +49,8 @@ public class TransportSecurityOptionsJsonSerializerTest {
                                 new HashSet<>(Arrays.asList(
                                         new PeerPolicy("cfgserver", "cfgserver policy description", singleton(new Role("myrole")), Arrays.asList(
                                                 RequiredPeerCredential.of(CN, "mycfgserver"),
-                                                RequiredPeerCredential.of(SAN_DNS, "*.suffix.com"))),
+                                                RequiredPeerCredential.of(SAN_DNS, "*.suffix.com"),
+                                                RequiredPeerCredential.of(SAN_URI, "myscheme://resource/path/"))),
                                         new PeerPolicy("node", singleton(new Role("anotherrole")), Collections.singletonList(RequiredPeerCredential.of(CN, "hostname")))))))
                 .build();
 
@@ -57,6 +59,8 @@ public class TransportSecurityOptionsJsonSerializerTest {
         serializer.serialize(out, options);
         TransportSecurityOptions deserializedOptions = serializer.deserialize(new ByteArrayInputStream(out.toByteArray()));
         assertEquals(options, deserializedOptions);
+        Path expectedJsonFile = Paths.get("src/test/resources/transport-security-options-with-authz-rules.json");
+        assertJsonEquals(new String(Files.readAllBytes(expectedJsonFile)), out.toString());
     }
 
     @Test

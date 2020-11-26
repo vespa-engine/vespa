@@ -125,6 +125,7 @@ public class TransportSecurityOptionsJsonSerializer {
         switch (field) {
             case CN: return RequiredPeerCredential.Field.CN;
             case SAN_DNS: return RequiredPeerCredential.Field.SAN_DNS;
+            case SAN_URI: return RequiredPeerCredential.Field.SAN_URI;
             default: throw new IllegalArgumentException("Invalid field type: " + field);
         }
     }
@@ -171,6 +172,7 @@ public class TransportSecurityOptionsJsonSerializer {
         switch (field) {
             case CN: return CredentialField.CN;
             case SAN_DNS: return CredentialField.SAN_DNS;
+            case SAN_URI: return CredentialField.SAN_URI;
             default: throw new IllegalArgumentException("Invalid field type: " + field);
         }
     }
