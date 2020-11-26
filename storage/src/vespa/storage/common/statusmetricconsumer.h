@@ -48,31 +48,6 @@ private:
     mutable std::mutex      _lock;
     framework::SecondTime   _startTime;
     framework::SecondTime   _processedTime;
-
-    void writeXmlTags(std::ostream& out,
-                      const vespalib::StringTokenizer& name,
-                      std::vector<std::string>& xmlTags) const;
-
-    void printHtmlMetricsReport(std::ostream& out,
-                                const metrics::MetricSnapshot& data,
-                                bool includeNotUsed) const;
-
-    void printStorageHtmlReport(std::ostream& out,
-                                std::map<String, Metric::SP>& usedMetrics,
-                                const metrics::MetricSnapshot&) const;
-    void printOperationHtmlReport(std::ostream& out,
-                                  std::map<String, Metric::SP>& usedMetrics,
-                                  const metrics::MetricSnapshot&) const;
-    void printMaintOpHtmlReport(std::ostream& out,
-                                std::map<String, Metric::SP>& usedMetrics,
-                                const metrics::MetricSnapshot&) const;
-    void printMergeHtmlReport(std::ostream& out,
-                              std::map<String, Metric::SP>& usedMetrics,
-                              const metrics::MetricSnapshot& snapshot) const;
-    void printVisitHtmlReport(std::ostream& out,
-                              std::map<String, Metric::SP>& usedMetrics,
-                              const metrics::MetricSnapshot&) const;
-
 };
 
 } // storage

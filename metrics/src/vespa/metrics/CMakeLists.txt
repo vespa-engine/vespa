@@ -12,7 +12,6 @@ vespa_add_library(metrics
     metricsnapshot.cpp
     metrictimer.cpp
     metricvalueset.cpp
-    printutils.cpp
     name_repo.cpp
     state_api_adapter.cpp
     summetric.cpp
