@@ -220,7 +220,7 @@ GetConfig::Main()
     FRTConfigRequestFactory requestFactory(protocolVersion, traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
     FRTConnection connection(spec, _server->supervisor(), TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
-    ConfigState state(configMD5, generation, false, false);
+    ConfigState state(configMD5, generation, false);
     FRTConfigRequest::UP request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout * 1000);
 
     _target->InvokeSync(request->getRequest(), clientTimeout); // seconds

@@ -36,6 +36,7 @@ public class LazyConfigCompiler implements ConfigCompiler {
     public CompiledBuilder compile(ConfigDefinitionClass defClass) {
         Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(new StringSourceObject(defClass.getName(), defClass.getDefinition()));
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, Locale.ENGLISH, null);
         Iterable<String> options = Arrays.asList("-d", outputDirectory.getAbsolutePath());
         JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, compilationUnits);
@@ -46,11 +47,9 @@ public class LazyConfigCompiler implements ConfigCompiler {
      * Lazy implementation of compiled builder that defers compilation until class is requested.
      */
     private static class LazyCompiledBuilder implements CompiledBuilder {
-
         private final ClassLoader classLoader;
         private final String classUrl;
         private final CompilationTask compilationTask;
-
         private LazyCompiledBuilder(ClassLoader classLoader, String classUrl, CompilationTask compilationTask) {
             this.classLoader = classLoader;
             this.classUrl = classUrl;

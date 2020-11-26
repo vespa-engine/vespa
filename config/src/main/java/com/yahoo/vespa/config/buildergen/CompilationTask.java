@@ -13,7 +13,6 @@ import javax.tools.JavaFileObject;
  * @author Ulf Lilleengen
  */
 class CompilationTask {
-
     private final JavaCompiler.CompilationTask task;
     private final DiagnosticCollector<JavaFileObject> diagnostics;
 
