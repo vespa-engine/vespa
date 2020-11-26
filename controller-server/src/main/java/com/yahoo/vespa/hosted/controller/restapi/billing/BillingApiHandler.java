@@ -112,7 +112,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
 
     private HttpResponse getAllInvoices() {
         var invoices = billingController.getInvoices();
-        var headers = new String[]{ "ID", "Tenant", "From", "To", "CpuHours", "MemoryHours", "DiskHours", "Cpu", "Memory", "Disk" };
+        var headers = new String[]{ "ID", "Tenant", "From", "To", "CpuHours", "MemoryHours", "DiskHours", "Cpu", "Memory", "Disk", "Additional" };
         var rows = invoices.stream()
                 .map(invoice -> {
                     return new Object[] {
@@ -120,7 +120,8 @@ public class BillingApiHandler extends LoggingRequestHandler {
                             invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
                             invoice.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
                             invoice.sumCpuHours(), invoice.sumMemoryHours(), invoice.sumDiskHours(),
-                            invoice.sumCpuCost(), invoice.sumMemoryCost(), invoice.sumDiskCost()
+                            invoice.sumCpuCost(), invoice.sumMemoryCost(), invoice.sumDiskCost(),
+                            invoice.sumAdditionalCost()
                     };
                 })
                 .collect(Collectors.toList());

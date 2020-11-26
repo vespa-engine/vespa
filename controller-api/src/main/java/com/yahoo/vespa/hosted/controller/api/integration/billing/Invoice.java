@@ -104,6 +104,12 @@ public class Invoice {
         return sumResourceValues(LineItem::getDiskCost);
     }
 
+    public BigDecimal sumAdditionalCost() {
+        // anything that is not covered by the cost for resources is "additional" costs
+        var resourceCosts = sumCpuCost().add(sumMemoryCost()).add(sumDiskCost());
+        return sum().subtract(resourceCosts);
+    }
+
     private BigDecimal sumResourceValues(Function<LineItem, Optional<BigDecimal>> f) {
         return lineItems.stream().flatMap(li -> f.apply(li).stream()).reduce(SCALED_ZERO, BigDecimal::add);
     }
