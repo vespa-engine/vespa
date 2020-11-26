@@ -392,7 +392,8 @@ public:
     }
 
     api::StorageMessageAddress storageAddress(uint16_t node) {
-        return api::StorageMessageAddress("storage", lib::NodeType::STORAGE, node);
+        static vespalib::string _storage("storage");
+        return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, node);
     }
 
     std::string getSentNodes(const std::string& oldClusterState,

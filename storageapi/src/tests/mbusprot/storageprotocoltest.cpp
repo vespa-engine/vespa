@@ -115,7 +115,8 @@ namespace {
 }
 
 TEST_F(StorageProtocolTest, testAddress50) {
-    StorageMessageAddress address("foo", lib::NodeType::STORAGE, 3);
+    vespalib::string cluster("foo");
+    StorageMessageAddress address(&cluster, lib::NodeType::STORAGE, 3);
     EXPECT_EQ(vespalib::string("storage/cluster.foo/storage/3/default"),
                          address.to_mbus_route().toString());
 }
@@ -816,25 +817,25 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
 }
 
 TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
-    EXPECT_EQ(64u, sizeof(StorageMessage));
-    EXPECT_EQ(80u, sizeof(StorageReply));
-    EXPECT_EQ(104u, sizeof(BucketReply));
+    EXPECT_EQ(72u, sizeof(StorageMessage));
+    EXPECT_EQ(88u, sizeof(StorageReply));
+    EXPECT_EQ(112u, sizeof(BucketReply));
     EXPECT_EQ(8u, sizeof(document::BucketId));
     EXPECT_EQ(16u, sizeof(document::Bucket));
     EXPECT_EQ(32u, sizeof(BucketInfo));
-    EXPECT_EQ(136u, sizeof(BucketInfoReply));
-    EXPECT_EQ(280u, sizeof(PutReply));
-    EXPECT_EQ(264u, sizeof(UpdateReply));
-    EXPECT_EQ(256u, sizeof(RemoveReply));
-    EXPECT_EQ(344u, sizeof(GetReply));
-    EXPECT_EQ(80u, sizeof(StorageCommand));
-    EXPECT_EQ(104u, sizeof(BucketCommand));
-    EXPECT_EQ(104u, sizeof(BucketInfoCommand));
-    EXPECT_EQ(104u + sizeof(std::string), sizeof(TestAndSetCommand));
-    EXPECT_EQ(136u + sizeof(std::string), sizeof(PutCommand));
-    EXPECT_EQ(136u + sizeof(std::string), sizeof(UpdateCommand));
-    EXPECT_EQ(216u + sizeof(std::string), sizeof(RemoveCommand));
-    EXPECT_EQ(288u, sizeof(GetCommand));
+    EXPECT_EQ(144u, sizeof(BucketInfoReply));
+    EXPECT_EQ(288u, sizeof(PutReply));
+    EXPECT_EQ(272u, sizeof(UpdateReply));
+    EXPECT_EQ(264u, sizeof(RemoveReply));
+    EXPECT_EQ(352u, sizeof(GetReply));
+    EXPECT_EQ(88u, sizeof(StorageCommand));
+    EXPECT_EQ(112u, sizeof(BucketCommand));
+    EXPECT_EQ(112u, sizeof(BucketInfoCommand));
+    EXPECT_EQ(112u + sizeof(std::string), sizeof(TestAndSetCommand));
+    EXPECT_EQ(144u + sizeof(std::string), sizeof(PutCommand));
+    EXPECT_EQ(144u + sizeof(std::string), sizeof(UpdateCommand));
+    EXPECT_EQ(224u + sizeof(std::string), sizeof(RemoveCommand));
+    EXPECT_EQ(296u, sizeof(GetCommand));
 }
 
 } // storage::api

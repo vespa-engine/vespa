@@ -11,7 +11,7 @@ namespace storage {
 
 class DistributorMessageSenderStub : public distributor::DistributorMessageSender {
     MessageSenderStub _stub_impl;
-    std::string _cluster_name;
+    vespalib::string _cluster_name;
     distributor::PendingMessageTracker* _pending_message_tracker;
 public:
 
@@ -82,7 +82,7 @@ public:
         return 0;
     }
 
-    const std::string& getClusterName() const override {
+    const vespalib::string& getClusterName() const override {
         return _cluster_name;
     }
 

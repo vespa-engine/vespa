@@ -26,6 +26,10 @@ using storage::lib::NodeType;
 
 namespace feedbm {
 
+namespace {
+    vespalib::string _Storage("storage");
+}
+
 class StorageApiRpcBmFeedHandler::MyMessageDispatcher : public storage::MessageDispatcher,
                                  public StorageReplyErrorChecker
 {
@@ -68,7 +72,7 @@ StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& share
     : IBmFeedHandler(),
       _name(vespalib::string("StorageApiRpcBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
-      _storage_address(std::make_unique<StorageMessageAddress>("storage", distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
+      _storage_address(std::make_unique<StorageMessageAddress>(&_Storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
       _shared_rpc_resources(shared_rpc_resources_in),
       _message_dispatcher(std::make_unique<MyMessageDispatcher>()),
       _message_codec_provider(std::make_unique<storage::rpc::MessageCodecProvider>(repo, std::make_shared<documentapi::LoadTypeSet>())),
