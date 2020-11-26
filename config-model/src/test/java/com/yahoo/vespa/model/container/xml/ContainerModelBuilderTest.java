@@ -884,11 +884,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         tester.addHosts(3);
         {
             VespaModel model = tester.createModel(servicesXml.apply(3), true);
+            String componentId = "com.yahoo.vespa.curator.Curator";
             ApplicationContainerCluster cluster = model.getContainerClusters().get("default");
             assertNotNull(cluster);
-            assertComponentConfigured(cluster,"com.yahoo.vespa.curator.Curator");
-            assertComponentConfigured(cluster,"com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
-            assertComponentConfigured(cluster,"com.yahoo.vespa.zookeeper.Reconfigurer");
+            Component<?, ?> curatorComponent = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
+            assertNotNull(curatorComponent);
         }
         {
             try {
@@ -913,11 +913,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 fail("Expected exception");
             } catch (IllegalArgumentException ignored) {}
         }
-    }
-
-    private void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
-        Component<?, ?> curatorComponent = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
-        assertNotNull(curatorComponent);
     }
 
     private Element generateContainerElementWithRenderer(String rendererId) {

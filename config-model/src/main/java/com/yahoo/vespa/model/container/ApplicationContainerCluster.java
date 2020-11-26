@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.container;
 
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
-import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
@@ -28,7 +27,6 @@ import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
-import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
@@ -55,8 +53,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         RankingConstantsConfig.Producer,
         ServletPathsConfig.Producer,
         ContainerMbusConfig.Producer,
-        MetricsProxyApiConfig.Producer,
-        ZookeeperServerConfig.Producer {
+        MetricsProxyApiConfig.Producer {
 
     public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
     public static final BindingPattern METRICS_V2_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(MetricsV2Handler.V2_PATH);
@@ -251,20 +248,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ?
                                                              heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster :
                                                              heapSizePercentageOfTotalNodeMemory);
-        }
-    }
-
-    @Override
-    public void getConfig(ZookeeperServerConfig.Builder builder) {
-        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
-
-        // Note: Default client and server ports are used, so not set here
-        for (Container container : getContainers()) {
-            ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
-            serverBuilder.hostname(container.getHostName());
-            serverBuilder.id(container.index());
-            builder.server(serverBuilder);
-            builder.dynamicReconfiguration(true);
         }
     }
 
