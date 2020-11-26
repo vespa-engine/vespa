@@ -43,6 +43,11 @@ public class ReconfigurerTest {
 
         // Created config has dynamicReconfig set to true
         assertTrue(reconfigurer.shouldReconfigure(createConfigAllowReconfiguring(2)));
+
+        // Test that equal config does not cause reconfiguration
+        Reconfigurer reconfigurer2 = new Reconfigurer();
+        reconfigurer2.startOrReconfigure(createConfigAllowReconfiguring(1));
+        assertFalse(reconfigurer2.shouldReconfigure(createConfigAllowReconfiguring(1)));
     }
 
     private ZookeeperServerConfig createConfigAllowReconfiguring(int numberOfServers) {
