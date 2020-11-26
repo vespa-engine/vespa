@@ -887,8 +887,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             ApplicationContainerCluster cluster = model.getContainerClusters().get("default");
             assertNotNull(cluster);
             assertComponentConfigured(cluster,"com.yahoo.vespa.curator.Curator");
-            assertComponentConfigured(cluster,"com.yahoo.vespa.curator.ReconfigurableVespaZooKeeperServer");
-            assertComponentConfigured(cluster,"com.yahoo.vespa.curator.Reconfigurer");
+            assertComponentConfigured(cluster,"com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
+            assertComponentConfigured(cluster,"com.yahoo.vespa.zookeeper.Reconfigurer");
         }
         {
             try {

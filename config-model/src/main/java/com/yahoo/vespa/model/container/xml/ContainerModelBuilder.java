@@ -218,8 +218,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT);
         }
         cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
-        cluster.addSimpleComponent("com.yahoo.vespa.curator.ReconfigurableVespaZooKeeperServer", null, "zkfacade");
-        cluster.addSimpleComponent("com.yahoo.vespa.curator.Reconfigurer", null, "zkfacade");
+        cluster.addSimpleComponent("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer", null, "zookeeper-server");
+        cluster.addSimpleComponent("com.yahoo.vespa.zookeeper.Reconfigurer", null, "zookeeper-server");
     }
 
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec) {
