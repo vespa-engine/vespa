@@ -12,15 +12,15 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-TensorSpec dense_2d_some_cells(bool float_cells, bool square) {
-    return TensorSpec(fmt("tensor%s(a[3],d[5])", float_cells ? "<float>" : ""))
+TensorSpec dense_2d_some_cells(bool square) {
+    return TensorSpec("tensor(a[3],d[5])")
         .add({{"a", 1}, {"d", 2}}, square ? 9.0 : 3.0)
         .add({{"a", 2}, {"d", 4}}, square ? 16.0 : 4.0)
         .add({{"a", 1}, {"d", 0}}, square ? 25.0 : 5.0);
 }
 
-TensorSpec sparse_2d_some_cells(bool float_cells, bool square) {
-    return TensorSpec(fmt("tensor%s(c{},e{})", float_cells ? "<float>" : ""))
+TensorSpec sparse_2d_some_cells(bool square) {
+    return TensorSpec("tensor(c{},e{})")
         .add({{"c", "foo"}, {"e", "foo"}}, square ? 1.0 : 1.0)
         .add({{"c", "foo"}, {"e", "bar"}}, square ? 4.0 : 2.0)
         .add({{"c", "bar"}, {"e", "bar"}}, square ? 9.0 : 3.0)
@@ -28,8 +28,8 @@ TensorSpec sparse_2d_some_cells(bool float_cells, bool square) {
         .add({{"c", "qux"}, {"e", "qux"}}, square ? 25.0 : 5.0);
 }
 
-TensorSpec mixed_5d_some_cells(bool float_cells, bool square) {
-    return TensorSpec(fmt("tensor%s(a[3],b[1],c{},d[5],e{})", float_cells ? "<float>" : ""))
+TensorSpec mixed_5d_some_cells(bool square) {
+    return TensorSpec("tensor(a[3],b[1],c{},d[5],e{})")
         .add({{"a", 1}, {"b", 0}, {"c", "foo"}, {"d", 2}, {"e", "bar"}}, square ? 4.0 : 2.0)
         .add({{"a", 2}, {"b", 0}, {"c", "bar"}, {"d", 3}, {"e", "bar"}}, square ? 9.0 : 3.0)
         .add({{"a", 0}, {"b", 0}, {"c", "foo"}, {"d", 4}, {"e", "foo"}}, square ? 16.0 : 4.0)
@@ -37,15 +37,15 @@ TensorSpec mixed_5d_some_cells(bool float_cells, bool square) {
         .add({{"a", 2}, {"b", 0}, {"c", "qux"}, {"d", 1}, {"e", "foo"}}, square ? 36.0 : 6.0);
 }
 
-TensorSpec dense_1d_all_two(bool float_cells) {
-    return TensorSpec(fmt("tensor%s(a[3])", float_cells ? "<float>" : ""))
+TensorSpec dense_1d_all_two() {
+    return TensorSpec("tensor(a[3])")
         .add({{"a", 0}}, 2.0)
         .add({{"a", 1}}, 2.0)
         .add({{"a", 2}}, 2.0);
 }
 
-TensorSpec sparse_1d_all_two(bool float_cells) {
-    return TensorSpec(fmt("tensor%s(c{})", float_cells ? "<float>" : ""))
+TensorSpec sparse_1d_all_two() {
+    return TensorSpec("tensor(c{})")
         .add({{"c", "foo"}}, 2.0)
         .add({{"c", "bar"}}, 2.0)
         .add({{"c", "qux"}}, 2.0);
@@ -62,27 +62,26 @@ TEST(ReferenceOperationsTest, concat_gives_expected_results) {
         .add({{"x", 0}}, 7.0)
         .add({{"x", 1}}, 4.0);
     EXPECT_EQ(output, expect);
-    a = TensorSpec("tensor<float>(a[3])")
+    a = TensorSpec("tensor(a[3])")
         .add({{"a", 0}}, 1.0)
         .add({{"a", 1}}, 2.0)
         .add({{"a", 2}}, 3.0);
     output = ReferenceOperations::concat(a, b, "a");
-    expect = TensorSpec("tensor<float>(a[4])")
+    expect = TensorSpec("tensor(a[4])")
         .add({{"a", 0}}, 1.0)
         .add({{"a", 1}}, 2.0)
         .add({{"a", 2}}, 3.0)
         .add({{"a", 3}}, 4.0);
     EXPECT_EQ(output, expect);
     output = ReferenceOperations::concat(b, a, "a");
-    expect = TensorSpec("tensor<float>(a[4])")
+    expect = TensorSpec("tensor(a[4])")
         .add({{"a", 0}}, 4.0)
         .add({{"a", 1}}, 1.0)
         .add({{"a", 2}}, 2.0)
         .add({{"a", 3}}, 3.0);
     EXPECT_EQ(output, expect);
-    bool use_float = false;
-    a = mixed_5d_some_cells(use_float, false);
-    b = mixed_5d_some_cells(use_float, true);
+    a = mixed_5d_some_cells(false);
+    b = mixed_5d_some_cells(true);
     output = ReferenceOperations::concat(a, b, "a");
     EXPECT_EQ(output.type(), "tensor(a[6],b[1],c{},d[5],e{})");
     output = ReferenceOperations::concat(a, b, "b");
@@ -114,23 +113,22 @@ TEST(ReferenceOperationsTest, join_gives_expected_results) {
     auto b = TensorSpec("tensor()").add({}, 4.0);
     auto output = ReferenceOperations::join(a, b, operation::Sub::f);
     EXPECT_EQ(output, TensorSpec("double").add({}, 3.0));
-    for (bool use_float : {false, true}) {
-        const auto expect_sq = mixed_5d_some_cells(use_float, true);
-        a = mixed_5d_some_cells(use_float, false);
-        b = TensorSpec("double").add({}, 2.0);
-        output = ReferenceOperations::join(a, b, operation::Pow::f);
-        EXPECT_EQ(output, expect_sq);
-        output = ReferenceOperations::join(a, a, operation::Mul::f);        
-        EXPECT_EQ(output, expect_sq);
-        auto c = ReferenceOperations::join(output, a, operation::Div::f);
-        EXPECT_EQ(c, a);
-        b = dense_1d_all_two(use_float);
-        output = ReferenceOperations::join(a, b, operation::Pow::f);
-        EXPECT_EQ(output, expect_sq);
-        b = sparse_1d_all_two(use_float);
-        output = ReferenceOperations::join(a, b, operation::Pow::f);
-        EXPECT_EQ(output, expect_sq);
-    }
+
+    const auto expect_sq = mixed_5d_some_cells(true);
+    a = mixed_5d_some_cells(false);
+    b = TensorSpec("double").add({}, 2.0);
+    output = ReferenceOperations::join(a, b, operation::Pow::f);
+    EXPECT_EQ(output, expect_sq);
+    output = ReferenceOperations::join(a, a, operation::Mul::f);        
+    EXPECT_EQ(output, expect_sq);
+    auto c = ReferenceOperations::join(output, a, operation::Div::f);
+    EXPECT_EQ(c, a);
+    b = dense_1d_all_two();
+    output = ReferenceOperations::join(a, b, operation::Pow::f);
+    EXPECT_EQ(output, expect_sq);
+    b = sparse_1d_all_two();
+    output = ReferenceOperations::join(a, b, operation::Pow::f);
+    EXPECT_EQ(output, expect_sq);
 }
 
 TEST(ReferenceOperationsTest, map_gives_expected_results) {
@@ -140,24 +138,22 @@ TEST(ReferenceOperationsTest, map_gives_expected_results) {
     auto out2 = ReferenceOperations::map(output, operation::Neg::f);
     EXPECT_EQ(out2, TensorSpec("double").add({}, -1.0));
 
-    for (bool use_float : {false, true}) {
-        input = dense_2d_some_cells(use_float, false);
-        output = ReferenceOperations::map(input, operation::Square::f);
-        EXPECT_EQ(output, dense_2d_some_cells(use_float, true));
+    input = dense_2d_some_cells(false);
+    output = ReferenceOperations::map(input, operation::Square::f);
+    EXPECT_EQ(output, dense_2d_some_cells(true));
         
-        input = sparse_2d_some_cells(use_float, false);
-        output = ReferenceOperations::map(input, operation::Square::f);
-        EXPECT_EQ(output, sparse_2d_some_cells(use_float, true));
+    input = sparse_2d_some_cells(false);
+    output = ReferenceOperations::map(input, operation::Square::f);
+    EXPECT_EQ(output, sparse_2d_some_cells(true));
         
-        input = mixed_5d_some_cells(use_float, false);
-        output = ReferenceOperations::map(input, operation::Square::f);
-        EXPECT_EQ(output, mixed_5d_some_cells(use_float, true));
-    }
+    input = mixed_5d_some_cells(false);
+    output = ReferenceOperations::map(input, operation::Square::f);
+    EXPECT_EQ(output, mixed_5d_some_cells(true));
 }
 
 
 TEST(ReferenceOperationsTest, merge_gives_expected_results) {
-    auto a = mixed_5d_some_cells(false, false);
+    auto a = mixed_5d_some_cells(false);
     auto b = TensorSpec("tensor(a[3],b[1],c{},d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"c", "foo"}, {"d", 4}, {"e", "foo"}}, 0.0)
         .add({{"a", 1}, {"b", 0}, {"c", "bar"}, {"d", 0}, {"e", "qux"}}, 42.0)
@@ -176,12 +172,12 @@ TEST(ReferenceOperationsTest, merge_gives_expected_results) {
 //-----------------------------------------------------------------------------
 
 TEST(ReferenceOperationsTest, peek_verbatim_labels) {
-    auto input = sparse_2d_some_cells(true, true);
+    auto input = sparse_2d_some_cells(true);
     ReferenceOperations::PeekSpec spec;
     spec.emplace("c", "qux");
     // peek 1 mapped dimension, verbatim label
     auto output = ReferenceOperations::peek(input, spec, {});
-    auto expect = TensorSpec("tensor<float>(e{})")
+    auto expect = TensorSpec("tensor(e{})")
         .add({{"e","foo"}}, 16.0)
         .add({{"e","qux"}}, 25.0);
     EXPECT_EQ(output, expect);
@@ -195,7 +191,7 @@ TEST(ReferenceOperationsTest, peek_verbatim_labels) {
     spec.emplace("c", "nomatch");
     // peek 1 mapped dimension, non-matching verbatim label
     output = ReferenceOperations::peek(input, spec, {});
-    expect = TensorSpec("tensor<float>(e{})");
+    expect = TensorSpec("tensor(e{})");
     EXPECT_EQ(output, expect);    
     spec.emplace("e", "nomatch");
     // peek all mapped dimensions, non-matching verbatim labels
@@ -203,12 +199,12 @@ TEST(ReferenceOperationsTest, peek_verbatim_labels) {
     expect = TensorSpec("double");
     EXPECT_EQ(output, expect);    
 
-    input = dense_2d_some_cells(true, false);
+    input = dense_2d_some_cells(false);
     spec.clear();
     spec.emplace("a", TensorSpec::Label(1));
     // peek 1 indexed dimension, verbatim label
     output = ReferenceOperations::peek(input, spec, {});
-    expect = TensorSpec("tensor<float>(d[5])")
+    expect = TensorSpec("tensor(d[5])")
         .add({{"d", 2}}, 3.0)
         .add({{"d", 0}}, 5.0);
     EXPECT_EQ(output, expect);
@@ -226,7 +222,7 @@ TEST(ReferenceOperationsTest, peek_labels_from_children) {
     auto too_big_ch = TensorSpec("double").add({}, 42.0);
     std::vector<TensorSpec> children = {too_big_ch, too_big_ch, zero_ch, pos_ch, neg_ch, too_big_ch};
 
-    auto input = dense_2d_some_cells(false, false);
+    auto input = dense_2d_some_cells(false);
     ReferenceOperations::PeekSpec spec;
     spec.emplace("a", size_t(3));
     // peek 1 indexed dimension, child (evaluating to 1.0)
@@ -296,7 +292,7 @@ TEST(ReferenceOperationsTest, peek_mixed) {
     auto neg_ch = TensorSpec("double").add({}, -2.0);
     auto too_big_ch = TensorSpec("double").add({}, 42.0);
     std::vector<TensorSpec> children = {too_big_ch, too_big_ch, zero_ch, pos_ch, neg_ch, too_big_ch};
-    auto input = TensorSpec("tensor<float>(a[3],b[1],c{},d[5],e{})")
+    auto input = TensorSpec("tensor(a[3],b[1],c{},d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"c", "-2"}, {"d", 1}, {"e", "foo"}},  1.0)
         .add({{"a", 0}, {"b", 0}, {"c", "1"}, {"d", 4}, {"e", "foo"}},   2.0) 
         .add({{"a", 1}, {"b", 0}, {"c", "-1"}, {"d", 4}, {"e", "foo"}},  3.0)
@@ -323,7 +319,7 @@ TEST(ReferenceOperationsTest, peek_mixed) {
     spec.emplace("c", size_t(4));
     spec.emplace("e", "foo");
     auto output = ReferenceOperations::peek(input, spec, children);
-    auto expect = TensorSpec("tensor<float>(d[5])")
+    auto expect = TensorSpec("tensor(d[5])")
         .add({{"d", 1}}, 6.0)
         .add({{"d", 2}}, 8.0)
         .add({{"d", 3}}, 10.0)
@@ -335,7 +331,7 @@ TEST(ReferenceOperationsTest, peek_mixed) {
 //-----------------------------------------------------------------------------
 
 TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
-    auto input = TensorSpec("tensor<float>(a[3],b[1],c{},d[5],e{})")
+    auto input = TensorSpec("tensor(a[3],b[1],c{},d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"c", "bar"}, {"d", 1}, {"e", "foo"}},  5.0)
         .add({{"a", 0}, {"b", 0}, {"c", "bar"}, {"d", 4}, {"e", "foo"}},  3.0)
         .add({{"a", 0}, {"b", 0}, {"c", "foo"}, {"d", 1}, {"e", "foo"}},  4.0)
@@ -351,7 +347,7 @@ TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
         .add({{"a", 2}, {"b", 0}, {"c", "qux"}, {"d", 1}, {"e", "foo"}},  14.0);
 
     auto output = ReferenceOperations::reduce(input, {"a"}, Aggr::SUM);
-    auto expect = TensorSpec("tensor<float>(b[1],c{},d[5],e{})")
+    auto expect = TensorSpec("tensor(b[1],c{},d[5],e{})")
         .add({{"b", 0}, {"c", "bar"}, {"d", 0}, {"e", "qux"}},  7.0)
         .add({{"b", 0}, {"c", "bar"}, {"d", 1}, {"e", "foo"}},  5.0)
         .add({{"b", 0}, {"c", "bar"}, {"d", 2}, {"e", "bar"}},  13.0)
@@ -368,7 +364,7 @@ TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
     EXPECT_EQ(output, expect);
 
     output = ReferenceOperations::reduce(input, {"a", "b", "d"}, Aggr::SUM);
-    expect = TensorSpec("tensor<float>(c{},e{})")
+    expect = TensorSpec("tensor(c{},e{})")
         .add({{"c", "bar"}, {"e", "bar"}},  25.0)
         .add({{"c", "bar"}, {"e", "foo"}},   8.0)
         .add({{"c", "bar"}, {"e", "qux"}},  16.0)
@@ -379,7 +375,7 @@ TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
     EXPECT_EQ(output, expect);
 
     output = ReferenceOperations::reduce(input, {"c"}, Aggr::SUM);
-    expect = TensorSpec("tensor<float>(a[3],b[1],d[5],e{})")
+    expect = TensorSpec("tensor(a[3],b[1],d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"d", 1}, {"e", "foo"}},  9.0)
         .add({{"a", 0}, {"b", 0}, {"d", 2}, {"e", "foo"}},  6.0)
         .add({{"a", 0}, {"b", 0}, {"d", 4}, {"e", "foo"}},  5.0)
@@ -394,7 +390,7 @@ TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
     EXPECT_EQ(output, expect);
     
     output = ReferenceOperations::reduce(input, {"a", "c"}, Aggr::SUM);
-    expect = TensorSpec("tensor<float>(b[1],d[5],e{})")
+    expect = TensorSpec("tensor(b[1],d[5],e{})")
         .add({{"b", 0}, {"d", 0}, {"e", "qux"}},  7.0)
         .add({{"b", 0}, {"d", 1}, {"e", "foo"}},  23.0)
         .add({{"b", 0}, {"d", 1}, {"e", "qux"}},  8.0)
@@ -407,7 +403,7 @@ TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
     EXPECT_EQ(output, expect);
 
     output = ReferenceOperations::reduce(input, {"a", "c", "d"}, Aggr::SUM);
-    expect = TensorSpec("tensor<float>(b[1],e{})")
+    expect = TensorSpec("tensor(b[1],e{})")
         .add({{"b", 0}, {"e", "bar"}},  35.0)
         .add({{"b", 0}, {"e", "foo"}},  45.0)
         .add({{"b", 0}, {"e", "qux"}},  24.0);
@@ -422,7 +418,7 @@ TEST(ReferenceOperationsTest, reduce_gives_expected_results) {
 
 
 TEST(ReferenceOperationsTest, rename_gives_expected_results) {
-    auto input = mixed_5d_some_cells(false, false);
+    auto input = mixed_5d_some_cells(false);
     auto output = ReferenceOperations::rename(input,
                                               {"a","b","c","e"},
                                               {"e","x","b","a"});
