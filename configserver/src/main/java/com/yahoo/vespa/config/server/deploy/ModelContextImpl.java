@@ -148,15 +148,12 @@ public class ModelContextImpl implements ModelContext {
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
         private final boolean enableAutomaticReindexing;
-        private final boolean dynamicReconfigurationOfZookeeperCluster;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.enableAutomaticReindexing = flagValue(source, appId, Flags.ENABLE_AUTOMATIC_REINDEXING);
-            this.dynamicReconfigurationOfZookeeperCluster = flagValue(source, appId, Flags.DYNAMIC_RECONFIGURATION_OF_ZOOKEEPER_CLUSTER);
         }
 
         @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
-        @Override public boolean dynamicReconfigurationOfZookeeperCluster() { return dynamicReconfigurationOfZookeeperCluster; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

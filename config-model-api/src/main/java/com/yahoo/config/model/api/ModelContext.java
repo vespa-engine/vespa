@@ -52,7 +52,6 @@ public interface ModelContext {
 
     interface FeatureFlags {
         @ModelFeatureFlag(owner = "bjorncs") default boolean enableAutomaticReindexing() { return false; }
-        @ModelFeatureFlag(owner = "hmusum") default boolean dynamicReconfigurationOfZookeeperCluster() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
