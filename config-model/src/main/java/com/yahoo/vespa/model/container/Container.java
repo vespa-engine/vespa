@@ -58,7 +58,7 @@ public abstract class Container extends AbstractService implements
     public static final int BASEPORT = Defaults.getDefaults().vespaWebServicePort();
     public static final String SINGLENODE_CONTAINER_SERVICESPEC = "default_singlenode_container";
 
-    /** The cluster this contasiner belongs to, or null if it is not added to any cluster */
+    /** The cluster this container belongs to, or null if it is not added to any cluster */
     private ContainerCluster owner = null;
 
     protected final AbstractConfigProducer parent;
@@ -306,9 +306,7 @@ public abstract class Container extends AbstractService implements
                         .port(getRpcPort())
                         .slobrokId(serviceSlobrokId()))
                 .filedistributor(filedistributorConfig())
-                .discriminator((clusterName != null ? clusterName + "." : "" ) + name)
-                .restartOnDeploy(owner != null && owner.getDeferChangesUntilRestart());
-
+                .discriminator((clusterName != null ? clusterName + "." : "" ) + name);
     }
 
     /** Returns the jvm args set explicitly for this node */
@@ -330,6 +328,7 @@ public abstract class Container extends AbstractService implements
 
     @Override
     public void getConfig(ComponentsConfig.Builder builder) {
+        builder.setApplyOnRestart(owner.getDeferChangesUntilRestart()); //  Sufficient to set on one config
         builder.components.addAll(ComponentsConfigGenerator.generate(allEnabledComponents()));
     }
 
