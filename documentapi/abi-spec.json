@@ -1527,7 +1527,6 @@
     ],
     "methods": [
       "public void <init>(java.util.Map)",
-      "public java.lang.String getDistributionConfigId()",
       "public com.yahoo.documentapi.messagebus.protocol.StoragePolicy$SlobrokHostPatternGenerator createPatternGenerator()"
     ],
     "fields": []
