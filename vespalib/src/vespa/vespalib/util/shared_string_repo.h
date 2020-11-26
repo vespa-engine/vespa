@@ -17,13 +17,7 @@ namespace vespalib {
  * 32-bit id that can be used by the application to check for
  * equality. The repo can never be shrunk in size, but ids can be
  * re-used when the corresponding strings are evicted from the
- * repo. Strong handles are used to track which strings are in
- * use. Weak handles are used as a cheap alternative to strong handles
- * when you also have a strong handle that ensures the string will not
- * be evicted. For example, an efficient sparse tensor attribute could
- * have a pool of strong handles to all strings used
- * internally. Individual tensor indexes could then contain only weak
- * handles, making string comparison as cheap as possible.
+ * repo. Handle objects are used to track which strings are in use.
  **/
 class SharedStringRepo {
 private:
@@ -142,15 +136,21 @@ private:
     }
 
     static vespalib::string get(uint32_t id) {
-        uint32_t part = (id - 1) & PART_MASK;
-        uint32_t local_idx = (id - 1) >> PART_BITS;
-        return _partitions[part].get(local_idx);
+        if (id != 0) {
+            uint32_t part = (id - 1) & PART_MASK;
+            uint32_t local_idx = (id - 1) >> PART_BITS;
+            return _partitions[part].get(local_idx);
+        } else {
+            return {};
+        }
     }
 
     static uint32_t copy(uint32_t id) {
-        uint32_t part = (id - 1) & PART_MASK;
-        uint32_t local_idx = (id - 1) >> PART_BITS;
-        _partitions[part].copy(local_idx);
+        if (id != 0) {
+            uint32_t part = (id - 1) & PART_MASK;
+            uint32_t local_idx = (id - 1) >> PART_BITS;
+            _partitions[part].copy(local_idx);
+        }
         return id;
     }
 
