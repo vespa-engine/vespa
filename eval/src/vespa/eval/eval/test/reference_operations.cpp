@@ -232,6 +232,9 @@ TensorSpec ReferenceOperations::peek(const TensorSpec &param, const PeekSpec &pe
             result.add(my_addr, cell.second);
         }
     }
+    if (result.cells().empty() && result_type.is_scalar()) {
+        result.add({}, 0.0);
+    }
     return result;
 }
 
@@ -283,5 +286,32 @@ TensorSpec ReferenceOperations::rename(const TensorSpec &a, const std::vector<ve
     return result;
 }
 
+TensorSpec ReferenceOperations::lambda(const vespalib::string &type_in, lambda_fun_t fun) {
+    ValueType type = ValueType::from_spec(type_in);
+    TensorSpec result(type.to_spec());
+    if (type.is_error()) {
+        return result;
+    }
+    std::vector<size_t> sizes;
+    for (const auto &dim: type.dimensions()) {
+        assert(dim.is_indexed());
+        sizes.push_back(dim.size);
+    }
+    TensorSpec::Address addr;
+    std::vector<size_t> indexes(type.dimensions().size());
+    std::function<void(size_t)> loop = [&](size_t idx) {
+        if (idx == sizes.size()) {
+            result.add(addr, fun(indexes));
+        } else {
+            for (size_t i = 0; i < sizes[idx]; ++i) {
+                addr.insert_or_assign(type.dimensions()[idx].name, TensorSpec::Label(i));
+                indexes[idx] = i;
+                loop(idx + 1);
+            }
+        }
+    };
+    loop(0);
+    return result;
+}
 
 } // namespace

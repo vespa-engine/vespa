@@ -115,6 +115,16 @@ TensorSpec & TensorSpec::operator = (const TensorSpec &) = default;
 
 TensorSpec::~TensorSpec() { }
 
+double
+TensorSpec::as_double() const
+{
+    double result = 0.0;
+    for (const auto &[key, value]: _cells) {
+        result += value.value;
+    }
+    return result;
+}
+
 TensorSpec &
 TensorSpec::add(Address address, double value) {
     auto [iter, inserted] = _cells.emplace(std::move(address), value);

@@ -68,6 +68,7 @@ public:
     TensorSpec(const TensorSpec &);
     TensorSpec & operator = (const TensorSpec &);
     ~TensorSpec();
+    double as_double() const;
     TensorSpec &add(Address address, double value);
     const vespalib::string &type() const { return _type; }
     const Cells &cells() const { return _cells; }

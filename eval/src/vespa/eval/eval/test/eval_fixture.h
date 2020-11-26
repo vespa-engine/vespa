@@ -86,9 +86,7 @@ public:
     const TensorSpec &result() const { return _result; }
     const TensorSpec get_param(size_t idx) const;
     size_t num_params() const;
-    static TensorSpec ref(const vespalib::string &expr, const ParamRepo &param_repo) {
-        return EvalFixture(SimpleTensorEngine::ref(), expr, param_repo, false, false).result();
-    }
+    static TensorSpec ref(const vespalib::string &expr, const ParamRepo &param_repo);
     static TensorSpec prod(const vespalib::string &expr, const ParamRepo &param_repo) {
         return EvalFixture(FastValueBuilderFactory::get(), expr, param_repo, true, false).result();
     }

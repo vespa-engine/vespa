@@ -251,7 +251,7 @@ TEST(ReferencePeekTest, verbatim_labels) {
     spec.emplace("e", "nomatch");
     // peek all mapped dimensions, non-matching verbatim labels
     output = ReferenceOperations::peek(input, spec, {});
-    expect = TensorSpec("double");
+    expect = TensorSpec("double").add({}, 0.0);
     EXPECT_EQ(output, expect);    
 
     input = dense_2d_some_cells(false);
@@ -485,6 +485,42 @@ TEST(ReferenceRenameTest, swap_and_rename_dimensions) {
         .add({{"e", 1}, {"x", 0}, {"b", "bar"}, {"d", 0}, {"a", "qux"}}, 5.0)
         .add({{"e", 2}, {"x", 0}, {"b", "qux"}, {"d", 1}, {"a", "foo"}}, 6.0);
     EXPECT_EQ(output, expect);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ReferenceLambdaTest, make_double) {
+    auto fun = [&](const std::vector<size_t> &indexes) {
+        EXPECT_EQ(indexes.size(), 0);
+        return double(5);
+    };
+    auto expect = TensorSpec("double").add({}, 5.0);
+    EXPECT_EQ(ReferenceOperations::lambda("double", fun), expect);
+}
+
+TEST(ReferenceLambdaTest, make_vector) {
+    auto fun = [&](const std::vector<size_t> &indexes) {
+        EXPECT_EQ(indexes.size(), 1);
+        return double(indexes[0] + 1.0);
+    };
+    auto expect = TensorSpec("tensor(x[3])")
+                  .add({{"x", 0}}, 1.0)
+                  .add({{"x", 1}}, 2.0)
+                  .add({{"x", 2}}, 3.0);
+    EXPECT_EQ(ReferenceOperations::lambda("tensor(x[3])", fun), expect);
+}
+
+TEST(ReferenceLambdaTest, make_matrix) {
+    auto fun = [&](const std::vector<size_t> &indexes) {
+        EXPECT_EQ(indexes.size(), 2);
+        return double(indexes[0] * 10 + indexes[1] + 1.0);
+    };
+    auto expect = TensorSpec("tensor(x[2],y[2])")
+                  .add({{"x", 0}, {"y", 0}}, 1.0)
+                  .add({{"x", 0}, {"y", 1}}, 2.0)
+                  .add({{"x", 1}, {"y", 0}}, 11.0)
+                  .add({{"x", 1}, {"y", 1}}, 12.0);
+    EXPECT_EQ(ReferenceOperations::lambda("tensor(x[2],y[2])", fun), expect);
 }
 
 //-----------------------------------------------------------------------------

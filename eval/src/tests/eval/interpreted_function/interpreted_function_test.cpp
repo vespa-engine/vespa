@@ -84,7 +84,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
     }
 };
 
-TEST_FF("require that compiled evaluation passes all conformance tests", MyEvalTest(), test::EvalSpec()) {
+TEST_FF("require that interpreted evaluation passes all conformance tests", MyEvalTest(), test::EvalSpec()) {
     f1.print_fail = true;
     f2.add_all_cases();
     f2.each_case(f1);
