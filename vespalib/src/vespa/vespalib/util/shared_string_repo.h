@@ -30,7 +30,7 @@ private:
         uint32_t hash;
     };
 
-    class Partition {
+    class alignas(64) Partition {
     public:
         struct Entry {
             uint32_t hash;
@@ -100,7 +100,7 @@ private:
             }
         }
 
-        vespalib::string get(uint32_t idx) {
+        vespalib::string as_string(uint32_t idx) {
             std::lock_guard guard(_lock);
             return _entries[idx].str;
         }
@@ -121,9 +121,12 @@ private:
         }
     };
 
-    static std::array<Partition,NUM_PARTS> _partitions;
+    std::array<Partition,NUM_PARTS> _partitions;
 
-    static uint32_t resolve(vespalib::stringref str) {
+    SharedStringRepo();
+    ~SharedStringRepo();
+
+    uint32_t resolve(vespalib::stringref str) {
         if (!str.empty()) {
             uint64_t full_hash = XXH3_64bits(str.data(), str.size());
             uint32_t part = full_hash & PART_MASK;
@@ -135,17 +138,17 @@ private:
         }
     }
 
-    static vespalib::string get(uint32_t id) {
+    vespalib::string as_string(uint32_t id) {
         if (id != 0) {
             uint32_t part = (id - 1) & PART_MASK;
             uint32_t local_idx = (id - 1) >> PART_BITS;
-            return _partitions[part].get(local_idx);
+            return _partitions[part].as_string(local_idx);
         } else {
             return {};
         }
     }
 
-    static uint32_t copy(uint32_t id) {
+    uint32_t copy(uint32_t id) {
         if (id != 0) {
             uint32_t part = (id - 1) & PART_MASK;
             uint32_t local_idx = (id - 1) >> PART_BITS;
@@ -154,7 +157,7 @@ private:
         return id;
     }
 
-    static void reclaim(uint32_t id) {
+    void reclaim(uint32_t id) {
         if (id != 0) {
             uint32_t part = (id - 1) & PART_MASK;
             uint32_t local_idx = (id - 1) >> PART_BITS;
@@ -163,31 +166,33 @@ private:
     }
 
 public:
+    static SharedStringRepo &get();
+
     class Handle {
     private:
         uint32_t _id;
     public:
         Handle() : _id(0) {}
-        Handle(vespalib::stringref str) : _id(resolve(str)) {}
-        Handle(const Handle &rhs) : _id(copy(rhs._id)) {}
+        Handle(vespalib::stringref str) : _id(get().resolve(str)) {}
+        Handle(const Handle &rhs) : _id(get().copy(rhs._id)) {}
         Handle &operator=(const Handle &rhs) {
-            reclaim(_id);
-            _id = copy(rhs._id);
+            get().reclaim(_id);
+            _id = get().copy(rhs._id);
             return *this;            
         }
         Handle(Handle &&rhs) noexcept : _id(rhs._id) {
             rhs._id = 0;
         }
         Handle &operator=(Handle &&rhs) {
-            reclaim(_id);
+            get().reclaim(_id);
             _id = rhs._id;
             rhs._id = 0;
             return *this;
         }
         bool operator==(const Handle &rhs) const { return (_id == rhs._id); }
         uint32_t id() const { return _id; }
-        vespalib::string as_string() const { return SharedStringRepo::get(_id); }
-        ~Handle() { reclaim(_id); }
+        vespalib::string as_string() const { return get().as_string(_id); }
+        ~Handle() { get().reclaim(_id); }
     };
 };
 

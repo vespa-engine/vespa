@@ -6,6 +6,14 @@ namespace vespalib {
 
 SharedStringRepo::Partition::~Partition() = default;
 
-std::array<SharedStringRepo::Partition, SharedStringRepo::NUM_PARTS> SharedStringRepo::_partitions{};
+SharedStringRepo::SharedStringRepo() = default;
+SharedStringRepo::~SharedStringRepo() = default;
+
+SharedStringRepo &
+SharedStringRepo::get()
+{
+    static SharedStringRepo repo;
+    return repo;
+}
 
 }
