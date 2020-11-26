@@ -23,14 +23,11 @@ struct BucketDBMetricUpdaterTest : Test {
     using NodeToReplicasMap = std::unordered_map<uint16_t, uint32_t>;
     NodeToReplicasMap replicaStatsOf(BucketDBMetricUpdater& metricUpdater);
 
-    metrics::LoadTypeSet _loadTypes;
-
     BucketDBMetricUpdaterTest();
 };
 
 BucketDBMetricUpdaterTest::BucketDBMetricUpdaterTest()
 {
-    _loadTypes.push_back(metrics::LoadType(0, "foo"));
 }
 
 namespace {
@@ -65,7 +62,7 @@ makeInfo(uint32_t copy0Crc, uint32_t copy1Crc)
 TEST_F(BucketDBMetricUpdaterTest, doc_and_byte_counts_are_updated) {
     BucketDBMetricUpdater metricUpdater;
     IdealStateMetricSet ims;
-    DistributorMetricSet dms(_loadTypes);
+    DistributorMetricSet dms;
 
     EXPECT_FALSE(metricUpdater.hasCompletedRound());
 
@@ -104,7 +101,7 @@ TEST_F(BucketDBMetricUpdaterTest, doc_and_byte_counts_are_updated) {
 TEST_F(BucketDBMetricUpdaterTest, bucket_db_memory_usage_metrics_are_updated) {
     BucketDBMetricUpdater metric_updater;
     IdealStateMetricSet ims;
-    DistributorMetricSet dms(_loadTypes);
+    DistributorMetricSet dms;
 
     vespalib::MemoryUsage mem_usage;
     mem_usage.incAllocatedBytes(1000);
@@ -138,7 +135,7 @@ TEST_F(BucketDBMetricUpdaterTest, bucket_db_memory_usage_metrics_are_updated) {
 TEST_F(BucketDBMetricUpdaterTest, buckets_with_too_few_and_too_many_copies) {
     BucketDBMetricUpdater metricUpdater;
     IdealStateMetricSet ims;
-    DistributorMetricSet dms(_loadTypes);
+    DistributorMetricSet dms;
 
     metricUpdater.completeRound();
     metricUpdater.getLastCompleteStats().propagateMetrics(ims, dms);
@@ -186,7 +183,7 @@ TEST_F(BucketDBMetricUpdaterTest, buckets_with_too_few_and_too_many_copies) {
 TEST_F(BucketDBMetricUpdaterTest, buckets_with_varying_trustedness) {
     BucketDBMetricUpdater metricUpdater;
     IdealStateMetricSet ims;
-    DistributorMetricSet dms(_loadTypes);
+    DistributorMetricSet dms;
 
     metricUpdater.completeRound(false);
     metricUpdater.getLastCompleteStats().propagateMetrics(ims, dms);
@@ -222,7 +219,7 @@ TEST_F(BucketDBMetricUpdaterTest, buckets_with_varying_trustedness) {
 TEST_F(BucketDBMetricUpdaterTest, pick_counts_from_trusted_copy) {
     BucketDBMetricUpdater metricUpdater;
     IdealStateMetricSet ims;
-    DistributorMetricSet dms(_loadTypes);
+    DistributorMetricSet dms;
 
     // First copy added is implicitly trusted, but it is not the largest.
     BucketDatabase::Entry e(document::BucketId(16, 2), makeInfo(100, 200));
@@ -237,7 +234,7 @@ TEST_F(BucketDBMetricUpdaterTest, pick_counts_from_trusted_copy) {
 TEST_F(BucketDBMetricUpdaterTest, pick_largest_copy_if_no_trusted) {
     BucketDBMetricUpdater metricUpdater;
     IdealStateMetricSet ims;
-    DistributorMetricSet dms(_loadTypes);
+    DistributorMetricSet dms;
 
     // No trusted copies, so must pick second copy.
     BucketInfo info(makeInfo(100, 200));
@@ -254,7 +251,7 @@ TEST_F(BucketDBMetricUpdaterTest, pick_largest_copy_if_no_trusted) {
 TEST_F(BucketDBMetricUpdaterTest, complete_round_clears_working_state) {
     BucketDBMetricUpdater metricUpdater;
     IdealStateMetricSet ims;
-    DistributorMetricSet dms(_loadTypes);
+    DistributorMetricSet dms;
 
     {
         BucketDatabase::Entry e(document::BucketId(16, 1), makeInfo(10));

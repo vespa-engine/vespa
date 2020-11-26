@@ -7,7 +7,6 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <algorithm>
 

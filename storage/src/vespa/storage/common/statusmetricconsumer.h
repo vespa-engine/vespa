@@ -13,12 +13,11 @@
 #include <vespa/storageframework/generic/status/statusreporter.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricmanager.h>
 #include <map>
 
-namespace vespalib {
-    class StringTokenizer;
-}
+namespace vespalib { class StringTokenizer; }
+namespace metrics { class MetricManager; }
 
 namespace storage {
 
@@ -39,9 +38,6 @@ public:
     bool reportStatus(std::ostream& out, const framework::HttpUrlPath&) const override;
     void updateMetrics(const MetricLockGuard & guard) override;
 private:
-    typedef metrics::Metric Metric;
-    typedef metrics::Metric::String String;
-
     metrics::MetricManager& _manager;
     StorageComponent        _component;
     std::string             _name;

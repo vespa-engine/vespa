@@ -11,8 +11,8 @@
 #pragma once
 
 #include "merge_handler_metrics.h"
-#include <vespa/metrics/metrics.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/summetric.h>
 
 namespace storage {
 
@@ -91,16 +91,16 @@ struct FileStorThreadMetrics : public metrics::MetricSet
 
     metrics::LongCountMetric operations;
     metrics::LongCountMetric failedOperations;
-    metrics::LoadMetric<PutMetricType> put;
-    metrics::LoadMetric<GetMetricType> get;
-    metrics::LoadMetric<RemoveMetricType> remove;
-    metrics::LoadMetric<Op> removeLocation;
-    metrics::LoadMetric<Op> statBucket;
-    metrics::LoadMetric<Update> update;
-    metrics::LoadMetric<OpWithNotFound> revert;
+    PutMetricType put;
+    GetMetricType get;
+    RemoveMetricType remove;
+    Op removeLocation;
+    Op statBucket;
+    Update update;
+    OpWithNotFound revert;
     Op createIterator;
-    metrics::LoadMetric<Visitor> visit;
-    metrics::LoadMetric<Op> multiOp;
+    Visitor visit;
+    Op multiOp;
     Op createBuckets;
     Op deleteBuckets;
     Op repairs;
@@ -121,7 +121,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     MergeHandlerMetrics merge_handler_metrics;
     metrics::LongAverageMetric batchingSize;
 
-    FileStorThreadMetrics(const std::string& name, const std::string& desc, const metrics::LoadTypeSet& lt);
+    FileStorThreadMetrics(const std::string& name, const std::string& desc);
     ~FileStorThreadMetrics() override;
 };
 
@@ -152,7 +152,7 @@ public:
     FileStorDiskMetrics(const std::string& name, const std::string& description, MetricSet* owner);
     ~FileStorDiskMetrics() override;
 
-    void initDiskMetrics(const metrics::LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk);
+    void initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk);
 };
 
 struct FileStorMetrics : public metrics::MetricSet
@@ -164,10 +164,10 @@ struct FileStorMetrics : public metrics::MetricSet
     metrics::LongCountMetric diskEvents;
     metrics::LongAverageMetric bucket_db_init_latency;
 
-    explicit FileStorMetrics(const metrics::LoadTypeSet&);
+    explicit FileStorMetrics();
     ~FileStorMetrics() override;
 
-    void initDiskMetrics(const metrics::LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk);
+    void initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk);
 };
 
 }

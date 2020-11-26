@@ -10,6 +10,7 @@ vespa_add_library(storage_visitor OBJECT
     visitor.cpp
     visitormanager.cpp
     visitormetrics.cpp
+    visitorthreadmetrics.cpp
     visitorthread.cpp
     DEPENDS
 )

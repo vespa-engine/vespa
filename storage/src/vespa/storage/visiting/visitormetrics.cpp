@@ -31,10 +31,10 @@ VisitorMetrics::VisitorMetrics()
     queueSize.unsetOnZeroValue();
 }
 
-VisitorMetrics::~VisitorMetrics() { }
+VisitorMetrics::~VisitorMetrics() = default;
 
 void
-VisitorMetrics::initThreads(uint16_t threadCount, const metrics::LoadTypeSet& loadTypes) {
+VisitorMetrics::initThreads(uint16_t threadCount) {
     if (!threads.empty()) {
         throw vespalib::IllegalStateException("Cannot initialize visitor metrics twice", VESPA_STRLOC);
     }
@@ -43,7 +43,7 @@ VisitorMetrics::initThreads(uint16_t threadCount, const metrics::LoadTypeSet& lo
     for (uint32_t i=0; i<threads.size(); ++i) {
         vespalib::asciistream ost;
         ost << "visitor_thread_" << i;
-        threads[i].reset(new VisitorThreadMetrics( ost.str(), ost.str(), loadTypes));
+        threads[i] = std::make_shared<VisitorThreadMetrics>( ost.str(), ost.str());
         registerMetric(*threads[i]);
         sum.addMetricToSum(*threads[i]);
     }

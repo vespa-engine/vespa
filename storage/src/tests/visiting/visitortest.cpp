@@ -127,8 +127,7 @@ protected:
         // come in and wipe our accumulated failure metrics.
         // Only 1 visitor thread running, so we know it has the metrics.
         const auto& metrics = _manager->getThread(0).getMetrics();
-        auto loadType = documentapi::LoadType::DEFAULT;
-        return metrics.visitorDestinationFailureReplies[loadType].getCount();
+        return metrics.visitorDestinationFailureReplies.getCount();
     }
 };
 

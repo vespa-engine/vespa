@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/summetric.h>
 #include <mutex>
 
 namespace storage {

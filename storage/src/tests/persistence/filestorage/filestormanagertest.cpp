@@ -264,13 +264,13 @@ struct FileStorHandlerComponents {
           dummyManager(new DummyStorageLink),
           messageSender(*dummyManager),
           loadTypes("raw:"),
-          metrics(loadTypes.getMetricLoadTypes()),
+          metrics(),
           filestorHandler()
     {
         top.push_back(std::unique_ptr<StorageLink>(dummyManager));
         top.open();
 
-        metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, threadsPerDisk);
+        metrics.initDiskMetrics(1, threadsPerDisk);
 
         filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics, test._node->getComponentRegister());
         filestorHandler->setGetNextMessageTimeout(50ms);
@@ -1831,7 +1831,7 @@ TEST_F(FileStorManagerTest, put_command_size_is_added_to_metric) {
     auto cmd = std::make_shared<api::PutCommand>(
             makeDocumentBucket(bucket), _node->getTestDocMan().createRandomDocument(), api::Timestamp(12345));
 
-    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->put[defaultLoadType]);
+    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->put);
 }
 
 TEST_F(FileStorManagerTest, update_command_size_is_added_to_metric) {
@@ -1845,7 +1845,7 @@ TEST_F(FileStorManagerTest, update_command_size_is_added_to_metric) {
     auto cmd = std::make_shared<api::UpdateCommand>(
             makeDocumentBucket(bucket), std::move(update), api::Timestamp(123456));
 
-    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->update[defaultLoadType]);
+    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->update);
 }
 
 TEST_F(FileStorManagerTest, remove_command_size_is_added_to_metric) {
@@ -1855,7 +1855,7 @@ TEST_F(FileStorManagerTest, remove_command_size_is_added_to_metric) {
     auto cmd = std::make_shared<api::RemoveCommand>(
             makeDocumentBucket(bucket), document::DocumentId("id:foo:testdoctype1::bar"), api::Timestamp(123456));
 
-    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->remove[defaultLoadType]);
+    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->remove);
 }
 
 TEST_F(FileStorManagerTest, get_command_size_is_added_to_metric) {
@@ -1865,7 +1865,7 @@ TEST_F(FileStorManagerTest, get_command_size_is_added_to_metric) {
     auto cmd = std::make_shared<api::GetCommand>(
             makeDocumentBucket(bucket), document::DocumentId("id:foo:testdoctype1::bar"), document::AllFields::NAME);
 
-    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->get[defaultLoadType]);
+    assert_request_size_set(c, std::move(cmd), thread_metrics_of(*c.manager)->get);
 }
 
 TEST_F(FileStorManagerTest, test_and_set_condition_mismatch_not_counted_as_failure) {
@@ -1882,7 +1882,7 @@ TEST_F(FileStorManagerTest, test_and_set_condition_mismatch_not_counted_as_failu
     ASSERT_SINGLE_REPLY(api::PutReply, reply, c.top, _waitTime);
     EXPECT_EQ(reply->getResult().getResult(), api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
 
-    auto& metrics = thread_metrics_of(*c.manager)->put[defaultLoadType];
+    auto& metrics = thread_metrics_of(*c.manager)->put;
     EXPECT_EQ(metrics.failed.getValue(), 0);
     EXPECT_EQ(metrics.test_and_set_failed.getValue(), 1);
     EXPECT_EQ(thread_metrics_of(*c.manager)->failedOperations.getValue(), 0);

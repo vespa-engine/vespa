@@ -76,7 +76,7 @@ public:
                                             getDistributorBucketSpace(),
                                             msg,
                                             getDistributor().getMetrics().
-                                            puts[msg->getLoadType()]);
+                                            puts);
         op->start(_sender, framework::MilliSecTime(0));
     }
 

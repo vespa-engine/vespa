@@ -55,7 +55,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _threadLockCheckInterval(60),
       _failDiskOnError(false),
       _use_async_message_handling_on_schedule(false),
-      _metrics(std::make_unique<FileStorMetrics>(_component.getLoadTypes()->getMetricLoadTypes())),
+      _metrics(std::make_unique<FileStorMetrics>()),
       _closed(false),
       _lock()
 {
@@ -171,8 +171,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _config = std::move(config);
         size_t numThreads = _config->numThreads;
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
-        _metrics->initDiskMetrics(_component.getLoadTypes()->getMetricLoadTypes(), numStripes,
-                                  computeAllPossibleHandlerThreads(*_config));
+        _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
 
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics, _compReg);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);

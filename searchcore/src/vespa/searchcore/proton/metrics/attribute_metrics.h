@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
 #include "memory_usage_metrics.h"
+#include <map>
 
 namespace proton {
 

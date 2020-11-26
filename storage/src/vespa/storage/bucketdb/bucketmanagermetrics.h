@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketspace.h>
-#include <vespa/metrics/metrics.h>
 #include <vespa/metrics/common/memory_usage_metrics.h>
+#include <vespa/metrics/summetric.h>
 
 #include <unordered_map>
 #include <memory>
