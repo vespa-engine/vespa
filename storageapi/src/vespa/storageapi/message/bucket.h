@@ -199,7 +199,7 @@ public:
     GetBucketDiffCommand(const document::Bucket &bucket,
                          const std::vector<Node>&,
                          Timestamp maxTimestamp);
-    ~GetBucketDiffCommand();
+    ~GetBucketDiffCommand() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }

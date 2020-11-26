@@ -3,13 +3,16 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.documentapi.DocumentAccessProvider;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
+import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
+import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
@@ -28,12 +31,15 @@ import java.util.TreeSet;
 @RestartConfigs({FleetcontrollerConfig.class, ZookeeperServerConfig.class})
 public class ClusterControllerContainer extends Container implements
         PlatformBundlesConfig.Producer,
-        ZookeeperServerConfig.Producer
+        ZookeeperServerConfig.Producer,
+        ReindexingConfig.Producer
 {
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
     private static final ComponentSpecification ZOOKEEPER_SERVER_BUNDLE = new ComponentSpecification("zookeeper-server");
+    private static final ComponentSpecification REINDEXING_CONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-reindexer");
 
     private final Set<String> bundles = new TreeSet<>();
+    private final ReindexingContext reindexingContext;
 
     public ClusterControllerContainer(
             AbstractConfigProducer<?> parent,
@@ -42,12 +48,16 @@ public class ClusterControllerContainer extends Container implements
             boolean isHosted,
             ReindexingContext reindexingContext) {
         super(parent, "" + index, index, isHosted);
+        this.reindexingContext = reindexingContext;
+
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
-                   "/clustercontroller-status/*");
+                   "/clustercontroller-status/*",
+                   CLUSTERCONTROLLER_BUNDLE);
         addHandler("clustercontroller-state-restapi-v2",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler",
-                   "/cluster/v2/*");
+                   "/cluster/v2/*",
+                   CLUSTERCONTROLLER_BUNDLE);
         if (runStandaloneZooKeeper) {
             addComponent("clustercontroller-zkrunner",
                          "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl",
@@ -73,7 +83,7 @@ public class ClusterControllerContainer extends Container implements
         addFileBundle("clustercontroller-core");
         addFileBundle("clustercontroller-utils");
         addFileBundle("zookeeper-server");
-        configureReindexing(reindexingContext);
+        configureReindexing();
     }
 
     @Override
@@ -110,15 +120,21 @@ public class ClusterControllerContainer extends Container implements
         addComponent(new Component<>(createComponentModel(id, className, bundle)));
     }
 
-    private void addHandler(String id, String className, String path) {
-        addHandler(new Handler(createComponentModel(id, className, CLUSTERCONTROLLER_BUNDLE)), path);
+    private void addHandler(String id, String className, String path, ComponentSpecification bundle) {
+        addHandler(new Handler(createComponentModel(id, className, bundle)), path);
     }
 
-    private void configureReindexing(ReindexingContext context) {
-        if (context != null) {
-            addFileBundle(ReindexingController.REINDEXING_CONTROLLER_BUNDLE);
-            addComponent(new ReindexingController(context));
+    private void configureReindexing() {
+        if (reindexingContext != null) {
+            addFileBundle(REINDEXING_CONTROLLER_BUNDLE.getName());
             addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
+            addComponent("reindexing-maintainer",
+                         "ai.vespa.reindexing.ReindexingMaintainer",
+                         REINDEXING_CONTROLLER_BUNDLE);
+            addHandler("reindexing-status",
+                       "ai.vespa.reindexing.http.ReindexingV1ApiHandler",
+                       "/reindexing/v1/*",
+                       REINDEXING_CONTROLLER_BUNDLE);
         }
     }
 
@@ -131,6 +147,22 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.myid(index());
+    }
+
+    @Override
+    public void getConfig(ReindexingConfig.Builder builder) {
+        if (reindexingContext == null)
+            return;
+
+        builder.clusterName(reindexingContext.contentClusterName());
+        builder.enabled(reindexingContext.reindexing().enabled());
+        for (NewDocumentType type : reindexingContext.documentTypes()) {
+            String typeName = type.getFullName().getName();
+            reindexingContext.reindexing().status(reindexingContext.contentClusterName(), typeName)
+                             .ifPresent(status -> builder.status(typeName,
+                                                                 new ReindexingConfig.Status.Builder()
+                                                                         .readyAtMillis(status.ready().toEpochMilli())));
+        }
     }
 
 }

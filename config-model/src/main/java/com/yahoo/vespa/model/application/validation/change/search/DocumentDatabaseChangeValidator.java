@@ -72,7 +72,7 @@ public class DocumentDatabaseChangeValidator {
 
     private List<VespaConfigChangeAction> validateDocumentTypeChanges(ValidationOverrides overrides, Instant now) {
         return new DocumentTypeChangeValidator(id, currentDocType, nextDocType)
-                       .validate(overrides, now);
+                       .validate();
     }
 
 }

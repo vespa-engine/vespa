@@ -5,6 +5,7 @@
 #include "ireplyhandler.h"
 #include "message.h"
 #include "tracelevel.h"
+#include "error.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/backtrace.h>
 
@@ -54,12 +55,6 @@ Reply::swapState(Routable &rhs)
     }
 }
 
-bool
-Reply::isReply() const
-{
-    return true;
-}
-
 void
 Reply::addError(const Error &e)
 {
@@ -72,14 +67,23 @@ Reply::addError(const Error &e)
 bool
 Reply::hasFatalErrors() const
 {
-    for (std::vector<Error>::const_iterator it = _errors.begin();
-         it != _errors.end(); ++it)
+    for (const Error & error : _errors)
     {
-        if (it->getCode() >= ErrorCode::FATAL_ERROR) {
+        if (error.getCode() >= ErrorCode::FATAL_ERROR) {
             return true;
         }
     }
     return false;
+}
+
+const Error &
+Reply::getError(uint32_t i) const {
+    return _errors[i];
+}
+
+uint32_t
+Reply::getNumErrors() const {
+    return _errors.size();
 }
 
 void

@@ -22,15 +22,19 @@ TEST(StorageMessageAddressTest, storage_hash_covers_all_expected_fields) {
               hash_of("foo", lib::NodeType::DISTRIBUTOR, 0));
     EXPECT_EQ(hash_of("foo", lib::NodeType::STORAGE, 123),
               hash_of("foo", lib::NodeType::STORAGE, 123));
+    EXPECT_EQ(hash_of("foo", lib::NodeType::STORAGE, 0),
+              hash_of("bar", lib::NodeType::STORAGE, 0));
 
     // These tests are all true with extremely high probability, though they do
     // depend on a hash function that may inherently cause collisions.
     EXPECT_NE(hash_of("foo", lib::NodeType::STORAGE, 0),
-              hash_of("bar", lib::NodeType::STORAGE, 0));
-    EXPECT_NE(hash_of("foo", lib::NodeType::STORAGE, 0),
               hash_of("foo", lib::NodeType::DISTRIBUTOR, 0));
     EXPECT_NE(hash_of("foo", lib::NodeType::STORAGE, 0),
               hash_of("foo", lib::NodeType::STORAGE, 1));
+
+    EXPECT_EQ(88u, sizeof(StorageMessageAddress));
+    EXPECT_EQ(64u, sizeof(StorageMessage));
+    EXPECT_EQ(16u, sizeof(mbus::Trace));
 }
 
 } // storage::api

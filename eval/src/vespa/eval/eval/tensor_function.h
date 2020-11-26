@@ -310,16 +310,19 @@ class Create : public Node
 {
     using Super = Node;
 private:
-    std::map<TensorSpec::Address, Child> _spec;
+    std::map<TensorSpec::Address, Child> _map;
 public:
     Create(const ValueType &result_type_in, const std::map<TensorSpec::Address, TensorFunction::CREF> &spec_in)
-        : Super(result_type_in), _spec()
+        : Super(result_type_in), _map()
     {
         for (const auto &cell: spec_in) {
-            _spec.emplace(cell.first, Child(cell.second));
+            _map.emplace(cell.first, Child(cell.second));
         }
     }
-    const std::map<TensorSpec::Address, Child> &spec() const { return _spec; }
+    const std::map<TensorSpec::Address, Child> &map() const { return _map; }
+    // mapping from cell address to index of child that computes the cell value
+    using Spec = std::map<TensorSpec::Address, size_t>;
+    Spec make_spec() const;
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;
     void push_children(std::vector<Child::CREF> &children) const final override;
@@ -359,25 +362,30 @@ public:
     using MyLabel = std::variant<TensorSpec::Label, Child>;
 private:
     Child _param;
-    std::map<vespalib::string, MyLabel> _spec;
+    std::map<vespalib::string, MyLabel> _map;
 public:
     Peek(const ValueType &result_type_in, const TensorFunction &param,
          const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec)
-        : Super(result_type_in), _param(param), _spec()
+        : Super(result_type_in), _param(param), _map()
     {
         for (const auto &dim: spec) {
             std::visit(vespalib::overload
                        {
                            [&](const TensorSpec::Label &label) {
-                               _spec.emplace(dim.first, label);
+                               _map.emplace(dim.first, label);
                            },
                            [&](const TensorFunction::CREF &ref) {
-                               _spec.emplace(dim.first, ref.get());
+                               _map.emplace(dim.first, ref.get());
                            }
                        }, dim.second);
         }
     }
-    const std::map<vespalib::string, MyLabel> &spec() const { return _spec; }
+    const std::map<vespalib::string, MyLabel> &map() const { return _map; }
+    // a verbatim label or the index of a child that computes the label value:
+    using LabelOrChildIndex = std::variant<TensorSpec::Label, size_t>;
+    // mapping from dimension name to verbatim label or child index:
+    using Spec = std::map<vespalib::string, LabelOrChildIndex>;
+    Spec make_spec() const;
     const ValueType &param_type() const { return _param.get().result_type(); }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const final override;

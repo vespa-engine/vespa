@@ -9,7 +9,10 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -32,10 +35,12 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
+    private final BooleanFlag usePowerOfTwoChoicesLb;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
+        usePowerOfTwoChoicesLb = Flags.USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING.bindTo(flagSource);
     }
 
     @Override
@@ -67,6 +72,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private LbServicesConfig.Tenants.Applications.Builder getAppConfig(ApplicationInfo app) {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
         ab.activeRotation(getActiveRotation(app));
+        ab.usePowerOfTwoChoicesLb(usePowerOfTwoChoicesLb(app));
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
                 .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));
@@ -85,6 +91,10 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
             }
         }
         return activeRotation;
+    }
+
+    private boolean usePowerOfTwoChoicesLb(ApplicationInfo app) {
+        return usePowerOfTwoChoicesLb.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value();
     }
 
     private LbServicesConfig.Tenants.Applications.Hosts.Builder getHostsConfig(HostInfo hostInfo) {

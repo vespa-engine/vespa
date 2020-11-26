@@ -8,6 +8,7 @@
 namespace proton {
 
 struct IDocumentMetaStore;
+class IPendingGidToLidChanges;
 
 /**
  * Class for task to be executed when a forced commit has completed and
@@ -28,9 +29,10 @@ class ForceCommitDoneTask : public vespalib::Executor::Task
     std::vector<uint32_t>  _lidsToReuse;
     bool                   _holdUnblockShrinkLidSpace;
     IDocumentMetaStore    &_documentMetaStore;
+    std::unique_ptr<IPendingGidToLidChanges> _pending_gid_to_lid_changes;
 
 public:
-    ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore);
+    ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore, std::unique_ptr<IPendingGidToLidChanges> pending_gid_to_lid_changes);
     ~ForceCommitDoneTask() override;
 
     void reuseLids(std::vector<uint32_t> &&lids);
@@ -42,7 +44,7 @@ public:
     void run() override;
 
     bool empty() const {
-        return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace;
+        return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace && !_pending_gid_to_lid_changes;
     }
 };
 

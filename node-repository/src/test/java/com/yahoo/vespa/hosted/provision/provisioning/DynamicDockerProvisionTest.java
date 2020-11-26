@@ -20,6 +20,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
@@ -471,7 +472,7 @@ public class DynamicDockerProvisionTest {
                 throw new OutOfCapacityException("No host flavor matches " + resources);
             return provisionIndexes.stream()
                                    .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor.get(), Optional.empty(),
-                                           "host-" + i + "-1", resources, osVersion))
+                                           List.of(new Address("host-" + i + "-1")), resources, osVersion))
                                    .collect(Collectors.toList());
         }
 

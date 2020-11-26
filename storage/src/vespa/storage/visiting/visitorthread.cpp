@@ -2,6 +2,7 @@
 
 #include "visitorthread.h"
 #include "messages.h"
+#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/messagebus/rpcmessagebus.h>
@@ -381,19 +382,18 @@ VisitorThread::createVisitor(vespalib::stringref libName,
 }
 
 namespace {
-    std::unique_ptr<api::StorageMessageAddress>
-    getDataAddress(const api::CreateVisitorCommand& cmd)
-    {
-        return std::make_unique<api::StorageMessageAddress>(
-                mbus::Route::parse(cmd.getDataDestination()));
-    }
 
-    std::unique_ptr<api::StorageMessageAddress>
-    getControlAddress(const api::CreateVisitorCommand& cmd)
-    {
-        return std::make_unique<api::StorageMessageAddress>(
-                mbus::Route::parse(cmd.getControlDestination()));
-    }
+std::unique_ptr<mbus::Route>
+getDataAddress(const api::CreateVisitorCommand& cmd)
+{
+    return std::make_unique<mbus::Route>(mbus::Route::parse(cmd.getDataDestination()));
+}
+
+std::unique_ptr<mbus::Route>
+getControlAddress(const api::CreateVisitorCommand& cmd)
+{
+    return std::make_unique<mbus::Route>(mbus::Route::parse(cmd.getControlDestination()));
+}
 
 void
 validateDocumentSelection(const document::DocumentTypeRepo& repo,
@@ -423,8 +423,8 @@ VisitorThread::onCreateVisitor(
     assert(_currentlyRunningVisitor == _visitors.end());
     ReturnCode result(ReturnCode::OK);
     std::unique_ptr<document::select::Node> docSelection;
-    std::unique_ptr<api::StorageMessageAddress> controlAddress;
-    std::unique_ptr<api::StorageMessageAddress> dataAddress;
+    std::unique_ptr<mbus::Route> controlAddress;
+    std::unique_ptr<mbus::Route> dataAddress;
     std::shared_ptr<Visitor> visitor;
     do {
         // If no buckets are specified, fail command

@@ -4,6 +4,7 @@
 #include "persistenceutil.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 

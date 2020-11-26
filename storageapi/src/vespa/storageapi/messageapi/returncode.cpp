@@ -10,17 +10,39 @@ ReturnCode::ReturnCode()
       _message()
 {}
 
-ReturnCode::ReturnCode(const ReturnCode &) = default;
-ReturnCode & ReturnCode::operator = (const ReturnCode &) = default;
 ReturnCode & ReturnCode::operator = (ReturnCode &&) noexcept = default;
 ReturnCode::~ReturnCode() = default;
 
-ReturnCode::ReturnCode(Result result, vespalib::stringref msg)
+ReturnCode::ReturnCode(Result result)
     : _result(result),
-      _message(msg)
+      _message()
 {}
 
-vespalib::string ReturnCode::getResultString(Result result) {
+ReturnCode::ReturnCode(Result result, vespalib::stringref msg)
+    : _result(result),
+      _message()
+{
+    if ( ! msg.empty()) {
+        _message = std::make_unique<vespalib::string>(msg);
+    }
+}
+
+ReturnCode::ReturnCode(const ReturnCode & rhs)
+    : _result(rhs._result),
+      _message()
+{
+    if (rhs._message) {
+        _message = std::make_unique<vespalib::string>(*rhs._message);
+    }
+}
+
+ReturnCode &
+ReturnCode::operator = (const ReturnCode & rhs) {
+    return operator=(ReturnCode(rhs));
+}
+
+vespalib::string
+ReturnCode::getResultString(Result result) {
     return documentapi::DocumentProtocol::getErrorName(result);
 }
 
@@ -28,9 +50,9 @@ vespalib::string
 ReturnCode::toString() const {
     vespalib::string ret = "ReturnCode(";
     ret += getResultString(_result);
-    if ( ! _message.empty()) {
+    if ( _message && ! _message->empty()) {
         ret += ", ";
-        ret += _message;
+        ret += *_message;
     }
     ret += ")";
     return ret;
@@ -146,4 +168,20 @@ ReturnCode::isBucketDisappearance() const
     }
 }
 
+vespalib::stringref
+ReturnCode::getMessage() const {
+    return _message
+           ? _message->operator vespalib::stringref()
+           : vespalib::stringref();
+}
+
+bool
+ReturnCode::operator==(const ReturnCode& code) const {
+    return (_result == code._result) && (getMessage() == code.getMessage());
+}
+
+bool
+ReturnCode::operator!=(const ReturnCode& code) const {
+    return (_result != code._result) || (getMessage() != code.getMessage());
+}
 }

@@ -46,7 +46,6 @@ using eval::TensorFunction;
 using eval::TensorSpec;
 using eval::Value;
 using eval::ValueType;
-using CellType = eval::ValueType::CellType;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 
@@ -451,7 +450,7 @@ void append_vector(OCT *&pos, const Value &value) {
 
 template <typename OCT>
 const Value &concat_vectors(const Value &a, const Value &b, const vespalib::string &dimension, size_t vector_size, Stash &stash) {
-    ArrayRef<OCT> cells = stash.create_array<OCT>(vector_size);
+    ArrayRef<OCT> cells = stash.create_uninitialized_array<OCT>(vector_size);
     OCT *pos = cells.begin();
     append_vector<OCT>(pos, a);
     append_vector<OCT>(pos, b);

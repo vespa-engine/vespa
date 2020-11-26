@@ -6089,6 +6089,7 @@
       "public final java.lang.Object get(java.lang.String, java.util.Map)",
       "public final java.lang.Object get(java.lang.String, java.util.Map, com.yahoo.processing.request.Properties)",
       "public final java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
+      "public final com.yahoo.search.query.profile.compiled.DimensionalMap getEntries()",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile clone()",
       "public java.lang.String toString()",
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",

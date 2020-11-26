@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
@@ -56,12 +57,10 @@ public class IndexingScriptChangeValidatorTest {
 
     private static VespaConfigChangeAction expectedReindexingAction(String field, String changedMsg, String fromScript, String toScript) {
         return VespaReindexAction.of(ClusterSpec.Id.from("test"),
-                                    "indexing-change",
-                                    ValidationOverrides.empty,
-                                    "Field '" + field + "' changed: " +
+                                     ValidationId.indexingChange,
+                                     "Field '" + field + "' changed: " +
                                     (changedMsg.isEmpty() ? "" : changedMsg + ", ") +
-                                    "indexing script: '" + fromScript + "' -> '" + toScript + "'", 
-                                    Instant.now());
+                                    "indexing script: '" + fromScript + "' -> '" + toScript + "'");
     }
 
     @Test

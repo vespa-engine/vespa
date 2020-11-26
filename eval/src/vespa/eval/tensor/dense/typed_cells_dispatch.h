@@ -6,7 +6,7 @@
 
 namespace vespalib::tensor {
 
-using CellType = vespalib::eval::ValueType::CellType;
+using vespalib::eval::CellType;
 using TypedCells = vespalib::eval::TypedCells;
 
 template <typename TGT, typename... Args>
@@ -30,7 +30,7 @@ decltype(auto) dispatch_2(A1 &&a, const TypedCells &b, Args &&...args) {
 struct GetCell {
     template<typename T>
     static double call(ConstArrayRef<T> arr, size_t idx) {
-	return arr[idx];
+        return arr[idx];
     }
     static double from(TypedCells src, size_t idx) {
         return dispatch_1<GetCell>(src, idx);

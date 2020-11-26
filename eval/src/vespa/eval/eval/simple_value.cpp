@@ -3,8 +3,6 @@
 #include "simple_value.h"
 #include "inline_operation.h"
 #include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/util/visit_ranges.h>
-#include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>

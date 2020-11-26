@@ -20,6 +20,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.custom.HostCapacity;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
@@ -208,12 +209,12 @@ public class DynamicProvisioningMaintainerTest {
         tester.maintainer.maintain();
 
         assertTrue("No IP addresses written as DNS updates are failing",
-                   provisioning.get().stream().allMatch(host -> host.ipConfig().pool().isEmpty()));
+                   provisioning.get().stream().allMatch(host -> host.ipConfig().pool().getIpSet().isEmpty()));
 
         tester.hostProvisioner.without(Behaviour.failDnsUpdate);
         tester.maintainer.maintain();
         assertTrue("IP addresses written as DNS updates are succeeding",
-                   provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().isEmpty()));
+                   provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().getIpSet().isEmpty()));
     }
 
     private static class DynamicProvisioningTester {
@@ -338,7 +339,7 @@ public class DynamicProvisioningMaintainerTest {
                                               "hostname" + index,
                                               hostFlavor,
                                               Optional.empty(),
-                                              "nodename" + index,
+                                              List.of(new Address("nodename" + index)),
                                               resources,
                                               osVersion));
             }

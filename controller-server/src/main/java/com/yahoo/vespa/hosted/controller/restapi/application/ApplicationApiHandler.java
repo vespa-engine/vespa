@@ -701,6 +701,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(cluster.current(), clusterObject.setObject("current"));
             cluster.target().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
             cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
+            scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
+            clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -1593,7 +1595,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     void setStatus(Cursor statusObject, ApplicationReindexing.Status status) {
-        statusObject.setLong("readyAtMillis", status.readyAt().toEpochMilli());
+        status.readyAt().ifPresent(readyAt -> statusObject.setLong("readyAtMillis", readyAt.toEpochMilli()));
+        status.startedAt().ifPresent(startedAt -> statusObject.setLong("startedAtMillis", startedAt.toEpochMilli()));
+        status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedAtMillis", endedAt.toEpochMilli()));
+        status.state().map(ApplicationApiHandler::toString).ifPresent(state -> statusObject.setString("state", state));
+        status.message().ifPresent(message -> statusObject.setString("message", message));
+        status.progress().ifPresent(progress -> statusObject.setString("progress", progress));
+    }
+
+    private static String toString(ApplicationReindexing.State state) {
+        switch (state) {
+            case PENDING: return "pending";
+            case RUNNING: return "running";
+            case FAILED: return "failed";
+            case SUCCESSFUL: return "successful";
+            default: return null;
+        }
     }
 
     /** Enables reindexing of an application in a zone. */
@@ -1914,6 +1931,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             object.setDouble("cost", Math.round(resources.nodes() * resources.nodeResources().cost() * 100.0 / 3.0) / 100.0);
     }
 
+    private void scalingEventsToSlime(List<Cluster.ScalingEvent> scalingEvents, Cursor scalingEventsArray) {
+        for (Cluster.ScalingEvent scalingEvent : scalingEvents) {
+            Cursor scalingEventObject = scalingEventsArray.addObject();
+            toSlime(scalingEvent.from(), scalingEventObject.setObject("from"));
+            toSlime(scalingEvent.to(), scalingEventObject.setObject("to"));
+            scalingEventObject.setLong("at", scalingEvent.at().toEpochMilli());
+        }
+    }
+
     private void toSlime(NodeResources resources, Cursor object) {
         object.setDouble("vcpu", resources.vcpu());
         object.setDouble("memoryGb", resources.memoryGb());
@@ -2054,7 +2080,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (RefeedAction refeedAction : result.prepareResponse().configChangeActions.refeedActions) {
             Cursor refeedActionObject = refeedActionsArray.addObject();
             refeedActionObject.setString("name", refeedAction.name);
-            refeedActionObject.setBool("allowed", refeedAction.allowed);
             refeedActionObject.setString("documentType", refeedAction.documentType);
             refeedActionObject.setString("clusterName", refeedAction.clusterName);
             serviceInfosToSlime(refeedAction.services, refeedActionObject.setArray("services"));

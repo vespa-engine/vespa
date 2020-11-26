@@ -11,6 +11,7 @@ namespace vespalib::tensor {
 
 using vespalib::ArrayRef;
 
+using eval::CellType;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
@@ -34,7 +35,7 @@ ArrayRef<CT> make_dst_cells(ConstArrayRef<CT> src_cells, Stash &stash) {
     if (inplace) {
         return unconstify(src_cells);
     } else {
-        return stash.create_array<CT>(src_cells.size());
+        return stash.create_uninitialized_array<CT>(src_cells.size());
     }
 }
 
@@ -66,7 +67,7 @@ using MyTypify = TypifyValue<TypifyCellType,TypifyOp2,TypifyBool>;
 
 bool is_dense(const TensorFunction &tf) { return tf.result_type().is_dense(); }
 bool is_double(const TensorFunction &tf) { return tf.result_type().is_double(); }
-ValueType::CellType cell_type(const TensorFunction &tf) { return tf.result_type().cell_type(); }
+CellType cell_type(const TensorFunction &tf) { return tf.result_type().cell_type(); }
 
 } // namespace vespalib::tensor::<unnamed>
 

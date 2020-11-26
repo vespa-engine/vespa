@@ -189,27 +189,19 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
 
 FileStorThreadMetrics::~FileStorThreadMetrics() = default;
 
-FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std::string& description,
-                                             const LoadTypeSet& loadTypes)
+FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std::string& description)
     : MetricSet(name, {{"partofsum"}}, description),
-      averageQueueWaitingTime(loadTypes,
-                              metrics::DoubleAverageMetric("averagequeuewait", {},
-                                                           "Average time an operation spends in input queue."),
-                              this)
+      averageQueueWaitingTime("averagequeuewait", {}, "Average time an operation spends in input queue.", this)
 {
 }
 
 FileStorStripeMetrics::~FileStorStripeMetrics() = default;
 
-FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::string& description,
-                                         const metrics::LoadTypeSet& loadTypes, MetricSet* owner)
+FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::string& description, MetricSet* owner)
     : MetricSet(name, {{"partofsum"}}, description, owner),
       sumThreads("allthreads", {{"sum"}}, "", this),
       sumStripes("allstripes", {{"sum"}}, "", this),
-      averageQueueWaitingTime(loadTypes,
-                              metrics::DoubleAverageMetric("averagequeuewait", {},
-                                                           "Average time an operation spends in input queue."),
-                              this),
+      averageQueueWaitingTime("averagequeuewait", {}, "Average time an operation spends in input queue.", this),
       queueSize("queuesize", {}, "Size of input message queue.", this),
       pendingMerges("pendingmerge", {}, "Number of buckets currently being merged.", this),
       waitingForLockHitRate("waitingforlockrate", {},
@@ -244,7 +236,7 @@ FileStorDiskMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t numS
         std::ostringstream name;
         name << "stripe" << i;
         desc << "Stripe " << i << '/' << numStripes;
-        stripes[i] = std::make_shared<FileStorStripeMetrics>(name.str(), desc.str(), loadTypes);
+        stripes[i] = std::make_shared<FileStorStripeMetrics>(name.str(), desc.str());
         registerMetric(*stripes[i]);
         sumStripes.addMetricToSum(*stripes[i]);
     }
@@ -267,7 +259,7 @@ void FileStorMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t num
     assert( ! disk);
     // Currently FileStorHandlerImpl expects metrics to exist for
     // disks that are not in use too.
-    disk = std::make_shared<FileStorDiskMetrics>( "disk_0", "Disk 0", loadTypes, this);
+    disk = std::make_shared<FileStorDiskMetrics>( "disk_0", "Disk 0", this);
     sum.addMetricToSum(*disk);
     disk->initDiskMetrics(loadTypes, numStripes, threadsPerDisk);
 }

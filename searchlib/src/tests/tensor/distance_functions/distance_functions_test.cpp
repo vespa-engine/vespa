@@ -33,7 +33,7 @@ void verify_geo_miles(const DistanceFunction *dist_fun,
 
 TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
 {
-    auto ct = vespalib::eval::ValueType::CellType::DOUBLE;
+    auto ct = vespalib::eval::CellType::DOUBLE;
 
     auto euclid = make_distance_function(DistanceMetric::Euclidean, ct);
 
@@ -54,7 +54,7 @@ TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
 
 TEST(DistanceFunctionsTest, angular_gives_expected_score)
 {
-    auto ct = vespalib::eval::ValueType::CellType::DOUBLE;
+    auto ct = vespalib::eval::CellType::DOUBLE;
 
     auto angular = make_distance_function(DistanceMetric::Angular, ct);
 
@@ -109,7 +109,7 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
 
 TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
 {
-    auto ct = vespalib::eval::ValueType::CellType::DOUBLE;
+    auto ct = vespalib::eval::CellType::DOUBLE;
 
     auto innerproduct = make_distance_function(DistanceMetric::InnerProduct, ct);
 
@@ -144,7 +144,7 @@ TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
 
 TEST(DistanceFunctionsTest, hamming_gives_expected_score)
 {
-    auto ct = vespalib::eval::ValueType::CellType::DOUBLE;
+    auto ct = vespalib::eval::CellType::DOUBLE;
 
     auto hamming = make_distance_function(DistanceMetric::Hamming, ct);
 
@@ -184,7 +184,7 @@ TEST(DistanceFunctionsTest, hamming_gives_expected_score)
 
 TEST(GeoDegreesTest, gives_expected_score)
 {
-    auto ct = vespalib::eval::ValueType::CellType::DOUBLE;
+    auto ct = vespalib::eval::CellType::DOUBLE;
     auto geodeg = make_distance_function(DistanceMetric::GeoDegrees, ct);
 
     std::vector<double> g1_sfo{37.61, -122.38};

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagemessage.h"
-
+#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -139,15 +139,6 @@ MessageType::print(std::ostream& out, bool verbose, const std::string& indent) c
     out << ")";
 }
 
-StorageMessageAddress::StorageMessageAddress(const mbus::Route& route)
-    : _route(route),
-      _protocol(DOCUMENT),
-      _precomputed_storage_hash(0),
-      _cluster(""),
-      _type(nullptr),
-      _index(0xFFFF)
-{ }
-
 std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr) {
     return os << addr.toString();
 }
@@ -160,38 +151,44 @@ createAddress(vespalib::stringref cluster, const lib::NodeType& type, uint16_t i
     return os.str();
 }
 
+size_t
+calculate_node_hash(const lib::NodeType& type, uint16_t index)
+{
+    uint16_t buf[] = { type, index };
+    return vespalib::hashValue(&buf, sizeof(buf));
+}
+
 // TODO we ideally want this removed. Currently just in place to support usage as map key when emplacement not available
 StorageMessageAddress::StorageMessageAddress()
-    : _route(),
-      _protocol(Protocol::STORAGE),
+    : _cluster(),
       _precomputed_storage_hash(0),
-      _cluster(),
       _type(nullptr),
+      _protocol(Protocol::STORAGE),
       _index(0)
 {}
 
-
 StorageMessageAddress::StorageMessageAddress(vespalib::stringref cluster, const lib::NodeType& type,
                                              uint16_t index, Protocol protocol)
-    : _route(),
-      _protocol(protocol),
-      _precomputed_storage_hash(0),
-      _cluster(cluster),
+    : _cluster(cluster),
+      _precomputed_storage_hash(calculate_node_hash(type, index)),
       _type(&type),
+      _protocol(protocol),
       _index(index)
 {
-    std::vector<mbus::IHopDirective::SP> directives;
-    auto address_as_str = createAddress(cluster, type, index);
-    // We reuse the string representation and pass it to vespalib's hashValue instead of
-    // explicitly combining a running hash over the individual fields. This is because
-    // hashValue internally uses xxhash, which offers great dispersion of bits even for
-    // minimal changes in the input (such as single bit differences in the index).
-    _precomputed_storage_hash = vespalib::hashValue(address_as_str.data(), address_as_str.size());
-    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(std::move(address_as_str)));
-    _route.addHop(mbus::Hop(std::move(directives), false));
 }
 
 StorageMessageAddress::~StorageMessageAddress() = default;
+
+mbus::Route
+StorageMessageAddress::to_mbus_route() const
+{
+    mbus::Route result;
+    auto address_as_str = createAddress(_cluster, *_type, _index);
+    std::vector<mbus::IHopDirective::SP> directives;
+    directives.emplace_back(std::make_shared<mbus::VerbatimDirective>(std::move(address_as_str)));
+    result.addHop(mbus::Hop(std::move(directives), false));
+    return result;
+}
 
 uint16_t
 StorageMessageAddress::getIndex() const
@@ -251,7 +248,7 @@ StorageMessageAddress::print(vespalib::asciistream & out) const
         out << "Document protocol";
     }
     if (!_type) {
-        out << ", " << _route.toString() << ")";
+        out << ", " << to_mbus_route().toString() << ")";
     } else {
         out << ", cluster " << _cluster << ", nodetype " << *_type
             << ", index " << _index << ")";
@@ -269,26 +266,32 @@ StorageMessage::generateMsgId()
 StorageMessage::StorageMessage(const MessageType& type, Id id)
     : _type(type),
       _msgId(id),
-      _priority(NORMAL),
       _address(),
-      _loadType(documentapi::LoadType::DEFAULT),
-      _approxByteSize(50)
+      _trace(),
+      _approxByteSize(50),
+      _priority(NORMAL)
 {
 }
 
 StorageMessage::StorageMessage(const StorageMessage& other, Id id)
     : _type(other._type),
       _msgId(id),
-      _priority(other._priority),
       _address(),
-      _loadType(other._loadType),
-      _approxByteSize(other._approxByteSize)
+      _trace(other.getTrace().getLevel()),
+      _approxByteSize(other._approxByteSize),
+      _priority(other._priority)
 {
 }
 
 StorageMessage::~StorageMessage() = default;
 
-void StorageMessage::setNewMsgId()
+const documentapi::LoadType&
+StorageMessage::getLoadType() const {
+    return documentapi::LoadType::DEFAULT;
+}
+
+void
+StorageMessage::setNewMsgId()
 {
     _msgId = generateMsgId();
 }
@@ -298,7 +301,8 @@ StorageMessage::getSummary() const {
     return toString();
 }
 
-const char* to_string(LockingRequirements req) noexcept {
+const char*
+to_string(LockingRequirements req) noexcept {
     switch (req) {
     case LockingRequirements::Exclusive: return "Exclusive";
     case LockingRequirements::Shared:    return "Shared";
@@ -306,12 +310,14 @@ const char* to_string(LockingRequirements req) noexcept {
     }
 }
 
-std::ostream& operator<<(std::ostream& os, LockingRequirements req) {
+std::ostream&
+operator<<(std::ostream& os, LockingRequirements req) {
     os << to_string(req);
     return os;
 }
 
-const char* to_string(InternalReadConsistency consistency) noexcept {
+const char*
+to_string(InternalReadConsistency consistency) noexcept {
     switch (consistency) {
     case InternalReadConsistency::Strong: return "Strong";
     case InternalReadConsistency::Weak:   return "Weak";
@@ -319,7 +325,8 @@ const char* to_string(InternalReadConsistency consistency) noexcept {
     }
 }
 
-std::ostream& operator<<(std::ostream& os, InternalReadConsistency consistency) {
+std::ostream&
+operator<<(std::ostream& os, InternalReadConsistency consistency) {
     os << to_string(consistency);
     return os;
 }

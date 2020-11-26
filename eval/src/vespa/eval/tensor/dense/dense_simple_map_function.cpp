@@ -32,7 +32,7 @@ ArrayRef<CT> make_dst_cells(ConstArrayRef<CT> src_cells, Stash &stash) {
     if (inplace) {
         return unconstify(src_cells);
     } else {
-        return stash.create_array<CT>(src_cells.size());
+        return stash.create_uninitialized_array<CT>(src_cells.size());
     }
 }
 

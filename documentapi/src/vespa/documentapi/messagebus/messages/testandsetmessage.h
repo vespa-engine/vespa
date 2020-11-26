@@ -12,7 +12,8 @@ private:
     TestAndSetCondition _condition;
 
 public:
-    ~TestAndSetMessage();
+    TestAndSetMessage();
+    ~TestAndSetMessage() override;
     void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
     const TestAndSetCondition & getCondition() const { return _condition; }
 };

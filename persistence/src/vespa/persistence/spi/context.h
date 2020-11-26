@@ -32,11 +32,7 @@
 #include "read_consistency.h"
 #include <vespa/vespalib/trace/trace.h>
 
-namespace metrics { class LoadType; }
-
 namespace storage::spi {
-
-using LoadType = metrics::LoadType;
 
 typedef uint16_t Priority; // 0 - max pri, 255 - min pri
 
@@ -46,18 +42,15 @@ struct Trace {
 };
 
 class Context {
-    const LoadType* _loadType;
     Priority _priority;
     vespalib::Trace _trace;
     ReadConsistency _readConsistency;
-
 public:
     Context(Context &&) = default;
     Context & operator = (Context &&) = default;
-    Context(const LoadType& loadType, Priority pri, int maxTraceLevel);
+    Context(Priority pri, int maxTraceLevel);
     ~Context();
 
-    const LoadType& getLoadType() const { return *_loadType; }
     Priority getPriority() const { return _priority; }
 
     /**
@@ -76,12 +69,14 @@ public:
         return _readConsistency;
     }
 
+    vespalib::Trace && steal_trace() { return std::move(_trace); }
     vespalib::Trace& getTrace() { return _trace; }
     const vespalib::Trace& getTrace() const { return _trace; }
 
     bool shouldTrace(int level) { return _trace.shouldTrace(level); }
-    void trace(int level, vespalib::stringref msg, bool addTime = true)
-        { _trace.trace(level, msg, addTime); }
+    void trace(int level, vespalib::stringref msg, bool addTime = true) {
+        _trace.trace(level, msg, addTime);
+    }
 };
 
 }

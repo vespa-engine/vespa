@@ -28,7 +28,7 @@ make_random_level_generator(uint32_t m)
 std::unique_ptr<NearestNeighborIndex>
 DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
                                          size_t vector_size,
-                                         vespalib::eval::ValueType::CellType cell_type,
+                                         vespalib::eval::CellType cell_type,
                                          const search::attribute::HnswIndexParams& params) const
 {
     (void) vector_size;

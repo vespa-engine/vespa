@@ -42,7 +42,6 @@ public class ConfigChangeActionsSlimeConverter {
         for (RefeedActions.Entry entry : actions.getRefeedActions().getEntries()) {
             Cursor entryCursor = refeedCursor.addObject();
             entryCursor.setString("name", entry.name());
-            entryCursor.setBool("allowed", entry.allowed());
             entryCursor.setString("documentType", entry.getDocumentType());
             entryCursor.setString("clusterName", entry.getClusterName());
             messagesToSlime(entryCursor, entry.getMessages());
@@ -55,7 +54,6 @@ public class ConfigChangeActionsSlimeConverter {
         for (ReindexActions.Entry entry : actions.getReindexActions().getEntries()) {
             Cursor entryCursor = refeedCursor.addObject();
             entryCursor.setString("name", entry.name());
-            entryCursor.setBool("allowed", entry.allowed());
             entryCursor.setString("documentType", entry.getDocumentType());
             entryCursor.setString("clusterName", entry.getClusterName());
             messagesToSlime(entryCursor, entry.getMessages());

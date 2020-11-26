@@ -49,6 +49,7 @@ using search::tensor::NearestNeighborIndexSaver;
 using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
 using vespalib::eval::TensorSpec;
+using vespalib::eval::CellType;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
 using vespalib::eval::EngineOrFactory;
@@ -228,11 +229,11 @@ class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
 
     std::unique_ptr<NearestNeighborIndex> make(const DocVectorAccess& vectors,
                                                size_t vector_size,
-                                               ValueType::CellType cell_type,
+                                               CellType cell_type,
                                                const search::attribute::HnswIndexParams& params) const override {
         (void) vector_size;
         (void) params;
-        assert(cell_type == ValueType::CellType::DOUBLE);
+        assert(cell_type == CellType::DOUBLE);
         return std::make_unique<MockNearestNeighborIndex>(vectors);
     }
 };

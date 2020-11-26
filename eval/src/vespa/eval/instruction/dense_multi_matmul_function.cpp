@@ -60,11 +60,11 @@ void my_cblas_float_multi_matmul_op(InterpretedFunction::State &state, uint64_t 
     state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type(), TypedCells(dst_cells)));
 }
 
-InterpretedFunction::op_function my_select(ValueType::CellType cell_type) {
-    if (cell_type == ValueType::CellType::DOUBLE) {
+InterpretedFunction::op_function my_select(CellType cell_type) {
+    if (cell_type == CellType::DOUBLE) {
         return my_cblas_double_multi_matmul_op;
     }
-    if (cell_type == ValueType::CellType::FLOAT) {
+    if (cell_type == CellType::FLOAT) {
         return my_cblas_float_multi_matmul_op;
     }
     abort();
@@ -117,7 +117,7 @@ struct DimPrefix {
 bool check_input_type(const ValueType &type, const DimList &relevant) {
     return (type.is_dense() &&
             (relevant.size() >= 2) &&
-            ((type.cell_type() == ValueType::CellType::FLOAT) || (type.cell_type() == ValueType::CellType::DOUBLE)));
+            ((type.cell_type() == CellType::FLOAT) || (type.cell_type() == CellType::DOUBLE)));
 }
 
 bool is_multi_matmul(const ValueType &a, const ValueType &b, const vespalib::string &reduce_dim) {

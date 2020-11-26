@@ -19,6 +19,7 @@ LOG_SETUP(".eval.onnx_wrapper");
 
 using vespalib::ArrayRef;
 using vespalib::ConstArrayRef;
+using vespalib::eval::CellType;
 using vespalib::eval::ValueType;
 using vespalib::eval::TypifyCellType;
 
@@ -110,18 +111,18 @@ auto convert_optimize(Onnx::Optimize optimize) {
     abort();
 }
 
-ValueType::CellType to_cell_type(Onnx::ElementType type) {
+CellType to_cell_type(Onnx::ElementType type) {
     switch (type) {
     case Onnx::ElementType::INT8:   [[fallthrough]];
     case Onnx::ElementType::INT16:  [[fallthrough]];
     case Onnx::ElementType::UINT8:  [[fallthrough]];
     case Onnx::ElementType::UINT16: [[fallthrough]];
-    case Onnx::ElementType::FLOAT:  return ValueType::CellType::FLOAT;
+    case Onnx::ElementType::FLOAT:  return CellType::FLOAT;
     case Onnx::ElementType::INT32:  [[fallthrough]];
     case Onnx::ElementType::INT64:  [[fallthrough]];
     case Onnx::ElementType::UINT32: [[fallthrough]];
     case Onnx::ElementType::UINT64: [[fallthrough]];
-    case Onnx::ElementType::DOUBLE: return ValueType::CellType::DOUBLE;
+    case Onnx::ElementType::DOUBLE: return CellType::DOUBLE;
     }
     abort();
 }
@@ -381,21 +382,21 @@ Onnx::EvalContext::convert_result(EvalContext &self, size_t idx)
 
 struct Onnx::EvalContext::SelectAdaptParam {
     template <typename ...Ts> static auto invoke() { return adapt_param<Ts...>; }
-    auto operator()(eval::ValueType::CellType ct) {
+    auto operator()(eval::CellType ct) {
         return typify_invoke<1,MyTypify,SelectAdaptParam>(ct);
     }
 };
 
 struct Onnx::EvalContext::SelectConvertParam {
     template <typename ...Ts> static auto invoke() { return convert_param<Ts...>; }
-    auto operator()(eval::ValueType::CellType ct, Onnx::ElementType et) {
+    auto operator()(eval::CellType ct, Onnx::ElementType et) {
         return typify_invoke<2,MyTypify,SelectConvertParam>(ct, et);
     }
 };
 
 struct Onnx::EvalContext::SelectConvertResult {
     template <typename ...Ts> static auto invoke() { return convert_result<Ts...>; }
-    auto operator()(Onnx::ElementType et, eval::ValueType::CellType ct) {
+    auto operator()(Onnx::ElementType et, eval::CellType ct) {
         return typify_invoke<2,MyTypify,SelectConvertResult>(et, ct);
     }
 };

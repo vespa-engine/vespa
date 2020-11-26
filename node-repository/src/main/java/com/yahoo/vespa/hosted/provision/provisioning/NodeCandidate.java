@@ -363,11 +363,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
             try {
                 allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
                 if (allocation.isEmpty()) return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get(),
-                                                                          "No IP addresses available on parent host");
+                                                                          "No addresses available on parent host");
             } catch (Exception e) {
-                log.warning("Failed allocating IP address on " + parent.get() +": " + Exceptions.toMessageString(e));
+                log.warning("Failed allocating address on " + parent.get() +": " + Exceptions.toMessageString(e));
                 return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get(),
-                                                "Failed when allocating IP address on host");
+                                                "Failed when allocating address on host");
             }
 
             Node node = Node.createDockerNode(allocation.get().addresses(),

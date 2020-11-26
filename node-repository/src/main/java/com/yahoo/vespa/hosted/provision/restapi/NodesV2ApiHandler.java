@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -256,8 +257,12 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         Set<String> ipAddressPool = new HashSet<>();
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
+        List<Address> addressPool = new ArrayList<>();
+        inspector.field("additionalHostnames").traverse((ArrayTraverser) (i, item) ->
+                addressPool.add(new Address(item.asString())));
+
         Node.Builder builder = Node.create(inspector.field("openStackId").asString(),
-                                           IP.Config.of(ipAddresses, ipAddressPool, List.of()),
+                                           IP.Config.of(ipAddresses, ipAddressPool, addressPool),
                                            inspector.field("hostname").asString(),
                                            flavorFromSlime(inspector),
                                            nodeTypeFromSlime(inspector.field("type")));

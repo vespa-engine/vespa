@@ -22,24 +22,23 @@ RoutableFactories60::DocumentMessageFactory::encode(const mbus::Routable &obj, v
 {
     const auto &msg = static_cast<const DocumentMessage&>(obj);
     out.putByte(msg.getPriority());
-    out.putInt(msg.getLoadType().getId());
+    out.putInt(LoadType::DEFAULT.getId());
     return doEncode(msg, out);
 }
 
 mbus::Routable::UP
-RoutableFactories60::DocumentMessageFactory::decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const
+RoutableFactories60::DocumentMessageFactory::decode(document::ByteBuffer &in, const LoadTypeSet&) const
 {
     uint8_t pri;
     in.getByte(pri);
-    uint32_t loadClass = decodeInt(in);
+    (void) decodeInt(in);
 
     DocumentMessage::UP msg = doDecode(in);
     if (msg) {
         msg->setPriority((Priority::Value)pri);
-        msg->setLoadType(loadTypes[loadClass]);
     }
 
-    return mbus::Routable::UP(msg.release());
+    return msg;
 }
 
 bool

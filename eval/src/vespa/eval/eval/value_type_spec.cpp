@@ -8,8 +8,6 @@
 
 namespace vespalib::eval::value_type {
 
-using CellType = ValueType::CellType;
-
 namespace {
 
 const char *to_name(CellType cell_type) {
@@ -188,7 +186,7 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out,
     } else if (type_name == "float") {
         return ValueType::make_type(CellType::FLOAT, {});
     } else if (type_name == "tensor") {
-        ValueType::CellType cell_type = parse_cell_type(ctx);
+        CellType cell_type = parse_cell_type(ctx);
         std::vector<ValueType::Dimension> list = parse_dimension_list(ctx);
         if (!ctx.failed()) {
             if (unsorted != nullptr) {

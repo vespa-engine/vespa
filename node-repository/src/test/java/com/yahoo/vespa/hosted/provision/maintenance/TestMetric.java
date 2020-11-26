@@ -10,8 +10,8 @@ import java.util.Map;
 
 public class TestMetric implements Metric {
 
-    public Map<String, Number> values = new LinkedHashMap<>();
-    public Map<String, List<Context>> context = new LinkedHashMap<>();
+    public final Map<String, Number> values = new LinkedHashMap<>();
+    public final Map<String, List<TestContext>> context = new LinkedHashMap<>();
 
     @Override
     public void set(String key, Number val, Context ctx) {
@@ -74,9 +74,9 @@ public class TestMetric implements Metric {
     /**
      * Context where the propertymap is not shared - but unique to each value.
      */
-    private static class TestContext implements Context{
+    static class TestContext implements Context{
         Number value;
-        Map<String, ?> properties;
+        final Map<String, ?> properties;
 
         public TestContext(Map<String, ?> properties) {
             this.properties = properties;
@@ -86,4 +86,5 @@ public class TestMetric implements Metric {
             this.value = value;
         }
     }
+
 }

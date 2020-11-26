@@ -135,7 +135,9 @@ public interface NodeRepository {
                         dockerImageFrom(node.getWantedDockerImage()),
                         dockerImageFrom(node.getCurrentDockerImage()),
                         node.getReports(),
-                        node.getHistory());
+                        node.getHistory(),
+                        node.getAdditionalIpAddresses(),
+                        node.getOpenStackId());
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {

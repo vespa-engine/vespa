@@ -124,20 +124,31 @@ expect_partial_remove(const TensorSpec& input, const TensorSpec& remove, const T
 }
 
 TEST(PartialRemoveTest, remove_where_address_is_not_fully_specified) {
-    auto input = TensorSpec("tensor(x{},y{})").
+    auto input_sparse = TensorSpec("tensor(x{},y{})").
             add({{"x", "a"},{"y", "c"}}, 3.0).
             add({{"x", "a"},{"y", "d"}}, 5.0).
             add({{"x", "b"},{"y", "c"}}, 7.0);
 
-    expect_partial_remove(input,TensorSpec("tensor(x{})").add({{"x", "a"}}, 1.0),
+    expect_partial_remove(input_sparse, TensorSpec("tensor(x{})").add({{"x", "a"}}, 1.0),
                           TensorSpec("tensor(x{},y{})").add({{"x", "b"},{"y", "c"}}, 7.0));
 
-    expect_partial_remove(input, TensorSpec("tensor(y{})").add({{"y", "c"}}, 1.0),
+    expect_partial_remove(input_sparse, TensorSpec("tensor(y{})").add({{"y", "c"}}, 1.0),
                           TensorSpec("tensor(x{},y{})").add({{"x", "a"},{"y", "d"}}, 5.0));
 
-    expect_partial_remove(input, TensorSpec("tensor(y{})").add({{"y", "d"}}, 1.0),
+    expect_partial_remove(input_sparse, TensorSpec("tensor(y{})").add({{"y", "d"}}, 1.0),
                           TensorSpec("tensor(x{},y{})").add({{"x", "a"},{"y", "c"}}, 3.0)
                                   .add({{"x", "b"},{"y", "c"}}, 7.0));
+
+    auto input_mixed = TensorSpec("tensor(x{},y{},z[1])").
+            add({{"x", "a"},{"y", "c"},{"z", 0}}, 3.0).
+            add({{"x", "a"},{"y", "d"},{"z", 0}}, 5.0).
+            add({{"x", "b"},{"y", "c"},{"z", 0}}, 7.0);
+
+    expect_partial_remove(input_mixed,TensorSpec("tensor(x{})").add({{"x", "a"}}, 1.0),
+                          TensorSpec("tensor(x{},y{},z[1])").add({{"x", "b"},{"y", "c"},{"z", 0}}, 7.0));
+
+    expect_partial_remove(input_mixed, TensorSpec("tensor(y{})").add({{"y", "c"}}, 1.0),
+                          TensorSpec("tensor(x{},y{},z[1])").add({{"x", "a"},{"y", "d"},{"z", 0}}, 5.0));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

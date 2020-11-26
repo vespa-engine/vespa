@@ -7,10 +7,12 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -26,25 +28,33 @@ public class ProvisionedHost {
     private final String hostHostname;
     private final Flavor hostFlavor;
     private final Optional<ApplicationId> exclusiveTo;
-    private final String nodeHostname;
+    private final List<Address> nodeAddresses;
     private final NodeResources nodeResources;
     private final Version osVersion;
 
     public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, Optional<ApplicationId> exclusiveTo,
-                           String nodeHostname, NodeResources nodeResources, Version osVersion) {
+                           List<Address> nodeAddresses, NodeResources nodeResources, Version osVersion) {
         this.id = Objects.requireNonNull(id, "Host id must be set");
         this.hostHostname = Objects.requireNonNull(hostHostname, "Host hostname must be set");
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
         this.exclusiveTo = Objects.requireNonNull(exclusiveTo, "exclusiveTo must be set");
-        this.nodeHostname = Objects.requireNonNull(nodeHostname, "Node hostname must be set");
+        this.nodeAddresses = validateNodeAddresses(nodeAddresses);
         this.nodeResources = Objects.requireNonNull(nodeResources, "Node resources must be set");
         this.osVersion = Objects.requireNonNull(osVersion, "OS version must be set");
+    }
+
+    private static List<Address> validateNodeAddresses(List<Address> nodeAddresses) {
+        Objects.requireNonNull(nodeAddresses, "Node addresses must be set");
+        if (nodeAddresses.isEmpty()) {
+            throw new IllegalArgumentException("There must be at least one node address");
+        }
+        return nodeAddresses;
     }
 
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost() {
         Node.Builder builder = Node
-                .create(id, IP.Config.EMPTY, hostHostname, hostFlavor, NodeType.host)
+                .create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor, NodeType.host)
                 .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))));
         exclusiveTo.ifPresent(builder::exclusiveTo);
         return builder.build();
@@ -52,7 +62,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the node running on this physical host */
     public Node generateNode() {
-        return Node.createDockerNode(Set.of(), nodeHostname, hostHostname, nodeResources, NodeType.tenant).build();
+        return Node.createDockerNode(Set.of(), nodeHostname(), hostHostname, nodeResources, NodeType.tenant).build();
     }
 
     public String getId() {
@@ -68,7 +78,11 @@ public class ProvisionedHost {
     }
 
     public String nodeHostname() {
-        return nodeHostname;
+        return nodeAddresses.get(0).hostname();
+    }
+
+    public List<Address> nodeAddresses() {
+        return nodeAddresses;
     }
 
     public NodeResources nodeResources() { return nodeResources; }
@@ -81,14 +95,14 @@ public class ProvisionedHost {
         return id.equals(that.id) &&
                hostHostname.equals(that.hostHostname) &&
                hostFlavor.equals(that.hostFlavor) &&
-               nodeHostname.equals(that.nodeHostname) &&
+               nodeAddresses.equals(that.nodeAddresses) &&
                nodeResources.equals(that.nodeResources) &&
                osVersion.equals(that.osVersion);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, hostHostname, hostFlavor, nodeHostname, nodeResources, osVersion);
+        return Objects.hash(id, hostHostname, hostFlavor, nodeAddresses, nodeResources, osVersion);
     }
 
     @Override
@@ -97,7 +111,7 @@ public class ProvisionedHost {
                "id='" + id + '\'' +
                ", hostHostname='" + hostHostname + '\'' +
                ", hostFlavor=" + hostFlavor +
-               ", nodeHostname='" + nodeHostname + '\'' +
+               ", nodeAddresses='" + nodeAddresses + '\'' +
                ", nodeResources=" + nodeResources +
                ", osVersion=" + osVersion +
                '}';

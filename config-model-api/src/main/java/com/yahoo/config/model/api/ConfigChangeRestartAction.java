@@ -11,8 +11,4 @@ public interface ConfigChangeRestartAction extends ConfigChangeAction {
     @Override
     default Type getType() { return Type.RESTART; }
 
-    /** Restarts are handled automatically so they are allowed */
-    @Override
-    default boolean allowed() { return true; }
-
 }

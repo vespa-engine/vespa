@@ -3,7 +3,7 @@
 #include "roundrobinpolicy.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/routing/verbatimdirective.h>
+#include <vespa/messagebus/error.h>
 
 namespace documentapi {
 
@@ -18,7 +18,7 @@ RoundRobinPolicy::RoundRobinPolicy(const string &) :
     _cache()
 {}
 
-RoundRobinPolicy::~RoundRobinPolicy() {}
+RoundRobinPolicy::~RoundRobinPolicy() = default;
 
 void
 RoundRobinPolicy::select(mbus::RoutingContext &ctx)

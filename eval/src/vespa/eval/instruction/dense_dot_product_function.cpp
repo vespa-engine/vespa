@@ -45,12 +45,12 @@ struct MyDotProductOp {
     static auto invoke() { return my_dot_product_op<LCT,RCT>; }
 };
 
-InterpretedFunction::op_function my_select(ValueType::CellType lct, ValueType::CellType rct) {
+InterpretedFunction::op_function my_select(CellType lct, CellType rct) {
     if (lct == rct) {
-        if (lct == ValueType::CellType::DOUBLE) {
+        if (lct == CellType::DOUBLE) {
             return my_cblas_double_dot_product_op;
         }
-        if (lct == ValueType::CellType::FLOAT) {
+        if (lct == CellType::FLOAT) {
             return my_cblas_float_dot_product_op;
         }
     }

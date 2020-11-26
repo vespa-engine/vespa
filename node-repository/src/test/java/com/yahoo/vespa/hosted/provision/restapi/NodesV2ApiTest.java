@@ -91,8 +91,9 @@ public class NodesV2ApiTest {
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.8.1") + "," + // test with only 1 ip address
-                                   asHostJson("host9.yahoo.com", "large-variant", "127.0.9.1", "::9:1") + "," +
-                                   asNodeJson("parent2.yahoo.com", NodeType.host, "large-variant", Optional.of(TenantName.from("myTenant")), Optional.of(ApplicationId.from("tenant1", "app1", "instance1")), Optional.empty(), "127.0.127.1", "::127:1") + "," +
+                                   asHostJson("host9.yahoo.com", "large-variant", List.of("node9-1.yahoo.com"), "127.0.9.1", "::9:1") + "," +
+                                   asNodeJson("parent2.yahoo.com", NodeType.host, "large-variant", Optional.of(TenantName.from("myTenant")),
+                                           Optional.of(ApplicationId.from("tenant1", "app1", "instance1")), Optional.empty(), List.of(), "127.0.127.1", "::127:1") + "," +
                                    asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com", "::11") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
@@ -322,7 +323,7 @@ public class NodesV2ApiTest {
 
         // Attempt to POST host node with already assigned IP
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                         "[" + asHostJson("host200.yahoo.com", "default", "127.0.2.1") + "]",
+                                         "[" + asHostJson("host200.yahoo.com", "default", List.of(), "127.0.2.1") + "]",
                                           Request.Method.POST), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot assign [127.0.2.1] to host200.yahoo.com: [127.0.2.1] already assigned to host2.yahoo.com\"}");
 
@@ -334,7 +335,7 @@ public class NodesV2ApiTest {
 
         // Node types running a single container can share their IP address with child node
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                         "[" + asNodeJson("cfghost42.yahoo.com", NodeType.confighost, "default", Optional.empty(), Optional.empty(), Optional.empty(), "127.0.42.1") + "]",
+                                         "[" + asNodeJson("cfghost42.yahoo.com", NodeType.confighost, "default", Optional.empty(), Optional.empty(), Optional.empty(), List.of(), "127.0.42.1") + "]",
                                          Request.Method.POST), 200,
                        "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -350,7 +351,7 @@ public class NodesV2ApiTest {
 
         // ... nor with child node on different host
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                         "[" + asNodeJson("cfghost43.yahoo.com", NodeType.confighost, "default", Optional.empty(), Optional.empty(), Optional.empty(), "127.0.43.1") + "]",
+                                         "[" + asNodeJson("cfghost43.yahoo.com", NodeType.confighost, "default", Optional.empty(), Optional.empty(), Optional.empty(), List.of(), "127.0.43.1") + "]",
                                           Request.Method.POST), 200,
                        "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/cfg42.yahoo.com",
@@ -392,7 +393,7 @@ public class NodesV2ApiTest {
     @Test
     public void fails_to_ready_node_with_hard_fail() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asHostJson("host12.yahoo.com", "default") + "]").
+                        ("[" + asHostJson("host12.yahoo.com", "default", List.of()) + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
@@ -961,7 +962,8 @@ public class NodesV2ApiTest {
     public void test_node_switch_hostname() throws Exception {
         String hostname = "host42.yahoo.com";
         // Add host with switch hostname
-        String json = asNodeJson(hostname, NodeType.host, "default", Optional.empty(), Optional.empty(), Optional.of("switch0"), "127.0.42.1", "::42:1");
+        String json = asNodeJson(hostname, NodeType.host, "default", Optional.empty(), Optional.empty(),
+                Optional.of("switch0"), List.of(), "127.0.42.1", "::42:1");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + json + "]").getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
@@ -1013,17 +1015,22 @@ public class NodesV2ApiTest {
                 "\"flavor\":\"" + flavor + "\"}";
     }
 
-    private static String asHostJson(String hostname, String flavor, String... ipAddress) {
-        return asNodeJson(hostname, NodeType.host, flavor, Optional.empty(), Optional.empty(), Optional.empty(), ipAddress);
+    private static String asHostJson(String hostname, String flavor, List<String> additionalHostnames, String... ipAddress) {
+        return asNodeJson(hostname, NodeType.host, flavor, Optional.empty(), Optional.empty(), Optional.empty(),
+                additionalHostnames, ipAddress);
     }
 
-    private static String asNodeJson(String hostname, NodeType nodeType, String flavor, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo, Optional<String> switchHostname, String... ipAddress) {
+    private static String asNodeJson(String hostname, NodeType nodeType, String flavor, Optional<TenantName> reservedTo,
+                                     Optional<ApplicationId> exclusiveTo, Optional<String> switchHostname,
+                                     List<String> additionalHostnames, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
                createIpAddresses(ipAddress) +
                "\"flavor\":\"" + flavor + "\"" +
                (reservedTo.map(tenantName -> ", \"reservedTo\":\"" + tenantName.value() + "\"").orElse("")) +
                (exclusiveTo.map(appId -> ", \"exclusiveTo\":\"" + appId.serializedForm() + "\"").orElse("")) +
                (switchHostname.map(s -> ", \"switchHostname\":\"" + s + "\"").orElse("")) +
+               (additionalHostnames.isEmpty() ? "" : ", \"additionalHostnames\":[\"" +
+                        String.join("\",\"", additionalHostnames) + "\"]") +
                ", \"type\":\"" + nodeType + "\"}";
     }
 

@@ -16,6 +16,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
@@ -108,6 +109,17 @@ public class LbServicesProducerTest {
         }
     }
 
+    @Test
+    public void use_power_of_two_lb_is_configured_from_feature_flag() throws IOException, SAXException {
+            RegionName regionName = RegionName.from("us-east-1");
+
+            LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
+            assertFalse(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").usePowerOfTwoChoicesLb());
+
+            flagSource.withBooleanFlag(Flags.USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING.id(), true);
+            conf = createModelAndGetLbServicesConfig(regionName);
+            assertTrue(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").usePowerOfTwoChoicesLb());
+    }
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) throws IOException, SAXException {
         Zone zone = new Zone(Environment.prod, regionName);
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()

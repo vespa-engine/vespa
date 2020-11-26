@@ -611,9 +611,7 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
 void
 PersistenceEngine::destroyIterators()
 {
-    Context context(storage::spi::LoadType(0, "default"),
-                    storage::spi::Priority(0x80),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(storage::spi::Priority(0x80), 0);
     for (;;) {
         IteratorId id;
         {

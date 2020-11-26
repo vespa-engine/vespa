@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/tensor_function.h>
 #include <map>
 
 namespace vespalib { class Stash; }
@@ -15,8 +16,8 @@ namespace vespalib::eval::instruction {
 //-----------------------------------------------------------------------------
 
 struct GenericPeek {
-    using MyLabel = std::variant<TensorSpec::Label, size_t>;
-    using SpecMap = std::map<vespalib::string, MyLabel>;
+    // mapping from dimension name to verbatim label or child
+    using SpecMap = tensor_function::Peek::Spec;
 
     static InterpretedFunction::Instruction
     make_instruction(const ValueType &input_type,

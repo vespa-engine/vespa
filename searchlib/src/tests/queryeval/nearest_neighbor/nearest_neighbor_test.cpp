@@ -25,7 +25,7 @@ using search::AttributeVector;
 using search::BitVector;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using CellType = vespalib::eval::ValueType::CellType;
+using vespalib::eval::CellType;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::EngineOrFactory;
 using search::tensor::DistanceFunction;

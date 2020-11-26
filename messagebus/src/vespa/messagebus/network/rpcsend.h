@@ -12,7 +12,7 @@ class FRT_ReflectionBuilder;
 
 namespace vespalib::slime { struct Cursor; }
 namespace vespalib { struct Memory; }
-namespace vespalib { class TraceNode; }
+namespace vespalib { class Trace; }
 namespace mbus {
 
 class Error;
@@ -56,7 +56,7 @@ protected:
 
     virtual void build(FRT_ReflectionBuilder & builder) = 0;
     virtual std::unique_ptr<Reply> createReply(const FRT_Values & response, const string & serviceName,
-                                               Error & error, vespalib::TraceNode & rootTrace) const = 0;
+                                               Error & error, vespalib::Trace & trace) const = 0;
     virtual void encodeRequest(FRT_RPCRequest &req, const vespalib::Version &version, const Route & route,
                                const RPCServiceAddress & address, const Message & msg, uint32_t traceLevel,
                                const PayLoadFiller &filler, duration timeRemaining) const = 0;

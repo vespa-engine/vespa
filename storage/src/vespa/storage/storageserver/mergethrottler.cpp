@@ -5,6 +5,7 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/messagebus/message.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -762,7 +763,7 @@ MergeThrottler::handleMessageUp(
     if (mergeReply.getResult().getResult() != api::ReturnCode::OK) {
         LOG(debug, "Merging failed for %s (%s)",
             mergeReply.toString().c_str(),
-            mergeReply.getResult().getMessage().c_str());
+            vespalib::string(mergeReply.getResult().getMessage()).c_str());
     }
 
     processMergeReply(msg, true, msgGuard);

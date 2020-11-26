@@ -6,9 +6,6 @@ import com.google.common.base.Suppliers;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Duration;
@@ -31,7 +28,6 @@ public class ContainerImages {
 
     private final CuratorDatabaseClient db;
     private final DockerImage defaultImage;
-    private final BooleanFlag replaceImage;
 
     /**
      * The container image is read on every request to /nodes/v2/node/[fqdn]. Cache current images to avoid
@@ -40,10 +36,9 @@ public class ContainerImages {
      */
     private volatile Supplier<Map<NodeType, DockerImage>> images;
 
-    public ContainerImages(CuratorDatabaseClient db, DockerImage defaultImage, FlagSource flagSource) {
+    public ContainerImages(CuratorDatabaseClient db, DockerImage defaultImage) {
         this.db = db;
         this.defaultImage = defaultImage;
-        this.replaceImage = Flags.REGIONAL_CONTAINER_REGISTRY.bindTo(flagSource);
         createCache();
     }
 
@@ -85,7 +80,7 @@ public class ContainerImages {
     /** Rewrite the registry part of given image, using this zone's default image */
     private DockerImage rewriteRegistry(DockerImage image) {
         DockerImage zoneImage = defaultImage;
-        if (zoneImage.replacedBy().isPresent() && replaceImage.value()) {
+        if (zoneImage.replacedBy().isPresent()) {
             zoneImage = zoneImage.replacedBy().get();
         }
         return image.withRegistry(zoneImage.registry());

@@ -15,9 +15,9 @@ public class RefeedActionsFormatterTest {
     @Test
     public void formatting_of_single_action() {
         RefeedActions actions = new ConfigChangeActionsBuilder().
-                refeed(CHANGE_ID, false, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(CHANGE_ID, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
                 build().getRefeedActions();
-        assertEquals("change-id: Consider removing data and re-feed document type 'music' in cluster 'foo' because:\n" +
+        assertEquals("field-type-change: Consider removing data and re-feed document type 'music' in cluster 'foo' because:\n" +
                      "    1) change\n",
                      new RefeedActionsFormatter(actions).format());
     }
@@ -25,20 +25,18 @@ public class RefeedActionsFormatterTest {
     @Test
     public void formatting_of_multiple_actions() {
         RefeedActions actions = new ConfigChangeActionsBuilder().
-                refeed(CHANGE_ID,   false, CHANGE_MSG,   DOC_TYPE,   CLUSTER, SERVICE_NAME).
-                refeed(CHANGE_ID,   false, CHANGE_MSG_2, DOC_TYPE,   CLUSTER, SERVICE_NAME).
-                refeed(CHANGE_ID_2, false, CHANGE_MSG_2, DOC_TYPE,   CLUSTER, SERVICE_NAME).
-                refeed(CHANGE_ID_2, true, CHANGE_MSG_2, DOC_TYPE,   CLUSTER, SERVICE_NAME).
-                refeed(CHANGE_ID,   false, CHANGE_MSG_2, DOC_TYPE_2, CLUSTER, SERVICE_NAME).
+                refeed(CHANGE_ID, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(CHANGE_ID, CHANGE_MSG_2, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(CHANGE_ID_2, CHANGE_MSG_2, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(CHANGE_ID_2, CHANGE_MSG_2, DOC_TYPE, CLUSTER, SERVICE_NAME).
+                refeed(CHANGE_ID, CHANGE_MSG_2, DOC_TYPE_2, CLUSTER, SERVICE_NAME).
                 build().getRefeedActions();
-        assertEquals("change-id: Consider removing data and re-feed document type 'book' in cluster 'foo' because:\n" +
+        assertEquals("field-type-change: Consider removing data and re-feed document type 'book' in cluster 'foo' because:\n" +
                      "    1) other change\n" +
-                     "change-id: Consider removing data and re-feed document type 'music' in cluster 'foo' because:\n" +
+                     "field-type-change: Consider removing data and re-feed document type 'music' in cluster 'foo' because:\n" +
                      "    1) change\n" +
                      "    2) other change\n" +
-                     "other-change-id: Consider removing data and re-feed document type 'music' in cluster 'foo' because:\n" +
-                     "    1) other change\n" +
-                     "(allowed) other-change-id: Consider removing data and re-feed document type 'music' in cluster 'foo' because:\n" +
+                     "indexing-change: Consider removing data and re-feed document type 'music' in cluster 'foo' because:\n" +
                      "    1) other change\n",
                 new RefeedActionsFormatter(actions).format());
     }

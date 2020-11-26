@@ -38,7 +38,7 @@ public:
                      const Config& config,
                      VisitorMetricSet& metrics);
 
-    ~VisitorOperation();
+    ~VisitorOperation() override;
 
     void onClose(DistributorMessageSender& sender) override;
     void onStart(DistributorMessageSender& sender) override;

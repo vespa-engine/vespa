@@ -15,8 +15,6 @@ namespace storage {
 
 class MergeStatus : public document::Printable {
 public:
-    using SP = std::shared_ptr<MergeStatus>;
-
     std::shared_ptr<api::StorageReply> reply;
     std::vector<api::MergeBucketCommand::Node> full_node_list;
     std::vector<api::MergeBucketCommand::Node> nodeList;
@@ -29,8 +27,8 @@ public:
     framework::MilliSecTimer startTime;
     spi::Context context;
  	
-    MergeStatus(const framework::Clock&, const metrics::LoadType&, api::StorageMessage::Priority, uint32_t traceLevel);
-    ~MergeStatus();
+    MergeStatus(const framework::Clock&, api::StorageMessage::Priority, uint32_t traceLevel);
+    ~MergeStatus() override;
 
     /**
      * Note: hasMask parameter and _entry._hasMask in part vector are per-reply masks,
@@ -41,7 +39,7 @@ public:
      */
     bool removeFromDiff(const std::vector<api::ApplyBucketDiffCommand::Entry>& part, uint16_t hasMask, const std::vector<api::MergeBucketCommand::Node> &nodes);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool isFirstNode() const { return (reply.get() != 0); }
+    bool isFirstNode() const { return static_cast<bool>(reply); }
 };
 
 } // storage

@@ -165,7 +165,7 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.containerImages = new ContainerImages(db, containerImage, flagSource);
+        this.containerImages = new ContainerImages(db, containerImage);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.spareCount = spareCount;
@@ -460,7 +460,7 @@ public class NodeRepository extends AbstractComponent {
                     .map(node -> {
                         if (node.state() != State.provisioned && node.state() != State.dirty)
                             illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
-                        if (node.type() == NodeType.host && node.ipConfig().pool().isEmpty())
+                        if (node.type() == NodeType.host && node.ipConfig().pool().getIpSet().isEmpty())
                             illegal("Can not set host " + node + " ready. Its IP address pool is empty.");
                         return node.withWantToRetire(false, false, Agent.system, clock.instant());
                     })

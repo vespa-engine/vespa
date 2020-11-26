@@ -57,6 +57,8 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
         List<String> respondents;
         do {
             respondents = curator.framework().getChildren().forPath(barrierPath);
+            log.log(Level.FINE, respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " +
+                                respondents + ", all participants: " + curator.zooKeeperEnsembleConnectionSpec());
 
             // First, check if all config servers responded
             if (respondents.size() == curator.zooKeeperEnsembleCount()) {

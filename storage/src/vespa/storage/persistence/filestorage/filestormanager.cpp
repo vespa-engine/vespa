@@ -673,10 +673,10 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case DestroyIteratorCommand::ID:
     {
-        spi::Context context(msg->getLoadType(), msg->getPriority(), msg->getTrace().getLevel());
+        spi::Context context(msg->getPriority(), msg->getTrace().getLevel());
         shared_ptr<DestroyIteratorCommand> cmd(std::static_pointer_cast<DestroyIteratorCommand>(msg));
         _provider->destroyIterator(cmd->getIteratorId(), context);
-        msg->getTrace().getRoot().addChild(context.getTrace().getRoot());
+        msg->getTrace().addChild(context.steal_trace());
         return true;
     }
     case ReadBucketList::ID:

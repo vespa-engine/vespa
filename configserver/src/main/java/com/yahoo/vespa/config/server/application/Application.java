@@ -130,7 +130,13 @@ public class Application implements ModelResult {
         if (logDebug()) {
             debug("Resolving " + configKey + " with config definition " + def);
         }
-        ConfigPayload payload = model.getConfig(configKey, def);
+
+        ConfigPayload payload = null;
+        try {
+            payload = model.getConfig(configKey, def);
+        } catch (Exception e) {
+            throw new ConfigurationRuntimeException("Unable to get config for " + app, e);
+        }
         if (payload == null) {
             metricUpdater.incrementFailedRequests();
             throw new ConfigurationRuntimeException("Unable to resolve config " + configKey);
