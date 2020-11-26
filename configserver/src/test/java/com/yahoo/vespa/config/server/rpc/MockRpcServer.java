@@ -25,7 +25,7 @@ import java.util.concurrent.CompletionService;
  */
 public class MockRpcServer extends RpcServer {
 
-    public RuntimeException exception = null;
+    public final RuntimeException exception = null;
     public int errorCode = 0;
     public final ConfigResponse response = null;
 

@@ -35,7 +35,7 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         if (payload == null) {
             payload = inputPayload;
             ConfigPayload configPayload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(payload.split("\n")));
-            setConfig(0L, false, false, configPayload.toInstance(configClass, key.getConfigId()));
+            setConfig(0L, false, configPayload.toInstance(configClass, key.getConfigId()));
             return true;
         }
         try {
