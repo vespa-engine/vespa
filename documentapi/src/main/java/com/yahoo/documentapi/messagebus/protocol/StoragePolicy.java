@@ -60,7 +60,6 @@ public class StoragePolicy extends SlobrokPolicy {
         SlobrokHostPatternGenerator(String clusterName) {
             base = "storage/cluster." + clusterName + "/distributor/";
             all = base + "*/default";
-
         }
 
         /**
@@ -224,12 +223,10 @@ public class StoragePolicy extends SlobrokPolicy {
     /** Class parsing the semicolon separated parameter string and exposes the appropriate value to the policy. */
     public static class Parameters {
         protected final String clusterName;
-        protected final String distributionConfigId;
         protected final SlobrokHostPatternGenerator slobrokHostPatternGenerator;
 
         public Parameters(Map<String, String> params) {
             clusterName = Objects.requireNonNull(params.get("cluster"), "Required parameter cluster with clustername not set");
-            distributionConfigId = clusterName;
             slobrokHostPatternGenerator = createPatternGenerator();
         }
 
