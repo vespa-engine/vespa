@@ -164,7 +164,7 @@ vespalib::string Empty;
 }
 
 // TODO we ideally want this removed. Currently just in place to support usage as map key when emplacement not available
-StorageMessageAddress::StorageMessageAddress()
+StorageMessageAddress::StorageMessageAddress() noexcept
     : _cluster(&Empty),
       _precomputed_storage_hash(0),
       _type(lib::NodeType::Type::UNKNOWN),
@@ -172,12 +172,12 @@ StorageMessageAddress::StorageMessageAddress()
       _index(0)
 {}
 
-StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index)
+StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept
     : StorageMessageAddress(cluster, type, index, Protocol::STORAGE)
 { }
 
 StorageMessageAddress::StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type,
-                                             uint16_t index, Protocol protocol)
+                                             uint16_t index, Protocol protocol) noexcept
     : _cluster(cluster),
       _precomputed_storage_hash(calculate_node_hash(type, index)),
       _type(type.getType()),
@@ -199,7 +199,7 @@ StorageMessageAddress::to_mbus_route() const
 }
 
 bool
-StorageMessageAddress::operator==(const StorageMessageAddress& other) const
+StorageMessageAddress::operator==(const StorageMessageAddress& other) const noexcept
 {
     if (_protocol != other._protocol) return false;
     if (_type != other._type) return false;
@@ -236,12 +236,12 @@ StorageMessageAddress::print(vespalib::asciistream & out) const
 TransportContext::~TransportContext() = default;
 
 StorageMessage::Id
-StorageMessage::generateMsgId()
+StorageMessage::generateMsgId() noexcept
 {
     return _G_lastMsgId.fetch_add(1, std::memory_order_relaxed);
 }
 
-StorageMessage::StorageMessage(const MessageType& type, Id id)
+StorageMessage::StorageMessage(const MessageType& type, Id id) noexcept
     : _type(type),
       _msgId(id),
       _address(),
@@ -251,7 +251,7 @@ StorageMessage::StorageMessage(const MessageType& type, Id id)
 {
 }
 
-StorageMessage::StorageMessage(const StorageMessage& other, Id id)
+StorageMessage::StorageMessage(const StorageMessage& other, Id id) noexcept
     : _type(other._type),
       _msgId(id),
       _address(),
@@ -264,12 +264,12 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id)
 StorageMessage::~StorageMessage() = default;
 
 const documentapi::LoadType&
-StorageMessage::getLoadType() const {
+StorageMessage::getLoadType() const noexcept {
     return documentapi::LoadType::DEFAULT;
 }
 
 void
-StorageMessage::setNewMsgId()
+StorageMessage::setNewMsgId() noexcept
 {
     _msgId = generateMsgId();
 }

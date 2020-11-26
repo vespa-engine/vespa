@@ -27,7 +27,7 @@ NodeType::get(vespalib::stringref serialized)
 }
 
 const NodeType&
-NodeType::get(Type type)
+NodeType::get(Type type) noexcept
 {
     switch (type) {
         case Type::STORAGE:
@@ -40,7 +40,7 @@ NodeType::get(Type type)
     abort();
 }
 
-NodeType::NodeType(vespalib::stringref name, Type type)
+NodeType::NodeType(vespalib::stringref name, Type type) noexcept
     : _type(type), _name(name)
 {
 }

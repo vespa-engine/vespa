@@ -29,24 +29,24 @@ public:
 
     /** Throws vespalib::IllegalArgumentException if invalid state given. */
     static const NodeType& get(vespalib::stringref serialized);
-    static const NodeType& get(Type type);
-    const vespalib::string& serialize() const { return _name; }
+    static const NodeType& get(Type type) noexcept;
+    const vespalib::string& serialize() const noexcept { return _name; }
 
-    Type getType() const { return _type; }
-    operator uint16_t() const { return static_cast<uint16_t>(_type); }
+    Type getType() const noexcept { return _type; }
+    operator uint16_t() const noexcept { return static_cast<uint16_t>(_type); }
 
-    const vespalib::string & toString() const { return _name; }
-    bool operator==(const NodeType& other) const { return (&other == this); }
-    bool operator!=(const NodeType& other) const { return (&other != this); }
+    const vespalib::string & toString() const noexcept { return _name; }
+    bool operator==(const NodeType& other) const noexcept { return (&other == this); }
+    bool operator!=(const NodeType& other) const noexcept { return (&other != this); }
 
-    bool operator<(const NodeType& other) const {
+    bool operator<(const NodeType& other) const noexcept {
         return (&other == this ? false : *this == NodeType::DISTRIBUTOR);
     }
 private:
     Type             _type;
     vespalib::string _name;
 
-    NodeType(vespalib::stringref name, Type type);
+    NodeType(vespalib::stringref name, Type type) noexcept;
 };
 
 std::ostream & operator << (std::ostream & os, const NodeType & n);
