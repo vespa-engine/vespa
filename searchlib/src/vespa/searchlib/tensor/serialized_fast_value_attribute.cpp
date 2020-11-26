@@ -21,8 +21,6 @@ namespace search::tensor {
 
 namespace {
 
-constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
-
 struct ValueBlock : LabelBlock {
     TypedCells cells;
 };
@@ -154,7 +152,6 @@ SerializedFastValueAttribute::getTensor(DocId docId) const
     return {};
 }
 
-
 bool
 SerializedFastValueAttribute::onLoad()
 {
@@ -163,7 +160,7 @@ SerializedFastValueAttribute::onLoad()
         return false;
     }
     setCreateSerialNum(tensorReader.getCreateSerialNum());
-    assert(tensorReader.getVersion() == TENSOR_ATTRIBUTE_VERSION);
+    assert(tensorReader.getVersion() == getVersion());
     uint32_t numDocs(tensorReader.getDocIdLimit());
     _refVector.reset();
     _refVector.unsafe_reserve(numDocs);
