@@ -51,7 +51,7 @@ TensorSpec sparse_1d_all_two() {
 //-----------------------------------------------------------------------------
 
 
-TEST(ReferenceConcatTest, concat_gives_expected_results) {
+TEST(ReferenceConcatTest, concat_numbers) {
     auto a = TensorSpec("double").add({}, 7.0);
     auto b = TensorSpec("double").add({}, 4.0);
     auto output = ReferenceOperations::concat(a, b, "x");
@@ -59,12 +59,16 @@ TEST(ReferenceConcatTest, concat_gives_expected_results) {
         .add({{"x", 0}}, 7.0)
         .add({{"x", 1}}, 4.0);
     EXPECT_EQ(output, expect);
-    a = TensorSpec("tensor(a[3])")
+}
+
+TEST(ReferenceConcatTest, concat_vector_and_number) {
+    auto a = TensorSpec("tensor(a[3])")
         .add({{"a", 0}}, 1.0)
         .add({{"a", 1}}, 2.0)
         .add({{"a", 2}}, 3.0);
-    output = ReferenceOperations::concat(a, b, "a");
-    expect = TensorSpec("tensor(a[4])")
+    auto b = TensorSpec("double").add({}, 4.0);
+    auto output = ReferenceOperations::concat(a, b, "a");
+    auto expect = TensorSpec("tensor(a[4])")
         .add({{"a", 0}}, 1.0)
         .add({{"a", 1}}, 2.0)
         .add({{"a", 2}}, 3.0)
@@ -77,16 +81,55 @@ TEST(ReferenceConcatTest, concat_gives_expected_results) {
         .add({{"a", 2}}, 2.0)
         .add({{"a", 3}}, 3.0);
     EXPECT_EQ(output, expect);
-    a = mixed_5d_some_cells(false);
-    b = mixed_5d_some_cells(true);
-    output = ReferenceOperations::concat(a, b, "a");
-    EXPECT_EQ(output.type(), "tensor(a[6],b[1],c{},d[5],e{})");
-    output = ReferenceOperations::concat(a, b, "b");
-    EXPECT_EQ(output.type(), "tensor(a[3],b[2],c{},d[5],e{})");
-    output = ReferenceOperations::concat(a, b, "x");
-    EXPECT_EQ(output.type(), "tensor(a[3],b[1],c{},d[5],e{},x[2])");
-    output = ReferenceOperations::concat(a, b, "c");
-    EXPECT_EQ(output.type(), "error");
+}
+
+TEST(ReferenceConcatTest, concat_mixed_tensors) {
+    auto l = TensorSpec("tensor(a{},b[2])")
+        .add({{"a","bar"},{"b",0}}, 2.0)
+        .add({{"a","bar"},{"b",1}}, 3.0)
+        .add({{"a","foo"},{"b",0}}, 4.0)
+        .add({{"a","foo"},{"b",1}}, 5.0)
+        .add({{"a","qux"},{"b",0}}, 6.0)
+        .add({{"a","qux"},{"b",1}}, 7.0);
+    auto r = TensorSpec("tensor(a{},b[3])")
+        .add({{"a","foo"},{"b",0}}, 10.0)
+        .add({{"a","foo"},{"b",1}}, 11.0)
+        .add({{"a","foo"},{"b",2}}, 12.0)
+        .add({{"a","bar"},{"b",0}}, 13.0)
+        .add({{"a","bar"},{"b",1}}, 14.0)
+        .add({{"a","bar"},{"b",2}}, 15.0);
+    auto output = ReferenceOperations::concat(l, r, "a");
+    EXPECT_EQ(output, TensorSpec("error"));
+    output = ReferenceOperations::concat(l, r, "b");
+    auto expect = TensorSpec("tensor(a{},b[5])")
+        .add({{"a","bar"},{"b",0}}, 2.0)
+        .add({{"a","bar"},{"b",1}}, 3.0)
+        .add({{"a","foo"},{"b",0}}, 4.0)
+        .add({{"a","foo"},{"b",1}}, 5.0)
+        .add({{"a","foo"},{"b",2}}, 10.0)
+        .add({{"a","foo"},{"b",3}}, 11.0)
+        .add({{"a","foo"},{"b",4}}, 12.0)
+        .add({{"a","bar"},{"b",2}}, 13.0)
+        .add({{"a","bar"},{"b",3}}, 14.0)
+        .add({{"a","bar"},{"b",4}}, 15.0);
+    EXPECT_EQ(output, expect);
+    output = ReferenceOperations::concat(l, r, "x");
+    EXPECT_EQ(output, TensorSpec("error"));
+    output = ReferenceOperations::concat(r, r, "x");
+    expect = TensorSpec("tensor(a{},b[3],x[2])")
+        .add({{"a","foo"},{"b",0},{"x",0}}, 10.0)
+        .add({{"a","foo"},{"b",1},{"x",0}}, 11.0)
+        .add({{"a","foo"},{"b",2},{"x",0}}, 12.0)
+        .add({{"a","bar"},{"b",0},{"x",0}}, 13.0)
+        .add({{"a","bar"},{"b",1},{"x",0}}, 14.0)
+        .add({{"a","bar"},{"b",2},{"x",0}}, 15.0)
+        .add({{"a","foo"},{"b",0},{"x",1}}, 10.0)
+        .add({{"a","foo"},{"b",1},{"x",1}}, 11.0)
+        .add({{"a","foo"},{"b",2},{"x",1}}, 12.0)
+        .add({{"a","bar"},{"b",0},{"x",1}}, 13.0)
+        .add({{"a","bar"},{"b",1},{"x",1}}, 14.0)
+        .add({{"a","bar"},{"b",2},{"x",1}}, 15.0);
+    EXPECT_EQ(output, expect);
 }
 
 //-----------------------------------------------------------------------------
@@ -109,16 +152,18 @@ TEST(ReferenceCreateTest, simple_create_works) {
 
 //-----------------------------------------------------------------------------
 
-TEST(ReferenceJoinTest, join_gives_expected_results) {
+TEST(ReferenceJoinTest, join_numbers) {
     auto a = TensorSpec("tensor()").add({}, 7.0);
     auto b = TensorSpec("tensor()").add({}, 4.0);
     auto output = ReferenceOperations::join(a, b, operation::Sub::f);
     EXPECT_EQ(output, TensorSpec("double").add({}, 3.0));
+}
 
+TEST(ReferenceJoinTest, join_mixed_tensors) {
     const auto expect_sq = mixed_5d_some_cells(true);
-    a = mixed_5d_some_cells(false);
-    b = TensorSpec("double").add({}, 2.0);
-    output = ReferenceOperations::join(a, b, operation::Pow::f);
+    auto a = mixed_5d_some_cells(false);
+    auto b = TensorSpec("double").add({}, 2.0);
+    auto output = ReferenceOperations::join(a, b, operation::Pow::f);
     EXPECT_EQ(output, expect_sq);
     output = ReferenceOperations::join(a, a, operation::Mul::f);        
     EXPECT_EQ(output, expect_sq);
@@ -134,29 +179,35 @@ TEST(ReferenceJoinTest, join_gives_expected_results) {
 
 //-----------------------------------------------------------------------------
 
-TEST(ReferenceMapTest, map_gives_expected_results) {
+TEST(ReferenceMapTest, map_numbers) {
     auto input = TensorSpec("tensor()").add({}, 0.0);
     auto output = ReferenceOperations::map(input, operation::Exp::f);
     EXPECT_EQ(output, TensorSpec("double").add({}, 1.0));
     auto out2 = ReferenceOperations::map(output, operation::Neg::f);
     EXPECT_EQ(out2, TensorSpec("double").add({}, -1.0));
+}
 
-    input = dense_2d_some_cells(false);
-    output = ReferenceOperations::map(input, operation::Square::f);
+TEST(ReferenceMapTest, map_dense_tensor) {
+    auto input = dense_2d_some_cells(false);
+    auto output = ReferenceOperations::map(input, operation::Square::f);
     EXPECT_EQ(output, dense_2d_some_cells(true));
-        
-    input = sparse_2d_some_cells(false);
-    output = ReferenceOperations::map(input, operation::Square::f);
+}
+
+TEST(ReferenceMapTest, map_sparse_tensor) {
+    auto input = sparse_2d_some_cells(false);
+    auto output = ReferenceOperations::map(input, operation::Square::f);
     EXPECT_EQ(output, sparse_2d_some_cells(true));
-        
-    input = mixed_5d_some_cells(false);
-    output = ReferenceOperations::map(input, operation::Square::f);
+}
+
+TEST(ReferenceMapTest, map_mixed_tensor) {
+    auto input = mixed_5d_some_cells(false);
+    auto output = ReferenceOperations::map(input, operation::Square::f);
     EXPECT_EQ(output, mixed_5d_some_cells(true));
 }
 
 //-----------------------------------------------------------------------------
 
-TEST(ReferenceMergeTest, mixed_merge_works) {
+TEST(ReferenceMergeTest, simple_mixed_merge) {
     auto a = mixed_5d_some_cells(false);
     auto b = TensorSpec("tensor(a[3],b[1],c{},d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"c", "foo"}, {"d", 4}, {"e", "foo"}}, 0.0)
