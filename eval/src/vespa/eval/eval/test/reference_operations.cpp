@@ -232,9 +232,6 @@ TensorSpec ReferenceOperations::peek(const TensorSpec &param, const PeekSpec &pe
             result.add(my_addr, cell.second);
         }
     }
-    if (result.cells().empty() && result_type.is_scalar()) {
-        result.add({}, 0.0);
-    }
     return result;
 }
 

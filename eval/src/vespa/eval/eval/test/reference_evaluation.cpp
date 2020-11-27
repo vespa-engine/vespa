@@ -135,7 +135,7 @@ struct EvalNode : public NodeVisitor {
                 }
             }
         }
-        result = ReferenceOperations::peek(param, spec, children);
+        result = ReferenceOperations::peek(param, spec, children).normalize();
     }
 
     //-------------------------------------------------------------------------

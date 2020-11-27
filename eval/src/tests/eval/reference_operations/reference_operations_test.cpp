@@ -251,7 +251,7 @@ TEST(ReferencePeekTest, verbatim_labels) {
     spec.emplace("e", "nomatch");
     // peek all mapped dimensions, non-matching verbatim labels
     output = ReferenceOperations::peek(input, spec, {});
-    expect = TensorSpec("double").add({}, 0.0);
+    expect = TensorSpec("double");
     EXPECT_EQ(output, expect);    
 
     input = dense_2d_some_cells(false);
