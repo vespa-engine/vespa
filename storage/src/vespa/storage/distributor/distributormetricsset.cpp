@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributormetricsset.h"
-#include <vespa/metrics/loadmetric.hpp>
-#include <vespa/metrics/summetric.hpp>
 #include <vespa/vespalib/util/memoryusage.h>
 
 namespace storage::distributor {
@@ -15,19 +13,20 @@ BucketDbMetrics::BucketDbMetrics(const vespalib::string& db_type, metrics::Metri
 
 BucketDbMetrics::~BucketDbMetrics() = default;
 
-DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
+//TODO Vespa 8 all metrics with .sum in the name should have that removed.
+DistributorMetricSet::DistributorMetricSet()
     : MetricSet("distributor", {{"distributor"}}, ""),
-      puts(lt, PersistenceOperationMetricSet("puts"), this),
-      updates(lt, UpdateMetricSet(), this),
-      update_puts(lt, PersistenceOperationMetricSet("update_puts"), this),
-      update_gets(lt, PersistenceOperationMetricSet("update_gets"), this),
-      update_metadata_gets(lt, PersistenceOperationMetricSet("update_metadata_gets"), this),
-      removes(lt, PersistenceOperationMetricSet("removes"), this),
-      removelocations(lt, PersistenceOperationMetricSet("removelocations"), this),
-      gets(lt, PersistenceOperationMetricSet("gets"), this),
-      stats(lt, PersistenceOperationMetricSet("stats"), this),
-      getbucketlists(lt, PersistenceOperationMetricSet("getbucketlists"), this),
-      visits(lt, VisitorMetricSet(), this),
+      puts("puts.sum", this),
+      updates(this),
+      update_puts("update_puts", this),
+      update_gets("update_gets", this),
+      update_metadata_gets("update_metadata_gets", this),
+      removes("removes.sum", this),
+      removelocations("removelocations.sum", this),
+      gets("gets.sum", this),
+      stats("stats", this),
+      getbucketlists("getbucketlists", this),
+      visits(this),
       stateTransitionTime("state_transition_time", {},
               "Time it takes to complete a cluster state transition. If a "
               "state transition is preempted before completing, its elapsed "
@@ -57,6 +56,3 @@ DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
 DistributorMetricSet::~DistributorMetricSet() = default;
 
 } // storage
-
-template class metrics::LoadMetric<storage::PersistenceOperationMetricSet>;
-template class metrics::SumMetric<storage::PersistenceOperationMetricSet>;

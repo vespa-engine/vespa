@@ -17,7 +17,7 @@
 
 #include "filestorhandler.h"
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageapi/messageapi/storagereply.h>

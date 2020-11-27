@@ -4,11 +4,13 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/metrics/metrics.h>
 #include <vespa/config/config.h>
 #include <vespa/config-persistence.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/persistence/messages.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
 #include <atomic>
 #include <vector>
 #include <unordered_map>

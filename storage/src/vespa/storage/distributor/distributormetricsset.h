@@ -4,9 +4,7 @@
 #include "persistence_operation_metric_set.h"
 #include "update_metric_set.h"
 #include "visitormetricsset.h"
-#include <vespa/metrics/metrics.h>
 #include <vespa/metrics/common/memory_usage_metrics.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 namespace vespalib { class MemoryUsage; }
 
@@ -21,17 +19,17 @@ struct BucketDbMetrics : metrics::MetricSet {
 
 class DistributorMetricSet : public metrics::MetricSet {
 public:
-    metrics::LoadMetric<PersistenceOperationMetricSet> puts;
-    metrics::LoadMetric<UpdateMetricSet> updates;
-    metrics::LoadMetric<PersistenceOperationMetricSet> update_puts;
-    metrics::LoadMetric<PersistenceOperationMetricSet> update_gets;
-    metrics::LoadMetric<PersistenceOperationMetricSet> update_metadata_gets;
-    metrics::LoadMetric<PersistenceOperationMetricSet> removes;
-    metrics::LoadMetric<PersistenceOperationMetricSet> removelocations;
-    metrics::LoadMetric<PersistenceOperationMetricSet> gets;
-    metrics::LoadMetric<PersistenceOperationMetricSet> stats;
-    metrics::LoadMetric<PersistenceOperationMetricSet> getbucketlists;
-    metrics::LoadMetric<VisitorMetricSet> visits;
+    PersistenceOperationMetricSet puts;
+    UpdateMetricSet updates;
+    PersistenceOperationMetricSet update_puts;
+    PersistenceOperationMetricSet update_gets;
+    PersistenceOperationMetricSet update_metadata_gets;
+    PersistenceOperationMetricSet removes;
+    PersistenceOperationMetricSet removelocations;
+    PersistenceOperationMetricSet gets;
+    PersistenceOperationMetricSet stats;
+    PersistenceOperationMetricSet getbucketlists;
+    VisitorMetricSet visits;
     metrics::DoubleAverageMetric stateTransitionTime;
     metrics::DoubleAverageMetric set_cluster_state_processing_time;
     metrics::DoubleAverageMetric activate_cluster_state_processing_time;
@@ -41,7 +39,7 @@ public:
     BucketDbMetrics mutable_dbs;
     BucketDbMetrics read_only_dbs;
 
-    explicit DistributorMetricSet(const metrics::LoadTypeSet& lt);
+    explicit DistributorMetricSet();
     ~DistributorMetricSet() override;
 };
 

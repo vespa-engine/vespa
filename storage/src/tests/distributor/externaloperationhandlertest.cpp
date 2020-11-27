@@ -43,23 +43,21 @@ struct ExternalOperationHandlerTest : Test, DistributorTestUtil {
     void start_operation_verify_rejected(std::shared_ptr<api::StorageCommand> cmd);
 
     int64_t safe_time_not_reached_metric_count(
-            const metrics::LoadMetric<PersistenceOperationMetricSet>& metrics) const {
-        return metrics[documentapi::LoadType::DEFAULT].failures
-                .safe_time_not_reached.getLongValue("count");
+            const PersistenceOperationMetricSet & metrics) const {
+        return metrics.failures.safe_time_not_reached.getLongValue("count");
     }
 
-    int64_t safe_time_not_reached_metric_count(const metrics::LoadMetric<UpdateMetricSet>& metrics) const {
-        return metrics[documentapi::LoadType::DEFAULT].failures.safe_time_not_reached.getLongValue("count");
+    int64_t safe_time_not_reached_metric_count(const UpdateMetricSet & metrics) const {
+        return metrics.failures.safe_time_not_reached.getLongValue("count");
     }
 
     int64_t concurrent_mutatations_metric_count(
-            const metrics::LoadMetric<PersistenceOperationMetricSet>& metrics) const {
-        return metrics[documentapi::LoadType::DEFAULT].failures
-                .concurrent_mutations.getLongValue("count");
+            const PersistenceOperationMetricSet& metrics) const {
+        return metrics.failures.concurrent_mutations.getLongValue("count");
     }
 
-    int64_t concurrent_mutatations_metric_count(const metrics::LoadMetric<UpdateMetricSet>& metrics) const {
-        return metrics[documentapi::LoadType::DEFAULT].failures.concurrent_mutations.getLongValue("count");
+    int64_t concurrent_mutatations_metric_count(const UpdateMetricSet & metrics) const {
+        return metrics.failures.concurrent_mutations.getLongValue("count");
     }
 
     void set_up_distributor_for_sequencing_test();

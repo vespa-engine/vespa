@@ -39,7 +39,7 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().
-                removes[msg->getLoadType()]);
+                removes);
 
         op->start(_sender, framework::MilliSecTime(0));
     }

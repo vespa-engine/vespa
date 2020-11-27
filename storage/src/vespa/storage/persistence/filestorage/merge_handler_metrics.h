@@ -1,8 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/countmetric.h>
 
+namespace metrics { class MetricSet; }
 namespace storage {
 
 // Provides a convenient wrapper for all MergeHandler-related metrics.

@@ -178,11 +178,11 @@ StorageNode::initialize()
 
     initializeNodeSpecific();
 
-    _statusMetrics.reset(new StatusMetricConsumer(
-            _context.getComponentRegister(), _context.getComponentRegister().getMetricManager()));
-    _stateReporter.reset(new StateReporter(
+    _statusMetrics = std::make_unique<StatusMetricConsumer>(
+            _context.getComponentRegister(), _context.getComponentRegister().getMetricManager());
+    _stateReporter = std::make_unique<StateReporter>(
             _context.getComponentRegister(), _context.getComponentRegister().getMetricManager(),
-            _generationFetcher));
+            _generationFetcher);
 
     // Start deadlock detector
     _deadLockDetector.reset(new DeadLockDetector(_context.getComponentRegister()));
