@@ -5,13 +5,6 @@
 
 namespace storage::api {
 
-BucketInfoReply::BucketInfoReply(const BucketInfoCommand& cmd,
-                                 const ReturnCode& code)
-    : BucketReply(cmd, code),
-      _result()
-{
-}
-
 void
 BucketInfoReply::print(std::ostream& out, bool verbose,
                        const std::string& indent) const

@@ -5,18 +5,7 @@
 
 namespace storage::api {
 
-ReturnCode::ReturnCode()
-    : _result(OK),
-      _message()
-{}
-
 ReturnCode & ReturnCode::operator = (ReturnCode &&) noexcept = default;
-ReturnCode::~ReturnCode() = default;
-
-ReturnCode::ReturnCode(Result result)
-    : _result(result),
-      _message()
-{}
 
 ReturnCode::ReturnCode(Result result, vespalib::stringref msg)
     : _result(result),
@@ -166,13 +155,6 @@ ReturnCode::isBucketDisappearance() const
         default:
             return false;
     }
-}
-
-vespalib::stringref
-ReturnCode::getMessage() const {
-    return _message
-           ? _message->operator vespalib::stringref()
-           : vespalib::stringref();
 }
 
 bool
