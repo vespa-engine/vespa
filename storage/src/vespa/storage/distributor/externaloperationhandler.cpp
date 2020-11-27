@@ -314,7 +314,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
 {
     document::BucketId bid;
-    RemoveLocationOperation::getBucketId(*this, *cmd, bid);
+    RemoveLocationOperation::getBucketId(*this, *this, *cmd, bid);
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), bid);
 
     auto& metrics = getMetrics().removelocations;

@@ -143,6 +143,7 @@ private:
     std::shared_ptr<api::StorageReply> _updateReply;
     DistributorComponent& _manager;
     DistributorNodeContext& _node_ctx;
+    DocumentSelectionParser& _parser;
     DistributorBucketSpace &_bucketSpace;
     SentMessageMap _sentMessageMap;
     SendState _sendState;

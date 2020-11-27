@@ -35,6 +35,7 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
       _updateReply(),
       _manager(manager),
       _node_ctx(manager),
+      _parser(manager),
       _bucketSpace(bucketSpace),
       _sendState(SendState::NONE_SENT),
       _mode(Mode::FAST_PATH),
@@ -576,10 +577,9 @@ TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorMessageSender& s
         return true; // No condition; nothing to do here.
     }
 
-    document::select::Parser parser(*_manager.getTypeRepo()->documentTypeRepo, _manager.getBucketIdFactory());
     std::unique_ptr<document::select::Node> selection;
     try {
-         selection = parser.parse(_updateCmd->getCondition().getSelection());
+         selection = _parser.parse_selection(_updateCmd->getCondition().getSelection());
     } catch (const document::select::ParsingFailedException & e) {
         sendReplyWithResult(sender, api::ReturnCode(
                 api::ReturnCode::ILLEGAL_PARAMETERS,

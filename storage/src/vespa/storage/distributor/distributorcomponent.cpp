@@ -2,6 +2,7 @@
 #include "distributorcomponent.h"
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
+#include <vespa/document/select/parser.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 
@@ -301,6 +302,13 @@ DistributorComponent::createAppropriateBucket(const document::Bucket &bucket)
 bool
 DistributorComponent::initializing() const {
     return _distributor.initializing();
+}
+
+std::unique_ptr<document::select::Node>
+DistributorComponent::parse_selection(const vespalib::string& selection) const
+{
+    document::select::Parser parser(*getTypeRepo()->documentTypeRepo, getBucketIdFactory());
+    return parser.parse(selection);
 }
 
 }

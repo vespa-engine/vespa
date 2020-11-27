@@ -3,6 +3,7 @@
 
 #include "distributor_node_context.h"
 #include "distributorinterface.h"
+#include "document_selection_parser.h"
 #include "operationowner.h"
 #include "statechecker.h"
 #include <vespa/storage/common/distributorcomponent.h>
@@ -27,7 +28,8 @@ struct DatabaseUpdate {
  * making those values available to other subcomponents.
  */
 class DistributorComponent : public storage::DistributorComponent,
-                             public DistributorNodeContext
+                             public DistributorNodeContext,
+                             public DocumentSelectionParser
 {
 public:
     DistributorComponent(DistributorInterface& distributor,
@@ -176,6 +178,9 @@ public:
     const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
     const vespalib::string& cluster_name() const noexcept override { return getClusterName(); }
     uint16_t node_index() const noexcept override { return getIndex(); }
+
+    // Implements DocumentSelectionParser
+    std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;
 
 private:
     void enumerateUnavailableNodes(

@@ -22,7 +22,8 @@ public:
     ~RemoveLocationOperation() override;
 
 
-    static int getBucketId(DistributorComponent& manager,
+    static int getBucketId(DistributorNodeContext& node_ctx,
+                           DocumentSelectionParser& parser,
                            const api::RemoveLocationCommand& cmd,
                            document::BucketId& id);
     void onStart(DistributorMessageSender& sender) override;
@@ -36,7 +37,8 @@ private:
 
     std::shared_ptr<api::RemoveLocationCommand> _msg;
 
-    DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
+    DocumentSelectionParser& _parser;
     DistributorBucketSpace &_bucketSpace;
 };
 

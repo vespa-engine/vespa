@@ -27,7 +27,8 @@ RemoveLocationOperation::RemoveLocationOperation(
                0),
       _tracker(_trackerInstance),
       _msg(std::move(msg)),
-      _manager(manager),
+      _node_ctx(manager),
+      _parser(manager),
       _bucketSpace(bucketSpace)
 {}
 
@@ -35,14 +36,13 @@ RemoveLocationOperation::~RemoveLocationOperation() = default;
 
 int
 RemoveLocationOperation::getBucketId(
-        DistributorComponent& manager,
+        DistributorNodeContext& node_ctx,
+        DocumentSelectionParser& parser,
         const api::RemoveLocationCommand& cmd, document::BucketId& bid)
 {
-    document::select::Parser parser(*manager.getTypeRepo()->documentTypeRepo, manager.bucket_id_factory());
-
-    document::BucketSelector bucketSel(manager.bucket_id_factory());
+    document::BucketSelector bucketSel(node_ctx.bucket_id_factory());
     std::unique_ptr<document::BucketSelector::BucketVector> exprResult
-        = bucketSel.select(*parser.parse(cmd.getDocumentSelection()));
+        = bucketSel.select(*parser.parse_selection(cmd.getDocumentSelection()));
 
     if (!exprResult.get()) {
         return 0;
@@ -58,7 +58,7 @@ void
 RemoveLocationOperation::onStart(DistributorMessageSender& sender)
 {
     document::BucketId bid;
-    int count = getBucketId(_manager, *_msg, bid);
+    int count = getBucketId(_node_ctx, _parser, *_msg, bid);
 
     if (count != 1) {
         _tracker.fail(sender,
