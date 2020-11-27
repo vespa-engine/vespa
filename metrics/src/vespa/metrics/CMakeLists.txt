@@ -4,7 +4,6 @@ vespa_add_library(metrics
     countmetric.cpp
     countmetricvalues.cpp
     jsonwriter.cpp
-    loadmetric.cpp
     memoryconsumption.cpp
     metric.cpp
     metricmanager.cpp
