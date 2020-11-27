@@ -186,18 +186,17 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
-            ChildData data = event.getData();
-            if (data == null) return; // Node might have been deleted after we got event
-            ApplicationId applicationId = ApplicationId.fromSerializedForm(Path.fromString(data.getPath()).getName());
+            // Note: event.getData() might return null on types not handled here (CONNECTION_*, INITIALIZED, see javadoc)
             switch (event.getType()) {
                 case CHILD_ADDED:
                     /* A new application is added when a session is added, @see
                     {@link com.yahoo.vespa.config.server.session.SessionRepository#childEvent(CuratorFramework, PathChildrenCacheEvent)} */
+                    ApplicationId applicationId = ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName());
                     log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
                     break;
                 // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
                 case CHILD_REMOVED:
-                    removeApplication(applicationId);
+                    removeApplication(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                     break;
                 case CHILD_UPDATED:
                     // do nothing, application just got redeployed
