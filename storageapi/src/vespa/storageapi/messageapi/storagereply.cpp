@@ -6,9 +6,13 @@
 
 namespace storage::api {
 
+StorageReply::StorageReply(const StorageCommand& cmd)
+    : StorageReply(cmd, ReturnCode())
+{}
+
 StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
     : StorageMessage(cmd.getType().getReplyType(), cmd.getMsgId()),
-      _result(code)
+      _result(std::move(code))
 {
     setPriority(cmd.getPriority());
     if (cmd.getAddress()) {

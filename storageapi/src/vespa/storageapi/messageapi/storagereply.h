@@ -23,8 +23,8 @@ class StorageReply : public StorageMessage {
     ReturnCode _result;
 
 protected:
-    explicit StorageReply(const StorageCommand& cmd,
-                          ReturnCode code = ReturnCode(ReturnCode::OK));
+    explicit StorageReply(const StorageCommand& cmd);
+    StorageReply(const StorageCommand& cmd, ReturnCode code);
 
 public:
     ~StorageReply() override;

@@ -79,7 +79,7 @@ private:
     };
 
     struct BucketChecksumGroup {
-        explicit BucketChecksumGroup(const BucketCopy& c)
+        explicit BucketChecksumGroup(const BucketCopy& c) noexcept
             : copy(c), sent(0), returnCode(api::ReturnCode::OK), to_node(UINT16_MAX), received(false)
         {}
 

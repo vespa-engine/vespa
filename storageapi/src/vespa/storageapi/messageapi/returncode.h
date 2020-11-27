@@ -61,16 +61,25 @@ private:
     Result _result;
     std::unique_ptr<vespalib::string> _message;
 public:
-    ReturnCode();
-    explicit ReturnCode(Result result);
-    explicit ReturnCode(Result result, vespalib::stringref msg);
+    ReturnCode()
+        : _result(OK),
+          _message()
+      { }
+    explicit ReturnCode(Result result)
+        : _result(result),
+          _message()
+    {}
+    ReturnCode(Result result, vespalib::stringref msg);
     ReturnCode(const ReturnCode &);
     ReturnCode & operator = (const ReturnCode &);
     ReturnCode(ReturnCode &&) noexcept = default;
     ReturnCode & operator = (ReturnCode &&) noexcept;
-    ~ReturnCode();
 
-    vespalib::stringref getMessage() const;
+    vespalib::stringref getMessage() const {
+        return _message
+               ? _message->operator vespalib::stringref()
+               : vespalib::stringref();
+    }
 
     Result getResult() const { return _result; }
 
