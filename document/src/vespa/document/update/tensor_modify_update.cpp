@@ -12,8 +12,6 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/tensor/partial_update.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/cell_values.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
