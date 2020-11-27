@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/operation.h>
@@ -7,7 +8,6 @@
 #include <vespa/eval/eval/test/eval_spec.h>
 #include <vespa/eval/eval/basic_nodes.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -15,7 +15,6 @@
 
 using namespace vespalib::eval;
 using vespalib::Stash;
-using vespalib::tensor::DefaultTensorEngine;
 
 //-----------------------------------------------------------------------------
 
@@ -53,9 +52,8 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         if (is_supported && !has_issues) {
             vespalib::string desc = as_string(param_names, param_values, expression);
             SimpleParams params(param_values);
-            verify_result(SimpleTensorEngine::ref(), *function, false,    "[untyped simple] "+desc, params, expected_result);
-            verify_result(DefaultTensorEngine::ref(), *function, false,   "[untyped prod]   "+desc, params, expected_result);
-            verify_result(DefaultTensorEngine::ref(), *function, true,    "[typed prod]     "+desc, params, expected_result);
+            verify_result(SimpleTensorEngine::ref(),      *function, false, "[untyped simple] "+desc, params, expected_result);
+            verify_result(FastValueBuilderFactory::get(), *function, true,  "[typed prod]     "+desc, params, expected_result);
         }
     }
 

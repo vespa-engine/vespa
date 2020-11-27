@@ -4,7 +4,6 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/typed_dense_tensor_builder.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
@@ -19,7 +18,7 @@ using namespace vespalib::eval::test;
 using namespace vespalib::tensor;
 using namespace vespalib::eval::tensor_function;
 
-const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 double seq_value = 0.0;
 
@@ -55,7 +54,7 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify_equal(const vespalib::string &expr) {
-    EvalFixture fixture(prod_engine, expr, param_repo, true, true);
+    EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
 }
 
