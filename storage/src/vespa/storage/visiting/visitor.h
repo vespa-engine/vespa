@@ -382,10 +382,6 @@ public:
     void setOwnNodeIndex(uint16_t nodeIndex) { _ownNodeIndex = nodeIndex; }
     void setBucketSpace(document::BucketSpace bucketSpace) { _bucketSpace = bucketSpace; }
 
-    const documentapi::LoadType& getLoadType() const {
-        return _initiatingCmd->getLoadType();
-    }
-
     /** Override this to know which buckets are currently being visited. */
     virtual void startingVisitor(const std::vector<document::BucketId>&) {}
 

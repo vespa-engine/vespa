@@ -54,9 +54,6 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
         if (index == 0xffff) index = serverConfig->nodeIndex;
         redundancy = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(uri.getConfigId(), uri.getContext())->redundancy;
         nodeCount = config::ConfigGetter<vespa::config::content::FleetcontrollerConfig>::getConfig(uri.getConfigId(), uri.getContext())->totalStorageCount;
-        _compReg.setPriorityConfig(
-                *config::ConfigGetter<StorageComponent::PriorityConfig>
-                    ::getConfig(uri.getConfigId(), uri.getContext()));
     } else {
         if (index == 0xffff) index = 0;
     }

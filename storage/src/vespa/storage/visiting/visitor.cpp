@@ -6,7 +6,6 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/document/select/node.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>

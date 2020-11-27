@@ -221,7 +221,6 @@ TEST_F(StateReporterTest, report_metrics) {
 
     LOG(debug, "Adding to get metric");
 
-    using documentapi::LoadType;
     thread0.get.count.inc(1);
 
     LOG(debug, "Waiting for 5 minute snapshot to be taken");

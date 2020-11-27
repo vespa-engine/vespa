@@ -11,7 +11,6 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
 
 namespace storage::mbusprot {
 
@@ -112,7 +111,6 @@ void write_request_header(vespalib::GrowableByteBuffer& buf, const api::StorageC
     hdr.set_message_id(cmd.getMsgId());
     hdr.set_priority(cmd.getPriority());
     hdr.set_source_index(cmd.getSourceIndex());
-    hdr.set_loadtype_id(documentapi::LoadType::DEFAULT.getId());
 
     uint8_t dest[128]; // Only primitive fields, should be plenty large enough.
     auto encoded_size = static_cast<uint32_t>(hdr.ByteSizeLong());

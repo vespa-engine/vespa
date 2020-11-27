@@ -7,7 +7,6 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using document::FixedBucketSpaces;
@@ -22,7 +21,7 @@ RoutableFactories60::DocumentMessageFactory::encode(const mbus::Routable &obj, v
 {
     const auto &msg = static_cast<const DocumentMessage&>(obj);
     out.putByte(msg.getPriority());
-    out.putInt(LoadType::DEFAULT.getId());
+    out.putInt(0);  // LoadType
     return doEncode(msg, out);
 }
 

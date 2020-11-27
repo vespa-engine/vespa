@@ -88,13 +88,11 @@ StorageNode::StorageNode(
       _serverConfig(),
       _clusterConfig(),
       _distributionConfig(),
-      _priorityConfig(),
       _doctypesConfig(),
       _bucketSpacesConfig(),
       _newServerConfig(),
       _newClusterConfig(),
       _newDistributionConfig(),
-      _newPriorityConfig(),
       _newDoctypesConfig(),
       _newBucketSpacesConfig(),
       _component(),
@@ -111,7 +109,6 @@ StorageNode::subscribeToConfigs()
     _configFetcher->subscribe<StorDistributionConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<UpgradingConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<StorServerConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<StorPrioritymappingConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<BucketspacesConfig>(_configUri.getConfigId(), this);
 
     _configFetcher->start();
@@ -120,7 +117,6 @@ StorageNode::subscribeToConfigs()
     _serverConfig = std::move(_newServerConfig);
     _clusterConfig = std::move(_newClusterConfig);
     _distributionConfig = std::move(_newDistributionConfig);
-    _priorityConfig = std::move(_newPriorityConfig);
     _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
 }
 
@@ -146,7 +142,6 @@ StorageNode::initialize()
     _context.getComponentRegister().setNodeInfo(_serverConfig->clusterName, getNodeType(), _serverConfig->nodeIndex);
     _context.getComponentRegister().setBucketIdFactory(document::BucketIdFactory());
     _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(*_distributionConfig));
-    _context.getComponentRegister().setPriorityConfig(*_priorityConfig);
     _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
 
     _metrics = std::make_shared<StorageMetricSet>();
@@ -333,10 +328,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         }
         _newClusterConfig.reset();
     }
-    if (_newPriorityConfig) {
-        _priorityConfig = std::move(_newPriorityConfig);
-        _context.getComponentRegister().setPriorityConfig(*_priorityConfig);
-    }
+
     if (_newBucketSpacesConfig) {
         _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
         _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
@@ -488,19 +480,6 @@ void StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
         handleLiveConfigUpdate(concurrent_config_guard);
     }
 }
-
-void StorageNode::configure(std::unique_ptr<StorPrioritymappingConfig> config) {
-    log_config_received(*config);
-    {
-        std::lock_guard configLockGuard(_configLock);
-        _newPriorityConfig = std::move(config);
-    }
-    if (_priorityConfig) {
-        InitialGuard concurrent_config_guard(_initial_config_mutex);
-        handleLiveConfigUpdate(concurrent_config_guard);
-    }
-}
-
 void
 StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
                        bool hasChanged, int64_t generation)

@@ -15,7 +15,6 @@ vespa_define_module(
 
     LIBS
     src/vespa/documentapi
-    src/vespa/documentapi/loadtypes
     src/vespa/documentapi/messagebus
     src/vespa/documentapi/messagebus/messages
     src/vespa/documentapi/messagebus/policies

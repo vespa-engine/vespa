@@ -37,15 +37,9 @@
 #include <vespa/vdslib/state/node.h>
 #include <mutex>
 
-namespace vespa::config::content::core::internal {
-    class InternalStorPrioritymappingType;
-}
 namespace document {
     class DocumentTypeRepo;
     class FieldSetRepo;
-}
-namespace documentapi {
-    class LoadType;
 }
 
 namespace storage {
@@ -53,7 +47,6 @@ namespace lib {
     class Distribution;
 }
 struct NodeStateUpdater;
-class PriorityMapper;
 struct StorageComponentRegister;
 
 class StorageComponent : public framework::Component {
@@ -65,7 +58,6 @@ public:
         const std::shared_ptr<const document::FieldSetRepo> fieldSetRepo;
     };
     using UP = std::unique_ptr<StorageComponent>;
-    using PriorityConfig = vespa::config::content::core::internal::InternalStorPrioritymappingType;
     using DistributionSP = std::shared_ptr<lib::Distribution>;
 
     /**
@@ -81,7 +73,6 @@ public:
      */
     void setNodeStateUpdater(NodeStateUpdater& updater);
     void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
-    void setPriorityConfig(const PriorityConfig&);
     void setBucketIdFactory(const document::BucketIdFactory&);
     void setDistribution(DistributionSP);
 
@@ -97,7 +88,6 @@ public:
 
     std::shared_ptr<Repos> getTypeRepo() const;
     const document::BucketIdFactory& getBucketIdFactory() const { return _bucketIdFactory; }
-    uint8_t getPriority(const documentapi::LoadType&) const;
     DistributionSP getDistribution() const;
     NodeStateUpdater& getStateUpdater() const;
     uint64_t getGeneration() const { return _generation.load(std::memory_order_relaxed); }
@@ -107,7 +97,6 @@ private:
     uint16_t _index;
     std::shared_ptr<Repos> _repos;
     // TODO: move _distribution in to _repos so lock will only taken once and only copying one shared_ptr.
-    std::unique_ptr<PriorityMapper> _priorityMapper;
     document::BucketIdFactory _bucketIdFactory;
     DistributionSP _distribution;
     NodeStateUpdater* _nodeStateUpdater;

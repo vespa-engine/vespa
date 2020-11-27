@@ -21,7 +21,6 @@
 #include <iosfwd>
 
 namespace vespalib { class asciistream; }
-namespace documentapi { class LoadType; }
 // The following macros are provided as a way to write storage messages simply.
 // They implement the parts of the code that can easily be automaticly
 // generated.
@@ -430,8 +429,6 @@ public:
      * method in the MessageHandler interface.
      */
     virtual bool callHandler(MessageHandler&, const StorageMessage::SP&) const = 0;
-
-    const documentapi::LoadType& getLoadType() const noexcept;
 
     mbus::Trace && steal_trace() noexcept { return std::move(_trace); }
     mbus::Trace& getTrace() noexcept { return _trace; }

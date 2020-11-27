@@ -134,14 +134,12 @@ void MetricsTest::createFakeLoad()
     {
         FileStorDiskMetrics& disk(*_filestorMetrics->disk);
         disk.queueSize.addValue(4 * n);
-        //disk.averageQueueWaitingTime[documentapi::LoadType::DEFAULT].addValue(10 * n);
+        disk.averageQueueWaitingTime.addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
         for (uint32_t j=0; j<disk.threads.size(); ++j) {
             FileStorThreadMetrics& thread(*disk.threads[j]);
             thread.operations.inc(120 * n);
             thread.failedOperations.inc(2 * n);
-
-            using documentapi::LoadType;
 
             thread.put.count.inc(10 * n);
             thread.put.latency.addValue(5 * n);
@@ -239,7 +237,6 @@ TEST_F(MetricsTest, snapshot_presenting) {
 
     LOG(debug, "Adding to get metric");
 
-    using documentapi::LoadType;
     thread0.get.count.inc(1);
 
     LOG(debug, "Waiting for 5 minute snapshot to be taken");

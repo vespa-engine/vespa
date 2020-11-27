@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagemessage.h"
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -262,11 +261,6 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id) noexcept
 }
 
 StorageMessage::~StorageMessage() = default;
-
-const documentapi::LoadType&
-StorageMessage::getLoadType() const noexcept {
-    return documentapi::LoadType::DEFAULT;
-}
 
 void
 StorageMessage::setNewMsgId() noexcept

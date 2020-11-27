@@ -10,7 +10,6 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/config-bucketspaces.h>
-#include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/vdslib/distribution/distribution.h>
 
@@ -20,7 +19,6 @@ class StorageComponentRegisterImpl
         : public virtual StorageComponentRegister,
           public virtual framework::defaultimplementation::ComponentRegisterImpl
 {
-    using PriorityConfig = StorageComponent::PriorityConfig;
     using BucketspacesConfig = vespa::config::content::core::internal::InternalBucketspacesType;
 
     std::mutex _componentLock;
@@ -29,7 +27,6 @@ class StorageComponentRegisterImpl
     const lib::NodeType* _nodeType;
     uint16_t _index;
     std::shared_ptr<const document::DocumentTypeRepo> _docTypeRepo;
-    PriorityConfig _priorityConfig;
     document::BucketIdFactory _bucketIdFactory;
     lib::Distribution::SP _distribution;
     NodeStateUpdater* _nodeStateUpdater;
@@ -54,7 +51,6 @@ public:
     void setNodeInfo(vespalib::stringref clusterName, const lib::NodeType& nodeType, uint16_t index);
     virtual void setNodeStateUpdater(NodeStateUpdater& updater);
     virtual void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
-    virtual void setPriorityConfig(const PriorityConfig&);
     virtual void setBucketIdFactory(const document::BucketIdFactory&);
     virtual void setDistribution(lib::Distribution::SP);
     virtual void setBucketSpacesConfig(const BucketspacesConfig&);

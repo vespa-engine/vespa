@@ -16,7 +16,6 @@ StorageComponentRegisterImpl::StorageComponentRegisterImpl()
       _nodeType(nullptr),
       _index(0xffff),
       _docTypeRepo(),
-      _priorityConfig(),
       _bucketIdFactory(),
       _distribution(),
       _nodeStateUpdater(nullptr),
@@ -37,7 +36,6 @@ StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
         smc.setNodeStateUpdater(*_nodeStateUpdater);
     }
     smc.setDocumentTypeRepo(_docTypeRepo);
-    smc.setPriorityConfig(_priorityConfig);
     smc.setBucketIdFactory(_bucketIdFactory);
     smc.setDistribution(_distribution);
 }
@@ -79,16 +77,6 @@ StorageComponentRegisterImpl::setDocumentTypeRepo(std::shared_ptr<const document
     _docTypeRepo = repo;
     for (auto& component : _components) {
         component->setDocumentTypeRepo(repo);
-    }
-}
-
-void
-StorageComponentRegisterImpl::setPriorityConfig(const PriorityConfig& config)
-{
-    std::lock_guard lock(_componentLock);
-    _priorityConfig = config;
-    for (auto& component : _components) {
-        component->setPriorityConfig(config);
     }
 }
 
