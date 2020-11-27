@@ -31,7 +31,8 @@ import java.util.Map;
  *
  * @author Vegard Havdal
  */
-// TODO  This functionality should be on VespaModel itself, but we don't have a way right now to apply a config override to a ConfigInstance.Builder
+// TODO: Most of this has been copied to ConfigInstance.Builder.buildInstance() and can be removed from here
+//       when Model.getConfig is removed
 class InstanceResolver {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(InstanceResolver.class.getName());
@@ -138,7 +139,6 @@ class InstanceResolver {
         return packagePrefix.value + cKey.getNamespace();
     }
 
-
     enum PackagePrefix {
         COM_YAHOO("com.yahoo."),
         NONE("");
@@ -148,4 +148,5 @@ class InstanceResolver {
             this.value = value;
         }
     }
+
 }
