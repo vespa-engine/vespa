@@ -84,10 +84,7 @@ public class ProtocolRepository {
             try {
                 ret = protocol.createPolicy(policyName, policyParam);
             } catch (RuntimeException e) {
-                log.log(Level.SEVERE, "Protcol '" + protocolName + "' threw an exception: " + e.getMessage(), e);
-                if (ret != null) {
-                    ret.destroy();
-                }
+                log.log(Level.SEVERE, "Protocol '" + protocolName + "' threw an exception: " + e.getMessage(), e);
                 return null;
             }
             if (ret == null) {

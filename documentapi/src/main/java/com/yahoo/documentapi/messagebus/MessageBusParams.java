@@ -7,7 +7,7 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class MessageBusParams extends DocumentAccessParams {
 

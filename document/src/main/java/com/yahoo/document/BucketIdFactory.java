@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.document.idstring.*;
-
 /**
  * A bucket id contains bit used for various purposes. In most use cases, these can use the default
  * settings, but the number of bits used for the different purposes is configurable, to allow for
@@ -13,7 +11,7 @@ import com.yahoo.document.idstring.*;
  *
  * For more information about what the sub parts of a bucket id actually is, read the bucket splitting documentation.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public class BucketIdFactory {
 
