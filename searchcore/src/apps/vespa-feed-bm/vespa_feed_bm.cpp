@@ -61,6 +61,7 @@
 #include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-opslogger.h>
+#include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
@@ -95,6 +96,7 @@ using vespa::config::content::core::StorBucketInitConfigBuilder;
 using vespa::config::content::core::StorCommunicationmanagerConfigBuilder;
 using vespa::config::content::core::StorDistributormanagerConfigBuilder;
 using vespa::config::content::core::StorOpsloggerConfigBuilder;
+using vespa::config::content::core::StorPrioritymappingConfigBuilder;
 using vespa::config::content::core::StorServerConfigBuilder;
 using vespa::config::content::core::StorStatusConfigBuilder;
 using vespa::config::content::core::StorVisitorConfigBuilder;
@@ -435,6 +437,7 @@ struct MyStorageConfig
     StorBouncerConfigBuilder      stor_bouncer;
     StorCommunicationmanagerConfigBuilder stor_communicationmanager;
     StorOpsloggerConfigBuilder    stor_opslogger;
+    StorPrioritymappingConfigBuilder stor_prioritymapping;
     UpgradingConfigBuilder        upgrading;
     StorServerConfigBuilder       stor_server;
     StorStatusConfigBuilder       stor_status;
@@ -451,6 +454,7 @@ struct MyStorageConfig
           stor_bouncer(),
           stor_communicationmanager(),
           stor_opslogger(),
+          stor_prioritymapping(),
           upgrading(),
           stor_server(),
           stor_status(),
@@ -503,6 +507,7 @@ struct MyStorageConfig
         set.addBuilder(config_id, &stor_bouncer);
         set.addBuilder(config_id, &stor_communicationmanager);
         set.addBuilder(config_id, &stor_opslogger);
+        set.addBuilder(config_id, &stor_prioritymapping);
         set.addBuilder(config_id, &upgrading);
         set.addBuilder(config_id, &stor_server);
         set.addBuilder(config_id, &stor_status);
