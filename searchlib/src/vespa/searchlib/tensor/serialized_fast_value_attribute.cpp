@@ -155,11 +155,10 @@ SerializedFastValueAttribute::~SerializedFastValueAttribute()
 void
 SerializedFastValueAttribute::setTensor(DocId docId, const vespalib::eval::Value &tensor)
 {
+    checkTensorType(tensor);
     EntryRef ref = _streamedValueStore.store_tensor(tensor);
+    assert(ref.valid());
     setTensorRef(docId, ref);
-    if (!ref.valid()) {
-        checkTensorType(tensor);
-    }
 }
 
 std::unique_ptr<Value>

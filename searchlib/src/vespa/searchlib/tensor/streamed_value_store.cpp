@@ -195,32 +195,26 @@ StreamedValueStore::serialize_labels(const Value::Index &index,
 TensorStore::EntryRef
 StreamedValueStore::store_tensor(const Value &tensor)
 {
-    if (tensor.type() == _tensor_type) {
-        CellsMemBlock cells_mem(tensor.cells());
-        size_t alignment = CellTypeUtils::alignment(_data_from_type.cell_type);
-        size_t padding = alignment - 1;
-        vespalib::nbostream stream;
-        stream << uint32_t(cells_mem.num);
-        serialize_labels(tensor.index(), stream);
-        size_t mem_size = stream.size() + cells_mem.total_sz + padding;
-        auto raw = allocRawBuffer(mem_size);
-        char *target = raw.data;
-        memcpy(target, stream.peek(), sizeof(uint32_t));
-        stream.adjustReadPos(sizeof(uint32_t));
-        target += sizeof(uint32_t);
-        target = fix_alignment(target, alignment);
-        memcpy(target, cells_mem.ptr, cells_mem.total_sz);
-        target += cells_mem.total_sz;
-        memcpy(target, stream.peek(), stream.size());
-        target += stream.size();
-        assert(target <= raw.data + mem_size);
-        return raw.ref;
-    } else {
-        LOG(error, "trying to store tensor of type %s in store only allowing %s",
-            tensor.type().to_spec().c_str(), _tensor_type.to_spec().c_str());
-        TensorStore::EntryRef invalid;
-        return invalid;
-    }
+    assert(tensor.type() == _tensor_type);
+    CellsMemBlock cells_mem(tensor.cells());
+    size_t alignment = CellTypeUtils::alignment(_data_from_type.cell_type);
+    size_t padding = alignment - 1;
+    vespalib::nbostream stream;
+    stream << uint32_t(cells_mem.num);
+    serialize_labels(tensor.index(), stream);
+    size_t mem_size = stream.size() + cells_mem.total_sz + padding;
+    auto raw = allocRawBuffer(mem_size);
+    char *target = raw.data;
+    memcpy(target, stream.peek(), sizeof(uint32_t));
+    stream.adjustReadPos(sizeof(uint32_t));
+    target += sizeof(uint32_t);
+    target = fix_alignment(target, alignment);
+    memcpy(target, cells_mem.ptr, cells_mem.total_sz);
+    target += cells_mem.total_sz;
+    memcpy(target, stream.peek(), stream.size());
+    target += stream.size();
+    assert(target <= raw.data + mem_size);
+    return raw.ref;
 }
 
 TensorStore::EntryRef
