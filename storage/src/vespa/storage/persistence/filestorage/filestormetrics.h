@@ -164,7 +164,7 @@ struct FileStorMetrics : public metrics::MetricSet
     metrics::LongCountMetric diskEvents;
     metrics::LongAverageMetric bucket_db_init_latency;
 
-    explicit FileStorMetrics();
+    FileStorMetrics();
     ~FileStorMetrics() override;
 
     void initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk);
