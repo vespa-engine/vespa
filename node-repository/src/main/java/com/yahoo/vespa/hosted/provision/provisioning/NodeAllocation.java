@@ -203,7 +203,7 @@ class NodeAllocation {
      * Such nodes will be marked retired during finalization of the list of accepted nodes.
      * The conditions for this are:
      *
-     * This is a content or combined node. These must always be retired before being removed to allow the cluster to
+     * This is a stateful node. These must always be retired before being removed to allow the cluster to
      * migrate away data.
      *
      * This is a container node and it is not desired due to having the wrong flavor. In this case this
@@ -218,7 +218,7 @@ class NodeAllocation {
         if (candidate.allocation().get().membership().retired()) return true; // don't second-guess if already retired
         if (! requestedNodes.considerRetiring()) return false;
 
-        return cluster.type().isContent() ||
+        return cluster.isStateful() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleFlavor(candidate));
     }
 
