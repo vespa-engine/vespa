@@ -7,7 +7,6 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/stash.h>
 
 namespace search::features {

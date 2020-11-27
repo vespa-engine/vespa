@@ -9,7 +9,6 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using namespace document;
