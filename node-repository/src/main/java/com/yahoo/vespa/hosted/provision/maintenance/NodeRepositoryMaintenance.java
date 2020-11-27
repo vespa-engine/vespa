@@ -164,7 +164,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             operatorChangeRedeployInterval = Duration.ofMinutes(3);
             // Vespa upgrade frequency is higher in CD so (de)activate OS upgrades more frequently as well
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
-            periodicRedeployInterval = Duration.ofMinutes(30);
+            periodicRedeployInterval = Duration.ofMinutes(60);
             provisionedExpiry = Duration.ofHours(4);
             rebalancerInterval = Duration.ofMinutes(120);
             redeployMaintainerInterval = Duration.ofMinutes(1);
