@@ -207,8 +207,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
-        Element zkElement = XML.getChild(spec, "zookeeper");
-        if (zkElement == null) return;
+        if (!hasZooKeeper(spec)) return;
         Element nodesElement = XML.getChild(spec, "nodes");
         boolean isCombined = nodesElement != null && nodesElement.hasAttribute("of");
         if (isCombined) {
@@ -617,7 +616,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (nodesElement == null) {
             cluster.addContainers(allocateWithoutNodesTag(cluster, context));
         } else {
-            List<ApplicationContainer> nodes = createNodes(cluster, nodesElement, context);
+            List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
             Element jvmElement = XML.getChild(nodesElement, "jvm");
             if (jvmElement == null) {
@@ -648,15 +647,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return sb.toString();
     }
     
-    private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+    private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
         if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
             return createNodesFromNodeType(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("of")) // hosted node spec referencing a content cluster
             return createNodesFromContentServiceReference(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("count")) // regular, hosted node spec
-            return createNodesFromNodeCount(cluster, nodesElement, context);
+            return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
         else if (cluster.isHostedVespa() && cluster.getZone().environment().isManuallyDeployed()) // default to 1 in manual zones
-            return createNodesFromNodeCount(cluster, nodesElement, context);
+            return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }
@@ -720,12 +719,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return List.of(node);
     }
 
-    private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+    private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
-                                                                                  log);
+                                                                                  log,
+                                                                                  hasZooKeeper(containerElement));
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
@@ -938,6 +938,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                     .map(ConfigServerSpec::getHostName)
                                                     .orElse("unknown") // Currently unable to test this, hence the unknown
                         ));
+    }
+
+    private static boolean hasZooKeeper(Element spec) {
+        return XML.getChild(spec, "zookeeper") != null;
     }
 
     /** Disallow renderers named "XmlRenderer" or "JsonRenderer" */

@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.application.api.DeployLogger;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -25,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * A group of storage nodes/distributors.
@@ -189,7 +189,7 @@ public class StorageGroup {
                                                                       HostSystem hostSystem, 
                                                                       DeployLogger logger) {
         ClusterSpec.Id clusterId = ClusterSpec.Id.from(clusterIdString);
-        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.content, clusterId, logger);
+        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.content, clusterId, logger, true);
     }
 
     public static class Builder {
