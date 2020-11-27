@@ -27,6 +27,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
 import java.nio.file.Files;
@@ -185,7 +186,9 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
-            ApplicationId applicationId = ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName());
+            ChildData data = event.getData();
+            if (data == null) return; // Node might have been deleted after we got event
+            ApplicationId applicationId = ApplicationId.fromSerializedForm(Path.fromString(data.getPath()).getName());
             switch (event.getType()) {
                 case CHILD_ADDED:
                     /* A new application is added when a session is added, @see
