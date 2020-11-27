@@ -1,3 +1,5 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "serialized_fast_value_attribute.h"
 #include "streamed_value_saver.h"
 #include <vespa/eval/eval/value.h>
@@ -62,6 +64,34 @@ public:
 
 ValueBlockStream::~ValueBlockStream() = default;
 
+void report_problematic_subspace(size_t idx,
+                                 const StreamedValueStore::DataFromType &from_type,
+                                 const StreamedValueStore::StreamedValueData &from_store)
+{
+    LOG(error, "PROBLEM: add_mapping returned same index=%zu twice", idx);
+    FastValueIndex temp_index(from_type.num_mapped_dimensions,
+                            from_store.num_subspaces);
+    auto from_start = ValueBlockStream(from_type, from_store);
+    while (auto redo_block = from_start.next_block()) {
+        if (idx == temp_index.map.add_mapping(redo_block.address)) {
+            vespalib::string msg = "Block with address[ ";
+            for (vespalib::stringref ref : redo_block.address) {
+                msg.append("'").append(ref).append("' ");
+            }
+            msg.append("]");
+            LOG(error, "%s maps to subspace %zu", msg.c_str(), idx);
+        }
+    }
+}
+
+/**
+ * This Value implementation is almost exactly like FastValue, but
+ * instead of owning its type and cells it just has a reference to
+ * data stored elsewhere.
+ * XXX: we should find a better name for this, and move it
+ * (together with the helper classes above) to its own file,
+ * and add associated unit tests.
+ **/
 class OnlyFastValueIndex : public Value {
 private:
     const ValueType &_type;
@@ -83,15 +113,13 @@ public:
         while (auto block = block_stream.next_block()) {
             size_t idx = my_index.map.add_mapping(block.address);
             if (idx != ss) {
-                LOG(error, "add_mapping returned idx=%zu for subspace %zu", idx, ss);
+                report_problematic_subspace(idx, from_type, from_store);
             }
             ++ss;
         }
-        if (ss != from_store.num_subspaces) {
-            LOG(error, "expected %zu subspaces but got %zu", from_store.num_subspaces, ss);
-            abort();
-        }
+        assert(ss == from_store.num_subspaces);
     }
+
 
     ~OnlyFastValueIndex();
     

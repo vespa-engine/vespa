@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -11,11 +11,42 @@
 namespace search::tensor {
 
 /**
- * Class for storing serialized tensors in memory
+ * Class for storing tensors in memory, with a special serialization
+ * format that can be used directly to make a StreamedValueView.
+ *
+ * The tensor type is owned by the store itself and will not be
+ * serialized at all.
+ *
+ * The parameters for serialization (see DataFromType) are:
+ * - number of mapped dimensions [MD]
+ * - dense subspace size [DS]
+ * - size of each cell [CS] - currently 4 (float) or 8 (double)
+ * - alignment for cells [CA] - currently 4 (float) or 8 (double)
+ * While the tensor value to be serialized has:
+ * - number of dense subspaces [ND]
+ * - labels for dense subspaces, ND * MD strings
+ * - cell values, ND * DS cells (each either float or double)
+ * The serialization format looks like:
+ *
+ *   [bytes]     : [format]                : [description]
+ *      4        :  n.b.o. uint32_ t       : num cells = ND * DS
+ *     1-7       :  (none)                 : padding to cell alignment CA
+ *  CS * ND * DS :  native float or double : cells
+ *      4        :  n.b.o. uint32_t        : number of subspaces = ND
+ *   (depends)   :  n.b.o. strings         : labels
+ *
+ * Here, n.b.o. means network byte order, or more precisely
+ * it's the format vespalib::nbostream uses for the given data type,
+ * including strings (where exact format depends on the string length).
+ * Note that the only unpredictably-sized data (the labels) are kept
+ * last.
+ * If we ever make a "hbostream" which uses host byte order, we
+ * could switch to that instead since these data are only kept in
+ * memory.
  */
 class StreamedValueStore : public TensorStore {
 public:
-    using RefType = vespalib::datastore::AlignedEntryRefT<22, 2>;
+    using RefType = vespalib::datastore::AlignedEntryRefT<22, 3>;
     using DataStoreType = vespalib::datastore::DataStoreT<RefType>;
 
     struct StreamedValueData {
@@ -44,8 +75,8 @@ private:
     vespalib::eval::ValueType _tensor_type;
     DataFromType _data_from_type;
     
-    void my_encode(const vespalib::eval::Value::Index &index,
-                   vespalib::nbostream &target) const;
+    void serialize_labels(const vespalib::eval::Value::Index &index,
+                          vespalib::nbostream &target) const;
 
     std::pair<const char *, uint32_t> getRawBuffer(RefType ref) const;
     vespalib::datastore::Handle<char> allocRawBuffer(uint32_t size);

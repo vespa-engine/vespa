@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -7,7 +8,13 @@
 namespace search::tensor {
 
 /**
- * Attribute vector class storing FastValue-like mixed tensors for all documents in memory.
+ * Attribute vector class storing serialized tensors for all documents in memory.
+ *
+ * When fetching a tensor with getTensor(docId) the returned Value
+ * will have a FastValueIndex (constructed on the fly) for its sparse
+ * mapping, but refer to a common type, while cells() will refer to
+ * memory in the serialized store without copying.
+ *
  */
 class SerializedFastValueAttribute : public TensorAttribute {
     vespalib::eval::ValueType _tensor_type;

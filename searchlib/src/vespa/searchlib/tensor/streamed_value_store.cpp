@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "streamed_value_store.h"
 #include "tensor_deserialize.h"
@@ -129,7 +130,7 @@ StreamedValueStore::get_tensor_data(EntryRef ref) const
     if (raw.second == 0u) {
         return retval;
     }
-    vespalib::nbostream_longlivedbuf source(raw.first, raw.second);
+    vespalib::nbostream source(raw.first, raw.second);
     uint32_t num_cells = source.readValue<uint32_t>();
     {
         uint32_t alignment = CellTypeUtils::alignment(_data_from_type.cell_type);
@@ -141,16 +142,8 @@ StreamedValueStore::get_tensor_data(EntryRef ref) const
     source.adjustReadPos(CellTypeUtils::mem_size(_data_from_type.cell_type, num_cells));
     retval.num_subspaces = source.readValue<uint32_t>();
     retval.labels_buffer = vespalib::ConstArrayRef<char>(source.peek(), source.size());
- 
-    if (retval.num_subspaces * _data_from_type.dense_subspace_size == num_cells) {
-        retval.valid = true;
-        return retval;
-    }
-    LOG(warning, "inconsistent stored tensor data: "
-        "num_subspaces[%zu] * dense_subspace_size[%u] = %zu != num_cells[%u]",
-        retval.num_subspaces, _data_from_type.dense_subspace_size,
-        retval.num_subspaces * _data_from_type.dense_subspace_size,
-        num_cells);
+    assert(retval.num_subspaces * _data_from_type.dense_subspace_size == num_cells);
+    retval.valid = true;
     return retval;
 }
 
@@ -169,8 +162,8 @@ StreamedValueStore::encode_tensor(EntryRef ref, vespalib::nbostream &target) con
 }
 
 void
-StreamedValueStore::my_encode(const Value::Index &index,
-                              vespalib::nbostream &target) const
+StreamedValueStore::serialize_labels(const Value::Index &index,
+                                     vespalib::nbostream &target) const
 {
     uint32_t num_subspaces = index.size();
     target << num_subspaces;
@@ -208,7 +201,7 @@ StreamedValueStore::store_tensor(const Value &tensor)
         size_t padding = alignment - 1;
         vespalib::nbostream stream;
         stream << uint32_t(cells_mem.num);
-        my_encode(tensor.index(), stream);
+        serialize_labels(tensor.index(), stream);
         size_t mem_size = stream.size() + cells_mem.total_sz + padding;
         auto raw = allocRawBuffer(mem_size);
         char *target = raw.data;
