@@ -417,11 +417,10 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         // Configure messagebus here as we for legacy reasons have
         // config here.
         auto documentTypeRepo = _component.getTypeRepo()->documentTypeRepo;
-        auto loadTypes = _component.getLoadTypes();
         _mbus = std::make_unique<mbus::RPCMessageBus>(
                 mbus::ProtocolSet()
-                        .add(std::make_shared<documentapi::DocumentProtocol>(*loadTypes, documentTypeRepo))
-                        .add(std::make_shared<mbusprot::StorageProtocol>(documentTypeRepo, *loadTypes)),
+                        .add(std::make_shared<documentapi::DocumentProtocol>(documentTypeRepo))
+                        .add(std::make_shared<mbusprot::StorageProtocol>(documentTypeRepo)),
                 params,
                 _configUri);
 
@@ -429,8 +428,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
     }
 
     _use_direct_storageapi_rpc = config->useDirectStorageapiRpc;
-    _message_codec_provider = std::make_unique<rpc::MessageCodecProvider>(_component.getTypeRepo()->documentTypeRepo,
-                                                                          _component.getLoadTypes());
+    _message_codec_provider = std::make_unique<rpc::MessageCodecProvider>(_component.getTypeRepo()->documentTypeRepo);
     _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport, config->rpc.numNetworkThreads);
     _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
     rpc::StorageApiRpcService::Params rpc_params;
@@ -788,18 +786,17 @@ CommunicationManager::print(std::ostream& out, bool verbose, const std::string& 
     out << "CommunicationManager";
 }
 
-void CommunicationManager::updateMessagebusProtocol(
-        const std::shared_ptr<const document::DocumentTypeRepo>& repo) {
+void CommunicationManager::updateMessagebusProtocol(const std::shared_ptr<const document::DocumentTypeRepo>& repo) {
     if (_mbus) {
         framework::SecondTime now(_component.getClock().getTimeInSeconds());
-        auto newDocumentProtocol = std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), repo);
+        auto newDocumentProtocol = std::make_shared<documentapi::DocumentProtocol>(repo);
         std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newDocumentProtocol)));
-        auto newStorageProtocol = std::make_shared<mbusprot::StorageProtocol>(repo, *_component.getLoadTypes());
+        auto newStorageProtocol = std::make_shared<mbusprot::StorageProtocol>(repo);
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newStorageProtocol)));
     }
     if (_message_codec_provider) {
-        _message_codec_provider->update_atomically(repo, _component.getLoadTypes());
+        _message_codec_provider->update_atomically(repo);
     }
 }
 

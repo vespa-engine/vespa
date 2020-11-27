@@ -81,8 +81,6 @@ public:
     const document::BucketIdFactory& getBucketIdFactory()
         { return _compReg.getBucketIdFactory(); }
     TestNodeStateUpdater& getStateUpdater() { return _nodeStateUpdater; }
-    documentapi::LoadTypeSet::SP getLoadTypes()
-        { return _compReg.getLoadTypes(); }
     lib::Distribution::SP getDistribution()
         { return _compReg.getDistribution(); }
     TestNodeStateUpdater& getNodeStateUpdater() { return _nodeStateUpdater; }

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagecomponent.h"
-#include <vespa/storage/storageserver/prioritymapper.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -40,22 +39,6 @@ StorageComponent::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTy
 }
 
 void
-StorageComponent::setLoadTypes(LoadTypeSetSP loadTypes)
-{
-    std::lock_guard guard(_lock);
-    _loadTypes = loadTypes;
-    _generation++;
-}
-
-
-void
-StorageComponent::setPriorityConfig(const PriorityConfig& c)
-{
-    // Priority mapper is already thread safe.
-    _priorityMapper->setConfig(c);
-}
-
-void
 StorageComponent::setBucketIdFactory(const document::BucketIdFactory& factory)
 {
     // Assumed to not be set dynamically.
@@ -88,8 +71,6 @@ StorageComponent::StorageComponent(StorageComponentRegister& compReg,
       _nodeType(nullptr),
       _index(0),
       _repos(),
-      _loadTypes(),
-      _priorityMapper(new PriorityMapper),
       _bucketIdFactory(),
       _distribution(),
       _nodeStateUpdater(nullptr),
@@ -120,24 +101,11 @@ StorageComponent::getIdentity() const
     return name.str();
 }
 
-uint8_t
-StorageComponent::getPriority(const documentapi::LoadType& lt) const
-{
-    return _priorityMapper->getPriority(lt);
-}
-
 std::shared_ptr<StorageComponent::Repos>
 StorageComponent::getTypeRepo() const
 {
     std::lock_guard guard(_lock);
     return _repos;
-}
-
-StorageComponent::LoadTypeSetSP
-StorageComponent::getLoadTypes() const
-{
-    std::lock_guard guard(_lock);
-    return _loadTypes;
 }
 
 StorageComponent::DistributionSP

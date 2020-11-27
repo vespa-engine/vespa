@@ -14,7 +14,6 @@ class FRT_RPCRequest;
 class FRT_Target;
 
 namespace document { class DocumentTypeRepo; }
-namespace documentapi { class LoadTypeSet; }
 
 namespace storage {
 

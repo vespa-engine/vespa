@@ -4,7 +4,6 @@
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation");

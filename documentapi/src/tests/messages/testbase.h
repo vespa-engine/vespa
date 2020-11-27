@@ -2,10 +2,10 @@
 #pragma once
 
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/messagebus/routable.h>
 #include <vespa/vespalib/component/version.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <map>
 
 using namespace documentapi;
 
@@ -24,8 +24,7 @@ typedef bool (TestBase::*TEST_METHOD_PT)();
 class TestBase : public vespalib::TestApp {
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
 protected:
-    const string                  _dataPath;
-    LoadTypeSet                        _loadTypes;
+    const string                       _dataPath;
     DocumentProtocol                   _protocol;
     std::map<uint32_t, TEST_METHOD_PT> _tests;
 

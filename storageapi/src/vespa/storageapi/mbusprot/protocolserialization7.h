@@ -3,7 +3,6 @@
 #pragma once
 
 #include "protocolserialization.h"
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 namespace storage::mbusprot {
 
@@ -13,13 +12,10 @@ namespace storage::mbusprot {
  */
 class ProtocolSerialization7 final : public ProtocolSerialization {
     const std::shared_ptr<const document::DocumentTypeRepo> _repo;
-    const documentapi::LoadTypeSet& _load_types;
 public:
-    ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo,
-                           const documentapi::LoadTypeSet& load_types);
+    explicit ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo);
 
     const document::DocumentTypeRepo& type_repo() const noexcept { return *_repo; }
-    const documentapi::LoadTypeSet& load_type_set() const noexcept { return _load_types; }
 
     // Put
     void onEncode(GBBuf&, const api::PutCommand&) const override;

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "visitormessagesession.h"
+#include <vespa/documentapi/messagebus/priority.h>
 
 namespace storage {
 
@@ -12,13 +13,11 @@ class VisitorThread;
 struct VisitorMessageSessionFactory {
     typedef std::unique_ptr<VisitorMessageSessionFactory> UP;
 
-    virtual ~VisitorMessageSessionFactory() {}
+    virtual ~VisitorMessageSessionFactory() = default;
 
-    virtual VisitorMessageSession::UP createSession(Visitor&,
-                                                    VisitorThread&) = 0;
+    virtual VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) = 0;
 
-    virtual documentapi::Priority::Value toDocumentPriority(
-            uint8_t storagePriority) const = 0;
+    virtual documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const = 0;
 };
 
 } // storage

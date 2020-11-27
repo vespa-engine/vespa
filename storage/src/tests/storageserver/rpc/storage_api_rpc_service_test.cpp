@@ -3,7 +3,6 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/messagebus/testlib/slobrok.h>
@@ -103,7 +102,6 @@ class RpcNode {
 protected:
     vdstestlib::DirConfig                             _config;
     std::shared_ptr<const document::DocumentTypeRepo> _doc_type_repo;
-    std::shared_ptr<const documentapi::LoadTypeSet>   _load_type_set;
     LockingMockOperationDispatcher                    _messages;
     std::unique_ptr<MessageCodecProvider>             _codec_provider;
     std::unique_ptr<SharedRpcResources>               _shared_rpc_resources;
@@ -113,7 +111,6 @@ public:
     RpcNode(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
         : _config(getStandardConfig(true)),
           _doc_type_repo(document::TestDocRepo().getTypeRepoSp()),
-          _load_type_set(std::make_shared<documentapi::LoadTypeSet>()),
           _node_address(make_address(node_index, is_distributor)),
           _slobrok_id(to_slobrok_id(_node_address))
     {
@@ -124,7 +121,7 @@ public:
 
         _shared_rpc_resources = std::make_unique<SharedRpcResources>(_config.getConfigId(), 0, 1);
         // TODO make codec provider into interface so we can test decode-failures more easily?
-        _codec_provider = std::make_unique<MessageCodecProvider>(_doc_type_repo, _load_type_set);
+        _codec_provider = std::make_unique<MessageCodecProvider>(_doc_type_repo);
     }
     ~RpcNode();
 

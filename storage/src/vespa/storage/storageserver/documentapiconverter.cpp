@@ -185,7 +185,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentReply& fromReply,
         break;
     }
 
-    if (toMsg.get()) {
+    if (toMsg) {
         if (fromReply.hasErrors()) {
             toMsg->setResult(api::ReturnCode((api::ReturnCode::Result) fromReply.getError(0).getCode(),
                                              fromReply.getError(0).getMessage()));

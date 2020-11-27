@@ -6,7 +6,6 @@
 
 namespace config      { class ConfigUri; }
 namespace document    { class DocumentTypeRepo; }
-namespace documentapi { class LoadTypeSet; }
 
 namespace mbus {
 
@@ -32,8 +31,7 @@ class BmMessageBus
     std::unique_ptr<mbus::SourceSession> _session;
 public:
     BmMessageBus(const config::ConfigUri& config_uri,
-                 std::shared_ptr<const document::DocumentTypeRepo> document_type_repo,
-                 const documentapi::LoadTypeSet& load_types);
+                 std::shared_ptr<const document::DocumentTypeRepo> document_type_repo);
     ~BmMessageBus();
     uint32_t get_error_count() const;
     void send_msg(std::unique_ptr<mbus::Message> msg, const mbus::Route &route, PendingTracker &tracker);

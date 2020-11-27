@@ -80,8 +80,7 @@ void MetricsTest::SetUp() {
     } catch (config::InvalidConfigException& e) {
         fprintf(stderr, "%s\n", e.what());
     }
-    _metricManager = std::make_unique<metrics::MetricManager>(
-            std::make_unique<MetricClock>(*_clock));
+    _metricManager = std::make_unique<metrics::MetricManager>(std::make_unique<MetricClock>(*_clock));
     _topSet.reset(new metrics::MetricSet("vds", {}, ""));
     {
         metrics::MetricLockGuard guard(_metricManager->getMetricLock());
@@ -92,8 +91,6 @@ void MetricsTest::SetUp() {
             _node->getComponentRegister(),
             *_metricManager,
             "status");
-
-    documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
 
     _filestorMetrics = std::make_shared<FileStorMetrics>();
     _filestorMetrics->initDiskMetrics(1, 1);
@@ -137,14 +134,12 @@ void MetricsTest::createFakeLoad()
     {
         FileStorDiskMetrics& disk(*_filestorMetrics->disk);
         disk.queueSize.addValue(4 * n);
-        //disk.averageQueueWaitingTime[documentapi::LoadType::DEFAULT].addValue(10 * n);
+        disk.averageQueueWaitingTime.addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
         for (uint32_t j=0; j<disk.threads.size(); ++j) {
             FileStorThreadMetrics& thread(*disk.threads[j]);
             thread.operations.inc(120 * n);
             thread.failedOperations.inc(2 * n);
-
-            using documentapi::LoadType;
 
             thread.put.count.inc(10 * n);
             thread.put.latency.addValue(5 * n);
@@ -242,7 +237,6 @@ TEST_F(MetricsTest, snapshot_presenting) {
 
     LOG(debug, "Adding to get metric");
 
-    using documentapi::LoadType;
     thread0.get.count.inc(1);
 
     LOG(debug, "Waiting for 5 minute snapshot to be taken");

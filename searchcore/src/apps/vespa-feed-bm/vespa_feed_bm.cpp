@@ -15,7 +15,6 @@
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
-#include <vespa/config-load-type.h>
 #include <vespa/config-persistence.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-slobroks.h>
@@ -62,7 +61,6 @@
 #include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-opslogger.h>
-#include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
@@ -86,7 +84,6 @@ using namespace std::chrono_literals;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
-using vespa::config::content::LoadTypeConfigBuilder;
 using vespa::config::content::PersistenceConfigBuilder;
 using vespa::config::content::StorDistributionConfigBuilder;
 using vespa::config::content::StorFilestorConfigBuilder;
@@ -98,7 +95,6 @@ using vespa::config::content::core::StorBucketInitConfigBuilder;
 using vespa::config::content::core::StorCommunicationmanagerConfigBuilder;
 using vespa::config::content::core::StorDistributormanagerConfigBuilder;
 using vespa::config::content::core::StorOpsloggerConfigBuilder;
-using vespa::config::content::core::StorPrioritymappingConfigBuilder;
 using vespa::config::content::core::StorServerConfigBuilder;
 using vespa::config::content::core::StorStatusConfigBuilder;
 using vespa::config::content::core::StorVisitorConfigBuilder;
@@ -439,12 +435,10 @@ struct MyStorageConfig
     StorBouncerConfigBuilder      stor_bouncer;
     StorCommunicationmanagerConfigBuilder stor_communicationmanager;
     StorOpsloggerConfigBuilder    stor_opslogger;
-    StorPrioritymappingConfigBuilder stor_prioritymapping;
     UpgradingConfigBuilder        upgrading;
     StorServerConfigBuilder       stor_server;
     StorStatusConfigBuilder       stor_status;
     BucketspacesConfigBuilder     bucketspaces;
-    LoadTypeConfigBuilder         load_type;
     MetricsmanagerConfigBuilder   metricsmanager;
     SlobroksConfigBuilder         slobroks;
     MessagebusConfigBuilder       messagebus;
@@ -457,12 +451,10 @@ struct MyStorageConfig
           stor_bouncer(),
           stor_communicationmanager(),
           stor_opslogger(),
-          stor_prioritymapping(),
           upgrading(),
           stor_server(),
           stor_status(),
           bucketspaces(),
-          load_type(),
           metricsmanager(),
           slobroks(),
           messagebus()
@@ -511,12 +503,10 @@ struct MyStorageConfig
         set.addBuilder(config_id, &stor_bouncer);
         set.addBuilder(config_id, &stor_communicationmanager);
         set.addBuilder(config_id, &stor_opslogger);
-        set.addBuilder(config_id, &stor_prioritymapping);
         set.addBuilder(config_id, &upgrading);
         set.addBuilder(config_id, &stor_server);
         set.addBuilder(config_id, &stor_status);
         set.addBuilder(config_id, &bucketspaces);
-        set.addBuilder(config_id, &load_type);
         set.addBuilder(config_id, &metricsmanager);
         set.addBuilder(config_id, &slobroks);
         set.addBuilder(config_id, &messagebus);
@@ -919,9 +909,7 @@ PersistenceProviderFixture::start_message_bus()
 {
     config::ConfigUri config_uri("bm-message-bus", _config_context);
     LOG(info, "Starting message bus");
-    _message_bus = std::make_unique<BmMessageBus>(config_uri,
-                                                  _repo,
-                                                  documentapi::LoadTypeSet());
+    _message_bus = std::make_unique<BmMessageBus>(config_uri, _repo);
     LOG(info, "Started message bus");
 }
 

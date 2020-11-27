@@ -90,8 +90,6 @@ void StateReporterTest::SetUp() {
             _generationFetcher,
             "status");
 
-    documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
-
     _filestorMetrics = std::make_shared<FileStorMetrics>();
     _filestorMetrics->initDiskMetrics(1, 1);
     _topSet->registerMetric(*_filestorMetrics);
@@ -223,7 +221,6 @@ TEST_F(StateReporterTest, report_metrics) {
 
     LOG(debug, "Adding to get metric");
 
-    using documentapi::LoadType;
     thread0.get.count.inc(1);
 
     LOG(debug, "Waiting for 5 minute snapshot to be taken");

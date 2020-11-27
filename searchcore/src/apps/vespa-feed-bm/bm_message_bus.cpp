@@ -129,16 +129,15 @@ BmMessageBus::ReplyHandler::message_aborted(uint64_t msg_id)
 }
 
 BmMessageBus::BmMessageBus(const config::ConfigUri& config_uri,
-                           std::shared_ptr<const document::DocumentTypeRepo> document_type_repo,
-                           const documentapi::LoadTypeSet& load_types)
+                           std::shared_ptr<const document::DocumentTypeRepo> document_type_repo)
     : _reply_handler(std::make_unique<ReplyHandler>()),
       _message_bus(),
       _session()
 {
     mbus::RPCNetworkParams params(config_uri);
     mbus::ProtocolSet protocol_set;
-    protocol_set.add(std::make_shared<DocumentProtocol>(load_types, document_type_repo));
-    protocol_set.add(std::make_shared<StorageProtocol>(document_type_repo, load_types));
+    protocol_set.add(std::make_shared<DocumentProtocol>(document_type_repo));
+    protocol_set.add(std::make_shared<StorageProtocol>(document_type_repo));
     params.setIdentity(mbus::Identity("vespa-bm-client"));
     _message_bus = std::make_unique<mbus::RPCMessageBus>(
             protocol_set,

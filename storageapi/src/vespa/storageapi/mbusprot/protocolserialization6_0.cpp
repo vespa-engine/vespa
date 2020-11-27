@@ -3,12 +3,10 @@
 #include "protocolserialization6_0.h"
 #include "serializationhelper.h"
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
-ProtocolSerialization6_0::ProtocolSerialization6_0(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                                                   const documentapi::LoadTypeSet &loadTypes)
-    : ProtocolSerialization5_2(repo, loadTypes)
+ProtocolSerialization6_0::ProtocolSerialization6_0(const std::shared_ptr<const document::DocumentTypeRepo> &repo)
+    : ProtocolSerialization5_2(repo)
 {
 }
 
@@ -39,5 +37,4 @@ ProtocolSerialization6_0::putBucketSpace(document::BucketSpace bucketSpace, vesp
     buf.putLong(bucketSpace.getId());
 }
 
-}
 }

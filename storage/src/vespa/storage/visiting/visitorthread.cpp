@@ -2,7 +2,6 @@
 
 #include "visitorthread.h"
 #include "messages.h"
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/messagebus/rpcmessagebus.h>

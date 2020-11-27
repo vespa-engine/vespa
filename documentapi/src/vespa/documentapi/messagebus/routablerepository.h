@@ -9,8 +9,6 @@
 
 namespace documentapi {
 
-class LoadTypeSet;
-
 /**
  * This class encapsulates the logic required to map routable type and version to a corresponding {@link
  * RoutableFactory}. It is owned and accessed through a {@link DocumentProtocol} instance. This class uses a
@@ -40,7 +38,6 @@ private:
     mutable std::mutex   _lock;
     TypeMap              _factoryTypes;
     mutable FactoryCache _cache;
-    const LoadTypeSet&   _loadTypes;
 
 public:
     RoutableRepository(const RoutableRepository &) = delete;
@@ -48,7 +45,7 @@ public:
     /**
      * Constructs a new routable repository.
      */
-    explicit RoutableRepository(const LoadTypeSet& loadTypes);
+    RoutableRepository();
 
     /**
      * Decodes a {@link Routable} from the given byte array. This uses the content of the byte array to
