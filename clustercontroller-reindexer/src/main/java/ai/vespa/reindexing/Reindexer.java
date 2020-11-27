@@ -193,8 +193,8 @@ public class Reindexer {
 
     VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
         VisitorParameters parameters = new VisitorParameters(type.getName());
-        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(4)
-                                                                .setWindowSizeDecrementFactor(5));
+        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(1)
+                                                                .setWindowSizeDecrementFactor(10));
         parameters.setRemoteDataHandler(cluster.name());
         parameters.setResumeToken(progress);
         parameters.setFieldSet(type.getName() + ":[document]");
