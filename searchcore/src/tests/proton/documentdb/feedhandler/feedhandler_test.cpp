@@ -5,8 +5,9 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -57,10 +58,10 @@ using storage::spi::UpdateResult;
 using vespalib::ThreadStackExecutor;
 using vespalib::ThreadStackExecutorBase;
 using vespalib::makeClosure;
+using vespalib::eval::EngineOrFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::tensor::test::makeTensor;
 
 using namespace proton;
 using namespace search::index;
@@ -329,13 +330,13 @@ struct UpdateContext {
         auto fieldValue = field.createValue();
         if (fieldName == "tensor") {
             dynamic_cast<TensorFieldValue &>(*fieldValue) =
-                makeTensor<Value>(TensorSpec("tensor(x{},y{})").
-                                   add({{"x","8"},{"y","9"}}, 11));
+                EngineOrFactory::get().from_spec(TensorSpec("tensor(x{},y{})").
+                                                 add({{"x","8"},{"y","9"}}, 11));
         } else if (fieldName == "tensor2") {
             auto tensorFieldValue = std::make_unique<TensorFieldValue>(tensor1DType);
             *tensorFieldValue =
-                makeTensor<Value>(TensorSpec("tensor(x{})").
-                                   add({{"x","8"}}, 11));
+                EngineOrFactory::get().from_spec(TensorSpec("tensor(x{})").
+                                                 add({{"x","8"}}, 11));
             fieldValue = std::move(tensorFieldValue);
         } else {
             fieldValue->assign(document::StringFieldValue("new value"));

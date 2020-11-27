@@ -9,16 +9,13 @@ LOG_SETUP("fieldvalue_test");
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/test/test_utils.h>
 
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace document;
-using namespace vespalib::tensor;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::eval::EngineOrFactory;
-using vespalib::tensor::test::makeTensor;
 
 namespace
 {
@@ -33,8 +30,8 @@ vespalib::eval::Value::UP createTensor(const TensorSpec &spec) {
 std::unique_ptr<vespalib::eval::Value>
 makeSimpleTensor()
 {
-    return makeTensor<vespalib::eval::Value>(TensorSpec("tensor(x{},y{})").
-                                             add({{"x", "4"}, {"y", "5"}}, 7));
+    return EngineOrFactory::get().from_spec(TensorSpec("tensor(x{},y{})").
+                                            add({{"x", "4"}, {"y", "5"}}, 7));
 }
 
 FieldValue::UP clone(FieldValue &fv) {

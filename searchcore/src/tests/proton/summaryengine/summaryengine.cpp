@@ -13,7 +13,6 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
-#include <vespa/metrics/metrics.h>
 
 LOG_SETUP("summaryengine_test");
 

@@ -699,7 +699,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
-            cluster.target().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
+            if (cluster.target().isPresent() && ! cluster.target().get().equals(cluster.current()))
+                toSlime(cluster.target().get(), clusterObject.setObject("target"));
             cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
             clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
@@ -1081,7 +1082,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
-    private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+    private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment,
+                                    String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         Instance instance = controller.applications().getInstance(id)
                                       .orElseThrow(() -> new NotExistsException(id + " not found"));
@@ -1137,6 +1139,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(endpoint, endpointArray.addObject());
         }
 
+        response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
         response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
@@ -1979,6 +1982,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
     private URI withPath(String newPath, URI uri) {
         return withPathAndQuery(newPath, null, uri);
+    }
+
+    private String toPath(DeploymentId id) {
+        return path("/application", "v4",
+                    "tenant", id.applicationId().tenant(),
+                    "application", id.applicationId().application(),
+                    "instance", id.applicationId().instance(),
+                    "environment", id.zoneId().environment(),
+                    "region", id.zoneId().region());
     }
 
     private long asLong(String valueOrNull, long defaultWhenNull) {

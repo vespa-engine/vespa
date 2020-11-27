@@ -48,6 +48,7 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
         builder.redundancy(effectiveFinalRedundancy());
         builder.ready_copies(effectiveReadyCopies());
     }
+
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         ProtonConfig.Distribution.Builder distBuilder = new ProtonConfig.Distribution.Builder();

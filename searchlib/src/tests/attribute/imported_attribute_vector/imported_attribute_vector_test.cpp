@@ -3,7 +3,6 @@
 #include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>

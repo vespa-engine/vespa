@@ -56,6 +56,9 @@ struct IdealStateManagerTest : Test, DistributorTestUtil {
     std::vector<document::BucketSpace> _bucketSpaces;
     std::string makeBucketStatusString(const std::string &defaultSpaceBucketStatus);
 };
+namespace {
+    vespalib::string _Storage("storage");
+}
 
 TEST_F(IdealStateManagerTest, sibling) {
     EXPECT_EQ(document::BucketId(1,1),
@@ -170,6 +173,7 @@ TEST_F(IdealStateManagerTest, recheck_when_active) {
 }
 
 TEST_F(IdealStateManagerTest, block_ideal_state_ops_on_full_request_bucket_info) {
+
     setupDistributor(2, 10, "distributor:1 storage:2");
 
     framework::defaultimplementation::FakeClock clock;
@@ -182,7 +186,7 @@ TEST_F(IdealStateManagerTest, block_ideal_state_ops_on_full_request_bucket_info)
     // sent to the entire node. It will then use a null bucketid.
     {
         auto msg = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), buckets);
-        msg->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 4));
+        msg->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 4));
         tracker.insert(msg);
     }
 
@@ -202,7 +206,7 @@ TEST_F(IdealStateManagerTest, block_ideal_state_ops_on_full_request_bucket_info)
     // Don't block on null-bucket messages that aren't RequestBucketInfo.
     {
         auto msg = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "foo", "bar", "baz");
-        msg->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 7));
+        msg->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 7));
         tracker.insert(msg);
     }
 
@@ -221,8 +225,7 @@ TEST_F(IdealStateManagerTest, block_check_for_all_operations_to_specific_bucket)
 
     {
         auto msg = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(bid));
-        msg->setAddress(
-                api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 4));
+        msg->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 4));
         tracker.insert(msg);
     }
     {

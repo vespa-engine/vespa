@@ -9,8 +9,8 @@ namespace storage::api {
 
 namespace {
 
-size_t hash_of(vespalib::stringref cluster, const lib::NodeType& type, uint16_t index) {
-    return StorageMessageAddress(cluster, type, index).internal_storage_hash();
+size_t hash_of(const vespalib::string & cluster, const lib::NodeType& type, uint16_t index) {
+    return StorageMessageAddress(&cluster, type, index).internal_storage_hash();
 }
 
 }
@@ -32,8 +32,8 @@ TEST(StorageMessageAddressTest, storage_hash_covers_all_expected_fields) {
     EXPECT_NE(hash_of("foo", lib::NodeType::STORAGE, 0),
               hash_of("foo", lib::NodeType::STORAGE, 1));
 
-    EXPECT_EQ(88u, sizeof(StorageMessageAddress));
-    EXPECT_EQ(64u, sizeof(StorageMessage));
+    EXPECT_EQ(16u, sizeof(StorageMessageAddress));
+    EXPECT_EQ(72u, sizeof(StorageMessage));
     EXPECT_EQ(16u, sizeof(mbus::Trace));
 }
 

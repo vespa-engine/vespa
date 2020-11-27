@@ -43,7 +43,7 @@ public:
     int getDistributorIndex() const override {
         return _distributor.getDistributorIndex(); // Thread safe
     }
-    const std::string& getClusterName() const override {
+    const vespalib::string& getClusterName() const override {
         return _distributor.getClusterName(); // Thread safe
     }
     const PendingMessageTracker& getPendingMessageTracker() const override {
@@ -241,8 +241,7 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 {
-    const documentapi::LoadType & loadType = cmd->getLoadType();
-    auto& metrics = getMetrics().puts[loadType];
+    auto& metrics = getMetrics().puts;
     if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
@@ -256,7 +255,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
         document::BucketSpace bucketSpace = cmd->getBucket().getBucketSpace();
         _op = std::make_shared<PutOperation>(*this,
                                              _bucketSpaceRepo.get(bucketSpace),
-                                             std::move(cmd), getMetrics().puts[loadType], std::move(handle));
+                                             std::move(cmd), getMetrics().puts, std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
@@ -267,8 +266,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
 {
-    const documentapi::LoadType & loadType = cmd->getLoadType();
-    auto& metrics = getMetrics().updates[loadType];
+    auto& metrics = getMetrics().updates;
     if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
@@ -292,8 +290,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
 {
-    const documentapi::LoadType & loadType = cmd->getLoadType();
-    auto& metrics = getMetrics().removes[loadType];
+    auto& metrics = getMetrics().removes;
     if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
         return true;
     }
@@ -306,7 +303,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
         auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
 
         _op = std::make_shared<RemoveOperation>(*this, distributorBucketSpace, std::move(cmd),
-                                                getMetrics().removes[loadType], std::move(handle));
+                                                getMetrics().removes, std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
@@ -320,13 +317,13 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
     RemoveLocationOperation::getBucketId(*this, *cmd, bid);
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), bid);
 
-    auto& metrics = getMetrics().removelocations[cmd->getLoadType()];
+    auto& metrics = getMetrics().removelocations;
     if (!checkTimestampMutationPreconditions(*cmd, bucket.getBucketId(), metrics)) {
         return true;
     }
 
     _op = std::make_shared<RemoveLocationOperation>(*this, _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                                    std::move(cmd), getMetrics().removelocations[cmd->getLoadType()]);
+                                                    std::move(cmd), getMetrics().removelocations);
     return true;
 }
 
@@ -338,7 +335,7 @@ api::InternalReadConsistency ExternalOperationHandler::desired_get_read_consiste
 
 std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(const std::shared_ptr<api::GetCommand>& cmd) {
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
-    auto& metrics = getMetrics().gets[cmd->getLoadType()];
+    auto& metrics = getMetrics().gets;
     auto snapshot = getDistributor().read_snapshot_for_bucket(bucket);
     if (!snapshot.is_routable()) {
         const auto& ctx = snapshot.context();
@@ -367,7 +364,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
 {
-    auto& metrics = getMetrics().stats[cmd->getLoadType()];
+    auto& metrics = getMetrics().stats;
     bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
         auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
         _op = std::make_shared<StatBucketOperation>(*this, bucket_space, cmd);
@@ -377,7 +374,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, GetBucketList)
 {
-    auto& metrics = getMetrics().getbucketlists[cmd->getLoadType()];
+    auto& metrics = getMetrics().getbucketlists;
     bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
         auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
         auto& bucket_database = bucket_space.getBucketDatabase();
@@ -392,7 +389,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
     const DistributorConfiguration& config(getDistributor().getConfig());
     VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(), config.getMaxVisitorsPerNodePerClientVisitor());
     auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
-    _op = Operation::SP(new VisitorOperation(*this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits[cmd->getLoadType()]));
+    _op = Operation::SP(new VisitorOperation(*this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits));
     return true;
 }
 

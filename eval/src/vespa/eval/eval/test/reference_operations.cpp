@@ -236,7 +236,7 @@ TensorSpec ReferenceOperations::peek(const TensorSpec &param, const PeekSpec &pe
 }
 
 
-TensorSpec ReferenceOperations::reduce(const TensorSpec &a, const std::vector<vespalib::string> &dims, Aggr aggr) {
+TensorSpec ReferenceOperations::reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims) {
     ValueType res_type = ValueType::from_spec(a.type()).reduce(dims);
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {

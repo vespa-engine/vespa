@@ -11,6 +11,10 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
+namespace {
+    vespalib::string _Storage("storage");
+}
+
 struct BucketStateOperationTest : Test, DistributorTestUtil {
     void SetUp() override {
         createLinks();
@@ -48,8 +52,7 @@ TEST_F(BucketStateOperationTest, activate_single_node) {
 
     std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
     ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-    EXPECT_EQ(api::StorageMessageAddress(
-                      "storage", lib::NodeType::STORAGE, 0).toString(),
+    EXPECT_EQ(api::StorageMessageAddress(&_Storage, lib::NodeType::STORAGE, 0).toString(),
               msg->getAddress()->toString());
 
     auto& cmd = dynamic_cast<const api::SetBucketStateCommand&>(*msg);
@@ -85,8 +88,7 @@ TEST_F(BucketStateOperationTest, activate_and_deactivate_nodes) {
     {
         std::shared_ptr<api::StorageCommand> msg = _sender.command(0);
         ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-        EXPECT_EQ(api::StorageMessageAddress(
-                          "storage", lib::NodeType::STORAGE, 1).toString(),
+        EXPECT_EQ(api::StorageMessageAddress(&_Storage, lib::NodeType::STORAGE, 1).toString(),
                   msg->getAddress()->toString());
 
         auto& cmd = dynamic_cast<const api::SetBucketStateCommand&>(*msg);
@@ -101,8 +103,7 @@ TEST_F(BucketStateOperationTest, activate_and_deactivate_nodes) {
     {
         std::shared_ptr<api::StorageCommand> msg  = _sender.command(1);
         ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-        EXPECT_EQ(api::StorageMessageAddress(
-                          "storage", lib::NodeType::STORAGE, 0).toString(),
+        EXPECT_EQ(api::StorageMessageAddress(&_Storage, lib::NodeType::STORAGE, 0).toString(),
                   msg->getAddress()->toString());
 
         auto& cmd = dynamic_cast<const api::SetBucketStateCommand&>(*msg);
@@ -142,8 +143,7 @@ TEST_F(BucketStateOperationTest, do_not_deactivate_if_activate_fails) {
     {
         std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
         ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-        EXPECT_EQ(api::StorageMessageAddress(
-                          "storage", lib::NodeType::STORAGE, 1).toString(),
+        EXPECT_EQ(api::StorageMessageAddress(&_Storage, lib::NodeType::STORAGE, 1).toString(),
                   msg->getAddress()->toString());
 
         auto& cmd = dynamic_cast<const api::SetBucketStateCommand&>(*msg);
@@ -185,8 +185,7 @@ TEST_F(BucketStateOperationTest, bucket_db_not_updated_on_failure) {
 
     std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
     ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-    EXPECT_EQ(api::StorageMessageAddress(
-                      "storage", lib::NodeType::STORAGE, 0).toString(),
+    EXPECT_EQ(api::StorageMessageAddress(&_Storage, lib::NodeType::STORAGE, 0).toString(),
               msg->getAddress()->toString());
 
     std::shared_ptr<api::StorageReply> reply(msg->makeReply().release());

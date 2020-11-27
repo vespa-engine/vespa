@@ -30,7 +30,7 @@ struct ReferenceOperations {
     static TensorSpec map(const TensorSpec &a, map_fun_t func);
     static TensorSpec merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun);
     static TensorSpec peek(const TensorSpec &param, const PeekSpec &spec, const std::vector<TensorSpec> &children);
-    static TensorSpec reduce(const TensorSpec &a, const std::vector<vespalib::string> &dims, Aggr aggr);
+    static TensorSpec reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims);
     static TensorSpec rename(const TensorSpec &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to);
 };
 

@@ -32,7 +32,8 @@ namespace {
 
 api::StorageMessageAddress
 makeAddress() {
-    return api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0);
+    static vespalib::string _storage("storage");
+    return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, 0);
 }
 
 void

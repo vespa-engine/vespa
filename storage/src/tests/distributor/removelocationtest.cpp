@@ -31,7 +31,7 @@ struct RemoveLocationOperationTest : Test, DistributorTestUtil {
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().
-                removelocations[msg->getLoadType()]);
+                removelocations);
 
         op->start(_sender, framework::MilliSecTime(0));
     }

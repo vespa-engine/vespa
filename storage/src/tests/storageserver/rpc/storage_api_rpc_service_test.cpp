@@ -90,7 +90,8 @@ LockingMockOperationDispatcher::LockingMockOperationDispatcher()  = default;
 LockingMockOperationDispatcher::~LockingMockOperationDispatcher() = default;
 
 api::StorageMessageAddress make_address(uint16_t node_index, bool is_distributor) {
-    return {"coolcluster", (is_distributor ? lib::NodeType::DISTRIBUTOR : lib::NodeType::STORAGE), node_index};
+    static vespalib::string _coolcluster("coolcluster");
+    return {&_coolcluster, (is_distributor ? lib::NodeType::DISTRIBUTOR : lib::NodeType::STORAGE), node_index};
 }
 
 vespalib::string to_slobrok_id(const api::StorageMessageAddress& address) {

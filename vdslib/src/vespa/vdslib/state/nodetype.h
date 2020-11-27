@@ -10,44 +10,47 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <stdint.h>
 
 namespace vespalib {
     class asciistream;
 }
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 class NodeType  {
-    typedef vespalib::asciistream asciistream;
-    uint16_t _enumValue;
-    vespalib::string _name;
-
-    NodeType(vespalib::stringref name, uint16_t enumValue);
-
 public:
+    NodeType(const NodeType &) = delete;
+    NodeType & operator = (const NodeType &) = delete;
+    NodeType(NodeType &&) = delete;
+    NodeType & operator =(NodeType &&) = delete;
+    enum class Type : uint8_t {STORAGE = 0, DISTRIBUTOR = 1, UNKNOWN = 2};
     static const NodeType DISTRIBUTOR;
     static const NodeType STORAGE;
 
     /** Throws vespalib::IllegalArgumentException if invalid state given. */
     static const NodeType& get(vespalib::stringref serialized);
-    const vespalib::string& serialize() const { return _name; }
+    static const NodeType& get(Type type) noexcept;
+    const vespalib::string& serialize() const noexcept { return _name; }
 
-    operator uint16_t() const { return _enumValue; }
+    Type getType() const noexcept { return _type; }
+    operator uint16_t() const noexcept { return static_cast<uint16_t>(_type); }
 
-    const vespalib::string & toString() const { return _name; }
-    bool operator==(const NodeType& other) const { return (&other == this); }
-    bool operator!=(const NodeType& other) const { return (&other != this); }
+    const vespalib::string & toString() const noexcept { return _name; }
+    bool operator==(const NodeType& other) const noexcept { return (&other == this); }
+    bool operator!=(const NodeType& other) const noexcept { return (&other != this); }
 
-    bool operator<(const NodeType& other) const {
+    bool operator<(const NodeType& other) const noexcept {
         return (&other == this ? false : *this == NodeType::DISTRIBUTOR);
     }
+private:
+    Type             _type;
+    vespalib::string _name;
+
+    NodeType(vespalib::stringref name, Type type) noexcept;
 };
 
 std::ostream & operator << (std::ostream & os, const NodeType & n);
 vespalib::asciistream & operator << (vespalib::asciistream & os, const NodeType & n);
 
-} // lib
-} // storage
+}
 

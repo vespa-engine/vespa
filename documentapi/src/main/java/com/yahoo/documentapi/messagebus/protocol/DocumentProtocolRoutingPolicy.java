@@ -6,5 +6,4 @@ import com.yahoo.messagebus.routing.RoutingPolicy;
 /**
  * @author thomasg
  */
-public interface DocumentProtocolRoutingPolicy extends RoutingPolicy {
-}
+public interface DocumentProtocolRoutingPolicy extends RoutingPolicy { }

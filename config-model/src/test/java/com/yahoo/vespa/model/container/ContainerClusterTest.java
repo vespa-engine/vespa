@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
@@ -326,14 +327,32 @@ public class ContainerClusterTest {
     public void requireCuratorConfig() {
         DeployState state = new DeployState.Builder().build();
         MockRoot root = new MockRoot("foo", state);
-        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
+        var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
         addContainer(root.deployLogger(), cluster, "c2", "host-c2");
         CuratorConfig.Builder configBuilder = new CuratorConfig.Builder();
         cluster.getConfig(configBuilder);
         CuratorConfig config = configBuilder.build();
-        assertEquals(List.of("host-c1", "host-c2"), config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
+        assertEquals(List.of("host-c1", "host-c2"),
+                     config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
         assertTrue(config.zookeeperLocalhostAffinity());
+    }
+
+    @Test
+    public void requireZooKeeperServerConfig() {
+        DeployState state = new DeployState.Builder().build();
+        MockRoot root = new MockRoot("foo", state);
+        var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        addContainer(root.deployLogger(), cluster, "c2", "host-c2");
+        addContainer(root.deployLogger(), cluster, "c3", "host-c3");
+
+        ZookeeperServerConfig.Builder configBuilder = new ZookeeperServerConfig.Builder();
+        cluster.getContainers().get(0).getConfig(configBuilder);
+        ZookeeperServerConfig config = configBuilder.build();
+        assertEquals(List.of("host-c1", "host-c2", "host-c3"),
+                     config.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
+        assertEquals(0, config.myid());
     }
 
     private void verifyTesterApplicationInstalledBundles(Zone zone, List<String> expectedBundleNames) {

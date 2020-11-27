@@ -101,7 +101,7 @@ public final class ClusterSpec {
         private boolean exclusive = false;
         private Optional<Id> combinedId = Optional.empty();
 
-        Builder(Type type, Id id, boolean specification) {
+        private Builder(Type type, Id id, boolean specification) {
             this.type = type;
             this.id = id;
             this.specification = specification;

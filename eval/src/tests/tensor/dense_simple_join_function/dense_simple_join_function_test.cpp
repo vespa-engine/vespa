@@ -4,7 +4,6 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_simple_join_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
@@ -45,7 +44,7 @@ std::ostream &operator<<(std::ostream &os, Overlap overlap)
 
 }
 
-const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
@@ -69,8 +68,8 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify_optimized(const vespalib::string &expr, Primary primary, Overlap overlap, bool pri_mut, size_t factor, int p_inplace = -1) {
-    EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
-    EvalFixture fixture(prod_engine, expr, param_repo, true, true);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseSimpleJoinFunction>();
@@ -91,8 +90,8 @@ void verify_optimized(const vespalib::string &expr, Primary primary, Overlap ove
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
-    EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseSimpleJoinFunction>();

@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  * This is an implementation of the {@link ThrottlePolicy} that offers dynamic limits to the number of pending messages a
  * {@link SourceSession} is allowed to have.
  *
- * <b>NOTE:</b> By context, "pending" is refering to the number of sent messages that have not been replied to yet.
+ * <b>NOTE:</b> By context, "pending" is referring to the number of sent messages that have not been replied to yet.
  *
  * @author Simon Thoresen Hult
  */
@@ -161,7 +161,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     }
 
     /**
-     * Sets the relative stepsize when decreasing window size.
+     * Sets the relative step size when decreasing window size.
      *
      * @param decrementFactor the step size to set
      * @return this, to allow chaining

@@ -2,12 +2,12 @@
 
 #pragma once
 
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/stash.h>
 #include <set>
 #include <functional>
@@ -90,7 +90,7 @@ public:
         return EvalFixture(SimpleTensorEngine::ref(), expr, param_repo, false, false).result();
     }
     static TensorSpec prod(const vespalib::string &expr, const ParamRepo &param_repo) {
-        return EvalFixture(tensor::DefaultTensorEngine::ref(), expr, param_repo, true, false).result();
+        return EvalFixture(FastValueBuilderFactory::get(), expr, param_repo, true, false).result();
     }
 };
 

@@ -27,10 +27,10 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
         DistributorMetricSet& metrics,
         SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
-      _updateMetric(metrics.updates[msg->getLoadType()]),
-      _putMetric(metrics.update_puts[msg->getLoadType()]),
-      _getMetric(metrics.update_gets[msg->getLoadType()]),
-      _metadata_get_metrics(metrics.update_metadata_gets[msg->getLoadType()]),
+      _updateMetric(metrics.updates),
+      _putMetric(metrics.update_puts),
+      _getMetric(metrics.update_gets),
+      _metadata_get_metrics(metrics.update_metadata_gets),
       _updateCmd(std::move(msg)),
       _updateReply(),
       _manager(manager),
@@ -74,7 +74,7 @@ struct IntermediateMessageSender : DistributorMessageSender {
         return forward.getDistributorIndex();
     }
 
-    const std::string& getClusterName() const override {
+    const vespalib::string& getClusterName() const override {
         return forward.getClusterName();
     }
 

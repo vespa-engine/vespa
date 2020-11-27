@@ -171,15 +171,11 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
                     "No visitor threads configured. If you don't want visitors "
                     "to run, don't use visitormanager.", VESPA_STRLOC);
         }
-        _metrics->initThreads(config->visitorthreads, _component.getLoadTypes()->getMetricLoadTypes());
+        _metrics->initThreads(config->visitorthreads);
         for (int32_t i=0; i<config->visitorthreads; ++i) {
-            _visitorThread.push_back(std::make_pair(
-                    std::shared_ptr<VisitorThread>(
-                        new VisitorThread(i, _componentRegister,
-                                          _messageSessionFactory,
-                                          _visitorFactories,
-                                          *_metrics->threads[i], *this)),
-                    std::map<api::VisitorId, std::string>()));
+            _visitorThread.emplace_back(
+                    new VisitorThread(i, _componentRegister, _messageSessionFactory, _visitorFactories, *_metrics->threads[i], *this),
+                    std::map<api::VisitorId, std::string>());
         }
     }
     _maxFixedConcurrentVisitors = maxConcurrentVisitorsFixed;

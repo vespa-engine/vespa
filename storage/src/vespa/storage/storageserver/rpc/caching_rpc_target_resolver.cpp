@@ -29,7 +29,7 @@ vespalib::string
 CachingRpcTargetResolver::address_to_slobrok_id(const api::StorageMessageAddress& address) {
     vespalib::asciistream as;
     as << "storage/cluster." << address.getCluster()
-       << '/' << ((address.getNodeType() == lib::NodeType::STORAGE) ? "storage" : "distributor")
+       << '/' << ((address.getNodeType() == lib::NodeType::Type::STORAGE) ? "storage" : "distributor")
        << '/' << address.getIndex();
     return as.str();
 }

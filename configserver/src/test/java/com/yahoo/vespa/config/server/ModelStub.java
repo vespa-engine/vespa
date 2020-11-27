@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
@@ -20,8 +21,14 @@ import java.util.Set;
 public class ModelStub implements Model {
 
     @Override
+    @SuppressWarnings("deprecation")
     public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
         return null;
+    }
+
+    @Override
+    public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition targetDef) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

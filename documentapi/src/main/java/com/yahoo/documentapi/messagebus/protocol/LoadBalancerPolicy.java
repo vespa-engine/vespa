@@ -21,7 +21,7 @@ import java.util.Map;
  *
  * If both slobroks and config is specified, the list from slobroks is used.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+ * @author Haakon Humberset
  */
 public class LoadBalancerPolicy extends SlobrokPolicy {
     private final String session;

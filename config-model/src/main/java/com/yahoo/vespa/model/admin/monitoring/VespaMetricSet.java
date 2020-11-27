@@ -542,6 +542,7 @@ public class VespaMetricSet {
         // TODO: For the purpose of this file and likely elsewhere, all but the last aggregate specifier,
         // TODO: such as 'average' and 'sum' in the metric names below are just confusing and can be mentally
         // TODO: disregarded when considering metric names. Consider cleaning up for Vespa 8.
+        // TODO Vespa 8 all metrics with .sum in the name should have that removed.
         metrics.add(new Metric("vds.datastored.alldisks.docs.average"));
         metrics.add(new Metric("vds.datastored.alldisks.bytes.average"));
         metrics.add(new Metric("vds.visitor.allthreads.averagevisitorlifetime.sum.max"));
