@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "routablerepository.h"
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/document/util/stringutil.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 #include <algorithm>
 
@@ -44,11 +42,10 @@ RoutableRepository::VersionMap::getFactory(const vespalib::Version &version) con
                             [](auto & lhs, auto & rhs) { return lhs.first.compareTo(rhs.first) <= 0; })->second;
 }
 
-RoutableRepository::RoutableRepository(const LoadTypeSet& loadTypes) :
+RoutableRepository::RoutableRepository() :
     _lock(),
     _factoryTypes(),
-    _cache(),
-    _loadTypes(loadTypes)
+    _cache()
 {
 }
 
@@ -69,7 +66,7 @@ RoutableRepository::decode(const vespalib::Version &version, mbus::BlobRef data)
             type, version.toString().c_str());
         return mbus::Routable::UP();
     }
-    mbus::Routable::UP ret = factory->decode(in, _loadTypes);
+    mbus::Routable::UP ret = factory->decode(in);
     if (!ret) {
         LOG(error, "Routable factory failed to deserialize routable of type %d (version %s).",
             type, version.toString().c_str());

@@ -80,8 +80,7 @@ void MetricsTest::SetUp() {
     } catch (config::InvalidConfigException& e) {
         fprintf(stderr, "%s\n", e.what());
     }
-    _metricManager = std::make_unique<metrics::MetricManager>(
-            std::make_unique<MetricClock>(*_clock));
+    _metricManager = std::make_unique<metrics::MetricManager>(std::make_unique<MetricClock>(*_clock));
     _topSet.reset(new metrics::MetricSet("vds", {}, ""));
     {
         metrics::MetricLockGuard guard(_metricManager->getMetricLock());
@@ -92,8 +91,6 @@ void MetricsTest::SetUp() {
             _node->getComponentRegister(),
             *_metricManager,
             "status");
-
-    documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
 
     _filestorMetrics = std::make_shared<FileStorMetrics>();
     _filestorMetrics->initDiskMetrics(1, 1);

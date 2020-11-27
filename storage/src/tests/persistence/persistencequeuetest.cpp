@@ -27,7 +27,6 @@ public:
         DummyStorageLink top;
         std::unique_ptr<DummyStorageLink> dummyManager;
         ForwardingMessageSender messageSender;
-        documentapi::LoadTypeSet loadTypes;
         FileStorMetrics metrics;
         std::unique_ptr<FileStorHandler> filestorHandler;
         uint32_t stripeId;
@@ -42,7 +41,6 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
       top(),
       dummyManager(std::make_unique<DummyStorageLink>()),
       messageSender(*dummyManager),
-      loadTypes("raw:"),
       metrics(),
       stripeId(0)
 {

@@ -2,6 +2,5 @@
 vespa_add_library(documentapi_documentapiloadtypes OBJECT
     SOURCES
     loadtype.cpp
-    loadtypeset.cpp
     DEPENDS
 )

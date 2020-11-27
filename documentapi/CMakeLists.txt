@@ -24,7 +24,6 @@ vespa_define_module(
     messagebus_messagebus-test
 
     TESTS
-    src/tests/loadtypes
     src/tests/messagebus
     src/tests/messages
     src/tests/policies

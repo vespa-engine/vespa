@@ -8,7 +8,6 @@
 #include "recoveryvisitor.h"
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
 

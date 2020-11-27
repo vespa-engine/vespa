@@ -47,7 +47,6 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
     vespalib::string clusterName = "mycluster";
     uint32_t redundancy = 2;
     uint32_t nodeCount = 10;
-    documentapi::LoadTypeSet::SP loadTypes;
     if (!configId.empty()) {
         config::ConfigUri uri(configId);
         std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
@@ -58,12 +57,8 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
         _compReg.setPriorityConfig(
                 *config::ConfigGetter<StorageComponent::PriorityConfig>
                     ::getConfig(uri.getConfigId(), uri.getContext()));
-        loadTypes = std::make_shared<documentapi::LoadTypeSet>(
-                *config::ConfigGetter<vespa::config::content::LoadTypeConfig>
-                    ::getConfig(uri.getConfigId(), uri.getContext()));
     } else {
         if (index == 0xffff) index = 0;
-        loadTypes.reset(new documentapi::LoadTypeSet);
     }
     if (index >= nodeCount) nodeCount = index + 1;
     if (redundancy > nodeCount) redundancy = nodeCount;
@@ -71,7 +66,6 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
     _compReg.setNodeInfo(clusterName, type, index);
     _compReg.setNodeStateUpdater(_nodeStateUpdater);
     _compReg.setDocumentTypeRepo(_docMan.getTypeRepoSP());
-    _compReg.setLoadTypes(loadTypes);
     _compReg.setBucketIdFactory(document::BucketIdFactory());
     auto distr = std::make_shared<lib::Distribution>(
             lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));

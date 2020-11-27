@@ -40,15 +40,6 @@ StorageComponent::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTy
 }
 
 void
-StorageComponent::setLoadTypes(LoadTypeSetSP loadTypes)
-{
-    std::lock_guard guard(_lock);
-    _loadTypes = loadTypes;
-    _generation++;
-}
-
-
-void
 StorageComponent::setPriorityConfig(const PriorityConfig& c)
 {
     // Priority mapper is already thread safe.
@@ -88,7 +79,6 @@ StorageComponent::StorageComponent(StorageComponentRegister& compReg,
       _nodeType(nullptr),
       _index(0),
       _repos(),
-      _loadTypes(),
       _priorityMapper(new PriorityMapper),
       _bucketIdFactory(),
       _distribution(),
@@ -131,13 +121,6 @@ StorageComponent::getTypeRepo() const
 {
     std::lock_guard guard(_lock);
     return _repos;
-}
-
-StorageComponent::LoadTypeSetSP
-StorageComponent::getLoadTypes() const
-{
-    std::lock_guard guard(_lock);
-    return _loadTypes;
 }
 
 StorageComponent::DistributionSP

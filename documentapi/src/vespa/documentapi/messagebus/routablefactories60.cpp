@@ -7,7 +7,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using document::FixedBucketSpaces;
@@ -27,7 +27,7 @@ RoutableFactories60::DocumentMessageFactory::encode(const mbus::Routable &obj, v
 }
 
 mbus::Routable::UP
-RoutableFactories60::DocumentMessageFactory::decode(document::ByteBuffer &in, const LoadTypeSet&) const
+RoutableFactories60::DocumentMessageFactory::decode(document::ByteBuffer &in) const
 {
     uint8_t pri;
     in.getByte(pri);
@@ -50,7 +50,7 @@ RoutableFactories60::DocumentReplyFactory::encode(const mbus::Routable &obj, ves
 }
 
 mbus::Routable::UP
-RoutableFactories60::DocumentReplyFactory::decode(document::ByteBuffer &in, const LoadTypeSet&) const
+RoutableFactories60::DocumentReplyFactory::decode(document::ByteBuffer &in) const
 {
     uint8_t pri;
     in.getByte(pri);

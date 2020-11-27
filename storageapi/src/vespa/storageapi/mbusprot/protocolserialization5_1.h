@@ -3,8 +3,7 @@
 
 #include "protocolserialization5_0.h"
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 class ProtocolSerialization5_1 : public ProtocolSerialization5_0
 {
@@ -13,8 +12,7 @@ class ProtocolSerialization5_1 : public ProtocolSerialization5_0
         BUCKET_ACTIVE = 0x2,
     };
 public:
-    ProtocolSerialization5_1(const std::shared_ptr<const document::DocumentTypeRepo>&,
-                             const documentapi::LoadTypeSet& loadTypes);
+    ProtocolSerialization5_1(const std::shared_ptr<const document::DocumentTypeRepo>&);
 
     api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const override;
     void putBucketInfo(const api::BucketInfo& info, vespalib::GrowableByteBuffer& buf) const override;
@@ -33,5 +31,4 @@ protected:
     SCmd::UP onDecodeCreateBucketCommand(BBuf&) const override;
 };
 
-} // mbusprot
-} // storage
+}

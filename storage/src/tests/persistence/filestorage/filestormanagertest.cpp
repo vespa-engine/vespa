@@ -56,7 +56,6 @@ namespace storage {
 
 namespace {
 
-metrics::LoadType defaultLoadType(0, "default");
 vespalib::string _Cluster("cluster");
 vespalib::string _Storage("storage");
 api::StorageMessageAddress _Storage2(&_Storage, lib::NodeType::STORAGE, 2);
@@ -255,7 +254,6 @@ struct FileStorHandlerComponents {
     DummyStorageLink top;
     DummyStorageLink* dummyManager;
     ForwardingMessageSender messageSender;
-    documentapi::LoadTypeSet loadTypes;
     FileStorMetrics metrics;
     std::unique_ptr<FileStorHandler> filestorHandler;
 
@@ -263,7 +261,6 @@ struct FileStorHandlerComponents {
         : top(),
           dummyManager(new DummyStorageLink),
           messageSender(*dummyManager),
-          loadTypes("raw:"),
           metrics(),
           filestorHandler()
     {

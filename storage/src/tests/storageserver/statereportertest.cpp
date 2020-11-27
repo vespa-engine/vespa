@@ -90,8 +90,6 @@ void StateReporterTest::SetUp() {
             _generationFetcher,
             "status");
 
-    documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
-
     _filestorMetrics = std::make_shared<FileStorMetrics>();
     _filestorMetrics->initDiskMetrics(1, 1);
     _topSet->registerMetric(*_filestorMetrics);

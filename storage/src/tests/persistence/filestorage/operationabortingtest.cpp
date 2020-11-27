@@ -72,8 +72,6 @@ public:
     }
 };
 
-metrics::LoadType defaultLoadType(0, "default");
-
 }
 
 struct OperationAbortingTest : FileStorTestFixture {

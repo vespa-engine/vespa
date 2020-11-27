@@ -12,9 +12,8 @@ namespace storage::mbusprot {
 class ProtocolSerialization5_2 : public ProtocolSerialization5_1
 {
 public:
-    ProtocolSerialization5_2(const std::shared_ptr<const document::DocumentTypeRepo>& repo,
-                             const documentapi::LoadTypeSet & loadTypes)
-        : ProtocolSerialization5_1(repo, loadTypes)
+    ProtocolSerialization5_2(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
+        : ProtocolSerialization5_1(repo)
     {}
 
 protected:

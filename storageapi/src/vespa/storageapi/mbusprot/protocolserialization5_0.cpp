@@ -7,6 +7,7 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <sstream>
 
@@ -92,7 +93,7 @@ ProtocolSerialization5_0::onEncodeCommand(GBBuf& buf, const api::StorageCommand&
     buf.putLong(msg.getMsgId());
     buf.putByte(msg.getPriority());
     buf.putShort(msg.getSourceIndex());
-    buf.putInt(msg.getLoadType().getId());
+    buf.putInt(documentapi::LoadType::DEFAULT.getId());
 }
 
 void
@@ -106,11 +107,8 @@ ProtocolSerialization5_0::onDecodeCommand(BBuf& buf, api::StorageCommand& msg) c
 }
 
 
-ProtocolSerialization5_0::ProtocolSerialization5_0(
-        const std::shared_ptr<const document::DocumentTypeRepo>& repo,
-        const documentapi::LoadTypeSet& loadTypes)
-    : ProtocolSerialization4_2(repo),
-      _loadTypes(loadTypes)
+ProtocolSerialization5_0::ProtocolSerialization5_0(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
+    : ProtocolSerialization4_2(repo)
 {
 }
 

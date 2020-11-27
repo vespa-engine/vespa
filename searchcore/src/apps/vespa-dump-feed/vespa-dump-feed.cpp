@@ -6,7 +6,6 @@
 #include <vespa/document/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/protocolset.h>
 #include <vespa/messagebus/rpcmessagebus.h>
@@ -47,7 +46,6 @@ public:
 class FeedHandler : public mbus::IMessageHandler
 {
 private:
-    documentapi::LoadTypeSet     _loadTypes;
     mbus::RPCMessageBus          _mbus;
     mbus::DestinationSession::UP _session;
     OutputFile                  &_idx;
@@ -95,8 +93,7 @@ FeedHandler::handleMessage(mbus::Message::UP message)
 }
 
 FeedHandler::FeedHandler(std::shared_ptr<const document::DocumentTypeRepo> repo, OutputFile &idx, OutputFile &dat)
-    : _loadTypes(),
-      _mbus(mbus::MessageBusParams().addProtocol(mbus::IProtocol::SP(new documentapi::DocumentProtocol(_loadTypes, repo))),
+    : _mbus(mbus::MessageBusParams().addProtocol(std::make_shared<documentapi::DocumentProtocol>(repo)),
             mbus::RPCNetworkParams()),
       _session(_mbus.getMessageBus()
                .createDestinationSession(mbus::DestinationSessionParams()

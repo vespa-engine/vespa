@@ -56,7 +56,6 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
     document::Bucket  _bucket;
     document::BucketId _dummy_remap_bucket{17, 12345};
     BucketInfo _dummy_bucket_info{1,2,3,4,5, true, false, 48};
-    documentapi::LoadTypeSet _loadTypes;
     mbusprot::StorageProtocol _protocol;
     static auto constexpr CONDITION_STRING = "There's just one condition";
 
@@ -66,9 +65,8 @@ struct StorageProtocolTest : TestWithParam<vespalib::Version> {
           _testDocId(_testDoc->getId()),
           _bucket_id(16, 0x51),
           _bucket(makeDocumentBucket(_bucket_id)),
-          _protocol(_docMan.getTypeRepoSP(), _loadTypes)
+          _protocol(_docMan.getTypeRepoSP())
     {
-        _loadTypes.addLoadType(34, "foo", documentapi::Priority::PRI_NORMAL_2);
     }
     ~StorageProtocolTest();
 

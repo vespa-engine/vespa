@@ -2,7 +2,6 @@
 #include <vespa/documentapi/messagebus/iroutingpolicyfactory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
@@ -82,9 +81,8 @@ Test::Main()
 
     std::shared_ptr<const DocumentTypeRepo> repo(new DocumentTypeRepo);
     mbus::Slobrok slobrok;
-    LoadTypeSet loadTypes;
     mbus::TestServer
-        srv(mbus::MessageBusParams().addProtocol(std::make_shared<DocumentProtocol>(loadTypes, repo)),
+        srv(mbus::MessageBusParams().addProtocol(std::make_shared<DocumentProtocol>(repo)),
             mbus::RPCNetworkParams(slobrok.config()));
     mbus::Receptor handler;
     mbus::SourceSession::UP src = srv.mb.createSourceSession(mbus::SourceSessionParams().setReplyHandler(handler));

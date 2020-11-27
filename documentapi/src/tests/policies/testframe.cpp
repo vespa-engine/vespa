@@ -60,9 +60,8 @@ public:
 TestFrame::TestFrame(const std::shared_ptr<const DocumentTypeRepo> &repo, const string &ident) :
     _identity(ident),
     _slobrok(std::make_shared<mbus::Slobrok>()),
-    _set(),
     _net(std::make_shared<MyNetwork>(mbus::RPCNetworkParams(_slobrok->config()).setIdentity(mbus::Identity(ident)))),
-    _mbus(std::make_shared<mbus::MessageBus>(*_net, mbus::MessageBusParams().addProtocol(std::make_shared<DocumentProtocol>(_set, repo)))),
+    _mbus(std::make_shared<mbus::MessageBus>(*_net, mbus::MessageBusParams().addProtocol(std::make_shared<DocumentProtocol>(repo)))),
     _msg(),
     _hop(mbus::HopSpec("foo", "bar")),
     _handler()

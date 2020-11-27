@@ -46,7 +46,6 @@ namespace document {
 }
 namespace documentapi {
     class LoadType;
-    class LoadTypeSet;
 }
 
 namespace storage {
@@ -67,7 +66,6 @@ public:
     };
     using UP = std::unique_ptr<StorageComponent>;
     using PriorityConfig = vespa::config::content::core::internal::InternalStorPrioritymappingType;
-    using LoadTypeSetSP = std::shared_ptr<documentapi::LoadTypeSet>;
     using DistributionSP = std::shared_ptr<lib::Distribution>;
 
     /**
@@ -83,7 +81,6 @@ public:
      */
     void setNodeStateUpdater(NodeStateUpdater& updater);
     void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
-    void setLoadTypes(LoadTypeSetSP);
     void setPriorityConfig(const PriorityConfig&);
     void setBucketIdFactory(const document::BucketIdFactory&);
     void setDistribution(DistributionSP);
@@ -99,7 +96,6 @@ public:
     vespalib::string getIdentity() const;
 
     std::shared_ptr<Repos> getTypeRepo() const;
-    LoadTypeSetSP getLoadTypes() const;
     const document::BucketIdFactory& getBucketIdFactory() const { return _bucketIdFactory; }
     uint8_t getPriority(const documentapi::LoadType&) const;
     DistributionSP getDistribution() const;
@@ -110,8 +106,7 @@ private:
     const lib::NodeType* _nodeType;
     uint16_t _index;
     std::shared_ptr<Repos> _repos;
-    // TODO: move loadTypes and _distribution in to _repos so lock will only taken once and only copying one shared_ptr.
-    LoadTypeSetSP _loadTypes;
+    // TODO: move _distribution in to _repos so lock will only taken once and only copying one shared_ptr.
     std::unique_ptr<PriorityMapper> _priorityMapper;
     document::BucketIdFactory _bucketIdFactory;
     DistributionSP _distribution;

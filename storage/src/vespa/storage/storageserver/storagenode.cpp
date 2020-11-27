@@ -7,7 +7,6 @@
 #include "statereporter.h"
 #include "storagemetricsset.h"
 #include "storagenodecontext.h"
-#include "tls_statistics_metrics_wrapper.h"
 
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
@@ -145,7 +144,6 @@ StorageNode::initialize()
     _rootFolder = _serverConfig->rootFolder;
 
     _context.getComponentRegister().setNodeInfo(_serverConfig->clusterName, getNodeType(), _serverConfig->nodeIndex);
-    _context.getComponentRegister().setLoadTypes(make_shared<documentapi::LoadTypeSet>(_configUri));
     _context.getComponentRegister().setBucketIdFactory(document::BucketIdFactory());
     _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(*_distributionConfig));
     _context.getComponentRegister().setPriorityConfig(*_priorityConfig);
@@ -164,11 +162,11 @@ StorageNode::initialize()
     // update node state according min used bits etc.
     // Needs node type to be set right away. Needs thread pool, index and
     // dead lock detector too, but not before open()
-    _stateManager.reset(new StateManager(
+    _stateManager = std::make_unique<StateManager>(
             _context.getComponentRegister(),
             _context.getComponentRegister().getMetricManager(),
             std::move(_hostInfo),
-            _singleThreadedDebugMode));
+            _singleThreadedDebugMode);
     _context.getComponentRegister().setNodeStateUpdater(*_stateManager);
 
     // Create VDS root folder, in case it doesn't already exist.

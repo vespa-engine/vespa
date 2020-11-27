@@ -8,7 +8,6 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/storage/config/config-stor-prioritymapping.h>
@@ -30,7 +29,6 @@ class StorageComponentRegisterImpl
     const lib::NodeType* _nodeType;
     uint16_t _index;
     std::shared_ptr<const document::DocumentTypeRepo> _docTypeRepo;
-    documentapi::LoadTypeSet::SP _loadTypes;
     PriorityConfig _priorityConfig;
     document::BucketIdFactory _bucketIdFactory;
     lib::Distribution::SP _distribution;
@@ -47,7 +45,6 @@ public:
     const lib::NodeType& getNodeType() const { return *_nodeType; }
     uint16_t getIndex() const { return _index; }
     std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() { return _docTypeRepo; }
-    documentapi::LoadTypeSet::SP getLoadTypes() { return _loadTypes; }
     const document::BucketIdFactory& getBucketIdFactory() { return _bucketIdFactory; }
     lib::Distribution::SP getDistribution() { return _distribution; }
     NodeStateUpdater& getNodeStateUpdater() { return *_nodeStateUpdater; }
@@ -57,7 +54,6 @@ public:
     void setNodeInfo(vespalib::stringref clusterName, const lib::NodeType& nodeType, uint16_t index);
     virtual void setNodeStateUpdater(NodeStateUpdater& updater);
     virtual void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
-    virtual void setLoadTypes(documentapi::LoadTypeSet::SP);
     virtual void setPriorityConfig(const PriorityConfig&);
     virtual void setBucketIdFactory(const document::BucketIdFactory&);
     virtual void setDistribution(lib::Distribution::SP);
