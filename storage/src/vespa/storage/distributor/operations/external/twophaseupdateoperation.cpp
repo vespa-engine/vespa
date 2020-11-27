@@ -34,6 +34,7 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
       _updateCmd(std::move(msg)),
       _updateReply(),
       _manager(manager),
+      _node_ctx(manager),
       _bucketSpace(bucketSpace),
       _sendState(SendState::NONE_SENT),
       _mode(Mode::FAST_PATH),
@@ -169,7 +170,7 @@ TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
     auto updateOperation = std::make_shared<UpdateOperation>(_manager, _bucketSpace, _updateCmd, _updateMetric);
     UpdateOperation & op = *updateOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(updateOperation), sender);
-    op.start(intermediate, _manager.getClock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
     transitionTo(SendState::UPDATES_SENT);
 
     if (intermediate._reply.get()) {
@@ -185,7 +186,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
     GetOperation& op = *get_operation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(get_operation), sender);
     _replicas_at_get_send_time = op.replicas_in_db(); // Populated at construction time, not at start()-time
-    op.start(intermediate, _manager.getClock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
 
     transitionTo(_use_initial_cheap_metadata_fetch_phase
                  ? SendState::METADATA_GETS_SENT
@@ -274,7 +275,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
     auto putOperation = std::make_shared<PutOperation>(_manager, _bucketSpace, std::move(put), _putMetric);
     PutOperation & op = *putOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(putOperation), sender);
-    op.start(intermediate, _manager.getClock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
     transitionTo(SendState::PUTS_SENT);
 
     LOG(debug, "Update(%s): sending Puts at timestamp %" PRIu64, update_doc_id().c_str(), putTimestamp);
@@ -466,7 +467,7 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
     // Note that this timestamp may be for a tombstone (remove) entry, in which case
     // conditional create-if-missing behavior kicks in as usual.
     // TODO avoid sending the Get at all if the newest replica is marked as a tombstone.
-    _single_get_latency_timer.emplace(_manager.getClock());
+    _single_get_latency_timer.emplace(_node_ctx.clock());
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), newest_replica->bucket_id);
     LOG(debug, "Update(%s): sending single payload Get to %s on node %u (had timestamp %" PRIu64 ")",
         update_doc_id().c_str(), bucket.toString().c_str(),

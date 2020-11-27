@@ -18,6 +18,7 @@ namespace storage::distributor {
 
 class DistributorComponent;
 class DistributorBucketSpace;
+class DistributorNodeContext;
 
 class VisitorOperation  : public Operation
 {
@@ -140,6 +141,7 @@ private:
     vespalib::duration timeLeft() const noexcept;
 
     DistributorComponent& _owner;
+    DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
     SentMessagesMap _sentMessages;
 

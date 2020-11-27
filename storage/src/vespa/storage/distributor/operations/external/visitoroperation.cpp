@@ -51,13 +51,14 @@ VisitorOperation::VisitorOperation(
         VisitorMetricSet& metrics)
     : Operation(),
       _owner(owner),
+      _node_ctx(owner),
       _bucketSpace(bucketSpace),
       _msg(m),
       _sentReply(false),
       _config(config),
       _metrics(metrics),
       _trace(TRACE_SOFT_MEMORY_LIMIT),
-      _operationTimer(owner.getClock())
+      _operationTimer(_node_ctx.clock())
 {
     const std::vector<document::BucketId>& buckets = m->getBuckets();
 
@@ -264,7 +265,7 @@ VisitorOperation::verifyDistributorIsNotDown(const lib::ClusterState& state)
 {
     const lib::NodeState& ownState(
             state.getNodeState(
-                lib::Node(lib::NodeType::DISTRIBUTOR, _owner.getIndex())));
+                lib::Node(lib::NodeType::DISTRIBUTOR, _node_ctx.node_index())));
     if (!ownState.getState().oneOf("ui")) {
         throw VisitorVerificationException(
                 api::ReturnCode::ABORTED, "Distributor is shutting down");
@@ -283,7 +284,7 @@ VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
             "Bucket %s is not owned by distributor %d, "
             "sending back system state '%s'",
             bid.toString().c_str(),
-            _owner.getIndex(),
+            _node_ctx.node_index(),
             bo.getNonOwnedState().toString().c_str());
         throw VisitorVerificationException(
                 api::ReturnCode::WRONG_DISTRIBUTION,
@@ -777,11 +778,11 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
 
     vespalib::asciistream os;
     os << _msg->getInstanceId() << '-'
-       << _owner.getIndex() << '-' << cmd->getMsgId();
+       << _node_ctx.node_index() << '-' << cmd->getMsgId();
 
     vespalib::string storageInstanceId(os.str());
     cmd->setInstanceId(storageInstanceId);
-    cmd->setAddress(api::StorageMessageAddress::create(&_owner.getClusterName(), lib::NodeType::STORAGE, node));
+    cmd->setAddress(api::StorageMessageAddress::create(&_node_ctx.cluster_name(), lib::NodeType::STORAGE, node));
     cmd->setMaximumPendingReplyCount(pending);
     cmd->setQueueTimeout(computeVisitorQueueTimeoutMs());
 

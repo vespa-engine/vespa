@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "distributor_node_context.h"
 #include "distributorinterface.h"
 #include "operationowner.h"
 #include "statechecker.h"
@@ -25,7 +26,8 @@ struct DatabaseUpdate {
  * Takes care of subscribing to document manager config and
  * making those values available to other subcomponents.
  */
-class DistributorComponent : public storage::DistributorComponent
+class DistributorComponent : public storage::DistributorComponent,
+                             public DistributorNodeContext
 {
 public:
     DistributorComponent(DistributorInterface& distributor,
@@ -168,6 +170,12 @@ public:
      * Returns true if the node is currently initializing.
      */
     bool initializing() const;
+
+    // Implements DistributorNodeContext
+    const framework::Clock& clock() const noexcept override { return getClock(); }
+    const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
+    const vespalib::string& cluster_name() const noexcept override { return getClusterName(); }
+    uint16_t node_index() const noexcept override { return getIndex(); }
 
 private:
     void enumerateUnavailableNodes(

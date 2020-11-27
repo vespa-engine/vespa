@@ -38,9 +38,9 @@ RemoveLocationOperation::getBucketId(
         DistributorComponent& manager,
         const api::RemoveLocationCommand& cmd, document::BucketId& bid)
 {
-    document::select::Parser parser(*manager.getTypeRepo()->documentTypeRepo, manager.getBucketIdFactory());
+    document::select::Parser parser(*manager.getTypeRepo()->documentTypeRepo, manager.bucket_id_factory());
 
-    document::BucketSelector bucketSel(manager.getBucketIdFactory());
+    document::BucketSelector bucketSel(manager.bucket_id_factory());
     std::unique_ptr<document::BucketSelector::BucketVector> exprResult
         = bucketSel.select(*parser.parse(cmd.getDocumentSelection()));
 

@@ -29,6 +29,7 @@ UpdateOperation::UpdateOperation(DistributorComponent& manager,
       _new_timestamp(_msg->getTimestamp()),
       _is_auto_create_update(_msg->getUpdate()->getCreateIfNonExistent()),
       _manager(manager),
+      _node_ctx(manager),
       _bucketSpace(bucketSpace),
       _newestTimestampLocation(),
       _infoAtSendTime(),
@@ -60,7 +61,7 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
 {
     LOG(debug, "Received UPDATE %s for bucket %" PRIx64,
         _msg->getDocumentId().toString().c_str(),
-        _manager.getBucketIdFactory().getBucketId(
+        _node_ctx.bucket_id_factory().getBucketId(
                 _msg->getDocumentId()).getRawId());
 
     // Don't do anything if all nodes are down.
@@ -73,7 +74,7 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
     }
 
     document::BucketId bucketId(
-            _manager.getBucketIdFactory().getBucketId(
+            _node_ctx.bucket_id_factory().getBucketId(
                     _msg->getDocumentId()));
 
     std::vector<BucketDatabase::Entry> entries;

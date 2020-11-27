@@ -46,6 +46,7 @@ private:
     const bool _is_auto_create_update;
 
     DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
     std::pair<document::BucketId, uint16_t> _newestTimestampLocation;
     api::BucketInfo _infoAtSendTime; // Should be same across all replicas

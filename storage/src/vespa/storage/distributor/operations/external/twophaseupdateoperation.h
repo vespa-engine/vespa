@@ -142,6 +142,7 @@ private:
     std::shared_ptr<api::UpdateCommand> _updateCmd;
     std::shared_ptr<api::StorageReply> _updateReply;
     DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
     SentMessageMap _sentMessageMap;
     SendState _sendState;

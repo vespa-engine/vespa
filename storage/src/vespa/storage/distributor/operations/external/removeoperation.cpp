@@ -22,7 +22,7 @@ RemoveOperation::RemoveOperation(DistributorComponent& manager,
                manager, msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(std::move(msg)),
-      _manager(manager),
+      _node_ctx(manager),
       _bucketSpace(bucketSpace)
 {
 }
@@ -35,7 +35,7 @@ RemoveOperation::onStart(DistributorMessageSender& sender)
     LOG(spam, "Started remove on document %s", _msg->getDocumentId().toString().c_str());
 
     document::BucketId bucketId(
-            _manager.getBucketIdFactory().getBucketId(
+            _node_ctx.bucket_id_factory().getBucketId(
                     _msg->getDocumentId()));
 
     std::vector<BucketDatabase::Entry> entries;

@@ -35,7 +35,7 @@ private:
 
     std::shared_ptr<api::RemoveCommand> _msg;
 
-    DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
 };
 
