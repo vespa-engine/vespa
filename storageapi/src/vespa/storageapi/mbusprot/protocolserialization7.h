@@ -13,7 +13,7 @@ namespace storage::mbusprot {
 class ProtocolSerialization7 final : public ProtocolSerialization {
     const std::shared_ptr<const document::DocumentTypeRepo> _repo;
 public:
-    ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo);
+    explicit ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo);
 
     const document::DocumentTypeRepo& type_repo() const noexcept { return *_repo; }
 

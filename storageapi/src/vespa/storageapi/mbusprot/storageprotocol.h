@@ -15,7 +15,7 @@ public:
 
     static mbus::string NAME;
 
-    StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo>);
+    explicit StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo>);
     ~StorageProtocol() override;
 
     const mbus::string& getName() const override { return NAME; }

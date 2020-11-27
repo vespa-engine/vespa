@@ -45,7 +45,7 @@ public:
     /**
      * Constructs a new routable repository.
      */
-    explicit RoutableRepository();
+    RoutableRepository();
 
     /**
      * Decodes a {@link Routable} from the given byte array. This uses the content of the byte array to
