@@ -220,8 +220,6 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     snap = &mm.getActiveMetrics(lockGuard);
     ASSERT_VALUE(0, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(0, *snap, "test.set1.set1.countSum");
-/* Current test procedure for fetching values, don't work in active sums of sets
-*/
 
     // 5 minute snapshot
     snap = &mm.getMetricSnapshot(lockGuard, 5 * 60);
