@@ -48,7 +48,6 @@
 #include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/tensor/types.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 using document::Annotation;

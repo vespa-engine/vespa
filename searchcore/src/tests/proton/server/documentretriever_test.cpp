@@ -23,7 +23,6 @@
 #include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcommon/common/schema.h>
@@ -93,7 +92,7 @@ using vespalib::eval::EngineOrFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
-using vespalib::tensor::test::makeTensor;
+using vespalib::eval::test::makeTensor;
 using namespace document::config_builder;
 using namespace search::index;
 
