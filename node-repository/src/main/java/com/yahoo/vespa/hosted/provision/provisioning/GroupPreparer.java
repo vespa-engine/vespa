@@ -122,7 +122,9 @@ public class GroupPreparer {
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
                 highestIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(
-                allNodes, application, cluster, requestedNodes, wantedGroups, nodeRepository);
+                allNodes, application, cluster, requestedNodes, wantedGroups,
+                nodeRepository.zone().getCloud().dynamicProvisioning(), nodeRepository.nameResolver(),
+                nodeRepository.resourcesCalculator(), nodeRepository.spareCount());
         allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
     }
