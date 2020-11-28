@@ -195,6 +195,7 @@ public class Reindexer {
         VisitorParameters parameters = new VisitorParameters(type.getName());
         parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(1)
                                                                 .setWindowSizeDecrementFactor(5)
+                                                                .setWeight(0.1)
                                                                 .setMinWindowSize(1));
         parameters.setRemoteDataHandler(cluster.name());
         parameters.setResumeToken(progress);
