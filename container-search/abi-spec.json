@@ -6164,6 +6164,7 @@
     "methods": [
       "public java.lang.Object get(java.util.Map)",
       "public boolean isEmpty()",
+      "public final java.util.Map getIndexedVariants()",
       "public java.lang.String toString()"
     ],
     "fields": []

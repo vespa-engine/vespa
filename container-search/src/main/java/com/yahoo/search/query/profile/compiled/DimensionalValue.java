@@ -57,6 +57,11 @@ public class DimensionalValue<VALUE> {
 
     public boolean isEmpty() { return indexedVariants.isEmpty(); }
 
+    /** Returns all the variants of value **/
+    public final Map<Binding, VALUE> getIndexedVariants() {
+        return this.indexedVariants;
+    }
+
     @Override
     public String toString() {
         return indexedVariants.toString();
