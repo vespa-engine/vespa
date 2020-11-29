@@ -18,8 +18,11 @@ LOG_SETUP(".fnet");
 using vespalib::ServerSocket;
 using vespalib::SocketHandle;
 using vespalib::SocketSpec;
+using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 namespace {
+
+constexpr size_t WAKEUP_LIMIT_IN_ADAPTIVE_MODE = 100;
 
 struct Sync : public FNET_IExecutable
 {
@@ -28,6 +31,11 @@ struct Sync : public FNET_IExecutable
         gate.countDown();
     }
 };
+
+bool needWakeup(vespalib::Executor::OptimizeFor mode, size_t qLen) {
+    return ((mode == OptimizeFor::LATENCY) && (qLen == 1)) ||
+           ((mode == OptimizeFor::ADAPTIVE) && (qLen == WAKEUP_LIMIT_IN_ADAPTIVE_MODE));
+}
 
 } // namespace<unnamed>
 
@@ -113,7 +121,7 @@ bool
 FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
                                 FNET_Context context)
 {
-    bool wasEmpty;
+    size_t qLen;
     {
         std::unique_lock<std::mutex> guard(_lock);
         if (IsShutDown()) {
@@ -121,10 +129,10 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
             SafeDiscardEvent(cpacket, context);
             return false;
         }
-        wasEmpty = _queue.IsEmpty_NoLock() && _owner.optimizeFor() == vespalib::Executor::OptimizeFor::LATENCY;
         _queue.QueuePacket_NoLock(cpacket, context);
+        qLen = _queue.GetPacketCnt_NoLock();
     }
-    if (wasEmpty) {
+    if (needWakeup(_owner.optimizeFor(), qLen)) {
         _selector.wakeup();
     }
     return true;
