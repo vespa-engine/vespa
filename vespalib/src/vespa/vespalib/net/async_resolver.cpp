@@ -2,6 +2,7 @@
 
 #include "async_resolver.h"
 #include "socket_spec.h"
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.net.async_resolver");
@@ -149,15 +150,20 @@ AsyncResolver::SP AsyncResolver::_shared_resolver(nullptr);
 
 AsyncResolver::AsyncResolver(HostResolver::SP resolver, size_t num_threads)
     : _resolver(std::move(resolver)),
-      _executor(num_threads, 128*1024, async_resolver_executor_thread)
+      _executor(std::make_unique<ThreadStackExecutor>(num_threads, 128*1024, async_resolver_executor_thread))
 {
+}
+
+void
+AsyncResolver::wait_for_pending_resolves() {
+    _executor->sync();
 }
 
 void
 AsyncResolver::resolve_async(const vespalib::string &spec, ResultHandler::WP result_handler)
 {
     auto task = std::make_unique<ResolveTask>(spec, *_resolver, std::move(result_handler));
-    auto rejected = _executor.execute(std::move(task));
+    auto rejected = _executor->execute(std::move(task));
     assert(!rejected);
 }
 

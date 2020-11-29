@@ -7,7 +7,6 @@
 #include <vector>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_engine.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 
 class FNET_TransportThread;
 class FastOS_ThreadPool;
@@ -30,7 +29,7 @@ private:
 
     vespalib::AsyncResolver::SP _async_resolver;
     vespalib::CryptoEngine::SP _crypto_engine;
-    vespalib::ThreadStackExecutor _work_pool;
+    std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
     Threads _threads;
 
 public:
