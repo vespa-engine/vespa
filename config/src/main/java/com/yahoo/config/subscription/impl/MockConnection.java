@@ -115,7 +115,7 @@ public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Co
             JRTServerConfigRequestV3 jrtReq = JRTServerConfigRequestV3.createFromRequest(request);
             Payload payload = Payload.from(ConfigPayload.empty());
             long generation = 1;
-            jrtReq.addOkResponse(payload, generation, false, false, ConfigUtils.getMd5(payload.getData()));
+            jrtReq.addOkResponse(payload, generation, false, ConfigUtils.getMd5(payload.getData()));
         }
 
     }

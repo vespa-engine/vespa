@@ -4264,8 +4264,6 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.search.handler.SearchWithRendererHandlerConfig build()"
     ],
     "fields": []
@@ -4507,8 +4505,6 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.search.pagetemplates.PageTemplatesConfig build()"
     ],
     "fields": [
@@ -4571,8 +4567,6 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.search.pagetemplates.ResolversConfig build()"
     ],
     "fields": [
@@ -6829,8 +6823,6 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.search.query.rewrite.RewritesConfig build()"
     ],
     "fields": [
@@ -8069,8 +8061,6 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.search.statistics.MeasureQpsConfig build()"
     ],
     "fields": []
@@ -8265,8 +8255,6 @@
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
       "public com.yahoo.search.statistics.TimingSearcherConfig build()"
     ],
     "fields": [
