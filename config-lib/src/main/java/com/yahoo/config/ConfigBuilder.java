@@ -5,7 +5,6 @@ package com.yahoo.config;
  * Root interface for all config builders.
  *
  * @author gjoranv
- * @since 5.1.6
  */
 public interface ConfigBuilder {
 }

@@ -1,5 +1,6 @@
 package com.yahoo.vespa.config.server.metrics;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
@@ -76,7 +77,13 @@ public class ProtonMetricsRetrieverTest {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition targetDef) {
             throw new UnsupportedOperationException();
         }
 

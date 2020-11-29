@@ -601,6 +601,8 @@ public final class AllfeaturesConfig extends ConfigInstance {
       return this;
     }
 
+    private boolean _applyOnRestart = false;
+
     @java.lang.Override
     public final boolean dispatchGetConfig(ConfigInstance.Producer producer) {
       if (producer instanceof Producer) {
@@ -611,11 +613,19 @@ public final class AllfeaturesConfig extends ConfigInstance {
     }
 
     @java.lang.Override
-    public final String getDefMd5()       { return CONFIG_DEF_MD5; }
+    public final String getDefMd5() { return CONFIG_DEF_MD5; }
+
     @java.lang.Override
-    public final String getDefName()      { return CONFIG_DEF_NAME; }
+    public final String getDefName() { return CONFIG_DEF_NAME; }
+
     @java.lang.Override
     public final String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }
+
+    @java.lang.Override
+    public final boolean getApplyOnRestart() { return _applyOnRestart; }
+
+    @java.lang.Override
+    public final void setApplyOnRestart(boolean applyOnRestart) { _applyOnRestart = applyOnRestart; }
 
     public AllfeaturesConfig build() {
       return new AllfeaturesConfig(this);
