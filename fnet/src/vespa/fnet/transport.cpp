@@ -29,7 +29,8 @@ FNET_Transport::FNET_Transport(vespalib::AsyncResolver::SP resolver, vespalib::C
     : _async_resolver(std::move(resolver)),
       _crypto_engine(std::move(crypto)),
       _work_pool(std::make_unique<vespalib::ThreadStackExecutor>(1, 128 * 1024, fnet_work_pool, 1024)),
-      _threads()
+      _threads(),
+      _optimizeFor(vespalib::Executor::OptimizeFor::LATENCY)
 {
     assert(num_threads >= 1);
     for (size_t i = 0; i < num_threads; ++i) {

@@ -31,6 +31,7 @@ private:
     vespalib::CryptoEngine::SP _crypto_engine;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
     Threads _threads;
+    vespalib::Executor::OptimizeFor _optimizeFor;
 
 public:
     /**
@@ -51,6 +52,11 @@ public:
     FNET_Transport()
         : FNET_Transport(vespalib::AsyncResolver::get_shared(), vespalib::CryptoEngine::get_default(), 1) {}
     ~FNET_Transport();
+
+    vespalib::Executor::OptimizeFor optimizeFor() const { return _optimizeFor; }
+    void optimizeFor(vespalib::Executor::OptimizeFor optimizeFor_in) {
+        _optimizeFor = optimizeFor_in;
+    }
 
     /**
      * Try to execute the given task on the internal work pool

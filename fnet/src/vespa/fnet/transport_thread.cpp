@@ -121,7 +121,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
             SafeDiscardEvent(cpacket, context);
             return false;
         }
-        wasEmpty = _queue.IsEmpty_NoLock();
+        wasEmpty = _queue.IsEmpty_NoLock() && _owner.optimizeFor() == vespalib::Executor::OptimizeFor::LATENCY;
         _queue.QueuePacket_NoLock(cpacket, context);
     }
     if (wasEmpty) {
@@ -482,6 +482,9 @@ FNET_TransportThread::EventLoopIteration()
 
         // handle wakeup and io-events
         _selector.dispatch(*this);
+        if (owner().optimizeFor() != vespalib::Executor::OptimizeFor::LATENCY) {
+            handle_wakeup();
+        }
 
         // handle IOC time-outs
         if (_config._iocTimeOut > 0) {
