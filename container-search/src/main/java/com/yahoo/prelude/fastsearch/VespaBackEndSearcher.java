@@ -43,7 +43,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     private String serverId;
 
     /** The set of all document databases available in the backend handled by this searcher */
-    private Map<String, DocumentDatabase> documentDbs = new LinkedHashMap<>();
+    private final Map<String, DocumentDatabase> documentDbs = new LinkedHashMap<>();
     private DocumentDatabase defaultDocumentDb = null;
 
     /** Default docsum class. null means "unset" and is the default value */

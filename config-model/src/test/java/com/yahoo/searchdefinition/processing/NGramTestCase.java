@@ -48,8 +48,8 @@ public class NGramTestCase extends SchemaTestCase {
         assertEquals(Stemming.NONE, gram1.getStemming());
 
         List<String> queryCommands = gram1.getQueryCommands();
-        assertEquals(1, queryCommands.size());
-        assertEquals("ngram 1", queryCommands.get(0));
+        assertEquals(2, queryCommands.size());
+        assertEquals("ngram 1", queryCommands.get(1));
     }
 
     @Test

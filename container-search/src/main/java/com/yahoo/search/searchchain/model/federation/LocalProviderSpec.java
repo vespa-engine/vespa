@@ -33,6 +33,7 @@ public class LocalProviderSpec {
                             com.yahoo.search.querytransform.RangeQueryOptimizer.class,
                             com.yahoo.search.querytransform.SortingDegrader.class,
                             com.yahoo.prelude.searcher.ValidateSortingSearcher.class,
+                            com.yahoo.search.searchers.QueryValidator.class,
                             com.yahoo.prelude.cluster.ClusterSearcher.class,
                             com.yahoo.search.grouping.GroupingValidator.class,
                             com.yahoo.search.grouping.vespa.GroupingExecutor.class,
