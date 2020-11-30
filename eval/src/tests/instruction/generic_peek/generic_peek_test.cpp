@@ -71,7 +71,7 @@ TensorSpec perform_generic_peek(const TensorSpec &a, const ValueType &result_typ
     Stash stash;
     std::vector<Value::CREF> my_stack;
     my_stack.push_back(*param);
-    size_t child_idx = 0;
+    size_t child_idx = 1;
     for (auto & [dim_name, label_or_child] : spec) {
         if (std::holds_alternative<size_t>(label_or_child)) {
             // here, label_or_child is a size_t specifying the value

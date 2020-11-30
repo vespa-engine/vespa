@@ -508,7 +508,9 @@ Peek::Spec
 Peek::make_spec() const
 {
     Spec generic_spec;
-    size_t child_idx = 0;
+    // the value peeked is child 0, so
+    // children (for label computation) in spec start at 1:
+    size_t child_idx = 1;
     for (const auto & [dim_name, label_or_child] : map()) {
         std::visit(vespalib::overload {
                 [&,&dim_name = dim_name](const TensorSpec::Label &label) {
