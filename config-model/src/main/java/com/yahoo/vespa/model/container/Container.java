@@ -306,7 +306,9 @@ public abstract class Container extends AbstractService implements
                         .port(getRpcPort())
                         .slobrokId(serviceSlobrokId()))
                 .filedistributor(filedistributorConfig())
-                .discriminator((clusterName != null ? clusterName + "." : "" ) + name);
+                .discriminator((clusterName != null ? clusterName + "." : "" ) + name)
+                .restartOnDeploy(owner != null && owner.getDeferChangesUntilRestart());
+
     }
 
     /** Returns the jvm args set explicitly for this node */
@@ -328,7 +330,6 @@ public abstract class Container extends AbstractService implements
 
     @Override
     public void getConfig(ComponentsConfig.Builder builder) {
-        builder.setApplyOnRestart(owner.getDeferChangesUntilRestart()); //  Sufficient to set on one config
         builder.components.addAll(ComponentsConfigGenerator.generate(allEnabledComponents()));
     }
 
