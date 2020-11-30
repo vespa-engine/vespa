@@ -24,7 +24,7 @@ public class ConfigResponseTest {
     @Test
     public void require_that_slime_response_is_initialized() throws IOException {
         ConfigPayload configPayload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
-        ConfigResponse response = SlimeConfigResponse.fromConfigPayload(configPayload, 3, false, "mymd5");
+        ConfigResponse response = SlimeConfigResponse.fromConfigPayload(configPayload, 3, false, false, "mymd5");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.serialize(baos, CompressionType.UNCOMPRESSED);
         String payload = baos.toString(StandardCharsets.UTF_8);
@@ -43,7 +43,7 @@ public class ConfigResponseTest {
         ConfigPayload configPayload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         Utf8Array data = configPayload.toUtf8Array(true);
         Utf8Array bytes = new Utf8Array(new LZ4PayloadCompressor().compress(data.getBytes()));
-        ConfigResponse response = new SlimeConfigResponse(bytes, 3, false, "mymd5", CompressionInfo.create(CompressionType.LZ4, data.getByteLength()));
+        ConfigResponse response = new SlimeConfigResponse(bytes, 3, false, false, "mymd5", CompressionInfo.create(CompressionType.LZ4, data.getByteLength()));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.serialize(baos, CompressionType.UNCOMPRESSED);
         String payload = baos.toString(StandardCharsets.UTF_8);
