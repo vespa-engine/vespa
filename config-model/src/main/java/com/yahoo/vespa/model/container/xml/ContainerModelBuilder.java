@@ -588,7 +588,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                       Element nodesElement, ConfigModelContext context) {
         applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
 
-        if (!cluster.getJvmGCOptions().isPresent()) {
+        if (cluster.getJvmGCOptions().isEmpty()) {
             String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
             cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState(), jvmGCOptions));
         }
@@ -627,7 +627,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
-            if (environmentVars != null && !environmentVars.isEmpty()) {
+            if (!environmentVars.isEmpty()) {
                 cluster.setEnvironmentVars(environmentVars);
             }
             if (useCpuSocketAffinity(nodesElement))
@@ -862,7 +862,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addIncludes(Element parentElement) {
         List<Element> includes = XML.getChildren(parentElement, IncludeDirs.INCLUDE);
-        if (includes == null || includes.isEmpty()) {
+        if (includes.isEmpty()) {
             return;
         }
         if (app == null) {
