@@ -175,7 +175,12 @@ class AutoscalingTester {
         }
     }
 
-    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId) {
+    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId)  {
+        addMeasurements(cpu, memory, disk, generation, true, true, count, applicationId);
+    }
+
+    public void addMeasurements(float cpu, float memory, float disk, int generation, boolean inService, boolean stable,
+                                int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
@@ -185,8 +190,8 @@ class AutoscalingTester {
                                                                               memory,
                                                                               disk,
                                                                               generation,
-                                                                              true,
-                                                                              true))));
+                                                                              inService,
+                                                                              stable))));
             }
         }
     }
