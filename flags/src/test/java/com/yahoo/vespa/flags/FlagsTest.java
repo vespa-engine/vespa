@@ -114,7 +114,8 @@ public class FlagsTest {
         SharedHost sharedHost = new SharedHost(List.of(new HostResources(
                 4.0, 16.0, 50.0, 0.3,
                 "fast", "local",
-                10)));
+                10)),
+                null);
         testGeneric(Flags.SHARED_HOST, sharedHost);
     }
 
