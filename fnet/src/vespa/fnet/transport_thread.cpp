@@ -125,7 +125,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
         _queue.QueuePacket_NoLock(cpacket, context);
         qLen = _queue.GetPacketCnt_NoLock();
     }
-    if (qLen == _owner.events_before_wakeup()) {
+    if (qLen == getConfig()._events_before_wakeup) {
         _selector.wakeup();
     }
     return true;
@@ -209,7 +209,6 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
     : _owner(owner_in),
       _now(clock::now()),
       _scheduler(&_now),
-      _config(),
       _componentsHead(nullptr),
       _timeOutHead(nullptr),
       _componentsTail(nullptr),
@@ -242,13 +241,17 @@ FNET_TransportThread::~FNET_TransportThread()
     }
 }
 
+const FNET_Config &
+FNET_TransportThread::getConfig() const {
+    return _owner.getConfig();
+}
 
 bool
 FNET_TransportThread::tune(SocketHandle &handle) const
 {
     handle.set_keepalive(true);
     handle.set_linger(true, 0);
-    handle.set_nodelay(_config._tcpNoDelay);
+    handle.set_nodelay(getConfig()._tcpNoDelay);
     return handle.set_blocking(false);
 }
 
@@ -486,8 +489,8 @@ FNET_TransportThread::EventLoopIteration()
         _selector.dispatch(*this);
 
         // handle IOC time-outs
-        if (_config._iocTimeOut > 0) {
-            time_point oldest = (_now - std::chrono::milliseconds(_config._iocTimeOut));
+        if (getConfig()._iocTimeOut > 0) {
+            time_point oldest = (_now - std::chrono::milliseconds(getConfig()._iocTimeOut));
             while (_timeOutHead != nullptr &&
                    oldest > _timeOutHead->_ioc_timestamp) {
 

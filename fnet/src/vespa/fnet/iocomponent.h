@@ -138,7 +138,7 @@ public:
      *
      * @return config object.
      **/
-    FNET_Config *GetConfig();
+    const FNET_Config & getConfig() const;
 
 
     /**

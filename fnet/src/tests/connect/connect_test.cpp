@@ -95,13 +95,13 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
         transport.Start(&pool);
     }
     TransportFixture(AsyncResolver::HostResolver::SP host_resolver)
-        : streamer(nullptr), pool(128 * 1024), transport(make_resolver(std::move(host_resolver)), 1),
+        : streamer(nullptr), pool(128 * 1024), transport(TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
     }
     TransportFixture(CryptoEngine::SP crypto)
-        : streamer(nullptr), pool(128 * 1024), transport(crypto, 1),
+        : streamer(nullptr), pool(128 * 1024), transport(TransportConfig().crypto(std::move(crypto))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
