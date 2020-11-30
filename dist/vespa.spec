@@ -80,13 +80,6 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.4.0
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
-%if 0%{?fc31}
-BuildRequires: vespa-protobuf-devel >= 3.7.0-4
-BuildRequires: llvm-devel >= 9.0.0
-BuildRequires: boost-devel >= 1.69
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
 %if 0%{?fc32}
 BuildRequires: protobuf-devel
 BuildRequires: llvm-devel >= 10.0.0
@@ -195,11 +188,6 @@ Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.4.0
 Requires: vespa-zstd >= 1.4.5-2
-%if 0%{?fc31}
-Requires: vespa-protobuf >= 3.7.0-4
-Requires: llvm-libs >= 9.0.0
-%define _vespa_llvm_version 9
-%endif
 %if 0%{?fc32}
 Requires: protobuf
 Requires: llvm-libs >= 10.0.0
