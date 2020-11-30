@@ -557,7 +557,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     /**
      * Returns a config server config containing the right zone settings (and defaults for the rest).
-     * This is useful to allow applications to find out in which zone they are runnung by having the Zone
+     * This is useful to allow applications to find out in which zone they are running by having the Zone
      * object (which is constructed from this config) injected.
      */
     @Override
