@@ -12,7 +12,6 @@ import com.yahoo.config.ConfigInstance;
  * @author Ulf Lilleengen
  */
 public class GenericConfig {
-
     public static class GenericConfigBuilder implements ConfigInstance.Builder {
 
         private final ConfigPayloadBuilder payloadBuilder;
@@ -50,7 +49,6 @@ public class GenericConfig {
         public String getDefMd5() {
             return "";
         }
-
     }
 
 }
