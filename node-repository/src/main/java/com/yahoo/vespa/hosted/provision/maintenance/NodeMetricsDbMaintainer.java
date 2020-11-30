@@ -59,12 +59,4 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
         return warnings == 0;
     }
 
-    /** Filter out uninformative snapshots before storing */
-    private Collection<Pair<String, MetricSnapshot>> filter(Collection<Pair<String, MetricSnapshot>> snapshots) {
-        return snapshots.stream()
-                        .filter(snapshot -> snapshot.getSecond().inService())
-                        .filter(snapshot -> ! snapshot.getSecond().stable())
-                        .collect(Collectors.toList());
-    }
-
 }
