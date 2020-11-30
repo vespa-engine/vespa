@@ -3,10 +3,12 @@
 ## Errata
 
 ### 2020-11-30: Document inconsistency
-This bug existed between 2020-08-28 and 2020-09-23.
+This bug was introduced in Vespa-7.277.38, fixed in Vespa-7.292.82.
 The following needs to happen to trigger the bug:
 
-* Visibility delay is non-zero.
+* visibility-delay is non-zero. Note that the default is zero, so for this to trigger,
+  [https://docs.vespa.ai/documentation/reference/services-content.html#visibility-delay](visibility-delay)
+  must have been set.
 * A new config change is deployed that contains changes to proton.
   This config snapshot is stored in the transaction log on the content node.
 * vespa-proton-bin is restarted, and as part of the prepare for restart step,
@@ -19,7 +21,7 @@ The following needs to happen to trigger the bug:
 * When the problem attributes are later flushed this inconsistency will be permanent.
 
 Solution:
-* Upgrade Vespa to at least vespa-7.306.19-1.el7.x86_64.rpm.
+* Upgrade Vespa to minimum Vespa-7.292.82.
 * Complete re-feed of the corpus.
 
 
