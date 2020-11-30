@@ -31,7 +31,7 @@ private:
     vespalib::CryptoEngine::SP _crypto_engine;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
     Threads _threads;
-    vespalib::Executor::OptimizeFor _optimizeFor;
+    size_t  _events_before_wakeup;
 
 public:
     /**
@@ -53,9 +53,9 @@ public:
         : FNET_Transport(vespalib::AsyncResolver::get_shared(), vespalib::CryptoEngine::get_default(), 1) {}
     ~FNET_Transport();
 
-    vespalib::Executor::OptimizeFor optimizeFor() const { return _optimizeFor; }
-    void optimizeFor(vespalib::Executor::OptimizeFor optimizeFor_in) {
-        _optimizeFor = optimizeFor_in;
+    size_t events_before_wakeup() const { return _events_before_wakeup; }
+    void events_before_wakeup(size_t events_before_wakeup_in) {
+        _events_before_wakeup = events_before_wakeup_in;
     }
 
     /**

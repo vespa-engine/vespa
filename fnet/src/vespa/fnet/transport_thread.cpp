@@ -22,8 +22,6 @@ using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 namespace {
 
-constexpr size_t WAKEUP_LIMIT_IN_ADAPTIVE_MODE = 100;
-
 struct Sync : public FNET_IExecutable
 {
     vespalib::Gate gate;
@@ -31,11 +29,6 @@ struct Sync : public FNET_IExecutable
         gate.countDown();
     }
 };
-
-bool needWakeup(vespalib::Executor::OptimizeFor mode, size_t qLen) {
-    return ((mode == OptimizeFor::LATENCY) && (qLen == 1)) ||
-           ((mode == OptimizeFor::ADAPTIVE) && (qLen == WAKEUP_LIMIT_IN_ADAPTIVE_MODE));
-}
 
 } // namespace<unnamed>
 
@@ -132,7 +125,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
         _queue.QueuePacket_NoLock(cpacket, context);
         qLen = _queue.GetPacketCnt_NoLock();
     }
-    if (needWakeup(_owner.optimizeFor(), qLen)) {
+    if (qLen == _owner.events_before_wakeup()) {
         _selector.wakeup();
     }
     return true;
@@ -488,11 +481,10 @@ FNET_TransportThread::EventLoopIteration()
         // sample current time (performed once per event loop iteration)
         _now = clock::now();
 
-        // handle wakeup and io-events
+        // handle io-events
         _selector.dispatch(*this);
-        if (owner().optimizeFor() != vespalib::Executor::OptimizeFor::LATENCY) {
-            handle_wakeup();
-        }
+
+        handle_wakeup();
 
         // handle IOC time-outs
         if (_config._iocTimeOut > 0) {
