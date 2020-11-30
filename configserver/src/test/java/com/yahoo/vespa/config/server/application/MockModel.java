@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
  * @author hakonhall
  */
 public class MockModel implements Model {
+
     private final Collection<HostInfo> hosts;
 
     static MockModel createContainer(String hostname, int statePort) {
@@ -72,7 +74,13 @@ public class MockModel implements Model {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition targetDef) {
         throw new UnsupportedOperationException();
     }
 
