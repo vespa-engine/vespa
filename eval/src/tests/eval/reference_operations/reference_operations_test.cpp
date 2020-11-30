@@ -231,26 +231,26 @@ TEST(ReferencePeekTest, verbatim_labels) {
     ReferenceOperations::PeekSpec spec;
     spec.emplace("c", "qux");
     // peek 1 mapped dimension, verbatim label
-    auto output = ReferenceOperations::peek(input, spec, {});
+    auto output = ReferenceOperations::peek(spec, {input});
     auto expect = TensorSpec("tensor(e{})")
         .add({{"e","foo"}}, 16.0)
         .add({{"e","qux"}}, 25.0);
     EXPECT_EQ(output, expect);
     spec.emplace("e", "foo");
     // peek all mapped dimensions, verbatim labels
-    output = ReferenceOperations::peek(input, spec, {});    
+    output = ReferenceOperations::peek(spec, {input});    
     expect = TensorSpec("double").add({}, 16.0);
     EXPECT_EQ(output, expect);    
 
     spec.clear();
     spec.emplace("c", "nomatch");
     // peek 1 mapped dimension, non-matching verbatim label
-    output = ReferenceOperations::peek(input, spec, {});
+    output = ReferenceOperations::peek(spec, {input});
     expect = TensorSpec("tensor(e{})");
     EXPECT_EQ(output, expect);    
     spec.emplace("e", "nomatch");
     // peek all mapped dimensions, non-matching verbatim labels
-    output = ReferenceOperations::peek(input, spec, {});
+    output = ReferenceOperations::peek(spec, {input});
     expect = TensorSpec("double");
     EXPECT_EQ(output, expect);    
 
@@ -258,14 +258,14 @@ TEST(ReferencePeekTest, verbatim_labels) {
     spec.clear();
     spec.emplace("a", TensorSpec::Label(1));
     // peek 1 indexed dimension, verbatim label
-    output = ReferenceOperations::peek(input, spec, {});
+    output = ReferenceOperations::peek(spec, {input});
     expect = TensorSpec("tensor(d[5])")
         .add({{"d", 2}}, 3.0)
         .add({{"d", 0}}, 5.0);
     EXPECT_EQ(output, expect);
     spec.emplace("d", TensorSpec::Label(2));
     // peek all indexed dimensions, verbatim labels
-    output = ReferenceOperations::peek(input, spec, {});    
+    output = ReferenceOperations::peek(spec, {input});    
     expect = TensorSpec("double").add({}, 3.0);
     EXPECT_EQ(output, expect);    
 }    
@@ -275,32 +275,33 @@ TEST(ReferencePeekTest, labels_from_children) {
     auto zero_ch = TensorSpec("double").add({}, 0.0);
     auto neg_ch = TensorSpec("double").add({}, -2.0);
     auto too_big_ch = TensorSpec("double").add({}, 42.0);
-    std::vector<TensorSpec> children = {too_big_ch, too_big_ch, zero_ch, pos_ch, neg_ch, too_big_ch};
+    std::vector<TensorSpec> children = {TensorSpec(""), too_big_ch, too_big_ch, zero_ch, pos_ch, neg_ch, too_big_ch};
+    auto &input = children[0];
+    input = dense_2d_some_cells(false);
 
-    auto input = dense_2d_some_cells(false);
     ReferenceOperations::PeekSpec spec;
-    spec.emplace("a", size_t(3));
+    spec.emplace("a", size_t(4));
     // peek 1 indexed dimension, child (evaluating to 1.0)
-    auto output = ReferenceOperations::peek(input, spec, children);
+    auto output = ReferenceOperations::peek(spec, children);
     auto expect = TensorSpec("tensor(d[5])")
         .add({{"d", 2}}, 3.0)
         .add({{"d", 0}}, 5.0);
     EXPECT_EQ(output, expect);
-    spec.emplace("d", size_t(2));
+    spec.emplace("d", size_t(3));
     // peek 2 indexed dimensions (both children)
-    output = ReferenceOperations::peek(input, spec, children);
+    output = ReferenceOperations::peek(spec, children);
     expect = TensorSpec("double").add({}, 5.0);
     EXPECT_EQ(output, expect);
     spec.clear();
-    spec.emplace("a", size_t(0));
+    spec.emplace("a", size_t(1));
     // peek 1 indexed dimension, child (evaluating to 42.0)
-    output = ReferenceOperations::peek(input, spec, children);
+    output = ReferenceOperations::peek(spec, children);
     expect = TensorSpec("tensor(d[5])");
     EXPECT_EQ(output, expect);
     spec.clear();
-    spec.emplace("a", size_t(4));
+    spec.emplace("a", size_t(5));
     // peek 1 indexed dimension, child (evaluating to -2.0)
-    output = ReferenceOperations::peek(input, spec, children);
+    output = ReferenceOperations::peek(spec, children);
     expect = TensorSpec("tensor(d[5])");
     EXPECT_EQ(output, expect);
 
@@ -311,32 +312,32 @@ TEST(ReferencePeekTest, labels_from_children) {
         .add({{"c", "-2"}, {"e", "1"}}, 5.0)
         .add({{"c", "-2"}, {"e", "-2"}}, 6.0);
     spec.clear();
-    spec.emplace("c", size_t(3));
+    spec.emplace("c", size_t(4));
     // peek 1 mapped dimension, child (evaluating to 1.0)
-    output = ReferenceOperations::peek(input, spec, children);
+    output = ReferenceOperations::peek(spec, children);
     expect = TensorSpec("tensor(e{})")
         .add({{"e", "1"}}, 3.0)
         .add({{"e", "0"}}, 4.0);
     EXPECT_EQ(output, expect);
-    spec.emplace("e", size_t(2));
+    spec.emplace("e", size_t(3));
     // peek 2 mapped dimensions (both children)
-    output = ReferenceOperations::peek(input, spec, children);
+    output = ReferenceOperations::peek(spec, children);
     expect = TensorSpec("double").add({}, 4.0);
     EXPECT_EQ(output, expect);
 
     spec.clear();
-    spec.emplace("c", size_t(4));
+    spec.emplace("c", size_t(5));
     // peek 1 mapped dimension, child (evaluating to -2.0)
-    output = ReferenceOperations::peek(input, spec, children);
+    output = ReferenceOperations::peek(spec, children);
     expect = TensorSpec("tensor(e{})")
         .add({{"e", "1"}}, 5.0)
         .add({{"e", "-2"}}, 6.0);
     EXPECT_EQ(output, expect);
 
     spec.clear();
-    spec.emplace("c", size_t(0));
+    spec.emplace("c", size_t(1));
     // peek 1 indexed dimension, child (evaluating to 42.0)
-    output = ReferenceOperations::peek(input, spec, children);
+    output = ReferenceOperations::peek(spec, children);
     expect = TensorSpec("tensor(e{})");
     EXPECT_EQ(output, expect);
 }
@@ -346,7 +347,6 @@ TEST(ReferencePeekTest, peek_mixed) {
     auto zero_ch = TensorSpec("double").add({}, 0.0);
     auto neg_ch = TensorSpec("double").add({}, -2.0);
     auto too_big_ch = TensorSpec("double").add({}, 42.0);
-    std::vector<TensorSpec> children = {too_big_ch, too_big_ch, zero_ch, pos_ch, neg_ch, too_big_ch};
     auto input = TensorSpec("tensor(a[3],b[1],c{},d[5],e{})")
         .add({{"a", 0}, {"b", 0}, {"c", "-2"}, {"d", 1}, {"e", "foo"}},  1.0)
         .add({{"a", 0}, {"b", 0}, {"c", "1"}, {"d", 4}, {"e", "foo"}},   2.0) 
@@ -368,12 +368,13 @@ TEST(ReferencePeekTest, peek_mixed) {
         .add({{"a", 2}, {"b", 0}, {"c", "-2"}, {"d", 2}, {"e", "foo"}}, 18.0)
         .add({{"a", 2}, {"b", 0}, {"c", "0"}, {"d", 3}, {"e", "bar"}},  19.0) 
         .add({{"a", 2}, {"b", 0}, {"c", "1"}, {"d", 1}, {"e", "foo"}},  20.0);
+    std::vector<TensorSpec> children = {input, too_big_ch, too_big_ch, zero_ch, pos_ch, neg_ch, too_big_ch};
     ReferenceOperations::PeekSpec spec;
-    spec.emplace("a", size_t(3));
-    spec.emplace("b", size_t(2));
-    spec.emplace("c", size_t(4));
+    spec.emplace("a", size_t(4));
+    spec.emplace("b", size_t(3));
+    spec.emplace("c", size_t(5));
     spec.emplace("e", "foo");
-    auto output = ReferenceOperations::peek(input, spec, children);
+    auto output = ReferenceOperations::peek(spec, children);
     auto expect = TensorSpec("tensor(d[5])")
         .add({{"d", 1}}, 6.0)
         .add({{"d", 2}}, 8.0)

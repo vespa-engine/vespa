@@ -107,12 +107,6 @@ struct EvalNode : public NodeVisitor {
     }
 
     void eval_peek(const TensorPeek &node) {
-        // TODO: fix Peek API so that the 'child index' sent in the
-        // spec is actually 'child index' (as defined by the function
-        // AST and Peek TensorFunction subclass) and not 'child index'
-        // - 1. This also means that the param (the object being
-        // peeked) should be sent as the first child and not as a
-        // separate parameter.
         TensorSpec param = eval_node(node.param(), params);
         ValueType param_type = ValueType::from_spec(param.type());
         auto is_indexed = [&](const vespalib::string &dim_name) {
@@ -121,6 +115,7 @@ struct EvalNode : public NodeVisitor {
                     (param_type.dimensions()[dim_idx].is_indexed()));
         };
         std::vector<TensorSpec> children;
+        children.push_back(param);
         std::map<vespalib::string, std::variant<TensorSpec::Label, size_t>> spec;
         for (const auto &[name, label]: node.dim_list()) {
             if (label.is_expr()) {
@@ -134,7 +129,7 @@ struct EvalNode : public NodeVisitor {
                 }
             }
         }
-        result = ReferenceOperations::peek(param, spec, children);
+        result = ReferenceOperations::peek(spec, children);
     }
 
     //-------------------------------------------------------------------------
