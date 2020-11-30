@@ -176,7 +176,7 @@ TensorSpec ReferenceOperations::merge(const TensorSpec &a, const TensorSpec &b, 
 
 
 TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vector<TensorSpec> &children) {
-    if (peek_spec.empty()) {
+    if (peek_spec.empty() || children.empty()) {
         return TensorSpec(ValueType::error_type().to_spec());
     }
     std::vector<vespalib::string> peek_dims;
