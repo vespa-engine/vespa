@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class MetricsV2MetricsFetcherTest {
@@ -70,14 +71,17 @@ public class MetricsV2MetricsFetcherTest {
             assertEquals(0.15, values.get(0).getSecond().memory(), delta);
             assertEquals(0.20, values.get(0).getSecond().disk(), delta);
             assertEquals(3, values.get(0).getSecond().generation(), delta);
+            assertFalse(values.get(0).getSecond().unstable());
         }
 
         {
+            httpClient.cannedResponse = cannedResponseForApplication2;
             try (Mutex lock = tester.nodeRepository().lock(application1)) {
-                tester.nodeRepository().write(tester.nodeRepository().getNodes(application1, Node.State.active)
+                tester.nodeRepository().write(tester.nodeRepository().getNodes(application2, Node.State.active)
                         .get(0).retire(tester.clock().instant()), lock);
             }
-            assertTrue("No metrics fetching while unstable", fetcher.fetchMetrics(application1).isEmpty());
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2));
+            assertTrue(values.get(0).getSecond().unstable());
         }
     }
 

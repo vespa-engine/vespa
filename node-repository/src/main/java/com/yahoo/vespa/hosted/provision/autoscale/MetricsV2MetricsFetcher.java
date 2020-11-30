@@ -55,9 +55,6 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
     public Collection<Pair<String, MetricSnapshot>> fetchMetrics(ApplicationId application) {
         NodeList applicationNodes = nodeRepository.list(application).state(Node.State.active);
 
-        // Do not try to draw conclusions from utilization while unstable
-        if (Autoscaler.unstable(applicationNodes.asList(), nodeRepository)) return Collections.emptyList();
-
         Optional<Node> metricsV2Container = applicationNodes.container()
                                                             .matching(node -> expectedUp(node))
                                                             .stream()
@@ -65,8 +62,7 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
         if (metricsV2Container.isEmpty()) return Collections.emptyList();
         // Consumer 'autoscaling' defined in com.yahoo.vespa.model.admin.monitoring.MetricConsumer
         String url = "http://" + metricsV2Container.get().hostname() + ":" + 4080 + apiPath + "?consumer=autoscaling";
-        String response = httpClient.get(url);
-        return new MetricsResponse(response).metrics();
+        return new MetricsResponse(httpClient.get(url), applicationNodes, nodeRepository).metrics();
     }
 
     @Override

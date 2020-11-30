@@ -15,8 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The autoscaler makes decisions about the flavor and node count that should be allocated to a cluster
- * based on observed behavior.
+ * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
  *
  * @author bratseth
  */
