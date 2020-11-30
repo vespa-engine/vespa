@@ -51,16 +51,47 @@ DistributorComponent::getClusterStateBundle() const
 std::vector<uint16_t>
 DistributorComponent::getIdealNodes(const document::Bucket &bucket) const
 {
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.get_ideal_nodes(bucket.getBucketId());
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    return bucketSpace.getDistribution().getIdealStorageNodes(
+            bucketSpace.getClusterState(),
+            bucket.getBucketId(),
+            _distributor.getStorageNodeUpStates());
+}
+
+BucketOwnership
+DistributorComponent::checkOwnershipInPendingAndGivenState(
+        const lib::Distribution& distribution,
+        const lib::ClusterState& clusterState,
+        const document::Bucket &bucket) const
+{
+    try {
+        BucketOwnership pendingRes(
+                _distributor.checkOwnershipInPendingState(bucket));
+        if (!pendingRes.isOwned()) {
+            return pendingRes;
+        }
+        uint16_t distributor = distribution.getIdealDistributorNode(
+                clusterState, bucket.getBucketId());
+
+        if (getIndex() == distributor) {
+            return BucketOwnership::createOwned();
+        } else {
+            return BucketOwnership::createNotOwnedInState(clusterState);
+        }
+    } catch (lib::TooFewBucketBitsInUseException& e) {
+        return BucketOwnership::createNotOwnedInState(clusterState);
+    } catch (lib::NoDistributorsAvailableException& e) {
+        return BucketOwnership::createNotOwnedInState(clusterState);
+    }
 }
 
 BucketOwnership
 DistributorComponent::checkOwnershipInPendingAndCurrentState(
         const document::Bucket &bucket) const
 {
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.check_ownership_in_pending_and_current_state(bucket.getBucketId());
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    return checkOwnershipInPendingAndGivenState(
+            bucketSpace.getDistribution(), bucketSpace.getClusterState(), bucket);
 }
 
 bool
@@ -69,8 +100,19 @@ DistributorComponent::ownsBucketInState(
         const lib::ClusterState& clusterState,
         const document::Bucket &bucket) const
 {
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_state(distribution, clusterState, bucket.getBucketId());
+    LOG(spam, "checking bucket %s in state %s with distr %s",
+        bucket.toString().c_str(), clusterState.toString().c_str(),
+        distribution.getNodeGraph().getDistributionConfigHash().c_str());
+    try {
+        uint16_t distributor = distribution.getIdealDistributorNode(
+                clusterState, bucket.getBucketId());
+
+        return (getIndex() == distributor);
+    } catch (lib::TooFewBucketBitsInUseException& e) {
+        return false;
+    } catch (lib::NoDistributorsAvailableException& e) {
+        return false;
+    }
 }
 
 bool
@@ -78,15 +120,15 @@ DistributorComponent::ownsBucketInState(
         const lib::ClusterState& clusterState,
         const document::Bucket &bucket) const
 {
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_state(clusterState, bucket.getBucketId());
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    return ownsBucketInState(bucketSpace.getDistribution(), clusterState, bucket);
 }
 
 bool
 DistributorComponent::ownsBucketInCurrentState(const document::Bucket &bucket) const
 {
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_current_state(bucket.getBucketId());
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    return ownsBucketInState(bucketSpace.getDistribution(), bucketSpace.getClusterState(), bucket);
 }
 
 api::StorageMessageAddress
@@ -98,8 +140,7 @@ DistributorComponent::nodeAddress(uint16_t nodeIndex) const
 bool
 DistributorComponent::checkDistribution(api::StorageCommand &cmd, const document::Bucket &bucket)
 {
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    BucketOwnership bo(bucket_space.check_ownership_in_pending_and_current_state(bucket.getBucketId()));
+    BucketOwnership bo(checkOwnershipInPendingAndCurrentState(bucket));
     if (!bo.isOwned()) {
         std::string systemStateStr = bo.getNonOwnedState().toString();
         LOG(debug,
@@ -179,7 +220,7 @@ DistributorComponent::updateBucketDatabase(
     assert(!(bucket.getBucketId() == document::BucketId()));
     BucketDatabase::Entry dbentry = bucketSpace.getBucketDatabase().get(bucket.getBucketId());
 
-    BucketOwnership ownership(bucketSpace.check_ownership_in_pending_and_current_state(bucket.getBucketId()));
+    BucketOwnership ownership(checkOwnershipInPendingAndCurrentState(bucket));
     if (!ownership.isOwned()) {
         LOG(debug,
             "Trying to add %s to database that we do not own according to "
@@ -207,27 +248,26 @@ DistributorComponent::updateBucketDatabase(
 
     // Ensure that we're not trying to bring any zombie copies into the
     // bucket database (i.e. copies on nodes that are actually unavailable).
-    const auto& available_nodes = bucketSpace.get_available_nodes();
-    bool found_down_node = false;
-    for (const auto& copy : changedNodes) {
-        if (copy.getNode() >= available_nodes.size() || !available_nodes[copy.getNode()]) {
-            found_down_node = true;
-            break;
-        }
+    std::vector<uint16_t> unavailableNodes;
+    enumerateUnavailableNodes(unavailableNodes, bucketSpace.getClusterState(), bucket, changedNodes);
+    if (auto* pending_state = _distributor.pendingClusterStateOrNull(bucket.getBucketSpace())) {
+        enumerateUnavailableNodes(unavailableNodes, *pending_state, bucket, changedNodes);
     }
     // Optimize for common case where we don't have to create a new
     // bucket copy vector
-    if (!found_down_node) {
-        dbentry->addNodes(changedNodes, bucketSpace.get_ideal_nodes(bucket.getBucketId()));
+    if (unavailableNodes.empty()) {
+        dbentry->addNodes(changedNodes, getIdealNodes(bucket));
     } else {
         std::vector<BucketCopy> upNodes;
         for (uint32_t i = 0; i < changedNodes.size(); ++i) {
             const BucketCopy& copy(changedNodes[i]);
-            if (copy.getNode() < available_nodes.size() && available_nodes[copy.getNode()]) {
+            if (std::find(unavailableNodes.begin(), unavailableNodes.end(), copy.getNode())
+                == unavailableNodes.end())
+            {
                 upNodes.emplace_back(copy);
             }
         }
-        dbentry->addNodes(upNodes, bucketSpace.get_ideal_nodes(bucket.getBucketId()));
+        dbentry->addNodes(upNodes, getIdealNodes(bucket));
     }
     if (updateFlags & DatabaseUpdate::RESET_TRUSTED) {
         dbentry->resetTrusted();
