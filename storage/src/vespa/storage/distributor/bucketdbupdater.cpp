@@ -106,8 +106,13 @@ BucketDBUpdater::hasPendingClusterState() const
 BucketOwnership
 BucketDBUpdater::checkOwnershipInPendingState(const document::Bucket& b) const
 {
-    auto &bucket_space(_distributorComponent.getBucketSpaceRepo().get(b.getBucketSpace()));
-    return bucket_space.check_ownership_in_pending_state(b.getBucketId());
+    if (hasPendingClusterState()) {
+        const auto& state(*_pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(b.getBucketSpace()));
+        if (!_distributorComponent.ownsBucketInState(state, b)) {
+            return BucketOwnership::createNotOwnedInState(state);
+        }
+    }
+    return BucketOwnership::createOwned();
 }
 
 const lib::ClusterState*
@@ -312,7 +317,6 @@ BucketDBUpdater::storageDistributionChanged()
             _distributorComponent.getBucketSpaceRepo(),
             _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
-    _distributorComponent.getBucketSpaceRepo().set_pending_cluster_state_bundle(_pendingClusterState->getNewClusterStateBundle());
 }
 
 void
@@ -431,7 +435,6 @@ BucketDBUpdater::onSetSystemState(
     _distributorComponent.getDistributor().getMetrics().set_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 
-    _distributorComponent.getBucketSpaceRepo().set_pending_cluster_state_bundle(_pendingClusterState->getNewClusterStateBundle());
     if (isPendingClusterStateCompleted()) {
         processCompletedPendingClusterState();
     }
@@ -779,7 +782,6 @@ BucketDBUpdater::activatePendingClusterState()
     update_read_snapshot_after_activation(_pendingClusterState->getNewClusterStateBundle());
     _pendingClusterState.reset();
     _outdatedNodesMap.clear();
-    _distributorComponent.getBucketSpaceRepo().clear_pending_cluster_state_bundle();
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
     clearReadOnlyBucketRepoDatabases();
