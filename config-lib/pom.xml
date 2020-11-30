@@ -26,6 +26,11 @@
       <artifactId>annotations</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>configgen</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -67,6 +72,31 @@
       <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>abi-check-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <finalName>${project.artifactId}-jar-with-dependencies</finalName>
+          <transformers>
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+              <manifestEntries>
+                <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                <Import-Package>
+                  com.yahoo.config.codegen<!-- TODO: Remove when the model of config def, which today is InnerCNode in codegen :-(, is moved to config-lib -->
+                </Import-Package>
+              </manifestEntries>
+            </transformer>
+          </transformers>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

@@ -38,6 +38,7 @@ import static java.util.logging.Level.INFO;
  * @author Ulf Lilleengen, hmusum, Tony Vaagenes
  */
 public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
+
     private final static Logger log = Logger.getLogger(ConfigPayloadApplier.class.getPackage().getName());
 
     private final ConfigInstance.Builder rootBuilder;
