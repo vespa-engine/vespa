@@ -33,11 +33,17 @@ struct DistributorBucketSpaceTest : public ::testing::Test
     {
     }
     ~DistributorBucketSpaceTest() = default;
+    // Count normal buckets using this distributor
     uint32_t count_distributor_buckets();
+    // Count normal buckets using service layer node 0.
     uint32_t count_storage_buckets();
+    // Count deep split buckets using this distributor
     uint32_t count_deep_split_distributor_buckets();
+    // Count deep split buckets using service layer node 0. Ideal nodes for a bucket changes for each split level when bucket used bits > 33.
     uint32_t count_deep_split_storage_buckets();
+    // Count normal buckets using this distributor and service layer node 0
     CountVector count_buckets();
+    // Count deep split buckets using this distributor and service layer node 0.
     CountVector count_deep_split_buckets();
 };
 
