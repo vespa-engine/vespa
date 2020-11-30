@@ -78,9 +78,6 @@ public final class ApplicationContainer extends Container implements
 
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
-        AbstractConfigProducer<?> parent = getParent();
-        if (parent == null) return;
-
         builder.myid(index());
     }
 
