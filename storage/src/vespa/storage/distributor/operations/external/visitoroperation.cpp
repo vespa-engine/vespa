@@ -44,14 +44,15 @@ VisitorOperation::BucketInfo::toString() const
 VisitorOperation::SuperBucketInfo::~SuperBucketInfo() = default;
 
 VisitorOperation::VisitorOperation(
-        DistributorComponent& owner,
+        DistributorNodeContext& node_ctx,
+        DistributorOperationContext& op_ctx,
         DistributorBucketSpace &bucketSpace,
         const api::CreateVisitorCommand::SP& m,
         const Config& config,
         VisitorMetricSet& metrics)
     : Operation(),
-      _owner(owner),
-      _node_ctx(owner),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
       _bucketSpace(bucketSpace),
       _msg(m),
       _sentReply(false),
@@ -73,7 +74,7 @@ VisitorOperation::VisitorOperation(
     _fromTime = m->getFromTime();
     _toTime = m->getToTime();
     if (_toTime == 0) {
-        _toTime = owner.getUniqueTimestamp();
+        _toTime = _op_ctx.generate_unique_timestamp();
     }
 }
 
@@ -276,7 +277,7 @@ void
 VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
 {
     document::Bucket bucket(_msg->getBucketSpace(), bid);
-    BucketOwnership bo(_owner.checkOwnershipInPendingAndCurrentState(bucket));
+    BucketOwnership bo(_op_ctx.check_ownership_in_pending_and_current_state(bucket));
     if (!bo.isOwned()) {
         verifyDistributorIsNotDown(bo.getNonOwnedState());
         std::string systemStateStr = bo.getNonOwnedState().toString();

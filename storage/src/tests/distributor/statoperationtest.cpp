@@ -32,7 +32,6 @@ TEST_F(StatOperationTest, bucket_info) {
     addNodesToBucketDB(document::BucketId(16, 5), "0=4/2/100,1=4/2/100");
 
     StatBucketOperation op(
-            getExternalOperationHandler(),
             getDistributorBucketSpace(),
             std::make_shared<api::StatBucketCommand>(
                     makeDocumentBucket(document::BucketId(16, 5)), ""));

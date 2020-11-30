@@ -15,7 +15,9 @@ class DistributorBucketSpace;
 class RemoveLocationOperation  : public Operation
 {
 public:
-    RemoveLocationOperation(DistributorComponent& manager,
+    RemoveLocationOperation(DistributorNodeContext& node_ctx,
+                            DistributorOperationContext& op_ctx,
+                            DocumentSelectionParser& parser,
                             DistributorBucketSpace &bucketSpace,
                             std::shared_ptr<api::RemoveLocationCommand> msg,
                             PersistenceOperationMetricSet& metric);

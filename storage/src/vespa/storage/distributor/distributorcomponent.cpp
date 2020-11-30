@@ -2,6 +2,7 @@
 #include "distributorcomponent.h"
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
+#include "pendingmessagetracker.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
@@ -302,6 +303,15 @@ DistributorComponent::createAppropriateBucket(const document::Bucket &bucket)
 bool
 DistributorComponent::initializing() const {
     return _distributor.initializing();
+}
+
+bool
+DistributorComponent::has_pending_message(uint16_t node_index,
+                                          const document::Bucket& bucket,
+                                          uint32_t message_type) const
+{
+    const auto& sender = static_cast<const DistributorMessageSender&>(getDistributor());
+    return sender.getPendingMessageTracker().hasPendingMessage(node_index, bucket, message_type);
 }
 
 std::unique_ptr<document::select::Node>

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "distributor_node_context.h"
+#include "distributor_operation_context.h"
 #include "distributorinterface.h"
 #include "document_selection_parser.h"
 #include "operationowner.h"
@@ -29,6 +30,7 @@ struct DatabaseUpdate {
  */
 class DistributorComponent : public storage::DistributorComponent,
                              public DistributorNodeContext,
+                             public DistributorOperationContext,
                              public DocumentSelectionParser
 {
 public:
@@ -179,8 +181,48 @@ public:
     const vespalib::string& cluster_name() const noexcept override { return getClusterName(); }
     uint16_t node_index() const noexcept override { return getIndex(); }
 
+    // Implements DistributorOperationContext
+    api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
+    BucketOwnership check_ownership_in_pending_and_current_state(const document::Bucket &bucket) const override {
+        return checkOwnershipInPendingAndCurrentState(bucket);
+    }
+    void update_bucket_database(const document::Bucket& bucket,
+                                const BucketCopy& changed_node,
+                                uint32_t update_flags = 0) override {
+        updateBucketDatabase(bucket, changed_node, update_flags);
+    }
+    virtual void update_bucket_database(const document::Bucket& bucket,
+                                        const std::vector<BucketCopy>& changed_nodes,
+                                        uint32_t update_flags = 0) override {
+        updateBucketDatabase(bucket, changed_nodes, update_flags);
+    }
+    void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override {
+        removeNodeFromDB(bucket, node_index);
+    }
+    const DistributorBucketSpaceRepo& bucket_space_repo() const override {
+        return getBucketSpaceRepo();
+    }
+    void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,
+                                               const BucketDatabase::Entry& entry,
+                                               uint8_t pri) override {
+        getDistributor().checkBucketForSplit(bucket_space, entry, pri);
+    }
+    const DistributorConfiguration& distributor_config() const override {
+        return getDistributor().getConfig();
+    }
+    bool has_pending_message(uint16_t node_index,
+                             const document::Bucket& bucket,
+                             uint32_t message_type) const override;
+    const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const override {
+        return getDistributor().pendingClusterStateOrNull(bucket_space);
+    }
+    const char* storage_node_up_states() const override {
+        return getDistributor().getStorageNodeUpStates();
+    }
+
     // Implements DocumentSelectionParser
     std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;
+
 
 private:
     void enumerateUnavailableNodes(

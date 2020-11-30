@@ -68,7 +68,7 @@ public:
     }
 
     DistributorMetricSet& getMetrics() override { return *_metrics; }
-    
+
     PendingMessageTracker& getPendingMessageTracker() override {
         return _pendingMessageTracker;
     }

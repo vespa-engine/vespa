@@ -11,7 +11,8 @@ using namespace storage::distributor;
 using namespace storage;
 using document::BucketSpace;
 
-RemoveOperation::RemoveOperation(DistributorComponent& manager,
+RemoveOperation::RemoveOperation(DistributorNodeContext& node_ctx,
+                                 DistributorOperationContext& op_ctx,
                                  DistributorBucketSpace &bucketSpace,
                                  std::shared_ptr<api::RemoveCommand> msg,
                                  PersistenceOperationMetricSet& metric,
@@ -19,10 +20,10 @@ RemoveOperation::RemoveOperation(DistributorComponent& manager,
     : SequencedOperation(std::move(sequencingHandle)),
       _trackerInstance(metric,
                std::make_shared<api::RemoveReply>(*msg),
-               manager, msg->getTimestamp()),
+               node_ctx, op_ctx, msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(std::move(msg)),
-      _node_ctx(manager),
+      _node_ctx(node_ctx),
       _bucketSpace(bucketSpace)
 {
 }

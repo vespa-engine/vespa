@@ -16,19 +16,22 @@ using namespace storage;
 using document::BucketSpace;
 
 RemoveLocationOperation::RemoveLocationOperation(
-        DistributorComponent& manager,
+        DistributorNodeContext& node_ctx,
+        DistributorOperationContext& op_ctx,
+        DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
         std::shared_ptr<api::RemoveLocationCommand> msg,
         PersistenceOperationMetricSet& metric)
     : Operation(),
       _trackerInstance(metric,
                std::make_shared<api::RemoveLocationReply>(*msg),
-               manager,
+               node_ctx,
+               op_ctx,
                0),
       _tracker(_trackerInstance),
       _msg(std::move(msg)),
-      _node_ctx(manager),
-      _parser(manager),
+      _node_ctx(node_ctx),
+      _parser(parser),
       _bucketSpace(bucketSpace)
 {}
 

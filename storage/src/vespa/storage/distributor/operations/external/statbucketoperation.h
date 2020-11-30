@@ -14,13 +14,12 @@ namespace storage::api { class StatBucketCommand; }
 
 namespace storage::distributor {
 
-class DistributorComponent;
 class DistributorBucketSpace;
 
 class StatBucketOperation : public Operation
 {
 public:
-    StatBucketOperation(DistributorComponent& manager, DistributorBucketSpace &bucketSpace,
+    StatBucketOperation(DistributorBucketSpace &bucketSpace,
                         const std::shared_ptr<api::StatBucketCommand> & cmd);
     ~StatBucketOperation();
 

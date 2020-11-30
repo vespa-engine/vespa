@@ -19,14 +19,16 @@ using namespace storage::distributor;
 using namespace storage;
 using document::BucketSpace;
 
-PutOperation::PutOperation(DistributorComponent& manager, DistributorBucketSpace &bucketSpace,
+PutOperation::PutOperation(DistributorNodeContext& node_ctx,
+                           DistributorOperationContext& op_ctx,
+                           DistributorBucketSpace &bucketSpace,
                            std::shared_ptr<api::PutCommand> msg,
                            PersistenceOperationMetricSet& metric, SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
-      _trackerInstance(metric, std::make_shared<api::PutReply>(*msg), manager, msg->getTimestamp()),
+      _trackerInstance(metric, std::make_shared<api::PutReply>(*msg), node_ctx, op_ctx, msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(std::move(msg)),
-      _manager(manager),
+      _op_ctx(op_ctx),
       _bucketSpace(bucketSpace)
 {
 }
@@ -97,8 +99,8 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetLi
         // Copy is inserted with timestamp 0 such that any actual bucket info
         // subsequently arriving from the storage node will always overwrite it.
         BucketCopy copy(BucketCopy::recentlyCreatedCopy(0, copies[i].getNode().getIndex()));
-        _manager.updateBucketDatabase(document::Bucket(originalCommand.getBucket().getBucketSpace(), lastBucket), copy,
-                                      DatabaseUpdate::CREATE_IF_NONEXISTING);
+        _op_ctx.update_bucket_database(document::Bucket(originalCommand.getBucket().getBucketSpace(), lastBucket), copy,
+                                       DatabaseUpdate::CREATE_IF_NONEXISTING);
     }
     ActiveList active;
     if (setOneActive) {
@@ -147,11 +149,11 @@ PutOperation::sendPutToBucketOnNode(document::BucketSpace bucketSpace, const doc
 }
 
 bool PutOperation::has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const {
-    auto* pending_state = _manager.getDistributor().pendingClusterStateOrNull(_msg->getBucket().getBucketSpace());
+    auto* pending_state = _op_ctx.pending_cluster_state_or_null(_msg->getBucket().getBucketSpace());
     if (!pending_state) {
         return false;
     }
-    const char* up_states = _manager.getDistributor().getStorageNodeUpStates();
+    const char* up_states = _op_ctx.storage_node_up_states();
     return std::any_of(targets.begin(), targets.end(), [pending_state, up_states](const auto& target){
         return !pending_state->getNodeState(target.getNode()).getState().oneOf(up_states);
     });
@@ -171,7 +173,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
     bool up = false;
     for (uint16_t i = 0; i < systemState.getNodeCount(lib::NodeType::STORAGE); i++) {
         if (systemState.getNodeState(lib::Node(lib::NodeType::STORAGE, i))
-            .getState().oneOf(_manager.getDistributor().getStorageNodeUpStates()))
+            .getState().oneOf(_op_ctx.storage_node_up_states()))
         {
             up = true;
         }
@@ -184,15 +186,14 @@ PutOperation::onStart(DistributorMessageSender& sender)
         idealNodeCalculator.setDistribution(_bucketSpace.getDistribution());
         idealNodeCalculator.setClusterState(_bucketSpace.getClusterState());
         OperationTargetResolverImpl targetResolver(_bucketSpace.getBucketDatabase(), idealNodeCalculator,
-                _manager.getDistributor().getConfig().getMinimalBucketSplit(),
+                _op_ctx.distributor_config().getMinimalBucketSplit(),
                 _bucketSpace.getDistribution().getRedundancy(),
                 _msg->getBucket().getBucketSpace());
         OperationTargetList targets(targetResolver.getTargets(OperationTargetResolver::PUT, bid));
 
         for (size_t i = 0; i < targets.size(); ++i) {
-            if (_manager.getDistributor().getPendingMessageTracker().
-                hasPendingMessage(targets[i].getNode().getIndex(), targets[i].getBucket(),
-                                  api::MessageType::DELETEBUCKET_ID))
+            if (_op_ctx.has_pending_message(targets[i].getNode().getIndex(), targets[i].getBucket(),
+                                            api::MessageType::DELETEBUCKET_ID))
             {
                 _tracker.fail(sender, api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
                                 "Bucket was being deleted while we got a PUT, failing operation to be safe"));
@@ -242,7 +243,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
         // Check whether buckets are large enough to be split.
         // TODO(vekterli): only check entries for sendToExisting?
         for (uint32_t i = 0; i < entries.size(); ++i) {
-            _manager.getDistributor().checkBucketForSplit(_msg->getBucket().getBucketSpace(),
+            _op_ctx.send_inline_split_if_bucket_too_large(_msg->getBucket().getBucketSpace(),
                                                           entries[i], _msg->getPriority());
         }
 
@@ -259,7 +260,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
 bool
 PutOperation::shouldImplicitlyActivateReplica(const OperationTargetList& targets) const
 {
-    const auto& config(_manager.getDistributor().getConfig());
+    const auto& config(_op_ctx.distributor_config());
     if (config.isBucketActivationDisabled()) {
         return false;
     }

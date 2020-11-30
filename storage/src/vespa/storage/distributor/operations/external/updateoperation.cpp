@@ -17,19 +17,19 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-UpdateOperation::UpdateOperation(DistributorComponent& manager,
+UpdateOperation::UpdateOperation(DistributorNodeContext& node_ctx,
+                                 DistributorOperationContext& op_ctx,
                                  DistributorBucketSpace &bucketSpace,
                                  const std::shared_ptr<api::UpdateCommand> & msg,
                                  UpdateMetricSet& metric)
     : Operation(),
       _trackerInstance(metric, std::make_shared<api::UpdateReply>(*msg),
-                       manager, msg->getTimestamp()),
+                       node_ctx, op_ctx, msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(msg),
       _new_timestamp(_msg->getTimestamp()),
       _is_auto_create_update(_msg->getUpdate()->getCreateIfNonExistent()),
-      _manager(manager),
-      _node_ctx(manager),
+      _node_ctx(node_ctx),
       _bucketSpace(bucketSpace),
       _newestTimestampLocation(),
       _infoAtSendTime(),

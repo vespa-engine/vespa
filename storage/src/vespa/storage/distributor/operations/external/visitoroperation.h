@@ -16,9 +16,9 @@ namespace storage::lib { class ClusterState; }
 
 namespace storage::distributor {
 
-class DistributorComponent;
 class DistributorBucketSpace;
 class DistributorNodeContext;
+class DistributorOperationContext;
 
 class VisitorOperation  : public Operation
 {
@@ -33,7 +33,8 @@ public:
         uint32_t maxVisitorsPerNodePerVisitor;
     };
 
-    VisitorOperation(DistributorComponent& manager,
+    VisitorOperation(DistributorNodeContext& node_ctx,
+                     DistributorOperationContext& op_ctx,
                      DistributorBucketSpace &bucketSpace,
                      const std::shared_ptr<api::CreateVisitorCommand> & msg,
                      const Config& config,
@@ -140,8 +141,8 @@ private:
      */
     vespalib::duration timeLeft() const noexcept;
 
-    DistributorComponent& _owner;
     DistributorNodeContext& _node_ctx;
+    DistributorOperationContext& _op_ctx;
     DistributorBucketSpace &_bucketSpace;
     SentMessagesMap _sentMessages;
 
