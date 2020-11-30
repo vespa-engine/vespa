@@ -347,12 +347,17 @@ public class ContainerClusterTest {
         addContainer(root.deployLogger(), cluster, "c2", "host-c2");
         addContainer(root.deployLogger(), cluster, "c3", "host-c3");
 
+        // Only myid is set for container
         ZookeeperServerConfig.Builder configBuilder = new ZookeeperServerConfig.Builder();
         cluster.getContainers().get(0).getConfig(configBuilder);
-        ZookeeperServerConfig config = configBuilder.build();
+        assertEquals(0, configBuilder.build().myid());
+
+        // the rest (e.g. servers) is set for cluster
+        cluster.getConfig(configBuilder);
+        assertEquals(0, configBuilder.build().myid());
         assertEquals(List.of("host-c1", "host-c2", "host-c3"),
-                     config.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
-        assertEquals(0, config.myid());
+                     configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
+
     }
 
     private void verifyTesterApplicationInstalledBundles(Zone zone, List<String> expectedBundleNames) {

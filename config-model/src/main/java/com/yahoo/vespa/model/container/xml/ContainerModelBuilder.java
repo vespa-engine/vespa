@@ -30,6 +30,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.text.XML;
@@ -60,6 +61,7 @@ import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
+import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -218,8 +220,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT);
         }
         cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
-        cluster.addSimpleComponent("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer", null, "zookeeper-server");
-        cluster.addSimpleComponent("com.yahoo.vespa.zookeeper.Reconfigurer", null, "zookeeper-server");
+
+        // These need to be setup so that they will use the container's config id, since each container
+        // have different config (id of zookeeper server)
+        cluster.getContainers().forEach(container -> {
+            container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer", container));
+            container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.Reconfigurer", container));
+        });
+    }
+
+    private SimpleComponent zookeeperComponent(String idSpec, Container container) {
+        String configId = container.getConfigId();
+        return new SimpleComponent(new ComponentModel(idSpec, null, "zookeeper-server", configId));
     }
 
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec) {

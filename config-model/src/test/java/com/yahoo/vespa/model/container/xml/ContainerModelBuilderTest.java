@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -887,8 +888,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             ApplicationContainerCluster cluster = model.getContainerClusters().get("default");
             assertNotNull(cluster);
             assertComponentConfigured(cluster,"com.yahoo.vespa.curator.Curator");
-            assertComponentConfigured(cluster,"com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
-            assertComponentConfigured(cluster,"com.yahoo.vespa.zookeeper.Reconfigurer");
+            cluster.getContainers().forEach(container -> {
+                assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
+                assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.Reconfigurer");
+
+                ZookeeperServerConfig container0Config = model.getConfig(ZookeeperServerConfig.class, container.getConfigId());
+                assertEquals(container.index(), container0Config.myid());
+                assertEquals(3, container0Config.server().size());
+            });
         }
         {
             try {
@@ -916,8 +923,12 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     private void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
-        Component<?, ?> curatorComponent = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
-        assertNotNull(curatorComponent);
+        Component<?, ?> component = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
+        assertNotNull(component);
+    }
+
+    private void assertComponentConfigured(ApplicationContainer container, String id) {
+        assertTrue(container.getComponents().getComponents().stream().anyMatch(component -> id.equals(component.getComponentId().getName())));
     }
 
     private Element generateContainerElementWithRenderer(String rendererId) {

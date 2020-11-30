@@ -81,8 +81,6 @@ public final class ApplicationContainer extends Container implements
         AbstractConfigProducer<?> parent = getParent();
         if (parent == null) return;
 
-        if (parent instanceof ApplicationContainerCluster)
-            ((ApplicationContainerCluster) this.parent).getConfig(builder);
         builder.myid(index());
     }
 
