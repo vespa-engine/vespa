@@ -73,11 +73,7 @@
       "public abstract boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public abstract java.lang.String getDefName()",
       "public abstract java.lang.String getDefNamespace()",
-      "public abstract java.lang.String getDefMd5()",
-      "public boolean getApplyOnRestart()",
-      "public void setApplyOnRestart(boolean)",
-      "public com.yahoo.config.ConfigInstance buildInstance(com.yahoo.config.codegen.InnerCNode)",
-      "public static void applyDef(com.yahoo.config.ConfigBuilder, com.yahoo.config.codegen.InnerCNode)"
+      "public abstract java.lang.String getDefMd5()"
     ],
     "fields": []
   },

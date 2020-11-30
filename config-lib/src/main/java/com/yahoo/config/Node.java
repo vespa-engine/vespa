@@ -5,6 +5,7 @@ package com.yahoo.config;
  * The Node class is superclass for all nodes in a {@link
  * ConfigInstance}.  Important subclasses of this node are {@link
  * InnerNode} and {@link LeafNode}.
+ *
  */
 public abstract class Node {
 
@@ -12,7 +13,7 @@ public abstract class Node {
      * Postinitialize this node. Any node needing to process its values depending on the config
      * id should override this method.
      *
-     * @param configId the configId of the ConfigInstance that owns (or is) this node
+     * @param configId  the configId of the ConfigInstance that owns (or is) this node
      */
     public void postInitialize(String configId) { return; }
 
@@ -25,5 +26,4 @@ public abstract class Node {
     protected Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
-
 }
