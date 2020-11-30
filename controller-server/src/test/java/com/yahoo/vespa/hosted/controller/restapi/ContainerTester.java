@@ -78,9 +78,13 @@ public class ContainerTester {
     }
 
     public void assertResponse(Request request, File responseFile, int expectedStatusCode) {
+        assertResponse(request, responseFile, expectedStatusCode, true);
+    }
+
+    public void assertResponse(Request request, File responseFile, int expectedStatusCode, boolean removeWhitespace) {
         String expectedResponse = readTestFile(responseFile.toString());
         expectedResponse = include(expectedResponse);
-        expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
+        if (removeWhitespace) expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
@@ -95,11 +99,11 @@ public class ContainerTester {
             // until the first stop character
             String stopCharacters = "[^,:\\\\[\\\\]{}]";
             String expectedResponsePattern = Pattern.quote(expectedResponse)
-                                                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E" +
-                                                                                      stopCharacters + "*\\\\Q");
+                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E" +
+                            stopCharacters + "*\\\\Q");
             if (!Pattern.matches(expectedResponsePattern, responseString)) {
                 throw new ComparisonFailure(responseFile.toString() + " (with ignored fields)",
-                                            expectedResponsePattern, responseString);
+                        expectedResponsePattern, responseString);
             }
         } else {
             assertEquals(responseFile.toString(), expectedResponse, responseString);

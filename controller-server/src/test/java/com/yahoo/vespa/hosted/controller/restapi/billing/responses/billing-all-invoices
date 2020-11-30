@@ -1,0 +1,2 @@
+ID,Tenant,From,To,CpuHours,MemoryHours,DiskHours,Cpu,Memory,Disk,Additional
+id-1,default,2020-05-23,2020-05-28,0.00,0.00,0.00,0.00,0.00,0.00,123.00
