@@ -19,7 +19,7 @@ private:
     BucketSpaceMap _map;
 
 public:
-    DistributorBucketSpaceRepo(uint16_t node_index);
+    explicit DistributorBucketSpaceRepo(uint16_t node_index);
     ~DistributorBucketSpaceRepo();
 
     DistributorBucketSpaceRepo(const DistributorBucketSpaceRepo&&) = delete;
