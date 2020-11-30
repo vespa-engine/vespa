@@ -11,12 +11,14 @@
 #include <vector>
 #include <map>
 #include <variant>
+#include <functional>
 
 namespace vespalib::eval {
 
 struct ReferenceOperations {
-    using map_fun_t = vespalib::eval::operation::op1_t;
-    using join_fun_t = vespalib::eval::operation::op2_t;
+    using map_fun_t = std::function<double(double)>;
+    using join_fun_t = std::function<double(double,double)>;
+    using lambda_fun_t = std::function<double(const std::vector<size_t> &dimension_indexes)>;
 
     // mapping from cell address to index of child that computes the cell value
     using CreateSpec = tensor_function::Create::Spec;
@@ -32,6 +34,7 @@ struct ReferenceOperations {
     static TensorSpec peek(const TensorSpec &param, const PeekSpec &spec, const std::vector<TensorSpec> &children);
     static TensorSpec reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims);
     static TensorSpec rename(const TensorSpec &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to);
+    static TensorSpec lambda(const vespalib::string &type, lambda_fun_t fun);
 };
 
 } // namespace

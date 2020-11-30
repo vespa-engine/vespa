@@ -489,5 +489,41 @@ TEST(ReferenceRenameTest, swap_and_rename_dimensions) {
 
 //-----------------------------------------------------------------------------
 
+TEST(ReferenceLambdaTest, make_double) {
+    auto fun = [&](const std::vector<size_t> &indexes) {
+        EXPECT_EQ(indexes.size(), 0);
+        return double(5);
+    };
+    auto expect = TensorSpec("double").add({}, 5.0);
+    EXPECT_EQ(ReferenceOperations::lambda("double", fun), expect);
+}
+
+TEST(ReferenceLambdaTest, make_vector) {
+    auto fun = [&](const std::vector<size_t> &indexes) {
+        EXPECT_EQ(indexes.size(), 1);
+        return double(indexes[0] + 1.0);
+    };
+    auto expect = TensorSpec("tensor(x[3])")
+                  .add({{"x", 0}}, 1.0)
+                  .add({{"x", 1}}, 2.0)
+                  .add({{"x", 2}}, 3.0);
+    EXPECT_EQ(ReferenceOperations::lambda("tensor(x[3])", fun), expect);
+}
+
+TEST(ReferenceLambdaTest, make_matrix) {
+    auto fun = [&](const std::vector<size_t> &indexes) {
+        EXPECT_EQ(indexes.size(), 2);
+        return double(indexes[0] * 10 + indexes[1] + 1.0);
+    };
+    auto expect = TensorSpec("tensor(x[2],y[2])")
+                  .add({{"x", 0}, {"y", 0}}, 1.0)
+                  .add({{"x", 0}, {"y", 1}}, 2.0)
+                  .add({{"x", 1}, {"y", 0}}, 11.0)
+                  .add({{"x", 1}, {"y", 1}}, 12.0);
+    EXPECT_EQ(ReferenceOperations::lambda("tensor(x[2],y[2])", fun), expect);
+}
+
+//-----------------------------------------------------------------------------
+
 GTEST_MAIN_RUN_ALL_TESTS()
 
