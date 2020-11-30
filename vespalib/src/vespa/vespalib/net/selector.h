@@ -59,6 +59,7 @@ public:
         for (const auto &evt: _events) {
             if (evt.data.ptr == nullptr) {
                 _wakeup_pipe.read_tokens();
+                handler.handle_wakeup();
             } else {
                 Context &ctx = *((Context *)(evt.data.ptr));
                 bool read = ((evt.events & (EPOLLIN  | EPOLLERR | EPOLLHUP)) != 0);
