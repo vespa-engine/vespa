@@ -112,7 +112,7 @@ public class FlagsTest {
     @Test
     public void testSharedHostFlag() {
         SharedHost sharedHost = new SharedHost(List.of(new HostResources(
-                4.0, 16.0, 50.0, null,
+                4.0, 16.0, 50.0, 0.3,
                 "fast", "local",
                 10)));
         testGeneric(Flags.SHARED_HOST, sharedHost);

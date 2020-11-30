@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -45,7 +44,7 @@ public class HostResources {
         this.vcpu = requirePositive("vcpu", vcpu);
         this.memoryGb = requirePositive("memoryGb", memoryGb);
         this.diskGb = requirePositive("diskGb", diskGb);
-        this.bandwidthGbps = requirePositive("bandwidthGbps", Optional.ofNullable(bandwidthGbps).orElse(0.3));
+        this.bandwidthGbps = requirePositive("bandwidthGbps", bandwidthGbps);
         this.diskSpeed = validateEnum("diskSpeed", validDiskSpeeds, diskSpeed);
         this.storageType = validateEnum("storageType", validStorageTypes, storageType);
         this.containers = requirePositive("containers", containers);
