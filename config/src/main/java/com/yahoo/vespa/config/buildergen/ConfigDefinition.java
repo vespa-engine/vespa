@@ -15,6 +15,7 @@ import java.io.StringReader;
  * @author Ulf Lilleengen
  */
 public class ConfigDefinition {
+
     private final String name;
     private final String[] defSchema;
     private final InnerCNode cnode;
