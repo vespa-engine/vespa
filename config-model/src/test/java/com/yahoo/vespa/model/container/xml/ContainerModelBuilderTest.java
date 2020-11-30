@@ -892,9 +892,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.Reconfigurer");
 
-                ZookeeperServerConfig container0Config = model.getConfig(ZookeeperServerConfig.class, container.getConfigId());
-                assertEquals(container.index(), container0Config.myid());
-                assertEquals(3, container0Config.server().size());
+                ZookeeperServerConfig config = model.getConfig(ZookeeperServerConfig.class, container.getConfigId());
+                assertEquals(container.index(), config.myid());
+                assertEquals(3, config.server().size());
             });
         }
         {
