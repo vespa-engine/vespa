@@ -15,8 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The autoscaler makes decisions about the flavor and node count that should be allocated to a cluster
- * based on observed behavior.
+ * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
  *
  * @author bratseth
  */
@@ -61,7 +60,7 @@ public class Autoscaler {
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        if (unstable(clusterNodes, nodeRepository))
+        if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
         AllocatableClusterResources currentAllocation =
@@ -72,7 +71,11 @@ public class Autoscaler {
         int measurementsPerNode = clusterTimeseries.measurementsPerNode();
         if  (measurementsPerNode < minimumMeasurementsPerNode(clusterType))
             return Advice.none("Collecting more data before making new scaling decisions" +
-                               ": Has " + measurementsPerNode + " data points per node");
+                               ": Has " + measurementsPerNode + " data points per node" +
+                               "(all: " + clusterTimeseries.measurementCount +
+                               ", without stale: " + clusterTimeseries.measurementCountWithoutStale +
+                               ", without out of service: " + clusterTimeseries.measurementCountWithoutStaleOutOfService +
+                               ", without unstable: " + clusterTimeseries.measurementCountWithoutStaleOutOfServiceUnstable);
 
         int nodesMeasured = clusterTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
@@ -151,18 +154,18 @@ public class Autoscaler {
         return Duration.ofHours(1);
     }
 
-    public static boolean unstable(List<Node> nodes, NodeRepository nodeRepository) {
+    public static boolean stable(List<Node> nodes, NodeRepository nodeRepository) {
         // The cluster is processing recent changes
         if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                             node.allocation().get().membership().retired() ||
                                             node.allocation().get().isRemovable()))
-            return true;
+            return false;
 
         // A deployment is ongoing
         if (nodeRepository.getNodes(nodes.get(0).allocation().get().owner(), Node.State.reserved).size() > 0)
-            return true;
+            return false;
 
-        return false;
+        return true;
     }
 
     public static class Advice {

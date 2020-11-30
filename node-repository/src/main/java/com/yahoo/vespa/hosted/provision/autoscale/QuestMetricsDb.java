@@ -89,6 +89,8 @@ public class QuestMetricsDb implements MetricsDb {
                 row.putFloat(3, (float)snapshot.getSecond().memory());
                 row.putFloat(4, (float)snapshot.getSecond().disk());
                 row.putLong(5, snapshot.getSecond().generation());
+                row.putBool(6, snapshot.getSecond().inService());
+                row.putBool(7, snapshot.getSecond().stable());
                 row.append();
             }
             writer.commit();
@@ -152,7 +154,8 @@ public class QuestMetricsDb implements MetricsDb {
 
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             compiler.compile("create table " + tableName +
-                             " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float, application_generation long)" +
+                             " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
+                             "  application_generation long, inService boolean, stable boolean)" +
                              " timestamp(at)" +
                              "PARTITION BY DAY;",
                              context);
@@ -200,7 +203,8 @@ public class QuestMetricsDb implements MetricsDb {
                                                          record.getFloat(3),
                                                          record.getFloat(4),
                                                          record.getLong(5),
-                                                         true));
+                                                         record.getBool(6),
+                                                         record.getBool(7)));
                     }
                 }
             }

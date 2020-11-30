@@ -43,7 +43,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
         int warnings = 0;
         for (ApplicationId application : activeNodesByApplication().keySet()) {
             try {
-                metricsDb.add(filter(metricsFetcher.fetchMetrics(application)));
+                metricsDb.add(metricsFetcher.fetchMetrics(application));
             }
             catch (Exception e) {
                 // TODO: Don't warn if this only happens occasionally
@@ -57,13 +57,6 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
         if (nodeRepository().zone().environment().isManuallyDeployed()) return true;
 
         return warnings == 0;
-    }
-
-    /** Filter out uninformative snapshots before storing */
-    private Collection<Pair<String, MetricSnapshot>> filter(Collection<Pair<String, MetricSnapshot>> snapshots) {
-        return snapshots.stream()
-                        .filter(snapshot -> snapshot.getSecond().inService())
-                        .collect(Collectors.toList());
     }
 
 }
