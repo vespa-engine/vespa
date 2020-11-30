@@ -22,7 +22,7 @@ public class RPCNetworkParams {
     private int numTargetsPerSpec = 1;
     private int numNetworkThreads = 2;
 
-    private int wakeupTriggerCount = 1;
+    private int transportEventsBeforeWakeup = 1;
     public enum Optimization {LATENCY, THROUGHPUT}
     Optimization optimization = Optimization.LATENCY;
 
@@ -219,12 +219,12 @@ public class RPCNetworkParams {
         return this;
     }
 
-    public int getWakeupTriggerCount() {
-        return wakeupTriggerCount;
+    public int getTransportEventsBeforeWakeup() {
+        return transportEventsBeforeWakeup;
     }
 
-    public RPCNetworkParams setWakeupTriggerCount(int wakeupTriggerCount) {
-        this.wakeupTriggerCount = wakeupTriggerCount;
+    public RPCNetworkParams setTransportEventsBeforeWakeup(int transportEventsBeforeWakeup) {
+        this.transportEventsBeforeWakeup = transportEventsBeforeWakeup;
         return this;
     }
 }

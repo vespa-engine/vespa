@@ -27,7 +27,7 @@ public class Transport {
     private final Worker            worker;
     private final AtomicInteger     runCnt;
     private final boolean tcpNoDelay;
-    private final int wakeupTriggerCount;
+    private final int eventsBeforeWakeup;
 
     private final TransportMetrics metrics = TransportMetrics.getInstance();
     private final ArrayList<TransportThread> threads = new ArrayList<>();
@@ -43,14 +43,14 @@ public class Transport {
      * @param fatalHandler fatal error handler
      * @param cryptoEngine crypto engine to use
      * @param numThreads number of {@link TransportThread}s.
-     * @param wakeupTriggerCount number write events in Q before waking thread up
+     * @param eventsBeforeWakeup number write events in Q before waking thread up
      **/
-    public Transport(String name, FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay, int wakeupTriggerCount) {
+    public Transport(String name, FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay, int eventsBeforeWakeup) {
         this.name = name;
         this.fatalHandler = fatalHandler; // NB: this must be set first
         this.cryptoEngine = cryptoEngine;
         this.tcpNoDelay = tcpNoDelay;
-        this.wakeupTriggerCount = Math.max(1, wakeupTriggerCount);
+        this.eventsBeforeWakeup = Math.max(1, eventsBeforeWakeup);
         connector = new Connector();
         worker = new Worker(this);
         runCnt = new AtomicInteger(numThreads);
@@ -58,17 +58,17 @@ public class Transport {
             threads.add(new TransportThread(this, i));
         }
     }
-    public Transport(String name, CryptoEngine cryptoEngine, int numThreads, int wakeupTriggerCount) {
-        this(name, null, cryptoEngine, numThreads, true, wakeupTriggerCount);
+    public Transport(String name, CryptoEngine cryptoEngine, int numThreads, int eventsBeforeWakeup) {
+        this(name, null, cryptoEngine, numThreads, true, eventsBeforeWakeup);
     }
     public Transport(String name, CryptoEngine cryptoEngine, int numThreads) {
         this(name, null, cryptoEngine, numThreads, true, 1);
     }
-    public Transport(String name, int numThreads, int wakeupTriggerCount) {
-        this(name, null, CryptoEngine.createDefault(), numThreads, true, wakeupTriggerCount);
+    public Transport(String name, int numThreads, int eventsBeforeWakeup) {
+        this(name, null, CryptoEngine.createDefault(), numThreads, true, eventsBeforeWakeup);
     }
-    public Transport(String name, int numThreads, boolean tcpNoDelay, int wakeupTriggerCount) {
-        this(name, null, CryptoEngine.createDefault(), numThreads, tcpNoDelay, wakeupTriggerCount); }
+    public Transport(String name, int numThreads, boolean tcpNoDelay, int eventsBeforeWakeup) {
+        this(name, null, CryptoEngine.createDefault(), numThreads, tcpNoDelay, eventsBeforeWakeup); }
     public Transport(String name, int numThreads) {
         this(name, null, CryptoEngine.createDefault(), numThreads, true, 1);
     }
@@ -88,7 +88,7 @@ public class Transport {
     }
 
     boolean getTcpNoDelay() { return tcpNoDelay; }
-    int getWakeupTriggerCount() { return wakeupTriggerCount; }
+    int getEventsBeforeWakeup() { return eventsBeforeWakeup; }
 
     String getName() { return name; }
 

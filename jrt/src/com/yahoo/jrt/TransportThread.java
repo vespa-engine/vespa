@@ -5,7 +5,6 @@ package com.yahoo.jrt;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -128,7 +127,7 @@ public class TransportThread {
             queue.enqueue(cmd);
             qlen = queue.size();
         }
-        if (qlen == parent.getWakeupTriggerCount()) {
+        if (qlen == parent.getEventsBeforeWakeup()) {
             selector.wakeup();
         }
         return true;
