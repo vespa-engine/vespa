@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
@@ -12,8 +11,6 @@ import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -26,7 +23,6 @@ import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
-import com.yahoo.yolean.Exceptions;
 
 import java.util.Objects;
 import java.util.Set;
@@ -135,35 +131,18 @@ public class Application implements ModelResult {
             debug("Resolving " + configKey + " with config definition " + def);
         }
 
-        ConfigInstance.Builder builder;
-        ConfigPayload payload;
+        ConfigPayload payload = null;
         try {
-            builder = model.getConfigInstance(configKey, def);
-            if (builder instanceof GenericConfig.GenericConfigBuilder) {
-                payload = ((GenericConfig.GenericConfigBuilder) builder).getPayload();
-            }
-            else {
-                try {
-                    ConfigInstance instance = builder.buildInstance(def.getCNode());
-                    payload = ConfigPayload.fromInstance(instance);
-                } catch (ConfigurationRuntimeException e) {
-                    // This can happen in cases where services ask for config that no longer exist before they have been able
-                    // to reconfigure themselves
-                    log.log(Level.INFO, "Error resolving instance for builder '" + builder.getClass().getName() +
-                                        "', returning empty config: " + Exceptions.toMessageString(e));
-                    payload = ConfigPayload.fromBuilder(new ConfigPayloadBuilder());
-                }
-                if (def.getCNode() != null)
-                    payload.applyDefaultsFromDef(def.getCNode());
-            }
+            payload = model.getConfig(configKey, def);
         } catch (Exception e) {
             throw new ConfigurationRuntimeException("Unable to get config for " + app, e);
         }
+        if (payload == null) {
+            metricUpdater.incrementFailedRequests();
+            throw new ConfigurationRuntimeException("Unable to resolve config " + configKey);
+        }
 
-        ConfigResponse configResponse = responseFactory.createResponse(payload,
-                                                                       applicationGeneration,
-                                                                       internalRedeploy,
-                                                                       builder.getApplyOnRestart());
+        ConfigResponse configResponse = responseFactory.createResponse(payload, applicationGeneration, internalRedeploy);
         metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
         if (useCache(req)) {
             cache.put(cacheKey, configResponse, configResponse.getConfigMd5());
