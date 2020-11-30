@@ -28,7 +28,6 @@ struct EvalNode : public NodeVisitor {
     TensorSpec result;
     EvalNode(const std::vector<TensorSpec> &params_in)
         : params(params_in), result("error") {}
-    TensorSpec get_result() { return std::move(result); }
 
     //-------------------------------------------------------------------------
 
@@ -89,7 +88,7 @@ struct EvalNode : public NodeVisitor {
             spec.emplace(node.get_child_address(i), i);
             children.push_back(eval_node(node.get_child(i), params));
         }
-        result = ReferenceOperations::create(node.type().to_spec(), spec, children).normalize();
+        result = ReferenceOperations::create(node.type().to_spec(), spec, children);
     }
 
     void eval_lambda(const TensorLambda &node) {
@@ -135,7 +134,7 @@ struct EvalNode : public NodeVisitor {
                 }
             }
         }
-        result = ReferenceOperations::peek(param, spec, children).normalize();
+        result = ReferenceOperations::peek(param, spec, children);
     }
 
     //-------------------------------------------------------------------------
@@ -339,7 +338,7 @@ struct EvalNode : public NodeVisitor {
 TensorSpec eval_node(const Node &node, const std::vector<TensorSpec> &params) {
     EvalNode my_eval(params);
     node.accept(my_eval);
-    return my_eval.get_result();
+    return my_eval.result.normalize();
 }
 
 } // <unnamed>

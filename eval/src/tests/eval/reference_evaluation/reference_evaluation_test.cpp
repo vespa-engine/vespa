@@ -105,10 +105,23 @@ TEST(ReferenceEvaluationTest, parameter_expression_works) {
     EXPECT_EQ(ref_eval(fun_b, {a, b}), b);
 }
 
+TEST(ReferenceEvaluationTest, parameter_expression_will_pad_with_zero) {
+    auto a = TensorSpec("tensor(x[3])")
+             .add({{"x", 1}}, 5.0);
+    auto expect = make_val("tensor(x[3]):[0,5,0]");
+    EXPECT_EQ(ref_eval("a", {a}), expect);
+}
+
 TEST(ReferenceEvaluationTest, reduce_expression_works) {
     auto a = make_val("tensor(x[2],y[2]):[[1,2],[3,4]]");
     auto expect = make_val("tensor(x[2]):[3,7]");
     EXPECT_EQ(ref_eval("reduce(a,sum,y)", {a}), expect);
+}
+
+TEST(ReferenceEvaluationTest, reduce_can_expand) {
+    auto a = make_val("tensor(x{},y[2]):{}");
+    auto expect = make_val("tensor(y[2]):[0,0]");
+    EXPECT_EQ(ref_eval("reduce(a,sum,x)", {a}), expect);
 }
 
 TEST(ReferenceEvaluationTest, map_expression_works) {
