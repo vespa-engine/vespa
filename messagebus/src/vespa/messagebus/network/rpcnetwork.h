@@ -15,6 +15,7 @@
 #include <vespa/fnet/frt/invokable.h>
 
 class FNET_Transport;
+class FastOS_ThreadPool;
 
 namespace slobrok {
     namespace api { class RegisterAPI; }
@@ -52,26 +53,26 @@ private:
 
     using SendAdapterMap = std::map<vespalib::Version, RPCSendAdapter*>;
 
-    INetworkOwner                                  *_owner;
-    Identity                                        _ident;
-    std::unique_ptr<FastOS_ThreadPool>              _threadPool;
-    std::unique_ptr<FNET_Transport>                 _transport;
-    std::unique_ptr<FRT_Supervisor>                 _orb;
-    FNET_Scheduler                                 &_scheduler;
-    std::unique_ptr<slobrok::ConfiguratorFactory>   _slobrokCfgFactory;
-    std::unique_ptr<slobrok::api::IMirrorAPI>       _mirror;
-    std::unique_ptr<slobrok::api::RegisterAPI>      _regAPI;
-    int                                             _requestedPort;
-    std::unique_ptr<RPCTargetPool>                  _targetPool;
-    std::unique_ptr<FNET_Task>                      _targetPoolTask;
-    std::unique_ptr<RPCServicePool>                 _servicePool;
-    std::unique_ptr<vespalib::ThreadStackExecutor>  _executor;
-    std::unique_ptr<RPCSendAdapter>                 _sendV1;
-    std::unique_ptr<RPCSendAdapter>                 _sendV2;
-    SendAdapterMap                                  _sendAdapters;
-    CompressionConfig                               _compressionConfig;
-    bool                                            _allowDispatchForEncode;
-    bool                                            _allowDispatchForDecode;
+    INetworkOwner                                     *_owner;
+    Identity                                           _ident;
+    std::unique_ptr<FastOS_ThreadPool>                 _threadPool;
+    std::unique_ptr<FNET_Transport>                    _transport;
+    std::unique_ptr<FRT_Supervisor>                    _orb;
+    FNET_Scheduler                                    &_scheduler;
+    std::unique_ptr<slobrok::ConfiguratorFactory>      _slobrokCfgFactory;
+    std::unique_ptr<slobrok::api::IMirrorAPI>          _mirror;
+    std::unique_ptr<slobrok::api::RegisterAPI>         _regAPI;
+    int                                                _requestedPort;
+    std::unique_ptr<RPCTargetPool>                     _targetPool;
+    std::unique_ptr<FNET_Task>                         _targetPoolTask;
+    std::unique_ptr<RPCServicePool>                    _servicePool;
+    std::unique_ptr<vespalib::SyncableThreadExecutor>  _executor;
+    std::unique_ptr<RPCSendAdapter>                    _sendV1;
+    std::unique_ptr<RPCSendAdapter>                    _sendV2;
+    SendAdapterMap                                     _sendAdapters;
+    CompressionConfig                                  _compressionConfig;
+    bool                                               _allowDispatchForEncode;
+    bool                                               _allowDispatchForDecode;
 
 
     /**

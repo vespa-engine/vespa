@@ -73,6 +73,7 @@ SharedRpcResources::SharedRpcResources(const config::ConfigUri& config_uri,
       _rpc_server_port(rpc_server_port),
       _shutdown(false)
 {
+    _transport->events_before_wakeup(100);
 }
 
 // TODO make sure init/shutdown is safe for aborted init in comm. mgr.

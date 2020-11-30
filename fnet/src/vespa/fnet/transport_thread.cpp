@@ -9,6 +9,7 @@
 #include "transport.h"
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/util/gate.h>
 #include <csignal>
 
 #include <vespa/log/log.h>
@@ -17,6 +18,7 @@ LOG_SETUP(".fnet");
 using vespalib::ServerSocket;
 using vespalib::SocketHandle;
 using vespalib::SocketSpec;
+using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 namespace {
 
@@ -112,7 +114,7 @@ bool
 FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
                                 FNET_Context context)
 {
-    bool wasEmpty;
+    size_t qLen;
     {
         std::unique_lock<std::mutex> guard(_lock);
         if (IsShutDown()) {
@@ -120,10 +122,10 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
             SafeDiscardEvent(cpacket, context);
             return false;
         }
-        wasEmpty = _queue.IsEmpty_NoLock();
         _queue.QueuePacket_NoLock(cpacket, context);
+        qLen = _queue.GetPacketCnt_NoLock();
     }
-    if (wasEmpty) {
+    if (qLen == _owner.events_before_wakeup()) {
         _selector.wakeup();
     }
     return true;
@@ -396,9 +398,8 @@ FNET_TransportThread::InitEventLoop()
     return true;
 }
 
-
 void
-FNET_TransportThread::handle_wakeup()
+FNET_TransportThread::handle_wakeup_events()
 {
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -479,7 +480,9 @@ FNET_TransportThread::EventLoopIteration()
         // sample current time (performed once per event loop iteration)
         _now = clock::now();
 
-        // handle wakeup and io-events
+        handle_wakeup_events();
+
+        // handle io-events
         _selector.dispatch(*this);
 
         // handle IOC time-outs
