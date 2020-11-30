@@ -78,7 +78,7 @@ public class AutoscalingMaintainerTester {
                                                                                      disk,
                                                                                      generation,
                                                                                      true,
-                                                                                     false))));
+                                                                                     true))));
         }
     }
 

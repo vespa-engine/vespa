@@ -52,9 +52,8 @@ public class NodeMetricsDbMaintainerTest {
         List<MetricSnapshot> allSnapshots = timeseriesList.stream()
                                                           .flatMap(timeseries -> timeseries.asList().stream())
                                                           .collect(Collectors.toList());
-        assertEquals(0.14, allSnapshots.get(0).cpu(), 0.000001);
-        assertTrue(allSnapshots.get(0).inService());
-        assertFalse(allSnapshots.get(1).inService());
+        assertTrue(allSnapshots.stream().anyMatch(snapshot -> snapshot.inService()));
+        assertTrue(allSnapshots.stream().anyMatch(snapshot -> ! snapshot.inService()));
     }
 
     private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {

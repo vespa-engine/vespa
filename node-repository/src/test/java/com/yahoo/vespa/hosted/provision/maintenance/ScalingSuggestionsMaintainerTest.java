@@ -82,7 +82,7 @@ public class ScalingSuggestionsMaintainerTest {
                                                                               disk,
                                                                               generation,
                                                                               true,
-                                                                              false))));
+                                                                              true))));
         }
     }
 
