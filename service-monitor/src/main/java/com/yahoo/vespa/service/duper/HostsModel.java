@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.duper;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
@@ -22,6 +23,7 @@ import java.util.Set;
  * @author hakon
  */
 public class HostsModel implements Model {
+
     private final Collection<HostInfo> hosts;
 
     public HostsModel(List<HostInfo> hosts) {
@@ -34,7 +36,13 @@ public class HostsModel implements Model {
     }
 
     @Override
+    @SuppressWarnings("deprecation") // yes, this is needed
     public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition configDefinition) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition) {
         throw new UnsupportedOperationException();
     }
 
@@ -72,4 +80,5 @@ public class HostsModel implements Model {
     public boolean skipOldConfigModels(Instant now) {
         throw new UnsupportedOperationException();
     }
+
 }
