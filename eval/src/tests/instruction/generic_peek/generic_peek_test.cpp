@@ -39,6 +39,7 @@ using PeekSpec = GenericPeek::SpecMap;
 
 TensorSpec reference_peek(const TensorSpec &param, const PeekSpec &spec) {
     std::vector<TensorSpec> children;
+    children.push_back(param);
     PeekSpec with_indexes;
     for (const auto & [dim_name, label_or_child] : spec) {
         const vespalib::string &dim = dim_name;
@@ -59,7 +60,7 @@ TensorSpec reference_peek(const TensorSpec &param, const PeekSpec &spec) {
                        }
                    }, label_or_child);
     }
-    return ReferenceOperations::peek(param, with_indexes, children);
+    return ReferenceOperations::peek(with_indexes, children);
 }
 
 TensorSpec perform_generic_peek(const TensorSpec &a, const ValueType &result_type,

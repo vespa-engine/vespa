@@ -175,7 +175,7 @@ TensorSpec ReferenceOperations::merge(const TensorSpec &a, const TensorSpec &b, 
 }
 
 
-TensorSpec ReferenceOperations::peek(const TensorSpec &param, const PeekSpec &peek_spec, const std::vector<TensorSpec> &children) {
+TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vector<TensorSpec> &children) {
     if (peek_spec.empty()) {
         return TensorSpec(ValueType::error_type().to_spec());
     }
@@ -183,6 +183,7 @@ TensorSpec ReferenceOperations::peek(const TensorSpec &param, const PeekSpec &pe
     for (const auto & [dim_name, label_or_child] : peek_spec) {
         peek_dims.push_back(dim_name);
     }
+    const TensorSpec &param = children[0];
     ValueType param_type = ValueType::from_spec(param.type());
     ValueType result_type = param_type.reduce(peek_dims);
     TensorSpec result(result_type.to_spec());

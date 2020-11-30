@@ -23,7 +23,9 @@ struct ReferenceOperations {
     // mapping from cell address to index of child that computes the cell value
     using CreateSpec = tensor_function::Create::Spec;
 
-    // mapping from dimension name to verbatim label or child
+    // mapping from dimension name to verbatim label or child index.
+    // Note: child 0 is the input param, so indexes in the spec must
+    // start at 1.
     using PeekSpec = tensor_function::Peek::Spec;
 
     static TensorSpec concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim);
@@ -31,7 +33,7 @@ struct ReferenceOperations {
     static TensorSpec join(const TensorSpec &a, const TensorSpec &b, join_fun_t function);
     static TensorSpec map(const TensorSpec &a, map_fun_t func);
     static TensorSpec merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun);
-    static TensorSpec peek(const TensorSpec &param, const PeekSpec &spec, const std::vector<TensorSpec> &children);
+    static TensorSpec peek(const PeekSpec &spec, const std::vector<TensorSpec> &children);
     static TensorSpec reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims);
     static TensorSpec rename(const TensorSpec &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to);
     static TensorSpec lambda(const vespalib::string &type, lambda_fun_t fun);
