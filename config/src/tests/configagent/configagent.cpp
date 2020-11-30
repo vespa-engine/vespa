@@ -36,7 +36,7 @@ public:
           _value(value),
           _fillCalled(false),
           _valid(valid),
-          _state(md5, timestamp, false),
+          _state(md5, timestamp, false, false),
           _errorMessage(errorMsg),
           _errorCode(errorC0de),
           _isError(iserror)
@@ -142,6 +142,7 @@ TEST("require that agent returns correct values") {
     ASSERT_EQUAL(cs.md5, handler.getConfigState().md5);
     ASSERT_EQUAL(cs.generation, handler.getConfigState().generation);
     ASSERT_EQUAL(cs.internalRedeploy, handler.getConfigState().internalRedeploy);
+    ASSERT_EQUAL(cs.applyOnRestart, handler.getConfigState().applyOnRestart);
 }
 
 TEST("require that successful request is delivered to holder") {
