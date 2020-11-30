@@ -71,7 +71,7 @@ public class MetricsV2MetricsFetcherTest {
             assertEquals(0.15, values.get(0).getSecond().memory(), delta);
             assertEquals(0.20, values.get(0).getSecond().disk(), delta);
             assertEquals(3, values.get(0).getSecond().generation(), delta);
-            assertFalse(values.get(0).getSecond().unstable());
+            assertTrue(values.get(0).getSecond().stable());
         }
 
         {
@@ -81,7 +81,7 @@ public class MetricsV2MetricsFetcherTest {
                         .get(0).retire(tester.clock().instant()), lock);
             }
             List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2));
-            assertTrue(values.get(0).getSecond().unstable());
+            assertFalse(values.get(0).getSecond().stable());
         }
     }
 

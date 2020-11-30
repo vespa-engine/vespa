@@ -43,7 +43,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
         int warnings = 0;
         for (ApplicationId application : activeNodesByApplication().keySet()) {
             try {
-                metricsDb.add(filter(metricsFetcher.fetchMetrics(application)));
+                metricsDb.add(metricsFetcher.fetchMetrics(application));
             }
             catch (Exception e) {
                 // TODO: Don't warn if this only happens occasionally
@@ -63,7 +63,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
     private Collection<Pair<String, MetricSnapshot>> filter(Collection<Pair<String, MetricSnapshot>> snapshots) {
         return snapshots.stream()
                         .filter(snapshot -> snapshot.getSecond().inService())
-                        .filter(snapshot -> ! snapshot.getSecond().unstable())
+                        .filter(snapshot -> ! snapshot.getSecond().stable())
                         .collect(Collectors.toList());
     }
 

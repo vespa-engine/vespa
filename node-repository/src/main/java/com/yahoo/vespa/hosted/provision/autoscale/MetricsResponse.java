@@ -59,12 +59,12 @@ public class MetricsResponse {
                                                                 Metric.disk.from(values),
                                                                 (long)Metric.generation.from(values),
                                                                 Metric.inService.from(values) > 0,
-                                                                 clusterIsUnstable(node.get(), applicationNodes, nodeRepository))));
+                                                                 clusterIsStable(node.get(), applicationNodes, nodeRepository))));
     }
 
-    private boolean clusterIsUnstable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
+    private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
         ClusterSpec cluster = node.allocation().get().membership().cluster();
-        return Autoscaler.unstable(applicationNodes.cluster(cluster.id()).asList(), nodeRepository);
+        return Autoscaler.stable(applicationNodes.cluster(cluster.id()).asList(), nodeRepository);
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {

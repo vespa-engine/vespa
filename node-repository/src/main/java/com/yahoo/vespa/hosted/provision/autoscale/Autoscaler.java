@@ -60,7 +60,7 @@ public class Autoscaler {
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
         ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        if (unstable(clusterNodes, nodeRepository))
+        if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
         AllocatableClusterResources currentAllocation =
@@ -150,18 +150,18 @@ public class Autoscaler {
         return Duration.ofHours(1);
     }
 
-    public static boolean unstable(List<Node> nodes, NodeRepository nodeRepository) {
+    public static boolean stable(List<Node> nodes, NodeRepository nodeRepository) {
         // The cluster is processing recent changes
         if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                             node.allocation().get().membership().retired() ||
                                             node.allocation().get().isRemovable()))
-            return true;
+            return false;
 
         // A deployment is ongoing
         if (nodeRepository.getNodes(nodes.get(0).allocation().get().owner(), Node.State.reserved).size() > 0)
-            return true;
+            return false;
 
-        return false;
+        return true;
     }
 
     public static class Advice {

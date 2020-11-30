@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -51,9 +52,9 @@ public class NodeMetricsDbMaintainerTest {
         List<MetricSnapshot> allSnapshots = timeseriesList.stream()
                                                           .flatMap(timeseries -> timeseries.asList().stream())
                                                           .collect(Collectors.toList());
-        assertEquals("Snapshot from the node not in service is filtered out",
-                     1, allSnapshots.size());
         assertEquals(0.14, allSnapshots.get(0).cpu(), 0.000001);
+        assertTrue(allSnapshots.get(0).inService());
+        assertFalse(allSnapshots.get(1).inService());
     }
 
     private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {
