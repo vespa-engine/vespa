@@ -398,9 +398,8 @@ FNET_TransportThread::InitEventLoop()
     return true;
 }
 
-
 void
-FNET_TransportThread::handle_wakeup()
+FNET_TransportThread::handle_wakeup_events()
 {
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -481,10 +480,10 @@ FNET_TransportThread::EventLoopIteration()
         // sample current time (performed once per event loop iteration)
         _now = clock::now();
 
+        handle_wakeup_events();
+
         // handle io-events
         _selector.dispatch(*this);
-
-        handle_wakeup();
 
         // handle IOC time-outs
         if (_config._iocTimeOut > 0) {
