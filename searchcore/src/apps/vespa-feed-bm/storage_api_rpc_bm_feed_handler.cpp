@@ -135,12 +135,6 @@ StorageApiRpcBmFeedHandler::get_name() const
 }
 
 bool
-StorageApiRpcBmFeedHandler::manages_buckets() const
-{
-    return _distributor;
-}
-
-bool
 StorageApiRpcBmFeedHandler::manages_timestamp() const
 {
     return _distributor;

@@ -86,12 +86,6 @@ DocumentApiMessageBusBmFeedHandler::get_name() const
 }
 
 bool
-DocumentApiMessageBusBmFeedHandler::manages_buckets() const
-{
-    return true;
-}
-
-bool
 DocumentApiMessageBusBmFeedHandler::manages_timestamp() const
 {
     return true;

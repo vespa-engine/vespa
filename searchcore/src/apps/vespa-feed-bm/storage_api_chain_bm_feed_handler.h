@@ -32,7 +32,6 @@ public:
     void attach_bucket_info_queue(PendingTracker &tracker) override;
     uint32_t get_error_count() const override;
     const vespalib::string &get_name() const override;
-    bool manages_buckets() const override;
     bool manages_timestamp() const override;
 };
 

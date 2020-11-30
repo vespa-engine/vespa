@@ -86,12 +86,6 @@ StorageApiMessageBusBmFeedHandler::get_name() const
 }
 
 bool
-StorageApiMessageBusBmFeedHandler::manages_buckets() const
-{
-    return _distributor;
-}
-
-bool
 StorageApiMessageBusBmFeedHandler::manages_timestamp() const
 {
     return _distributor;
