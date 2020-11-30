@@ -18,6 +18,7 @@ import static java.util.logging.Level.FINE;
  * Used by config proxy.
  *
  * @author Vegard Havdal
+ *
  */
 public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfig> {
 
@@ -32,7 +33,7 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
 
     @Override
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsInternalRedeploy(), jrtReq.responseIsApplyOnRestart(), RawConfig.createFromResponseParameters(jrtReq) );
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsInternalRedeploy(), RawConfig.createFromResponseParameters(jrtReq) );
         log.log(FINE, () -> "in setNewConfig, config=" + this.getConfigState().getConfig());
     }
 
@@ -56,17 +57,6 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
 
         if (configState.getConfig() != null) {
             configState.getConfig().setInternalRedeploy(internalRedeploy);
-        }
-    }
-
-    // Override to propagate internal redeploy into the config value in addition to the config state
-    @Override
-    void setApplyOnRestart(boolean applyOnRestart) {
-        super.setApplyOnRestart(applyOnRestart);
-        ConfigState<RawConfig> configState = getConfigState();
-
-        if (configState.getConfig() != null) {
-            configState.getConfig().setApplyOnRestart(applyOnRestart);
         }
     }
 
