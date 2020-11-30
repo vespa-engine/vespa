@@ -300,13 +300,15 @@ TEST("require that tensor create works") {
 TEST("require that single value tensor peek works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
+    size_t b_id = ctx.add_tensor(ctx.make_double(1000.0));
     Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
     Value::UP expect = ctx.make_vector({2.0, 3.0, 0.0});
     const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
+    const auto &b = inject(ValueType::from_spec("double"), b_id, ctx.stash);
     const auto &t = const_value(*my_const, ctx.stash);
     const auto &peek1 = peek(t, {{"x", "foo"}, {"y", a}}, ctx.stash);
     const auto &peek2 = peek(t, {{"x", "bar"}, {"y", size_t(0)}}, ctx.stash);
-    const auto &peek3 = peek(t, {{"x", "bar"}, {"y", size_t(1000)}}, ctx.stash);
+    const auto &peek3 = peek(t, {{"x", "bar"}, {"y", b}}, ctx.stash);
     const auto &fun = create(ValueType::from_spec("tensor(x[3])"),
                              {
                                  {{{"x", 0}}, peek1},
