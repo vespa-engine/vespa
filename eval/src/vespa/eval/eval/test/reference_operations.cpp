@@ -289,19 +289,15 @@ TensorSpec ReferenceOperations::lambda(const vespalib::string &type_in, lambda_f
     if (type.is_error()) {
         return result;
     }
-    std::vector<size_t> sizes;
-    for (const auto &dim: type.dimensions()) {
-        assert(dim.is_indexed());
-        sizes.push_back(dim.size);
-    }
+    const auto &dim_list = type.dimensions();
     TensorSpec::Address addr;
     std::vector<size_t> indexes(type.dimensions().size());
     std::function<void(size_t)> loop = [&](size_t idx) {
-        if (idx == sizes.size()) {
+        if (idx == dim_list.size()) {
             result.add(addr, fun(indexes));
         } else {
-            for (size_t i = 0; i < sizes[idx]; ++i) {
-                addr.insert_or_assign(type.dimensions()[idx].name, TensorSpec::Label(i));
+            for (size_t i = 0; i < dim_list[idx].size; ++i) {
+                addr.insert_or_assign(dim_list[idx].name, TensorSpec::Label(i));
                 indexes[idx] = i;
                 loop(idx + 1);
             }
