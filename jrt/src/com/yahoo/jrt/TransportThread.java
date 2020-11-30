@@ -120,15 +120,15 @@ public class TransportThread {
     }
 
     private boolean postCommand(Runnable cmd) {
-        boolean wakeup;
+        int qlen;
         synchronized (this) {
             if (state == CLOSED) {
                 return false;
             }
-            wakeup = queue.isEmpty();
             queue.enqueue(cmd);
+            qlen = queue.size();
         }
-        if (wakeup) {
+        if (qlen == parent.getWakeupTriggerCount()) {
             selector.wakeup();
         }
         return true;
