@@ -327,7 +327,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
 
     ExternalOperationHandler& handler = getExternalOperationHandler();
     return std::make_shared<TwoPhaseUpdateOperation>(
-            handler, getDistributorBucketSpace(), msg, getDistributor().getMetrics());
+            handler, handler, handler, getDistributorBucketSpace(), msg, getDistributor().getMetrics());
 }
 
 TEST_F(TwoPhaseUpdateOperationTest, simple) {

@@ -103,6 +103,7 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
     {
         return std::make_unique<VisitorOperation>(
                 getExternalOperationHandler(),
+                getExternalOperationHandler(),
                 getDistributorBucketSpace(),
                 msg,
                 config,

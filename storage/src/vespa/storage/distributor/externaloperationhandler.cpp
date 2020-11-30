@@ -253,7 +253,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
         document::BucketSpace bucketSpace = cmd->getBucket().getBucketSpace();
-        _op = std::make_shared<PutOperation>(*this,
+        _op = std::make_shared<PutOperation>(*this, *this,
                                              _bucketSpaceRepo.get(bucketSpace),
                                              std::move(cmd), getMetrics().puts, std::move(handle));
     } else {
@@ -277,7 +277,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
     auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
     if (allowMutation(handle)) {
         document::BucketSpace bucketSpace = cmd->getBucket().getBucketSpace();
-        _op = std::make_shared<TwoPhaseUpdateOperation>(*this,
+        _op = std::make_shared<TwoPhaseUpdateOperation>(*this, *this, *this,
                                                         _bucketSpaceRepo.get(bucketSpace),
                                                         std::move(cmd), getMetrics(), std::move(handle));
     } else {
@@ -302,7 +302,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
     if (allowMutation(handle)) {
         auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
 
-        _op = std::make_shared<RemoveOperation>(*this, distributorBucketSpace, std::move(cmd),
+        _op = std::make_shared<RemoveOperation>(*this, *this, distributorBucketSpace, std::move(cmd),
                                                 getMetrics().removes, std::move(handle));
     } else {
         sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
@@ -314,7 +314,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
 {
     document::BucketId bid;
-    RemoveLocationOperation::getBucketId(*this, *cmd, bid);
+    RemoveLocationOperation::getBucketId(*this, *this, *cmd, bid);
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), bid);
 
     auto& metrics = getMetrics().removelocations;
@@ -322,7 +322,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
         return true;
     }
 
-    _op = std::make_shared<RemoveLocationOperation>(*this, _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
+    _op = std::make_shared<RemoveLocationOperation>(*this, *this, *this,
+                                                    _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
                                                     std::move(cmd), getMetrics().removelocations);
     return true;
 }
@@ -367,7 +368,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
     auto& metrics = getMetrics().stats;
     bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
         auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
-        _op = std::make_shared<StatBucketOperation>(*this, bucket_space, cmd);
+        _op = std::make_shared<StatBucketOperation>(bucket_space, cmd);
     });
     return true;
 }
@@ -389,7 +390,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
     const DistributorConfiguration& config(getDistributor().getConfig());
     VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(), config.getMaxVisitorsPerNodePerClientVisitor());
     auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
-    _op = Operation::SP(new VisitorOperation(*this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits));
+    _op = Operation::SP(new VisitorOperation(*this, *this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits));
     return true;
 }
 

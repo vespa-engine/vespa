@@ -28,6 +28,8 @@ struct RemoveLocationOperationTest : Test, DistributorTestUtil {
 
         op = std::make_unique<RemoveLocationOperation>(
                 getExternalOperationHandler(),
+                getExternalOperationHandler(),
+                getExternalOperationHandler(),
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().

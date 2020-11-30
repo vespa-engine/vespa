@@ -67,7 +67,7 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_m
 
     ExternalOperationHandler& handler = getExternalOperationHandler();
     return std::make_shared<UpdateOperation>(
-            handler, getDistributorBucketSpace(), msg,
+            handler, handler, getDistributorBucketSpace(), msg,
             getDistributor().getMetrics().updates);
 }
 

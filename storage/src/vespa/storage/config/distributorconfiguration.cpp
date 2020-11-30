@@ -46,6 +46,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _use_weak_internal_read_consistency_for_client_gets(false),
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(false),
       _prioritize_global_bucket_merges(true),
+      _enable_revert(true),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 {
 }
@@ -164,6 +165,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
     _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
     _prioritize_global_bucket_merges = config.prioritizeGlobalBucketMerges;
+    _enable_revert = config.enableRevert;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 

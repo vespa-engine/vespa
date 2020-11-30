@@ -44,20 +44,22 @@ VisitorOperation::BucketInfo::toString() const
 VisitorOperation::SuperBucketInfo::~SuperBucketInfo() = default;
 
 VisitorOperation::VisitorOperation(
-        DistributorComponent& owner,
+        DistributorNodeContext& node_ctx,
+        DistributorOperationContext& op_ctx,
         DistributorBucketSpace &bucketSpace,
         const api::CreateVisitorCommand::SP& m,
         const Config& config,
         VisitorMetricSet& metrics)
     : Operation(),
-      _owner(owner),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
       _bucketSpace(bucketSpace),
       _msg(m),
       _sentReply(false),
       _config(config),
       _metrics(metrics),
       _trace(TRACE_SOFT_MEMORY_LIMIT),
-      _operationTimer(owner.getClock())
+      _operationTimer(_node_ctx.clock())
 {
     const std::vector<document::BucketId>& buckets = m->getBuckets();
 
@@ -72,7 +74,7 @@ VisitorOperation::VisitorOperation(
     _fromTime = m->getFromTime();
     _toTime = m->getToTime();
     if (_toTime == 0) {
-        _toTime = owner.getUniqueTimestamp();
+        _toTime = _op_ctx.generate_unique_timestamp();
     }
 }
 
@@ -264,7 +266,7 @@ VisitorOperation::verifyDistributorIsNotDown(const lib::ClusterState& state)
 {
     const lib::NodeState& ownState(
             state.getNodeState(
-                lib::Node(lib::NodeType::DISTRIBUTOR, _owner.getIndex())));
+                lib::Node(lib::NodeType::DISTRIBUTOR, _node_ctx.node_index())));
     if (!ownState.getState().oneOf("ui")) {
         throw VisitorVerificationException(
                 api::ReturnCode::ABORTED, "Distributor is shutting down");
@@ -275,7 +277,7 @@ void
 VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
 {
     document::Bucket bucket(_msg->getBucketSpace(), bid);
-    BucketOwnership bo(_owner.checkOwnershipInPendingAndCurrentState(bucket));
+    BucketOwnership bo(_op_ctx.check_ownership_in_pending_and_current_state(bucket));
     if (!bo.isOwned()) {
         verifyDistributorIsNotDown(bo.getNonOwnedState());
         std::string systemStateStr = bo.getNonOwnedState().toString();
@@ -283,7 +285,7 @@ VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
             "Bucket %s is not owned by distributor %d, "
             "sending back system state '%s'",
             bid.toString().c_str(),
-            _owner.getIndex(),
+            _node_ctx.node_index(),
             bo.getNonOwnedState().toString().c_str());
         throw VisitorVerificationException(
                 api::ReturnCode::WRONG_DISTRIBUTION,
@@ -777,11 +779,11 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
 
     vespalib::asciistream os;
     os << _msg->getInstanceId() << '-'
-       << _owner.getIndex() << '-' << cmd->getMsgId();
+       << _node_ctx.node_index() << '-' << cmd->getMsgId();
 
     vespalib::string storageInstanceId(os.str());
     cmd->setInstanceId(storageInstanceId);
-    cmd->setAddress(api::StorageMessageAddress::create(&_owner.getClusterName(), lib::NodeType::STORAGE, node));
+    cmd->setAddress(api::StorageMessageAddress::create(&_node_ctx.cluster_name(), lib::NodeType::STORAGE, node));
     cmd->setMaximumPendingReplyCount(pending);
     cmd->setQueueTimeout(computeVisitorQueueTimeoutMs());
 
