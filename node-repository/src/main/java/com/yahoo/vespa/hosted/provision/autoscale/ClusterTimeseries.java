@@ -23,6 +23,11 @@ public class ClusterTimeseries {
 
     private final List<Node> clusterNodes;
 
+    final int measurementCount;
+    final int measurementCountWithoutStale;
+    final int measurementCountWithoutStaleOutOfService;
+    final int measurementCountWithoutStaleOutOfServiceUnstable;
+
     /** The measurements for all hosts in this snapshot */
     private final List<NodeTimeseries> nodeTimeseries;
 
@@ -32,9 +37,18 @@ public class ClusterTimeseries {
         var timeseries = db.getNodeTimeseries(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterType)),
                                               clusterNodes.stream().map(Node::hostname).collect(Collectors.toSet()));
         Map<String, Instant> startTimePerNode = metricStartTimes(cluster, clusterNodes, timeseries, nodeRepository);
+
+        measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
+
         timeseries = filterStale(timeseries, startTimePerNode);
+        measurementCountWithoutStale = timeseries.stream().mapToInt(m -> m.size()).sum();
+
         timeseries = filter(timeseries, snapshot -> snapshot.inService());
+        measurementCountWithoutStaleOutOfService = timeseries.stream().mapToInt(m -> m.size()).sum();
+
         timeseries = filter(timeseries, snapshot -> snapshot.stable());
+        measurementCountWithoutStaleOutOfServiceUnstable = timeseries.stream().mapToInt(m -> m.size()).sum();
+
         this.nodeTimeseries = timeseries;
     }
 
