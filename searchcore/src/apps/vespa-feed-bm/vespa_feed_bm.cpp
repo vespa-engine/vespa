@@ -1302,7 +1302,7 @@ void benchmark_async_spi(const BMParams &bm_params)
     LOG(info, "start initialize");
     provider.initialize();
     LOG(info, "create %u buckets", f.num_buckets());
-    if (!f._feed_handler->manages_buckets()) {
+    if (!bm_params.needs_distributor()) {
         f.create_buckets();
     }
     if (bm_params.needs_service_layer()) {
