@@ -18,14 +18,12 @@ public class SlimeConfigResponse implements ConfigResponse {
     private final CompressionInfo compressionInfo;
     private final long generation;
     private final boolean internalRedeploy;
-    private final boolean applyOnRestart;
     private final String configMd5;
 
     public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload, long generation,
-                                                        boolean internalRedeploy, boolean applyOnRestart,
-                                                        String configMd5) {
+                                                        boolean internalRedeploy, String configMd5) {
         Utf8Array data = payload.toUtf8Array(true);
-        return new SlimeConfigResponse(data, generation, internalRedeploy, applyOnRestart,
+        return new SlimeConfigResponse(data, generation, internalRedeploy,
                                        configMd5,
                                        CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
@@ -33,13 +31,11 @@ public class SlimeConfigResponse implements ConfigResponse {
     public SlimeConfigResponse(Utf8Array payload,
                                long generation,
                                boolean internalRedeploy,
-                               boolean applyOnRestart,
                                String configMd5,
                                CompressionInfo compressionInfo) {
         this.payload = payload;
         this.generation = generation;
         this.internalRedeploy = internalRedeploy;
-        this.applyOnRestart = applyOnRestart;
         this.configMd5 = configMd5;
         this.compressionInfo = compressionInfo;
     }
@@ -60,9 +56,6 @@ public class SlimeConfigResponse implements ConfigResponse {
      */
     @Override
     public boolean isInternalRedeploy() { return internalRedeploy; }
-
-    @Override
-    public boolean applyOnRestart() { return applyOnRestart; }
 
     @Override
     public String getConfigMd5() {
