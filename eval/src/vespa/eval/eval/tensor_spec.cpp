@@ -4,7 +4,7 @@
 #include "array_array_map.h"
 #include "function.h"
 #include "interpreted_function.h"
-#include "simple_tensor_engine.h"
+#include "simple_value.h"
 #include "tensor.h"
 #include "tensor_engine.h"
 #include "value.h"
@@ -208,7 +208,8 @@ TensorSpec::from_expr(const vespalib::string &expr)
     NoParams no_params;
     auto fun = Function::parse(expr);
     if (!fun->has_error() && (fun->num_params() == 0)) {
-        InterpretedFunction ifun(SimpleTensorEngine::ref(), *fun, NodeTypes());
+        NodeTypes node_types(*fun, {});
+        InterpretedFunction ifun(SimpleValueBuilderFactory::get(), *fun, node_types);
         InterpretedFunction::Context ctx(ifun);
         return from_value(ifun.eval(ctx, no_params));
     }
