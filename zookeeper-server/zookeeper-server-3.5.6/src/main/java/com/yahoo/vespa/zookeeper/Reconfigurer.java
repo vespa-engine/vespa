@@ -27,6 +27,7 @@ public class Reconfigurer extends AbstractComponent {
     private static final int sessionTimeoutInSeconds = 30;
 
     private ZooKeeperRunner zooKeeperRunner;
+    private ZookeeperServerConfig zookeeperServerConfig;
 
     @Inject
     public Reconfigurer() {
@@ -39,6 +40,8 @@ public class Reconfigurer extends AbstractComponent {
 
         if (shouldReconfigure(newConfig))
             reconfigure(new ReconfigurationInfo(existingConfig(), newConfig));
+
+        this.zookeeperServerConfig = newConfig;
     }
 
     boolean shouldReconfigure(ZookeeperServerConfig newConfig) {
@@ -90,7 +93,7 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     ZookeeperServerConfig existingConfig() {
-        return zooKeeperRunner.zookeeperServerConfig();
+        return zookeeperServerConfig;
     }
 
     static class ReconfigurationInfo {

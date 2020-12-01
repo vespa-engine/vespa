@@ -37,8 +37,9 @@ public class ReconfigurerTest {
     @Test
     public void testStartupAndReconfigure() {
         Reconfigurer reconfigurer = new Reconfigurer();
-        ZookeeperServerConfig existingConfig = createConfig(2);
-        reconfigurer.startOrReconfigure(existingConfig);
+        ZookeeperServerConfig initialConfig = createConfig(2);
+        reconfigurer.startOrReconfigure(initialConfig);
+        assertEquals(initialConfig, reconfigurer.existingConfig());
 
         // Created config has dynamicReconfig set to false
         assertFalse(reconfigurer.shouldReconfigure(createConfig(3)));
