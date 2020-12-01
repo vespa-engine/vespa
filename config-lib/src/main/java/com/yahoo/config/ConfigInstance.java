@@ -1,16 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-
-import com.yahoo.config.codegen.CNode;
-import com.yahoo.config.codegen.InnerCNode;
-import com.yahoo.config.codegen.LeafCNode;
 
 /**
  * Represents an instance of an application config with a specific configId.
