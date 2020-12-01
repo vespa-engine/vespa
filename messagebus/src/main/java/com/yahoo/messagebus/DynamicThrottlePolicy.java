@@ -157,6 +157,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      */
     public DynamicThrottlePolicy setWindowSizeIncrement(double windowSizeIncrement) {
         this.windowSizeIncrement = windowSizeIncrement;
+        this.windowSize = Math.max(this.minWindowSize, this.windowSizeIncrement);
         return this;
     }
 
@@ -240,6 +241,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      */
     public DynamicThrottlePolicy setMinWindowSize(double min) {
         this.minWindowSize = min;
+        this.windowSize = Math.max(this.minWindowSize, this.windowSizeIncrement);
         return this;
     }
 
@@ -265,7 +267,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * @return the max limit
      */
     public int getMaxPendingCount() {
-        return (int)windowSize;
+        return (int) windowSize;
     }
 
 }
