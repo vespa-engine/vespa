@@ -30,12 +30,10 @@ class FNET_TransportThread : public FastOS_Runnable
 
 public:
     using Selector = vespalib::Selector<FNET_IOComponent>;
-    using clock = FNET_Scheduler::clock;
-    using time_point = clock::time_point;
 
 private:
     FNET_Transport          &_owner;          // owning transport layer
-    time_point               _now;            // current time sampler
+    vespalib::steady_time    _now;            // current time sampler
     FNET_Scheduler           _scheduler;      // transport thread scheduler
     FNET_IOComponent        *_componentsHead; // I/O component list head
     FNET_IOComponent        *_timeOutHead;    // first IOC in list to time out
@@ -155,6 +153,9 @@ private:
      * @return true on success, false on failure.
      **/
     bool InitEventLoop();
+
+    void endEventLoop();
+    void checkTimedoutComponents(vespalib::duration timeout);
 
     /**
      * Perform a single transport thread event loop iteration. This

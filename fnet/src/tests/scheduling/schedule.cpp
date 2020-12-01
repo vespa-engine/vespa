@@ -3,8 +3,8 @@
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
 
-using my_clock = FNET_Scheduler::clock;
-using time_point = my_clock::time_point;
+using my_clock = vespalib::steady_clock;
+using time_point = vespalib::steady_time;
 using ms_double = std::chrono::duration<double, std::milli>;
 
 time_point _time;
