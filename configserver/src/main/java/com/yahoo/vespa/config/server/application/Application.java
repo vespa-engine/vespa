@@ -144,7 +144,7 @@ public class Application implements ModelResult {
             }
             else {
                 try {
-                    ConfigInstance instance = builder.buildInstance(def.getCNode());
+                    ConfigInstance instance = ConfigInstanceBuilder.buildInstance(builder, def.getCNode());
                     payload = ConfigPayload.fromInstance(instance);
                 } catch (ConfigurationRuntimeException e) {
                     // This can happen in cases where services ask for config that no longer exist before they have been able
@@ -218,4 +218,5 @@ public class Application implements ModelResult {
     public Set<String> allConfigIds() {
         return model.allConfigIds();
     }
+
 }
