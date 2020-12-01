@@ -20,23 +20,7 @@
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
-using namespace vespalib::tensor;
 using namespace vespalib::eval::tensor_function;
-
-using EvalMode = DenseLambdaFunction::EvalMode;
-
-namespace vespalib::tensor {
-
-std::ostream &operator<<(std::ostream &os, EvalMode eval_mode)
-{
-    switch(eval_mode) {
-    case EvalMode::COMPILED:    return os << "COMPILED";
-    case EvalMode::INTERPRETED: return os << "INTERPRETED";
-    }
-    abort();
-}
-
-}
 
 const ValueBuilderFactory &simple_factory = SimpleValueBuilderFactory::get();
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
@@ -80,7 +64,7 @@ void verify_not_optimized(const vespalib::string &expr, const vespalib::string &
 }
 
 void verify_reshape(const vespalib::string &expr, const vespalib::string &expect) {
-    verify_impl<DenseReplaceTypeFunction>(expr, expect);
+    verify_impl<tensor::DenseReplaceTypeFunction>(expr, expect);
 }
 
 void verify_range(const vespalib::string &expr, const vespalib::string &expect) {
