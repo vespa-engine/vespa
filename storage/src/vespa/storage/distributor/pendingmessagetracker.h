@@ -15,7 +15,6 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
-
 #include <set>
 #include <unordered_map>
 #include <chrono>
@@ -23,14 +22,41 @@
 
 namespace storage::distributor {
 
-class PendingMessageTracker : public framework::HtmlStatusReporter
-{
+enum class TaskRunState {
+    OK,
+    Aborted,
+    BucketLost
+};
 
+struct DeferredTask {
+    virtual ~DeferredTask() = default;
+    virtual void run(TaskRunState state) = 0;
+};
+
+template <typename Func>
+class LambdaDeferredTask : public DeferredTask {
+    Func _func;
+public:
+    explicit LambdaDeferredTask(Func&& f) : _func(std::move(f)) {}
+    LambdaDeferredTask(const LambdaDeferredTask&) = delete;
+    LambdaDeferredTask(LambdaDeferredTask&&) = delete;
+    ~LambdaDeferredTask() override = default;
+
+    void run(TaskRunState state) override {
+        _func(state);
+    }
+};
+
+template <typename Func>
+std::unique_ptr<DeferredTask> make_deferred_task(Func&& f) {
+    return std::make_unique<LambdaDeferredTask<std::decay_t<Func>>>(std::forward<Func>(f));
+}
+
+class PendingMessageTracker : public framework::HtmlStatusReporter {
 public:
     class Checker {
     public:
-        virtual ~Checker() {}
-
+        virtual ~Checker() = default;
         virtual bool check(uint32_t messageType, uint16_t node, uint8_t priority) = 0;
     };
 
@@ -42,8 +68,8 @@ public:
      */
     using TimePoint = std::chrono::milliseconds;
 
-    PendingMessageTracker(framework::ComponentRegister&);
-    ~PendingMessageTracker();
+    explicit PendingMessageTracker(framework::ComponentRegister&);
+    ~PendingMessageTracker() override;
 
     void insert(const std::shared_ptr<api::StorageMessage>&);
     document::Bucket reply(const api::StorageReply& reply);
@@ -89,6 +115,8 @@ public:
         _nodeBusyDuration = secs;
     }
 
+    void run_once_no_pending_for_bucket(const document::Bucket& bucket, std::unique_ptr<DeferredTask> task);
+    void abort_deferred_tasks();
 private:
     struct MessageEntry {
         TimePoint        timeStamp;
@@ -130,23 +158,29 @@ private:
     {
     };
 
-    typedef boost::multi_index::multi_index_container <
+    using Messages = boost::multi_index::multi_index_container <
         MessageEntry,
         boost::multi_index::indexed_by<
             boost::multi_index::ordered_unique<MessageIdKey>,
             boost::multi_index::ordered_non_unique<CompositeNodeBucketKey>,
             boost::multi_index::ordered_non_unique<CompositeBucketMsgNodeKey>
         >
-    > Messages;
+    >;
 
-    typedef Messages::nth_index<0>::type MessagesByMsgId;
-    typedef Messages::nth_index<1>::type MessagesByNodeAndBucket;
-    typedef Messages::nth_index<2>::type MessagesByBucketAndType;
+    using MessagesByMsgId         = Messages::nth_index<0>::type;
+    using MessagesByNodeAndBucket = Messages::nth_index<1>::type;
+    using MessagesByBucketAndType = Messages::nth_index<2>::type;
+    using DeferredBucketTaskMap   = std::unordered_multimap<
+            document::Bucket,
+            std::unique_ptr<DeferredTask>,
+            document::Bucket::hash
+        >;
 
-    Messages _messages;
-    framework::Component _component;
-    NodeInfo _nodeInfo;
-    std::chrono::seconds _nodeBusyDuration;
+    Messages              _messages;
+    framework::Component  _component;
+    NodeInfo              _nodeInfo;
+    std::chrono::seconds  _nodeBusyDuration;
+    DeferredBucketTaskMap _deferred_bucket_tasks;
 
     // Since distributor is currently single-threaded, this will only
     // contend when status page is being accessed. It is, however, required
@@ -169,6 +203,8 @@ private:
     void getStatusPerNode(std::ostream& out) const;
     void getStatusPerBucket(std::ostream& out) const;
     TimePoint currentTime() const;
+
+    std::vector<std::unique_ptr<DeferredTask>> get_deferred_ops_if_bucket_pending_drained(const document::Bucket&);
 };
 
 }

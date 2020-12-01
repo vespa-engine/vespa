@@ -2,8 +2,11 @@
 #pragma once
 
 #include <vespa/document/base/globalid.h>
+#include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <set>
 #include <utility>
+#include <variant>
 
 namespace document {
 class DocumentId;
@@ -15,19 +18,42 @@ class OperationSequencer;
 
 /**
  * Represents a move-only handle which effectively holds a guard for
- * allowing sequenced operations towards a particular document ID.
+ * allowing sequenced operations towards a particular document ID or
+ * bucket ID.
  *
  * Destroying a handle will implicitly release the guard, allowing
  * new sequenced operations towards the ID.
  */
 class SequencingHandle {
-    OperationSequencer* _sequencer;
-    document::GlobalId _gid;
 public:
-    SequencingHandle() noexcept : _sequencer(nullptr) {}
-    SequencingHandle(OperationSequencer& sequencer, const document::GlobalId& gid)
-            : _sequencer(&sequencer),
-              _gid(gid)
+    enum class BlockedBy {
+        PendingOperation,
+        LockedBucket
+    };
+private:
+    OperationSequencer* _sequencer;
+    using HandleVariant = std::variant<document::Bucket, document::GlobalId, BlockedBy>;
+    HandleVariant       _handle;
+public:
+    SequencingHandle() noexcept
+        : _sequencer(nullptr),
+          _handle()
+    {}
+
+    explicit SequencingHandle(BlockedBy blocked_by)
+        : _sequencer(nullptr),
+          _handle(blocked_by)
+    {}
+
+    SequencingHandle(OperationSequencer& sequencer, const document::GlobalId& gid) noexcept
+        : _sequencer(&sequencer),
+          _handle(gid)
+    {
+    }
+
+    SequencingHandle(OperationSequencer& sequencer, const document::Bucket& bucket)
+        : _sequencer(&sequencer),
+          _handle(bucket)
     {
     }
 
@@ -39,8 +65,8 @@ public:
     SequencingHandle& operator=(const SequencingHandle&) = delete;
 
     SequencingHandle(SequencingHandle&& rhs) noexcept
-            : _sequencer(rhs._sequencer),
-              _gid(rhs._gid)
+        : _sequencer(rhs._sequencer),
+          _handle(std::move(rhs._handle))
     {
         rhs._sequencer = nullptr;
     }
@@ -48,13 +74,30 @@ public:
     SequencingHandle& operator=(SequencingHandle&& rhs) noexcept {
         if (&rhs != this) {
             std::swap(_sequencer, rhs._sequencer);
-            std::swap(_gid, rhs._gid);
+            std::swap(_handle, rhs._handle);
         }
         return *this;
     }
 
-    bool valid() const noexcept { return (_sequencer != nullptr); }
-    const document::GlobalId& gid() const noexcept { return _gid; }
+    [[nodiscard]] bool valid() const noexcept { return (_sequencer != nullptr); }
+    [[nodiscard]] bool was_blocked() const noexcept {
+        return std::holds_alternative<BlockedBy>(_handle);
+    }
+    [[nodiscard]] BlockedBy blocked_by() const noexcept {
+        return std::get<BlockedBy>(_handle); // FIXME can actually throw
+    }
+    [[nodiscard]] bool has_bucket() const noexcept {
+        return std::holds_alternative<document::Bucket>(_handle);
+    }
+    const document::Bucket& bucket() const noexcept {
+        return std::get<document::Bucket>(_handle); // FIXME can actually throw
+    }
+    [[nodiscard]] bool has_gid() const noexcept {
+        return std::holds_alternative<document::GlobalId>(_handle);
+    }
+    const document::GlobalId& gid() const noexcept {
+        return std::get<document::GlobalId>(_handle); // FIXME can actually throw
+    }
     void release();
 };
 
@@ -68,7 +111,10 @@ public:
  */
 class OperationSequencer {
     using GidSet = vespalib::hash_set<document::GlobalId, document::GlobalId::hash>;
-    GidSet _active_gids;
+    using BucketSet = std::set<document::Bucket>;
+
+    GidSet    _active_gids;
+    BucketSet _active_buckets;
 
     friend class SequencingHandle;
 public:
@@ -76,8 +122,11 @@ public:
     ~OperationSequencer();
 
     // Returns a handle with valid() == true iff no concurrent operations are
-    // already active for `id`.
-    SequencingHandle try_acquire(const document::DocumentId& id);
+    // already active for `id` _and_ the there are no active bucket locks for
+    // any bucket that may contain `id`.
+    SequencingHandle try_acquire(document::BucketSpace bucket_space, const document::DocumentId& id);
+
+    SequencingHandle try_acquire(const document::Bucket& bucket);
 private:
     void release(const SequencingHandle& handle);
 };

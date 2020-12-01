@@ -32,6 +32,7 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     pendingmessagetrackertest.cpp
     persistence_metrics_set_test.cpp
     putoperationtest.cpp
+    read_for_write_visitor_operation_test.cpp
     removebucketoperationtest.cpp
     removelocationtest.cpp
     removeoperationtest.cpp
