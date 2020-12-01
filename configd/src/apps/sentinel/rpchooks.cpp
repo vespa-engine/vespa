@@ -2,7 +2,8 @@
 
 #include "rpchooks.h"
 #include "cmdq.h"
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".rpchooks");

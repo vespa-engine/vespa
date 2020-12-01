@@ -3,6 +3,7 @@
 #pragma once
 
 #include "context.h"
+#include "config.h"
 #include <memory>
 #include <vector>
 #include <vespa/vespalib/net/async_resolver.h>

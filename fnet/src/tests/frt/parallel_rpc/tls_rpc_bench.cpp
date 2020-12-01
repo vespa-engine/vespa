@@ -6,7 +6,9 @@
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
 #include <vespa/vespalib/test/time_tracer.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <thread>
 #include <chrono>
 

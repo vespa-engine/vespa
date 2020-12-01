@@ -7,6 +7,10 @@
 #include <vespa/log/exceptions.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/supervisor.h>
+
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".logd.rpc_forwarder");
