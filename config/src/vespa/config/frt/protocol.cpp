@@ -41,6 +41,7 @@ const Memory RESPONSE_CONFIG_GENERATION = "generation";
 const Memory RESPONSE_PAYLOAD = "payload";
 const Memory RESPONSE_TRACE = "trace";
 const Memory RESPONSE_INTERNAL_REDEPLOY = "internalRedeploy";
+const Memory RESPONSE_APPLY_ON_RESTART = "applyOnRestart";
 
 const Inspector &
 extractPayload(const Slime & data)
