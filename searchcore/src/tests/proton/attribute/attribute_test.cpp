@@ -7,8 +7,9 @@
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
@@ -82,7 +83,7 @@ using std::string;
 using vespalib::ForegroundTaskExecutor;
 using vespalib::ForegroundThreadExecutor;
 using vespalib::SequencedTaskExecutorObserver;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
@@ -644,7 +645,7 @@ TEST_F(FilterAttributeManagerTest, readable_attribute_vector_filters_attributes)
 namespace {
 
 Value::UP make_tensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 const vespalib::string sparse_tensor = "tensor(x{},y{})";
@@ -668,7 +669,7 @@ Document::UP
 createTensorPutDoc(DocBuilder &builder, const Value &tensor) {
     return builder.startDocument("id:ns:searchdocument::1").
         startAttributeField("a1").
-        addTensor(EngineOrFactory::get().copy(tensor)).endField().endDocument();
+        addTensor(SimpleValue::from_value(tensor)).endField().endDocument();
 }
 
 }
@@ -712,7 +713,7 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
                                   .add({{"x", "8"}, {"y", "9"}}, 11));
     TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec(sparse_tensor));
     TensorFieldValue new_value(xySparseTensorDataType);
-    new_value = EngineOrFactory::get().copy(*new_tensor);
+    new_value = SimpleValue::from_value(*new_tensor);
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(AssignValueUpdate(new_value)));
     DummyFieldUpdateCallback onUpdate;

@@ -32,8 +32,9 @@
 #include <vespa/searchcore/proton/matching/match_params.h>
 #include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
@@ -58,8 +59,8 @@ using storage::spi::Timestamp;
 using search::fef::indexproperties::hitcollector::HeapSize;
 
 using vespalib::nbostream;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
-using vespalib::eval::EngineOrFactory;
 
 void inject_match_phase_limiting(Properties &setup, const vespalib::string &attribute, size_t max_hits, bool descending)
 {
@@ -666,9 +667,8 @@ TEST("require that summary features are filled") {
     EXPECT_TRUE(!f[2].is_double());
     EXPECT_TRUE(f[2].is_data());
     {
-        auto engine = EngineOrFactory::get();
         nbostream buf(f[2].as_data().data, f[2].as_data().size);
-        auto actual = engine.to_spec(*engine.decode(buf));
+        auto actual = spec_from_value(*SimpleValue::from_stream(buf));
         auto expect = TensorSpec("tensor(x[3])").add({{"x", 0}}, 0).add({{"x", 1}}, 1).add({{"x", 2}}, 2);
         EXPECT_EQUAL(actual, expect);
     }
