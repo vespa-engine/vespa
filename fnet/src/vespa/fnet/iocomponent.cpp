@@ -32,9 +32,9 @@ FNET_IOComponent::~FNET_IOComponent()
     assert(_ioc_selector == nullptr);
 }
 
-FNET_Config *
-FNET_IOComponent::GetConfig() {
-    return _ioc_owner->GetConfig();
+const FNET_Config &
+FNET_IOComponent::getConfig() const {
+    return _ioc_owner->getConfig();
 }
 
 void

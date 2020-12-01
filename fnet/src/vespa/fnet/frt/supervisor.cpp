@@ -419,7 +419,7 @@ StandaloneFRT::StandaloneFRT()
 
 StandaloneFRT::StandaloneFRT(vespalib::CryptoEngine::SP crypto)
     : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*128)),
-      _transport(std::make_unique<FNET_Transport>(std::move(crypto), 1)),
+      _transport(std::make_unique<FNET_Transport>(TransportConfig().crypto(std::move(crypto)))),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
 {
     _transport->Start(_threadPool.get());

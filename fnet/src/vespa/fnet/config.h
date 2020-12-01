@@ -11,6 +11,7 @@
 class FNET_Config
 {
 public:
+    uint32_t  _events_before_wakeup;
     uint32_t  _iocTimeOut;
     uint32_t  _maxInputBufferSize;
     uint32_t  _maxOutputBufferSize;
