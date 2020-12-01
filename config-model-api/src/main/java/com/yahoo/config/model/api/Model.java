@@ -36,7 +36,9 @@ public interface Model {
      * @param configKey the key to resolve
      * @param configDefinition the config definition to use for the schema
      */
-    ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition);
+    default ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition) {
+        return null; // TODO: Remove this default implementation after December 2020
+    }
 
     /** Produces a set of the valid config keys for this model. */
     Set<ConfigKey<?>> allConfigsProduced();
