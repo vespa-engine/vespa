@@ -202,13 +202,13 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     /**
      * Sets the weight for this client. The larger the value, the more resources
      * will be allocated to this clients. Resources are shared between clients
-     * proportiannally to their weights.
+     * proportionally to the set weights.
      *
      * @param weight the weight to set
      * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setWeight(double weight) {
-        this.weight = weight;
+        this.weight = Math.pow(weight, 0.5);
         return this;
     }
 
