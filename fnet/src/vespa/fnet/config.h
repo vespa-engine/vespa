@@ -18,23 +18,4 @@ public:
     bool      _tcpNoDelay;
 
     FNET_Config();
-    FNET_Config & events_before_wakeup(uint32_t v) {
-        if (v > 1) {
-            _events_before_wakeup = v;
-        }
-        return *this;
-    }
-    FNET_Config & maxInputBufferSize(uint32_t v) {
-        _maxInputBufferSize = v;
-        return *this;
-    }
-    FNET_Config & maxOutputBufferSize(uint32_t v) {
-        _maxOutputBufferSize = v;
-        return *this;
-    }
-    FNET_Config & tcpNoDelay(bool v) {
-        _tcpNoDelay = v;
-        return *this;
-    }
-
 };

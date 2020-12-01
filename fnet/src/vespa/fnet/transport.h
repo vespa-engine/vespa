@@ -32,13 +32,27 @@ public:
         _crypto = std::move(crypto_in);
         return *this;
     }
-    TransportConfig & config(const FNET_Config & config_in) {
-        _config = config_in;
+    const FNET_Config & config() const { return _config; }
+    uint32_t num_threads() const { return _num_threads; }
+
+    TransportConfig & events_before_wakeup(uint32_t v) {
+        if (v > 1) {
+            _config._events_before_wakeup = v;
+        }
         return *this;
     }
-    const FNET_Config & config() const { return _config; }
-    FNET_Config & config() { return _config; }
-    uint32_t num_threads() const { return _num_threads; }
+    TransportConfig & maxInputBufferSize(uint32_t v) {
+        _config._maxInputBufferSize = v;
+        return *this;
+    }
+    TransportConfig & maxOutputBufferSize(uint32_t v) {
+        _config._maxOutputBufferSize = v;
+        return *this;
+    }
+    TransportConfig & tcpNoDelay(bool v) {
+        _config._tcpNoDelay = v;
+        return *this;
+    }
 private:
     FNET_Config                 _config;
     vespalib::AsyncResolver::SP _resolver;
