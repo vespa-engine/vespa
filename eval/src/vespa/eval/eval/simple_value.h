@@ -7,9 +7,14 @@
 #include <vector>
 #include <map>
 
-namespace vespalib { class Stash; }
+namespace vespalib {
+class Stash;
+class nbostream;
+}
 
 namespace vespalib::eval {
+
+class TensorSpec;
 
 /**
  * A simple implementation of a generic value that can also be used to
@@ -39,6 +44,9 @@ public:
     const Value::Index &index() const override { return *this; }
     size_t size() const override { return _index.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
+    static Value::UP from_spec(const TensorSpec &spec);
+    static Value::UP from_value(const Value &value);
+    static Value::UP from_stream(nbostream &stream);
 };
 
 /**
