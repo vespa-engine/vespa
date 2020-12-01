@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.defaults.Defaults;
 import io.questdb.cairo.CairoConfiguration;
@@ -40,7 +41,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class QuestMetricsDb implements MetricsDb {
+public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private static final Logger log = Logger.getLogger(QuestMetricsDb.class.getName());
     private static final String tableName = "metrics";
@@ -141,6 +142,9 @@ public class QuestMetricsDb implements MetricsDb {
             log.log(Level.WARNING, "Failed to gc old metrics data in " + dataDir, e);
         }
     }
+
+    @Override
+    public void deconstruct() { close(); }
 
     @Override
     public void close() {
