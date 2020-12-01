@@ -59,7 +59,7 @@ void verify_impl(const vespalib::string &expr, const vespalib::string &expect) {
     verify_impl<T>(expr, expect, [](const T*){});
 }
 
-void verify_not_optimized(const vespalib::string &expr, const vespalib::string &expect) {
+void verify_generic(const vespalib::string &expr, const vespalib::string &expect) {
     verify_impl<tensor_function::Lambda>(expr, expect);
 }
 
@@ -133,38 +133,38 @@ TEST("require that non-continuous cell extraction is optimized") {
 }
 
 TEST("require that simple dynamic tensor lambda works") {
-    TEST_DO(verify_not_optimized("tensor(x[3])(x+a)", "tensor(x[3]):[1,2,3]"));
+    TEST_DO(verify_generic("tensor(x[3])(x+a)", "tensor(x[3]):[1,2,3]"));
 }
 
 TEST("require that compiled multi-dimensional multi-param dynamic tensor lambda works") {
-    TEST_DO(verify_not_optimized("tensor(x[3],y[2])((b-a)+x+y)", "tensor(x[3],y[2]):[[1,2],[2,3],[3,4]]"));
-    TEST_DO(verify_not_optimized("tensor<float>(x[3],y[2])((b-a)+x+y)", "tensor<float>(x[3],y[2]):[[1,2],[2,3],[3,4]]"));
+    TEST_DO(verify_generic("tensor(x[3],y[2])((b-a)+x+y)", "tensor(x[3],y[2]):[[1,2],[2,3],[3,4]]"));
+    TEST_DO(verify_generic("tensor<float>(x[3],y[2])((b-a)+x+y)", "tensor<float>(x[3],y[2]):[[1,2],[2,3],[3,4]]"));
 }
 
 TEST("require that interpreted multi-dimensional multi-param dynamic tensor lambda works") {
-    TEST_DO(verify_not_optimized("tensor(x[3],y[2])((x3{x:(a)}-a)+x+y)", "tensor(x[3],y[2]):[[1,2],[2,3],[3,4]]"));
-    TEST_DO(verify_not_optimized("tensor<float>(x[3],y[2])((x3{x:(a)}-a)+x+y)", "tensor<float>(x[3],y[2]):[[1,2],[2,3],[3,4]]"));
+    TEST_DO(verify_generic("tensor(x[3],y[2])((x3{x:(a)}-a)+x+y)", "tensor(x[3],y[2]):[[1,2],[2,3],[3,4]]"));
+    TEST_DO(verify_generic("tensor<float>(x[3],y[2])((x3{x:(a)}-a)+x+y)", "tensor<float>(x[3],y[2]):[[1,2],[2,3],[3,4]]"));
 }
 
 TEST("require that tensor lambda can be used for tensor slicing") {
-    TEST_DO(verify_not_optimized("tensor(x[2])(x3{x:(x+a)})", "tensor(x[2]):[2,3]"));
-    TEST_DO(verify_not_optimized("tensor(x[2])(a+x3{x:(x)})", "tensor(x[2]):[2,3]"));
+    TEST_DO(verify_generic("tensor(x[2])(x3{x:(x+a)})", "tensor(x[2]):[2,3]"));
+    TEST_DO(verify_generic("tensor(x[2])(a+x3{x:(x)})", "tensor(x[2]):[2,3]"));
 }
 
 TEST("require that tensor lambda can be used to convert from sparse to dense tensors") {
-    TEST_DO(verify_not_optimized("tensor(x[3])(x3m{x:(x)})", "tensor(x[3]):[1,2,3]"));
-    TEST_DO(verify_not_optimized("tensor(x[2])(x3m{x:(x)})", "tensor(x[2]):[1,2]"));
+    TEST_DO(verify_generic("tensor(x[3])(x3m{x:(x)})", "tensor(x[3]):[1,2,3]"));
+    TEST_DO(verify_generic("tensor(x[2])(x3m{x:(x)})", "tensor(x[2]):[1,2]"));
 }
 
 TEST("require that dynamic nested tensor lambda using tensor peek works") {
-    TEST_DO(verify_not_optimized("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})", "tensor(x[2]):[1,3]"));
+    TEST_DO(verify_generic("tensor(x[2])(tensor(y[2])((x+y)+a){y:(x)})", "tensor(x[2]):[1,3]"));
 }
 
 TEST("require that out-of-bounds cell extraction is not optimized") {
-    TEST_DO(verify_not_optimized("tensor(x[3])(x3y5{x:1,y:(x+3)})", "tensor(x[3]):[9,10,0]"));
-    TEST_DO(verify_not_optimized("tensor(x[3])(x3y5{x:1,y:(x-1)})", "tensor(x[3]):[0,6,7]"));
-    TEST_DO(verify_not_optimized("tensor(x[3])(x3y5{x:(x+1),y:(x)})", "tensor(x[3]):[6,12,0]"));
-    TEST_DO(verify_not_optimized("tensor(x[3])(x3y5{x:(x-1),y:(x)})", "tensor(x[3]):[0,2,8]"));
+    TEST_DO(verify_generic("tensor(x[3])(x3y5{x:1,y:(x+3)})", "tensor(x[3]):[9,10,0]"));
+    TEST_DO(verify_generic("tensor(x[3])(x3y5{x:1,y:(x-1)})", "tensor(x[3]):[0,6,7]"));
+    TEST_DO(verify_generic("tensor(x[3])(x3y5{x:(x+1),y:(x)})", "tensor(x[3]):[6,12,0]"));
+    TEST_DO(verify_generic("tensor(x[3])(x3y5{x:(x-1),y:(x)})", "tensor(x[3]):[0,2,8]"));
 }
 
 TEST("require that non-double result from inner tensor lambda function fails type resolving") {
