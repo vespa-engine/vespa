@@ -27,6 +27,7 @@ public class Reconfigurer extends AbstractComponent {
     private static final int sessionTimeoutInSeconds = 30;
 
     private ZooKeeperRunner zooKeeperRunner;
+    private ZookeeperServerConfig zookeeperServerConfig;
 
     @Inject
     public Reconfigurer() {
@@ -38,11 +39,13 @@ public class Reconfigurer extends AbstractComponent {
             zooKeeperRunner = startServer(newConfig);
 
         if (shouldReconfigure(newConfig))
-            reconfigure(newConfig);
+            reconfigure(new ReconfigurationInfo(existingConfig(), newConfig));
+
+        this.zookeeperServerConfig = newConfig;
     }
 
     boolean shouldReconfigure(ZookeeperServerConfig newConfig) {
-        ZookeeperServerConfig existingConfig = zooKeeperRunner.zookeeperServerConfig();
+        ZookeeperServerConfig existingConfig = existingConfig();
         if (!newConfig.dynamicReconfiguration() || existingConfig == null) return false;
 
         return !newConfig.equals(existingConfig);
@@ -52,24 +55,19 @@ public class Reconfigurer extends AbstractComponent {
         return new ZooKeeperRunner(zookeeperServerConfig);
     }
 
-    void reconfigure(ZookeeperServerConfig newConfig) {
-        ZookeeperServerConfig existingConfig = zooKeeperRunner.zookeeperServerConfig();
-
-        List<String> originalServers = List.copyOf(servers(existingConfig));
-        log.log(Level.INFO, "Original servers: " + originalServers);
-
-        List<String> joiningServers = servers(newConfig);
-        List<String> leavingServers = setDifference(originalServers, joiningServers);
-        List<String> addedServers = setDifference(joiningServers, leavingServers);
+    void reconfigure(ReconfigurationInfo reconfigurationInfo) {
+        List<String> joiningServers = reconfigurationInfo.joiningServers();
+        List<String> leavingServers = reconfigurationInfo.leavingServers();
+        List<String> addedServers = reconfigurationInfo.addedServers();
 
         log.log(Level.INFO, "Will reconfigure zookeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers +
                             ", new members" + addedServers);
         try {
-            ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(existingConfig), sessionTimeoutInSeconds, null);
+            ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(reconfigurationInfo.existingConfig()), sessionTimeoutInSeconds, null);
 
             long fromConfig = -1;
-            zooKeeperAdmin.reconfigure(joiningServers, originalServers, addedServers, fromConfig, null);
+            zooKeeperAdmin.reconfigure(joiningServers, leavingServers, addedServers, fromConfig, null);
         } catch (IOException | KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -78,7 +76,7 @@ public class Reconfigurer extends AbstractComponent {
     /**
      * Returns items in set a that are not in set b
      */
-    List<String> setDifference(List<String> a, List<String> b) {
+    static List<String> setDifference(List<String> a, List<String> b) {
         Set<String> ret = new HashSet<>(a);
         ret.removeAll(b);
         return new ArrayList<>(ret);
@@ -88,10 +86,48 @@ public class Reconfigurer extends AbstractComponent {
         return String.join(",", servers(config));
     }
 
-    private List<String> servers(ZookeeperServerConfig config) {
+    private static List<String> servers(ZookeeperServerConfig config) {
         return config.server().stream()
                 .map(server -> server.hostname() + ":" + server.quorumPort() + ":" + server.electionPort())
                 .collect(Collectors.toList());
+    }
+
+    ZookeeperServerConfig existingConfig() {
+        return zookeeperServerConfig;
+    }
+
+    static class ReconfigurationInfo {
+
+        private final ZookeeperServerConfig existingConfig;
+        private final List<String> joiningServers;
+        private final List<String> leavingServers;
+        private final List<String> addedServers;
+
+        public ReconfigurationInfo(ZookeeperServerConfig existingConfig, ZookeeperServerConfig newConfig) {
+            this.existingConfig = existingConfig;
+            List<String> originalServers = List.copyOf(servers(existingConfig));
+
+            this.joiningServers = servers(newConfig);
+            this.leavingServers = setDifference(originalServers, servers(newConfig));
+            this.addedServers = setDifference(servers(newConfig), originalServers);
+        }
+
+        public ZookeeperServerConfig existingConfig() {
+            return existingConfig;
+        }
+
+        public List<String> joiningServers() {
+            return joiningServers;
+        }
+
+        public List<String> leavingServers() {
+            return leavingServers;
+        }
+
+        public List<String> addedServers() {
+            return addedServers;
+        }
+
     }
 
 }

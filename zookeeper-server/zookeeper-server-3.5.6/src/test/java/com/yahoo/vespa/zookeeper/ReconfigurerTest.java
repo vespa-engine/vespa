@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -36,13 +37,18 @@ public class ReconfigurerTest {
     @Test
     public void testStartupAndReconfigure() {
         Reconfigurer reconfigurer = new Reconfigurer();
-        reconfigurer.startOrReconfigure(createConfig(1));
+        ZookeeperServerConfig initialConfig = createConfig(2);
+        reconfigurer.startOrReconfigure(initialConfig);
+        assertEquals(initialConfig, reconfigurer.existingConfig());
 
         // Created config has dynamicReconfig set to false
-        assertFalse(reconfigurer.shouldReconfigure(createConfig(2)));
+        assertFalse(reconfigurer.shouldReconfigure(createConfig(3)));
 
-        // Created config has dynamicReconfig set to true
-        assertTrue(reconfigurer.shouldReconfigure(createConfigAllowReconfiguring(2)));
+        // Increase number of servers, created config has dynamicReconfig set to true
+        assertReconfiguration(3, reconfigurer);
+
+        // Decrease number of servers, Created config has dynamicReconfig set to true
+        assertReconfiguration(1, reconfigurer);
 
         // Test that equal config does not cause reconfiguration
         Reconfigurer reconfigurer2 = new Reconfigurer();
@@ -77,6 +83,20 @@ public class ReconfigurerTest {
         builder.electionPort(electionPort);
         builder.quorumPort(quorumPort);
         return builder;
+    }
+
+    private void assertReconfiguration(int numberOfServers, Reconfigurer reconfigurer) {
+        ZookeeperServerConfig existingConfig = reconfigurer.existingConfig();
+        int currentServerCount = reconfigurer.existingConfig().server().size();
+        int expectedLeavingServers = Math.max(0, currentServerCount - numberOfServers);
+        int expectedAddedServers = Math.max(0, numberOfServers - currentServerCount);
+
+        ZookeeperServerConfig newConfig = createConfigAllowReconfiguring(numberOfServers);
+        assertTrue(reconfigurer.shouldReconfigure(newConfig));
+        Reconfigurer.ReconfigurationInfo reconfigurationInfo = new Reconfigurer.ReconfigurationInfo(existingConfig, newConfig);
+        assertEquals(numberOfServers, reconfigurationInfo.joiningServers().size());
+        assertEquals(expectedLeavingServers, reconfigurationInfo.leavingServers().size());
+        assertEquals(expectedAddedServers, reconfigurationInfo.addedServers().size());
     }
 
 }
