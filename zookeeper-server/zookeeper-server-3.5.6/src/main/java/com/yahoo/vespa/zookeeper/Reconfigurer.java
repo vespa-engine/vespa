@@ -69,7 +69,7 @@ public class Reconfigurer extends AbstractComponent {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(existingConfig), sessionTimeoutInSeconds, null);
 
             long fromConfig = -1;
-            zooKeeperAdmin.reconfigure(joiningServers, originalServers, addedServers, fromConfig, null);
+            zooKeeperAdmin.reconfigure(joiningServers, leavingServers, addedServers, fromConfig, null);
         } catch (IOException | KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
         }
