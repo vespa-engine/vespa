@@ -17,7 +17,7 @@ jobs:
       VESPA_MAVEN_COMMAND: "mvn"
       LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
       MAVEN_OPTS: "-XX:-DoEscapeAnalysis -Dfile.encoding=UTF-8 -Xms3g -Xmx3g -Xss1m -XX:MaxJavaStackTraceDepth=1000000"
-      VESPA_MAVEN_EXTRA_OPTS: "-B -nsu -T1C -Dsurefire.exitTimeout=120  -Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.javadoc.skip=true -Dmaven.source.skip=true"
+      VESPA_MAVEN_EXTRA_OPTS: "-B -nsu -T1C -Dsurefire.exitTimeout=180  -Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.javadoc.skip=true -Dmaven.source.skip=true"
       CCACHE_TMP_DIR: "/tmp/ccache_tmp"
       CCACHE_DATA_DIR: "/tmp/vespa/ccache"
       CCACHE_COMPRESS: "1"
