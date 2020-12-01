@@ -21,6 +21,7 @@ import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBu
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.net.URIBuilder;
+import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -240,6 +241,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                 .setMaxConnPerRoute(10)
                                 .setTlsStrategy(tlsStrategy)
                                 .build())
+                .setIOReactorConfig(IOReactorConfig.custom()
+                        .setSoTimeout(Timeout.ofSeconds(2))
+                        .build())
                 .setUserAgent("config-convergence-checker")
                 .setConnectionReuseStrategy((request, response, context) -> false) // Disable connection reuse
                 .build();
