@@ -7,7 +7,6 @@
 #include <thread>
 #include <chrono>
 
-using namespace std::chrono_literals;
 namespace storage::spi { struct PersistenceProvider; }
 
 namespace feedbm {
@@ -31,6 +30,7 @@ public:
         _pending--;
     }
     void retain() {
+        using namespace std::chrono_literals;
         while (_pending >= _limit) {
             std::this_thread::sleep_for(1ms);
         }
