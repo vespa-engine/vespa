@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
@@ -26,7 +29,7 @@ struct Rpc : FRT_Invokable {
     FRT_Target *connect(uint32_t port) {
         return orb.GetTarget(port);
     }
-    ~Rpc() {
+    ~Rpc() override {
         transport.ShutDown(true);
         thread_pool.Close();
     }
@@ -34,7 +37,7 @@ struct Rpc : FRT_Invokable {
 
 struct Server : Rpc {
     uint32_t port;
-    Server(CryptoEngine::SP crypto, size_t num_threads) : Rpc(crypto, num_threads), port(listen()) {
+    Server(CryptoEngine::SP crypto, size_t num_threads) : Rpc(std::move(crypto), num_threads), port(listen()) {
         init_rpc();
         start();
     }
@@ -54,7 +57,7 @@ struct Server : Rpc {
 
 struct Client : Rpc {
     uint32_t port;
-    Client(CryptoEngine::SP crypto, size_t num_threads, const Server &server) : Rpc(crypto, num_threads), port(server.port) {
+    Client(CryptoEngine::SP crypto, size_t num_threads, const Server &server) : Rpc(std::move(crypto), num_threads), port(server.port) {
         start();
     }
     FRT_Target *connect() { return Rpc::connect(port); }
@@ -62,7 +65,7 @@ struct Client : Rpc {
 
 struct Result {
     std::vector<double> req_per_sec;
-    Result(size_t num_threads) : req_per_sec(num_threads, 0.0) {}
+    explicit Result(size_t num_threads) : req_per_sec(num_threads, 0.0) {}
     double throughput() const {
         double sum = 0.0;
         for (double sample: req_per_sec) {

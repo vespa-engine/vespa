@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fastos/app.h>
 
 #include <sstream>
@@ -15,12 +17,11 @@ private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
     FRT_Target     *_target;
 
-    PingProxy(const PingProxy &);
-    PingProxy &operator=(const PingProxy &);
-
 public:
+    PingProxy(const PingProxy &) = delete;
+    PingProxy &operator=(const PingProxy &) = delete;
     PingProxy() : _server(), _target(nullptr) {}
-    virtual ~PingProxy();
+    ~PingProxy() override ;
     int usage();
     void initRPC(const char *spec);
     void finiRPC();
