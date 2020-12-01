@@ -35,8 +35,8 @@ import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
-import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
+import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
  * @author Simon Thoresen Hult
