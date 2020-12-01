@@ -255,7 +255,7 @@ public class ApplicationHandler extends HttpHandler {
         return new ReindexingResponse(tenant.getApplicationRepo().database()
                                             .readReindexingStatus(applicationId)
                                             .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)),
-                                      Map.of()); // TODO jonmv/bjorncs: Get status of each cluster and fill in here.
+                                      applicationRepository.getClusterReindexingStatus(applicationId));
     }
 
     private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {
