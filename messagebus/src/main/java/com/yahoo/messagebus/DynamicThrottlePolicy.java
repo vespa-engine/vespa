@@ -99,7 +99,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
 
         if (maxThroughput > 0 && throughput > maxThroughput * 0.95) {
             // No need to increase window when we're this close to max.
-        } else if (throughput > localMaxThroughput * 1.01) {
+        } else if (throughput >= localMaxThroughput) {
             localMaxThroughput = throughput;
             windowSize += weight*windowSizeIncrement;
             if (log.isLoggable(Level.FINE)) {
