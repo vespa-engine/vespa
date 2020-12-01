@@ -47,11 +47,6 @@ public:
      * distribution and cluster state -and- that of the pending cluster
      * state and distribution (if any pending exists).
      */
-    BucketOwnership checkOwnershipInPendingAndGivenState(
-            const lib::Distribution& distribution,
-            const lib::ClusterState& clusterState,
-            const document::Bucket &bucket) const;
-
     BucketOwnership checkOwnershipInPendingAndCurrentState(
             const document::Bucket &bucket) const;
 
