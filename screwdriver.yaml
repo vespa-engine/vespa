@@ -3,41 +3,37 @@ cache:
    job:
        main: [/main_job_cache]
 
-shared:
-  image: vespaengine/vespa-build-centos7
-
 jobs:
   main:
     requires: [~pr, ~commit]
+    image: vespaengine/vespa-build-centos7
     annotations:
       screwdriver.cd/cpu: TURBO
       screwdriver.cd/ram: TURBO
       screwdriver.cd/disk: HIGH
       screwdriver.cd/timeout: 600
 
-      #screwdriver.cd/dockerEnabled: true
     environment:
-      MVN: "mvn"
+      VESPA_MAVEN_COMMAND: "mvn"
       LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
-      MVN_OPTS: "-nsu -T1C -XX:-DoEscapeAnalysis -Dfile.encoding=UTF-8 -Xms3g -Xmx3g -Xss1m -XX:MaxJavaStackTraceDepth=1000000 -Dsurefire.exitTimeout=120"
-      MAVEN_EXTRA_OPTS: "-B -Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.javadoc.skip=true -Dmaven.source.skip=true"
-      CCACHE_DIR: "/tmp/vespa/ccache"
+      MAVEN_OPTS: "-XX:-DoEscapeAnalysis -Dfile.encoding=UTF-8 -Xms3g -Xmx3g -Xss1m -XX:MaxJavaStackTraceDepth=1000000"
+      VESPA_MAVEN_EXTRA_OPTS: "-B -nsu -T1C -Dsurefire.exitTimeout=120  -Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.javadoc.skip=true -Dmaven.source.skip=true"
       CCACHE_TMP_DIR: "/tmp/ccache_tmp"
+      CCACHE_DATA_DIR: "/tmp/vespa/ccache"
       CCACHE_COMPRESS: "1"
       MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"
 
     steps:
       - inspect: |
+          set -x
           env | grep -v TOKEN
           cat /proc/cpuinfo
           cat /proc/meminfo
           df -h
-          #docker --version
-          #docker images
-      - checkout: |
-          git clone --depth 1 https://github.com/vespa-engine/vespa
       - restore-cache: |
           (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
+
+          export CCACHE_DIR=$CCACHE_DATA_DIR
 
           mkdir -p $CCACHE_DIR
           mkdir -p $CCACHE_TMP_DIR
@@ -53,12 +49,15 @@ jobs:
 
           source /opt/rh/devtoolset-9/enable
           source /opt/rh/rh-maven35/enable
-          cd vespa
+
           ./bootstrap.sh full
+
           cmake3 -DVESPA_UNPRIVILEGED=no -DVALGRIND_UNIT_TESTS=true -DVESPA_CPU_ARCH_FLAGS="-march=sandybridge -mtune=skylake" .
-          make -j10
-          make test ARGS="--output-on-failure -j $10"
-          $MVN $MAVEN_OPTS $MAVEN_EXTRA_OPTS clean install
+          make -j$(nproc)
+          make test ARGS="--output-on-failure -j $(nproc)"
+
+          $VESPA_MAVEN_COMMAND $VESPA_MAVEN_EXTRA_OPTS clean install
+
 
       - save-cache: |
           # Print ccache stats
