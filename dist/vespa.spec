@@ -457,7 +457,6 @@ fi
 %{_prefix}/lib/jars/athenz-identity-provider-service-jar-with-dependencies.jar
 %{_prefix}/lib/jars/cloud-tenant-cd-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-apps-jar-with-dependencies.jar
-%{_prefix}/lib/jars/clustercontroller-apputil-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-reindexer-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-utils-jar-with-dependencies.jar
