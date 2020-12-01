@@ -481,19 +481,9 @@ public class ApplicationHandler extends HttpHandler {
         private static void setStatus(Cursor object, ClusterReindexing.Status status) {
             object.setLong("startedMillis", status.startedAt().toEpochMilli());
             status.endedAt().ifPresent(endedAt -> object.setLong("endedMillis", endedAt.toEpochMilli()));
-            status.state().map(ReindexingResponse::toString).ifPresent(state -> object.setString("state", state));
+            status.state().map(ClusterReindexing.State::asString).ifPresent(state -> object.setString("state", state));
             status.message().ifPresent(message -> object.setString("message", message));
             status.progress().ifPresent(progress -> object.setString("progress", progress));
-        }
-
-        static String toString(ClusterReindexing.State state) {
-            switch (state) {
-                case PENDING: return "pending";
-                case RUNNING: return "running";
-                case FAILED: return "failed";
-                case SUCCESSFUL: return "successful";
-                default: throw new IllegalArgumentException("Unexpected state '" + state + "'");
-            }
         }
 
     }
