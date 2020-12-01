@@ -11,7 +11,6 @@ import com.yahoo.config.provision.security.NodeIdentifierException;
 import com.yahoo.config.provision.security.NodeIdentity;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.SecurityContext;
-import java.util.logging.Level;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.ConfigKey;
@@ -29,9 +28,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.rpc.security.AuthorizationException.*;
+import static com.yahoo.vespa.config.server.rpc.security.AuthorizationException.Type;
+import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 
 /**
@@ -204,11 +205,6 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     private RequestHandler getTenantHandler(TenantName tenantName) {
         return handlerProvider.getRequestHandler(tenantName)
                 .orElseThrow(() -> new AuthorizationException(String.format("No handler exists for tenant '%s'", tenantName.value())));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void throwUnchecked(Throwable t) throws T {
-        throw (T)t;
     }
 
     private enum JrtErrorCode {

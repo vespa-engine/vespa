@@ -160,4 +160,25 @@ public class Exceptions {
     public interface SupplierThrowingIOException<T> {
         T get() throws IOException;
     }
+
+    /**
+     * Allows treating checked exceptions as unchecked.
+     * Usage:
+     * throw throwUnchecked(e);
+     * The reason for the return type is to allow writing throw at the call site
+     * instead of just calling throwUnchecked. Just calling throwUnchecked
+     * means that the java compiler won't know that the statement will throw an exception,
+     * and will therefore complain on things such e.g. missing return value.
+     */
+    public static RuntimeException throwUnchecked(Throwable e) {
+        throwUncheckedImpl(e);
+        return new RuntimeException(); // Non-null return value to stop tooling from complaining about potential NPE
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void throwUncheckedImpl(Throwable t) throws T {
+        throw (T)t;
+    }
+
+
 }
