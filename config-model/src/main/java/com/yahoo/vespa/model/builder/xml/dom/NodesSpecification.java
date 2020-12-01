@@ -202,15 +202,17 @@ public class NodesSpecification {
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
-                                                          DeployLogger logger) {
+                                                          DeployLogger logger,
+                                                          boolean stateful) {
         if (combinedId.isPresent())
             clusterType = ClusterSpec.Type.combined;
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId)
-                .vespaVersion(version)
-                .exclusive(exclusive)
-                .combinedId(combinedId.map(ClusterSpec.Id::from))
-                .dockerImageRepository(dockerImageRepo)
-                .build();
+                                         .vespaVersion(version)
+                                         .exclusive(exclusive)
+                                         .combinedId(combinedId.map(ClusterSpec.Id::from))
+                                         .dockerImageRepository(dockerImageRepo)
+                                         .stateful(stateful)
+                                         .build();
         return hostSystem.allocateHosts(cluster, Capacity.from(min, max, required, canFail), logger);
     }
 

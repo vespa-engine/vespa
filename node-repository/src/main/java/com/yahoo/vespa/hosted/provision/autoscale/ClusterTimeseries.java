@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +32,8 @@ public class ClusterTimeseries {
 
     public ClusterTimeseries(Cluster cluster, List<Node> clusterNodes, MetricsDb db, NodeRepository nodeRepository) {
         this.clusterNodes = clusterNodes;
-        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        var timeseries = db.getNodeTimeseries(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterType)),
+        ClusterSpec clusterSpec = clusterNodes.get(0).allocation().get().membership().cluster();
+        var timeseries = db.getNodeTimeseries(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterSpec)),
                                               clusterNodes.stream().map(Node::hostname).collect(Collectors.toSet()));
         Map<String, Instant> startTimePerNode = metricStartTimes(cluster, clusterNodes, timeseries, nodeRepository);
 
