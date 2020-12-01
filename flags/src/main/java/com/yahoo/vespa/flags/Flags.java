@@ -254,6 +254,12 @@ public class Flags {
             CONSOLE_USER_EMAIL
     );
 
+    public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
+            "max-trial-tenants", -1,
+            "The maximum nr. of tenants with trial plan, -1 is unlimited",
+            "Takes effect immediately"
+    );
+
     public static final UnboundBooleanFlag CONTROLLER_PROVISION_LB = defineFeatureFlag(
             "controller-provision-lb", false,
             "Provision load balancer for controller cluster",
