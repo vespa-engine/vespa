@@ -3,6 +3,7 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -129,7 +130,7 @@ ExternalOperationHandlerTest::findNonOwnedUserBucketInState(
     lib::ClusterState state(statestr);
     for (uint64_t i = 1; i < 1000; ++i) {
         document::BucketId bucket(32, i);
-        if (!getExternalOperationHandler().ownsBucketInState(state, makeDocumentBucket(bucket))) {
+        if (!getDistributorBucketSpace().owns_bucket_in_state(state, bucket)) {
             return bucket;
         }
     }
@@ -145,8 +146,8 @@ ExternalOperationHandlerTest::findOwned1stNotOwned2ndInStates(
     lib::ClusterState state2(statestr2);
     for (uint64_t i = 1; i < 1000; ++i) {
         document::BucketId bucket(32, i);
-        if (getExternalOperationHandler().ownsBucketInState(state1, makeDocumentBucket(bucket))
-            && !getExternalOperationHandler().ownsBucketInState(state2, makeDocumentBucket(bucket)))
+        if (getDistributorBucketSpace().owns_bucket_in_state(state1, bucket)
+            && !getDistributorBucketSpace().owns_bucket_in_state(state2, bucket))
         {
             return bucket;
         }

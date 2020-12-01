@@ -81,7 +81,17 @@ public:
     std::vector<uint16_t> get_ideal_nodes_fallback(document::BucketId bucket) const;
 
     bool owns_bucket_in_state(const lib::Distribution& distribution, const lib::ClusterState& cluster_state, document::BucketId bucket) const;
+
+    /**
+     * Returns true if this distributor owns the given bucket in the
+     * given cluster and current distribution config.
+     */
     bool owns_bucket_in_state(const lib::ClusterState& clusterState, document::BucketId bucket) const;
+
+    /**
+     * Returns true if this distributor owns the given bucket with the current
+     * cluster state and distribution config.
+     */
     bool owns_bucket_in_current_state(document::BucketId bucket) const;
 
     BucketOwnership check_ownership_in_pending_state(document::BucketId bucket) const;
