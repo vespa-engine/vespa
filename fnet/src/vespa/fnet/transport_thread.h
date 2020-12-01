@@ -184,7 +184,7 @@ public:
      *
      * @param owner owning transport layer
      **/
-    FNET_TransportThread(FNET_Transport &owner_in);
+    explicit FNET_TransportThread(FNET_Transport &owner_in);
 
 
     /**

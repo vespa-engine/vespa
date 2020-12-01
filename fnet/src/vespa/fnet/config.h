@@ -17,7 +17,7 @@ public:
     uint32_t  _maxOutputBufferSize;
     bool      _tcpNoDelay;
 
-    explicit FNET_Config();
+    FNET_Config();
     FNET_Config & events_before_wakeup(uint32_t v) {
         if (v > 1) {
             _events_before_wakeup = v;

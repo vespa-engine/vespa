@@ -57,12 +57,14 @@ private:
     using Threads = std::vector<Thread>;
 
     vespalib::AsyncResolver::SP _async_resolver;
-    vespalib::CryptoEngine::SP _crypto_engine;
+    vespalib::CryptoEngine::SP  _crypto_engine;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
-    Threads      _threads;
-    FNET_Config  _config;
+    Threads            _threads;
+    const FNET_Config  _config;
 
 public:
+    FNET_Transport(const FNET_Transport &) = delete;
+    FNET_Transport & operator = (const FNET_Transport &) = delete;
     /**
      * Construct a transport layer. To activate your newly created
      * transport object you need to call either the Start method to
@@ -70,7 +72,7 @@ public:
      * the current thread become the transport thread. Main may only
      * be called for single-threaded transports.
      **/
-    FNET_Transport(TransportConfig config);
+    explicit FNET_Transport(TransportConfig config);
 
     explicit FNET_Transport(uint32_t num_threads)
         : FNET_Transport(TransportConfig(num_threads)) {}
