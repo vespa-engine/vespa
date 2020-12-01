@@ -76,7 +76,9 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
             windowSize = Math.min(windowSize, pendingCount + windowSizeIncrement);
         }
         timeOfLastMessage = time;
-        return pendingCount < windowSize;
+        int windowSizeFloored = (int) windowSize;
+        boolean carry = numSent / (windowSize * resizeRate) < windowSize - windowSizeFloored;
+        return pendingCount <  windowSizeFloored + (carry  ? 1 : 0);
     }
 
     @Override
