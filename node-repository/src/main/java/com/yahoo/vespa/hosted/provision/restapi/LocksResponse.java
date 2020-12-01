@@ -51,26 +51,6 @@ public class LocksResponse extends HttpResponse {
         root.setString("hostname", hostname);
         root.setString("time", Instant.now().toString());
 
-        Cursor lockPathsCursor = root.setArray("lock-paths");
-        lockMetricsByPath.forEach((lockPath, lockMetrics) -> {
-            Cursor lockPathCursor = lockPathsCursor.addObject();
-            lockPathCursor.setString("path", lockPath);
-            lockPathCursor.setLong("acquireCount", lockMetrics.getCumulativeAcquireCount());
-            lockPathCursor.setLong("acquireFailedCount", lockMetrics.getCumulativeAcquireFailedCount());
-            lockPathCursor.setLong("acquireTimedOutCount", lockMetrics.getCumulativeAcquireTimedOutCount());
-            lockPathCursor.setLong("lockedCount", lockMetrics.getCumulativeAcquireSucceededCount());
-            lockPathCursor.setLong("releaseCount", lockMetrics.getCumulativeReleaseCount());
-            lockPathCursor.setLong("releaseFailedCount", lockMetrics.getCumulativeReleaseFailedCount());
-            lockPathCursor.setLong("reentryCount", lockMetrics.getCumulativeReentryCount());
-            lockPathCursor.setLong("deadlock", lockMetrics.getCumulativeDeadlockCount());
-            lockPathCursor.setLong("nakedRelease", lockMetrics.getCumulativeNakedReleaseCount());
-            lockPathCursor.setLong("acquireWithoutRelease", lockMetrics.getCumulativeAcquireWithoutReleaseCount());
-            lockPathCursor.setLong("foreignRelease", lockMetrics.getCumulativeForeignReleaseCount());
-
-            setLatency(lockPathCursor, "acquire", lockMetrics.getAcquireLatencyMetrics());
-            setLatency(lockPathCursor, "locked", lockMetrics.getLockedLatencyMetrics());
-        });
-
         Cursor threadsCursor = root.setArray("threads");
         for (var threadLockStats : threadLockStatsList) {
             Optional<LockAttempt> ongoingLockAttempt = threadLockStats.getTopMostOngoingLockAttempt();
@@ -102,18 +82,45 @@ public class LocksResponse extends HttpResponse {
             Cursor recordingsCursor = root.setArray("recordings");
             historicRecordings.forEach(recording -> setRecording(recordingsCursor.addObject(), recording));
         }
+
+        Cursor lockPathsCursor = root.setArray("lock-paths");
+        lockMetricsByPath.forEach((lockPath, lockMetrics) -> {
+            Cursor lockPathCursor = lockPathsCursor.addObject();
+            lockPathCursor.setString("path", lockPath);
+            setNonZeroLong(lockPathCursor, "acquireCount", lockMetrics.getCumulativeAcquireCount());
+            setNonZeroLong(lockPathCursor, "acquireFailedCount", lockMetrics.getCumulativeAcquireFailedCount());
+            setNonZeroLong(lockPathCursor, "acquireTimedOutCount", lockMetrics.getCumulativeAcquireTimedOutCount());
+            setNonZeroLong(lockPathCursor, "lockedCount", lockMetrics.getCumulativeAcquireSucceededCount());
+            setNonZeroLong(lockPathCursor, "releaseCount", lockMetrics.getCumulativeReleaseCount());
+            setNonZeroLong(lockPathCursor, "releaseFailedCount", lockMetrics.getCumulativeReleaseFailedCount());
+            setNonZeroLong(lockPathCursor, "reentryCount", lockMetrics.getCumulativeReentryCount());
+            setNonZeroLong(lockPathCursor, "deadlock", lockMetrics.getCumulativeDeadlockCount());
+            setNonZeroLong(lockPathCursor, "nakedRelease", lockMetrics.getCumulativeNakedReleaseCount());
+            setNonZeroLong(lockPathCursor, "acquireWithoutRelease", lockMetrics.getCumulativeAcquireWithoutReleaseCount());
+            setNonZeroLong(lockPathCursor, "foreignRelease", lockMetrics.getCumulativeForeignReleaseCount());
+
+            setLatency(lockPathCursor, "acquire", lockMetrics.getAcquireLatencyMetrics());
+            setLatency(lockPathCursor, "locked", lockMetrics.getLockedLatencyMetrics());
+        });
+    }
+
+    private static void setNonZeroLong(Cursor cursor, String fieldName, long value) {
+        if (value != 0) {
+            cursor.setLong(fieldName, value);
+        }
     }
 
     private static void setLatency(Cursor cursor, String name, LatencyMetrics latencyMetrics) {
-        cursor.setDouble(name + "Latency", latencyMetrics.latencySeconds());
-        cursor.setDouble(name + "MaxActiveLatency", latencyMetrics.maxActiveLatencySeconds());
-        cursor.setDouble(name + "Hz", latencyMetrics.endHz());
-        cursor.setDouble(name + "Load", latencyMetrics.load());
+        setNonZeroDouble(cursor, name + "Latency", latencyMetrics.latencySeconds());
+        setNonZeroDouble(cursor, name + "MaxActiveLatency", latencyMetrics.maxActiveLatencySeconds());
+        setNonZeroDouble(cursor, name + "Hz", latencyMetrics.endHz());
+        setNonZeroDouble(cursor, name + "Load", latencyMetrics.load());
     }
 
-    private static double roundDouble(double value, int decimalPlaces) {
-        double factor = Math.pow(10, decimalPlaces);
-        return Math.round(value * factor) / factor;
+    private static void setNonZeroDouble(Cursor cursor, String fieldName, double value) {
+        if (Double.compare(value, 0.0) != 0) {
+            cursor.setDouble(fieldName, value);
+        }
     }
 
     @Override
