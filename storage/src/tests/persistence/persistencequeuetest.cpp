@@ -3,6 +3,7 @@
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
+#include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/log/log.h>
@@ -26,7 +27,6 @@ public:
         DummyStorageLink top;
         std::unique_ptr<DummyStorageLink> dummyManager;
         ForwardingMessageSender messageSender;
-        documentapi::LoadTypeSet loadTypes;
         FileStorMetrics metrics;
         std::unique_ptr<FileStorHandler> filestorHandler;
         uint32_t stripeId;
@@ -41,14 +41,13 @@ PersistenceQueueTest::Fixture::Fixture(FileStorTestFixture& parent_)
       top(),
       dummyManager(std::make_unique<DummyStorageLink>()),
       messageSender(*dummyManager),
-      loadTypes("raw:"),
-      metrics(loadTypes.getMetricLoadTypes()),
+      metrics(),
       stripeId(0)
 {
     top.push_back(std::move(dummyManager));
     top.open();
 
-    metrics.initDiskMetrics(loadTypes.getMetricLoadTypes(), 1, 1);
+    metrics.initDiskMetrics(1, 1);
 
     filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics,
                                                             parent._node->getComponentRegister());

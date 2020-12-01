@@ -3,15 +3,15 @@
 #include "nodetype.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <cassert>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 // WARNING: Because static initialization happen in random order, the State
 // class use these enum values directly during static initialization since
 // these objects may yet not exist. Update in State if you change this.
-const NodeType NodeType::STORAGE("storage", 0);
-const NodeType NodeType::DISTRIBUTOR("distributor", 1);
+const NodeType NodeType::STORAGE("storage", NodeType::Type::STORAGE);
+const NodeType NodeType::DISTRIBUTOR("distributor", NodeType::Type::DISTRIBUTOR);
 
 const NodeType&
 NodeType::get(vespalib::stringref serialized)
@@ -26,8 +26,22 @@ NodeType::get(vespalib::stringref serialized)
             "Unknown node type " + serialized + " given.", VESPA_STRLOC);
 }
 
-NodeType::NodeType(vespalib::stringref name, uint16_t enumValue)
-    : _enumValue(enumValue), _name(name)
+const NodeType&
+NodeType::get(Type type) noexcept
+{
+    switch (type) {
+        case Type::STORAGE:
+            return STORAGE;
+        case Type::DISTRIBUTOR:
+            return DISTRIBUTOR;
+        case Type::UNKNOWN:
+            assert(type != Type::UNKNOWN);
+    }
+    abort();
+}
+
+NodeType::NodeType(vespalib::stringref name, Type type) noexcept
+    : _type(type), _name(name)
 {
 }
 
@@ -39,5 +53,4 @@ vespalib::asciistream & operator << (vespalib::asciistream & os, const NodeType 
     return os << n.toString();
 }
 
-} // lib
-} // storage
+}

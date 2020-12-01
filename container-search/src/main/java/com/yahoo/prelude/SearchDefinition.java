@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude;
 
-import com.yahoo.prelude.Index.Attribute;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,13 +15,13 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 // TODO: Make freezable!
 public class SearchDefinition {
 
-    private String name;
+    private final String name;
 
     /** A map of all indices in this search definition, indexed by name */
-    private Map<String, Index> indices = new HashMap<>();
+    private final Map<String, Index> indices = new HashMap<>();
 
     /* A map of all indices in this search definition, indexed by lower cased name. */
-    private Map<String, Index> lowerCase = new HashMap<>();
+    private final Map<String, Index> lowerCase = new HashMap<>();
 
     private String defaultPosition;
 

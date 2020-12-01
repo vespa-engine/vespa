@@ -15,7 +15,6 @@
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
-#include <vespa/config-load-type.h>
 #include <vespa/config-persistence.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-slobroks.h>
@@ -86,7 +85,6 @@ using namespace std::chrono_literals;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
-using vespa::config::content::LoadTypeConfigBuilder;
 using vespa::config::content::PersistenceConfigBuilder;
 using vespa::config::content::StorDistributionConfigBuilder;
 using vespa::config::content::StorFilestorConfigBuilder;
@@ -444,7 +442,6 @@ struct MyStorageConfig
     StorServerConfigBuilder       stor_server;
     StorStatusConfigBuilder       stor_status;
     BucketspacesConfigBuilder     bucketspaces;
-    LoadTypeConfigBuilder         load_type;
     MetricsmanagerConfigBuilder   metricsmanager;
     SlobroksConfigBuilder         slobroks;
     MessagebusConfigBuilder       messagebus;
@@ -462,7 +459,6 @@ struct MyStorageConfig
           stor_server(),
           stor_status(),
           bucketspaces(),
-          load_type(),
           metricsmanager(),
           slobroks(),
           messagebus()
@@ -516,7 +512,6 @@ struct MyStorageConfig
         set.addBuilder(config_id, &stor_server);
         set.addBuilder(config_id, &stor_status);
         set.addBuilder(config_id, &bucketspaces);
-        set.addBuilder(config_id, &load_type);
         set.addBuilder(config_id, &metricsmanager);
         set.addBuilder(config_id, &slobroks);
         set.addBuilder(config_id, &messagebus);
@@ -919,9 +914,7 @@ PersistenceProviderFixture::start_message_bus()
 {
     config::ConfigUri config_uri("bm-message-bus", _config_context);
     LOG(info, "Starting message bus");
-    _message_bus = std::make_unique<BmMessageBus>(config_uri,
-                                                  _repo,
-                                                  documentapi::LoadTypeSet());
+    _message_bus = std::make_unique<BmMessageBus>(config_uri, _repo);
     LOG(info, "Started message bus");
 }
 
@@ -1309,7 +1302,7 @@ void benchmark_async_spi(const BMParams &bm_params)
     LOG(info, "start initialize");
     provider.initialize();
     LOG(info, "create %u buckets", f.num_buckets());
-    if (!f._feed_handler->manages_buckets()) {
+    if (!bm_params.needs_distributor()) {
         f.create_buckets();
     }
     if (bm_params.needs_service_layer()) {

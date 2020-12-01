@@ -2,6 +2,7 @@
 
 #include "filestorhandlerimpl.h"
 #include "filestormetrics.h"
+#include "mergestatus.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -77,7 +78,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
 FileStorHandlerImpl::~FileStorHandlerImpl() = default;
 
 void
-FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, MergeStatus::SP status)
+FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, std::shared_ptr<MergeStatus> status)
 {
     std::lock_guard mlock(_mergeStatesLock);
     if (_mergeStates.find(bucket) != _mergeStates.end()) {
@@ -90,7 +91,7 @@ MergeStatus&
 FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 {
     std::lock_guard mlock(_mergeStatesLock);
-    MergeStatus::SP status = _mergeStates[bucket];
+    std::shared_ptr<MergeStatus> status = _mergeStates[bucket];
     if ( ! status ) {
         throw vespalib::IllegalStateException("No merge state exist for " + bucket.toString(), VESPA_STRLOC);
     }
@@ -140,7 +141,7 @@ FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const api:
         return;
     }
     if (code != 0) {
-        MergeStatus::SP statusPtr(it->second);
+        std::shared_ptr<MergeStatus> statusPtr(it->second);
         assert(statusPtr.get());
         MergeStatus& status(*statusPtr);
         if (status.reply.get()) {
@@ -325,12 +326,9 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
     _metrics->pendingMerges.addValue(_mergeStates.size());
     _metrics->queueSize.addValue(getQueueSize());
 
-    for (auto & entry : _metrics->averageQueueWaitingTime.getMetricMap()) {
-        metrics::LoadType loadType(entry.first, "ignored");
-        for (const auto & stripe : _metrics->stripes) {
-            const auto & m = stripe->averageQueueWaitingTime[loadType];
-            entry.second->addTotalValueWithCount(m.getTotal(), m.getCount());
-        }
+    for (const auto & stripe : _metrics->stripes) {
+        const auto & m = stripe->averageQueueWaitingTime;
+        _metrics->averageQueueWaitingTime.addTotalValueWithCount(m.getTotal(), m.getCount());
     }
 }
 
@@ -944,8 +942,7 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
 FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx, PriorityIdx::iterator iter) {
 
-    api::StorageMessage & m(*iter->_command);
-    std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()])));
+    std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(_metrics->averageQueueWaitingTime)));
 
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
     document::Bucket bucket(iter->_bucket);

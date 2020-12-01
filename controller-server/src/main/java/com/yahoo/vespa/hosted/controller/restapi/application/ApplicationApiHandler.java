@@ -699,8 +699,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
-            cluster.target().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
+            if (cluster.target().isPresent() && ! cluster.target().get().equals(cluster.current()))
+                toSlime(cluster.target().get(), clusterObject.setObject("target"));
             cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
+            scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
+            clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -1079,7 +1082,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
-    private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+    private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment,
+                                    String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         Instance instance = controller.applications().getInstance(id)
                                       .orElseThrow(() -> new NotExistsException(id + " not found"));
@@ -1135,6 +1139,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(endpoint, endpointArray.addObject());
         }
 
+        response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
         response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
@@ -1593,7 +1598,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     void setStatus(Cursor statusObject, ApplicationReindexing.Status status) {
-        statusObject.setLong("readyAtMillis", status.readyAt().toEpochMilli());
+        status.readyAt().ifPresent(readyAt -> statusObject.setLong("readyAtMillis", readyAt.toEpochMilli()));
+        status.startedAt().ifPresent(startedAt -> statusObject.setLong("startedAtMillis", startedAt.toEpochMilli()));
+        status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedAtMillis", endedAt.toEpochMilli()));
+        status.state().map(ApplicationApiHandler::toString).ifPresent(state -> statusObject.setString("state", state));
+        status.message().ifPresent(message -> statusObject.setString("message", message));
+        status.progress().ifPresent(progress -> statusObject.setString("progress", progress));
+    }
+
+    private static String toString(ApplicationReindexing.State state) {
+        switch (state) {
+            case PENDING: return "pending";
+            case RUNNING: return "running";
+            case FAILED: return "failed";
+            case SUCCESSFUL: return "successful";
+            default: return null;
+        }
     }
 
     /** Enables reindexing of an application in a zone. */
@@ -1914,6 +1934,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             object.setDouble("cost", Math.round(resources.nodes() * resources.nodeResources().cost() * 100.0 / 3.0) / 100.0);
     }
 
+    private void scalingEventsToSlime(List<Cluster.ScalingEvent> scalingEvents, Cursor scalingEventsArray) {
+        for (Cluster.ScalingEvent scalingEvent : scalingEvents) {
+            Cursor scalingEventObject = scalingEventsArray.addObject();
+            toSlime(scalingEvent.from(), scalingEventObject.setObject("from"));
+            toSlime(scalingEvent.to(), scalingEventObject.setObject("to"));
+            scalingEventObject.setLong("at", scalingEvent.at().toEpochMilli());
+        }
+    }
+
     private void toSlime(NodeResources resources, Cursor object) {
         object.setDouble("vcpu", resources.vcpu());
         object.setDouble("memoryGb", resources.memoryGb());
@@ -1953,6 +1982,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
     private URI withPath(String newPath, URI uri) {
         return withPathAndQuery(newPath, null, uri);
+    }
+
+    private String toPath(DeploymentId id) {
+        return path("/application", "v4",
+                    "tenant", id.applicationId().tenant(),
+                    "application", id.applicationId().application(),
+                    "instance", id.applicationId().instance(),
+                    "environment", id.zoneId().environment(),
+                    "region", id.zoneId().region());
     }
 
     private long asLong(String valueOrNull, long defaultWhenNull) {
@@ -2054,7 +2092,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (RefeedAction refeedAction : result.prepareResponse().configChangeActions.refeedActions) {
             Cursor refeedActionObject = refeedActionsArray.addObject();
             refeedActionObject.setString("name", refeedAction.name);
-            refeedActionObject.setBool("allowed", refeedAction.allowed);
             refeedActionObject.setString("documentType", refeedAction.documentType);
             refeedActionObject.setString("clusterName", refeedAction.clusterName);
             serviceInfosToSlime(refeedAction.services, refeedActionObject.setArray("services"));

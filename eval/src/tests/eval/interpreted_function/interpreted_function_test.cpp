@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/eval_spec.h>
 #include <vespa/eval/eval/basic_nodes.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -15,7 +15,6 @@
 
 using namespace vespalib::eval;
 using vespalib::Stash;
-using vespalib::tensor::DefaultTensorEngine;
 
 //-----------------------------------------------------------------------------
 
@@ -53,9 +52,8 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         if (is_supported && !has_issues) {
             vespalib::string desc = as_string(param_names, param_values, expression);
             SimpleParams params(param_values);
-            verify_result(SimpleTensorEngine::ref(), *function, false,    "[untyped simple] "+desc, params, expected_result);
-            verify_result(DefaultTensorEngine::ref(), *function, false,   "[untyped prod]   "+desc, params, expected_result);
-            verify_result(DefaultTensorEngine::ref(), *function, true,    "[typed prod]     "+desc, params, expected_result);
+            verify_result(SimpleValueBuilderFactory::get(), *function, "[simple] "+desc, params, expected_result);
+            verify_result(FastValueBuilderFactory::get(),   *function, "[prod]   "+desc, params, expected_result);
         }
     }
 
@@ -74,14 +72,11 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
 
     void verify_result(EngineOrFactory engine,
                        const Function &function,
-                       bool typed,
                        const vespalib::string &description,
                        const SimpleParams &params,
                        double expected_result)
     {
-        NodeTypes node_types = typed
-                               ? NodeTypes(function, std::vector<ValueType>(params.params.size(), ValueType::double_type()))
-                               : NodeTypes();
+        auto node_types = NodeTypes(function, std::vector<ValueType>(params.params.size(), ValueType::double_type()));
         InterpretedFunction ifun(engine, function, node_types);
         InterpretedFunction::Context ictx(ifun);
         const Value &result_value = ifun.eval(ictx, params);
@@ -89,7 +84,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
     }
 };
 
-TEST_FF("require that compiled evaluation passes all conformance tests", MyEvalTest(), test::EvalSpec()) {
+TEST_FF("require that interpreted evaluation passes all conformance tests", MyEvalTest(), test::EvalSpec()) {
     f1.print_fail = true;
     f2.add_all_cases();
     f2.each_case(f1);
@@ -109,7 +104,8 @@ TEST("require that invalid function is tagged with error") {
 
 size_t count_ifs(const vespalib::string &expr, std::initializer_list<double> params_in) {
     auto fun = Function::parse(expr);
-    InterpretedFunction ifun(SimpleTensorEngine::ref(), *fun, NodeTypes());
+    auto node_types = NodeTypes(*fun, std::vector<ValueType>(params_in.size(), ValueType::double_type()));
+    InterpretedFunction ifun(SimpleValueBuilderFactory::get(), *fun, node_types);
     InterpretedFunction::Context ctx(ifun);
     SimpleParams params(params_in);
     ifun.eval(ctx, params);
@@ -137,7 +133,8 @@ TEST("require that function pointers can be passed as instruction parameters") {
 
 TEST("require that basic addition works") {
     auto function = Function::parse("a+10");
-    InterpretedFunction interpreted(SimpleTensorEngine::ref(), *function, NodeTypes());
+    auto node_types = NodeTypes(*function, {ValueType::double_type()});
+    InterpretedFunction interpreted(SimpleValueBuilderFactory::get(), *function, node_types);
     InterpretedFunction::Context ctx(interpreted);
     SimpleParams params_20({20});
     SimpleParams params_40({40});

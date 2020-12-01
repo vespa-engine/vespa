@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -40,11 +41,13 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
+import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
@@ -59,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -871,6 +875,61 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
     }
 
+    @Test
+    public void cluster_with_zookeeper() {
+        Function<Integer, String> servicesXml = (nodeCount) -> "<container version='1.0' id='default'>" +
+                                                               "<nodes count='" + nodeCount + "'/>" +
+                                                               "<zookeeper/>" +
+                                                               "</container>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(3);
+        {
+            VespaModel model = tester.createModel(servicesXml.apply(3), true);
+            ApplicationContainerCluster cluster = model.getContainerClusters().get("default");
+            assertNotNull(cluster);
+            assertComponentConfigured(cluster,"com.yahoo.vespa.curator.Curator");
+            cluster.getContainers().forEach(container -> {
+                assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
+                assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.Reconfigurer");
+
+                ZookeeperServerConfig config = model.getConfig(ZookeeperServerConfig.class, container.getConfigId());
+                assertEquals(container.index(), config.myid());
+                assertEquals(3, config.server().size());
+            });
+        }
+        {
+            try {
+                tester.createModel(servicesXml.apply(1), true);
+                fail("Expected exception");
+            } catch (IllegalArgumentException ignored) {}
+        }
+        {
+            String xmlWithNodes =
+                    "<?xml version='1.0' encoding='utf-8' ?>" +
+                    "<services>" +
+                    "  <container version='1.0' id='container1'>" +
+                    "     <zookeeper/>" +
+                    "     <nodes of='content1'/>" +
+                    "  </container>" +
+                    "  <content version='1.0' id='content1'>" +
+                    "     <nodes count='3'/>" +
+                    "   </content>" +
+                    "</services>";
+            try {
+                tester.createModel(xmlWithNodes, true);
+                fail("Expected exception");
+            } catch (IllegalArgumentException ignored) {}
+        }
+    }
+
+    private void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
+        Component<?, ?> component = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
+        assertNotNull(component);
+    }
+
+    private void assertComponentConfigured(ApplicationContainer container, String id) {
+        assertTrue(container.getComponents().getComponents().stream().anyMatch(component -> id.equals(component.getComponentId().getName())));
+    }
 
     private Element generateContainerElementWithRenderer(String rendererId) {
         return DomBuilderTest.parse(
@@ -880,4 +939,5 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  </search>",
                 "</container>");
     }
+
 }

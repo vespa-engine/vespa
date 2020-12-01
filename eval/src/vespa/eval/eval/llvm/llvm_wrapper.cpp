@@ -253,7 +253,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::Value *eval_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)eval_ptr), eval_funptr_t, "inject_eval");
         llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getVoidTy()->getPointerTo(), "inject_ctx");
         if (pass_params == PassParams::ARRAY) {
-	    push(builder.CreateCall(llvm::cast<llvm::FunctionType>(eval_fun->getType()->getPointerElementType()),
+            push(builder.CreateCall(llvm::cast<llvm::FunctionType>(eval_fun->getType()->getPointerElementType()),
                                     eval_fun, {ctx, params[0]}, "call_eval"));
         } else {
             assert(pass_params == PassParams::LAZY);

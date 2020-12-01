@@ -6,7 +6,6 @@
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/storageframework/generic/component/component.h>
-#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <boost/multi_index_container.hpp>

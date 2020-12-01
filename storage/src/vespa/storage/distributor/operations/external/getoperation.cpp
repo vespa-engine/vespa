@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "getoperation.h"
-#include <vespa/storage/distributor/distributorcomponent.h>
+#include <vespa/storage/distributor/distributor_node_context.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.get");
@@ -44,21 +45,21 @@ GetOperation::GroupId::operator==(const GroupId& other) const
             && _node == other._node);
 }
 
-GetOperation::GetOperation(DistributorComponent& manager,
+GetOperation::GetOperation(DistributorNodeContext& node_ctx,
                            const DistributorBucketSpace &bucketSpace,
                            std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                            std::shared_ptr<api::GetCommand> msg,
                            PersistenceOperationMetricSet& metric,
                            api::InternalReadConsistency desired_read_consistency)
     : Operation(),
-      _manager(manager),
+      _node_ctx(node_ctx),
       _bucketSpace(bucketSpace),
       _msg(std::move(msg)),
       _returnCode(api::ReturnCode::OK),
       _doc(),
       _newest_replica(),
       _metric(metric),
-      _operationTimer(manager.getClock()),
+      _operationTimer(node_ctx.clock()),
       _desired_read_consistency(desired_read_consistency),
       _has_replica_inconsistency(false),
       _any_replicas_failed(false)
@@ -76,7 +77,7 @@ GetOperation::onClose(DistributorMessageSender& sender)
 bool
 GetOperation::copyIsOnLocalNode(const BucketCopy& copy) const
 {
-    return (copy.getNode() == _manager.getIndex());
+    return (copy.getNode() == _node_ctx.node_index());
 }
 
 int
@@ -144,9 +145,7 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
 
     LOG(debug, "Received %s", msg->toString(true).c_str());
 
-    if ( ! getreply->getTrace().getRoot().isEmpty()) {
-        _msg->getTrace().getRoot().addChild(getreply->getTrace().getRoot());
-    }
+    _msg->getTrace().addChild(getreply->steal_trace());
     bool allDone = true;
     for (auto& response : _responses) {
         for (uint32_t i = 0; i < response.second.size(); i++) {

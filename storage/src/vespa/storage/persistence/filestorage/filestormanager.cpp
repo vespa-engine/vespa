@@ -55,7 +55,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _threadLockCheckInterval(60),
       _failDiskOnError(false),
       _use_async_message_handling_on_schedule(false),
-      _metrics(std::make_unique<FileStorMetrics>(_component.getLoadTypes()->getMetricLoadTypes())),
+      _metrics(std::make_unique<FileStorMetrics>()),
       _closed(false),
       _lock()
 {
@@ -91,9 +91,8 @@ FileStorManager::~FileStorManager()
 }
 
 void
-FileStorManager::print(std::ostream& out, bool verbose, const std::string& indent) const
+FileStorManager::print(std::ostream& out, bool , const std::string& ) const
 {
-    (void) verbose; (void) indent;
     out << "FileStorManager";
 }
 
@@ -123,6 +122,14 @@ selectSequencer(vespa::config::content::StorFilestorConfig::ResponseSequencerTyp
 #endif
 
 thread_local PersistenceHandler * _G_threadLocalHandler TLS_LINKAGE = nullptr;
+
+size_t
+computeAllPossibleHandlerThreads(const vespa::config::content::StorFilestorConfig & cfg) {
+    return cfg.numThreads +
+           computeNumResponseThreads(cfg.numResponseThreads) +
+           cfg.numNetworkThreads +
+           cfg.numVisitorThreads;
+}
 
 }
 
@@ -164,8 +171,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         _config = std::move(config);
         size_t numThreads = _config->numThreads;
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
-        _metrics->initDiskMetrics(_component.getLoadTypes()->getMetricLoadTypes(), numStripes,
-                                  numThreads + _config->numResponseThreads + _config->numNetworkThreads);
+        _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
 
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics, _compReg);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
@@ -673,10 +679,10 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
     case DestroyIteratorCommand::ID:
     {
-        spi::Context context(msg->getLoadType(), msg->getPriority(), msg->getTrace().getLevel());
+        spi::Context context(msg->getPriority(), msg->getTrace().getLevel());
         shared_ptr<DestroyIteratorCommand> cmd(std::static_pointer_cast<DestroyIteratorCommand>(msg));
         _provider->destroyIterator(cmd->getIteratorId(), context);
-        msg->getTrace().getRoot().addChild(context.getTrace().getRoot());
+        msg->getTrace().addChild(context.steal_trace());
         return true;
     }
     case ReadBucketList::ID:

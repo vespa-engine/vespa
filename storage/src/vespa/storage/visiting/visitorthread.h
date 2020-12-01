@@ -60,8 +60,7 @@ class VisitorThread : public framework::Runnable,
         Event(const Event& other) = delete;
         Event& operator= (const Event& other) = delete;
         Event(api::VisitorId visitor, mbus::Reply::UP reply);
-        Event(api::VisitorId visitor,
-                     const std::shared_ptr<api::StorageMessage>& msg);
+        Event(api::VisitorId visitor, const std::shared_ptr<api::StorageMessage>& msg);
         ~Event();
 
         bool empty() const noexcept {

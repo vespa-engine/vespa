@@ -12,7 +12,6 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.log.LogLevel;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -156,7 +155,7 @@ public class EndpointCertificateManager {
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, storedMetaData) -> {
             var lastRequested = Instant.ofEpochSecond(storedMetaData.lastRequested());
             if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(applicationId)) {
-                log.log(LogLevel.INFO, "Cert for app " + applicationId.serializedForm()
+                log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
                         + " has not been requested in a month and app has no deployments"
                         + (mode == CleanupMode.ENABLE ? ", deleting from provider and ZK" : ""));
                 if (mode == CleanupMode.ENABLE) {

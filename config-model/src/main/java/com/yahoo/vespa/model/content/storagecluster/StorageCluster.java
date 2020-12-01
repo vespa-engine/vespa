@@ -121,6 +121,7 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
     @Override
     public void getConfig(StorFilestorConfig.Builder builder) {
         fileStorProducer.getConfig(builder);
+        storVisitorProducer.getConfig(builder);
     }
 
 }

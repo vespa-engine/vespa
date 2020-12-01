@@ -127,8 +127,7 @@ protected:
         // come in and wipe our accumulated failure metrics.
         // Only 1 visitor thread running, so we know it has the metrics.
         const auto& metrics = _manager->getThread(0).getMetrics();
-        auto loadType = documentapi::LoadType::DEFAULT;
-        return metrics.visitorDestinationFailureReplies[loadType].getCount();
+        return metrics.visitorDestinationFailureReplies.getCount();
     }
 };
 
@@ -440,7 +439,8 @@ VisitorTest::fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_
 std::shared_ptr<api::CreateVisitorCommand>
 VisitorTest::makeCreateVisitor(const VisitorOptions& options)
 {
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
+    static vespalib::string _storage("storage");
+    api::StorageMessageAddress address(&_storage, lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(
             makeBucketSpace(), options.visitorType, "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
@@ -799,15 +799,16 @@ TEST_F(VisitorTest, no_mbus_tracing_if_trace_level_is_zero) {
     cmd->getTrace().setLevel(0);
     std::shared_ptr<api::CreateVisitorReply> reply;
     ASSERT_NO_FATAL_FAILURE(doCompleteVisitingSession(cmd, reply));
-    EXPECT_TRUE(reply->getTrace().getRoot().isEmpty());
+    EXPECT_TRUE(reply->getTrace().isEmpty());
 }
 
 TEST_F(VisitorTest, reply_contains_trace_if_trace_level_above_zero) {
     std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor());
     cmd->getTrace().setLevel(1);
+    cmd->getTrace().trace(1,"at least one trace.");
     std::shared_ptr<api::CreateVisitorReply> reply;
     ASSERT_NO_FATAL_FAILURE(doCompleteVisitingSession(cmd, reply));
-    EXPECT_FALSE(reply->getTrace().getRoot().isEmpty());
+    EXPECT_FALSE(reply->getTrace().isEmpty());
 }
 
 TEST_F(VisitorTest, no_more_iterators_sent_while_memory_used_above_limit) {

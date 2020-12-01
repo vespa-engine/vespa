@@ -110,9 +110,8 @@ public class AutoscalingMaintainerTest {
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
         // Add measurement of the expected generation, leading to rescaling
-        tester.clock().advance(Duration.ofSeconds(1));
+        tester.clock().advance(Duration.ofHours(2));
         tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 500, app1);
-        //tester.clock().advance(Duration.ofSeconds(1));
         Instant lastMaintenanceTime = tester.clock().instant();
         tester.maintainer().maintain();
         assertEquals(lastMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
@@ -122,10 +121,10 @@ public class AutoscalingMaintainerTest {
 
     @Test
     public void test_toString() {
-        assertEquals("4 * [vcpu: 1.0, memory: 2.0 Gb, disk 4.0 Gb] (total: [vcpu: 4.0, memory: 8.0 Gb, disk: 16.0 Gb])",
+        assertEquals("4 nodes with [vcpu: 1.0, memory: 2.0 Gb, disk 4.0 Gb, bandwidth: 1.0 Gbps] (total: [vcpu: 4.0, memory: 8.0 Gb, disk 16.0 Gb, bandwidth: 4.0 Gbps])",
                 AutoscalingMaintainer.toString(new ClusterResources(4, 1, new NodeResources(1, 2, 4, 1))));
 
-        assertEquals("4 (in 2 groups) * [vcpu: 1.0, memory: 2.0 Gb, disk 4.0 Gb] (total: [vcpu: 4.0, memory: 8.0 Gb, disk: 16.0 Gb])",
+        assertEquals("4 nodes (in 2 groups) with [vcpu: 1.0, memory: 2.0 Gb, disk 4.0 Gb, bandwidth: 1.0 Gbps] (total: [vcpu: 4.0, memory: 8.0 Gb, disk 16.0 Gb, bandwidth: 4.0 Gbps])",
                 AutoscalingMaintainer.toString(new ClusterResources(4, 2, new NodeResources(1, 2, 4, 1))));
     }
 

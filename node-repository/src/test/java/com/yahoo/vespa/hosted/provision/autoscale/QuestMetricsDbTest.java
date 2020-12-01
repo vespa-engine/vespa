@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
 import com.yahoo.test.ManualClock;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Tests the Quest metrics db.
@@ -34,6 +36,7 @@ public class QuestMetricsDbTest {
         ManualClock clock = new ManualClock("2020-10-01T00:00:00");
         QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
         Instant startTime = clock.instant();
+
         clock.advance(Duration.ofSeconds(1));
         db.add(timeseries(1000, Duration.ofSeconds(1), clock, "host1", "host2", "host3"));
 
@@ -111,6 +114,46 @@ public class QuestMetricsDbTest {
         assertEquals(24 * 1 + dayOffset, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
     }
 
+    /** To manually test that we can read existing data */
+    @Ignore
+    @Test
+    public void testReadingExistingData() {
+        String dataDir = "data/QuestMetricsDbExistingData";
+        if ( ! new File(dataDir).exists()) {
+            System.out.println("No existing data to check");
+            return;
+        }
+        IOUtils.createDirectory(dataDir + "/metrics");
+        ManualClock clock = new ManualClock("2020-10-01T00:00:00");
+        clock.advance(Duration.ofSeconds(10)); // Adjust to end time of data written
+        QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
+
+        List<NodeTimeseries> timeseries = db.getNodeTimeseries(clock.instant().minus(Duration.ofSeconds(10)), Set.of("host1"));
+        assertFalse("Could read existing data", timeseries.isEmpty());
+        assertEquals(10, timeseries.get(0).size());
+
+        System.out.println("Existing data:");
+        for (var snapshot : timeseries.get(0).asList())
+            System.out.println("  " + snapshot);
+    }
+
+    /** To update data for the manual test above */
+    @Ignore
+    @Test
+    public void updateExistingData() {
+        String dataDir = "data/QuestMetricsDbExistingData";
+        IOUtils.recursiveDeleteDir(new File(dataDir));
+        IOUtils.createDirectory(dataDir + "/metrics");
+        ManualClock clock = new ManualClock("2020-10-01T00:00:00");
+        QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
+        Instant startTime = clock.instant();
+        db.add(timeseries(10, Duration.ofSeconds(1), clock, "host1"));
+
+        int added = db.getNodeTimeseries(startTime, Set.of("host1")).get(0).asList().size();
+        System.out.println("Added " + added + " rows of data");
+        db.close();
+    }
+
     private Collection<Pair<String, MetricSnapshot>> timeseries(int countPerHost, Duration sampleRate, ManualClock clock,
                                                                 String ... hosts) {
         Collection<Pair<String, MetricSnapshot>> timeseries = new ArrayList<>();
@@ -121,6 +164,7 @@ public class QuestMetricsDbTest {
                                                                    i * 0.2,
                                                                    i * 0.4,
                                                                    i % 100,
+                                                                   true,
                                                                    true)));
             clock.advance(sampleRate);
         }
@@ -136,8 +180,10 @@ public class QuestMetricsDbTest {
                                                                    i * 0.2,
                                                                    i * 0.4,
                                                                    i % 100,
-                                                                   true)));
+                                                                   true,
+                                                                   false)));
         }
         return timeseries;
     }
+
 }

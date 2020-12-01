@@ -2,7 +2,6 @@
 #pragma once
 
 #include "newest_replica.h"
-#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/document/update/documentupdate.h>
@@ -18,6 +17,7 @@ namespace storage {
 namespace api {
 class UpdateCommand;
 class CreateBucketReply;
+class ReturnCode;
 }
 
 class UpdateMetricSet;
@@ -55,7 +55,9 @@ class GetOperation;
 class TwoPhaseUpdateOperation : public SequencedOperation
 {
 public:
-    TwoPhaseUpdateOperation(DistributorComponent& manager,
+    TwoPhaseUpdateOperation(DistributorNodeContext& node_ctx,
+                            DistributorOperationContext& op_ctx,
+                            DocumentSelectionParser& parser,
                             DistributorBucketSpace &bucketSpace,
                             std::shared_ptr<api::UpdateCommand> msg,
                             DistributorMetricSet& metrics,
@@ -125,7 +127,7 @@ private:
             DistributorMessageSender& sender,
             const document::Document& candidateDoc);
     bool satisfiesUpdateTimestampConstraint(api::Timestamp) const;
-    void addTraceFromReply(const api::StorageReply& reply);
+    void addTraceFromReply(api::StorageReply& reply);
     bool hasTasCondition() const noexcept;
     void replyWithTasFailure(DistributorMessageSender& sender,
                              vespalib::stringref message);
@@ -141,12 +143,14 @@ private:
     PersistenceOperationMetricSet& _metadata_get_metrics;
     std::shared_ptr<api::UpdateCommand> _updateCmd;
     std::shared_ptr<api::StorageReply> _updateReply;
-    DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
+    DistributorOperationContext& _op_ctx;
+    DocumentSelectionParser& _parser;
     DistributorBucketSpace &_bucketSpace;
     SentMessageMap _sentMessageMap;
     SendState _sendState;
     Mode _mode;
-    mbus::TraceNode _trace;
+    mbus::Trace _trace;
     document::BucketId _updateDocBucketId;
     std::vector<std::pair<document::BucketId, uint16_t>> _replicas_at_get_send_time;
     std::optional<framework::MilliSecTimer> _single_get_latency_timer;

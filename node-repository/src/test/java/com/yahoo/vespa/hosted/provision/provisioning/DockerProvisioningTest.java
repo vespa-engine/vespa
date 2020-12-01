@@ -75,7 +75,6 @@ public class DockerProvisioningTest {
     public void refuses_to_activate_on_non_active_host() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId zoneApplication = ProvisioningTester.applicationId();
         List<Node> parents = tester.makeReadyNodes(10, new NodeResources(2, 4, 20, 2), NodeType.host, 1);
         for (Node parent : parents)
             tester.makeReadyVirtualDockerNodes(1, dockerResources, parent.hostname());
@@ -90,11 +89,8 @@ public class DockerProvisioningTest {
             fail("Expected the allocation to fail due to parent hosts not being active yet");
         } catch (OutOfCapacityException expected) { }
 
-        // Activate the zone-app, thereby allocating the parents
-        List<HostSpec> hosts = tester.prepare(zoneApplication,
-                ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("zone-app")).vespaVersion(wantedVespaVersion).build(),
-                Capacity.fromRequiredNodeType(NodeType.host));
-        tester.activate(zoneApplication, hosts);
+        // Activate the hosts, thereby allocating the parents
+        tester.activateTenantHosts();
 
         // Try allocating tenants again
         List<HostSpec> nodes = tester.prepare(application1,
@@ -410,10 +406,6 @@ public class DockerProvisioningTest {
 
     private Set<String> hostsOf(NodeList nodes) {
         return nodes.asList().stream().map(Node::parentHostname).map(Optional::get).collect(Collectors.toSet());
-    }
-
-    private void prepareAndActivate(ApplicationId application, int nodeCount, boolean exclusive, ProvisioningTester tester) {
-        prepareAndActivate(application, nodeCount, exclusive, dockerResources, tester);
     }
 
     private void prepareAndActivate(ApplicationId application, int nodeCount, boolean exclusive, NodeResources resources, ProvisioningTester tester) {

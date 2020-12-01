@@ -76,7 +76,7 @@ public:
 MessageTracker::UP
 ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTracker::UP tracker) const
 {
-    tracker->setMetric(_env._metrics.removeLocation[cmd.getLoadType()]);
+    tracker->setMetric(_env._metrics.removeLocation);
 
     LOG(debug, "RemoveLocation(%s): using selection '%s'",
         cmd.getBucketId().toString().c_str(),
@@ -95,7 +95,7 @@ ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, Message
 MessageTracker::UP
 ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd, MessageTracker::UP tracker) const
 {
-    tracker->setMetric(_env._metrics.statBucket[cmd.getLoadType()]);
+    tracker->setMetric(_env._metrics.statBucket);
     std::ostringstream ost;
     ost << "Persistence bucket " << cmd.getBucketId() << "\n";
 

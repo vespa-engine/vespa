@@ -16,7 +16,6 @@ namespace vespalib::eval {
 class ValueType
 {
 public:
-    using CellType = vespalib::eval::CellType;
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;

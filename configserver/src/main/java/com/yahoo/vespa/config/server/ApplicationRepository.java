@@ -326,12 +326,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
 
-        if (deployment.configChangeActions().getRefeedActions().getEntries().stream().anyMatch(entry -> ! entry.allowed()))
-            logger.log(Level.WARNING, "Activation rejected because of disallowed re-feed actions");
-        else if (deployment.configChangeActions().getReindexActions().getEntries().stream().anyMatch(entry -> ! entry.allowed()))
-            logger.log(Level.WARNING, "Activation rejected because of disallowed re-index actions");
-        else
-            deployment.activate();
+        deployment.activate();
 
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
@@ -1014,21 +1009,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         RestartActions restartActions = actions.getRestartActions();
         if ( ! restartActions.isEmpty()) {
             logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
-                    restartActions.format());
+                                      restartActions.format());
         }
         RefeedActions refeedActions = actions.getRefeedActions();
         if ( ! refeedActions.isEmpty()) {
-            boolean allAllowed = refeedActions.getEntries().stream().allMatch(RefeedActions.Entry::allowed);
-            logger.log(allAllowed ? Level.INFO : Level.WARNING,
+            logger.log(Level.WARNING,
                        "Change(s) between active and new application that may require re-feed:\n" +
-                               refeedActions.format());
+                       refeedActions.format());
         }
         ReindexActions reindexActions = actions.getReindexActions();
         if ( ! reindexActions.isEmpty()) {
-            boolean allAllowed = reindexActions.getEntries().stream().allMatch(ReindexActions.Entry::allowed);
-            logger.log(allAllowed ? Level.INFO : Level.WARNING,
-                    "Change(s) between active and new application that may require re-index:\n" +
-                            reindexActions.format());
+            logger.log(Level.WARNING,
+                       "Change(s) between active and new application that may require re-index:\n" +
+                       reindexActions.format());
         }
     }
 

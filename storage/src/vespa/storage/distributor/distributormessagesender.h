@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace storage::lib { class NodeType; }
 namespace storage::distributor {
@@ -18,7 +19,7 @@ public:
                                 const std::shared_ptr<api::StorageCommand>& cmd, bool useDocumentAPI = false);
 
     virtual int getDistributorIndex() const = 0;
-    virtual const std::string& getClusterName() const = 0;
+    virtual const vespalib::string& getClusterName() const = 0;
     virtual const PendingMessageTracker& getPendingMessageTracker() const = 0;
 };
 

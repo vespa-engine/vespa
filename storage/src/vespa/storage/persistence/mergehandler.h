@@ -16,15 +16,18 @@
 #include "types.h"
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/docentry.h>
-#include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/common/messagesender.h>
 
 namespace storage {
 
-namespace spi { struct PersistenceProvider; }
+namespace spi {
+    struct PersistenceProvider;
+    class Context;
+}
 class PersistenceUtil;
 class ApplyBucketDiffEntryResult;
+class MergeStatus;
 
 class MergeHandler : public Types {
 
@@ -42,19 +45,16 @@ public:
 
     bool buildBucketInfoList(
             const spi::Bucket& bucket,
-            const documentapi::LoadType&,
             Timestamp maxTimestamp,
             uint8_t myNodeIndex,
             std::vector<api::GetBucketDiffCommand::Entry>& output,
             spi::Context& context) const;
     void fetchLocalData(const spi::Bucket& bucket,
-                        const documentapi::LoadType&,
                         std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                         uint8_t nodeIndex,
                         spi::Context& context) const;
     api::BucketInfo applyDiffLocally(
                           const spi::Bucket& bucket,
-                          const documentapi::LoadType&,
                           std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                           uint8_t nodeIndex,
                           spi::Context& context) const;

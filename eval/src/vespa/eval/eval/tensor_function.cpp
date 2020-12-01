@@ -125,7 +125,7 @@ void op_tensor_create(State &state, uint64_t param) {
     const Create &self = unwrap_param<Create>(param);
     TensorSpec spec(self.result_type().to_spec());
     size_t i = 0;
-    for (auto pos = self.spec().rbegin(); pos != self.spec().rend(); ++pos) {
+    for (auto pos = self.map().rbegin(); pos != self.map().rend(); ++pos) {
         spec.add(pos->first, state.peek(i++).as_double());
     }
     const Value &result = *state.stash.create<Value::UP>(state.engine.from_spec(spec));
@@ -180,7 +180,7 @@ void op_tensor_peek(State &state, uint64_t param) {
     const Peek &self = unwrap_param<Peek>(param);
     TensorSpec::Address addr;
     size_t child_cnt = 0;
-    for (auto pos = self.spec().rbegin(); pos != self.spec().rend(); ++pos) {
+    for (auto pos = self.map().rbegin(); pos != self.map().rend(); ++pos) {
         std::visit(vespalib::overload
                    {
                        [&](const TensorSpec::Label &label) {
@@ -388,21 +388,27 @@ Concat::visit_self(vespalib::ObjectVisitor &visitor) const
 void
 Create::push_children(std::vector<Child::CREF> &children) const
 {
-    for (const auto &cell: _spec) {
+    for (const auto &cell: _map) {
         children.emplace_back(cell.second);
     }
+}
+
+Create::Spec
+Create::make_spec() const
+{
+    Spec generic_spec;
+    size_t child_idx = 0;
+    for (const auto & kv : map()) {
+        generic_spec[kv.first] = child_idx++;
+    }
+    return generic_spec;
 }
 
 Instruction
 Create::compile_self(EngineOrFactory engine, Stash &stash) const
 {
     if (engine.is_factory()) {
-        std::map<TensorSpec::Address, size_t> generic_spec;
-        size_t child_idx = 0;
-        for (const auto & kv : spec()) {
-            generic_spec[kv.first] = child_idx++;
-        }
-        return instruction::GenericCreate::make_instruction(result_type(), generic_spec, engine.factory(), stash);
+        return instruction::GenericCreate::make_instruction(result_type(), make_spec(), engine.factory(), stash);
     }
     return Instruction(op_tensor_create, wrap_param<Create>(*this));
 }
@@ -410,7 +416,7 @@ Create::compile_self(EngineOrFactory engine, Stash &stash) const
 void
 Create::visit_children(vespalib::ObjectVisitor &visitor) const
 {
-    for (const auto &cell: _spec) {
+    for (const auto &cell: _map) {
         ::visit(visitor, ::vespalib::eval::as_string(cell.first), cell.second.get());
     }
 }
@@ -487,7 +493,7 @@ void
 Peek::push_children(std::vector<Child::CREF> &children) const
 {
     children.emplace_back(_param);
-    for (const auto &dim: _spec) {
+    for (const auto &dim: _map) {
         std::visit(vespalib::overload
                    {
                        [&](const Child &child) {
@@ -498,23 +504,31 @@ Peek::push_children(std::vector<Child::CREF> &children) const
     }
 }
 
+Peek::Spec
+Peek::make_spec() const
+{
+    Spec generic_spec;
+    // the value peeked is child 0, so
+    // children (for label computation) in spec start at 1:
+    size_t child_idx = 1;
+    for (const auto & [dim_name, label_or_child] : map()) {
+        std::visit(vespalib::overload {
+                [&,&dim_name = dim_name](const TensorSpec::Label &label) {
+                    generic_spec.emplace(dim_name, label);
+                },
+                [&,&dim_name = dim_name](const TensorFunction::Child &) {
+                    generic_spec.emplace(dim_name, child_idx++);
+                }
+            }, label_or_child);
+    }
+    return generic_spec;
+}
+
 Instruction
 Peek::compile_self(EngineOrFactory engine, Stash &stash) const
 {
     if (engine.is_factory()) {
-        instruction::GenericPeek::SpecMap generic_spec;
-        size_t child_idx = 0;
-        for (const auto & [dim_name, label_or_child] : spec()) {
-            std::visit(vespalib::overload {
-                    [&,&dim_name = dim_name](const TensorSpec::Label &label) {
-                        generic_spec.emplace(dim_name, label);
-                    },
-                    [&,&dim_name = dim_name](const TensorFunction::Child &) {
-                        generic_spec.emplace(dim_name, child_idx++);
-                    }
-                }, label_or_child);
-        }
-        return instruction::GenericPeek::make_instruction(param_type(), result_type(), generic_spec, engine.factory(), stash);
+        return instruction::GenericPeek::make_instruction(param_type(), result_type(), make_spec(), engine.factory(), stash);
     }
     return Instruction(op_tensor_peek, wrap_param<Peek>(*this));
 }
@@ -523,7 +537,7 @@ void
 Peek::visit_children(vespalib::ObjectVisitor &visitor) const
 {
     ::visit(visitor, "param", _param.get());
-    for (const auto &dim: _spec) {
+    for (const auto &dim: _map) {
         std::visit(vespalib::overload
                    {
                        [&](const TensorSpec::Label &label) {

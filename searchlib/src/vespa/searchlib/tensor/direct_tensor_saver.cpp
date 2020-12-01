@@ -4,7 +4,6 @@
 #include "direct_tensor_store.h"
 
 #include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/objects/nbostream.h>

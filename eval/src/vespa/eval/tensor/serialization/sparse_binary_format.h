@@ -17,7 +17,7 @@ class Tensor;
 class SparseBinaryFormat
 {
 public:
-    using CellType = eval::ValueType::CellType;
+    using CellType = eval::CellType;
 
     static void serialize(nbostream &stream, const Tensor &tensor);
     static std::unique_ptr<Tensor> deserialize(nbostream &stream, CellType cell_type);

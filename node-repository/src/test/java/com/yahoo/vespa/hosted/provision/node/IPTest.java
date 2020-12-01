@@ -86,8 +86,8 @@ public class IPTest {
         resolver.addReverseRecord("::2", "host1");
 
         Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver);
-        assertEquals("::1", allocation.get().primary());
-        assertFalse(allocation.get().secondary().isPresent());
+        assertEquals(Optional.of("::1"), allocation.get().ipv6Address());
+        assertFalse(allocation.get().ipv4Address().isPresent());
         assertEquals("host3", allocation.get().hostname());
 
         // Allocation fails if DNS record is missing
@@ -105,16 +105,16 @@ public class IPTest {
         var pool = testPool(false);
         var allocation = pool.findAllocation(emptyList, resolver);
         assertFalse("Found allocation", allocation.isEmpty());
-        assertEquals("127.0.0.1", allocation.get().primary());
-        assertTrue("No secondary address", allocation.get().secondary().isEmpty());
+        assertEquals(Optional.of("127.0.0.1"), allocation.get().ipv4Address());
+        assertTrue("No IPv6 address", allocation.get().ipv6Address().isEmpty());
     }
 
     @Test
     public void test_find_allocation_dual_stack() {
         IP.Pool pool = testPool(true);
         Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver);
-        assertEquals("::1", allocation.get().primary());
-        assertEquals("127.0.0.2", allocation.get().secondary().get());
+        assertEquals(Optional.of("::1"), allocation.get().ipv6Address());
+        assertEquals("127.0.0.2", allocation.get().ipv4Address().get());
         assertEquals("host3", allocation.get().hostname());
     }
 

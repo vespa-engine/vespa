@@ -473,7 +473,7 @@ public class RoutingNode implements ReplyHandler {
     }
 
     /**
-     * This method traverses the current hop looking for an isntance of {@link ErrorDirective}. If one is found, this
+     * This method traverses the current hop looking for an instance of {@link ErrorDirective}. If one is found, this
      * method assigns a corresponding error reply to this node.
      *
      * @return True if an error was found.

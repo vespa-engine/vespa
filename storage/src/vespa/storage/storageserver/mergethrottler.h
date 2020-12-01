@@ -16,7 +16,11 @@
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/messagebus/staticthrottlepolicy.h>
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/summetric.h>
+#include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/metrictimer.h>
 #include <vespa/config/config.h>
 #include <chrono>
 
@@ -44,7 +48,7 @@ public:
         metrics::LongCountMetric other;
 
         MergeFailureMetrics(metrics::MetricSet* owner);
-        ~MergeFailureMetrics();
+        ~MergeFailureMetrics() override;
     };
 
     class MergeOperationMetrics : public metrics::MetricSet {

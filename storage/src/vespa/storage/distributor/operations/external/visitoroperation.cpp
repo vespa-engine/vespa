@@ -44,20 +44,22 @@ VisitorOperation::BucketInfo::toString() const
 VisitorOperation::SuperBucketInfo::~SuperBucketInfo() = default;
 
 VisitorOperation::VisitorOperation(
-        DistributorComponent& owner,
+        DistributorNodeContext& node_ctx,
+        DistributorOperationContext& op_ctx,
         DistributorBucketSpace &bucketSpace,
         const api::CreateVisitorCommand::SP& m,
         const Config& config,
         VisitorMetricSet& metrics)
     : Operation(),
-      _owner(owner),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
       _bucketSpace(bucketSpace),
       _msg(m),
       _sentReply(false),
       _config(config),
       _metrics(metrics),
       _trace(TRACE_SOFT_MEMORY_LIMIT),
-      _operationTimer(owner.getClock())
+      _operationTimer(_node_ctx.clock())
 {
     const std::vector<document::BucketId>& buckets = m->getBuckets();
 
@@ -72,7 +74,7 @@ VisitorOperation::VisitorOperation(
     _fromTime = m->getFromTime();
     _toTime = m->getToTime();
     if (_toTime == 0) {
-        _toTime = owner.getUniqueTimestamp();
+        _toTime = _op_ctx.generate_unique_timestamp();
     }
 }
 
@@ -161,7 +163,7 @@ VisitorOperation::markOperationAsFailedDueToNodeError(
             result.getResult(),
             vespalib::make_string("[from content node %u] %s",
                                   fromFailingNodeIndex,
-                                  result.getMessage().c_str()));
+                                  vespalib::string(result.getMessage()).c_str()));
 }
 
 void
@@ -171,7 +173,7 @@ VisitorOperation::onReceive(
 {
     api::CreateVisitorReply& reply = static_cast<api::CreateVisitorReply&>(*r);
 
-    _trace.add(reply.getTrace().getRoot());
+    _trace.add(reply.steal_trace());
 
     SentMessagesMap::iterator iter = _sentMessages.find(reply.getMsgId());
     assert(iter != _sentMessages.end());
@@ -264,7 +266,7 @@ VisitorOperation::verifyDistributorIsNotDown(const lib::ClusterState& state)
 {
     const lib::NodeState& ownState(
             state.getNodeState(
-                lib::Node(lib::NodeType::DISTRIBUTOR, _owner.getIndex())));
+                lib::Node(lib::NodeType::DISTRIBUTOR, _node_ctx.node_index())));
     if (!ownState.getState().oneOf("ui")) {
         throw VisitorVerificationException(
                 api::ReturnCode::ABORTED, "Distributor is shutting down");
@@ -275,7 +277,7 @@ void
 VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
 {
     document::Bucket bucket(_msg->getBucketSpace(), bid);
-    BucketOwnership bo(_owner.checkOwnershipInPendingAndCurrentState(bucket));
+    BucketOwnership bo(_op_ctx.check_ownership_in_pending_and_current_state(bucket));
     if (!bo.isOwned()) {
         verifyDistributorIsNotDown(bo.getNonOwnedState());
         std::string systemStateStr = bo.getNonOwnedState().toString();
@@ -283,7 +285,7 @@ VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
             "Bucket %s is not owned by distributor %d, "
             "sending back system state '%s'",
             bid.toString().c_str(),
-            _owner.getIndex(),
+            _node_ctx.node_index(),
             bo.getNonOwnedState().toString().c_str());
         throw VisitorVerificationException(
                 api::ReturnCode::WRONG_DISTRIBUTION,
@@ -662,9 +664,7 @@ bool
 VisitorOperation::bucketIsValidAndConsistent(const BucketDatabase::Entry& entry) const
 {
     if (!entry.valid()) {
-        LOG(debug,
-            "Bucket %s does not exist anymore",
-            entry.toString().c_str());
+        LOG(debug, "Bucket %s does not exist anymore", entry.toString().c_str());
         return false;
     }
     assert(entry->getNodeCount() != 0);
@@ -696,10 +696,8 @@ VisitorOperation::assignBucketsToNodes(NodeToBucketsMap& nodeToBucketsMap)
 
         BucketInfo& bucketInfo(subIter->second);
         if (shouldSkipBucket(bucketInfo)) {
-            LOG(spam,
-                "Skipping subbucket %s because it is done/active/failed: %s",
-                subBucket.toString().c_str(),
-                bucketInfo.toString().c_str());
+            LOG(spam, "Skipping subbucket %s because it is done/active/failed: %s",
+                subBucket.toString().c_str(), bucketInfo.toString().c_str());
             continue;
         }
 
@@ -721,25 +719,13 @@ VisitorOperation::assignBucketsToNodes(NodeToBucketsMap& nodeToBucketsMap)
 }
 
 int
-VisitorOperation::getNumVisitorsToSendForNode(uint16_t node,
-                                              uint32_t totalBucketsOnNode) const
+VisitorOperation::getNumVisitorsToSendForNode(uint16_t node, uint32_t totalBucketsOnNode) const
 {
-    int visitorCountAvailable(
-            std::max(1, static_cast<int>(_config.maxVisitorsPerNodePerVisitor -
-                                         _activeNodes[node])));
-
-    int visitorCountMinBucketsPerVisitor(
-            std::max(1, static_cast<int>(totalBucketsOnNode / _config.minBucketsPerVisitor)));
-
-    int visitorCount(
-            std::min(visitorCountAvailable, visitorCountMinBucketsPerVisitor));
-    LOG(spam,
-        "Will send %d visitors to node %d (available=%d, "
-        "buckets restricted=%d)",
-        visitorCount,
-        node,
-        visitorCountAvailable,
-        visitorCountMinBucketsPerVisitor);
+    int visitorCountAvailable(std::max(1, static_cast<int>(_config.maxVisitorsPerNodePerVisitor - _activeNodes[node])));
+    int visitorCountMinBucketsPerVisitor(std::max(1, static_cast<int>(totalBucketsOnNode / _config.minBucketsPerVisitor)));
+    int visitorCount(std::min(visitorCountAvailable, visitorCountMinBucketsPerVisitor));
+    LOG(spam, "Will send %d visitors to node %d (available=%d, buckets restricted=%d)",
+        visitorCount, node, visitorCountAvailable, visitorCountMinBucketsPerVisitor);
 
     return visitorCount;
 }
@@ -749,31 +735,24 @@ VisitorOperation::sendStorageVisitors(const NodeToBucketsMap& nodeToBucketsMap,
                                       DistributorMessageSender& sender)
 {
     bool visitorsSent = false;
-    for (NodeToBucketsMap::const_iterator iter = nodeToBucketsMap.begin();
-         iter != nodeToBucketsMap.end();
-         ++iter) {
-        if (iter->second.size() > 0) {
-            int visitorCount(getNumVisitorsToSendForNode(iter->first, iter->second.size()));
+    for (const auto & entry : nodeToBucketsMap ) {
+        if (entry.second.size() > 0) {
+            int visitorCount(getNumVisitorsToSendForNode(entry.first, entry.second.size()));
 
             std::vector<std::vector<document::BucketId> > bucketsVector(visitorCount);
-            for (unsigned int i = 0; i < iter->second.size(); i++) {
-                bucketsVector[i % visitorCount].push_back(iter->second[i]);
+            for (unsigned int i = 0; i < entry.second.size(); i++) {
+                bucketsVector[i % visitorCount].push_back(entry.second[i]);
             }
             for (int i = 0; i < visitorCount; i++) {
-                LOG(spam,
-                    "Send visitor to node %d with %u buckets",
-                    iter->first,
-                    (unsigned int)bucketsVector[i].size());
+                LOG(spam, "Send visitor to node %d with %u buckets",
+                    entry.first, (unsigned int)bucketsVector[i].size());
 
-                sendStorageVisitor(iter->first,
-                                   bucketsVector[i],
-                                   _msg->getMaximumPendingReplyCount(),
-                                   sender);
+                sendStorageVisitor(entry.first, bucketsVector[i], _msg->getMaximumPendingReplyCount(), sender);
 
                 visitorsSent = true;
             }
         } else {
-            LOG(spam, "Do not send visitor to node %d, no buckets", iter->first);
+            LOG(spam, "Do not send visitor to node %d, no buckets", entry.first);
         }
     }
     return visitorsSent;
@@ -791,7 +770,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
                                      uint32_t pending,
                                      DistributorMessageSender& sender)
 {
-    api::CreateVisitorCommand::SP cmd(new api::CreateVisitorCommand(*_msg));
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(*_msg);
     cmd->getBuckets() = buckets;
 
     // TODO: Send this through distributor - do after moving visitor stuff from docapi to storageprotocol
@@ -800,12 +779,11 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
 
     vespalib::asciistream os;
     os << _msg->getInstanceId() << '-'
-       << _owner.getIndex() << '-' << cmd->getMsgId();
+       << _node_ctx.node_index() << '-' << cmd->getMsgId();
 
     vespalib::string storageInstanceId(os.str());
     cmd->setInstanceId(storageInstanceId);
-    cmd->setAddress(api::StorageMessageAddress(_owner.getClusterName(),
-                                               lib::NodeType::STORAGE, node));
+    cmd->setAddress(api::StorageMessageAddress::create(&_node_ctx.cluster_name(), lib::NodeType::STORAGE, node));
     cmd->setMaximumPendingReplyCount(pending);
     cmd->setQueueTimeout(computeVisitorQueueTimeoutMs());
 
@@ -828,8 +806,8 @@ VisitorOperation::sendReply(const api::ReturnCode& code, DistributorMessageSende
 {
     if (!_sentReply) {
         // Send create visitor reply
-        api::CreateVisitorReply::SP reply(new api::CreateVisitorReply(*_msg));
-        _trace.moveTraceTo(reply->getTrace().getRoot());
+        auto reply = std::make_shared<api::CreateVisitorReply>(*_msg);
+        _trace.moveTraceTo(reply->getTrace());
         reply->setLastBucket(getLastBucketVisited());
         reply->setResult(code);
 
@@ -867,8 +845,7 @@ VisitorOperation::updateReplyMetrics(const api::ReturnCode& result)
 void
 VisitorOperation::onClose(DistributorMessageSender& sender)
 {
-    sendReply(api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"),
-              sender);
+    sendReply(api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"), sender);
 }
 
 }

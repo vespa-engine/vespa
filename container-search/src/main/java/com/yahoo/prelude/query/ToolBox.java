@@ -18,8 +18,7 @@ public final class ToolBox {
          * {@link ToolBox#visit(QueryVisitor, Item)}. Return true to visit the
          * sub-items of the given item, return false to ignore the sub-items.
          *
-         * @param item
-         *            each item in the query tree
+         * @param item each item in the query tree
          * @return whether or not to visit the sub-items of the argument item
          *         (and then invoke the {@link #onExit()} method)
          */

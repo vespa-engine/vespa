@@ -15,6 +15,9 @@ numthreads int default=2
 # Optimize for latency, or throughput.
 optimize_for enum {LATENCY, THROUGHPUT} default=LATENCY
 
+# Number of events before triggering wakeup of network thread.
+transport_events_before_wakeup int default=1
+
 # Everying below is deprecated and will go away very soon.
 # Dynamic throttling is used, and works better than anything else.
 maxpendingcount int default=2048

@@ -4,7 +4,7 @@
 
 #include "socket_address.h"
 #include "socket_spec.h"
-#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <chrono>
 #include <memory>
@@ -117,15 +117,15 @@ private:
         void run() override;
     };
 
-    HostResolver::SP         _resolver;
-    ThreadStackExecutor      _executor;
-    static std::mutex        _shared_lock;
-    static AsyncResolver::SP _shared_resolver;
+    HostResolver::SP                        _resolver;
+    std::unique_ptr<SyncableThreadExecutor> _executor;
+    static std::mutex                       _shared_lock;
+    static AsyncResolver::SP                _shared_resolver;
 
     AsyncResolver(HostResolver::SP resolver, size_t num_threads);
 public:
     void resolve_async(const vespalib::string &spec, ResultHandler::WP result_handler);
-    void wait_for_pending_resolves() { _executor.sync(); }
+    void wait_for_pending_resolves();
     static AsyncResolver::SP create(Params params);
     static AsyncResolver::SP get_shared();
 };

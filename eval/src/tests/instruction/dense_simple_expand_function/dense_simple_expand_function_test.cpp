@@ -4,7 +4,6 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
@@ -17,7 +16,6 @@ using namespace vespalib::eval::tensor_function;
 
 using Inner = DenseSimpleExpandFunction::Inner;
 
-const TensorEngine &old_engine = tensor::DefaultTensorEngine::ref();
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
@@ -49,18 +47,6 @@ void verify_optimized(const vespalib::string &expr, Inner inner) {
     ASSERT_EQ(fixture.num_params(), 2);
     EXPECT_TRUE(!(fixture.get_param(0) == fixture.result()));
     EXPECT_TRUE(!(fixture.get_param(1) == fixture.result()));
-
-    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
-    EvalFixture old_fixture(old_engine, expr, param_repo, true, true);
-    EXPECT_EQ(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQ(old_fixture.result(), old_slow_fixture.result());
-    info = old_fixture.find_all<DenseSimpleExpandFunction>();
-    ASSERT_EQ(info.size(), 1u);
-    EXPECT_TRUE(info[0]->result_is_mutable());
-    EXPECT_EQ(info[0]->inner(), inner);
-    ASSERT_EQ(old_fixture.num_params(), 2);
-    EXPECT_TRUE(!(old_fixture.get_param(0) == old_fixture.result()));
-    EXPECT_TRUE(!(old_fixture.get_param(1) == old_fixture.result()));
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
@@ -69,13 +55,6 @@ void verify_not_optimized(const vespalib::string &expr) {
     EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQ(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseSimpleExpandFunction>();
-    EXPECT_TRUE(info.empty());
-
-    EvalFixture old_slow_fixture(old_engine, expr, param_repo, false);
-    EvalFixture old_fixture(old_engine, expr, param_repo, true);
-    EXPECT_EQ(old_fixture.result(), EvalFixture::ref(expr, param_repo));
-    EXPECT_EQ(old_fixture.result(), old_slow_fixture.result());
-    info = old_fixture.find_all<DenseSimpleExpandFunction>();
     EXPECT_TRUE(info.empty());
 }
 

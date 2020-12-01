@@ -71,47 +71,47 @@ public class GroupPreparer {
         }
 
         // There were some changes, so re-do the allocation with locks
-        try (Mutex lock = nodeRepository.lock(application)) {
-            try (Mutex allocationLock = nodeRepository.lockUnallocated()) {
-                NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                        highestIndex, wantedGroups, allocationLock);
+        try (Mutex lock = nodeRepository.lock(application);
+             Mutex allocationLock = nodeRepository.lockUnallocated()) {
 
-                if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
-                    Version osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
-                    List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
-                            .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
-                                                                                 deficit.getFlavor(),
-                                                                                 application,
-                                                                                 osVersion,
-                                                                                 requestedNodes.isExclusive() ? HostSharing.exclusive : HostSharing.any))
-                            .orElseGet(List::of);
+            NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
+                    highestIndex, wantedGroups, allocationLock);
 
-                    // At this point we have started provisioning of the hosts, the first priority is to make sure that
-                    // the returned hosts are added to the node-repo so that they are tracked by the provision maintainers
-                    List<Node> hosts = provisionedHosts.stream()
-                                                       .map(ProvisionedHost::generateHost)
-                                                       .collect(Collectors.toList());
-                    nodeRepository.addNodes(hosts, Agent.application);
+            if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
+                Version osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
+                List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
+                        .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
+                                                                             deficit.getFlavor(),
+                                                                             application,
+                                                                             osVersion,
+                                                                             requestedNodes.isExclusive() ? HostSharing.exclusive : HostSharing.any))
+                        .orElseGet(List::of);
 
-                    // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
-                    List<NodeCandidate> candidates = provisionedHosts.stream()
-                                                                     .map(host -> NodeCandidate.createNewExclusiveChild(host.generateNode(),
-                                                                                                                        host.generateHost()))
-                                                                     .collect(Collectors.toList());
-                    allocation.offer(candidates);
-                }
+                // At this point we have started provisioning of the hosts, the first priority is to make sure that
+                // the returned hosts are added to the node-repo so that they are tracked by the provision maintainers
+                List<Node> hosts = provisionedHosts.stream()
+                                                   .map(ProvisionedHost::generateHost)
+                                                   .collect(Collectors.toList());
+                nodeRepository.addNodes(hosts, Agent.application);
 
-                if (! allocation.fulfilled() && requestedNodes.canFail())
-                    throw new OutOfCapacityException((cluster.group().isPresent() ? "Out of capacity on " + cluster.group().get() :"") +
-                                                     allocation.outOfCapacityDetails());
-
-                // Carry out and return allocation
-                nodeRepository.reserve(allocation.reservableNodes());
-                nodeRepository.addDockerNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
-                List<Node> acceptedNodes = allocation.finalNodes();
-                surplusActiveNodes.removeAll(acceptedNodes);
-                return acceptedNodes;
+                // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
+                List<NodeCandidate> candidates = provisionedHosts.stream()
+                                                                 .map(host -> NodeCandidate.createNewExclusiveChild(host.generateNode(),
+                                                                                                                    host.generateHost()))
+                                                                 .collect(Collectors.toList());
+                allocation.offer(candidates);
             }
+
+            if (! allocation.fulfilled() && requestedNodes.canFail())
+                throw new OutOfCapacityException((cluster.group().isPresent() ? "Out of capacity on " + cluster.group().get() :"") +
+                                                 allocation.outOfCapacityDetails());
+
+            // Carry out and return allocation
+            nodeRepository.reserve(allocation.reservableNodes());
+            nodeRepository.addDockerNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
+            List<Node> acceptedNodes = allocation.finalNodes();
+            surplusActiveNodes.removeAll(acceptedNodes);
+            return acceptedNodes;
         }
     }
 
@@ -122,7 +122,9 @@ public class GroupPreparer {
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
                 highestIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(
-                allNodes, application, cluster, requestedNodes, wantedGroups, nodeRepository);
+                allNodes, application, cluster, requestedNodes, wantedGroups,
+                nodeRepository.zone().getCloud().dynamicProvisioning(), nodeRepository.nameResolver(),
+                nodeRepository.resourcesCalculator(), nodeRepository.spareCount());
         allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
     }

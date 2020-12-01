@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import java.util.logging.Level;
+
+import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.metrics.simple.Counter;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.prelude.query.CompositeItem;
@@ -25,14 +27,16 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.yolean.Exceptions;
 
 /**
- * Check whether the query tree seems to be "well formed". In other words, run heurestics against
+ * Check whether the query tree seems to be "well formed". In other words, run heuristics against
  * the input data to see whether the query should sent to the search backend.
  *
  * @author Steinar Knutsen
  */
+@Before(PhaseNames.BACKEND)
 public class InputCheckingSearcher extends Searcher {
 
     private final Counter utfRejections;

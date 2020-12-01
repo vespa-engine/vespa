@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "filestormetrics.h"
-#include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
 #include <sstream>
 
 namespace storage {
 
 using metrics::MetricSet;
-using metrics::LoadTypeSet;
 
+// TODO Vespa 8 all metrics with .sum in the name should have that removed.
 FileStorThreadMetrics::Op::Op(const std::string& id, const std::string& name, MetricSet* owner)
     : MetricSet(id, {}, name + " load in filestor thread", owner),
       _name(name),
@@ -109,7 +108,7 @@ FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::UP>& ownerList,
 }
 
 FileStorThreadMetrics::Update::Update(MetricSet* owner)
-    : OpWithTestAndSetFailed("update", "Update", owner),
+    : OpWithTestAndSetFailed("update.sum", "Update", owner),
       latencyRead("latency_read", {}, "Latency of the source read in the request.", this)
 { }
 
@@ -128,7 +127,7 @@ FileStorThreadMetrics::Update::clone(std::vector<Metric::UP>& ownerList,
 }
 
 FileStorThreadMetrics::Visitor::Visitor(MetricSet* owner)
-    : Op("visit", "Visit", owner),
+    : Op("visit.sum", "Visit", owner),
       documentsPerIterate("docs", {}, "Number of entries read per iterate call", this)
 { }
 
@@ -146,20 +145,20 @@ FileStorThreadMetrics::Visitor::clone(std::vector<Metric::UP>& ownerList,
     return (Visitor*) (new Visitor(owner))->assignValues(*this);
 }
 
-FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std::string& desc, const LoadTypeSet& lt)
+FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std::string& desc)
     : MetricSet(name, {{"filestor"},{"partofsum"}}, desc),
       operations("operations", {}, "Number of operations processed.", this),
       failedOperations("failedoperations", {}, "Number of operations throwing exceptions.", this),
-      put(lt, PutMetricType("put", "Put"), this),
-      get(lt, GetMetricType("get", "Get"), this),
-      remove(lt, RemoveMetricType("remove", "Remove"), this),
-      removeLocation(lt, Op("remove_location", "Remove location"), this),
-      statBucket(lt, Op("stat_bucket", "Stat bucket"), this),
-      update(lt, Update(), this),
-      revert(lt, OpWithNotFound("revert", "Revert"), this),
+      put("put.sum", "Put", this),
+      get("get.sum", "Get", this),
+      remove("remove.sum", "Remove", this),
+      removeLocation("remove_location.sum", "Remove location", this),
+      statBucket("stat_bucket", "Stat bucket", this),
+      update(this),
+      revert("revert", "Revert", this),
       createIterator("createiterator", {}, this),
-      visit(lt, Visitor(), this),
-      multiOp(lt, Op("multioperations", "The number of multioperations that have been created"), this),
+      visit(this),
+      multiOp("multioperations", "The number of multioperations that have been created", this),
       createBuckets("createbuckets", "Number of buckets that has been created.", this),
       deleteBuckets("deletebuckets", "Number of buckets that has been deleted.", this),
       repairs("bucketverified", "Number of times buckets have been checked.", this),
@@ -189,27 +188,19 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
 
 FileStorThreadMetrics::~FileStorThreadMetrics() = default;
 
-FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std::string& description,
-                                             const LoadTypeSet& loadTypes)
+FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std::string& description)
     : MetricSet(name, {{"partofsum"}}, description),
-      averageQueueWaitingTime(loadTypes,
-                              metrics::DoubleAverageMetric("averagequeuewait", {},
-                                                           "Average time an operation spends in input queue."),
-                              this)
+      averageQueueWaitingTime("averagequeuewait", {}, "Average time an operation spends in input queue.", this)
 {
 }
 
 FileStorStripeMetrics::~FileStorStripeMetrics() = default;
 
-FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::string& description,
-                                         const metrics::LoadTypeSet& loadTypes, MetricSet* owner)
+FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::string& description, MetricSet* owner)
     : MetricSet(name, {{"partofsum"}}, description, owner),
       sumThreads("allthreads", {{"sum"}}, "", this),
       sumStripes("allstripes", {{"sum"}}, "", this),
-      averageQueueWaitingTime(loadTypes,
-                              metrics::DoubleAverageMetric("averagequeuewait", {},
-                                                           "Average time an operation spends in input queue."),
-                              this),
+      averageQueueWaitingTime("averagequeuewait.sum", {}, "Average time an operation spends in input queue.", this),
       queueSize("queuesize", {}, "Size of input message queue.", this),
       pendingMerges("pendingmerge", {}, "Number of buckets currently being merged.", this),
       waitingForLockHitRate("waitingforlockrate", {},
@@ -224,7 +215,7 @@ FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::str
 FileStorDiskMetrics::~FileStorDiskMetrics() = default;
 
 void
-FileStorDiskMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk)
+FileStorDiskMetrics::initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk)
 {
     threads.clear();
     threads.resize(threadsPerDisk);
@@ -233,7 +224,7 @@ FileStorDiskMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t numS
         std::ostringstream name;
         name << "thread" << i;
         desc << "Thread " << i << '/' << threadsPerDisk;
-        threads[i] = std::make_shared<FileStorThreadMetrics>(name.str(), desc.str(), loadTypes);
+        threads[i] = std::make_shared<FileStorThreadMetrics>(name.str(), desc.str());
         registerMetric(*threads[i]);
         sumThreads.addMetricToSum(*threads[i]);
     }
@@ -244,13 +235,13 @@ FileStorDiskMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t numS
         std::ostringstream name;
         name << "stripe" << i;
         desc << "Stripe " << i << '/' << numStripes;
-        stripes[i] = std::make_shared<FileStorStripeMetrics>(name.str(), desc.str(), loadTypes);
+        stripes[i] = std::make_shared<FileStorStripeMetrics>(name.str(), desc.str());
         registerMetric(*stripes[i]);
         sumStripes.addMetricToSum(*stripes[i]);
     }
 }
 
-FileStorMetrics::FileStorMetrics(const LoadTypeSet&)
+FileStorMetrics::FileStorMetrics()
     : MetricSet("filestor", {{"filestor"}}, ""),
       sum("alldisks", {{"sum"}}, "", this),
       directoryEvents("directoryevents", {}, "Number of directory events received.", this),
@@ -262,26 +253,14 @@ FileStorMetrics::FileStorMetrics(const LoadTypeSet&)
 
 FileStorMetrics::~FileStorMetrics() = default;
 
-void FileStorMetrics::initDiskMetrics(const LoadTypeSet& loadTypes, uint32_t numStripes, uint32_t threadsPerDisk)
+void FileStorMetrics::initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk)
 {
     assert( ! disk);
     // Currently FileStorHandlerImpl expects metrics to exist for
     // disks that are not in use too.
-    disk = std::make_shared<FileStorDiskMetrics>( "disk_0", "Disk 0", loadTypes, this);
+    disk = std::make_shared<FileStorDiskMetrics>( "disk_0", "Disk 0", this);
     sum.addMetricToSum(*disk);
-    disk->initDiskMetrics(loadTypes, numStripes, threadsPerDisk);
+    disk->initDiskMetrics(numStripes, threadsPerDisk);
 }
 
 }
-
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::Op>;
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::OpWithNotFound>;
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::Update>;
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::Visitor>;
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::PutMetricType>;
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::GetMetricType>;
-template class metrics::LoadMetric<storage::FileStorThreadMetrics::RemoveMetricType>;
-template class metrics::SumMetric<storage::FileStorThreadMetrics::Op>;
-template class metrics::SumMetric<storage::FileStorThreadMetrics::OpWithNotFound>;
-template class metrics::SumMetric<storage::FileStorThreadMetrics::Update>;
-template class metrics::SumMetric<storage::FileStorThreadMetrics::Visitor>;

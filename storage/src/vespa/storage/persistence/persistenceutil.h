@@ -6,10 +6,17 @@
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/persistence/filestorage/filestorhandler.h>
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
+#include <vespa/storageframework/generic/clock/timer.h>
+#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/storageutil/utils.h>
 
+namespace storage::api {
+    class StorageMessage;
+    class StorageReply;
+}
 namespace storage {
+
 
 class PersistenceUtil;
 
@@ -18,7 +25,7 @@ public:
     typedef std::unique_ptr<MessageTracker> UP;
 
     MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender,
-                   FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
+                   FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg);
 
     ~MessageTracker();
 
@@ -29,17 +36,17 @@ public:
      * non-default reply. They should call this function as soon as they create
      * a reply, to ensure it is stored in case of failure after reply creation.
      */
-    void setReply(api::StorageReply::SP reply) {
+    void setReply(std::shared_ptr<api::StorageReply> reply) {
         assert( ! _reply );
         _reply = std::move(reply);
     }
 
     /** Utility function to be able to write a bit less in client. */
     void fail(uint32_t result, const String& message = "") {
-        fail(ReturnCode((api::ReturnCode::Result)result, message));
+        fail(api::ReturnCode((api::ReturnCode::Result)result, message));
     }
     /** Set the request to fail with the given failure. */
-    void fail(const ReturnCode&);
+    void fail(const api::ReturnCode&);
 
     /** Don't send reply for the command being processed. Used by multi chain
      * commands like merge. */
@@ -52,7 +59,7 @@ public:
     api::StorageReply & getReply() {
         return *_reply;
     }
-    api::StorageReply::SP && stealReplySP() && {
+    std::shared_ptr<api::StorageReply> && stealReplySP() && {
         return std::move(_reply);
     }
 
@@ -71,23 +78,23 @@ public:
 
     static MessageTracker::UP
     createForTesting(const framework::MilliSecTimer & timer, PersistenceUtil & env, MessageSender & replySender,
-                     FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
+                     FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg);
 
 private:
     MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
-                   FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg);
+                   FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg);
 
     [[nodiscard]] bool count_result_as_failure() const noexcept;
 
     bool                                     _sendReply;
     bool                                     _updateBucketInfo;
     FileStorHandler::BucketLockInterface::SP _bucketLock;
-    api::StorageMessage::SP                  _msg;
+    std::shared_ptr<api::StorageMessage>     _msg;
     spi::Context                             _context;
     const PersistenceUtil                   &_env;
     MessageSender                           &_replySender;
     FileStorThreadMetrics::Op               *_metric; // needs a better and thread safe solution
-    api::StorageReply::SP                    _reply;
+    std::shared_ptr<api::StorageReply>       _reply;
     api::ReturnCode                          _result;
     framework::MilliSecTimer                 _timer;
 };

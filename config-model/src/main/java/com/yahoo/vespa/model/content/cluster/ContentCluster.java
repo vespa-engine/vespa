@@ -582,20 +582,19 @@ public class ContentCluster extends AbstractConfigProducer implements
 
     @Override
     public void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder) {
-    	if (!getSearch().hasIndexedCluster()) return;
-    	builder.
-    	defaultroute(com.yahoo.vespa.model.routing.DocumentProtocol.getDirectRouteName(getConfigId())).
-    	route(new MessagetyperouteselectorpolicyConfig.Route.Builder().
-    	        messagetype(DocumentProtocol.MESSAGE_PUTDOCUMENT).
-    	        name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId()))).
-    	route(new MessagetyperouteselectorpolicyConfig.Route.Builder().
-    	        messagetype(DocumentProtocol.MESSAGE_REMOVEDOCUMENT).
-    	        name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId()))).
-    	route(new MessagetyperouteselectorpolicyConfig.Route.Builder().
-    	        messagetype(DocumentProtocol.MESSAGE_UPDATEDOCUMENT).
-    	        name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())));
+        if ( ! getSearch().hasIndexedCluster()) return;
+        builder.defaultroute(com.yahoo.vespa.model.routing.DocumentProtocol.getDirectRouteName(getConfigId()))
+               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                              .messagetype(DocumentProtocol.MESSAGE_PUTDOCUMENT)
+                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())))
+               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                              .messagetype(DocumentProtocol.MESSAGE_REMOVEDOCUMENT)
+                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())))
+               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                              .messagetype(DocumentProtocol.MESSAGE_UPDATEDOCUMENT)
+                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())));
     }
-    
+
     public com.yahoo.vespa.model.content.StorageGroup getRootGroup() {
         return rootGroup;
     }

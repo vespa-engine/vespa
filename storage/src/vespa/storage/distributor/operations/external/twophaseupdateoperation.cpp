@@ -20,28 +20,35 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
+
+
 TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
-        DistributorComponent& manager,
+        DistributorNodeContext& node_ctx,
+        DistributorOperationContext& op_ctx,
+        DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
         std::shared_ptr<api::UpdateCommand> msg,
         DistributorMetricSet& metrics,
         SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
-    _updateMetric(metrics.updates[msg->getLoadType()]),
-    _putMetric(metrics.update_puts[msg->getLoadType()]),
-    _getMetric(metrics.update_gets[msg->getLoadType()]),
-    _metadata_get_metrics(metrics.update_metadata_gets[msg->getLoadType()]),
-    _updateCmd(std::move(msg)),
-    _updateReply(),
-    _manager(manager),
-    _bucketSpace(bucketSpace),
-    _sendState(SendState::NONE_SENT),
-    _mode(Mode::FAST_PATH),
-    _single_get_latency_timer(),
-    _fast_path_repair_source_node(0xffff),
-    _use_initial_cheap_metadata_fetch_phase(
-            _manager.getDistributor().getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates()),
-    _replySent(false)
+      _updateMetric(metrics.updates),
+      _putMetric(metrics.update_puts),
+      _getMetric(metrics.update_gets),
+      _metadata_get_metrics(metrics.update_metadata_gets),
+      _updateCmd(std::move(msg)),
+      _updateReply(),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
+      _parser(parser),
+      _bucketSpace(bucketSpace),
+      _sendState(SendState::NONE_SENT),
+      _mode(Mode::FAST_PATH),
+      _trace(_updateCmd->getTrace().getLevel()),
+      _single_get_latency_timer(),
+      _fast_path_repair_source_node(0xffff),
+      _use_initial_cheap_metadata_fetch_phase(
+            _op_ctx.distributor_config().enable_metadata_only_fetch_phase_for_inconsistent_updates()),
+      _replySent(false)
 {
     document::BucketIdFactory idFactory;
     _updateDocBucketId = idFactory.getBucketId(_updateCmd->getDocumentId());
@@ -73,7 +80,7 @@ struct IntermediateMessageSender : DistributorMessageSender {
         return forward.getDistributorIndex();
     }
 
-    const std::string& getClusterName() const override {
+    const vespalib::string& getClusterName() const override {
         return forward.getClusterName();
     }
 
@@ -132,9 +139,7 @@ TwoPhaseUpdateOperation::sendReply(
         std::shared_ptr<api::StorageReply>& reply)
 {
     assert(!_replySent);
-    if (!_trace.isEmpty()) {
-        reply->getTrace().getRoot().addChild(_trace);
-    }
+    reply->getTrace().addChild(std::move(_trace));
     sender.sendReply(reply);
     _replySent = true;
 }
@@ -167,10 +172,10 @@ TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
 {
     _mode = Mode::FAST_PATH;
     LOG(debug, "Update(%s) fast path: sending Update commands", update_doc_id().c_str());
-    auto updateOperation = std::make_shared<UpdateOperation>(_manager, _bucketSpace, _updateCmd, _updateMetric);
+    auto updateOperation = std::make_shared<UpdateOperation>(_node_ctx, _op_ctx, _bucketSpace, _updateCmd, _updateMetric);
     UpdateOperation & op = *updateOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(updateOperation), sender);
-    op.start(intermediate, _manager.getClock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
     transitionTo(SendState::UPDATES_SENT);
 
     if (intermediate._reply.get()) {
@@ -186,7 +191,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
     GetOperation& op = *get_operation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(get_operation), sender);
     _replicas_at_get_send_time = op.replicas_in_db(); // Populated at construction time, not at start()-time
-    op.start(intermediate, _manager.getClock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
 
     transitionTo(_use_initial_cheap_metadata_fetch_phase
                  ? SendState::METADATA_GETS_SENT
@@ -222,7 +227,7 @@ TwoPhaseUpdateOperation::create_initial_safe_path_get_operation() {
                update_doc_id().c_str(), field_set, api::to_string(read_consistency));
     auto& get_metric = (_use_initial_cheap_metadata_fetch_phase ? _metadata_get_metrics : _getMetric);
     return std::make_shared<GetOperation>(
-            _manager, _bucketSpace, _bucketSpace.getBucketDatabase().acquire_read_guard(),
+            _node_ctx, _bucketSpace, _bucketSpace.getBucketDatabase().acquire_read_guard(),
             get, get_metric, read_consistency);
 }
 
@@ -247,7 +252,7 @@ bool
 TwoPhaseUpdateOperation::lostBucketOwnershipBetweenPhases() const
 {
     document::Bucket updateDocBucket(_updateCmd->getBucket().getBucketSpace(), _updateDocBucketId);
-    BucketOwnership bo(_manager.checkOwnershipInPendingAndCurrentState(updateDocBucket));
+    BucketOwnership bo(_op_ctx.check_ownership_in_pending_and_current_state(updateDocBucket));
     return !bo.isOwned();
 }
 
@@ -272,10 +277,10 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
     auto put = std::make_shared<api::PutCommand>(bucket, doc, putTimestamp);
     copyMessageSettings(*_updateCmd, *put);
-    auto putOperation = std::make_shared<PutOperation>(_manager, _bucketSpace, std::move(put), _putMetric);
+    auto putOperation = std::make_shared<PutOperation>(_node_ctx, _op_ctx, _bucketSpace, std::move(put), _putMetric);
     PutOperation & op = *putOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(putOperation), sender);
-    op.start(intermediate, _manager.getClock().getTimeInMillis());
+    op.start(intermediate, _node_ctx.clock().getTimeInMillis());
     transitionTo(SendState::PUTS_SENT);
 
     LOG(debug, "Update(%s): sending Puts at timestamp %" PRIu64, update_doc_id().c_str(), putTimestamp);
@@ -318,7 +323,7 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
             sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, ""));
             return;
         }
-        schedulePutsWithUpdatedDocument(getReply.getDocument(), _manager.getUniqueTimestamp(), sender);
+        schedulePutsWithUpdatedDocument(getReply.getDocument(), _op_ctx.generate_unique_timestamp(), sender);
         return;
     }
 
@@ -467,7 +472,7 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
     // Note that this timestamp may be for a tombstone (remove) entry, in which case
     // conditional create-if-missing behavior kicks in as usual.
     // TODO avoid sending the Get at all if the newest replica is marked as a tombstone.
-    _single_get_latency_timer.emplace(_manager.getClock());
+    _single_get_latency_timer.emplace(_node_ctx.clock());
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), newest_replica->bucket_id);
     LOG(debug, "Update(%s): sending single payload Get to %s on node %u (had timestamp %" PRIu64 ")",
         update_doc_id().c_str(), bucket.toString().c_str(),
@@ -498,7 +503,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sen
     }
 
     document::Document::SP docToUpdate;
-    api::Timestamp putTimestamp = _manager.getUniqueTimestamp();
+    api::Timestamp putTimestamp = _op_ctx.generate_unique_timestamp();
 
     if (reply.getDocument().get()) {
         api::Timestamp receivedTimestamp = reply.getLastModifiedTimestamp();
@@ -533,7 +538,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sen
 }
 
 bool TwoPhaseUpdateOperation::may_restart_with_fast_path(const api::GetReply& reply) {
-    return (_manager.getDistributor().getConfig().update_fast_path_restart_enabled() &&
+    return (_op_ctx.distributor_config().update_fast_path_restart_enabled() &&
             !_replicas_at_get_send_time.empty() && // To ensure we send CreateBucket+Put if no replicas exist.
             reply.had_consistent_replicas() &&
             replica_set_unchanged_after_get_operation());
@@ -576,10 +581,9 @@ TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorMessageSender& s
         return true; // No condition; nothing to do here.
     }
 
-    document::select::Parser parser(*_manager.getTypeRepo()->documentTypeRepo, _manager.getBucketIdFactory());
     std::unique_ptr<document::select::Node> selection;
     try {
-         selection = parser.parse(_updateCmd->getCondition().getSelection());
+         selection = _parser.parse_selection(_updateCmd->getCondition().getSelection());
     } catch (const document::select::ParsingFailedException & e) {
         sendReplyWithResult(sender, api::ReturnCode(
                 api::ReturnCode::ILLEGAL_PARAMETERS,
@@ -645,11 +649,9 @@ TwoPhaseUpdateOperation::satisfiesUpdateTimestampConstraint(api::Timestamp ts) c
 }
 
 void
-TwoPhaseUpdateOperation::addTraceFromReply(const api::StorageReply& reply)
+TwoPhaseUpdateOperation::addTraceFromReply(api::StorageReply & reply)
 {
-    if ( ! reply.getTrace().getRoot().isEmpty()) {
-        _trace.addChild(reply.getTrace().getRoot());
-    }
+    _trace.addChild(reply.steal_trace());
 }
 
 void

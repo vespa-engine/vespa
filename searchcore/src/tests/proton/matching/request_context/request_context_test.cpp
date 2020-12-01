@@ -2,7 +2,6 @@
 
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcore/proton/matching/requestcontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/fef/properties.h>

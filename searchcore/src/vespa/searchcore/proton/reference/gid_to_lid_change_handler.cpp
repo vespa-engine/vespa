@@ -2,6 +2,7 @@
 
 #include "gid_to_lid_change_handler.h"
 #include "i_gid_to_lid_change_listener.h"
+#include "pending_gid_to_lid_changes.h"
 #include <vespa/vespalib/util/lambdatask.h>
 #include <cassert>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -14,8 +15,8 @@ GidToLidChangeHandler::GidToLidChangeHandler()
     : _lock(),
       _listeners(),
       _closed(false),
-      _pendingRemove()
-
+      _pendingRemove(),
+      _pending_changes()
 {
 }
 
@@ -40,6 +41,13 @@ GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, GlobalId gid)
     for (const auto &listener : _listeners) {
         listener->notifyRemove(context, gid);
     }
+}
+
+void
+GidToLidChangeHandler::notifyPut(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serial_num)
+{
+    lock_guard guard(_lock);
+    _pending_changes.emplace_back(std::move(context), gid, lid, serial_num, false);
 }
 
 void
@@ -79,6 +87,7 @@ GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, GlobalId gid,
     } else {
         notifyRemove(std::move(context), gid);
     }
+    _pending_changes.emplace_back(IDestructorCallbackSP(), gid, 0, serialNum, true);
 }
 
 void
@@ -94,6 +103,16 @@ GidToLidChangeHandler::notifyRemoveDone(GlobalId gid, SerialNum serialNum)
     } else {
         --entry.refCount;
     }
+}
+
+std::unique_ptr<IPendingGidToLidChanges>
+GidToLidChangeHandler::grab_pending_changes()
+{
+    lock_guard guard(_lock);
+    if (_pending_changes.empty()) {
+        return {};
+    }
+    return std::make_unique<PendingGidToLidChanges>(*this, std::move(_pending_changes));
 }
 
 void

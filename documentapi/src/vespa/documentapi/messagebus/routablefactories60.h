@@ -87,7 +87,7 @@ public:
 
     public:
         bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
-        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
+        mbus::Routable::UP decode(document::ByteBuffer &in) const override;
     };
 
     /**
@@ -121,7 +121,7 @@ public:
 
     public:
         bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
-        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
+        mbus::Routable::UP decode(document::ByteBuffer &in) const override;
     };
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -137,7 +137,7 @@ public:
         virtual bool encodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf) const;
         virtual string decodeBucketSpace(document::ByteBuffer&) const;
     public:
-        CreateVisitorMessageFactory() : DocumentMessageFactory() {}
+        CreateVisitorMessageFactory() noexcept : DocumentMessageFactory() {}
     };
     class CreateVisitorReplyFactory : public DocumentReplyFactory {
     protected:
@@ -164,7 +164,7 @@ public:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
-        DocumentListMessageFactory(const document::DocumentTypeRepo &r)
+        DocumentListMessageFactory(const document::DocumentTypeRepo &r) noexcept
             : _repo(r) {}
     };
     class DocumentListReplyFactory : public DocumentReplyFactory {
@@ -224,14 +224,14 @@ public:
         DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentReply &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
-        GetDocumentReplyFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
+        GetDocumentReplyFactory(const document::DocumentTypeRepo &r) noexcept : _repo(r) {}
     };
     class MapVisitorMessageFactory : public DocumentMessageFactory {
     protected:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
-        MapVisitorMessageFactory() : DocumentMessageFactory()  {}
+        MapVisitorMessageFactory() noexcept : DocumentMessageFactory()  {}
     };
     class MapVisitorReplyFactory : public DocumentReplyFactory {
     protected:
@@ -248,7 +248,7 @@ public:
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         void decodeInto(PutDocumentMessage & msg, document::ByteBuffer & buf) const;
-        PutDocumentMessageFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
+        PutDocumentMessageFactory(const document::DocumentTypeRepo &r) noexcept : _repo(r) {}
     };
     class PutDocumentReplyFactory : public DocumentReplyFactory {
     protected:
@@ -275,7 +275,7 @@ public:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
-        RemoveLocationMessageFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
+        RemoveLocationMessageFactory(const document::DocumentTypeRepo &r) noexcept : _repo(r) {}
     };
     class RemoveLocationReplyFactory : public DocumentReplyFactory {
     protected:
@@ -324,7 +324,7 @@ public:
         bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
     public:
         void decodeInto(UpdateDocumentMessage & msg, document::ByteBuffer & buf) const;
-        UpdateDocumentMessageFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
+        UpdateDocumentMessageFactory(const document::DocumentTypeRepo &r) noexcept : _repo(r) {}
     };
     class UpdateDocumentReplyFactory : public DocumentReplyFactory {
     protected:

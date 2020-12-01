@@ -3,7 +3,6 @@
 #include "persistenceengine.h"
 #include "ipersistenceengineowner.h"
 #include "transport_latch.h"
-#include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -611,9 +610,7 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
 void
 PersistenceEngine::destroyIterators()
 {
-    Context context(storage::spi::LoadType(0, "default"),
-                    storage::spi::Priority(0x80),
-                    storage::spi::Trace::TraceLevel(0));
+    Context context(storage::spi::Priority(0x80), 0);
     for (;;) {
         IteratorId id;
         {

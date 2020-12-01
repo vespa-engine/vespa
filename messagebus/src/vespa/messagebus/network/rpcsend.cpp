@@ -178,7 +178,7 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
         }
     } else {
         FRT_Values &ret = *req->GetReturn();
-        reply = createReply(ret, serviceName, error, trace.getRoot());
+        reply = createReply(ret, serviceName, error, trace);
     }
     if (trace.shouldTrace(TraceLevel::SEND_RECEIVE)) {
         trace.trace(TraceLevel::SEND_RECEIVE,

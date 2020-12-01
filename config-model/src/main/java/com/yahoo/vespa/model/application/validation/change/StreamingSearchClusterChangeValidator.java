@@ -78,7 +78,7 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
                                                                              NewDocumentType nextDocType,
                                                                              ValidationOverrides overrides,
                                                                              Instant now) {
-        return new DocumentTypeChangeValidator(id, currentDocType, nextDocType).validate(overrides, now);
+        return new DocumentTypeChangeValidator(id, currentDocType, nextDocType).validate();
     }
 
     private static NewDocumentType getDocumentType(ContentCluster cluster, StreamingSearchCluster streamingCluster) {

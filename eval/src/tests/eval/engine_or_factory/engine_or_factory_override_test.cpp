@@ -10,16 +10,16 @@ using namespace vespalib::eval;
 using namespace vespalib::tensor;
 
 TEST(EngineOrFactoryOverrideTest, set_can_override_get_result) {
-    EngineOrFactory::set(FastValueBuilderFactory::get());
-    EXPECT_EQ(EngineOrFactory::get().to_string(), "FastValueBuilderFactory");
+    EngineOrFactory::set(DefaultTensorEngine::ref());
+    EXPECT_EQ(EngineOrFactory::get().to_string(), "DefaultTensorEngine");
 }
 
 TEST(EngineOrFactoryOverrideTest, set_with_same_value_is_allowed) {
-    EngineOrFactory::set(FastValueBuilderFactory::get());
+    EngineOrFactory::set(DefaultTensorEngine::ref());
 }
 
 TEST(EngineOrFactoryOverrideTest, set_with_another_value_is_not_allowed) {
-    EXPECT_THROW(EngineOrFactory::set(DefaultTensorEngine::ref()), vespalib::IllegalStateException);
+    EXPECT_THROW(EngineOrFactory::set(FastValueBuilderFactory::get()), vespalib::IllegalStateException);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

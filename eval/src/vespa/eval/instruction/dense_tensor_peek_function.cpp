@@ -75,10 +75,10 @@ DenseTensorPeekFunction::optimize(const TensorFunction &expr, Stash &stash)
         const ValueType &peek_type = peek->param_type();
         if (expr.result_type().is_double() && peek_type.is_dense()) {
             std::vector<std::pair<int64_t,size_t>> spec;
-            assert(peek_type.dimensions().size() == peek->spec().size());
+            assert(peek_type.dimensions().size() == peek->map().size());
             for (auto dim = peek_type.dimensions().rbegin(); dim != peek_type.dimensions().rend(); ++dim) {
-                auto dim_spec = peek->spec().find(dim->name);
-                assert(dim_spec != peek->spec().end());
+                auto dim_spec = peek->map().find(dim->name);
+                assert(dim_spec != peek->map().end());
 
                 std::visit(vespalib::overload
                            {

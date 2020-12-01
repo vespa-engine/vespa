@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "eval_fixture.h"
+#include "reference_evaluation.h"
 #include <vespa/eval/eval/make_tensor_function.h>
 #include <vespa/eval/eval/optimize_tensor_function.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -227,6 +228,19 @@ size_t
 EvalFixture::num_params() const
 {
     return _param_values.size();
+}
+
+TensorSpec
+EvalFixture::ref(const vespalib::string &expr, const ParamRepo &param_repo)
+{
+    auto fun = Function::parse(expr);
+    std::vector<TensorSpec> params;
+    for (size_t i = 0; i < fun->num_params(); ++i) {
+        auto pos = param_repo.map.find(fun->param_name(i));
+        ASSERT_TRUE(pos != param_repo.map.end());
+        params.push_back(pos->second.value);
+    }
+    return ReferenceEvaluation::eval(*fun, params);
 }
 
 } // namespace vespalib::eval::test

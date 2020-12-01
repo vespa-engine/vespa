@@ -20,7 +20,6 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/config-bucketspaces.h>
-#include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
@@ -53,7 +52,6 @@ namespace lib { class NodeType; }
 class StorageNode : private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>,
                     private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
                     private config::IFetcherCallback<vespa::config::content::UpgradingConfig>,
-                    private config::IFetcherCallback<vespa::config::content::core::StorPrioritymappingConfig>,
                     private config::IFetcherCallback<vespa::config::content::core::BucketspacesConfig>,
                     private framework::MetricUpdateHook,
                     private DoneInitializeHandler,
@@ -100,7 +98,6 @@ protected:
     using StorServerConfig = vespa::config::content::core::StorServerConfig;
     using UpgradingConfig = vespa::config::content::UpgradingConfig;
     using StorDistributionConfig = vespa::config::content::StorDistributionConfig;
-    using StorPrioritymappingConfig = vespa::config::content::core::StorPrioritymappingConfig;
     using BucketspacesConfig = vespa::config::content::core::BucketspacesConfig;
 private:
     bool _singleThreadedDebugMode;
@@ -135,7 +132,6 @@ private:
     void configure(std::unique_ptr<StorServerConfig> config) override;
     void configure(std::unique_ptr<UpgradingConfig> config) override;
     void configure(std::unique_ptr<StorDistributionConfig> config) override;
-    void configure(std::unique_ptr<StorPrioritymappingConfig>) override;
     virtual void configure(std::unique_ptr<document::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
     void configure(std::unique_ptr<BucketspacesConfig>) override;
@@ -151,14 +147,12 @@ protected:
     std::unique_ptr<StorServerConfig> _serverConfig;
     std::unique_ptr<UpgradingConfig> _clusterConfig;
     std::unique_ptr<StorDistributionConfig> _distributionConfig;
-    std::unique_ptr<StorPrioritymappingConfig> _priorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _doctypesConfig;
     std::unique_ptr<BucketspacesConfig> _bucketSpacesConfig;
         // New configs gotten that has yet to have been handled
     std::unique_ptr<StorServerConfig> _newServerConfig;
     std::unique_ptr<UpgradingConfig> _newClusterConfig;
     std::unique_ptr<StorDistributionConfig> _newDistributionConfig;
-    std::unique_ptr<StorPrioritymappingConfig> _newPriorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _newDoctypesConfig;
     std::unique_ptr<BucketspacesConfig> _newBucketSpacesConfig;
     std::unique_ptr<StorageComponent> _component;

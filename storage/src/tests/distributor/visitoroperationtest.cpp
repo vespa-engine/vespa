@@ -94,7 +94,7 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
     }
 
     VisitorMetricSet& defaultVisitorMetrics() {
-        return getDistributor().getMetrics().visits[documentapi::LoadType::DEFAULT];
+        return getDistributor().getMetrics().visits;
     }
 
     std::unique_ptr<VisitorOperation> createOpWithConfig(
@@ -103,14 +103,14 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
     {
         return std::make_unique<VisitorOperation>(
                 getExternalOperationHandler(),
+                getExternalOperationHandler(),
                 getDistributorBucketSpace(),
                 msg,
                 config,
-                getDistributor().getMetrics().visits[msg->getLoadType()]);
+                getDistributor().getMetrics().visits);
     }
 
-    std::unique_ptr<VisitorOperation> createOpWithDefaultConfig(
-            api::CreateVisitorCommand::SP msg)
+    std::unique_ptr<VisitorOperation> createOpWithDefaultConfig(api::CreateVisitorCommand::SP msg)
     {
         return createOpWithConfig(std::move(msg), defaultConfig);
     }
@@ -126,21 +126,17 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
     }
 
     const std::vector<BucketId>& getBucketsFromLastCommand() {
-        const auto& cvc = dynamic_cast<const CreateVisitorCommand&>(
-                *_sender.commands().back());
+        const auto& cvc = dynamic_cast<const CreateVisitorCommand&>(*_sender.commands().back());
         return cvc.getBuckets();
     }
 
     std::pair<std::string, std::string>
-    runVisitor(document::BucketId id,
-                           document::BucketId lastId,
-                           uint32_t maxBuckets);
+    runVisitor(document::BucketId id, document::BucketId lastId, uint32_t maxBuckets);
 
 
     void doStandardVisitTest(const std::string& clusterState);
 
-    std::unique_ptr<VisitorOperation> startOperationWith2StorageNodeVisitors(
-            bool inconsistent);
+    std::unique_ptr<VisitorOperation> startOperationWith2StorageNodeVisitors(bool inconsistent);
 
     void do_visitor_roundtrip_with_statistics(const api::ReturnCode& result);
 };

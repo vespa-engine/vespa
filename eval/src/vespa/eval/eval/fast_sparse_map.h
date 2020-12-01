@@ -97,6 +97,9 @@ public:
     }
     ~FastSparseMap();
 
+    FastSparseMap& operator=(const FastSparseMap& rhs);
+    FastSparseMap& operator=(FastSparseMap&& rhs);
+
     MemoryUsage estimate_extra_memory_usage() const {
         MemoryUsage extra_usage;
         size_t map_self_size = sizeof(_map);

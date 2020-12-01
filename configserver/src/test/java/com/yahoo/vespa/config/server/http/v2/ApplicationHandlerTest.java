@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ModelFactory;
@@ -15,7 +14,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.test.ManualClock;
-import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
 import com.yahoo.vespa.config.server.MockProvisioner;
@@ -23,7 +21,8 @@ import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
-import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ClusterReindexing;
+import com.yahoo.vespa.config.server.application.ClusterReindexing.Status;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
@@ -31,6 +30,7 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.StaticResponse;
+import com.yahoo.vespa.config.server.http.v2.ApplicationHandler.ReindexingResponse;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -42,16 +42,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.ws.rs.client.Client;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
@@ -437,6 +438,80 @@ public class ApplicationHandlerTest {
         assertEquals("report", getRenderedString(response));
     }
 
+    @Test
+    public void testClusterReindexingStateSerialization() {
+        Stream.of(ClusterReindexing.State.values()).forEach(ReindexingResponse::toString);
+    }
+
+    @Test
+    public void testReindexingSerialization() throws IOException {
+        Instant now = Instant.ofEpochMilli(123456);
+        ApplicationReindexing applicationReindexing = ApplicationReindexing.ready(now.minusSeconds(10))
+                                                                           .withPending("foo", "bar", 123L)
+                                                                           .withReady("moo", now.minusSeconds(1))
+                                                                           .withReady("moo", "baz", now);
+        ClusterReindexing clusterReindexing = new ClusterReindexing(Map.of("bax", new Status(now, null, null, null, null),
+                                                                           "baz", new Status(now.plusSeconds(1),
+                                                                                             now.plusSeconds(2),
+                                                                                             ClusterReindexing.State.FAILED,
+                                                                                             "message",
+                                                                                             "some")));
+        assertJsonEquals(getRenderedString(new ReindexingResponse(applicationReindexing,
+                                                                  Map.of("boo", clusterReindexing,
+                                                                         "moo", clusterReindexing))),
+                         "{\n" +
+                         "  \"enabled\": true,\n" +
+                         "  \"status\": {\n" +
+                         "    \"readyMillis\": 113456\n" +
+                         "  },\n" +
+                         "  \"clusters\": {\n" +
+                         "    \"boo\": {\n" +
+                         "      \"pending\": {},\n" +
+                         "      \"ready\": {\n" +
+                         "        \"bax\": {\n" +
+                         "          \"startedMillis\": 123456\n" +
+                         "        },\n" +
+                         "        \"baz\": {\n" +
+                         "          \"startedMillis\": 124456,\n" +
+                         "          \"endedMillis\": 125456,\n" +
+                         "          \"state\": \"failed\",\n" +
+                         "          \"message\": \"message\",\n" +
+                         "          \"progress\": \"some\"\n" +
+                         "        }\n" +
+                         "      }\n" +
+                         "    },\n" +
+                         "    \"foo\": {\n" +
+                         "      \"pending\": {\n" +
+                         "        \"bar\": 123\n" +
+                         "      },\n" +
+                         "      \"ready\": {},\n" +
+                         "      \"status\": {\n" +
+                         "        \"readyMillis\": 113456\n" +
+                         "      }\n" +
+                         "    },\n" +
+                         "    \"moo\": {\n" +
+                         "      \"pending\": {},\n" +
+                         "      \"ready\": {\n" +
+                         "        \"baz\": {\n" +
+                         "          \"readyMillis\": 123456,\n" +
+                         "          \"startedMillis\": 124456,\n" +
+                         "          \"endedMillis\": 125456,\n" +
+                         "          \"state\": \"failed\",\n" +
+                         "          \"message\": \"message\",\n" +
+                         "          \"progress\": \"some\"\n" +
+                         "        },\n" +
+                         "        \"bax\": {\n" +
+                         "          \"startedMillis\": 123456\n" +
+                         "        }\n" +
+                         "      },\n" +
+                         "      \"status\": {\n" +
+                         "        \"readyMillis\": 122456\n" +
+                         "      }\n" +
+                         "    }\n" +
+                         "  }\n" +
+                         "}\n");
+    }
+
     private void assertNotAllowed(Method method) throws IOException {
         String url = "http://myhost:14000/application/v2/tenant/" + mytenantName + "/application/default";
         deleteAndAssertResponse(url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
@@ -556,21 +631,6 @@ public class ApplicationHandlerTest {
     private HttpResponse fileDistributionStatus(ApplicationId application, Zone zone) {
         String restartUrl = toUrlPath(application, zone, true) + "/filedistributionstatus";
         return createApplicationHandler().handle(createTestRequest(restartUrl, GET));
-    }
-
-    private static class MockStateApiFactory implements ConfigConvergenceChecker.StateApiFactory {
-        boolean createdApi = false;
-        @Override
-        public ConfigConvergenceChecker.StateApi createStateApi(Client client, URI serviceUri) {
-            createdApi = true;
-            return () -> {
-                try {
-                    return new ObjectMapper().readTree("{\"config\":{\"generation\":1}}");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            };
-        }
     }
 
     private ApplicationHandler createApplicationHandler() {

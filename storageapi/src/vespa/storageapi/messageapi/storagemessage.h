@@ -12,7 +12,6 @@
 #pragma once
 
 #include "messagehandler.h"
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/messagebus/trace.h>
 #include <vespa/vdslib/state/nodetype.h>
@@ -21,9 +20,7 @@
 #include <map>
 #include <iosfwd>
 
-namespace vespalib {
-    class asciistream;
-}
+namespace vespalib { class asciistream; }
 // The following macros are provided as a way to write storage messages simply.
 // They implement the parts of the code that can easily be automaticly
 // generated.
@@ -243,16 +240,16 @@ public:
     MessageType(const MessageType &) = delete;
     MessageType& operator=(const MessageType &) = delete;
     ~MessageType();
-    Id getId() const { return _id; }
-    static Id getMaxId() { return MESSAGETYPE_MAX_ID; }
-    const vespalib::string& getName() const { return _name; }
-    bool isReply() const { return (_replyOf != 0); }
+    Id getId() const noexcept { return _id; }
+    static Id getMaxId() noexcept { return MESSAGETYPE_MAX_ID; }
+    const vespalib::string& getName() const noexcept { return _name; }
+    bool isReply() const noexcept { return (_replyOf != 0); }
     /** Only valid to call on replies. */
-    const MessageType& getCommandType() const { return *_replyOf; }
+    const MessageType& getCommandType() const noexcept { return *_replyOf; }
     /** Only valid to call on commands. */
-    const MessageType& getReplyType() const { return *_reply; }
-    bool operator==(const MessageType& type) const { return (_id == type._id); }
-    bool operator!=(const MessageType& type) const { return (_id != type._id); }
+    const MessageType& getReplyType() const noexcept { return *_reply; }
+    bool operator==(const MessageType& type) const noexcept { return (_id == type._id); }
+    bool operator!=(const MessageType& type) const noexcept { return (_id != type._id); }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
@@ -265,42 +262,44 @@ public:
  */
 class StorageMessageAddress {
 public:
-    enum Protocol { STORAGE, DOCUMENT };
+    enum class Protocol : uint8_t { STORAGE, DOCUMENT };
 
 private:
-    mbus::Route _route;
-    Protocol    _protocol;
+    const vespalib::string  *_cluster;
     // Used for internal VDS addresses only
-    size_t               _precomputed_storage_hash;
-    vespalib::string     _cluster;
-    const lib::NodeType* _type;
-    uint16_t             _index;
+    uint32_t                 _precomputed_storage_hash;
+    lib::NodeType::Type      _type;
+    Protocol                 _protocol;
+    uint16_t                 _index;
 
 public:
-    StorageMessageAddress(); // Only to be used when transient default ctor semantics are needed by containers
-    StorageMessageAddress(const mbus::Route& route);
-    StorageMessageAddress(vespalib::stringref clusterName,
-                          const lib::NodeType& type, uint16_t index,
-                          Protocol protocol = STORAGE);
+    StorageMessageAddress() noexcept; // Only to be used when transient default ctor semantics are needed by containers
+    StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept;
+    StorageMessageAddress(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index, Protocol protocol) noexcept;
     ~StorageMessageAddress();
 
-    void setProtocol(Protocol p) { _protocol = p; }
+    void setProtocol(Protocol p) noexcept { _protocol = p; }
 
-    const mbus::Route& getRoute() const { return _route; }
-    Protocol getProtocol() const { return _protocol; }
-    uint16_t getIndex() const;
-    const lib::NodeType& getNodeType() const;
-    const vespalib::string& getCluster() const;
+    mbus::Route to_mbus_route() const;
+    Protocol getProtocol() const noexcept { return _protocol; }
+    uint16_t getIndex() const noexcept { return _index; }
+    lib::NodeType::Type getNodeType() const noexcept { return _type; }
+    const vespalib::string& getCluster() const noexcept { return *_cluster; }
 
-    // Returns precomputed hash over <cluster, type, index> tuple. Other fields not included.
-    [[nodiscard]] size_t internal_storage_hash() const noexcept {
+    // Returns precomputed hash over <type, index> pair. Other fields not included.
+    [[nodiscard]] uint32_t internal_storage_hash() const noexcept {
         return _precomputed_storage_hash;
     }
 
-    bool operator==(const StorageMessageAddress& other) const;
+    bool operator==(const StorageMessageAddress& other) const noexcept;
     vespalib::string toString() const;
     friend std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr);
-
+    static StorageMessageAddress create(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept {
+        return api::StorageMessageAddress(cluster, type, index);
+    }
+    static StorageMessageAddress createDocApi(const vespalib::string * cluster, const lib::NodeType& type, uint16_t index) noexcept {
+        return api::StorageMessageAddress(cluster, type, index, Protocol::DOCUMENT);
+    }
 private:
     void print(vespalib::asciistream & out) const;
 };
@@ -353,48 +352,47 @@ public:
     static const char* getPriorityString(Priority);
 
 private:
+    static document::Bucket getDummyBucket() noexcept { return document::Bucket(document::BucketSpace::invalid(), document::BucketId()); }
     mutable std::unique_ptr<TransportContext> _transportContext;
 
 protected:
-    static Id generateMsgId();
+    static Id generateMsgId() noexcept;
 
-    const MessageType& _type;
-    Id _msgId;
-    Priority _priority;
-    std::unique_ptr<StorageMessageAddress> _address;
-    documentapi::LoadType _loadType;
-    mbus::Trace _trace;
-    uint32_t _approxByteSize;
+    const MessageType&    _type;
+    Id                    _msgId;
+    StorageMessageAddress _address;
+    vespalib::Trace       _trace;
+    uint32_t              _approxByteSize;
+    Priority              _priority;
 
-    StorageMessage(const MessageType& code, Id id);
-    StorageMessage(const StorageMessage&, Id id);
+    StorageMessage(const MessageType& code, Id id) noexcept;
+    StorageMessage(const StorageMessage&, Id id) noexcept;
 
-    static document::Bucket getDummyBucket() { return document::Bucket(document::BucketSpace::invalid(), document::BucketId()); }
 public:
     StorageMessage& operator=(const StorageMessage&) = delete;
     StorageMessage(const StorageMessage&) = delete;
-    virtual ~StorageMessage();
+    ~StorageMessage() override;
 
-    Id getMsgId() const { return _msgId; }
+    Id getMsgId() const noexcept { return _msgId; }
 
     /** Method used by storage commands to set a new id. */
-    void setNewMsgId();
+    void setNewMsgId() noexcept;
 
     /**
      * Set the id of this message. Typically used to set the id to a
      * unique value previously generated with the generateMsgId method.
      **/
-    void forceMsgId(Id msgId) { _msgId = msgId; }
+    void forceMsgId(Id msgId) noexcept { _msgId = msgId; }
 
-    const MessageType& getType() const { return _type; }
+    const MessageType& getType() const noexcept { return _type; }
 
-    void setPriority(Priority p) { _priority = p; }
-    Priority getPriority() const { return _priority; }
+    void setPriority(Priority p) noexcept { _priority = p; }
+    Priority getPriority() const noexcept { return _priority; }
 
-    const StorageMessageAddress* getAddress() const { return _address.get(); }
+    const StorageMessageAddress* getAddress() const noexcept { return (_address.getNodeType() != lib::NodeType::Type::UNKNOWN) ? &_address : nullptr; }
 
-    void setAddress(const StorageMessageAddress& address) {
-        _address.reset(new StorageMessageAddress(address));
+    void setAddress(const StorageMessageAddress& address) noexcept {
+        _address = address;
     }
 
     /**
@@ -405,7 +403,7 @@ public:
         return _approxByteSize;
     }
 
-    void setApproxByteSize(uint32_t value) {
+    void setApproxByteSize(uint32_t value) noexcept {
         _approxByteSize = value;
     }
 
@@ -414,11 +412,11 @@ public:
      * created, whether it was a storageprotocol message, a documentprotocol
      * message, or an RPC call.
      */
-    void setTransportContext(std::unique_ptr<TransportContext> context) {
+    void setTransportContext(std::unique_ptr<TransportContext> context) noexcept {
         _transportContext = std::move(context);
     }
 
-    std::unique_ptr<TransportContext> getTransportContext() const {
+    std::unique_ptr<TransportContext> getTransportContext() const noexcept {
         return std::move(_transportContext);
     }
 
@@ -432,16 +430,14 @@ public:
      */
     virtual bool callHandler(MessageHandler&, const StorageMessage::SP&) const = 0;
 
-    const documentapi::LoadType& getLoadType() const { return _loadType; }
-    void setLoadType(const documentapi::LoadType& type) { _loadType = type; }
-
-    mbus::Trace& getTrace() { return _trace; }
-    const mbus::Trace& getTrace() const { return _trace; }
+    mbus::Trace && steal_trace() noexcept { return std::move(_trace); }
+    mbus::Trace& getTrace() noexcept { return _trace; }
+    const mbus::Trace& getTrace() const noexcept { return _trace; }
 
     /**
        Sets the trace object for this message.
     */
-    void setTrace(const mbus::Trace &trace) { _trace = trace; }
+    void setTrace(vespalib::Trace && trace) noexcept { _trace = std::move(trace); }
 
     /**
      * Cheap version of tostring().
@@ -449,7 +445,7 @@ public:
     virtual vespalib::string getSummary() const;
 
     virtual document::Bucket getBucket() const { return getDummyBucket(); }
-    document::BucketId getBucketId() const { return getBucket().getBucketId(); }
+    document::BucketId getBucketId() const noexcept { return getBucket().getBucketId(); }
     virtual bool hasSingleBucketId() const { return false; }
     virtual LockingRequirements lockingRequirements() const noexcept {
         // Safe default: assume exclusive locking is required.

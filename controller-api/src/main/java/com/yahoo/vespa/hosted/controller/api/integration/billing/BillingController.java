@@ -49,7 +49,9 @@ public interface BillingController {
 
     InstrumentList listInstruments(TenantName tenant, String userId);
 
-    List<Invoice> getInvoices(TenantName tenant);
+    List<Invoice> getInvoicesForTenant(TenantName tenant);
+
+    List<Invoice> getInvoices();
 
     void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged);
 

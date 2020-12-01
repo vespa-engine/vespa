@@ -15,7 +15,8 @@ class DistributorBucketSpace;
 class RemoveOperation  : public SequencedOperation
 {
 public:
-    RemoveOperation(DistributorComponent& manager,
+    RemoveOperation(DistributorNodeContext& node_ctx,
+                    DistributorOperationContext& op_ctx,
                     DistributorBucketSpace &bucketSpace,
                     std::shared_ptr<api::RemoveCommand> msg,
                     PersistenceOperationMetricSet& metric,
@@ -35,7 +36,7 @@ private:
 
     std::shared_ptr<api::RemoveCommand> _msg;
 
-    DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
 };
 

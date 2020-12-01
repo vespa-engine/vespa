@@ -179,21 +179,18 @@ public:
     {
     }
 
-    void notifyPutDone(IDestructorCallbackSP, document::GlobalId gid, uint32_t lid, SerialNum)  override {
+    void notifyPut(IDestructorCallbackSP, document::GlobalId gid, uint32_t lid, SerialNum) override {
         _changeGid = gid;
         _changeLid = lid;
         _gidToLid[gid] = lid;
         ++_changes;
     }
 
-    void notifyRemove(IDestructorCallbackSP, document::GlobalId gid, SerialNum)  override {
+    void notifyRemove(IDestructorCallbackSP, document::GlobalId gid, SerialNum) override {
         _changeGid = gid;
         _changeLid = 0;
         _gidToLid[gid] = 0;
         ++_changes;
-    }
-
-    void notifyRemoveDone(document::GlobalId, SerialNum)  override {
     }
 
     void assertChanges(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {

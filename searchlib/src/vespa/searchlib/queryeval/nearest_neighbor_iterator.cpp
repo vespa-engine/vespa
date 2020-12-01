@@ -7,8 +7,7 @@ using search::tensor::DenseTensorAttribute;
 using vespalib::ConstArrayRef;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::TypedCells;
-
-using CellType = vespalib::eval::ValueType::CellType;
+using vespalib::eval::CellType;
 
 namespace search::queryeval {
 

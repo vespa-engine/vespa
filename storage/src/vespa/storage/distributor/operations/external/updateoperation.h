@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
 namespace document {
@@ -24,7 +23,8 @@ class DistributorBucketSpace;
 class UpdateOperation : public Operation
 {
 public:
-    UpdateOperation(DistributorComponent& manager,
+    UpdateOperation(DistributorNodeContext& node_ctx,
+                    DistributorOperationContext& op_ctx,
                     DistributorBucketSpace &bucketSpace,
                     const std::shared_ptr<api::UpdateCommand> & msg,
                     UpdateMetricSet& metric);
@@ -46,7 +46,7 @@ private:
     const api::Timestamp _new_timestamp;
     const bool _is_auto_create_update;
 
-    DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
     std::pair<document::BucketId, uint16_t> _newestTimestampLocation;
     api::BucketInfo _infoAtSendTime; // Should be same across all replicas

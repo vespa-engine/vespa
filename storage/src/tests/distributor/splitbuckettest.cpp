@@ -44,6 +44,11 @@ SplitOperationTest::SplitOperationTest()
 {
 }
 
+namespace {
+    vespalib::string _Storage("storage");
+    api::StorageMessageAddress _Storage0Address(&_Storage, lib::NodeType::STORAGE, 0);
+}
+
 TEST_F(SplitOperationTest, simple) {
     enableDistributorClusterState("distributor:1 storage:1");
 
@@ -65,7 +70,7 @@ TEST_F(SplitOperationTest, simple) {
 
         std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
         ASSERT_EQ(msg->getType(), api::MessageType::SPLITBUCKET);
-        EXPECT_EQ(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0).toString(),
+        EXPECT_EQ(_Storage0Address.toString(),
                   msg->getAddress()->toString());
 
         std::shared_ptr<api::StorageReply> reply(msg->makeReply().release());
@@ -135,7 +140,7 @@ TEST_F(SplitOperationTest, multi_node_failure) {
         {
             std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
             ASSERT_EQ(msg->getType(), api::MessageType::SPLITBUCKET);
-            EXPECT_EQ(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0).toString(),
+            EXPECT_EQ(_Storage0Address.toString(),
                       msg->getAddress()->toString());
 
             auto* sreply = static_cast<api::SplitBucketReply*>(msg->makeReply().release());
@@ -264,8 +269,7 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     };
     auto joinCmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(joinTarget));
     joinCmd->getSourceBuckets() = joinSources;
-    joinCmd->setAddress(
-            api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
+    joinCmd->setAddress(_Storage0Address);
 
     tracker.insert(joinCmd);
 
@@ -284,8 +288,7 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     tracker.clearMessagesForNode(0);
     EXPECT_FALSE(op.isBlocked(tracker));
 
-    joinCmd->setAddress(
-            api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
+    joinCmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
     tracker.insert(joinCmd);
 
     EXPECT_TRUE(op.isBlocked(tracker));

@@ -100,12 +100,6 @@ StorageApiChainBmFeedHandler::get_name() const
 }
 
 bool
-StorageApiChainBmFeedHandler::manages_buckets() const
-{
-    return _distributor;
-}
-
-bool
 StorageApiChainBmFeedHandler::manages_timestamp() const
 {
     return _distributor;

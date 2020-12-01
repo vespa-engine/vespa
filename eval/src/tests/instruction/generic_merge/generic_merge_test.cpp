@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/test/reference_operations.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -33,29 +34,6 @@ std::vector<Layout> merge_layouts = {
     {x({"a","b","c"}),y(5)},                            {x({"b","c","d"}),y(5)}
 };
 
-
-TensorSpec reference_merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
-    ValueType res_type = ValueType::merge(ValueType::from_spec(a.type()),
-                                          ValueType::from_spec(b.type()));
-    EXPECT_FALSE(res_type.is_error());
-    TensorSpec result(res_type.to_spec());
-    for (const auto &cell: a.cells()) {
-        auto other = b.cells().find(cell.first);
-        if (other == b.cells().end()) {
-            result.add(cell.first, cell.second);
-        } else {
-            result.add(cell.first, fun(cell.second, other->second));
-        }
-    }
-    for (const auto &cell: b.cells()) {
-        auto other = a.cells().find(cell.first);
-        if (other == a.cells().end()) {
-            result.add(cell.first, cell.second);
-        }
-    }
-    return result;
-}
-
 TensorSpec perform_generic_merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun, const ValueBuilderFactory &factory) {
     Stash stash;
     auto lhs = value_from_spec(a, factory);
@@ -72,7 +50,7 @@ void test_generic_merge_with(const ValueBuilderFactory &factory) {
         TensorSpec rhs = spec(merge_layouts[i + 1], Div16(N()));
         SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
         for (auto fun: {operation::Add::f, operation::Mul::f, operation::Sub::f, operation::Max::f}) {
-            auto expect = reference_merge(lhs, rhs, fun);
+            auto expect = ReferenceOperations::merge(lhs, rhs, fun);
             auto actual = perform_generic_merge(lhs, rhs, fun, factory);
             EXPECT_EQ(actual, expect);
         }
@@ -102,7 +80,7 @@ TEST(GenericMergeTest, immediate_generic_merge_works) {
         TensorSpec rhs = spec(merge_layouts[i + 1], Div16(N()));
         SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
         for (auto fun: {operation::Add::f, operation::Mul::f, operation::Sub::f, operation::Max::f}) {
-            auto expect = reference_merge(lhs, rhs, fun);
+            auto expect = ReferenceOperations::merge(lhs, rhs, fun);
             auto actual = immediate_generic_merge(lhs, rhs, fun);
             EXPECT_EQ(actual, expect);
         }

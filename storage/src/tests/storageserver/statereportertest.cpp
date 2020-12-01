@@ -2,6 +2,7 @@
 
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
 #include <vespa/storage/storageserver/statereporter.h>
 #include <vespa/metrics/metricmanager.h>
@@ -89,10 +90,8 @@ void StateReporterTest::SetUp() {
             _generationFetcher,
             "status");
 
-    documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
-
-    _filestorMetrics = std::make_shared<FileStorMetrics>(_node->getLoadTypes()->getMetricLoadTypes());
-    _filestorMetrics->initDiskMetrics(loadTypes->getMetricLoadTypes(), 1, 1);
+    _filestorMetrics = std::make_shared<FileStorMetrics>();
+    _filestorMetrics->initDiskMetrics(1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
     _metricManager->init(_config->getConfigId(), _node->getThreadPool());
@@ -222,8 +221,7 @@ TEST_F(StateReporterTest, report_metrics) {
 
     LOG(debug, "Adding to get metric");
 
-    using documentapi::LoadType;
-    thread0.get[LoadType::DEFAULT].count.inc(1);
+    thread0.get.count.inc(1);
 
     LOG(debug, "Waiting for 5 minute snapshot to be taken");
     // Wait until active metrics have been added to 5 min snapshot and reset
@@ -239,7 +237,7 @@ TEST_F(StateReporterTest, report_metrics) {
     }
     LOG(debug, "5 minute snapshot should have been taken. Adding put count");
 
-    thread0.put[LoadType::DEFAULT].count.inc(1);
+    thread0.put.count.inc(1);
 
     const int pathCount = 2;
     const char* paths[pathCount] = {

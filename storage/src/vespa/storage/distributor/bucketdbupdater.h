@@ -9,7 +9,6 @@
 #include "operation_routing_snapshot.h"
 #include "outdated_nodes_map.h"
 #include <vespa/document/bucket/bucket.h>
-#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/storagelink.h>

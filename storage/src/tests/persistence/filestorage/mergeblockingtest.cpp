@@ -2,7 +2,7 @@
 
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/persistence/messages.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <vector>
@@ -32,7 +32,8 @@ namespace {
 
 api::StorageMessageAddress
 makeAddress() {
-    return api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0);
+    static vespalib::string _storage("storage");
+    return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, 0);
 }
 
 void

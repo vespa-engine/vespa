@@ -5,7 +5,6 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_single_reduce_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
@@ -21,7 +20,7 @@ using namespace vespalib::eval::test;
 using namespace vespalib::tensor;
 using namespace vespalib::eval::tensor_function;
 
-const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
@@ -45,8 +44,8 @@ struct ReduceSpec {
 };
 
 void verify_optimized_impl(const vespalib::string &expr, const std::vector<ReduceSpec> &spec_list) {
-    EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseSingleReduceFunction>();
@@ -69,8 +68,8 @@ void verify_optimized(const vespalib::string &expr, const ReduceSpec &spec1, con
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
-    EvalFixture slow_fixture(prod_engine, expr, param_repo, false);
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<DenseSingleReduceFunction>();

@@ -33,7 +33,7 @@ import java.util.Optional;
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateNearestNeighborSearcher extends Searcher {
 
-    private Map<String, TensorType> validAttributes = new HashMap<>();
+    private final Map<String, TensorType> validAttributes = new HashMap<>();
 
     public ValidateNearestNeighborSearcher(AttributesConfig attributesConfig) {
         for (AttributesConfig.Attribute a : attributesConfig.attribute()) {
@@ -61,12 +61,10 @@ public class ValidateNearestNeighborSearcher extends Searcher {
 
         public Optional<ErrorMessage> errorMessage = Optional.empty();
 
-        private final RankProperties rankProperties;
         private final Map<String, TensorType> validAttributes;
         private final Query query;
 
         public NNVisitor(RankProperties rankProperties, Map<String, TensorType> validAttributes, Query query) {
-            this.rankProperties = rankProperties;
             this.validAttributes = validAttributes;
             this.query = query;
         }

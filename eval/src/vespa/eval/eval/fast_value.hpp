@@ -390,20 +390,12 @@ FastValueIndex::sparse_only_merge(const ValueType &res_type, const Fun &fun,
                              const FastValueIndex &lhs, const FastValueIndex &rhs,
                              ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash)
 {
-    auto &result = stash.create<FastValue<OCT>>(res_type, lhs.map.num_dims(), 1, lhs.map.size()+rhs.map.size());
-    lhs.map.each_map_entry([&](auto lhs_subspace, auto hash)
-                           {
-                               auto idx = result.my_index.map.add_mapping(lhs.map.make_addr(lhs_subspace), hash);
-                               if (__builtin_expect((idx == result.my_cells.size), true)) {
-                                   auto rhs_subspace = rhs.map.lookup(hash);
-                                   if (rhs_subspace != FastSparseMap::npos()) {
-                                       auto cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
-                                       result.my_cells.push_back_fast(cell_value);
-                                   } else {
-                                       result.my_cells.push_back_fast(lhs_cells[lhs_subspace]);
-                                   }
-                               }
-                           });
+    size_t guess_size = lhs.map.size() + rhs.map.size();
+    auto &result = stash.create<FastValue<OCT>>(res_type, lhs.map.num_dims(), 1, guess_size);
+    result.my_index = lhs;
+    for (auto val : lhs_cells) {
+        result.my_cells.push_back_fast(val);
+    }
     rhs.map.each_map_entry([&](auto rhs_subspace, auto hash)
                            {
                                auto lhs_subspace = lhs.map.lookup(hash);
@@ -412,9 +404,11 @@ FastValueIndex::sparse_only_merge(const ValueType &res_type, const Fun &fun,
                                    if (__builtin_expect((idx == result.my_cells.size), true)) {
                                        result.my_cells.push_back_fast(rhs_cells[rhs_subspace]);
                                    }
+                               } else {
+                                   auto cell_value = fun(lhs_cells[lhs_subspace], rhs_cells[rhs_subspace]);
+                                   *result.my_cells.get(lhs_subspace) = cell_value;
                                }
                            });
-
     return result;
 }
 

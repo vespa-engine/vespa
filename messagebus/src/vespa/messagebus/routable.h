@@ -24,9 +24,9 @@ namespace mbus {
  */
 class Routable {
 private:
-    Context   _context;
-    CallStack _stack;
-    Trace     _trace;
+    Context    _context;
+    CallStack  _stack;
+    Trace      _trace;
 
 public:
     /**
@@ -90,6 +90,7 @@ public:
      * @return Trace object
      */
     Trace &getTrace() { return _trace; }
+    Trace && steal_trace() { return std::move(_trace); }
 
     /**
      * Access the Trace object for this Routable. The Trace is part of the
@@ -106,7 +107,7 @@ public:
      *
      * @param trace The trace to set.
      */
-    void setTrace(const Trace &trace) { _trace = trace; }
+    void setTrace(Trace &&trace) { _trace = std::move(trace); }
 
     /**
      * Swaps the state that makes this routable unique to another routable. The

@@ -60,10 +60,7 @@ BucketOwnershipNotifier::sendNotifyBucketToDistributor(
     }
     auto notifyCmd = std::make_shared<api::NotifyBucketChangeCommand>(bucket, infoToSend);
 
-    notifyCmd->setAddress(api::StorageMessageAddress(
-                                  _component.getClusterName(),
-                                  lib::NodeType::DISTRIBUTOR,
-                                  distributorIndex));
+    notifyCmd->setAddress(api::StorageMessageAddress::create(&_component.getClusterName(), lib::NodeType::DISTRIBUTOR, distributorIndex));
     notifyCmd->setSourceIndex(_component.getIndex());
     LOG(debug,
         "Sending notify to distributor %u: %s",

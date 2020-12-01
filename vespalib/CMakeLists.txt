@@ -94,6 +94,7 @@ vespa_define_module(
     src/tests/rendezvous
     src/tests/runnable_pair
     src/tests/sha1
+    src/tests/shared_string_repo
     src/tests/sharedptr
     src/tests/signalhandler
     src/tests/simple_thread_bundle

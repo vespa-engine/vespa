@@ -7,7 +7,6 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <algorithm>
 
@@ -15,10 +14,6 @@ using storage::spi::test::makeSpiBucket;
 using namespace ::testing;
 
 namespace storage {
-
-namespace {
-spi::LoadType defaultLoadType(0, "default");
-}
 
 struct SplitBitDetectorTest : Test {
     document::TestDocMan testDocMan;
@@ -30,8 +25,7 @@ struct SplitBitDetectorTest : Test {
         : testDocMan(),
           provider(testDocMan.getTypeRepoSP()),
           bucket(makeSpiBucket(document::BucketId(1, 1))),
-          context(defaultLoadType, spi::Priority(0),
-                  spi::Trace::TraceLevel(0))
+          context(spi::Priority(0), spi::Trace::TraceLevel(0))
     {
         provider.initialize();
         provider.createBucket(bucket, context);

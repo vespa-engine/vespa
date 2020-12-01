@@ -16,11 +16,11 @@
 #pragma once
 
 #include "filestorhandler.h"
-#include "mergestatus.h"
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
+#include <vespa/storageapi/messageapi/storagereply.h>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
@@ -218,7 +218,7 @@ public:
         return stripe(bucket).lock(bucket, lockReq);
     }
 
-    void addMergeStatus(const document::Bucket&, MergeStatus::SP) override;
+    void addMergeStatus(const document::Bucket&, std::shared_ptr<MergeStatus>) override;
     MergeStatus& editMergeStatus(const document::Bucket&) override;
     bool isMerging(const document::Bucket&) const override;
     uint32_t getNumActiveMerges() const override;
@@ -242,7 +242,7 @@ private:
     MessageSender&          _messageSender;
     const document::BucketIdFactory& _bucketIdFactory;
     mutable std::mutex    _mergeStatesLock;
-    std::map<document::Bucket, MergeStatus::SP> _mergeStates;
+    std::map<document::Bucket, std::shared_ptr<MergeStatus>> _mergeStates;
     vespalib::duration    _getNextMessageTimeout;
     const uint32_t        _max_active_merges_per_stripe; // Read concurrently by stripes.
     mutable std::mutex              _pauseMonitor;

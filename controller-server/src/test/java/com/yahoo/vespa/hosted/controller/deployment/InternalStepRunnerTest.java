@@ -125,34 +125,7 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    public void reindexRequirementBlocksDeployment() {
-        tester.configServer().setConfigChangeActions(new ConfigChangeActions(List.of(),
-                                                                             List.of(),
-                                                                             List.of(new ReindexAction("Reindex",
-                                                                                                       false,
-                                                                                                       "doctype",
-                                                                                                       "cluster",
-                                                                                                       Collections.emptyList(),
-                                                                                                       List.of("Reindex it!")))));
-        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
-        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
-    }
-
-    @Test
-    public void refeedRequirementBlocksDeployment() {
-        tester.configServer().setConfigChangeActions(new ConfigChangeActions(List.of(),
-                                                                             List.of(new RefeedAction("Refeed",
-                                                                                                      false,
-                                                                                                      "doctype",
-                                                                                                      "cluster",
-                                                                                                      Collections.emptyList(),
-                                                                                                      singletonList("Refeed it!"))),
-                                                                             List.of()));
-        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
-        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
-    }
-
-    @Test
+    // TODO jonmv: Change to only wait for restarts, and remove triggering of restarts from runner.
     public void restartsServicesAndWaitsForRestartAndReboot() {
         RunId id = app.newRun(JobType.productionUsCentral1);
         ZoneId zone = id.type().zone(system());

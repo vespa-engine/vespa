@@ -12,6 +12,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     benchmark_timer.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
+    child_process.cpp
     classname.cpp
     closuretask.cpp
     compress.cpp
@@ -42,10 +43,10 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     runnable_pair.cpp
     sequence.cpp
     sha1.cpp
+    shared_string_repo.cpp
     sig_catch.cpp
     signalhandler.cpp
     simple_thread_bundle.cpp
-    child_process.cpp
     stash.cpp
     string_hash.cpp
     stringfmt.cpp

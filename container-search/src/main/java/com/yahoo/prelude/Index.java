@@ -44,11 +44,14 @@ public class Index {
     /** The null index - don't use this for name lookups */
     public static final Index nullIndex = new Index("(null)");
 
-    private String name;
+    private final String name;
 
-    private List<String> aliases = new ArrayList<>();
+    private String type; // TODO: Parse top a type object; do not expose this as a string
+
+    private final List<String> aliases = new ArrayList<>();
 
     // The state resulting from adding commands to this (using addCommand)
+    private boolean tensor = false;
     private boolean uriIndex = false;
     private boolean hostIndex = false;
     private StemMode stemMode = StemMode.NONE;
@@ -79,11 +82,11 @@ public class Index {
     /** The string terminating an exact token in this index, or null to use the default (space) */
     private String exactTerminator = null;
 
-    /** Commands which are not coverted into a field */
-    private Set<String> commands = new java.util.HashSet<>();
+    /** Commands which are not converted into a field */
+    private final Set<String> commands = new java.util.HashSet<>();
 
     /** All the commands added to this, including those converted to fields above */
-    private List<String> allCommands = new java.util.ArrayList<>();
+    private final List<String> allCommands = new java.util.ArrayList<>();
 
     public Index(String name) {
         this.name = name;
@@ -142,7 +145,9 @@ public class Index {
     public Index addCommand(String commandString) {
         allCommands.add(commandString);
 
-        if ("fullurl".equals(commandString)) {
+        if (commandString.startsWith("type tensor(")) { // TODO: Type info can replace numerical, predicate, multivalue
+            setTensor(true);
+        } else if ("fullurl".equals(commandString)) {
             setUriIndex(true);
         } else if ("urlhost".equals(commandString)) {
             setHostIndex(true);
@@ -195,6 +200,12 @@ public class Index {
         }
         return this;
     }
+
+    private void setTensor(boolean tensor) {
+        this.tensor = tensor;
+    }
+
+    public boolean isTensor() { return tensor; }
 
     private void setPredicateBounds(String bounds) {
         if ( ! bounds.startsWith("[..")) {
@@ -270,9 +281,7 @@ public class Index {
         return "(null)".equals(name);
     }
 
-    public boolean isAttribute() {
-        return isAttribute;
-    }
+    public boolean isAttribute() { return isAttribute; }
 
     public void setAttribute(boolean isAttribute) {
         this.isAttribute = isAttribute;

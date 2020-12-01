@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
-#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
 namespace document {
@@ -24,8 +23,11 @@ class OperationTargetList;
 class PutOperation : public SequencedOperation
 {
 public:
-    PutOperation(DistributorComponent& manager, DistributorBucketSpace &bucketSpace,
-                 std::shared_ptr<api::PutCommand> msg, PersistenceOperationMetricSet& metric,
+    PutOperation(DistributorNodeContext& node_ctx,
+                 DistributorOperationContext& op_ctx,
+                 DistributorBucketSpace &bucketSpace,
+                 std::shared_ptr<api::PutCommand> msg,
+                 PersistenceOperationMetricSet& metric,
                  SequencingHandle sequencingHandle = SequencingHandle());
 
     void onStart(DistributorMessageSender& sender) override;
@@ -52,7 +54,7 @@ private:
     bool has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const;
 
     std::shared_ptr<api::PutCommand> _msg;
-    DistributorComponent& _manager;
+    DistributorOperationContext& _op_ctx;
     DistributorBucketSpace &_bucketSpace;
 };
 

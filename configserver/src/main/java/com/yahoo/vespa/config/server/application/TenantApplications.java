@@ -27,6 +27,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
 import java.nio.file.Files;
@@ -64,13 +65,13 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     private final HostRegistry<ApplicationId> hostRegistry;
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
-    private final Clock clock = Clock.systemUTC();
+    private final Clock clock;
     private final TenantFileSystemDirs tenantFileSystemDirs;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
                               ConfigserverConfig configserverConfig, HostRegistry<ApplicationId> hostRegistry,
-                              TenantFileSystemDirs tenantFileSystemDirs) {
+                              TenantFileSystemDirs tenantFileSystemDirs, Clock clock) {
         this.database = new ApplicationCuratorDatabase(tenant, curator);
         this.tenant = tenant;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
@@ -83,6 +84,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
         this.hostRegistry = hostRegistry;
         this.tenantFileSystemDirs = tenantFileSystemDirs;
+        this.clock = clock;
     }
 
     // For testing only
@@ -95,7 +97,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),
                                       componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
-                                      new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName));
+                                      new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
+                                      componentRegistry.getClock());
     }
 
     /** The curator backed ZK storage of this. */
@@ -140,7 +143,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
-        database().createApplication(id);
+        database().createApplication(id, clock.instant());
     }
 
     /**
@@ -183,16 +186,17 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
-            ApplicationId applicationId = ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName());
+            // Note: event.getData() might return null on types not handled here (CONNECTION_*, INITIALIZED, see javadoc)
             switch (event.getType()) {
                 case CHILD_ADDED:
                     /* A new application is added when a session is added, @see
                     {@link com.yahoo.vespa.config.server.session.SessionRepository#childEvent(CuratorFramework, PathChildrenCacheEvent)} */
+                    ApplicationId applicationId = ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName());
                     log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
                     break;
                 // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
                 case CHILD_REMOVED:
-                    removeApplication(applicationId);
+                    removeApplication(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
                     break;
                 case CHILD_UPDATED:
                     // do nothing, application just got redeployed

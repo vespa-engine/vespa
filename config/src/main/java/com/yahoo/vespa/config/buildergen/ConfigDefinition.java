@@ -30,12 +30,4 @@ public class ConfigDefinition {
         return cnode;
     }
 
-    public ConfigDefinitionClass generateClass() {
-        File tempDir = Files.createTempDir();
-        DefParser parser = new DefParser(name, new StringReader(StringUtilities.implode(defSchema, "\n")));
-        JavaClassBuilder builder = new JavaClassBuilder(parser.getTree(), parser.getNormalizedDefinition(),  tempDir, null);
-        String className = builder.className();
-        return new ConfigDefinitionClass(className, builder.javaPackage(), builder.getConfigClass(className));
-    }
-
 }

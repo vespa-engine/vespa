@@ -3,8 +3,8 @@
 #pragma once
 
 #include "i_gid_to_lid_change_handler.h"
+#include "pending_gid_to_lid_change.h"
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/document/base/globalid.h>
 #include <vector>
 #include <mutex>
 
@@ -44,6 +44,7 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
     Listeners  _listeners;
     bool       _closed;
     vespalib::hash_map<GlobalId, PendingRemoveEntry, GlobalId::hash> _pendingRemove;
+    std::vector<PendingGidToLidChange> _pending_changes;
 
     void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid);
     void notifyRemove(IDestructorCallbackSP context, GlobalId gid);
@@ -51,9 +52,11 @@ public:
     GidToLidChangeHandler();
     ~GidToLidChangeHandler() override;
 
-    void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum) override;
+    void notifyPut(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serial_num) override;
+    void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum);
     void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum) override;
-    void notifyRemoveDone(GlobalId gid, SerialNum serialNum) override;
+    void notifyRemoveDone(GlobalId gid, SerialNum serialNum);
+    std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override;
 
     /**
      * Close handler, further notifications are blocked.

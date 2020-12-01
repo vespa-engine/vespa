@@ -62,7 +62,37 @@
           "diskSpeed" : "fast",
           "storageType" : "any"
         }
-      }
+      },
+      "scalingEvents" : [
+        {
+          "from": {
+            "nodes": 0,
+            "groups": 0,
+            "resources": {
+              "vcpu" : 0.0,
+              "memoryGb": 0.0,
+              "diskGb": 0.0,
+              "bandwidthGbps": 0.0,
+              "diskSpeed": "fast",
+              "storageType": "any"
+            }
+          },
+          "to": {
+            "nodes": 2,
+            "groups": 1,
+            "resources" : {
+              "vcpu": 2.0,
+              "memoryGb": 8.0,
+              "diskGb": 50.0,
+              "bandwidthGbps": 1.0,
+              "diskSpeed": "fast",
+              "storageType": "local"
+            }
+          },
+          "at" : 123
+        }
+      ],
+      "autoscalingStatus" : ""
     }
   }
 }

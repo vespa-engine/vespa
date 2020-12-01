@@ -4,7 +4,6 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/simple_tensor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_replace_type_function.h>
 #include <vespa/eval/tensor/dense/dense_fast_rename_optimizer.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
@@ -20,7 +19,7 @@ using namespace vespalib::eval::test;
 using namespace vespalib::tensor;
 using namespace vespalib::eval::tensor_function;
 
-const TensorEngine &prod_engine = DefaultTensorEngine::ref();
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
@@ -32,14 +31,14 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify_optimized(const vespalib::string &expr) {
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<DenseReplaceTypeFunction>();
     EXPECT_EQUAL(info.size(), 1u);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
-    EvalFixture fixture(prod_engine, expr, param_repo, true);
+    EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<DenseReplaceTypeFunction>();
     EXPECT_TRUE(info.empty());

@@ -2,6 +2,8 @@
 #include "distributorcomponent.h"
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
+#include "pendingmessagetracker.h"
+#include <vespa/document/select/parser.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 
@@ -132,30 +134,21 @@ DistributorComponent::ownsBucketInCurrentState(const document::Bucket &bucket) c
 api::StorageMessageAddress
 DistributorComponent::nodeAddress(uint16_t nodeIndex) const
 {
-    return api::StorageMessageAddress(
-            getClusterName(),
-            lib::NodeType::STORAGE,
-            nodeIndex);
+    return api::StorageMessageAddress::create(&getClusterName(), lib::NodeType::STORAGE, nodeIndex);
 }
 
 bool
-DistributorComponent::checkDistribution(
-        api::StorageCommand &cmd,
-        const document::Bucket &bucket)
+DistributorComponent::checkDistribution(api::StorageCommand &cmd, const document::Bucket &bucket)
 {
     BucketOwnership bo(checkOwnershipInPendingAndCurrentState(bucket));
     if (!bo.isOwned()) {
         std::string systemStateStr = bo.getNonOwnedState().toString();
         LOG(debug,
-            "Got message with wrong distribution, "
-            "bucket %s sending back state '%s'",
-            bucket.toString().c_str(),
-            systemStateStr.c_str());
+            "Got message with wrong distribution, bucket %s sending back state '%s'",
+            bucket.toString().c_str(), systemStateStr.c_str());
 
         api::StorageReply::UP reply(cmd.makeReply());
-        api::ReturnCode ret(
-                api::ReturnCode::WRONG_DISTRIBUTION,
-                systemStateStr);
+        api::ReturnCode ret(api::ReturnCode::WRONG_DISTRIBUTION, systemStateStr);
         reply->setResult(ret);
         sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
         return false;
@@ -164,8 +157,7 @@ DistributorComponent::checkDistribution(
 }
 
 void
-DistributorComponent::removeNodesFromDB(const document::Bucket &bucket,
-                                          const std::vector<uint16_t>& nodes)
+DistributorComponent::removeNodesFromDB(const document::Bucket &bucket, const std::vector<uint16_t>& nodes)
 {
     auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
     BucketDatabase::Entry dbentry = bucketSpace.getBucketDatabase().get(bucket.getBucketId());
@@ -351,6 +343,22 @@ DistributorComponent::createAppropriateBucket(const document::Bucket &bucket)
 bool
 DistributorComponent::initializing() const {
     return _distributor.initializing();
+}
+
+bool
+DistributorComponent::has_pending_message(uint16_t node_index,
+                                          const document::Bucket& bucket,
+                                          uint32_t message_type) const
+{
+    const auto& sender = static_cast<const DistributorMessageSender&>(getDistributor());
+    return sender.getPendingMessageTracker().hasPendingMessage(node_index, bucket, message_type);
+}
+
+std::unique_ptr<document::select::Node>
+DistributorComponent::parse_selection(const vespalib::string& selection) const
+{
+    document::select::Parser parser(*getTypeRepo()->documentTypeRepo, getBucketIdFactory());
+    return parser.parse(selection);
 }
 
 }

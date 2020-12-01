@@ -6,7 +6,6 @@
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/metrics/loadtype.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 
 using document::Document;
@@ -20,8 +19,7 @@ namespace feedbm {
 
 namespace {
 
-storage::spi::LoadType default_load_type(0, "default");
-storage::spi::Context context(default_load_type, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+storage::spi::Context context(storage::spi::Priority(0), 0);
 
 void get_bucket_info_loop(PendingTracker &tracker)
 {
@@ -38,7 +36,7 @@ class MyOperationComplete : public storage::spi::OperationComplete
     PendingTracker& _tracker;
 public:
     MyOperationComplete(std::atomic<uint32_t> &errors, const Bucket& bucket, PendingTracker& tracker);
-    ~MyOperationComplete();
+    ~MyOperationComplete() override;
     void onComplete(std::unique_ptr<storage::spi::Result> result) override;
     void addResultHandler(const storage::spi::ResultHandler* resultHandler) override;
 };
@@ -149,12 +147,6 @@ const vespalib::string&
 SpiBmFeedHandler::get_name() const
 {
     return _name;
-}
-
-bool
-SpiBmFeedHandler::manages_buckets() const
-{
-    return false;
 }
 
 bool

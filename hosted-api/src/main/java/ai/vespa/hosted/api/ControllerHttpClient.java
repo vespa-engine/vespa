@@ -281,12 +281,12 @@ public abstract class ControllerHttpClient {
                 if (response.statusCode() / 100 == 4)
                     throw new IllegalArgumentException("Bad request for " + request + ": " + message);
 
-                throw new IOException("Failed " + request + ": " + message);
+                throw new IOException(message);
 
             }
             catch (IOException e) { // Catches the above, and timeout exceptions from the client.
                 if (thrown == null)
-                    thrown = new UncheckedIOException(e);
+                    thrown = new UncheckedIOException("Failed " + request + ": " + e, e);
                 else
                     thrown.addSuppressed(e);
 

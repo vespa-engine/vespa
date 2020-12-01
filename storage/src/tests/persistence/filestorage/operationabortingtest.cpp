@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/persistence/messages.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/stllike/hash_set_insert.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -71,8 +71,6 @@ public:
         return PersistenceProviderWrapper::deleteBucket(bucket, ctx);
     }
 };
-
-spi::LoadType defaultLoadType(0, "default");
 
 }
 

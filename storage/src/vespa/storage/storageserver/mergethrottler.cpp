@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mergethrottler.h"
-#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/messagebus/message.h>
+#include <vespa/messagebus/error.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -65,7 +65,7 @@ MergeThrottler::ChainedMergeState::ChainedMergeState(const api::StorageMessage::
       _cycleBroken(false),
       _aborted(false)
 { }
-MergeThrottler::ChainedMergeState::~ChainedMergeState() {}
+MergeThrottler::ChainedMergeState::~ChainedMergeState() = default;
 
 MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
     : metrics::MetricSet("mergethrottler", {}, "", owner),
@@ -74,7 +74,7 @@ MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
       chaining("mergechains", this),
       local("locallyexecutedmerges", this)
 { }
-MergeThrottler::Metrics::~Metrics() {}
+MergeThrottler::Metrics::~Metrics() = default;
 
 MergeThrottler::MergeFailureMetrics::MergeFailureMetrics(metrics::MetricSet* owner)
     : metrics::MetricSet("failures", {}, "Detailed failure statistics", owner),
@@ -99,7 +99,7 @@ MergeThrottler::MergeFailureMetrics::MergeFailureMetrics(metrics::MetricSet* own
     sum.addMetricToSum(rejected);
     sum.addMetricToSum(other);
 }
-MergeThrottler::MergeFailureMetrics::~MergeFailureMetrics() { }
+MergeThrottler::MergeFailureMetrics::~MergeFailureMetrics() = default;
 
 
 MergeThrottler::MergeOperationMetrics::MergeOperationMetrics(const std::string& name, metrics::MetricSet* owner)
@@ -108,7 +108,7 @@ MergeThrottler::MergeOperationMetrics::MergeOperationMetrics(const std::string& 
       failures(this)
 {
 }
-MergeThrottler::MergeOperationMetrics::~MergeOperationMetrics() { }
+MergeThrottler::MergeOperationMetrics::~MergeOperationMetrics() = default;
 
 MergeThrottler::MergeNodeSequence::MergeNodeSequence(
         const api::MergeBucketCommand& cmd,
@@ -373,11 +373,7 @@ MergeThrottler::forwardCommandToNode(
                     mergeCmd.getMaxTimestamp(),
                     mergeCmd.getClusterStateVersion(),
                     newChain));
-    fwdMerge->setAddress(
-            api::StorageMessageAddress(
-                    _component.getClusterName(),
-                    lib::NodeType::STORAGE,
-                    nodeIndex));
+    fwdMerge->setAddress(api::StorageMessageAddress::create(&_component.getClusterName(), lib::NodeType::STORAGE, nodeIndex));
     fwdMerge->setSourceIndex(mergeCmd.getSourceIndex());
     fwdMerge->setPriority(mergeCmd.getPriority());
     fwdMerge->setTimeout(mergeCmd.getTimeout());
@@ -762,7 +758,7 @@ MergeThrottler::handleMessageUp(
     if (mergeReply.getResult().getResult() != api::ReturnCode::OK) {
         LOG(debug, "Merging failed for %s (%s)",
             mergeReply.toString().c_str(),
-            mergeReply.getResult().getMessage().c_str());
+            vespalib::string(mergeReply.getResult().getMessage()).c_str());
     }
 
     processMergeReply(msg, true, msgGuard);

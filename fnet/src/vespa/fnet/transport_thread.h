@@ -54,10 +54,6 @@ private:
     bool                     _finished;       // event loop stopped ?
     bool                     _waitFinished;   // someone is waiting for _finished
 
-    FNET_TransportThread(const FNET_TransportThread &);
-    FNET_TransportThread &operator=(const FNET_TransportThread &);
-
-
     /**
      * Add an IOComponent to the list of components. This operation is
      * performed immidiately and without locking. This method should
@@ -176,7 +172,11 @@ private:
         return _shutdown.load(std::memory_order_relaxed);
     }
 
+    void handle_wakeup_events();
+
 public:
+    FNET_TransportThread(const FNET_TransportThread &) = delete;
+    FNET_TransportThread &operator=(const FNET_TransportThread &) = delete;
     /**
      * Construct a transport object. To activate your newly created
      * transport object you need to call either the Start method to
@@ -192,7 +192,7 @@ public:
      * Destruct object. This should NOT be done before the transport
      * thread has completed it's work and raised the finished flag.
      **/
-    ~FNET_TransportThread();
+    ~FNET_TransportThread() override;
 
 
     /**
@@ -458,8 +458,8 @@ public:
     void WaitFinished();
 
 
-    // selector call-back for selector wakeup
-    void handle_wakeup();
+    // Empty selector call-back for selector wakeup
+    void handle_wakeup() { }
 
     // selector call-back for io-events
     void handle_event(FNET_IOComponent &ctx, bool read, bool write);

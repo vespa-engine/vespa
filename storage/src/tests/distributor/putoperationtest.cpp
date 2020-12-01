@@ -73,10 +73,11 @@ public:
 
     void sendPut(std::shared_ptr<api::PutCommand> msg) {
         op = std::make_unique<PutOperation>(getExternalOperationHandler(),
+                                            getExternalOperationHandler(),
                                             getDistributorBucketSpace(),
                                             msg,
                                             getDistributor().getMetrics().
-                                            puts[msg->getLoadType()]);
+                                            puts);
         op->start(_sender, framework::MilliSecTime(0));
     }
 

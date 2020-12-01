@@ -7,7 +7,6 @@
 #include <vector>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_engine.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 
 class FNET_TransportThread;
 class FastOS_ThreadPool;
@@ -30,8 +29,9 @@ private:
 
     vespalib::AsyncResolver::SP _async_resolver;
     vespalib::CryptoEngine::SP _crypto_engine;
-    vespalib::ThreadStackExecutor _work_pool;
+    std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
     Threads _threads;
+    size_t  _events_before_wakeup;
 
 public:
     /**
@@ -52,6 +52,11 @@ public:
     FNET_Transport()
         : FNET_Transport(vespalib::AsyncResolver::get_shared(), vespalib::CryptoEngine::get_default(), 1) {}
     ~FNET_Transport();
+
+    size_t events_before_wakeup() const { return _events_before_wakeup; }
+    void events_before_wakeup(size_t events_before_wakeup_in) {
+        _events_before_wakeup = events_before_wakeup_in;
+    }
 
     /**
      * Try to execute the given task on the internal work pool

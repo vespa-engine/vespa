@@ -9,7 +9,6 @@
 #pragma once
 
 #include "filestorhandler.h"
-#include "filestormetrics.h"
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/document/bucket/bucketid.h>
@@ -34,6 +33,7 @@ namespace storage {
 namespace api {
     class ReturnCode;
     class StorageReply;
+    class BucketCommand;
 }
 
 struct FileStorManagerTest;
@@ -42,6 +42,7 @@ class BucketOwnershipNotifier;
 class AbortBucketOperationsCommand;
 struct DoneInitializeHandler;
 class PersistenceHandler;
+struct FileStorMetrics;
 
 class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,

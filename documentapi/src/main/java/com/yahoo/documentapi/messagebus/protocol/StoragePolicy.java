@@ -40,7 +40,6 @@ import java.util.logging.Logger;
  *
  * cluster=[clusterName] (Mandatory, determines the cluster name)
  * config=[config] (Optional, a comma separated list of config servers to use. Used to talk to clusters not defined in this vespa application)
- * slobrokconfigid=[id] (Optional, use given config id for slobrok instead of default)
  * clusterconfigid=[id] (Optional, use given config id for distribution instead of default)
  *
  * @author Haakon Humberset

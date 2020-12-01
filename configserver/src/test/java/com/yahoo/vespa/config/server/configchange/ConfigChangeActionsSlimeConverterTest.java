@@ -89,16 +89,15 @@ public class ConfigChangeActionsSlimeConverterTest {
     @Test
     public void json_representation_of_refeed_actions() throws IOException {
         ConfigChangeActions actions = new ConfigChangeActionsBuilder().
-                refeed(CHANGE_ID, true, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_TYPE).
-                refeed(CHANGE_ID_2, false, CHANGE_MSG, DOC_TYPE_2, CLUSTER, SERVICE_TYPE).build();
+                refeed(CHANGE_ID, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_TYPE).
+                refeed(CHANGE_ID_2, CHANGE_MSG, DOC_TYPE_2, CLUSTER, SERVICE_TYPE).build();
         assertEquals("{\n" +
                         " \"configChangeActions\": {\n" +
                         "  \"restart\": [\n" +
                         "  ],\n" +
                         "  \"refeed\": [\n" +
                         "   {\n" +
-                        "    \"name\": \"change-id\",\n" +
-                        "    \"allowed\": true,\n" +
+                        "    \"name\": \"field-type-change\",\n" +
                         "    \"documentType\": \"music\",\n" +
                         "    \"clusterName\": \"foo\",\n" +
                         "    \"messages\": [\n" +
@@ -114,8 +113,7 @@ public class ConfigChangeActionsSlimeConverterTest {
                         "    ]\n" +
                         "   },\n" +
                         "   {\n" +
-                        "    \"name\": \"other-change-id\",\n" +
-                        "    \"allowed\": false,\n" +
+                        "    \"name\": \"indexing-change\",\n" +
                         "    \"documentType\": \"book\",\n" +
                         "    \"clusterName\": \"foo\",\n" +
                         "    \"messages\": [\n" +
@@ -141,7 +139,7 @@ public class ConfigChangeActionsSlimeConverterTest {
         @Test
         public void json_representation_of_reindex_actions() throws IOException {
             ConfigChangeActions actions = new ConfigChangeActionsBuilder().
-                    reindex(CHANGE_ID, true, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_TYPE).build();
+                    reindex(CHANGE_ID, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_TYPE).build();
             assertEquals(
                     "{\n" +
                             " \"configChangeActions\": {\n" +
@@ -151,8 +149,7 @@ public class ConfigChangeActionsSlimeConverterTest {
                             "  ],\n" +
                             "  \"reindex\": [\n" +
                             "   {\n" +
-                            "    \"name\": \"change-id\",\n" +
-                            "    \"allowed\": true,\n" +
+                            "    \"name\": \"field-type-change\",\n" +
                             "    \"documentType\": \"music\",\n" +
                             "    \"clusterName\": \"foo\",\n" +
                             "    \"messages\": [\n" +

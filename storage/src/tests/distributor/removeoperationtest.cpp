@@ -36,10 +36,11 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
 
         op = std::make_unique<RemoveOperation>(
                 getExternalOperationHandler(),
+                getExternalOperationHandler(),
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().
-                removes[msg->getLoadType()]);
+                removes);
 
         op->start(_sender, framework::MilliSecTime(0));
     }

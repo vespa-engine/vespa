@@ -5,6 +5,7 @@
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/visiting/visitormetrics.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
@@ -79,8 +80,7 @@ void MetricsTest::SetUp() {
     } catch (config::InvalidConfigException& e) {
         fprintf(stderr, "%s\n", e.what());
     }
-    _metricManager = std::make_unique<metrics::MetricManager>(
-            std::make_unique<MetricClock>(*_clock));
+    _metricManager = std::make_unique<metrics::MetricManager>(std::make_unique<MetricClock>(*_clock));
     _topSet.reset(new metrics::MetricSet("vds", {}, ""));
     {
         metrics::MetricLockGuard guard(_metricManager->getMetricLock());
@@ -92,17 +92,15 @@ void MetricsTest::SetUp() {
             *_metricManager,
             "status");
 
-    documentapi::LoadTypeSet::SP loadTypes(_node->getLoadTypes());
-
-    _filestorMetrics = std::make_shared<FileStorMetrics>(_node->getLoadTypes()->getMetricLoadTypes());
-    _filestorMetrics->initDiskMetrics(loadTypes->getMetricLoadTypes(), 1, 1);
+    _filestorMetrics = std::make_shared<FileStorMetrics>();
+    _filestorMetrics->initDiskMetrics(1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
     _bucketManagerMetrics = std::make_shared<BucketManagerMetrics>(_node->getComponentRegister().getBucketSpaceRepo());
     _topSet->registerMetric(*_bucketManagerMetrics);
 
     _visitorMetrics = std::make_shared<VisitorMetrics>();
-    _visitorMetrics->initThreads(4, loadTypes->getMetricLoadTypes());
+    _visitorMetrics->initThreads(4);
     _topSet->registerMetric(*_visitorMetrics);
     _metricManager->init(_config->getConfigId(), _node->getThreadPool());
 }
@@ -136,31 +134,29 @@ void MetricsTest::createFakeLoad()
     {
         FileStorDiskMetrics& disk(*_filestorMetrics->disk);
         disk.queueSize.addValue(4 * n);
-        //disk.averageQueueWaitingTime[documentapi::LoadType::DEFAULT].addValue(10 * n);
+        disk.averageQueueWaitingTime.addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
         for (uint32_t j=0; j<disk.threads.size(); ++j) {
             FileStorThreadMetrics& thread(*disk.threads[j]);
             thread.operations.inc(120 * n);
             thread.failedOperations.inc(2 * n);
 
-            using documentapi::LoadType;
-
-            thread.put[LoadType::DEFAULT].count.inc(10 * n);
-            thread.put[LoadType::DEFAULT].latency.addValue(5 * n);
-            thread.get[LoadType::DEFAULT].count.inc(12 * n);
-            thread.get[LoadType::DEFAULT].notFound.inc(2 * n);
-            thread.get[LoadType::DEFAULT].latency.addValue(3 * n);
-            thread.remove[LoadType::DEFAULT].count.inc(6 * n);
-            thread.remove[LoadType::DEFAULT].notFound.inc(1 * n);
-            thread.remove[LoadType::DEFAULT].latency.addValue(2 * n);
-            thread.update[LoadType::DEFAULT].count.inc(2 * n);
-            thread.update[LoadType::DEFAULT].notFound.inc(1 * n);
-            thread.update[LoadType::DEFAULT].latencyRead.addValue(2 * n);
-            thread.update[LoadType::DEFAULT].latency.addValue(7 * n);
-            thread.revert[LoadType::DEFAULT].count.inc(2 * n);
-            thread.revert[LoadType::DEFAULT].notFound.inc(n / 2);
-            thread.revert[LoadType::DEFAULT].latency.addValue(2 * n);
-            thread.visit[LoadType::DEFAULT].count.inc(6 * n);
+            thread.put.count.inc(10 * n);
+            thread.put.latency.addValue(5 * n);
+            thread.get.count.inc(12 * n);
+            thread.get.notFound.inc(2 * n);
+            thread.get.latency.addValue(3 * n);
+            thread.remove.count.inc(6 * n);
+            thread.remove.notFound.inc(1 * n);
+            thread.remove.latency.addValue(2 * n);
+            thread.update.count.inc(2 * n);
+            thread.update.notFound.inc(1 * n);
+            thread.update.latencyRead.addValue(2 * n);
+            thread.update.latency.addValue(7 * n);
+            thread.revert.count.inc(2 * n);
+            thread.revert.notFound.inc(n / 2);
+            thread.revert.latency.addValue(2 * n);
+            thread.visit.count.inc(6 * n);
 
             thread.deleteBuckets.count.inc(1 * n);
             thread.repairs.count.inc(3 * n);
@@ -186,12 +182,12 @@ void MetricsTest::createFakeLoad()
     for (uint32_t i=0; i<_visitorMetrics->threads.size(); ++i) {
         VisitorThreadMetrics& thread(*_visitorMetrics->threads[i]);
         thread.queueSize.addValue(2);
-        thread.averageQueueWaitingTime[documentapi::LoadType::DEFAULT].addValue(10);
-        thread.averageVisitorLifeTime[documentapi::LoadType::DEFAULT].addValue(1000);
-        thread.createdVisitors[documentapi::LoadType::DEFAULT].inc(5 * n);
-        thread.abortedVisitors[documentapi::LoadType::DEFAULT].inc(1 * n);
-        thread.completedVisitors[documentapi::LoadType::DEFAULT].inc(4 * n);
-        thread.failedVisitors[documentapi::LoadType::DEFAULT].inc(2 * n);
+        thread.averageQueueWaitingTime.addValue(10);
+        thread.averageVisitorLifeTime.addValue(1000);
+        thread.createdVisitors.inc(5 * n);
+        thread.abortedVisitors.inc(1 * n);
+        thread.completedVisitors.inc(4 * n);
+        thread.failedVisitors.inc(2 * n);
     }
     _clock->addSecondsToTime(60);
     _metricManager->timeChangedNotification();
@@ -241,8 +237,7 @@ TEST_F(MetricsTest, snapshot_presenting) {
 
     LOG(debug, "Adding to get metric");
 
-    using documentapi::LoadType;
-    thread0.get[LoadType::DEFAULT].count.inc(1);
+    thread0.get.count.inc(1);
 
     LOG(debug, "Waiting for 5 minute snapshot to be taken");
     // Wait until active metrics have been added to 5 min snapshot and reset
@@ -258,7 +253,7 @@ TEST_F(MetricsTest, snapshot_presenting) {
     }
     LOG(debug, "5 minute snapshot should have been taken. Adding put count");
 
-    thread0.put[LoadType::DEFAULT].count.inc(1);
+    thread0.put.count.inc(1);
 
     // Verify that active metrics have set put count but not get count
     ASSERT_METRIC(-2, "vds.filestor.alldisks.allthreads.put.sum.count", 1);

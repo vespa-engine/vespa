@@ -172,7 +172,7 @@ public class RoleTest {
     }
 
     @Test
-    public void billing() {
+    public void billing_tenant() {
         URI billing = URI.create("/billing/v1/tenant/t1/billing");
 
         Role user = Role.reader(TenantName.from("t1"));
@@ -188,4 +188,129 @@ public class RoleTest {
 
     }
 
+    @Test
+    public void billing_test() {
+        var tester = new EnforcerTester(publicCdEnforcer);
+
+        var accountant = Role.hostedAccountant();
+        var operator = Role.hostedOperator();
+        var reader = Role.reader(TenantName.from("t1"));
+        var developer = Role.developer(TenantName.from("t1"));
+        var admin = Role.administrator(TenantName.from("t1"));
+        var otherAdmin = Role.administrator(TenantName.from("t2"));
+
+        tester.on("/billing/v1/tenant/t1/token")
+                .assertAction(accountant)
+                .assertAction(operator, Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin,    Action.read)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/instrument")
+                .assertAction(accountant)
+                .assertAction(operator,                 Action.read)
+                .assertAction(reader,                   Action.read,                Action.delete)
+                .assertAction(developer,                Action.read,                Action.delete)
+                .assertAction(admin,                    Action.read, Action.update, Action.delete)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/instrument/i1")
+                .assertAction(accountant)
+                .assertAction(operator,  Action.read)
+                .assertAction(reader,    Action.read,                Action.delete)
+                .assertAction(developer, Action.read,                Action.delete)
+                .assertAction(admin,     Action.read, Action.update, Action.delete)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/billing")
+                .assertAction(accountant)
+                .assertAction(operator,  Action.read)
+                .assertAction(reader,    Action.read)
+                .assertAction(developer, Action.read)
+                .assertAction(admin,     Action.read)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/plan")
+                .assertAction(accountant, Action.update)
+                .assertAction(operator,   Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin,      Action.update)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/tenant/t1/collection")
+                .assertAction(accountant, Action.update)
+                .assertAction(operator,   Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/billing")
+                .assertAction(accountant, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,   Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/invoice/tenant/t1/line-item")
+                .assertAction(accountant, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,                  Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/invoice")
+                .assertAction(accountant, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,                  Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+
+        tester.on("/billing/v1/invoice/i1/status")
+                .assertAction(accountant, Action.create, Action.read, Action.update, Action.delete)
+                .assertAction(operator,                  Action.read)
+                .assertAction(reader)
+                .assertAction(developer)
+                .assertAction(admin)
+                .assertAction(otherAdmin);
+    }
+
+    private static class EnforcerTester {
+        private final Enforcer enforcer;
+        private final URI resource;
+
+        EnforcerTester(Enforcer enforcer) {
+            this(enforcer, null);
+        }
+
+        EnforcerTester(Enforcer enforcer, URI uri) {
+            this.enforcer = enforcer;
+            this.resource = uri;
+        }
+
+        public EnforcerTester on(String uri) {
+            return new EnforcerTester(enforcer, URI.create(uri));
+        }
+
+        public EnforcerTester assertAction(Role role, Action ...actions) {
+            var allowed = List.of(actions);
+
+            allowed.forEach(action -> {
+                var msg = String.format("%s should be allowed to %s on %s", role, action, resource);
+                assertTrue(msg, enforcer.allows(role, action, resource));
+            });
+
+            Action.all().stream().filter(a -> ! allowed.contains(a)).forEach(action -> {
+                var msg = String.format("%s should not be allowed to %s on %s", role, action, resource);
+                assertFalse(msg, enforcer.allows(role, action, resource));
+            });
+
+            return this;
+        }
+    }
 }

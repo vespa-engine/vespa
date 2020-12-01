@@ -18,6 +18,7 @@ import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -29,7 +30,9 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -249,9 +252,10 @@ public class ApplicationHandler extends HttpHandler {
         if (tenant == null)
             throw new NotFoundException("Tenant '" + applicationId.tenant().value() + "' not found");
 
-        return new ReindexResponse(tenant.getApplicationRepo().database()
-                                         .readReindexingStatus(applicationId)
-                                         .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)));
+        return new ReindexingResponse(tenant.getApplicationRepo().database()
+                                            .readReindexingStatus(applicationId)
+                                            .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)),
+                                      Map.of()); // TODO jonmv/bjorncs: Get status of each cluster and fill in here.
     }
 
     private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {
@@ -439,31 +443,59 @@ public class ApplicationHandler extends HttpHandler {
         }
     }
 
-    private static class ReindexResponse extends JSONResponse {
-        ReindexResponse(ApplicationReindexing reindexing) {
+    static class ReindexingResponse extends JSONResponse {
+        ReindexingResponse(ApplicationReindexing reindexing, Map<String, ClusterReindexing> clusters) {
             super(Response.Status.OK);
-                object.setBool("enabled", reindexing.enabled());
-                setStatus(object.setObject("status"), reindexing.common());
+            object.setBool("enabled", reindexing.enabled());
+            setStatus(object.setObject("status"), reindexing.common());
 
-                Cursor clustersObject = object.setObject("clusters");
-                reindexing.clusters().entrySet().stream().sorted(comparingByKey())
-                          .forEach(cluster -> {
-                              Cursor clusterObject = clustersObject.setObject(cluster.getKey());
-                              setStatus(clusterObject.setObject("status"), cluster.getValue().common());
+            Cursor clustersObject = object.setObject("clusters");
+            Stream<String> clusterNames = Stream.concat(clusters.keySet().stream(), reindexing.clusters().keySet().stream());
+            clusterNames.sorted()
+                        .forEach(clusterName -> {
+                            Cursor clusterObject = clustersObject.setObject(clusterName);
+                            Cursor pendingObject = clusterObject.setObject("pending");
+                            Cursor readyObject = clusterObject.setObject("ready");
 
-                              Cursor pendingObject = clusterObject.setObject("pending");
-                              cluster.getValue().pending().entrySet().stream().sorted(comparingByKey())
-                                     .forEach(pending -> pendingObject.setLong(pending.getKey(), pending.getValue()));
+                            Map<String, Cursor> statuses = new HashMap<>();
+                            if (reindexing.clusters().containsKey(clusterName)) {
+                                setStatus(clusterObject.setObject("status"), reindexing.clusters().get(clusterName).common());
 
-                              Cursor readyObject = clusterObject.setObject("ready");
-                              cluster.getValue().ready().entrySet().stream().sorted(comparingByKey())
-                                     .forEach(ready -> setStatus(readyObject.setObject(ready.getKey()), ready.getValue()));
-                          });
+                                reindexing.clusters().get(clusterName).pending().entrySet().stream().sorted(comparingByKey())
+                                          .forEach(pending -> pendingObject.setLong(pending.getKey(), pending.getValue()));
+
+                                reindexing.clusters().get(clusterName).ready().entrySet().stream().sorted(comparingByKey())
+                                          .forEach(ready -> setStatus(statuses.computeIfAbsent(ready.getKey(), readyObject::setObject), ready.getValue()));
+                            }
+                            if (clusters.containsKey(clusterName))
+                                clusters.get(clusterName).documentTypeStatus().entrySet().stream().sorted(comparingByKey())
+                                        .forEach(status -> setStatus(statuses.computeIfAbsent(status.getKey(), readyObject::setObject), status.getValue()));
+
+                        });
         }
 
-        private static void setStatus(Cursor object, ApplicationReindexing.Status status) {
-            object.setLong("readyMillis", status.ready().toEpochMilli());
+        private static void setStatus(Cursor object, ApplicationReindexing.Status readyStatus) {
+            object.setLong("readyMillis", readyStatus.ready().toEpochMilli());
         }
+
+        private static void setStatus(Cursor object, ClusterReindexing.Status status) {
+            object.setLong("startedMillis", status.startedAt().toEpochMilli());
+            status.endedAt().ifPresent(endedAt -> object.setLong("endedMillis", endedAt.toEpochMilli()));
+            status.state().map(ReindexingResponse::toString).ifPresent(state -> object.setString("state", state));
+            status.message().ifPresent(message -> object.setString("message", message));
+            status.progress().ifPresent(progress -> object.setString("progress", progress));
+        }
+
+        static String toString(ClusterReindexing.State state) {
+            switch (state) {
+                case PENDING: return "pending";
+                case RUNNING: return "running";
+                case FAILED: return "failed";
+                case SUCCESSFUL: return "successful";
+                default: throw new IllegalArgumentException("Unexpected state '" + state + "'");
+            }
+        }
+
     }
 
 }

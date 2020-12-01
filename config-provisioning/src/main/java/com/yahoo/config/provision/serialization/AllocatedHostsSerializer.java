@@ -44,11 +44,6 @@ public class AllocatedHostsSerializer {
 
     private static final String realResourcesKey = "realResources";
     private static final String advertisedResourcesKey = "advertisedResources";
-
-    // Flavor can be removed when all allocated nodes are docker nodes
-    private static final String flavorKey = "flavor";
-
-    private static final String resourcesKey = "resources";
     private static final String requestedResourcesKey = "requestedResources";
     private static final String vcpuKey = "vcpu";
     private static final String memoryKey = "memory";

@@ -15,14 +15,16 @@ namespace storage::distributor {
 PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
         PersistenceOperationMetricSet& metric,
         std::shared_ptr<api::BucketInfoReply> reply,
-        DistributorComponent& link,
+        DistributorNodeContext& node_ctx,
+        DistributorOperationContext& op_ctx,
         api::Timestamp revertTimestamp)
-    : MessageTracker(link.getClusterName()),
+    : MessageTracker(node_ctx.cluster_name()),
       _metric(metric),
       _reply(std::move(reply)),
-      _manager(link),
+      _op_ctx(op_ctx),
       _revertTimestamp(revertTimestamp),
-      _requestTimer(link.getClock()),
+      _trace(_reply->getTrace().getLevel()),
+      _requestTimer(node_ctx.clock()),
       _n_persistence_replies_total(0),
       _n_successful_persistence_replies(0),
       _priority(_reply->getPriority()),
@@ -36,11 +38,11 @@ void
 PersistenceMessageTrackerImpl::updateDB()
 {
     for (const auto & entry : _bucketInfo) {
-        _manager.updateBucketDatabase(entry.first, entry.second);
+        _op_ctx.update_bucket_database(entry.first, entry.second);
     }
 
     for (const auto & entry :  _remapBucketInfo){
-        _manager.updateBucketDatabase(entry.first, entry.second,DatabaseUpdate::CREATE_IF_NONEXISTING);
+        _op_ctx.update_bucket_database(entry.first, entry.second, DatabaseUpdate::CREATE_IF_NONEXISTING);
     }
 }
 
@@ -118,7 +120,7 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
         LOG(spam, "Can't return early because we have already replied or failed");
         return false;
     }
-    auto &bucketSpaceRepo(_manager.getBucketSpaceRepo());
+    auto &bucketSpaceRepo(_op_ctx.bucket_space_repo());
     auto &bucketSpace(bucketSpaceRepo.get(_reply->getBucket().getBucketSpace()));
     const lib::Distribution& distribution = bucketSpace.getDistribution();
 
@@ -163,25 +165,18 @@ PersistenceMessageTrackerImpl::addBucketInfoFromReply(
             bucket.toString().c_str(),
             bucketInfo.toString().c_str(),
             node);
-        _remapBucketInfo[bucket].push_back(
-                BucketCopy(_manager.getUniqueTimestamp(),
-                           node,
-                           bucketInfo));
+        _remapBucketInfo[bucket].emplace_back(_op_ctx.generate_unique_timestamp(), node, bucketInfo);
     } else {
         LOG(debug, "Bucket %s: Received bucket info %s from node %d",
             bucket.toString().c_str(),
             bucketInfo.toString().c_str(),
             node);
-        _bucketInfo[bucket].push_back(
-                BucketCopy(_manager.getUniqueTimestamp(),
-                           node,
-                           bucketInfo));
+        _bucketInfo[bucket].emplace_back(_op_ctx.generate_unique_timestamp(), node, bucketInfo);
     }
 }
 
 void
-PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, 
-                                              const api::BucketInfoReply& reply) const
+PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const
 {
     LOG(spam, "Bucket %s: Received successful reply %s",
         reply.getBucketId().toString().c_str(),
@@ -201,7 +196,7 @@ PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node,
 bool
 PersistenceMessageTrackerImpl::shouldRevert() const
 {
-    return _manager.getDistributorConfig().enableRevert
+    return _op_ctx.distributor_config().enable_revert()
             &&  !_revertNodes.empty() && !_success && _reply;
 }
 
@@ -230,7 +225,7 @@ PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
     updateMetrics();
     _trace.setStrict(false);
     if ( ! _trace.isEmpty()) {
-        _reply->getTrace().getRoot().addChild(_trace);
+        _reply->getTrace().addChild(std::move(_trace));
     }
     
     sender.sendReply(_reply);
@@ -264,7 +259,7 @@ PersistenceMessageTrackerImpl::handleCreateBucketReply(
         && reply.getResult().getResult() != api::ReturnCode::EXISTS)
     {
         LOG(spam, "Create bucket reply failed, so deleting it from bucket db");
-        _manager.removeNodeFromDB(reply.getBucket(), node);
+        _op_ctx.remove_node_from_bucket_database(reply.getBucket(), node);
     }
 }
 
@@ -292,9 +287,7 @@ PersistenceMessageTrackerImpl::updateFromReply(
         api::BucketInfoReply& reply,
         uint16_t node)
 {
-    if ( ! reply.getTrace().getRoot().isEmpty()) {
-        _trace.addChild(reply.getTrace().getRoot());
-    }
+    _trace.addChild(reply.steal_trace());
 
     if (reply.getType() == api::MessageType::CREATEBUCKET_REPLY) {
         handleCreateBucketReply(reply, node);

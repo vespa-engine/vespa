@@ -17,12 +17,16 @@ using storage::lib::NodeType;
 
 namespace feedbm {
 
+namespace {
+    vespalib::string _Storage("storage");
+}
 StorageApiMessageBusBmFeedHandler::StorageApiMessageBusBmFeedHandler(BmMessageBus &message_bus, bool distributor)
     : IBmFeedHandler(),
       _name(vespalib::string("StorageApiMessageBusBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
-      _storage_address(std::make_unique<StorageMessageAddress>("storage", distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
-      _message_bus(message_bus)
+      _storage_address(std::make_unique<StorageMessageAddress>(&_Storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
+      _message_bus(message_bus),
+      _route(_storage_address->to_mbus_route())
 {
 }
 
@@ -33,7 +37,7 @@ StorageApiMessageBusBmFeedHandler::send_msg(std::shared_ptr<storage::api::Storag
 {
     cmd->setSourceIndex(0);
     auto msg = std::make_unique<storage::mbusprot::StorageCommand>(cmd);
-    _message_bus.send_msg(std::move(msg), _storage_address->getRoute(), pending_tracker);
+    _message_bus.send_msg(std::move(msg), _route, pending_tracker);
 }
 
 void
@@ -79,12 +83,6 @@ const vespalib::string&
 StorageApiMessageBusBmFeedHandler::get_name() const
 {
     return _name;
-}
-
-bool
-StorageApiMessageBusBmFeedHandler::manages_buckets() const
-{
-    return _distributor;
 }
 
 bool

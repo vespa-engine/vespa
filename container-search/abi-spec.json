@@ -6089,6 +6089,7 @@
       "public final java.lang.Object get(java.lang.String, java.util.Map)",
       "public final java.lang.Object get(java.lang.String, java.util.Map, com.yahoo.processing.request.Properties)",
       "public final java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
+      "public final com.yahoo.search.query.profile.compiled.DimensionalMap getEntries()",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile clone()",
       "public java.lang.String toString()",
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
@@ -7969,6 +7970,18 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.metrics.simple.MetricReceiver)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.searchers.QueryValidator": {
+    "superClass": "com.yahoo.search.Searcher",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
     ],
     "fields": []

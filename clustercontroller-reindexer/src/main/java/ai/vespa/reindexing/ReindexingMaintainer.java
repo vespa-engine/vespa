@@ -56,19 +56,18 @@ public class ReindexingMaintainer extends AbstractComponent {
                                 Metric metric,
                                 DocumentAccess access, ZookeepersConfig zookeepersConfig,
                                 ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig allClustersBucketSpacesConfig,
-                                ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
-        this(Clock.systemUTC(), metric, access, zookeepersConfig, clusterListConfig, allClustersBucketSpacesConfig, reindexingConfig, documentmanagerConfig);
+                                ReindexingConfig reindexingConfig) {
+        this(Clock.systemUTC(), metric, access, zookeepersConfig, clusterListConfig, allClustersBucketSpacesConfig, reindexingConfig);
     }
 
     ReindexingMaintainer(Clock clock, Metric metric, DocumentAccess access, ZookeepersConfig zookeepersConfig,
                          ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig allClustersBucketSpacesConfig,
-                         ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
-        DocumentTypeManager manager = new DocumentTypeManager(documentmanagerConfig);
-        this.reindexer = new Reindexer(parseCluster(reindexingConfig.clusterName(), clusterListConfig, allClustersBucketSpacesConfig, manager),
-                                       parseReady(reindexingConfig, manager),
+                         ReindexingConfig reindexingConfig) {
+        this.reindexer = new Reindexer(parseCluster(reindexingConfig.clusterName(), clusterListConfig, allClustersBucketSpacesConfig, access.getDocumentTypeManager()),
+                                       parseReady(reindexingConfig, access.getDocumentTypeManager()),
                                        new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()),
                                                              reindexingConfig.clusterName(),
-                                                             manager),
+                                                             access.getDocumentTypeManager()),
                                        access,
                                        metric,
                                        clock);

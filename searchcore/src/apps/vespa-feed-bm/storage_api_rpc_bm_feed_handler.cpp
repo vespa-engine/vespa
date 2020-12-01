@@ -6,14 +6,12 @@
 #include "storage_reply_error_checker.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpc/message_codec_provider.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
-#include <cassert>
 
 using document::Document;
 using document::DocumentId;
@@ -25,6 +23,10 @@ using storage::rpc::StorageApiRpcService;
 using storage::lib::NodeType;
 
 namespace feedbm {
+
+namespace {
+    vespalib::string _Storage("storage");
+}
 
 class StorageApiRpcBmFeedHandler::MyMessageDispatcher : public storage::MessageDispatcher,
                                  public StorageReplyErrorChecker
@@ -68,10 +70,10 @@ StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& share
     : IBmFeedHandler(),
       _name(vespalib::string("StorageApiRpcBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
-      _storage_address(std::make_unique<StorageMessageAddress>("storage", distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
+      _storage_address(std::make_unique<StorageMessageAddress>(&_Storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
       _shared_rpc_resources(shared_rpc_resources_in),
       _message_dispatcher(std::make_unique<MyMessageDispatcher>()),
-      _message_codec_provider(std::make_unique<storage::rpc::MessageCodecProvider>(repo, std::make_shared<documentapi::LoadTypeSet>())),
+      _message_codec_provider(std::make_unique<storage::rpc::MessageCodecProvider>(repo)),
       _rpc_client(std::make_unique<storage::rpc::StorageApiRpcService>(*_message_dispatcher, _shared_rpc_resources, *_message_codec_provider, rpc_params))
 {
 }
@@ -130,12 +132,6 @@ const vespalib::string&
 StorageApiRpcBmFeedHandler::get_name() const
 {
     return _name;
-}
-
-bool
-StorageApiRpcBmFeedHandler::manages_buckets() const
-{
-    return _distributor;
 }
 
 bool

@@ -16,7 +16,6 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author geirst
@@ -44,20 +43,16 @@ public class ConfigChangeActionsBuilder {
     }
 
 
-    ConfigChangeActionsBuilder refeed(String name, boolean allowed, String message, String documentType, String clusterName, String serviceName) {
-        actions.add(new MockRefeedAction(name,
-                                         allowed,
+    ConfigChangeActionsBuilder refeed(ValidationId validationId, String message, String documentType, String clusterName, String serviceName) {
+        actions.add(new MockRefeedAction(validationId,
                                          message,
                                          List.of(createService(clusterName, "myclustertype", "myservicetype", serviceName)), documentType));
         return this;
     }
 
-    ConfigChangeActionsBuilder reindex(String name, boolean allowed, String message, String documentType, String clusterName, String serviceName) {
+    ConfigChangeActionsBuilder reindex(ValidationId validationId, String message, String documentType, String clusterName, String serviceName) {
         List<ServiceInfo> services = List.of(createService(clusterName, "myclustertype", "myservicetype", serviceName));
-        ValidationOverrides overrides = mock(ValidationOverrides.class);
-        when(overrides.allows((String) any(), any())).thenReturn(allowed);
-        when(overrides.allows((ValidationId) any(), any())).thenReturn(allowed);
-        actions.add(VespaReindexAction.of(ClusterSpec.Id.from(clusterName), name, overrides, message, services, documentType, Instant.now()));
+        actions.add(VespaReindexAction.of(ClusterSpec.Id.from(clusterName), validationId, message, services, documentType));
         return this;
     }
 

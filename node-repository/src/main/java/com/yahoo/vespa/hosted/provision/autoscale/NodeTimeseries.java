@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +40,10 @@ public class NodeTimeseries {
         List<MetricSnapshot> list = new ArrayList<>(snapshots);
         list.add(snapshot);
         return new NodeTimeseries(hostname(), list);
+    }
+
+    public NodeTimeseries filter(Predicate<MetricSnapshot> filter) {
+        return new NodeTimeseries(hostname, snapshots.stream().filter(filter).collect(Collectors.toList()));
     }
 
     public NodeTimeseries justAfter(Instant oldestTime) {

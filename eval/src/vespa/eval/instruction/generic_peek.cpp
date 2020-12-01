@@ -24,7 +24,8 @@ using Spec = GenericPeek::SpecMap;
 
 size_t count_children(const Spec &spec)
 {
-    size_t num_children = 0;
+    // accounts for "input" child:
+    size_t num_children = 1;
     for (const auto & [dim_name, child_or_label] : spec) {
         if (std::holds_alternative<size_t>(child_or_label)) {
             ++num_children;
@@ -35,7 +36,7 @@ size_t count_children(const Spec &spec)
 
 struct DimSpec {
     vespalib::stringref name;
-    GenericPeek::MyLabel child_or_label;
+    GenericPeek::SpecMap::mapped_type child_or_label;
     bool has_child() const {
         return std::holds_alternative<size_t>(child_or_label);
     }
@@ -313,18 +314,19 @@ generic_mixed_peek(const ValueType &res_type,
 template <typename ICT, typename OCT>
 void my_generic_peek_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<PeekParam>(param_in);
-    const Value & input_value = state.peek(param.num_children);
-    const size_t last_child = param.num_children - 1;
+    // stack index for children are in range [0, num_children>
+    size_t last_valid_stack_idx = param.num_children - 1;
+    const Value & input_value = state.peek(last_valid_stack_idx);
     auto get_child_value = [&] (size_t child_idx) {
-        size_t stack_idx = last_child - child_idx;
+        size_t stack_idx = last_valid_stack_idx - child_idx;
         return int64_t(state.peek(stack_idx).as_double());
     };
     auto up = generic_mixed_peek<ICT,OCT>(param.res_type, input_value,
                                           param.sparse_plan, param.dense_plan,
                                           param.factory, get_child_value);
     const Value &result = *state.stash.create<Value::UP>(std::move(up));
-    // num_children does not include the "input" param
-    state.pop_n_push(param.num_children + 1, result);
+    // num_children includes the "input" param
+    state.pop_n_push(param.num_children, result);
 }
 
 struct SelectGenericPeekOp {

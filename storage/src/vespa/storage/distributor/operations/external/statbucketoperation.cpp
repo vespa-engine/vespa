@@ -11,7 +11,6 @@ LOG_SETUP(".distributor.callback.statbucket");
 namespace storage::distributor {
 
 StatBucketOperation::StatBucketOperation(
-        [[maybe_unused]] DistributorComponent& manager,
         DistributorBucketSpace &bucketSpace,
         const std::shared_ptr<api::StatBucketCommand> & cmd)
     : Operation(),

@@ -1,8 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/tensor/dense/dense_replace_type_function.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
@@ -13,7 +13,7 @@ using namespace vespalib::eval;
 using namespace vespalib::tensor;
 using namespace vespalib;
 
-const TensorEngine &engine = DefaultTensorEngine::ref();
+EngineOrFactory prod_factory{FastValueBuilderFactory::get()};
 
 TypedCells getCellsRef(const eval::Value &value) {
     return value.cells();
@@ -34,16 +34,16 @@ struct Fixture {
     std::vector<TensorFunction::Child::CREF> children;
     InterpretedFunction::State               state;
     Fixture()
-        : my_value(engine.from_spec(spec({x(10)}, N()))),
+        : my_value(prod_factory.from_spec(spec({x(10)}, N()))),
           new_type(ValueType::from_spec("tensor(x[5],y[2])")),
           mock_child(my_value->type()),
           my_fun(new_type, mock_child),
           children(),
-          state(engine)
+          state(prod_factory)
     {
         my_fun.push_children(children);
         state.stack.push_back(*my_value);
-        my_fun.compile_self(engine, state.stash).perform(state);
+        my_fun.compile_self(prod_factory, state.stash).perform(state);
         ASSERT_EQUAL(children.size(), 1u);
         ASSERT_EQUAL(state.stack.size(), 1u);
         ASSERT_TRUE(!new_type.is_error());

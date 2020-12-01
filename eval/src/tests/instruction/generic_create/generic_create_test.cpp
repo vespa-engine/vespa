@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_create.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/test/reference_operations.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -53,6 +54,19 @@ bool operator< (const NumberedCellSpec &a, const NumberedCellSpec &b) {
     return a.num < b.num;
 }
 
+TensorSpec reference_create(const TensorSpec &a) {
+    std::vector<TensorSpec> children;
+    ReferenceOperations::CreateSpec spec;
+    for (const auto & [addr, value] : a.cells()) {
+        size_t child_idx = children.size();
+        spec.emplace(addr, child_idx);
+        TensorSpec child("double");
+        child.add({}, value);
+        children.push_back(child);
+    }
+    return ReferenceOperations::create(a.type(), spec, children);
+}
+
 TensorSpec perform_generic_create(const TensorSpec &a, const ValueBuilderFactory &factory)
 {
     ValueType res_type = ValueType::from_spec(a.type());
@@ -80,12 +94,13 @@ void test_generic_create_with(const ValueBuilderFactory &factory) {
     for (const auto & layout : create_layouts) {
         TensorSpec full = spec(layout, N());
         auto actual = perform_generic_create(full, factory);
-        EXPECT_EQ(actual, full);
+        auto expect = reference_create(full).normalize();
+        EXPECT_EQ(actual, expect);
         for (size_t n : {2, 3, 4, 5}) {
             TensorSpec partial = remove_each(full, n);
             actual = perform_generic_create(partial, factory);
-            auto filled = spec_from_value(*value_from_spec(partial, SimpleValueBuilderFactory::get()));
-            EXPECT_EQ(actual, filled);
+            expect = reference_create(partial).normalize();
+            EXPECT_EQ(actual, expect);
         }
     }
 }

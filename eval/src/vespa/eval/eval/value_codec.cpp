@@ -14,8 +14,6 @@ namespace vespalib::eval {
 
 namespace {
 
-using CellType = ValueType::CellType;
-
 constexpr uint32_t DOUBLE_CELL_TYPE = 0;
 constexpr uint32_t FLOAT_CELL_TYPE = 1;
 
@@ -118,7 +116,7 @@ ValueType decode_type(nbostream &input, const Format &format) {
         }
     }
     if (dim_list.empty()) {
-        assert(cell_type == ValueType::CellType::DOUBLE);
+        assert(cell_type == CellType::DOUBLE);
     }
     return ValueType::tensor_type(std::move(dim_list), cell_type);
 }

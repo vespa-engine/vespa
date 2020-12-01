@@ -3,7 +3,6 @@
 #pragma once
 
 #include "operationdonecontext.h"
-#include <vespa/searchcore/proton/reference/pending_notify_remove_done.h>
 #include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/document/base/globalid.h>
@@ -26,12 +25,11 @@ class RemoveDoneContext : public OperationDoneContext
 {
     vespalib::Executor &_executor;
     std::unique_ptr<vespalib::Executor::Task> _task;
-    PendingNotifyRemoveDone _pendingNotifyRemoveDone;
     IPendingLidTracker::Token _uncommitted;
 
 public:
     RemoveDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor, IDocumentMetaStore &documentMetaStore,
-                      PendingNotifyRemoveDone &&pendingNotifyRemoveDone, uint32_t lid);
+                      uint32_t lid);
     ~RemoveDoneContext() override;
 };
 

@@ -7,16 +7,7 @@
 using document::Bucket;
 using document::BucketId;
 
-namespace storage {
-namespace api {
-
-BucketReply::BucketReply(const BucketCommand& cmd,
-                         const ReturnCode& code)
-    : StorageReply(cmd, code),
-      _bucket(cmd.getBucket()),
-      _originalBucket(cmd.getOriginalBucketId())
-{
-}
+namespace storage::api {
 
 void
 BucketReply::remapBucketId(const BucketId& bucket) {
@@ -42,5 +33,4 @@ BucketReply::print(std::ostream& out, bool verbose,
     }
 }
 
-} // api
-} // storage
+}

@@ -2,6 +2,7 @@
 
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -15,7 +16,6 @@ using document::test::makeDocumentBucket;
 
 namespace storage {
 
-spi::LoadType FileStorTestFixture::defaultLoadType = spi::LoadType(0, "default");
 const uint32_t FileStorTestFixture::MSG_WAIT_TIME;
 
 void
@@ -51,10 +51,8 @@ FileStorTestFixture::TearDown()
 void
 FileStorTestFixture::createBucket(const document::BucketId& bid)
 {
-    spi::Context context(defaultLoadType, spi::Priority(0),
-                         spi::Trace::TraceLevel(0));
-    _node->getPersistenceProvider().createBucket(
-            makeSpiBucket(bid), context);
+    spi::Context context(spi::Priority(0), spi::Trace::TraceLevel(0));
+    _node->getPersistenceProvider().createBucket(makeSpiBucket(bid), context);
 
     StorBucketDatabase::WrappedEntry entry(
             _node->getStorageBucketDatabase().get(bid, "foo",
@@ -85,9 +83,11 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
     top.open();
 }
 
+vespalib::string _Storage("storage");
+
 api::StorageMessageAddress
 FileStorTestFixture::makeSelfAddress() {
-    return api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0);
+    return api::StorageMessageAddress(&_Storage, lib::NodeType::STORAGE, 0);
 }
 
 void

@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
@@ -164,10 +165,9 @@ public class StreamingSearchClusterChangeValidatorTest {
 
     private static VespaConfigChangeAction createFieldTypeChangeRefeedAction(String docType, List<ServiceInfo> service) {
         return ConfigChangeTestUtils.newRefeedAction(ClusterSpec.Id.from("test"),
-                                                     "field-type-change",
-                                                     ValidationOverrides.empty,
-                "Document type '" + docType + "': Field 'f1' changed: data type: 'string' -> 'int'",
-                                                     service, docType, Instant.now());
+                                                     ValidationId.fieldTypeChange,
+                                                     "Document type '" + docType + "': Field 'f1' changed: data type: 'string' -> 'int'",
+                                                     service, docType);
     }
 
     private static VespaConfigChangeAction createAddFastAccessRestartAction() {
