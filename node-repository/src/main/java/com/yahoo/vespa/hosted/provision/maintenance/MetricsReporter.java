@@ -261,28 +261,27 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                 .forEach((lockPath, lockMetrics) -> {
                     Metric.Context context = getContext(Map.of("lockPath", lockPath));
 
-                    metric.set("lockAttempt.acquire", lockMetrics.getAndResetAcquireCount(), context);
-                    metric.set("lockAttempt.acquireFailed", lockMetrics.getAndResetAcquireFailedCount(), context);
+                    LatencyMetrics acquireLatencyMetrics = lockMetrics.getAndResetAcquireLatencyMetrics();
+                    metric.set("lockAttempt.acquireMaxActiveLatency", acquireLatencyMetrics.maxActiveLatencySeconds(), context);
+                    metric.set("lockAttempt.acquireHz", acquireLatencyMetrics.startHz(), context);
+                    metric.set("lockAttempt.acquireLoad", acquireLatencyMetrics.load(), context);
+
+                    LatencyMetrics lockedLatencyMetrics = lockMetrics.getAndResetLockedLatencyMetrics();
+                    metric.set("lockAttempt.lockedLatency", lockedLatencyMetrics.maxLatencySeconds(), context);
+                    metric.set("lockAttempt.lockedLoad", lockedLatencyMetrics.load(), context);
+
                     metric.set("lockAttempt.acquireTimedOut", lockMetrics.getAndResetAcquireTimedOutCount(), context);
-                    metric.set("lockAttempt.locked", lockMetrics.getAndResetAcquireSucceededCount(), context);
-                    metric.set("lockAttempt.release", lockMetrics.getAndResetReleaseCount(), context);
-                    metric.set("lockAttempt.releaseFailed", lockMetrics.getAndResetReleaseFailedCount(), context);
-                    metric.set("lockAttempt.reentry", lockMetrics.getAndResetReentryCount(), context);
                     metric.set("lockAttempt.deadlock", lockMetrics.getAndResetDeadlockCount(), context);
-                    metric.set("lockAttempt.nakedRelease", lockMetrics.getAndResetNakedReleaseCount(), context);
-                    metric.set("lockAttempt.acquireWithoutRelease", lockMetrics.getAndResetAcquireWithoutReleaseCount(), context);
-                    metric.set("lockAttempt.foreignRelease", lockMetrics.getAndResetForeignReleaseCount(), context);
 
-                    setLockLatencyMetrics("acquire", lockMetrics.getAndResetAcquireLatencyMetrics(), context);
-                    setLockLatencyMetrics("locked", lockMetrics.getAndResetLockedLatencyMetrics(), context);
+                    // bucket for various rare errors - to reduce #metrics
+                    metric.set("lockAttempt.errors",
+                            lockMetrics.getAndResetAcquireFailedCount() +
+                                    lockMetrics.getAndResetReleaseFailedCount() +
+                                    lockMetrics.getAndResetNakedReleaseCount() +
+                                    lockMetrics.getAndResetAcquireWithoutReleaseCount() +
+                                    lockMetrics.getAndResetForeignReleaseCount(),
+                            context);
                 });
-    }
-
-    private void setLockLatencyMetrics(String name, LatencyMetrics latencyMetrics, Metric.Context context) {
-        metric.set("lockAttempt." + name + "Latency", latencyMetrics.latencySeconds(), context);
-        metric.set("lockAttempt." + name + "MaxActiveLatency", latencyMetrics.maxActiveLatencySeconds(), context);
-        metric.set("lockAttempt." + name + "Hz", latencyMetrics.startHz(), context);
-        metric.set("lockAttempt." + name + "Load", latencyMetrics.load(), context);
     }
 
     private void updateDockerMetrics(NodeList nodes) {
