@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_function.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -12,6 +12,8 @@
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::tensor_function;
+
+const auto &simple_factory = SimpleValueBuilderFactory::get();
 
 struct EvalCtx {
     EngineOrFactory engine;
@@ -176,18 +178,13 @@ struct EvalCtx {
 };
 
 void verify_equal(const Value &expect, const Value &value) {
-    const Tensor *tensor = value.as_tensor();
-    ASSERT_TRUE(tensor != nullptr);
-    const Tensor *expect_tensor = expect.as_tensor();
-    ASSERT_TRUE(expect_tensor != nullptr);
-    ASSERT_EQUAL(&expect_tensor->engine(), &tensor->engine());
-    auto expect_spec = expect_tensor->engine().to_spec(expect);
-    auto value_spec = tensor->engine().to_spec(value);
+    auto expect_spec = spec_from_value(expect);
+    auto value_spec = spec_from_value(value);
     EXPECT_EQUAL(expect_spec, value_spec);
 }
 
 TEST("require that const_value works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     Value::UP my_const = ctx.make_tensor_matrix();
     Value::UP expect = ctx.make_tensor_matrix();
     const auto &fun = const_value(*my_const, ctx.stash);
@@ -197,7 +194,7 @@ TEST("require that const_value works") {
 }
 
 TEST("require that tensor injection works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
     Value::UP expect = ctx.make_tensor_matrix();
     const auto &fun = inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash);
@@ -207,7 +204,7 @@ TEST("require that tensor injection works") {
 }
 
 TEST("require that partial tensor reduction works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     Value::UP expect = ctx.make_tensor_reduce_y_output();
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {"y"}, ctx.stash);
@@ -217,7 +214,7 @@ TEST("require that partial tensor reduction works") {
 }
 
 TEST("require that full tensor reduction works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
@@ -228,7 +225,7 @@ TEST("require that full tensor reduction works") {
 }
 
 TEST("require that tensor map works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_map_input());
     Value::UP expect = ctx.make_tensor_map_output();
     const auto &fun = map(inject(ValueType::from_spec("tensor(x{},y{})"), a_id, ctx.stash), operation::Neg::f, ctx.stash);
@@ -238,7 +235,7 @@ TEST("require that tensor map works") {
 }
 
 TEST("require that tensor join works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_join_lhs());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_join_rhs());
     Value::UP expect = ctx.make_tensor_join_output();
@@ -251,7 +248,7 @@ TEST("require that tensor join works") {
 }
 
 TEST("require that tensor merge works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_merge_lhs());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_merge_rhs());
     Value::UP expect = ctx.make_tensor_merge_output();
@@ -264,7 +261,7 @@ TEST("require that tensor merge works") {
 }
 
 TEST("require that tensor concat works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix_first_half());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_matrix_second_half());
     Value::UP expect = ctx.make_tensor_matrix();
@@ -277,7 +274,7 @@ TEST("require that tensor concat works") {
 }
 
 TEST("require that tensor create works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     size_t b_id = ctx.add_tensor(ctx.make_double(2.0));
     Value::UP my_const = ctx.make_double(3.0);
@@ -298,15 +295,17 @@ TEST("require that tensor create works") {
 }
 
 TEST("require that single value tensor peek works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
+    size_t b_id = ctx.add_tensor(ctx.make_double(1000.0));
     Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
     Value::UP expect = ctx.make_vector({2.0, 3.0, 0.0});
     const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
+    const auto &b = inject(ValueType::from_spec("double"), b_id, ctx.stash);
     const auto &t = const_value(*my_const, ctx.stash);
     const auto &peek1 = peek(t, {{"x", "foo"}, {"y", a}}, ctx.stash);
     const auto &peek2 = peek(t, {{"x", "bar"}, {"y", size_t(0)}}, ctx.stash);
-    const auto &peek3 = peek(t, {{"x", "bar"}, {"y", size_t(1000)}}, ctx.stash);
+    const auto &peek3 = peek(t, {{"x", "bar"}, {"y", b}}, ctx.stash);
     const auto &fun = create(ValueType::from_spec("tensor(x[3])"),
                              {
                                  {{{"x", 0}}, peek1},
@@ -320,7 +319,7 @@ TEST("require that single value tensor peek works") {
 }
 
 TEST("require that tensor subspace tensor peek works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
     Value::UP expect = ctx.make_vector({3.0, 4.0}, "y");
     const auto &t = const_value(*my_const, ctx.stash);
@@ -331,7 +330,7 @@ TEST("require that tensor subspace tensor peek works") {
 }
 
 TEST("require that automatic string conversion tensor peek works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     Value::UP my_const = ctx.make_vector({1.0, 2.0, 3.0}, "x", true);
     const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
@@ -345,7 +344,7 @@ TEST("require that automatic string conversion tensor peek works") {
 }
 
 TEST("require that tensor rename works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
     Value::UP expect = ctx.make_tensor_matrix_renamed();
     const auto &fun = rename(inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash),
@@ -356,7 +355,7 @@ TEST("require that tensor rename works") {
 }
 
 TEST("require that if_node works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_true());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_matrix_first_half());
     size_t c_id = ctx.add_tensor(ctx.make_tensor_matrix_second_half());

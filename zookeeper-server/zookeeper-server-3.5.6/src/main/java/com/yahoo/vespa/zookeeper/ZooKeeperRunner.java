@@ -45,8 +45,4 @@ public class ZooKeeperRunner implements Runnable {
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }
 
-    public ZookeeperServerConfig zookeeperServerConfig() {
-        return zookeeperServerConfig;
-    }
-
 }

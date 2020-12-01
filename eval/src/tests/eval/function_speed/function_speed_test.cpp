@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/fast_value.h>
 
@@ -46,7 +46,8 @@ struct Fixture {
     CompiledFunction lazy;
     Fixture(const vespalib::string &expr)
         : function(Function::parse(expr)),
-          interpreted_simple(SimpleTensorEngine::ref(), *function, NodeTypes()),
+          interpreted_simple(SimpleValueBuilderFactory::get(), *function,
+                             NodeTypes(*function, std::vector<ValueType>(function->num_params(), ValueType::double_type()))),                             
           interpreted(FastValueBuilderFactory::get(), *function,
                       NodeTypes(*function, std::vector<ValueType>(function->num_params(), ValueType::double_type()))),
           separate(*function, PassParams::SEPARATE),

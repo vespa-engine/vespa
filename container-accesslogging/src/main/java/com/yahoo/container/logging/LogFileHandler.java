@@ -125,8 +125,10 @@ public class LogFileHandler extends StreamHandler {
         try {
             if (currentOutputStream != null) {
                 long newPos = currentOutputStream.getChannel().position();
-                nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
-                lastDropPosition = newPos;
+                if (newPos > lastDropPosition + 102400) {
+                    nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
+                    lastDropPosition = newPos;
+                }
             }
         } catch (IOException e) {
             logger.warning("Failed dropping from cache : " + Exceptions.toMessageString(e));
