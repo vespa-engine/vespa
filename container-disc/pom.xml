@@ -190,7 +190,6 @@
             <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>
                 <!-- Vespa bundles -->
-                configgen.jar,
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
                 container-jersey2-jar-with-dependencies.jar,
