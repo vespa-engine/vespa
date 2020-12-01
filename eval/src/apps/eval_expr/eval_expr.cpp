@@ -19,17 +19,11 @@ int main(int argc, char **argv) {
         fprintf(stderr, "expression error: %s\n", function->get_error().c_str());
         return 1;
     }
-    InterpretedFunction interpreted(SimpleTensorEngine::ref(), *function, NodeTypes());
-    InterpretedFunction::Context ctx(interpreted);
-    SimpleParams params({});
-    const Value &result = interpreted.eval(ctx, params);
-    if (result.is_double()) {
-        fprintf(stdout, "%.32g\n", result.as_double());
-    } else if (result.is_tensor()) {
-        vespalib::string str = SimpleTensorEngine::ref().to_spec(result).to_string();
-        fprintf(stdout, "%s\n", str.c_str());
+    auto result = TensorSpec::from_expr(argv[1]);
+    if (result.type() == "double" && result.cells().size() == 1) {
+        fprintf(stdout, "%.32g\n", result.cells().begin()->second.value);
     } else {
-        fprintf(stdout, "error\n");
+        fprintf(stdout, "%s\n", result.to_string().c_str());
     }
     return 0;
 }
