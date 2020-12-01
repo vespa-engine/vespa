@@ -2,6 +2,10 @@
 
 #include "pending_tracker.h"
 #include "bucket_info_queue.h"
+#include <thread>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 namespace feedbm {
 
@@ -15,6 +19,14 @@ PendingTracker::PendingTracker(uint32_t limit)
 PendingTracker::~PendingTracker()
 {
     drain();
+}
+
+void
+PendingTracker::retain() {
+    while (_pending >= _limit) {
+        std::this_thread::sleep_for(1ms);
+    }
+    _pending++;
 }
 
 void

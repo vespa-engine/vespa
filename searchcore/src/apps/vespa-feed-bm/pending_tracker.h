@@ -4,8 +4,6 @@
 
 #include <atomic>
 #include <memory>
-#include <thread>
-#include <chrono>
 
 namespace storage::spi { struct PersistenceProvider; }
 
@@ -29,14 +27,7 @@ public:
     void release() {
         _pending--;
     }
-    void retain() {
-        using namespace std::chrono_literals;
-        while (_pending >= _limit) {
-            std::this_thread::sleep_for(1ms);
-        }
-        _pending++;
-    }
-
+    void retain();
     void drain();
 
     void attach_bucket_info_queue(storage::spi::PersistenceProvider& provider, std::atomic<uint32_t>& errors);
