@@ -24,7 +24,6 @@ class SlimeResponseData {
     static final String RESPONSE_CONFIG_MD5 = "configMD5";
     static final String RESPONSE_CONFIG_GENERATION = "generation";
     static final String RESPONSE_INTERNAL_REDEPLOY = "internalRedeploy";
-    static final String RESPONSE_APPLY_ON_RESTART = "applyOnRestart";
     static final String RESPONSE_COMPRESSION_INFO = "compressionInfo";
 
     private final Request request;
@@ -70,11 +69,6 @@ class SlimeResponseData {
 
     boolean getResponseInternalRedeployment() {
         Inspector inspector = getResponseField(RESPONSE_INTERNAL_REDEPLOY);
-        return inspector.valid() && inspector.asBool();
-    }
-
-    boolean getResponseApplyOnRestart() {
-        Inspector inspector = getResponseField(RESPONSE_APPLY_ON_RESTART);
         return inspector.valid() && inspector.asBool();
     }
 
