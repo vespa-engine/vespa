@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
@@ -7,45 +7,22 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.codegen.LeafCNode;
-import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.yolean.Exceptions;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-
+import java.util.logging.Level;
 
 /**
- * <p>
- * This class is capable of resolving config from a config model for a given request. It will handle
- * incompatibilities of the def version in the request and the version of the config classes the model
- * is using.
- * </p>
- * <p>
- * This class is agnostic of transport protocol and server implementation.
- * </p>
- * <p>
- * Thread safe.
- * </p>
- *
- * @author Vegard Havdal
+ * Builds a ConfigInstance from a ConfigInstance.Builder.
+ * (Put here not in ConfigInstance.Builder temporarily to work around dependency problems.)
  */
-// TODO: Most of this has been copied to ConfigInstance.Builder.buildInstance() and can be removed from here
-//       when Model.getConfig is removed
-class InstanceResolver {
+class ConfigInstanceBuilder {
 
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(InstanceResolver.class.getName());
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigInstanceBuilder.class.getName());
 
-    /**
-     * Resolves this config key into a correctly typed ConfigInstance using the given config builder.
-     * FIXME: Make private once config overrides are deprecated.?
-     *
-     * @param builder a ConfigBuilder to create the instance from.
-     * @param targetDef the def to use
-     * @return the config instance or null of no producer for this found in model
-     */
-    static ConfigInstance resolveToInstance(ConfigInstance.Builder builder, InnerCNode targetDef) {
+    static ConfigInstance buildInstance(ConfigInstance.Builder builder, InnerCNode targetDef) {
         try {
             if (targetDef != null) applyDef(builder, targetDef);
             Class<? extends ConfigInstance> clazz = getConfigClass(builder.getClass());
@@ -118,9 +95,11 @@ class InstanceResolver {
                         setter.invoke(builder, node.getDefaultValue().getValue());
                     }
                 } catch (Exception e) {
-                    log.severe("For config '"+targetDef.getFullName()+"': Unable to apply the default value for field '"+node.getName()+
-                            "' to config Builder (where it wasn't set): "+
-                            Exceptions.toMessageString(e));
+                    log.log(Level.SEVERE,
+                            "For config '" + targetDef.getFullName() + "': " +
+                            "Unable to apply the default value for field '" + node.getName() +
+                            "' to config Builder (where it wasn't set)",
+                            e);
                 }
             }
         }
@@ -133,20 +112,6 @@ class InstanceResolver {
             throw new ConfigurationRuntimeException("Builder class " + builderClass + " has enclosing class " + configClass + ", which is not a ConfigInstance");
         }
         return (Class<? extends ConfigInstance>) configClass;
-    }
-
-    static String packageName(ConfigDefinitionKey cKey, PackagePrefix packagePrefix) {
-        return packagePrefix.value + cKey.getNamespace();
-    }
-
-    enum PackagePrefix {
-        COM_YAHOO("com.yahoo."),
-        NONE("");
-
-        final String value;
-        PackagePrefix (String value) {
-            this.value = value;
-        }
     }
 
 }
