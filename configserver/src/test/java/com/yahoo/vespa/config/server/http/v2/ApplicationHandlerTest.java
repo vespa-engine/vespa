@@ -440,7 +440,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testClusterReindexingStateSerialization() {
-        Stream.of(ClusterReindexing.State.values()).forEach(ClusterReindexing.State::toString);
+        Stream.of(ClusterReindexing.State.values()).forEach(ReindexingResponse::toString);
     }
 
     @Test

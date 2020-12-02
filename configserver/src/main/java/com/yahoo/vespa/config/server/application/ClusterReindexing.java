@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.application;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -11,7 +10,6 @@ import java.util.Optional;
  * Reindexing status for each document type in a content cluster.
  *
  * @author jonmv
- * @author bjorncs
  */
 public class ClusterReindexing {
 
@@ -53,19 +51,8 @@ public class ClusterReindexing {
 
 
     public enum State {
-        PENDING("pending"), RUNNING("running"), FAILED("failed"), SUCCESSFUL("successful");
 
-        private final String stringValue;
+        PENDING, RUNNING, FAILED, SUCCESSFUL;
 
-        State(String stringValue) { this.stringValue = stringValue; }
-
-        public static State fromString(String value) {
-            return Arrays.stream(values())
-                    .filter(v -> v.stringValue.equals(value))
-                    .findAny()
-                    .orElseThrow(() -> new IllegalArgumentException("Unknown value: " + value));
-        }
-
-        public String asString() { return stringValue; }
     }
 }
