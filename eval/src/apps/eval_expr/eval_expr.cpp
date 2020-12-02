@@ -20,8 +20,11 @@ int main(int argc, char **argv) {
         return 1;
     }
     auto result = TensorSpec::from_expr(argv[1]);
-    if (result.type() == "double" && result.cells().size() == 1) {
-        fprintf(stdout, "%.32g\n", result.cells().begin()->second.value);
+    auto type = ValueType::from_spec(result.type());
+    if (type.is_error()) {
+        fprintf(stdout, "error\n");
+    } else if (type.is_scalar()) {
+        fprintf(stdout, "%.32g\n", result.as_double());
     } else {
         fprintf(stdout, "%s\n", result.to_string().c_str());
     }
