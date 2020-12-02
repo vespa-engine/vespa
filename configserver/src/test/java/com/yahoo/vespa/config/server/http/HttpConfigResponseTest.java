@@ -20,7 +20,7 @@ public class HttpConfigResponseTest {
     public void require_that_response_is_created_from_config() throws IOException {
         final long generation = 1L;
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
-        ConfigResponse configResponse = SlimeConfigResponse.fromConfigPayload(payload, generation, false, "mymd5");
+        ConfigResponse configResponse = SlimeConfigResponse.fromConfigPayload(payload, generation, false, false, "mymd5");
         HttpConfigResponse response = HttpConfigResponse.createFromConfig(configResponse);
         assertThat(SessionHandlerTest.getRenderedString(response), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}"));
     }

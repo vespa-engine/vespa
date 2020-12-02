@@ -22,6 +22,8 @@ public interface ConfigResponse {
 
     boolean isInternalRedeploy();
 
+    boolean applyOnRestart();
+
     String getConfigMd5();
 
     void serialize(OutputStream os, CompressionType uncompressed) throws IOException;
