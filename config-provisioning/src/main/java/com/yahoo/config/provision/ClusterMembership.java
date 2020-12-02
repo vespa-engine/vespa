@@ -42,11 +42,8 @@ public class ClusterMembership {
             }
         }
 
-        ClusterSpec.Type type = ClusterSpec.Type.valueOf(components[0]);
-        if (type.isContent()) {
-            stateful = true; // TODO(mpolden): Serialization compatibility. Remove after December 2020
-        }
-        this.cluster = ClusterSpec.specification(type, ClusterSpec.Id.from(components[1]))
+        this.cluster = ClusterSpec.specification(ClusterSpec.Type.valueOf(components[0]),
+                                                 ClusterSpec.Id.from(components[1]))
                                   .group(ClusterSpec.Group.from(Integer.parseInt(components[2])))
                                   .vespaVersion(vespaVersion)
                                   .exclusive(exclusive)
