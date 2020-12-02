@@ -6,8 +6,8 @@
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <ostream>
 #include <cassert>
 
@@ -157,7 +157,7 @@ TensorFieldValue::print(std::ostream& out, bool verbose,
     (void) indent;
     out << "{TensorFieldValue: ";
     if (_tensor) {
-        out << EngineOrFactory::get().to_spec(*_tensor).to_string();
+        out << spec_from_value(*_tensor).to_string();
     } else {
         out << "null";
     }
@@ -228,9 +228,8 @@ TensorFieldValue::compare(const FieldValue &other) const
     // Compare the actual tensors by converting to TensorSpec strings.
     // TODO: this can be very slow, check if it might be used for anything
     // performance-critical.
-    auto engine = EngineOrFactory::get();
-    auto lhs_spec = engine.to_spec(*_tensor).to_string();
-    auto rhs_spec = engine.to_spec(*rhs._tensor).to_string();
+    auto lhs_spec = spec_from_value(*_tensor).to_string();
+    auto rhs_spec = spec_from_value(*rhs._tensor).to_string();
     return lhs_spec.compare(rhs_spec);
 }
 
