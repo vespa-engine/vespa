@@ -44,6 +44,7 @@ public class HostSwitchUpdater extends ControllerMaintainer {
         try {
             for (var zone : controller().zoneRegistry().zones().controllerUpgraded().all().ids()) {
                 for (var node : nodeRepository.list(zone)) {
+                    if (!node.type().isHost()) continue;
                     NodeEntity nodeEntity = nodeEntities.get(registeredHostnameOf(node));
                     if (!shouldUpdate(node, nodeEntity)) continue;
 

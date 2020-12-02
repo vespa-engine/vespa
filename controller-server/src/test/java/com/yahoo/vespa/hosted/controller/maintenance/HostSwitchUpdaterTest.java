@@ -15,6 +15,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
@@ -64,15 +65,19 @@ public class HostSwitchUpdaterTest {
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
         String hostnameSuffix = ".prod." + zone.value();
+        Node configNode = new Node.Builder().hostname(HostName.from("cfg3" + hostnameSuffix))
+                                            .type(NodeType.config)
+                                            .build();
         Node configHost = new Node.Builder().hostname(HostName.from("cfghost3" + hostnameSuffix))
                                             .type(NodeType.confighost)
                                             .build();
-        tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, configHost);
+        tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, List.of(configNode, configHost));
         String switchHostname = switchHostname(configHost);
         NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "", "", switchHostname);
         tester.serviceRegistry().entityService().addNodeEntity(configNodeEntity);
         maintainer.maintain();
         assertEquals(switchHostname, getNode(configHost.hostname(), tester).switchHostname().get());
+        assertTrue("Switch hostname is not set for non-host", getNode(configNode.hostname(), tester).switchHostname().isEmpty());
     }
 
     private static Node getNode(HostName hostname, ControllerTester tester) {
