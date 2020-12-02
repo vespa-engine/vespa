@@ -1805,8 +1805,7 @@ TEST_F(BucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_pending_s
     // Set, but _don't_ enable cluster state. We want it to be pending.
     setSystemState(stateAfter);
     EXPECT_TRUE(getDistributorBucketSpace().owns_bucket_in_current_state(bucket));
-    EXPECT_FALSE(getBucketDBUpdater()
-                 .checkOwnershipInPendingState(makeDocumentBucket(bucket)).isOwned());
+    EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_state(bucket).isOwned());
 
     ASSERT_NO_FATAL_FAILURE(sendFakeReplyForSingleBucketRequest(*rbi));
 
@@ -1926,8 +1925,7 @@ TEST_F(BucketDBUpdaterTest, changed_distribution_config_does_not_elide_bucket_db
     setDistribution(getDistConfig6Nodes2Groups());
 
     getBucketDatabase().forEach(*func_processor([&](const auto& e) {
-        EXPECT_TRUE(getBucketDBUpdater()
-                .checkOwnershipInPendingState(makeDocumentBucket(e.getBucketId())).isOwned());
+        EXPECT_TRUE(getDistributorBucketSpace().check_ownership_in_pending_state(e.getBucketId()).isOwned());
     }));
 }
 
