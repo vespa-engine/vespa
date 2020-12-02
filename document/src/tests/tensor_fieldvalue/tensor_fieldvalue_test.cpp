@@ -7,15 +7,16 @@ LOG_SETUP("fieldvalue_test");
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace document;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using vespalib::eval::EngineOrFactory;
 
 namespace
 {
@@ -24,14 +25,14 @@ TensorDataType xSparseTensorDataType(ValueType::from_spec("tensor(x{})"));
 TensorDataType xySparseTensorDataType(ValueType::from_spec("tensor(x{},y{})"));
 
 vespalib::eval::Value::UP createTensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 std::unique_ptr<vespalib::eval::Value>
 makeSimpleTensor()
 {
-    return EngineOrFactory::get().from_spec(TensorSpec("tensor(x{},y{})").
-                                            add({{"x", "4"}, {"y", "5"}}, 7));
+    return SimpleValue::from_spec(TensorSpec("tensor(x{},y{})").
+                                  add({{"x", "4"}, {"y", "5"}}, 7));
 }
 
 FieldValue::UP clone(FieldValue &fv) {

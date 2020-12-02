@@ -36,8 +36,9 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -51,7 +52,7 @@ using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::slime::Cursor;
 using vespalib::eval::TensorSpec;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 using vespalib::compression::CompressionConfig;
 using namespace document;
 using std::string;
@@ -772,7 +773,7 @@ namespace
 {
 
 vespalib::eval::Value::UP createTensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 }
@@ -838,7 +839,7 @@ void checkDeserialization(const string &name, std::unique_ptr<vespalib::eval::Va
     TensorDataType valueType(tensor ? tensor->type() : vespalib::eval::ValueType::error_type());
     TensorFieldValue value(valueType);
     if (tensor) {
-        value = EngineOrFactory::get().copy(*tensor);
+        value = std::move(tensor);
     }
     serializeToFile(value, data_dir + name + "__cpp");
     deserializeAndCheck(data_dir + name + "__cpp", value);
@@ -877,7 +878,7 @@ TensorDocFixture::TensorDocFixture(const DocumentTypeRepo &docTypeRepo,
       _blob()
 {
     auto fv = _doc.getField(tensor_field_name).createValue();
-    dynamic_cast<TensorFieldValue &>(*fv) = EngineOrFactory::get().copy(*_tensor);
+    dynamic_cast<TensorFieldValue &>(*fv) = SimpleValue::from_value(*_tensor);
     _doc.setValue(tensor_field_name, *fv);
     _doc.serialize(_blob);
 }
