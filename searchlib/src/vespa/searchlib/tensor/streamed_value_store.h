@@ -31,8 +31,7 @@ namespace search::tensor {
  *   [bytes]     : [format]                : [description]
  *      4        :  n.b.o. uint32_ t       : num cells = ND * DS
  *  CS * ND * DS :  native float or double : cells
- *      4        :  n.b.o. uint32_t        : number of subspaces = ND
- *   (depends)   :  n.b.o. strings         : labels
+ *   (depends)   :  n.b.o. strings         : ND * MD label strings
  *
  * Here, n.b.o. means network byte order, or more precisely
  * it's the format vespalib::nbostream uses for the given data type,

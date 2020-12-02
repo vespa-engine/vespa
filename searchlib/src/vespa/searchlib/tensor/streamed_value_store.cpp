@@ -135,9 +135,9 @@ StreamedValueStore::get_tensor_data(EntryRef ref) const
     check_alignment(source.peek(), CellTypeUtils::alignment(_data_from_type.cell_type));
     retval.cells_ref = TypedCells(source.peek(), _data_from_type.cell_type, num_cells);
     source.adjustReadPos(CellTypeUtils::mem_size(_data_from_type.cell_type, num_cells));
-    retval.num_subspaces = source.readValue<uint32_t>();
+    assert((num_cells % _data_from_type.dense_subspace_size) == 0);
+    retval.num_subspaces = num_cells / _data_from_type.dense_subspace_size;
     retval.labels_buffer = vespalib::ConstArrayRef<char>(source.peek(), source.size());
-    assert(retval.num_subspaces * _data_from_type.dense_subspace_size == num_cells);
     retval.valid = true;
     return retval;
 }
@@ -161,7 +161,6 @@ StreamedValueStore::serialize_labels(const Value::Index &index,
                                      vespalib::nbostream &target) const
 {
     uint32_t num_subspaces = index.size();
-    target << num_subspaces;
     uint32_t num_mapped_dims = _data_from_type.num_mapped_dimensions;
     std::vector<vespalib::stringref> labels(num_mapped_dims * num_subspaces);
     auto view = index.create_view({});
