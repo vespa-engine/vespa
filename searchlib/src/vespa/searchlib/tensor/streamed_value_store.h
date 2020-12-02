@@ -21,7 +21,7 @@ namespace search::tensor {
  * - number of mapped dimensions [MD]
  * - dense subspace size [DS]
  * - size of each cell [CS] - currently 4 (float) or 8 (double)
- * - alignment for cells [CA] - currently 4 (float) or 8 (double)
+ * - alignment for cells - currently 4 (float) or 8 (double)
  * While the tensor value to be serialized has:
  * - number of dense subspaces [ND]
  * - labels for dense subspaces, ND * MD strings
@@ -30,7 +30,6 @@ namespace search::tensor {
  *
  *   [bytes]     : [format]                : [description]
  *      4        :  n.b.o. uint32_ t       : num cells = ND * DS
- *     1-7       :  (none)                 : padding to cell alignment CA
  *  CS * ND * DS :  native float or double : cells
  *      4        :  n.b.o. uint32_t        : number of subspaces = ND
  *   (depends)   :  n.b.o. strings         : labels
