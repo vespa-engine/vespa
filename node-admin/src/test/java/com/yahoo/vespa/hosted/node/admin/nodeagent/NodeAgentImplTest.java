@@ -7,8 +7,8 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
@@ -238,7 +238,7 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator, never()).resume(any());
 
         // Set the feature flag
-        flagSource.withDoubleFlag(Flags.CONTAINER_CPU_CAP.id(), 2.3);
+        flagSource.withDoubleFlag(PermanentFlags.CONTAINER_CPU_CAP.id(), 2.3);
 
         nodeAgent.doConverge(thirdContext);
         inOrder.verify(containerOperations).updateContainer(eq(thirdContext), eq(ContainerResources.from(9.2, 4, 16)));

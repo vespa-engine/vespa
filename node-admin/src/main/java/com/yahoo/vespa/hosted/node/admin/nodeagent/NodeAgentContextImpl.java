@@ -9,8 +9,8 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -69,7 +69,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.vespaUserOnHost = vespaUserOnHost;
         this.cpuSpeedup = cpuSpeedup;
         this.disabledNodeAgentTasks = NodeAgentTask.fromString(
-                Flags.DISABLED_HOST_ADMIN_TASKS.bindTo(flagSource).with(FetchVector.Dimension.HOSTNAME, node.hostname()).value());
+                PermanentFlags.DISABLED_HOST_ADMIN_TASKS.bindTo(flagSource).with(FetchVector.Dimension.HOSTNAME, node.hostname()).value());
     }
 
     @Override

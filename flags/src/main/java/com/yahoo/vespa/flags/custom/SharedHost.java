@@ -7,13 +7,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 
 import java.util.List;
 import java.util.Objects;
 
 /**
- * Defines properties related to shared hosts, see {@link Flags#SHARED_HOST}.
+ * Defines properties related to shared hosts, see {@link PermanentFlags#SHARED_HOST}.
  *
  * @author hakon
  */

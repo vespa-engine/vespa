@@ -1,8 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
@@ -88,7 +88,7 @@ public class NodeAgentContextImplTest {
 
     private static NodeAgentContext createContextWithDisabledTasks(String... tasks) {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
-        flagSource.withListFlag(Flags.DISABLED_HOST_ADMIN_TASKS.id(), List.of(tasks), String.class);
+        flagSource.withListFlag(PermanentFlags.DISABLED_HOST_ADMIN_TASKS.id(), List.of(tasks), String.class);
         return new NodeAgentContextImpl.Builder("node123").flagSource(flagSource).build();
     }
 }

@@ -3,8 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.ClusterCapacity;
-import com.yahoo.vespa.flags.custom.SharedHost;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -15,10 +13,8 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -46,45 +42,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
-            "fleet-canary", false,
-            List.of("hakonhall"), "2020-12-02", "2021-02-01",
-            "Whether the host is a fleet canary.",
-            "Takes effect on next host admin tick.",
-            HOSTNAME);
-
-    public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
-            "disabled-host-admin-tasks", List.of(), String.class,
-            List.of("valerijf"), "2020-12-02", "2021-02-01",
-            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
-            "functionality (see NodeAgentTask), that should be skipped",
-            "Takes effect on next host admin tick",
-            HOSTNAME, NODE_TYPE);
-
-    public static final UnboundStringFlag DOCKER_VERSION = defineStringFlag(
-            "docker-version", "1.13.1-102.git7f2769b",
-            List.of("hakonhall"), "2020-12-02", "2021-02-01",
-            "The version of the docker to use of the format VERSION-REL: The YUM package to be installed will be " +
-            "2:docker-VERSION-REL.el7.centos.x86_64 in AWS (and without '.centos' otherwise). " +
-            "If docker-version is not of this format, it must be parseable by YumPackageName::fromString.",
-            "Takes effect on next tick.",
-            HOSTNAME);
-
-    public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
-            "container-cpu-cap", 0,
-            List.of("valerijf"), "2020-12-02", "2021-02-01",
-            "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
-            "to cap CPU at 200%, set this to 2, etc.",
-            "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
-            HOSTNAME, APPLICATION_ID);
-
-    public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
-            "reboot-interval-in-days", 30,
-            List.of("hakonhall"), "2020-12-02", "2021-02-01",
-            "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
-            "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
-            "Takes effect on next run of NodeRebooter");
-
     public static final UnboundBooleanFlag RETIRE_WITH_PERMANENTLY_DOWN = defineFeatureFlag(
             "retire-with-permanently-down", false,
             List.of("hakonhall"), "2020-12-02", "2021-02-01",
@@ -93,38 +50,10 @@ public class Flags {
             "Takes effect on the next run of RetiredExpirer.",
             HOSTNAME);
 
-    public static final UnboundListFlag<ClusterCapacity> PREPROVISION_CAPACITY = defineListFlag(
-            "preprovision-capacity", List.of(), ClusterCapacity.class,
-            List.of("hakonhall"), "2020-12-02", "2021-02-01",
-            "Specifies the resources that ought to be immediately available for additional cluster " +
-            "allocations.  If the resources are not available, additional hosts will be provisioned. " +
-            "Only applies to dynamically provisioned zones.",
-            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
-
-    public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
-            "shared-host", SharedHost.createDisabled(), SharedHost.class,
-            List.of("hakonhall"), "2020-12-02", "2021-02-01",
-            "Specifies whether shared hosts can be provisioned, and if so, the advertised " +
-            "node resources of the host, the maximum number of containers, etc.",
-            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
-
-    public static final UnboundListFlag<String> INACTIVE_MAINTENANCE_JOBS = defineListFlag(
-            "inactive-maintenance-jobs", List.of(), String.class,
-            List.of("mpolden"), "2020-12-02", "2021-02-01",
-            "The list of maintenance jobs that are inactive.",
-            "Takes effect immediately, but any currently running jobs will run until completion.");
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2021-02-01",
             "Default limit for when to apply termwise query evaluation",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundStringFlag JVM_GC_OPTIONS = defineStringFlag(
-            "jvm-gc-options", "",
-            List.of("baldersheim"), "2020-12-02", "2021-02-01",
-            "Sets deafult jvm gc options",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -205,13 +134,6 @@ public class Flags {
             "Takes effect on next host-admin tick.",
             HOSTNAME);
 
-    public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.5.6",
-            List.of("hmusum"), "2020-12-02", "2021-02-01",
-            "ZooKeeper server version, a jar file zookeeper-server-<ZOOKEEPER_SERVER_VERSION>-jar-with-dependencies.jar must exist",
-            "Takes effect on restart of Docker container",
-            NODE_TYPE, APPLICATION_ID, HOSTNAME);
-
     public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
             "tls-for-zookeeper-client-server-communication", "OFF",
             List.of("hmusum"), "2020-12-02", "2021-02-01",
@@ -277,14 +199,6 @@ public class Flags {
             "Takes effect immediately on new hosts, on next redeploy for applications",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_PUBLIC_SIGNUP_FLOW = defineFeatureFlag(
-            "enable-public-signup-flow", false,
-            List.of("andreer"), "2020-12-02", "2021-02-01",
-            "Show the public signup flow for a user in the console",
-            "takes effect on browser reload of api/user/v1/user",
-            CONSOLE_USER_EMAIL
-    );
-
     public static final UnboundBooleanFlag CONTROLLER_PROVISION_LB = defineFeatureFlag(
             "controller-provision-lb", false,
             List.of("mpolden"), "2020-12-02", "2021-02-01",
@@ -301,32 +215,10 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundIntFlag TENANT_BUDGET_QUOTA = defineIntFlag(
-            "tenant-budget-quota", -1,
-            List.of("ogronnesby"), "2020-12-02", "2021-02-01",
-            "The budget in cents/hr a tenant is allowed spend per instance, as calculated by NodeResources",
-            "Only takes effect on next deployment, if set to a value other than the default for flag!",
-            TENANT_ID
-    );
-
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
             "enable-public-only", false,
             List.of("ogronnesby"), "2020-12-02", "2021-02-01",
             "Only access public hosts from container",
-            "Takes effect on next tick"
-    );
-
-    public static final UnboundListFlag<String> OUTBOUND_BLOCKED_IPV4 = defineListFlag(
-            "container-outbound-blocked-ipv4", List.of(), String.class,
-            List.of("ogronnesby"), "2020-12-02", "2021-02-01",
-            "List of IPs or CIDRs that are blocked for outbound connections",
-            "Takes effect on next tick"
-    );
-
-    public static final UnboundListFlag<String> OUTBOUND_BLOCKED_IPV6 = defineListFlag(
-            "container-outbound-blocked-ipv6", List.of(), String.class,
-            List.of("ogronnesby"), "2020-12-02", "2021-02-01",
-            "List of IPs or CIDRs that are blocked for outbound connections",
             "Takes effect on next tick"
     );
 
@@ -337,13 +229,6 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID
     );
-
-    public static final UnboundBooleanFlag SKIP_MAINTENANCE_DEPLOYMENT = defineFeatureFlag(
-            "node-repository-skip-maintenance-deployment", false,
-            List.of("hmusum"), "2020-12-02", "2021-02-01",
-            "Whether PeriodicApplicationMaintainer should skip deployment for an application",
-            "Takes effect at next run of maintainer",
-            APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION = defineFeatureFlag(
             "use-access-control-client-authentication", false,
