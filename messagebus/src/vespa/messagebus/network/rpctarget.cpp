@@ -32,7 +32,7 @@ RPCTarget::resolveVersion(duration timeout, RPCTarget::IVersionHandler &handler)
         std::unique_lock guard(_lock);
         state = _state.load(std::memory_order_relaxed);
         if (state == VERSION_RESOLVED || state == PROCESSING_HANDLERS) {
-            while (_state.load(std::memory_order::memory_order_relaxed) == PROCESSING_HANDLERS) {
+            while (_state.load(std::memory_order_relaxed) == PROCESSING_HANDLERS) {
                 _cond.wait(guard);
             }
             hasVersion = true;

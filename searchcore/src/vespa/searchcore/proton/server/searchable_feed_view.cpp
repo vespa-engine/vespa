@@ -65,7 +65,7 @@ SearchableFeedView::putIndexedFields(SerialNum serialNum, search::DocumentIdT li
         return;
     }
     _writeService.index().execute(
-            makeLambdaTask([=] {
+            makeLambdaTask([this, serialNum, lid, newDoc, onWriteDone] {
                 performIndexPut(serialNum, lid, newDoc, onWriteDone);
             }));
 }
@@ -100,7 +100,7 @@ SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid
 void
 SearchableFeedView::heartBeatIndexedFields(SerialNum serialNum)
 {
-    _writeService.index().execute(makeLambdaTask([=] { performIndexHeartBeat(serialNum); }));
+    _writeService.index().execute(makeLambdaTask([this, serialNum] { performIndexHeartBeat(serialNum); }));
 }
 
 void
@@ -126,7 +126,7 @@ SearchableFeedView::removeIndexedFields(SerialNum serialNum, search::DocumentIdT
         return;
     }
     _writeService.index().execute(
-            makeLambdaTask([=]() {
+            makeLambdaTask([this, serialNum, lid, onWriteDone]() {
                 performIndexRemove(serialNum, lid, onWriteDone);
             }));
 }
@@ -166,7 +166,7 @@ SearchableFeedView::removeIndexedFields(SerialNum serialNum, const LidVector &li
         return;
 
     _writeService.index().execute(
-            makeLambdaTask([=]() {
+            makeLambdaTask([this, serialNum, lidsToRemove, onWriteDone]() {
                 performIndexRemove(serialNum, lidsToRemove, onWriteDone);
             }));
 }
@@ -200,7 +200,7 @@ void
 SearchableFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
     Parent::internalForceCommit(serialNum, onCommitDone);
-    _writeService.index().execute(makeLambdaTask([=]() { performIndexForceCommit(serialNum, onCommitDone); }));
+    _writeService.index().execute(makeLambdaTask([this, serialNum, onCommitDone]() { performIndexForceCommit(serialNum, onCommitDone); }));
     _writeService.index().wakeup();
 }
 
