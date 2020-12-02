@@ -87,7 +87,9 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     private String connectionSpec(ZookeeperServerConfig config) {
-        return String.join(",", servers(config));
+        return config.server().stream()
+                     .map(server -> server.hostname() + ":" + server.quorumPort())
+                     .collect(Collectors.joining(","));
     }
 
     private static List<String> servers(ZookeeperServerConfig config) {
@@ -98,11 +100,6 @@ public class Reconfigurer extends AbstractComponent {
 
     ZookeeperServerConfig existingConfig() {
         return zookeeperServerConfig;
-    }
-
-    public void shutdown() {
-        if (zooKeeperRunner != null)
-            zooKeeperRunner.shutdown();
     }
 
     static class ReconfigurationInfo {
