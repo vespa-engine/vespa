@@ -100,11 +100,6 @@ public class Reconfigurer extends AbstractComponent {
         return zookeeperServerConfig;
     }
 
-    public void shutdown() {
-        if (zooKeeperRunner != null)
-            zooKeeperRunner.shutdown();
-    }
-
     static class ReconfigurationInfo {
 
         private final ZookeeperServerConfig existingConfig;
