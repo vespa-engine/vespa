@@ -30,6 +30,7 @@ jobs:
           cat /proc/cpuinfo
           cat /proc/meminfo
           df -h
+          uname -a
       - restore-cache: |
           (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
 
