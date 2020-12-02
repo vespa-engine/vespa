@@ -227,7 +227,7 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         return;
     }
 
-    auto pending = getDistributor().checkOwnershipInPendingState(bucket);
+    auto pending = bucket_space.check_ownership_in_pending_state(bucket.getBucketId());
     if (pending.isOwned()) {
         func(_bucketSpaceRepo);
     } else {

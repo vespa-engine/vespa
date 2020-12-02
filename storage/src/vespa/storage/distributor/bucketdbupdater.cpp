@@ -103,13 +103,6 @@ BucketDBUpdater::hasPendingClusterState() const
     return static_cast<bool>(_pendingClusterState);
 }
 
-BucketOwnership
-BucketDBUpdater::checkOwnershipInPendingState(const document::Bucket& b) const
-{
-    auto &bucket_space(_distributorComponent.getBucketSpaceRepo().get(b.getBucketSpace()));
-    return bucket_space.check_ownership_in_pending_state(b.getBucketId());
-}
-
 const lib::ClusterState*
 BucketDBUpdater::pendingClusterStateOrNull(const document::BucketSpace& space) const {
     return (hasPendingClusterState()

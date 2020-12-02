@@ -94,6 +94,10 @@ public:
      */
     bool owns_bucket_in_current_state(document::BucketId bucket) const;
 
+    /**
+     * If there is a pending state, returns ownership state of bucket in it.
+     * Otherwise always returns "is owned", i.e. it must also be checked in the current state.
+     */
     BucketOwnership check_ownership_in_pending_state(document::BucketId bucket) const;
     BucketOwnership check_ownership_in_pending_and_given_state(const lib::Distribution& distribution,
                                                                const lib::ClusterState& clusterState,

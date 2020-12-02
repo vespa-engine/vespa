@@ -144,12 +144,6 @@ Distributor::getPendingMessageTracker() const
     return _pendingMessageTracker;
 }
 
-BucketOwnership
-Distributor::checkOwnershipInPendingState(const document::Bucket &b) const
-{
-    return _bucketDBUpdater.checkOwnershipInPendingState(b);
-}
-
 const lib::ClusterState*
 Distributor::pendingClusterStateOrNull(const document::BucketSpace& space) const {
     return _bucketDBUpdater.pendingClusterStateOrNull(space);
