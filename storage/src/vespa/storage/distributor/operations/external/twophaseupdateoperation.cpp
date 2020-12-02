@@ -5,6 +5,7 @@
 #include "putoperation.h"
 #include "updateoperation.h"
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -251,8 +252,8 @@ TwoPhaseUpdateOperation::onStart(DistributorMessageSender& sender) {
 bool
 TwoPhaseUpdateOperation::lostBucketOwnershipBetweenPhases() const
 {
-    document::Bucket updateDocBucket(_updateCmd->getBucket().getBucketSpace(), _updateDocBucketId);
-    BucketOwnership bo(_op_ctx.check_ownership_in_pending_and_current_state(updateDocBucket));
+    auto &bucket_space(_op_ctx.bucket_space_repo().get(_updateCmd->getBucket().getBucketSpace()));
+    BucketOwnership bo(bucket_space.check_ownership_in_pending_and_current_state(_updateDocBucketId));
     return !bo.isOwned();
 }
 

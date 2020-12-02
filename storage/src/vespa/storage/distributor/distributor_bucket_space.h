@@ -99,12 +99,22 @@ public:
      * Otherwise always returns "is owned", i.e. it must also be checked in the current state.
      */
     BucketOwnership check_ownership_in_pending_state(document::BucketId bucket) const;
+    /**
+     * Returns the ownership status of a bucket as decided with the given
+     * distribution and cluster state -and- that of the pending cluster
+     * state and distribution (if any pending exists).
+     */
     BucketOwnership check_ownership_in_pending_and_given_state(const lib::Distribution& distribution,
                                                                const lib::ClusterState& clusterState,
                                                                document::BucketId bucket) const;
     BucketOwnership check_ownership_in_pending_and_current_state_fallback(document::BucketId bucket) const;
     const std::vector<bool>& get_available_nodes() const { return _available_nodes; }
     std::vector<uint16_t> get_ideal_nodes(document::BucketId bucket);
+    /**
+     * Returns the ownership status of a bucket as decided with the current
+     * distribution and cluster state -and- that of the pending cluster
+     * state and distribution (if any pending exists).
+     */
     BucketOwnership check_ownership_in_pending_and_current_state(document::BucketId bucket);
 };
 

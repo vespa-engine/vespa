@@ -43,14 +43,6 @@ public:
     ~DistributorComponent() override;
 
     /**
-     * Returns the ownership status of a bucket as decided with the given
-     * distribution and cluster state -and- that of the pending cluster
-     * state and distribution (if any pending exists).
-     */
-    BucketOwnership checkOwnershipInPendingAndCurrentState(
-            const document::Bucket &bucket) const;
-
-    /**
      * Returns a reference to the current cluster state bundle. Valid until the
      * next time the distributor main thread processes its message queue.
      */
@@ -166,9 +158,6 @@ public:
 
     // Implements DistributorOperationContext
     api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
-    BucketOwnership check_ownership_in_pending_and_current_state(const document::Bucket &bucket) const override {
-        return checkOwnershipInPendingAndCurrentState(bucket);
-    }
     void update_bucket_database(const document::Bucket& bucket,
                                 const BucketCopy& changed_node,
                                 uint32_t update_flags = 0) override {
@@ -182,7 +171,7 @@ public:
     void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override {
         removeNodeFromDB(bucket, node_index);
     }
-    const DistributorBucketSpaceRepo& bucket_space_repo() const override {
+    DistributorBucketSpaceRepo& bucket_space_repo() override {
         return getBucketSpaceRepo();
     }
     void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,

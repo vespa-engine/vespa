@@ -55,14 +55,6 @@ DistributorComponent::getIdealNodes(const document::Bucket &bucket) const
     return bucket_space.get_ideal_nodes(bucket.getBucketId());
 }
 
-BucketOwnership
-DistributorComponent::checkOwnershipInPendingAndCurrentState(
-        const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.check_ownership_in_pending_and_current_state(bucket.getBucketId());
-}
-
 api::StorageMessageAddress
 DistributorComponent::nodeAddress(uint16_t nodeIndex) const
 {

@@ -23,7 +23,6 @@ class DistributorOperationContext {
 public:
     virtual ~DistributorOperationContext() {}
     virtual api::Timestamp generate_unique_timestamp() = 0;
-    virtual BucketOwnership check_ownership_in_pending_and_current_state(const document::Bucket &bucket) const = 0;
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const BucketCopy& changed_node,
                                         uint32_t update_flags = 0) = 0;
@@ -31,7 +30,7 @@ public:
                                         const std::vector<BucketCopy>& changed_nodes,
                                         uint32_t update_flags = 0) = 0;
     virtual void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) = 0;
-    virtual const DistributorBucketSpaceRepo& bucket_space_repo() const = 0;
+    virtual DistributorBucketSpaceRepo& bucket_space_repo() = 0;
 
     virtual void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,
                                                        const BucketDatabase::Entry& entry,
