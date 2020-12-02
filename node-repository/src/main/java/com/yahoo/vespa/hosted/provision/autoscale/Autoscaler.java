@@ -200,13 +200,6 @@ public class Autoscaler {
         private static Advice scaleTo(ClusterResources target) {
             return new Advice(Optional.of(target), true, "Scaling due to load changes");
         }
-
-        @Override
-        public String toString() {
-            return "autoscaling advice: " +
-                   (present ? (target.isPresent() ? "Scale to " + target.get() : "Don't scale") : " None");
-        }
-
     }
 
 }
