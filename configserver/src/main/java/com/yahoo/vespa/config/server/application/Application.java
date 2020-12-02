@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.Model;
@@ -11,6 +12,8 @@ import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.ConfigPayloadBuilder;
+import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -23,6 +26,7 @@ import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.Objects;
 import java.util.Set;
@@ -98,6 +102,7 @@ public class Application implements ModelResult {
     /**
      * Gets a config from ZK. Returns null if not found.
      */
+    @SuppressWarnings("deprecation")
     public ConfigResponse resolveConfig(GetConfigRequest req, ConfigResponseFactory responseFactory) {
         long start = System.currentTimeMillis();
         metricUpdater.incrementRequests();
@@ -131,18 +136,43 @@ public class Application implements ModelResult {
             debug("Resolving " + configKey + " with config definition " + def);
         }
 
-        ConfigPayload payload = null;
+        ConfigInstance.Builder builder;
+        ConfigPayload payload;
+        boolean applyOnRestart = false;
         try {
-            payload = model.getConfig(configKey, def);
+            builder = model.getConfigInstance(configKey, def);
+            if (builder == null) { // TODO: Remove this condition after December 2020
+                payload = model.getConfig(configKey, def);
+                if (def.getCNode() != null)
+                    payload.applyDefaultsFromDef(def.getCNode());
+            }
+            else if (builder instanceof GenericConfig.GenericConfigBuilder) {
+                payload = ((GenericConfig.GenericConfigBuilder) builder).getPayload();
+                applyOnRestart = builder.getApplyOnRestart();
+            }
+            else {
+                try {
+                    ConfigInstance instance = ConfigInstanceBuilder.buildInstance(builder, def.getCNode());
+                    payload = ConfigPayload.fromInstance(instance);
+                    applyOnRestart = builder.getApplyOnRestart();
+                } catch (ConfigurationRuntimeException e) {
+                    // This can happen in cases where services ask for config that no longer exist before they have been able
+                    // to reconfigure themselves
+                    log.log(Level.INFO, "Error resolving instance for builder '" + builder.getClass().getName() +
+                                        "', returning empty config: " + Exceptions.toMessageString(e));
+                    payload = ConfigPayload.fromBuilder(new ConfigPayloadBuilder());
+                }
+                if (def.getCNode() != null)
+                    payload.applyDefaultsFromDef(def.getCNode());
+            }
         } catch (Exception e) {
             throw new ConfigurationRuntimeException("Unable to get config for " + app, e);
         }
-        if (payload == null) {
-            metricUpdater.incrementFailedRequests();
-            throw new ConfigurationRuntimeException("Unable to resolve config " + configKey);
-        }
 
-        ConfigResponse configResponse = responseFactory.createResponse(payload, applicationGeneration, internalRedeploy);
+        ConfigResponse configResponse = responseFactory.createResponse(payload,
+                                                                       applicationGeneration,
+                                                                       internalRedeploy,
+                                                                       applyOnRestart);
         metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
         if (useCache(req)) {
             cache.put(cacheKey, configResponse, configResponse.getConfigMd5());
@@ -197,4 +227,5 @@ public class Application implements ModelResult {
     public Set<String> allConfigIds() {
         return model.allConfigIds();
     }
+
 }

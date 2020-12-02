@@ -33,6 +33,7 @@ import static java.util.stream.Collectors.toList;
 public class ConfigSubscriber implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(ConfigSubscriber.class.getName());
+
     private State state = State.OPEN;
     protected final List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new CopyOnWriteArrayList<>();
     private final ConfigSource source;
@@ -44,6 +45,13 @@ public class ConfigSubscriber implements AutoCloseable {
 
     /** Whether the last generation received was due to a system-internal redeploy, not an application package change */
     private boolean internalRedeploy = false;
+
+    /**
+     * Whether the last generation should only be applied on restart, not immediately.
+     * Once this is set it will not be unset, as no future generation should be applied
+     * once there is a generation which require restart.
+     */
+    private boolean applyOnRestart = false;
 
     /**
      * Reuse requesters for equal source sets, limit number if many subscriptions.
@@ -235,12 +243,15 @@ public class ConfigSubscriber implements AutoCloseable {
      * @param timeoutInMillis timeout to wait in milliseconds
      * @param requireChange if set, at least one config have to change
      * @return true, if a new config generation has been found for all configs (additionally requires
-     *         that at lest one of them has changed if <code>requireChange</code> is true), false otherwise
+     *         that at lest one of them has changed if <code>requireChange</code> is true), and
+     *         the config should be applied at this time, false otherwise
      */
     private boolean acquireSnapshot(long timeoutInMillis, boolean requireChange) {
+        boolean applyOnRestartOnly;
         synchronized (monitor) {
             if (state == State.CLOSED) return false;
             state = State.FROZEN;
+            applyOnRestartOnly = applyOnRestart;
         }
         long started = System.currentTimeMillis();
         long timeLeftMillis = timeoutInMillis;
@@ -269,9 +280,18 @@ public class ConfigSubscriber implements AutoCloseable {
                 allGenerationsChanged &= config.isGenerationChanged();
                 anyConfigChanged      |= config.isConfigChanged();
                 internalRedeployOnly  &= config.isInternalRedeploy();
+                applyOnRestartOnly    |= requireChange && config.applyOnRestart(); // only if this is reconfig
                 timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
             }
-            reconfigDue = (anyConfigChanged || !requireChange) && allGenerationsChanged && allGenerationsTheSame;
+            reconfigDue = ((anyConfigChanged && !applyOnRestartOnly) || !requireChange)
+                          && allGenerationsChanged && allGenerationsTheSame;
+
+            if (requireChange && applyOnRestartOnly) { // if this is a reconfig, disable future reconfigs until restart
+                synchronized (monitor) {
+                    applyOnRestart = applyOnRestartOnly;
+                }
+            }
+
             if (!reconfigDue && timeLeftMillis > 0) {
                 sleep(timeLeftMillis);
             }
