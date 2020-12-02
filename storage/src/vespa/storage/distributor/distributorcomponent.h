@@ -171,7 +171,7 @@ public:
     void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override {
         removeNodeFromDB(bucket, node_index);
     }
-    DistributorBucketSpaceRepo& bucket_space_repo() override {
+    const DistributorBucketSpaceRepo& bucket_space_repo() const override {
         return getBucketSpaceRepo();
     }
     void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,

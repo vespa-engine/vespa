@@ -168,7 +168,7 @@ DistributorBucketSpace::check_ownership_in_pending_and_current_state_fallback(do
 }
 
 std::vector<uint16_t>
-DistributorBucketSpace::get_ideal_nodes(document::BucketId bucket)
+DistributorBucketSpace::get_ideal_nodes(document::BucketId bucket) const
 {
     assert(bucket.getUsedBits() >= _distribution_bits);
     if (bucket.getUsedBits() > 33) { // cf. storage::lib::Distribution::getStorageSeed
@@ -186,7 +186,7 @@ DistributorBucketSpace::get_ideal_nodes(document::BucketId bucket)
 }
 
 BucketOwnership
-DistributorBucketSpace::check_ownership_in_pending_and_current_state(document::BucketId bucket)
+DistributorBucketSpace::check_ownership_in_pending_and_current_state(document::BucketId bucket) const
 {
     if (bucket.getUsedBits() < _distribution_bits) {
         // Cannot map to super bucket ==> cannot cache result

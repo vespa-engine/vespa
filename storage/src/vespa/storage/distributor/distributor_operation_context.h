@@ -30,7 +30,7 @@ public:
                                         const std::vector<BucketCopy>& changed_nodes,
                                         uint32_t update_flags = 0) = 0;
     virtual void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) = 0;
-    virtual DistributorBucketSpaceRepo& bucket_space_repo() = 0;
+    virtual const DistributorBucketSpaceRepo& bucket_space_repo() const = 0;
 
     virtual void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,
                                                        const BucketDatabase::Entry& entry,
