@@ -1853,6 +1853,24 @@ public class ModelProvisioningTest {
         });
     }
 
+    @Test
+    public void containerWithZooKeeperSuboptimalNodeCountDuringRetirement() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='zk'>" +
+                "     <zookeeper/>" +
+                "     <nodes count='4'/>" + // (3 + 1 retired)
+                "  </container>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(4);
+        VespaModel model = tester.createModel(servicesXml, true, "node-1-3-9-01");
+        ApplicationContainerCluster cluster = model.getContainerClusters().get("zk");
+        assertEquals(1, cluster.getContainers().stream().filter(Container::isRetired).count());
+        assertEquals(3, cluster.getContainers().stream().filter(c -> !c.isRetired()).count());
+    }
+
     private VespaModel createNonProvisionedMultitenantModel(String services) {
         return createNonProvisionedModel(true, null, services);
     }

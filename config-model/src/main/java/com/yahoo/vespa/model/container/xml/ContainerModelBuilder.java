@@ -213,10 +213,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (isCombined) {
             throw new IllegalArgumentException("A combined cluster cannot run ZooKeeper");
         }
-        int nodeCount = cluster.getContainers().size();
-        if (nodeCount < MIN_ZOOKEEPER_NODE_COUNT || nodeCount > MAX_ZOOKEEPER_NODE_COUNT || nodeCount % 2 == 0) {
-            throw new IllegalArgumentException("Clusters running ZooKeeper must have an odd number of nodes, between " +
-                                               MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT);
+        long nonRetiredNodes = cluster.getContainers().stream().filter(c -> !c.isRetired()).count();
+        if (nonRetiredNodes < MIN_ZOOKEEPER_NODE_COUNT || nonRetiredNodes > MAX_ZOOKEEPER_NODE_COUNT || nonRetiredNodes % 2 == 0) {
+            throw new IllegalArgumentException("Cluster with ZooKeeper needs an odd number of nodes, between " +
+                                               MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT +
+                                               ", have " + nonRetiredNodes + " non-retired");
         }
         cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
 
