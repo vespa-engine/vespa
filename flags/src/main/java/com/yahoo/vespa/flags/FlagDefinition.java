@@ -67,7 +67,7 @@ public class FlagDefinition {
                             "Flag cannot expire before its creation date (createdAt='%s', expiresAt='%s')",
                             createdAt, expiresAt));
         }
-        if (owners.equals(PermanentFlags.OWNERS)) {
+        if (owners == PermanentFlags.OWNERS) {
             if (!createdAt.equals(PermanentFlags.CREATED_AT) || !expiresAt.equals(PermanentFlags.EXPIRES_AT)) {
                 throw new IllegalArgumentException("Invalid creation or expiration date for permanent flag");
             }
