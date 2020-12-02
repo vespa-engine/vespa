@@ -1,6 +1,9 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.NodeEntity;
@@ -9,7 +12,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -51,14 +53,33 @@ public class HostSwitchUpdaterTest {
         // Host is updated
         tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
         maintainer.maintain();
-        Supplier<Node> updatedHost = () -> allNodes(tester).stream().filter(node -> node.hostname().equals(host.hostname())).findFirst().get();
-        assertEquals(newSwitch, updatedHost.get().switchHostname().get());
+        assertEquals(newSwitch, getNode(host.hostname(), tester).switchHostname().get());
 
         // Host keeps old switch hostname if removed from the node entity
         nodeEntity = new NodeEntity(host.hostname().value(), "", "", "");
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         maintainer.maintain();
-        assertEquals(newSwitch, updatedHost.get().switchHostname().get());
+        assertEquals(newSwitch, getNode(host.hostname(), tester).switchHostname().get());
+
+        // Updates node registered under a different hostname
+        ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
+        String hostnameSuffix = ".prod." + zone.value();
+        Node configHost = new Node.Builder().hostname(HostName.from("cfghost3" + hostnameSuffix))
+                                            .type(NodeType.confighost)
+                                            .build();
+        tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, configHost);
+        String switchHostname = switchHostname(configHost);
+        NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "", "", switchHostname);
+        tester.serviceRegistry().entityService().addNodeEntity(configNodeEntity);
+        maintainer.maintain();
+        assertEquals(switchHostname, getNode(configHost.hostname(), tester).switchHostname().get());
+    }
+
+    private static Node getNode(HostName hostname, ControllerTester tester) {
+        return allNodes(tester).stream()
+                               .filter(node -> node.hostname().equals(hostname))
+                               .findFirst()
+                               .orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
     }
 
     private static List<Node> allNodes(ControllerTester tester) {
@@ -69,10 +90,14 @@ public class HostSwitchUpdaterTest {
         return nodes;
     }
 
+    private static String switchHostname(Node node) {
+        return "tor-" + node.hostname().value();
+    }
+
     private static void addNodeEntities(ControllerTester tester) {
         for (var node : allNodes(tester)) {
             if (!node.type().isHost()) continue;
-            NodeEntity nodeEntity = new NodeEntity(node.hostname().value(), "", "", "tor-" + node.hostname().value());
+            NodeEntity nodeEntity = new NodeEntity(node.hostname().value(), "", "", switchHostname(node));
             tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         }
     }
