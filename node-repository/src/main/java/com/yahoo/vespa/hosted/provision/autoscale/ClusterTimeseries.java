@@ -60,8 +60,8 @@ public class ClusterTimeseries {
                                                   List<NodeTimeseries> nodeTimeseries,
                                                   NodeRepository nodeRepository) {
         Map<String, Instant> startTimePerHost = new HashMap<>();
-        if ( ! cluster.scalingEvents().isEmpty()) {
-            var deployment = cluster.scalingEvents().get(cluster.scalingEvents().size() - 1);
+        if (cluster.lastScalingEvent().isPresent()) {
+            var deployment = cluster.lastScalingEvent().get();
             for (Node node : clusterNodes) {
                 startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
                 var nodeGenerationMeasurements =
