@@ -161,8 +161,9 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
                                                               const document::BucketId &bucketId,
                                                               PersistenceOperationMetricSet& persistenceMetrics)
 {
-    document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
-    if (!ownsBucketInCurrentState(bucket)) {
+    auto &bucket_space(_bucketSpaceRepo.get(cmd.getBucket().getBucketSpace()));
+    if (!bucket_space.owns_bucket_in_current_state(bucketId)) {
+        document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
         bounce_with_wrong_distribution(cmd);
@@ -170,7 +171,7 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
         return false;
     }
 
-    auto pending = getDistributor().checkOwnershipInPendingState(bucket);
+    auto pending = bucket_space.check_ownership_in_pending_state(bucketId);
     if (!pending.isOwned()) {
         // We return BUSY here instead of WrongDistributionReply to avoid clients potentially
         // ping-ponging between cluster state versions during a state transition.
@@ -217,7 +218,8 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         PersistenceOperationMetricSet& metrics,
         Func func)
 {
-    if (!ownsBucketInCurrentState(bucket)) {
+    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    if (!bucket_space.owns_bucket_in_current_state(bucket.getBucketId())) {
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
         bounce_with_wrong_distribution(cmd);

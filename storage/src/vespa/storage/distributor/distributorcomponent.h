@@ -50,23 +50,6 @@ public:
     BucketOwnership checkOwnershipInPendingAndCurrentState(
             const document::Bucket &bucket) const;
 
-    bool ownsBucketInState(const lib::Distribution& distribution,
-                           const lib::ClusterState& clusterState,
-                           const document::Bucket &bucket) const;
-
-    /**
-     * Returns true if this distributor owns the given bucket in the
-     * given cluster and current distribution config.
-     */
-    bool ownsBucketInState(const lib::ClusterState& clusterState,
-                           const document::Bucket &bucket) const;
-
-    /**
-     * Returns true if this distributor owns the given bucket with the current
-     * cluster state and distribution config.
-     */
-    bool ownsBucketInCurrentState(const document::Bucket &bucket) const;
-
     /**
      * Returns a reference to the current cluster state bundle. Valid until the
      * next time the distributor main thread processes its message queue.
