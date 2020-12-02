@@ -18,7 +18,6 @@ LOG_SETUP(".fnet");
 using vespalib::ServerSocket;
 using vespalib::SocketHandle;
 using vespalib::SocketSpec;
-using OptimizeFor = vespalib::Executor::OptimizeFor;
 using vespalib::steady_clock;
 
 namespace {
