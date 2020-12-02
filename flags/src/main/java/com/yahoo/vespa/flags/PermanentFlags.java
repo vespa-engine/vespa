@@ -2,6 +2,8 @@
 package com.yahoo.vespa.flags;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -53,5 +55,5 @@ public class PermanentFlags {
         return Flags.defineListFlag(flagId, defaultValue, elementClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
-    private static String toString(Instant instant) { return DateTimeFormatter.ISO_DATE.format(instant); }
+    private static String toString(Instant instant) { return DateTimeFormatter.ISO_DATE.withZone(ZoneOffset.UTC).format(instant); }
 }
