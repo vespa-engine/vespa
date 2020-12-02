@@ -62,12 +62,16 @@ public class Reconfigurer extends AbstractComponent {
 
         log.log(Level.INFO, "Will reconfigure zookeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers +
-                            ", new members" + addedServers);
+                            ", new members: " + addedServers);
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(reconfigurationInfo.existingConfig()), sessionTimeoutInSeconds, null);
 
             long fromConfig = -1;
-            zooKeeperAdmin.reconfigure(joiningServers, leavingServers, addedServers, fromConfig, null);
+            String joiningServersString = String.join(",", joiningServers);
+            String leavingServersString = String.join(",", leavingServers);
+            String addedServersString = String.join(",", addedServers);
+            // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
+            zooKeeperAdmin.reconfigure(joiningServersString, leavingServersString, addedServersString, fromConfig, null);
         } catch (IOException | KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
         }
