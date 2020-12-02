@@ -202,19 +202,19 @@ TEST_F("Test single threaded lower_bound reader during updates", Fixture)
 {
     uint32_t cnt = 1000000;
     f._reportWork = true;
-    f._writer.execute(makeLambdaTask([=]() { f.writeWork(cnt); }));
-    f._readers.execute(makeLambdaTask([=]() { f.readWork(); }));
+    f._writer.execute(makeLambdaTask([this, cnt]() { f.writeWork(cnt); }));
+    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
 }
 
 TEST_F("Test multithreaded lower_bound reader during updates", Fixture)
 {
     uint32_t cnt = 1000000;
     f._reportWork = true;
-    f._writer.execute(makeLambdaTask([=]() { f.writeWork(cnt); }));
-    f._readers.execute(makeLambdaTask([=]() { f.readWork(); }));
-    f._readers.execute(makeLambdaTask([=]() { f.readWork(); }));
-    f._readers.execute(makeLambdaTask([=]() { f.readWork(); }));
-    f._readers.execute(makeLambdaTask([=]() { f.readWork(); }));
+    f._writer.execute(makeLambdaTask([this, cnt]() { f.writeWork(cnt); }));
+    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
+    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
+    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
+    f._readers.execute(makeLambdaTask([this]() { f.readWork(); }));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
