@@ -26,7 +26,8 @@ public:
     hash_map & operator = (hash_map &&) noexcept = default;
     hash_map(const hash_map &) = default;
     hash_map & operator = (const hash_map &) = default;
-    hash_map(size_t reserveSize=0);
+    hash_map();
+    explicit hash_map(size_t reserveSize);
     hash_map(size_t reserveSize, H hasher, EQ equality);
     hash_map(std::initializer_list<value_type> input);
     ~hash_map() noexcept;
