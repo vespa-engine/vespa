@@ -79,6 +79,14 @@ struct TargetPoolTask : public FNET_Task {
     }
 };
 
+TransportConfig
+toFNETConfig(const RPCNetworkParams & params) {
+    return TransportConfig()
+              .maxInputBufferSize(params.getMaxInputBufferSize())
+              .maxOutputBufferSize(params.getMaxOutputBufferSize())
+              .tcpNoDelay(params.getTcpNoDelay());
+}
+
 }
 
 RPCNetwork::SendContext::SendContext(RPCNetwork &net, const Message &msg,
@@ -117,7 +125,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _owner(nullptr),
     _ident(params.getIdentity()),
     _threadPool(std::make_unique<FastOS_ThreadPool>(128000, 0)),
-    _transport(std::make_unique<FNET_Transport>()),
+    _transport(std::make_unique<FNET_Transport>(toFNETConfig(params))),
     _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _scheduler(*_transport->GetScheduler()),
     _slobrokCfgFactory(std::make_unique<slobrok::ConfiguratorFactory>(params.getSlobrokConfig())),
@@ -135,9 +143,6 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _allowDispatchForEncode(params.getDispatchOnEncode()),
     _allowDispatchForDecode(params.getDispatchOnDecode())
 {
-    _transport->SetMaxInputBufferSize(params.getMaxInputBufferSize());
-    _transport->SetMaxOutputBufferSize(params.getMaxOutputBufferSize());
-    _transport->SetTCPNoDelay(params.getTcpNoDelay());
 }
 
 RPCNetwork::~RPCNetwork()

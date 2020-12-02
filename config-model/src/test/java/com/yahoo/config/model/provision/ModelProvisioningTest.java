@@ -1815,6 +1815,44 @@ public class ModelProvisioningTest {
         assertEquals(1, controller.getContainers().size());
     }
 
+    @Test
+    public void testStatefulProperty() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='qrs'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <container version='1.0' id='zk'>" +
+                "     <zookeeper/>" +
+                "     <nodes count='3'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='content'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(6);
+        VespaModel model = tester.createModel(servicesXml, true);
+
+        Map<String, Boolean> tests = Map.of("qrs", false,
+                                            "zk", true,
+                                            "content", true);
+        Map<String, List<HostResource>> hostsByCluster = model.hostSystem().getHosts().stream()
+                                                              .collect(Collectors.groupingBy(h -> h.spec().membership().get().cluster().id().value()));
+        tests.forEach((clusterId, stateful) -> {
+            List<HostResource> hosts = hostsByCluster.getOrDefault(clusterId, List.of());
+            assertFalse("Hosts are provisioned for '" + clusterId + "'", hosts.isEmpty());
+            assertEquals("Hosts in cluster '" + clusterId + "' are " + (stateful ? "" : "not ") + "stateful",
+                         stateful,
+                         hosts.stream().allMatch(h -> h.spec().membership().get().cluster().isStateful()));
+        });
+    }
+
     private VespaModel createNonProvisionedMultitenantModel(String services) {
         return createNonProvisionedModel(true, null, services);
     }

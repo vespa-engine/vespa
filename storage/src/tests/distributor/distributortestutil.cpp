@@ -133,7 +133,7 @@ DistributorTestUtil::getNodes(document::BucketId id)
 std::string
 DistributorTestUtil::getIdealStr(document::BucketId id, const lib::ClusterState& state)
 {
-    if (!getExternalOperationHandler().ownsBucketInState(state, makeDocumentBucket(id))) {
+    if (!getDistributorBucketSpace().owns_bucket_in_state(state, id)) {
         return id.toString();
     }
 

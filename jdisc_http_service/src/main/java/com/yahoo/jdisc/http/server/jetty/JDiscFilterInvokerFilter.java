@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
+import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
  * Runs JDisc security filters for Servlets

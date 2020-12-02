@@ -262,19 +262,19 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     Metric.Context context = getContext(Map.of("lockPath", lockPath));
 
                     LatencyMetrics acquireLatencyMetrics = lockMetrics.getAndResetAcquireLatencyMetrics();
-                    metric.set("lockAttempt.acquireMaxActiveLatency", acquireLatencyMetrics.maxActiveLatencySeconds(), context);
-                    metric.set("lockAttempt.acquireHz", acquireLatencyMetrics.startHz(), context);
-                    metric.set("lockAttempt.acquireLoad", acquireLatencyMetrics.load(), context);
+                    setNonZero("lockAttempt.acquireMaxActiveLatency", acquireLatencyMetrics.maxActiveLatencySeconds(), context);
+                    setNonZero("lockAttempt.acquireHz", acquireLatencyMetrics.startHz(), context);
+                    setNonZero("lockAttempt.acquireLoad", acquireLatencyMetrics.load(), context);
 
                     LatencyMetrics lockedLatencyMetrics = lockMetrics.getAndResetLockedLatencyMetrics();
-                    metric.set("lockAttempt.lockedLatency", lockedLatencyMetrics.maxLatencySeconds(), context);
-                    metric.set("lockAttempt.lockedLoad", lockedLatencyMetrics.load(), context);
+                    setNonZero("lockAttempt.lockedLatency", lockedLatencyMetrics.maxLatencySeconds(), context);
+                    setNonZero("lockAttempt.lockedLoad", lockedLatencyMetrics.load(), context);
 
-                    metric.set("lockAttempt.acquireTimedOut", lockMetrics.getAndResetAcquireTimedOutCount(), context);
-                    metric.set("lockAttempt.deadlock", lockMetrics.getAndResetDeadlockCount(), context);
+                    setNonZero("lockAttempt.acquireTimedOut", lockMetrics.getAndResetAcquireTimedOutCount(), context);
+                    setNonZero("lockAttempt.deadlock", lockMetrics.getAndResetDeadlockCount(), context);
 
                     // bucket for various rare errors - to reduce #metrics
-                    metric.set("lockAttempt.errors",
+                    setNonZero("lockAttempt.errors",
                             lockMetrics.getAndResetAcquireFailedCount() +
                                     lockMetrics.getAndResetReleaseFailedCount() +
                                     lockMetrics.getAndResetNakedReleaseCount() +
@@ -282,6 +282,12 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                                     lockMetrics.getAndResetForeignReleaseCount(),
                             context);
                 });
+    }
+
+    private void setNonZero(String key, Number value, Metric.Context context) {
+        if (Double.compare(value.doubleValue(), 0.0) != 0) {
+            metric.set(key, value, context);
+        }
     }
 
     private void updateDockerMetrics(NodeList nodes) {

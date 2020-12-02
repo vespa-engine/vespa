@@ -18,7 +18,7 @@ LOG_SETUP(".fnet");
 using vespalib::ServerSocket;
 using vespalib::SocketHandle;
 using vespalib::SocketSpec;
-using OptimizeFor = vespalib::Executor::OptimizeFor;
+using vespalib::steady_clock;
 
 namespace {
 
@@ -125,7 +125,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
         _queue.QueuePacket_NoLock(cpacket, context);
         qLen = _queue.GetPacketCnt_NoLock();
     }
-    if (qLen == _owner.events_before_wakeup()) {
+    if (qLen == getConfig()._events_before_wakeup) {
         _selector.wakeup();
     }
     return true;
@@ -207,9 +207,8 @@ extern "C" {
 
 FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
     : _owner(owner_in),
-      _now(clock::now()),
+      _now(steady_clock ::now()),
       _scheduler(&_now),
-      _config(),
       _componentsHead(nullptr),
       _timeOutHead(nullptr),
       _componentsTail(nullptr),
@@ -242,13 +241,17 @@ FNET_TransportThread::~FNET_TransportThread()
     }
 }
 
+const FNET_Config &
+FNET_TransportThread::getConfig() const {
+    return _owner.getConfig();
+}
 
 bool
 FNET_TransportThread::tune(SocketHandle &handle) const
 {
     handle.set_keepalive(true);
     handle.set_linger(true, 0);
-    handle.set_nodelay(_config._tcpNoDelay);
+    handle.set_nodelay(getConfig()._tcpNoDelay);
     return handle.set_blocking(false);
 }
 
@@ -394,7 +397,7 @@ FNET_TransportThread::InitEventLoop()
         LOG(error, "Transport: InitEventLoop: object already active!");
         return false;
     }
-    _now = clock::now();
+    _now = steady_clock::now();
     return true;
 }
 
@@ -468,17 +471,15 @@ FNET_TransportThread::handle_event(FNET_IOComponent &ctx, bool read, bool write)
 
 
 bool
-FNET_TransportThread::EventLoopIteration()
-{
-    FNET_IOComponent   *component = nullptr;
-    int                 msTimeout = FNET_Scheduler::tick_ms.count();
+FNET_TransportThread::EventLoopIteration() {
 
     if (!IsShutDown()) {
+        int msTimeout = FNET_Scheduler::tick_ms.count();
         // obtain I/O events
         _selector.poll(msTimeout);
 
         // sample current time (performed once per event loop iteration)
-        _now = clock::now();
+        _now = steady_clock::now();
 
         handle_wakeup_events();
 
@@ -486,16 +487,8 @@ FNET_TransportThread::EventLoopIteration()
         _selector.dispatch(*this);
 
         // handle IOC time-outs
-        if (_config._iocTimeOut > 0) {
-            time_point oldest = (_now - std::chrono::milliseconds(_config._iocTimeOut));
-            while (_timeOutHead != nullptr &&
-                   oldest > _timeOutHead->_ioc_timestamp) {
-
-                component = _timeOutHead;
-                RemoveComponent(component);
-                component->Close();
-                AddDeleteComponent(component);
-            }
+        if (getConfig()._iocTimeOut > vespalib::duration::zero()) {
+            checkTimedoutComponents(getConfig()._iocTimeOut);
         }
 
         // perform pending tasks
@@ -510,6 +503,23 @@ FNET_TransportThread::EventLoopIteration()
     if (_finished)
         return false;
 
+    endEventLoop();
+    return false;
+}
+
+void
+FNET_TransportThread::checkTimedoutComponents(vespalib::duration timeout) {
+    vespalib::steady_time oldest = (_now - timeout);
+    while (_timeOutHead != nullptr && oldest > _timeOutHead->_ioc_timestamp) {
+        FNET_IOComponent *component = _timeOutHead;
+        RemoveComponent(component);
+        component->Close();
+        AddDeleteComponent(component);
+    }
+}
+
+void
+FNET_TransportThread::endEventLoop() {
     // flush event queue
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -528,7 +538,7 @@ FNET_TransportThread::EventLoopIteration()
     }
 
     // close and remove all I/O Components
-    component = _componentsHead;
+    FNET_IOComponent *component = _componentsHead;
     while (component != nullptr) {
         assert(component == _componentsHead);
         FNET_IOComponent *tmp = component;
@@ -554,7 +564,6 @@ FNET_TransportThread::EventLoopIteration()
 
     LOG(spam, "Transport: event loop finished.");
 
-    return false;
 }
 
 

@@ -71,7 +71,7 @@ pairAsRange(Pair pair)
 std::vector<uint64_t>
 PendingMessageTracker::clearMessagesForNode(uint16_t node)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     MessagesByNodeAndBucket& idx(boost::multi_index::get<1>(_messages));
     auto range = pairAsRange(idx.equal_range(boost::make_tuple(node)));
 
@@ -88,7 +88,7 @@ PendingMessageTracker::clearMessagesForNode(uint16_t node)
 void
 PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     if (msg->getAddress()) {
         _messages.emplace(currentTime(), msg->getType().getId(), msg->getPriority(), msg->getMsgId(),
                           msg->getBucket(), msg->getAddress()->getIndex());
@@ -103,7 +103,7 @@ PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
 document::Bucket
 PendingMessageTracker::reply(const api::StorageReply& r)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::unique_lock guard(_lock);
     document::Bucket bucket;
 
     LOG(debug, "Got reply: %s", r.toString().c_str());
@@ -121,9 +121,70 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         }
         LOG(debug, "Erased message with id %" PRIu64, msgId);
         msgs.erase(msgId);
+        auto deferred_tasks = get_deferred_ops_if_bucket_pending_drained(bucket);
+        // Deferred tasks may try to send messages, which in turn will invoke the PendingMessageTracker.
+        // To avoid deadlocking, we run the tasks outside the lock.
+        // TODO remove locking entirely... Only exists for status pages!
+        guard.unlock();
+        // We expect this to be "effectively noexcept", i.e. any tasks throwing an
+        // exception will end up nuking the distributor process from the unwind.
+        for (auto& task : deferred_tasks) {
+            task->run(TaskRunState::OK);
+        }
     }
 
     return bucket;
+}
+
+namespace {
+
+template <typename Range>
+bool is_empty_range(const Range& range) noexcept {
+    return (range.first == range.second);
+}
+
+}
+
+std::vector<std::unique_ptr<DeferredTask>>
+PendingMessageTracker::get_deferred_ops_if_bucket_pending_drained(const document::Bucket& bucket)
+{
+    if (_deferred_bucket_tasks.empty()) {
+        return {};
+    }
+    std::vector<std::unique_ptr<DeferredTask>> tasks;
+    auto& bucket_idx = boost::multi_index::get<2>(_messages);
+    auto pending_tasks_for_bucket = bucket_idx.equal_range(bucket);
+    if (is_empty_range(pending_tasks_for_bucket)) {
+        auto waiting_tasks = _deferred_bucket_tasks.equal_range(bucket);
+        for (auto task_iter = waiting_tasks.first; task_iter != waiting_tasks.second; ++task_iter) {
+            tasks.emplace_back(std::move(task_iter->second));
+        }
+        _deferred_bucket_tasks.erase(waiting_tasks.first, waiting_tasks.second);
+    }
+    return tasks;
+}
+
+void
+PendingMessageTracker::run_once_no_pending_for_bucket(const document::Bucket& bucket, std::unique_ptr<DeferredTask> task)
+{
+    std::unique_lock guard(_lock);
+    auto& bucket_idx = boost::multi_index::get<2>(_messages);
+    const auto pending_tasks_for_bucket = bucket_idx.equal_range(bucket);
+    if (is_empty_range(pending_tasks_for_bucket)) {
+        guard.unlock(); // Must not be held whilst running task, or else recursive sends will deadlock.
+        task->run(TaskRunState::OK); // Nothing pending, run immediately.
+    } else {
+        _deferred_bucket_tasks.emplace(bucket, std::move(task));
+    }
+}
+
+void
+PendingMessageTracker::abort_deferred_tasks()
+{
+    std::lock_guard guard(_lock);
+    for (auto& task : _deferred_bucket_tasks) {
+        task.second->run(TaskRunState::Aborted);
+    }
 }
 
 namespace {
@@ -144,7 +205,7 @@ runCheckerOnRange(PendingMessageTracker::Checker& checker, const Range& range)
 void
 PendingMessageTracker::checkPendingMessages(uint16_t node, const document::Bucket &bucket, Checker& checker) const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
 
     auto range = pairAsRange(msgs.equal_range(boost::make_tuple(node, bucket)));
@@ -154,7 +215,7 @@ PendingMessageTracker::checkPendingMessages(uint16_t node, const document::Bucke
 void
 PendingMessageTracker::checkPendingMessages(const document::Bucket &bucket, Checker& checker) const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     const MessagesByBucketAndType& msgs(boost::multi_index::get<2>(_messages));
 
     auto range = pairAsRange(msgs.equal_range(boost::make_tuple(bucket)));
@@ -164,7 +225,7 @@ PendingMessageTracker::checkPendingMessages(const document::Bucket &bucket, Chec
 bool
 PendingMessageTracker::hasPendingMessage(uint16_t node, const document::Bucket &bucket, uint32_t messageType) const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     const MessagesByNodeAndBucket& msgs(boost::multi_index::get<1>(_messages));
 
     auto range = msgs.equal_range(boost::make_tuple(node, bucket, messageType));
@@ -181,7 +242,7 @@ PendingMessageTracker::getStatusStartPage(std::ostream& out) const
 void
 PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     const MessagesByNodeAndBucket& msgs = boost::multi_index::get<1>(_messages);
     using BucketMap = std::map<document::Bucket, std::vector<vespalib::string>>;
     BucketMap perBucketMsgs;
@@ -210,7 +271,7 @@ PendingMessageTracker::getStatusPerBucket(std::ostream& out) const
 void
 PendingMessageTracker::getStatusPerNode(std::ostream& out) const
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::lock_guard guard(_lock);
     const MessagesByNodeAndBucket& msgs = boost::multi_index::get<1>(_messages);
     int lastNode = -1;
     for (const auto & node : msgs) {

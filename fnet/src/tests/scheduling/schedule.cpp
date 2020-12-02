@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/scheduler.h>
+#include <vespa/fnet/task.h>
 
-using my_clock = FNET_Scheduler::clock;
-using time_point = my_clock::time_point;
+using vespalib::steady_clock;
+using vespalib::steady_time;
 using ms_double = std::chrono::duration<double, std::milli>;
 
-time_point _time;
+steady_time _time;
 FNET_Scheduler *_scheduler;
 
 template <class Rep, class Period>
@@ -22,11 +23,11 @@ int as_ms(std::chrono::time_point<Clock,Duration> time) {
 class MyTask : public FNET_Task
 {
 public:
-  time_point  _time;
+  steady_time _time;
   int         _target;
   bool        _done;
 
-  MyTask(int target)
+  explicit MyTask(int target)
     : FNET_Task(::_scheduler),
       _time(),
       _target(target),
@@ -79,7 +80,7 @@ public:
 
 
 TEST("schedule") {
-  _time = time_point(std::chrono::milliseconds(0));
+  _time = steady_time(vespalib::duration::zero());
   _scheduler = new FNET_Scheduler(&_time, &_time);
 
   RealTimeTask rt_task1;
@@ -97,25 +98,25 @@ TEST("schedule") {
     assert(tasks[i] != nullptr);
   }
 
-  time_point start;
+  steady_time start;
   ms_double  ms;
 
-  start = my_clock::now();
+  start = steady_clock::now();
   for (uint32_t j = 0; j < taskCnt; j++) {
     tasks[j]->Schedule(tasks[j]->GetTarget() / 1000.0);
   }
-  ms = (my_clock::now() - start);
+  ms = (steady_clock::now() - start);
   double scheduleTime = ms.count() / (double)taskCnt;
   fprintf(stderr, "scheduling cost: %1.2f microseconds\n", scheduleTime * 1000.0);
 
-  start = my_clock::now();
+  start = steady_clock::now();
   uint32_t tickCnt = 0;
   while (as_ms(_time) < 135000.0) {
     _time += FNET_Scheduler::tick_ms;
     _scheduler->CheckTasks();
     tickCnt++;
   }
-  ms = (my_clock::now() - start);
+  ms = (steady_clock::now() - start);
   fprintf(stderr, "3 RT tasks + %d one-shot tasks over 135s\n", taskCnt);
   fprintf(stderr, "%1.2f seconds actual run time\n", ms.count() / 1000.0);
   fprintf(stderr, "%1.2f tasks per simulated second\n", (double)taskCnt / (double)135);

@@ -59,7 +59,7 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
+        ClusterSpec clusterSpec = clusterNodes.get(0).allocation().get().membership().cluster();
         if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
@@ -69,13 +69,13 @@ public class Autoscaler {
         ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
         int measurementsPerNode = clusterTimeseries.measurementsPerNode();
-        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterType))
+        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterSpec))
             return Advice.none("Collecting more data before making new scaling decisions" +
                                ": Has " + measurementsPerNode + " data points per node" +
-                               "(all: " + clusterTimeseries.measurementCount +
+                               " (all: " + clusterTimeseries.measurementCount +
                                ", without stale: " + clusterTimeseries.measurementCountWithoutStale +
                                ", without out of service: " + clusterTimeseries.measurementCountWithoutStaleOutOfService +
-                               ", without unstable: " + clusterTimeseries.measurementCountWithoutStaleOutOfServiceUnstable);
+                               ", without unstable: " + clusterTimeseries.measurementCountWithoutStaleOutOfServiceUnstable + ")");
 
         int nodesMeasured = clusterTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
@@ -124,14 +124,14 @@ public class Autoscaler {
     }
 
     private boolean recentlyScaled(Cluster cluster, List<Node> clusterNodes) {
-        Duration downscalingDelay = downscalingDelay(clusterNodes.get(0).allocation().get().membership().cluster().type());
+        Duration downscalingDelay = downscalingDelay(clusterNodes.get(0).allocation().get().membership().cluster());
         return cluster.lastScalingEvent().map(event -> event.at()).orElse(Instant.MIN)
                       .isAfter(nodeRepository.clock().instant().minus(downscalingDelay));
     }
 
     /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */
-    static Duration scalingWindow(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return Duration.ofHours(12);
+    static Duration scalingWindow(ClusterSpec cluster) {
+        if (cluster.isStateful()) return Duration.ofHours(12);
         return Duration.ofMinutes(30);
     }
 
@@ -140,8 +140,8 @@ public class Autoscaler {
     }
 
     /** Measurements are currently taken once a minute. See also scalingWindow */
-    static int minimumMeasurementsPerNode(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return 60;
+    static int minimumMeasurementsPerNode(ClusterSpec cluster) {
+        if (cluster.isStateful()) return 60;
         return 7;
     }
 
@@ -149,8 +149,8 @@ public class Autoscaler {
      * We should wait a while before scaling down after a scaling event as a peak in usage
      * indicates more peaks may arrive in the near future.
      */
-    static Duration downscalingDelay(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return Duration.ofHours(12);
+    static Duration downscalingDelay(ClusterSpec cluster) {
+        if (cluster.isStateful()) return Duration.ofHours(12);
         return Duration.ofHours(1);
     }
 

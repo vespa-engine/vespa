@@ -19,17 +19,14 @@ int main(int argc, char **argv) {
         fprintf(stderr, "expression error: %s\n", function->get_error().c_str());
         return 1;
     }
-    InterpretedFunction interpreted(SimpleTensorEngine::ref(), *function, NodeTypes());
-    InterpretedFunction::Context ctx(interpreted);
-    SimpleParams params({});
-    const Value &result = interpreted.eval(ctx, params);
-    if (result.is_double()) {
-        fprintf(stdout, "%.32g\n", result.as_double());
-    } else if (result.is_tensor()) {
-        vespalib::string str = SimpleTensorEngine::ref().to_spec(result).to_string();
-        fprintf(stdout, "%s\n", str.c_str());
-    } else {
+    auto result = TensorSpec::from_expr(argv[1]);
+    auto type = ValueType::from_spec(result.type());
+    if (type.is_error()) {
         fprintf(stdout, "error\n");
+    } else if (type.is_scalar()) {
+        fprintf(stdout, "%.32g\n", result.as_double());
+    } else {
+        fprintf(stdout, "%s\n", result.to_string().c_str());
     }
     return 0;
 }

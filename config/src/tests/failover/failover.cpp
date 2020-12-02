@@ -5,7 +5,9 @@
 #include <vespa/config/frt/protocol.h>
 #include <vespa/config/config.h>
 #include <vespa/config/common/configcontext.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+
 #include "config-my.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/simple_buffer.h>

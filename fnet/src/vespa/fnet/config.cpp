@@ -3,7 +3,8 @@
 #include "config.h"
 
 FNET_Config::FNET_Config()
-    : _iocTimeOut(0),
+    : _iocTimeOut(vespalib::duration::zero()),
+      _events_before_wakeup(1),
       _maxInputBufferSize(0x10000),
       _maxOutputBufferSize(0x10000),
       _tcpNoDelay(true)

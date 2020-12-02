@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <mutex>
-#include <condition_variable>
 #include <atomic>
 #include <memory>
 
@@ -18,10 +16,8 @@ class BucketInfoQueue;
  * benchmark feeding.
  */
 class PendingTracker {
-    uint32_t                _pending;
+    std::atomic<uint32_t>   _pending;
     uint32_t                _limit;
-    std::mutex              _mutex;
-    std::condition_variable _cond;
     std::unique_ptr<BucketInfoQueue> _bucket_info_queue;
 
 public:
@@ -29,20 +25,9 @@ public:
     ~PendingTracker();
 
     void release() {
-        std::unique_lock<std::mutex> guard(_mutex);
-        --_pending;
-        if (_pending < _limit) {
-            _cond.notify_all();
-        }
+        _pending--;
     }
-    void retain() {
-        std::unique_lock<std::mutex> guard(_mutex);
-        while (_pending >= _limit) {
-            _cond.wait(guard);
-        }
-        ++_pending;
-    }
-
+    void retain();
     void drain();
 
     void attach_bucket_info_queue(storage::spi::PersistenceProvider& provider, std::atomic<uint32_t>& errors);

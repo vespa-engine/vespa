@@ -58,7 +58,7 @@ public class AllocationOptimizer {
                                                              groups,
                                                              nodeResourcesWith(nodesAdjustedForRedundancy, groupsAdjustedForRedundancy, limits, current, target));
 
-                var allocatableResources = AllocatableClusterResources.from(next, exclusive, current.clusterType(), limits, nodeRepository);
+                var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;
@@ -79,7 +79,7 @@ public class AllocationOptimizer {
 
         int groupSize = nodes / groups;
 
-        if (current.clusterType().isContent()) { // load scales with node share of content
+        if (current.clusterSpec().isStateful()) { // load scales with node share of content
             // The fixed cost portion of cpu does not scale with changes to the node count
             // TODO: Only for the portion of cpu consumed by queries
             double cpuPerGroup = fixedCpuCostFraction * target.nodeCpu() +

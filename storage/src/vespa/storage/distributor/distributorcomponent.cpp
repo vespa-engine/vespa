@@ -63,32 +63,6 @@ DistributorComponent::checkOwnershipInPendingAndCurrentState(
     return bucket_space.check_ownership_in_pending_and_current_state(bucket.getBucketId());
 }
 
-bool
-DistributorComponent::ownsBucketInState(
-        const lib::Distribution& distribution,
-        const lib::ClusterState& clusterState,
-        const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_state(distribution, clusterState, bucket.getBucketId());
-}
-
-bool
-DistributorComponent::ownsBucketInState(
-        const lib::ClusterState& clusterState,
-        const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_state(clusterState, bucket.getBucketId());
-}
-
-bool
-DistributorComponent::ownsBucketInCurrentState(const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_current_state(bucket.getBucketId());
-}
-
 api::StorageMessageAddress
 DistributorComponent::nodeAddress(uint16_t nodeIndex) const
 {

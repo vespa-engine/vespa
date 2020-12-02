@@ -78,7 +78,6 @@ public class ClusterControllerContainer extends Container implements
 
         // TODO: Why are bundles added here instead of in the cluster?
         addFileBundle("clustercontroller-apps");
-        addFileBundle("clustercontroller-apputil");
         addFileBundle("clustercontroller-core");
         addFileBundle("clustercontroller-utils");
         addFileBundle("zookeeper-server");

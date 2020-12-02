@@ -11,9 +11,8 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/simple_buffer.h>
-#include <vespa/fnet/fnet.h>
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/fnet/frt/error.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/config/frt/protocol.h>
 #include <lz4.h>
 #include "config-my.h"
@@ -277,10 +276,10 @@ TEST("require that v3 request is correctly initialized") {
     traceIn.trace(2, "Hei");
     FRTConfigRequestV3 v3req(&conn, key, md5, currentGeneration, hostName,
                              timeout, traceIn, VespaVersion::fromString("1.2.3"), CompressionType::LZ4);
-    ASSERT_TRUE(v3req.verifyState(ConfigState(md5, 3, false)));
-    ASSERT_FALSE(v3req.verifyState(ConfigState(md5, 2, false)));
-    ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 3, false)));
-    ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 2, false)));
+    ASSERT_TRUE(v3req.verifyState(ConfigState(md5, 3, false, false)));
+    ASSERT_FALSE(v3req.verifyState(ConfigState(md5, 2, false, false)));
+    ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 3, false, false)));
+    ASSERT_FALSE(v3req.verifyState(ConfigState("xxx", 2, false, false)));
 
     ConfigDefinition origDef(MyConfig::CONFIG_DEF_SCHEMA);
 

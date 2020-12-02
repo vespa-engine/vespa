@@ -52,6 +52,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ApplicationMetaDataGarbageCollector applicationMetaDataGarbageCollector;
     private final HostRepairMaintainer hostRepairMaintainer;
     private final ContainerImageExpirer containerImageExpirer;
+    private final HostSwitchUpdater hostSwitchUpdater;
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
@@ -81,6 +82,7 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationMetaDataGarbageCollector = new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector);
         hostRepairMaintainer = new HostRepairMaintainer(controller, intervals.hostRepairMaintainer);
         containerImageExpirer = new ContainerImageExpirer(controller, intervals.containerImageExpirer);
+        hostSwitchUpdater = new HostSwitchUpdater(controller, intervals.hostSwitchUpdater);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -111,6 +113,7 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationMetaDataGarbageCollector.close();
         hostRepairMaintainer.close();
         containerImageExpirer.close();
+        hostSwitchUpdater.close();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
@@ -148,6 +151,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration applicationMetaDataGarbageCollector;
         private final Duration hostRepairMaintainer;
         private final Duration containerImageExpirer;
+        private final Duration hostSwitchUpdater;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -170,6 +174,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
             this.hostRepairMaintainer = duration(12, HOURS);
             this.containerImageExpirer = duration(2, HOURS);
+            this.hostSwitchUpdater = duration(12, HOURS);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

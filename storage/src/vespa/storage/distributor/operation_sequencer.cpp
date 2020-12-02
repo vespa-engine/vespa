@@ -4,8 +4,7 @@
 #include <vespa/document/base/documentid.h>
 #include <cassert>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 void SequencingHandle::release() {
     if (valid()) {
@@ -14,27 +13,49 @@ void SequencingHandle::release() {
     }
 }
 
-OperationSequencer::OperationSequencer() {
-}
+OperationSequencer::OperationSequencer()  = default;
+OperationSequencer::~OperationSequencer() = default;
 
-OperationSequencer::~OperationSequencer() {
-}
-
-SequencingHandle OperationSequencer::try_acquire(const document::DocumentId& id) {
+SequencingHandle OperationSequencer::try_acquire(document::BucketSpace bucket_space, const document::DocumentId& id) {
     const document::GlobalId gid(id.getGlobalId());
+    if (!_active_buckets.empty()) {
+        auto doc_bucket_id = gid.convertToBucketId();
+        // TODO avoid O(n), but sub bucket resolving is tricky and we expect the number
+        // of locked buckets to be in the range of 0 to <very small number>.
+        for (const auto& entry : _active_buckets) {
+            if ((entry.getBucketSpace() == bucket_space)
+                && entry.getBucketId().contains(doc_bucket_id))
+            {
+                return SequencingHandle(SequencingHandle::BlockedBy::LockedBucket);
+            }
+        }
+    }
     const auto inserted = _active_gids.insert(gid);
     if (inserted.second) {
         return SequencingHandle(*this, gid);
     } else {
-        return SequencingHandle();
+        return SequencingHandle(SequencingHandle::BlockedBy::PendingOperation);
+    }
+}
+
+SequencingHandle OperationSequencer::try_acquire(const document::Bucket& bucket) {
+    const auto inserted = _active_buckets.insert(bucket);
+    if (inserted.second) {
+        return SequencingHandle(*this, bucket);
+    } else {
+        return SequencingHandle(SequencingHandle::BlockedBy::LockedBucket);
     }
 }
 
 void OperationSequencer::release(const SequencingHandle& handle) {
     assert(handle.valid());
-    _active_gids.erase(handle.gid());
+    if (handle.has_gid()) {
+        _active_gids.erase(handle.gid());
+    } else {
+        assert(handle.has_bucket());
+        [[maybe_unused]] auto erased = _active_buckets.erase(handle.bucket());
+        assert(erased == 1u);
+    }
 }
 
-} // distributor
-} // storage
-
+} // storage::distributor
