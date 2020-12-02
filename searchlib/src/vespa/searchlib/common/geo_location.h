@@ -20,6 +20,7 @@ struct GeoLocation
     static constexpr int32_t range_high = std::numeric_limits<int32_t>::max();
     static constexpr uint32_t radius_inf = std::numeric_limits<uint32_t>::max();
     struct Point {
+        Point(int32_t x_in, int32_t y_in) : x(x_in), y(y_in) {}
         const int32_t x;
         const int32_t y;
         Point() = delete;
@@ -79,7 +80,7 @@ struct GeoLocation
         int32_t x = 0;
         int32_t y = 0;
         vespalib::geo::ZCurve::decode(zcurve_encoded_xy, &x, &y);
-        return inside_limit(Point{x, y});
+        return inside_limit(Point(x, y));
     }
 
 private:

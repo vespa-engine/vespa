@@ -60,7 +60,7 @@ public:
     IdleObserver() : _num_idle(_always_zero) {}
     IdleObserver(const std::atomic<size_t> &num_idle) : _num_idle(num_idle) {}
     bool is_always_zero() const { return (&_num_idle == &_always_zero); }
-    size_t get() const { return _num_idle.load(std::memory_order::memory_order_relaxed); }
+    size_t get() const { return _num_idle.load(std::memory_order_relaxed); }
 };
 
 /**
@@ -154,7 +154,7 @@ public:
     DocidRange first_range(size_t thread_id) override { return next_task(thread_id); }
     DocidRange next_range(size_t thread_id) override { return next_task(thread_id); }
     size_t total_size(size_t thread_id) const override { return _assigned[thread_id]; }
-    size_t unassigned_size() const override { return _unassigned.load(std::memory_order::memory_order_relaxed); }
+    size_t unassigned_size() const override { return _unassigned.load(std::memory_order_relaxed); }
     IdleObserver make_idle_observer() const override { return IdleObserver(); }
     DocidRange share_range(size_t, DocidRange todo) override { return todo; }
 };
