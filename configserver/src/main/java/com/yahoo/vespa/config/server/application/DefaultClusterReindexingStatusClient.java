@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -105,10 +106,18 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
         for (JsonNode statusJson : jsonNode.get("status")) {
             String type = statusJson.get("type").textValue();
             Instant startedMillis = Instant.ofEpochMilli(statusJson.get("startedMillis").longValue());
-            Instant endedMillis = Instant.ofEpochMilli(statusJson.get("endedMillis").longValue());
-            String progressToken = statusJson.get("progress").textValue();
-            ClusterReindexing.State state = ClusterReindexing.State.fromString(statusJson.get("state").textValue());
-            String message = statusJson.get("message").textValue();
+            Instant endedMillis = Optional.ofNullable(statusJson.get("endedMillis"))
+                    .map(json -> Instant.ofEpochMilli(json.longValue()))
+                    .orElse(null);
+            String progressToken = Optional.ofNullable(statusJson.get("progress"))
+                    .map(JsonNode::textValue)
+                    .orElse(null);
+            ClusterReindexing.State state = Optional.ofNullable(statusJson.get("state"))
+                    .map(json -> ClusterReindexing.State.fromString(json.textValue()))
+                    .orElse(null);
+            String message = Optional.ofNullable(statusJson.get("message"))
+                    .map(JsonNode::textValue)
+                    .orElse(null);
             documentStatuses.put(type, new ClusterReindexing.Status(startedMillis, endedMillis, state, message, progressToken));
         }
         return new ClusterReindexing(documentStatuses);
