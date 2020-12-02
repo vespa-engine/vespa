@@ -270,13 +270,6 @@ public class Flags {
             "Whether to provision and use endpoint certs for apps in shared routing zones",
             "Takes effect on next deployment of the application", APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_CLOUD_INIT_FORMAT = defineFeatureFlag(
-            "use-cloud-init", false,
-            List.of("nobody"), "2020-12-02", "2021-02-01",
-            "Use the cloud-init format when provisioning hosts",
-            "Takes effect immediately",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag PROVISION_APPLICATION_ROLES = defineFeatureFlag(
             "provision-application-roles", false,
             List.of("nobody"), "2020-12-02", "2021-02-01",
