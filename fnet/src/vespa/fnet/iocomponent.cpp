@@ -16,7 +16,7 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
       _ioc_selector(nullptr),
       _ioc_spec(nullptr),
       _flags(shouldTimeOut),
-      _ioc_timestamp(clock::now()),
+      _ioc_timestamp(vespalib::steady_clock::now()),
       _ioc_lock(),
       _ioc_cond(),
       _ioc_refcnt(1)
