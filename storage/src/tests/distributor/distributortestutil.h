@@ -175,6 +175,9 @@ public:
     BucketDatabase::Entry getBucket(const document::BucketId& bId) const;
 
     std::vector<document::BucketSpace> getBucketSpaces() const;
+
+    DistributorMessageSenderStub& sender() noexcept { return _sender; }
+    const DistributorMessageSenderStub& sender() const noexcept { return _sender; }
 protected:
     vdstestlib::DirConfig _config;
     std::unique_ptr<TestDistributorApp> _node;
