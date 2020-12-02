@@ -117,7 +117,7 @@ public class QuestMetricsDbTest {
     /** To manually test that we can read existing data */
     @Ignore
     @Test
-    public void testReadingExistingData() {
+    public void testReadingAndAppendingToExistingData() {
         String dataDir = "data/QuestMetricsDbExistingData";
         if ( ! new File(dataDir).exists()) {
             System.out.println("No existing data to check");
@@ -125,14 +125,21 @@ public class QuestMetricsDbTest {
         }
         IOUtils.createDirectory(dataDir + "/metrics");
         ManualClock clock = new ManualClock("2020-10-01T00:00:00");
-        clock.advance(Duration.ofSeconds(10)); // Adjust to end time of data written
+        clock.advance(Duration.ofSeconds(9)); // Adjust to last data written
         QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
 
-        List<NodeTimeseries> timeseries = db.getNodeTimeseries(clock.instant().minus(Duration.ofSeconds(10)), Set.of("host1"));
+        List<NodeTimeseries> timeseries = db.getNodeTimeseries(clock.instant().minus(Duration.ofSeconds(9)), Set.of("host1"));
         assertFalse("Could read existing data", timeseries.isEmpty());
         assertEquals(10, timeseries.get(0).size());
 
-        System.out.println("Existing data:");
+        System.out.println("Existing data read:");
+        for (var snapshot : timeseries.get(0).asList())
+            System.out.println("  " + snapshot);
+
+        clock.advance(Duration.ofSeconds(1));
+        db.add(timeseries(2, Duration.ofSeconds(1), clock, "host1"));
+        System.out.println("New data written and read:");
+        timeseries = db.getNodeTimeseries(clock.instant().minus(Duration.ofSeconds(2)), Set.of("host1"));
         for (var snapshot : timeseries.get(0).asList())
             System.out.println("  " + snapshot);
     }
