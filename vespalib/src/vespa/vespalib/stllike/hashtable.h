@@ -129,7 +129,7 @@ class hashtable : public hashtable_base
 private:
     using Node=hash_node<Value>;
 protected:
-    typedef vespalib::Array<Node> NodeStore;
+    using NodeStore = vespalib::Array<Node>;
     virtual void move(NodeStore && oldStore);
 public:
     class const_iterator;
