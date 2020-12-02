@@ -29,14 +29,14 @@ struct OperationSequencerTest : Test {
 TEST_F(OperationSequencerTest, can_get_sequencing_handle_for_id_without_existing_handle) {
     auto handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test::abcd"));
     EXPECT_TRUE(handle.valid());
-    EXPECT_FALSE(handle.was_blocked());
+    EXPECT_FALSE(handle.is_blocked());
 }
 
 TEST_F(OperationSequencerTest, cannot_get_sequencing_handle_for_id_with_existing_handle) {
     auto first_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test::abcd"));
     auto second_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test::abcd"));
     EXPECT_FALSE(second_handle.valid());
-    ASSERT_TRUE(second_handle.was_blocked());
+    ASSERT_TRUE(second_handle.is_blocked());
     EXPECT_EQ(second_handle.blocked_by(), SequencingHandle::BlockedBy::PendingOperation);
 }
 
@@ -65,7 +65,7 @@ TEST_F(OperationSequencerTest, cannot_get_handle_for_gid_contained_in_locked_buc
     EXPECT_TRUE(bucket_handle.valid());
     auto doc_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test:n=1:abcd"));
     EXPECT_FALSE(doc_handle.valid());
-    ASSERT_TRUE(doc_handle.was_blocked());
+    ASSERT_TRUE(doc_handle.is_blocked());
     EXPECT_EQ(doc_handle.blocked_by(), SequencingHandle::BlockedBy::LockedBucket);
 }
 

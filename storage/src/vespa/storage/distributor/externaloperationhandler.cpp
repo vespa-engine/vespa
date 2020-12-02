@@ -243,6 +243,15 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
     }
 }
 
+namespace {
+
+bool put_is_allowed_through_bucket_lock(const api::PutCommand& cmd) {
+    const auto& tas_cond = cmd.getCondition();
+    return (tas_cond.isPresent() && (tas_cond.getSelection() == reindexing_bucket_lock_bypass_value()));
+}
+
+}
+
 bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
     auto& metrics = getMetrics().puts;
     if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
@@ -256,11 +265,8 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
     const auto bucket_space = cmd->getBucket().getBucketSpace();
     auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     bool allow = allowMutation(handle);
-    const auto& tas_cond = cmd->getCondition();
-    const bool bypass_bucket_lock = (tas_cond.isPresent()
-                                     && (tas_cond.getSelection() == reindexing_bucket_lock_bypass_value()));
-    if (bypass_bucket_lock) {
-        if (!allow && handle.was_blocked() && (handle.blocked_by() == SequencingHandle::BlockedBy::LockedBucket)) {
+    if (put_is_allowed_through_bucket_lock(*cmd)) {
+        if (!allow && handle.is_blocked_by(SequencingHandle::BlockedBy::LockedBucket)) {
             cmd->setCondition(documentapi::TestAndSetCondition()); // Must clear TaS or the backend will reject the op
             allow = true;
         } else {

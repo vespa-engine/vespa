@@ -80,11 +80,14 @@ public:
     }
 
     [[nodiscard]] bool valid() const noexcept { return (_sequencer != nullptr); }
-    [[nodiscard]] bool was_blocked() const noexcept {
+    [[nodiscard]] bool is_blocked() const noexcept {
         return std::holds_alternative<BlockedBy>(_handle);
     }
     [[nodiscard]] BlockedBy blocked_by() const noexcept {
         return std::get<BlockedBy>(_handle); // FIXME can actually throw
+    }
+    [[nodiscard]] bool is_blocked_by(BlockedBy blocker) const noexcept {
+        return (is_blocked() && blocked_by() == blocker);
     }
     [[nodiscard]] bool has_bucket() const noexcept {
         return std::holds_alternative<document::Bucket>(_handle);
