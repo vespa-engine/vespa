@@ -260,9 +260,9 @@ public class Flags {
 
     public static final UnboundStringFlag YUM_DIST_HOST = defineStringFlag(
             "yum-dist-host", "",
+            List.of("aressem"), "2020-12-02", "2021-02-01",
             "Override the default dist host for yum.",
-            "Takes effect on next tick or on host-admin restart (may vary where used)."
-    );
+            "Takes effect on next tick or on host-admin restart (may vary where used).");
 
     public static final UnboundBooleanFlag ENDPOINT_CERT_IN_SHARED_ROUTING = defineFeatureFlag(
             "endpoint-cert-in-shared-routing", false,
