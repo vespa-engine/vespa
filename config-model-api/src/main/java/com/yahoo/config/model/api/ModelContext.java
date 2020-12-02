@@ -51,7 +51,7 @@ public interface ModelContext {
     Version wantedNodeVespaVersion();
 
     interface FeatureFlags {
-        @ModelFeatureFlag(owner = "bjorncs") default boolean enableAutomaticReindexing() { return false; }
+        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}) default boolean enableAutomaticReindexing() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -139,7 +139,7 @@ public interface ModelContext {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     @interface ModelFeatureFlag {
-        String owner();
+        String[] owners();
         String comment() default "";
     }
 

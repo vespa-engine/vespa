@@ -16,7 +16,7 @@ import java.io.OutputStream;
  * @author hakonhall
  */
 public class DefinedFlag extends HttpResponse {
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final FlagDefinition flagDefinition;
 
@@ -35,6 +35,11 @@ public class DefinedFlag extends HttpResponse {
     static void renderFlagDefinition(FlagDefinition flagDefinition, ObjectNode definitionNode) {
         definitionNode.put("description", flagDefinition.getDescription());
         definitionNode.put("modification-effect", flagDefinition.getModificationEffect());
+        ArrayNode ownersNode = mapper.createArrayNode();
+        flagDefinition.getOwners().forEach(ownersNode::add);
+        definitionNode.set("owners", ownersNode);
+        definitionNode.put("createdAt", flagDefinition.getCreatedAt().toString());
+        definitionNode.put("expiresAt", flagDefinition.getExpiresAt().toString());
         ArrayNode dimensionsNode = definitionNode.putArray("dimensions");
         flagDefinition.getDimensions().forEach(dimension -> dimensionsNode.add(DimensionHelper.toWire(dimension)));
     }
