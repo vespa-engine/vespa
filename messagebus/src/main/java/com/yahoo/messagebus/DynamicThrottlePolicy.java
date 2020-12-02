@@ -23,7 +23,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     private double resizeRate = 3;
     private long resizeTime = 0;
     private long timeOfLastMessage;
-    private double efficiencyThreshold = 1.0;
+    private double efficiencyThreshold = 1;
     private double windowSizeIncrement = 20;
     private double windowSize = windowSizeIncrement;
     private double minWindowSize = windowSizeIncrement;
@@ -77,7 +77,8 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
         }
         timeOfLastMessage = time;
         int windowSizeFloored = (int) windowSize;
-        boolean carry = numSent < (windowSize * resizeRate) * windowSize - windowSizeFloored;
+        // Use floating point window sizes, so the algorithm sees the different in 1.1 and 1.9 window size.
+        boolean carry = numSent < (windowSize * resizeRate) * (windowSize - windowSizeFloored);
         return pendingCount < windowSizeFloored + (carry ? 1 : 0);
     }
 
