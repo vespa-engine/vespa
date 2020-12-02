@@ -56,7 +56,7 @@ jobs:
           make -j$(nproc)
           make test ARGS="--output-on-failure -j $(nproc)"
 
-          $VESPA_MAVEN_COMMAND $VESPA_MAVEN_EXTRA_OPTS -DskipTests clean install
+          $VESPA_MAVEN_COMMAND $VESPA_MAVEN_EXTRA_OPTS clean install
 
 
       - save-cache: |
