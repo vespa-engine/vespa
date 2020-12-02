@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -50,8 +51,14 @@ public class HostSwitchUpdaterTest {
         // Host is updated
         tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
         maintainer.maintain();
-        Node updatedHost = allNodes(tester).stream().filter(node -> node.hostname().equals(host.hostname())).findFirst().get();
-        assertEquals(newSwitch, updatedHost.switchHostname().get());
+        Supplier<Node> updatedHost = () -> allNodes(tester).stream().filter(node -> node.hostname().equals(host.hostname())).findFirst().get();
+        assertEquals(newSwitch, updatedHost.get().switchHostname().get());
+
+        // Host keeps old switch hostname if removed from the node entity
+        nodeEntity = new NodeEntity(host.hostname().value(), "", "", "");
+        tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
+        maintainer.maintain();
+        assertEquals(newSwitch, updatedHost.get().switchHostname().get());
     }
 
     private static List<Node> allNodes(ControllerTester tester) {

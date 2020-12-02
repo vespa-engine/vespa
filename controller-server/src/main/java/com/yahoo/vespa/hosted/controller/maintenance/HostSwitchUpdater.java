@@ -37,7 +37,7 @@ public class HostSwitchUpdater extends ControllerMaintainer {
                 if (!shouldUpdate(node, nodeEntity)) continue;
 
                 NodeRepositoryNode updatedNode = new NodeRepositoryNode();
-                updatedNode.setSwitchHostname(nodeEntity.switchHostname().orElse(null));
+                updatedNode.setSwitchHostname(nodeEntity.switchHostname().get());
                 nodeRepository.patchNode(zone, node.hostname().value(), updatedNode);
             }
         }
@@ -46,6 +46,7 @@ public class HostSwitchUpdater extends ControllerMaintainer {
 
     private static boolean shouldUpdate(Node node, NodeEntity nodeEntity) {
         if (nodeEntity == null) return false;
+        if (nodeEntity.switchHostname().isEmpty()) return false;
         return !node.switchHostname().equals(nodeEntity.switchHostname());
     }
 
