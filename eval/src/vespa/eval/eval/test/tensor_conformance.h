@@ -2,21 +2,17 @@
 
 #pragma once
 
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib {
-namespace eval {
-namespace test {
+namespace vespalib::eval::test {
 
 /**
  * A collection of tensor-related tests that can be run for various
- * implementations of the TensorEngine interface.
+ * implementations.
  **/
 struct TensorConformance {
-    static void run_tests(const vespalib::string &module_path, EngineOrFactory engine);
+    static void run_tests(const vespalib::string &module_path, const ValueBuilderFactory &factory);
 };
 
-} // namespace vespalib::eval::test
-} // namespace vespalib::eval
-} // namespace vespalib
+} // namespace
