@@ -25,8 +25,6 @@ vespa_add_library(eval_eval OBJECT
     operator_nodes.cpp
     optimize_tensor_function.cpp
     param_usage.cpp
-    simple_tensor.cpp
-    simple_tensor_engine.cpp
     simple_value.cpp
     string_stuff.cpp
     tensor.cpp

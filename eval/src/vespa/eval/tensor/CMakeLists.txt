@@ -5,6 +5,5 @@ vespa_add_library(eval_tensor OBJECT
     partial_update.cpp
     tensor.cpp
     tensor_address.cpp
-    wrapped_simple_tensor.cpp
     wrapped_simple_value.cpp
 )

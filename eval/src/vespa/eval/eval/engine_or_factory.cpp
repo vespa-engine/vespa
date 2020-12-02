@@ -4,7 +4,6 @@
 #include "fast_value.h"
 #include "simple_value.h"
 #include "value_codec.h"
-#include "simple_tensor_engine.h"
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_map.h>
@@ -159,9 +158,6 @@ EngineOrFactory::to_string() const
     if (is_engine()) {
         if (&engine() == &tensor::DefaultTensorEngine::ref()) {
             return "DefaultTensorEngine";
-        }
-        if (&engine() == &SimpleTensorEngine::ref()) {
-            return "SimpleTensorEngine";
         }
     }
     if (is_factory()) {

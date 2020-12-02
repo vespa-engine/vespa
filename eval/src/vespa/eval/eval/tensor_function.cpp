@@ -5,7 +5,6 @@
 #include "operation.h"
 #include "tensor.h"
 #include "tensor_engine.h"
-#include "simple_tensor_engine.h"
 #include "visit_stuff.h"
 #include "string_stuff.h"
 #include <vespa/eval/instruction/generic_concat.h>

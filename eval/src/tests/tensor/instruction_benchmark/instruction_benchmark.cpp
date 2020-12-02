@@ -29,7 +29,6 @@
 #include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_merge.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/operation.h>
