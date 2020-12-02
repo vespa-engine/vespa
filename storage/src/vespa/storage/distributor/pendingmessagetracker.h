@@ -22,12 +22,21 @@
 
 namespace storage::distributor {
 
+/**
+ * Since the state a deferred task depends on may have changed between the
+ * time a task was scheduled and when it's actually executed, this enum provides
+ * a means of communicating if a task should be started as normal.
+ */
 enum class TaskRunState {
-    OK,
-    Aborted,
-    BucketLost
+    OK,        // Task may be started as normal
+    Aborted,   // Task should trigger an immediate abort behavior (distributor is shutting down)
+    BucketLost // Task should trigger an immediate abort behavior (bucket no longer present on node)
 };
 
+/**
+ * Represents an arbitrary task whose execution may be deferred until no
+ * further pending operations are present.
+ */
 struct DeferredTask {
     virtual ~DeferredTask() = default;
     virtual void run(TaskRunState state) = 0;
