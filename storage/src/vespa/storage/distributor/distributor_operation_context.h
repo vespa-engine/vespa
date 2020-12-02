@@ -23,7 +23,6 @@ class DistributorOperationContext {
 public:
     virtual ~DistributorOperationContext() {}
     virtual api::Timestamp generate_unique_timestamp() = 0;
-    virtual BucketOwnership check_ownership_in_pending_and_current_state(const document::Bucket &bucket) const = 0;
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const BucketCopy& changed_node,
                                         uint32_t update_flags = 0) = 0;

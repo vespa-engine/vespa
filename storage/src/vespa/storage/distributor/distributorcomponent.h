@@ -43,23 +43,10 @@ public:
     ~DistributorComponent() override;
 
     /**
-     * Returns the ownership status of a bucket as decided with the given
-     * distribution and cluster state -and- that of the pending cluster
-     * state and distribution (if any pending exists).
-     */
-    BucketOwnership checkOwnershipInPendingAndCurrentState(
-            const document::Bucket &bucket) const;
-
-    /**
      * Returns a reference to the current cluster state bundle. Valid until the
      * next time the distributor main thread processes its message queue.
      */
     const lib::ClusterStateBundle& getClusterStateBundle() const;
-
-    /**
-     * Returns the ideal nodes for the given bucket.
-     */
-    std::vector<uint16_t> getIdealNodes(const document::Bucket &bucket) const;
 
     /**
       * Returns the slobrok address of the given storage node.
@@ -166,9 +153,6 @@ public:
 
     // Implements DistributorOperationContext
     api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
-    BucketOwnership check_ownership_in_pending_and_current_state(const document::Bucket &bucket) const override {
-        return checkOwnershipInPendingAndCurrentState(bucket);
-    }
     void update_bucket_database(const document::Bucket& bucket,
                                 const BucketCopy& changed_node,
                                 uint32_t update_flags = 0) override {

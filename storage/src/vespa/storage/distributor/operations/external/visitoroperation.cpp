@@ -297,8 +297,8 @@ VisitorOperation::verifyDistributorIsNotDown(const lib::ClusterState& state)
 void
 VisitorOperation::verifyDistributorOwnsBucket(const document::BucketId& bid)
 {
-    document::Bucket bucket(_msg->getBucketSpace(), bid);
-    BucketOwnership bo(_op_ctx.check_ownership_in_pending_and_current_state(bucket));
+    auto &bucket_space(_op_ctx.bucket_space_repo().get(_msg->getBucketSpace()));
+    BucketOwnership bo(bucket_space.check_ownership_in_pending_and_current_state(bid));
     if (!bo.isOwned()) {
         verifyDistributorIsNotDown(bo.getNonOwnedState());
         std::string systemStateStr = bo.getNonOwnedState().toString();
