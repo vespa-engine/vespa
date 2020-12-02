@@ -109,6 +109,9 @@ public:
                                                                document::BucketId bucket) const;
     BucketOwnership check_ownership_in_pending_and_current_state_fallback(document::BucketId bucket) const;
     const std::vector<bool>& get_available_nodes() const { return _available_nodes; }
+    /**
+     * Returns the ideal nodes for the given bucket.
+     */
     std::vector<uint16_t> get_ideal_nodes(document::BucketId bucket) const;
     /**
      * Returns the ownership status of a bucket as decided with the current

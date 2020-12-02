@@ -48,13 +48,6 @@ DistributorComponent::getClusterStateBundle() const
     return _distributor.getClusterStateBundle();
 };
 
-std::vector<uint16_t>
-DistributorComponent::getIdealNodes(const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.get_ideal_nodes(bucket.getBucketId());
-}
-
 api::StorageMessageAddress
 DistributorComponent::nodeAddress(uint16_t nodeIndex) const
 {

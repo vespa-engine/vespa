@@ -49,11 +49,6 @@ public:
     const lib::ClusterStateBundle& getClusterStateBundle() const;
 
     /**
-     * Returns the ideal nodes for the given bucket.
-     */
-    std::vector<uint16_t> getIdealNodes(const document::Bucket &bucket) const;
-
-    /**
       * Returns the slobrok address of the given storage node.
       */
     api::StorageMessageAddress nodeAddress(uint16_t nodeIndex) const;
