@@ -1576,7 +1576,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                   .forEach(cluster -> {
                       Cursor clusterObject = clustersArray.addObject();
                       clusterObject.setString("name", cluster.getKey());
-                      setStatus(clusterObject.setObject("status"), cluster.getValue().common());
+                      cluster.getValue().common().ifPresent(common -> setStatus(clusterObject.setObject("status"), common));
 
                       Cursor pendingArray = clusterObject.setArray("pending");
                       cluster.getValue().pending().entrySet().stream().sorted(comparingByKey())
