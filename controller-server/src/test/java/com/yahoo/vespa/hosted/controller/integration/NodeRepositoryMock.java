@@ -41,6 +41,8 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, TargetVersions> targetVersions = new HashMap<>();
     private final Map<Integer, Duration> osUpgradeBudgets = new HashMap<>();
 
+    private boolean allowPatching = false;
+
     /** Add or update given nodes in zone */
     public void putNodes(ZoneId zone, List<Node> nodes) {
         nodeRepository.putIfAbsent(zone, new HashMap<>());
@@ -230,7 +232,14 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public void patchNode(ZoneId zoneId, String hostName, NodeRepositoryNode node) {
-        throw new UnsupportedOperationException();
+        if (!allowPatching) throw new UnsupportedOperationException();
+        List<Node> existing = list(zoneId, List.of(HostName.from(hostName)));
+        if (existing.size() != 1) throw new IllegalArgumentException("Node " + hostName + " not found in " + zoneId);
+
+        // Note: Only supports switchHostname
+        Node newNode = new Node.Builder(existing.get(0)).switchHostname(node.getSwitchHostname())
+                                                        .build();
+        putNodes(zoneId, newNode);
     }
 
     @Override
@@ -278,6 +287,11 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void addReport(ZoneId zoneId, HostName hostName, String reportId, JsonNode report) {
         nodeRepository.get(zoneId).get(hostName).reports().put(reportId, report);
+    }
+
+    public NodeRepositoryMock allowPatching(boolean allowPatching) {
+        this.allowPatching = allowPatching;
+        return this;
     }
 
 }
