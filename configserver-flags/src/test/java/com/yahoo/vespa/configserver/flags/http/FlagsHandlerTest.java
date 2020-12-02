@@ -60,10 +60,10 @@ public class FlagsHandlerTest {
             fixUnusedWarning(replacer);
             Flags.defineFeatureFlag("id", false, List.of("joe"), "2010-01-01", "2030-01-01", "desc", "mod", FetchVector.Dimension.HOSTNAME);
             verifySuccessfulRequest(Method.GET, "/defined", "",
-                    "{\"id\":{\"description\":\"desc\",\"modification-effect\":\"mod\",\"dimensions\":[\"hostname\"]}}");
+                    "{\"id\":{\"description\":\"desc\",\"modification-effect\":\"mod\",\"owners\":[\"joe\"],\"createdAt\":\"2010-01-01T00:00:00Z\",\"expiresAt\":\"2030-01-01T00:00:00Z\",\"dimensions\":[\"hostname\"]}}");
 
             verifySuccessfulRequest(Method.GET, "/defined/id", "",
-                    "{\"description\":\"desc\",\"modification-effect\":\"mod\",\"dimensions\":[\"hostname\"]}");
+                    "{\"description\":\"desc\",\"modification-effect\":\"mod\",\"owners\":[\"joe\"],\"createdAt\":\"2010-01-01T00:00:00Z\",\"expiresAt\":\"2030-01-01T00:00:00Z\",\"dimensions\":[\"hostname\"]}");
         }
     }
 
