@@ -3,8 +3,9 @@ package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,15 +19,11 @@ import java.util.Optional;
  */
 public class Cluster {
 
-    public static final int maxScalingEvents = 15;
-
     private final ClusterSpec.Id id;
     private final boolean exclusive;
     private final ClusterResources min, max;
     private final Optional<ClusterResources> suggested;
     private final Optional<ClusterResources> target;
-
-    /** The maxScalingEvents last scaling events of this, sorted by increasing time (newest last) */
     private final List<ScalingEvent> scalingEvents;
     private final String autoscalingStatus;
 
@@ -48,10 +45,8 @@ public class Cluster {
             this.target = Optional.empty();
         else
             this.target = targetResources;
-        this.scalingEvents = List.copyOf(scalingEvents);
+        this.scalingEvents = scalingEvents;
         this.autoscalingStatus = autoscalingStatus;
-        if (autoscalingStatus.isEmpty() && targetResources.isPresent())
-            throw new RuntimeException("Autoscaling status set empty for " + id + " even though target is " + targetResources);
     }
 
     public ClusterSpec.Id id() { return id; }
@@ -102,10 +97,8 @@ public class Cluster {
     }
 
     public Cluster with(ScalingEvent scalingEvent) {
-        List<ScalingEvent> scalingEvents = new ArrayList<>(this.scalingEvents);
-        scalingEvents.add(scalingEvent);
-        prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
+        // NOTE: We're just storing the latest scaling event so far
+        return new Cluster(id, exclusive, min, max, suggested, target, List.of(scalingEvent), autoscalingStatus);
     }
 
     public Cluster withAutoscalingStatus(String autoscalingStatus) {
@@ -125,11 +118,6 @@ public class Cluster {
     @Override
     public String toString() {
         return "cluster '" + id + "'";
-    }
-
-    private void prune(List<ScalingEvent> scalingEvents) {
-        while (scalingEvents.size() > maxScalingEvents)
-            scalingEvents.remove(0);
     }
 
 }

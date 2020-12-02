@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
-import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
 import java.time.Duration;
 import java.util.List;
@@ -67,17 +66,19 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                            List<Node> clusterNodes,
                            MaintenanceDeployment deployment) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId));
-        if (application.cluster(clusterId).isEmpty()) return;
-        Cluster cluster = application.cluster(clusterId).get();
+        Optional<Cluster> cluster = application.cluster(clusterId);
+        if (cluster.isEmpty()) return;
 
-        var advice = autoscaler.autoscale(cluster, clusterNodes);
-        cluster = cluster.withAutoscalingStatus(advice.reason());
+        var advice = autoscaler.autoscale(cluster.get(), clusterNodes);
+
+        application = application.with(cluster.get().withAutoscalingStatus(advice.reason()));
         if (advice.isEmpty()) {
-            applications().put(application.with(cluster), deployment.applicationLock().get());
-        } else if (!cluster.targetResources().equals(advice.target())) {
-            applications().put(application.with(cluster.withTarget(advice.target())), deployment.applicationLock().get());
+            applications().put(application, deployment.applicationLock().get());
+        }
+        else if ( ! cluster.get().targetResources().equals(advice.target())) {
+            applications().put(application.with(cluster.get().withTarget(advice.target())), deployment.applicationLock().get());
             if (advice.target().isPresent()) {
-                logAutoscaling(advice.target().get(), applicationId, cluster, clusterNodes);
+                logAutoscaling(advice.target().get(), applicationId, cluster.get(), clusterNodes);
                 deployment.activate();
             }
         }
