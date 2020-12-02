@@ -50,8 +50,6 @@ public class Cluster {
             this.target = targetResources;
         this.scalingEvents = List.copyOf(scalingEvents);
         this.autoscalingStatus = autoscalingStatus;
-        if (autoscalingStatus.isEmpty() && targetResources.isPresent())
-            throw new RuntimeException("Autoscaling status set empty for " + id + " even though target is " + targetResources);
     }
 
     public ClusterSpec.Id id() { return id; }
