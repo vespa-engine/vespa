@@ -11,6 +11,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerMain;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +37,15 @@ public class ZooKeeperRunner implements Runnable {
     }
 
     void shutdown() {
-        executorService.shutdownNow();
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(10000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.log(Level.INFO, "Interrupted waiting for executor to complete", e);
+        }
+        if ( ! executorService.isTerminated()) {
+            executorService.shutdownNow();
+        }
     }
 
     @Override
