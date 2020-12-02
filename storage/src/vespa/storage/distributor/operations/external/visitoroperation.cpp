@@ -43,6 +43,24 @@ VisitorOperation::BucketInfo::toString() const
 
 VisitorOperation::SuperBucketInfo::~SuperBucketInfo() = default;
 
+namespace {
+
+[[nodiscard]] bool
+matches_visitor_library(vespalib::stringref input, vespalib::stringref expected)
+{
+    if (input.size() != expected.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < input.size(); ++i) {
+        if (static_cast<char>(std::tolower(static_cast<unsigned char>(input[i]))) != expected[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+}
+
 VisitorOperation::VisitorOperation(
         DistributorNodeContext& node_ctx,
         DistributorOperationContext& op_ctx,
@@ -55,11 +73,14 @@ VisitorOperation::VisitorOperation(
       _op_ctx(op_ctx),
       _bucketSpace(bucketSpace),
       _msg(m),
-      _sentReply(false),
       _config(config),
       _metrics(metrics),
       _trace(TRACE_SOFT_MEMORY_LIMIT),
-      _operationTimer(_node_ctx.clock())
+      _operationTimer(_node_ctx.clock()),
+      _bucket_lock(), // Initially no lock is held
+      _sentReply(false),
+      _verified_and_expanded(false),
+      _is_read_for_write(matches_visitor_library(_msg->getLibraryName(), "reindexingvisitor"))
 {
     const std::vector<document::BucketId>& buckets = m->getBuckets();
 
@@ -245,7 +266,7 @@ VisitorOperation::verifyVisitorDistributionBitCount(
         const document::BucketId& bid)
 {
     const lib::ClusterState& clusterState = _bucketSpace.getClusterState();
-    if (_msg->getDocumentSelection().length() == 0
+    if (_msg->getDocumentSelection().empty()
         && bid.getUsedBits() != clusterState.getDistributionBitCount())
     {
         LOG(debug,
@@ -332,6 +353,13 @@ VisitorOperation::verifyCreateVisitorCommand(DistributorMessageSender& sender)
         verifyOperationContainsBuckets();
         verifyOperationHasSuperbucketAndProgress();
         verifyOperationSentToCorrectDistributor();
+        // TODO wrap and test
+        if (is_read_for_write() && (_msg->getMaxBucketsPerVisitor() != 1)) {
+            throw VisitorVerificationException(
+                    api::ReturnCode::ILLEGAL_PARAMETERS,
+                    vespalib::make_string("Read-for-write visitors can only have 1 max pending bucket, was %u",
+                                          _msg->getMaxBucketsPerVisitor()));
+        }
         return true;
     } catch (const VisitorVerificationException& e) {
         LOG(debug,
@@ -379,14 +407,6 @@ VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& b
 
     bool doneExpand(iter == bucketVisitOrder.end());
     return doneExpand;
-}
-
-bool
-VisitorOperation::expandBucketAll()
-{
-    std::vector<BucketDatabase::Entry> entries;
-    _bucketSpace.getBucketDatabase().getAll(_superBucket.bid, entries);
-    return pickBucketsToVisit(entries);
 }
 
 bool
@@ -568,13 +588,24 @@ VisitorOperation::pickTargetNode(
 void
 VisitorOperation::onStart(DistributorMessageSender& sender)
 {
-    if (!verifyCreateVisitorCommand(sender)) {
-        return;
+    if (!_verified_and_expanded) {
+        if (!verify_command_and_expand_buckets(sender)) {
+            return;
+        }
     }
-
-    expandBucket();
-
     startNewVisitors(sender);
+}
+
+bool
+VisitorOperation::verify_command_and_expand_buckets(DistributorMessageSender& sender)
+{
+    assert(!_verified_and_expanded);
+    _verified_and_expanded = true;
+    if (!verifyCreateVisitorCommand(sender)) {
+        return false;
+    }
+    expandBucket();
+    return true;
 }
 
 bool
@@ -770,6 +801,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
                                      uint32_t pending,
                                      DistributorMessageSender& sender)
 {
+    // TODO rewrite to not use copy ctor and remove wonky StorageCommand copy ctor impl
     auto cmd = std::make_shared<api::CreateVisitorCommand>(*_msg);
     cmd->getBuckets() = buckets;
 
@@ -846,6 +878,28 @@ void
 VisitorOperation::onClose(DistributorMessageSender& sender)
 {
     sendReply(api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"), sender);
+}
+
+void
+VisitorOperation::fail_with_bucket_already_locked(DistributorMessageSender& sender)
+{
+    assert(is_read_for_write());
+    sendReply(api::ReturnCode(api::ReturnCode::BUSY, "This bucket is already locked by another operation"), sender);
+}
+
+std::optional<document::Bucket>
+VisitorOperation::first_bucket_to_visit() const
+{
+    if (_superBucket.subBuckets.empty()) {
+        return {};
+    }
+    return {document::Bucket(_msg->getBucketSpace(), _superBucket.subBuckets.begin()->first)};
+}
+
+void
+VisitorOperation::assign_bucket_lock_handle(SequencingHandle handle)
+{
+    _bucket_lock = std::move(handle);
 }
 
 }

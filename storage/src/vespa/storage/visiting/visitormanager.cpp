@@ -6,6 +6,7 @@
 #include "countvisitor.h"
 #include "testvisitor.h"
 #include "recoveryvisitor.h"
+#include "reindexing_visitor.h"
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -55,6 +56,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
     _visitorFactories["testvisitor"] = std::make_shared<TestVisitorFactory>();
     _visitorFactories["countvisitor"] = std::make_shared<CountVisitorFactory>();
     _visitorFactories["recoveryvisitor"] = std::make_shared<RecoveryVisitorFactory>();
+    _visitorFactories["reindexingvisitor"] = std::make_shared<ReindexingVisitorFactory>();
     _component.registerStatusPage(*this);
 }
 

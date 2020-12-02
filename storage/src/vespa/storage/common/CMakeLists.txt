@@ -9,6 +9,7 @@ vespa_add_library(storage_common OBJECT
     global_bucket_space_distribution_converter.cpp
     messagebucket.cpp
     messagesender.cpp
+    reindexing_constants.cpp
     servicelayercomponent.cpp
     statusmessages.cpp
     statusmetricconsumer.cpp

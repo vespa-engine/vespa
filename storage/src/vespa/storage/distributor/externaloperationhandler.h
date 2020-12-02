@@ -11,6 +11,8 @@
 #include <chrono>
 #include <mutex>
 
+namespace documentapi { class TestAndSetCondition; }
+
 namespace storage {
 
 class PersistenceOperationMetricSet;
@@ -21,6 +23,7 @@ class DistributorMetricSet;
 class Distributor;
 class MaintenanceOperationGenerator;
 class DirectDispatchSender;
+class OperationOwner;
 
 class ExternalOperationHandler : public DistributorComponent,
                                  public api::MessageHandler
@@ -29,19 +32,20 @@ public:
     using Clock = std::chrono::system_clock;
     using TimePoint = std::chrono::time_point<Clock>;
 
-    DEF_MSG_COMMAND_H(Get);
-    DEF_MSG_COMMAND_H(Put);
-    DEF_MSG_COMMAND_H(Update);
-    DEF_MSG_COMMAND_H(Remove);
-    DEF_MSG_COMMAND_H(RemoveLocation);
-    DEF_MSG_COMMAND_H(StatBucket);
-    DEF_MSG_COMMAND_H(CreateVisitor);
-    DEF_MSG_COMMAND_H(GetBucketList);
+    bool onGet(const std::shared_ptr<api::GetCommand>&) override;
+    bool onPut(const std::shared_ptr<api::PutCommand>&) override;
+    bool onUpdate(const std::shared_ptr<api::UpdateCommand>&) override;
+    bool onRemove(const std::shared_ptr<api::RemoveCommand>&) override;
+    bool onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>&) override;
+    bool onStatBucket(const std::shared_ptr<api::StatBucketCommand>&) override;
+    bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
+    bool onGetBucketList(const std::shared_ptr<api::GetBucketListCommand>&) override;
 
     ExternalOperationHandler(Distributor& owner,
                              DistributorBucketSpaceRepo& bucketSpaceRepo,
                              DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                             const MaintenanceOperationGenerator&,
+                             const MaintenanceOperationGenerator& gen,
+                             OperationOwner& operation_owner,
                              DistributorComponentRegister& compReg);
 
     ~ExternalOperationHandler() override;
@@ -74,12 +78,18 @@ public:
         return _use_weak_internal_read_consistency_for_gets.load(std::memory_order_relaxed);
     }
 
+    // Exposed for testing
+    OperationSequencer& operation_sequencer() noexcept {
+        return _operation_sequencer;
+    }
+
 private:
     std::unique_ptr<DirectDispatchSender> _direct_dispatch_sender;
     const MaintenanceOperationGenerator& _operationGenerator;
-    OperationSequencer _mutationSequencer;
+    OperationSequencer _operation_sequencer;
     Operation::SP _op;
     TimePoint _rejectFeedBeforeTimeReached;
+    OperationOwner& _distributor_operation_owner;
     mutable std::mutex _non_main_thread_ops_mutex;
     OperationOwner _non_main_thread_ops_owner;
     std::atomic<bool> _concurrent_gets_enabled;
