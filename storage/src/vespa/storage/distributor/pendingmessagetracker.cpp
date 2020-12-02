@@ -121,7 +121,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         }
         LOG(debug, "Erased message with id %" PRIu64, msgId);
         msgs.erase(msgId);
-        auto deferred_tasks = get_deferred_ops_if_bucket_pending_drained(bucket);
+        auto deferred_tasks = get_deferred_ops_if_bucket_writes_drained(bucket);
         // Deferred tasks may try to send messages, which in turn will invoke the PendingMessageTracker.
         // To avoid deadlocking, we run the tasks outside the lock.
         // TODO remove locking entirely... Only exists for status pages!
@@ -143,23 +143,49 @@ bool is_empty_range(const Range& range) noexcept {
     return (range.first == range.second);
 }
 
+template <typename Range>
+bool range_is_empty_or_only_has_read_ops(const Range& range) noexcept {
+    if (is_empty_range(range)) {
+        return true;
+    }
+    // Number of ops to check is expected to be small in the common case
+    for (auto iter = range.first; iter != range.second; ++iter) {
+        switch (iter->msgType) {
+        case api::MessageType::GET_ID:
+        case api::MessageType::STAT_ID:
+        case api::MessageType::VISITOR_CREATE_ID:
+        case api::MessageType::VISITOR_DESTROY_ID:
+            continue;
+        default:
+            return false;
+        }
+    }
+    return true;
+}
+
+}
+
+bool
+PendingMessageTracker::bucket_has_no_pending_write_ops(const document::Bucket& bucket) const noexcept
+{
+    auto& bucket_idx = boost::multi_index::get<2>(_messages);
+    auto pending_tasks_for_bucket = bucket_idx.equal_range(bucket);
+    return range_is_empty_or_only_has_read_ops(pending_tasks_for_bucket);
 }
 
 std::vector<std::unique_ptr<DeferredTask>>
-PendingMessageTracker::get_deferred_ops_if_bucket_pending_drained(const document::Bucket& bucket)
+PendingMessageTracker::get_deferred_ops_if_bucket_writes_drained(const document::Bucket& bucket)
 {
-    if (_deferred_bucket_tasks.empty()) {
+    if (_deferred_read_tasks.empty()) {
         return {};
     }
     std::vector<std::unique_ptr<DeferredTask>> tasks;
-    auto& bucket_idx = boost::multi_index::get<2>(_messages);
-    auto pending_tasks_for_bucket = bucket_idx.equal_range(bucket);
-    if (is_empty_range(pending_tasks_for_bucket)) {
-        auto waiting_tasks = _deferred_bucket_tasks.equal_range(bucket);
+    if (bucket_has_no_pending_write_ops(bucket)) {
+        auto waiting_tasks = _deferred_read_tasks.equal_range(bucket);
         for (auto task_iter = waiting_tasks.first; task_iter != waiting_tasks.second; ++task_iter) {
             tasks.emplace_back(std::move(task_iter->second));
         }
-        _deferred_bucket_tasks.erase(waiting_tasks.first, waiting_tasks.second);
+        _deferred_read_tasks.erase(waiting_tasks.first, waiting_tasks.second);
     }
     return tasks;
 }
@@ -168,13 +194,11 @@ void
 PendingMessageTracker::run_once_no_pending_for_bucket(const document::Bucket& bucket, std::unique_ptr<DeferredTask> task)
 {
     std::unique_lock guard(_lock);
-    auto& bucket_idx = boost::multi_index::get<2>(_messages);
-    const auto pending_tasks_for_bucket = bucket_idx.equal_range(bucket);
-    if (is_empty_range(pending_tasks_for_bucket)) {
+    if (bucket_has_no_pending_write_ops(bucket)) {
         guard.unlock(); // Must not be held whilst running task, or else recursive sends will deadlock.
         task->run(TaskRunState::OK); // Nothing pending, run immediately.
     } else {
-        _deferred_bucket_tasks.emplace(bucket, std::move(task));
+        _deferred_read_tasks.emplace(bucket, std::move(task));
     }
 }
 
@@ -182,7 +206,7 @@ void
 PendingMessageTracker::abort_deferred_tasks()
 {
     std::lock_guard guard(_lock);
-    for (auto& task : _deferred_bucket_tasks) {
+    for (auto& task : _deferred_read_tasks) {
         task.second->run(TaskRunState::Aborted);
     }
 }
