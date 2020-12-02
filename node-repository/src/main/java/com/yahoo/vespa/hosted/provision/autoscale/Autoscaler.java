@@ -72,10 +72,10 @@ public class Autoscaler {
         if  (measurementsPerNode < minimumMeasurementsPerNode(clusterSpec))
             return Advice.none("Collecting more data before making new scaling decisions" +
                                ": Has " + measurementsPerNode + " data points per node" +
-                               "(all: " + clusterTimeseries.measurementCount +
+                               " (all: " + clusterTimeseries.measurementCount +
                                ", without stale: " + clusterTimeseries.measurementCountWithoutStale +
                                ", without out of service: " + clusterTimeseries.measurementCountWithoutStaleOutOfService +
-                               ", without unstable: " + clusterTimeseries.measurementCountWithoutStaleOutOfServiceUnstable);
+                               ", without unstable: " + clusterTimeseries.measurementCountWithoutStaleOutOfServiceUnstable + ")");
 
         int nodesMeasured = clusterTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
