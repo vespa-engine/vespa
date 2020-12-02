@@ -7,7 +7,6 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/vespalib/util/stash.h>
 #include <set>
 #include <functional>

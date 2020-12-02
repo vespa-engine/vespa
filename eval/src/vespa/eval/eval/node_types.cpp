@@ -332,6 +332,15 @@ NodeTypes::NodeTypes()
 {
 }
 
+NodeTypes::NodeTypes(const nodes::Node &const_node)
+    : _not_found(ValueType::error_type()),
+      _type_map()
+{
+    std::vector<ValueType> no_input_types;
+    nodes::TypeResolver resolver(no_input_types, _type_map, _errors);
+    const_node.traverse(resolver);
+}
+
 NodeTypes::NodeTypes(const Function &function, const std::vector<ValueType> &input_types)
     : _not_found(ValueType::error_type()),
       _type_map()

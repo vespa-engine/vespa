@@ -28,6 +28,7 @@ public:
     NodeTypes();
     NodeTypes(NodeTypes &&rhs) = default;
     NodeTypes &operator=(NodeTypes &&rhs) = default;
+    NodeTypes(const nodes::Node &const_node);
     NodeTypes(const Function &function, const std::vector<ValueType> &input_types);
     ~NodeTypes();
     const std::vector<vespalib::string> &errors() const { return _errors; }

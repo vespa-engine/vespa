@@ -2,8 +2,6 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>

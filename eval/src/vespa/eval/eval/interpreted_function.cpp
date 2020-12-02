@@ -8,7 +8,6 @@
 #include "make_tensor_function.h"
 #include "optimize_tensor_function.h"
 #include "compile_tensor_function.h"
-#include "simple_tensor_engine.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
