@@ -76,7 +76,9 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
             windowSize = Math.min(windowSize, pendingCount + windowSizeIncrement);
         }
         timeOfLastMessage = time;
-        return pendingCount < windowSize;
+        int windowSizeFloored = (int) windowSize;
+        boolean carry = numSent < (windowSize * resizeRate) * windowSize - windowSizeFloored;
+        return pendingCount < windowSizeFloored + (carry ? 1 : 0);
     }
 
     @Override
@@ -97,7 +99,7 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
 
         if (maxThroughput > 0 && throughput > maxThroughput * 0.95) {
             // No need to increase window when we're this close to max.
-        } else if (throughput > localMaxThroughput * 1.01) {
+        } else if (throughput >= localMaxThroughput) {
             localMaxThroughput = throughput;
             windowSize += weight*windowSizeIncrement;
             if (log.isLoggable(Level.FINE)) {
@@ -200,13 +202,13 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     /**
      * Sets the weight for this client. The larger the value, the more resources
      * will be allocated to this clients. Resources are shared between clients
-     * proportiannally to their weights.
+     * proportionally to the set weights.
      *
      * @param weight the weight to set
      * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setWeight(double weight) {
-        this.weight = weight;
+        this.weight = Math.pow(weight, 0.5);
         return this;
     }
 
