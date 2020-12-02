@@ -224,6 +224,12 @@ public class Flags {
             "Takes effect on next deployment from controller",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag YUM_DIST_HOST = defineStringFlag(
+            "yum-dist-host", "",
+            "Override the default dist host for yum.",
+            "Takes effect on next tick or on host-admin restart (may vary where used)."
+    );
+
     public static final UnboundBooleanFlag ENDPOINT_CERT_IN_SHARED_ROUTING = defineFeatureFlag(
             "endpoint-cert-in-shared-routing", false,
             "Whether to provision and use endpoint certs for apps in shared routing zones",
