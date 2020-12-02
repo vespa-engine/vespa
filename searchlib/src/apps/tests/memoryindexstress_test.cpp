@@ -371,9 +371,9 @@ Fixture::stressTest(uint32_t writeCnt)
     LOG(info,
         "starting stress test, 1 write thread, %u read threads, %u writes",
         readThreads, writeCnt);
-    _writer.execute(makeLambdaTask([=]() { writeWork(writeCnt); }));
+    _writer.execute(makeLambdaTask([this, writeCnt]() { writeWork(writeCnt); }));
     for (uint32_t i = 0; i < readThreads; ++i) {
-        _readers.execute(makeLambdaTask([=]() { readWork(); }));
+        _readers.execute(makeLambdaTask([this]() { readWork(); }));
     }
 }
 

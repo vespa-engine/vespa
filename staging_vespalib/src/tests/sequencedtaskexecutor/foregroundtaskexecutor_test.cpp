@@ -61,7 +61,7 @@ public:
     wait(int wantDone)
     {
         std::unique_lock<std::mutex> guard(_m);
-        _cv.wait(guard, [=] { return this->_done >= wantDone; });
+        _cv.wait(guard, [this, wantDone] { return this->_done >= wantDone; });
     }
 };
 
