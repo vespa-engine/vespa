@@ -1234,17 +1234,24 @@ TEST_F(DocumentSelectParserTest, testDocumentIdsInRemoves)
 
 namespace {
 
+#if __cplusplus > 201703L
 const char *
-bad_cast_from_u8(const char8_t *p) {
+char_from_u8(const char8_t * p) {
     return reinterpret_cast<const char *>(p);
 }
+#else
+const char *
+char_from_u8(const char * p) {
+    return p;
+}
+#endif
 
 }
 
 TEST_F(DocumentSelectParserTest, testUtf8)
 {
     createDocs();
-    vespalib::string utf8name = bad_cast_from_u8(u8"H\u00e5kon");
+    vespalib::string utf8name = char_from_u8(u8"H\u00e5kon");
     EXPECT_EQ(size_t(6), utf8name.size());
 
     /// \todo TODO (was warning):  UTF8 test for glob/regex support in selection language disabled. Known not to work
