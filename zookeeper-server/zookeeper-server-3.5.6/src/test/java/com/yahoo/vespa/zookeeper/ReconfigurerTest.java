@@ -12,8 +12,8 @@ import java.io.IOException;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 /**
  * Tests dynamic reconfiguration of zookeeper cluster.
@@ -35,33 +35,47 @@ public class ReconfigurerTest {
     }
 
     @Test
-    public void testStartupAndReconfigure() {
-        Reconfigurer reconfigurer = new Reconfigurer();
-        ZookeeperServerConfig initialConfig = createConfig(3);
+    public void testReconfigure() {
+        TestableReconfigurer reconfigurer = new TestableReconfigurer();
+        ZookeeperServerConfig initialConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(initialConfig);
-        assertEquals(initialConfig, reconfigurer.existingConfig());
+        assertSame(initialConfig, reconfigurer.activeConfig());
 
-        // Created config has dynamicReconfig set to false
-        assertFalse(reconfigurer.shouldReconfigure(createConfig(3)));
+        // Cluster grows
+        ZookeeperServerConfig nextConfig = createConfig(5, true);
+        reconfigurer.startOrReconfigure(nextConfig);
+        assertEquals("node0:2181,node1:2181,node2:2181", reconfigurer.connectionSpec);
+        assertEquals("3=node3:2182:2183,4=node4:2182:2183", reconfigurer.joiningServers);
+        assertNull("No servers are leaving", reconfigurer.leavingServers);
+        assertEquals(1, reconfigurer.reconfigurations);
+        assertSame(nextConfig, reconfigurer.activeConfig());
 
-        // Increase number of servers, created config has dynamicReconfig set to true
-        assertReconfiguration(5, reconfigurer);
+        // No reconfiguration happens with same config
+        reconfigurer.startOrReconfigure(nextConfig);
+        assertEquals(1, reconfigurer.reconfigurations);
+        assertSame(nextConfig, reconfigurer.activeConfig());
 
-        // Decrease number of servers, Created config has dynamicReconfig set to true
-        assertReconfiguration(1, reconfigurer);
-
-        // Test that equal config does not cause reconfiguration
-        Reconfigurer reconfigurer2 = new Reconfigurer();
-        reconfigurer2.startOrReconfigure(createConfigAllowReconfiguring(1));
-        assertFalse(reconfigurer2.shouldReconfigure(createConfigAllowReconfiguring(1)));
+        // Cluster shrinks
+        nextConfig = createConfig(3, true);
+        reconfigurer.startOrReconfigure(nextConfig);
+        assertEquals(2, reconfigurer.reconfigurations);
+        assertEquals("node0:2181,node1:2181,node2:2181,node3:2181,node4:2181", reconfigurer.connectionSpec);
+        assertNull("No servers are joining", reconfigurer.joiningServers);
+        assertEquals("3,4", reconfigurer.leavingServers);
+        assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
-    private ZookeeperServerConfig createConfigAllowReconfiguring(int numberOfServers) {
-        return createConfig(numberOfServers, true);
-    }
+    @Test
+    public void testDynamicReconfigurationDisabled() {
+        TestableReconfigurer reconfigurer = new TestableReconfigurer();
+        ZookeeperServerConfig initialConfig = createConfig(3, false);
+        reconfigurer.startOrReconfigure(initialConfig);
+        assertSame(initialConfig, reconfigurer.activeConfig());
 
-    private ZookeeperServerConfig createConfig(int numberOfServers) {
-        return createConfig(numberOfServers, false);
+        ZookeeperServerConfig nextConfig = createConfig(5, false);
+        reconfigurer.startOrReconfigure(nextConfig);
+        assertSame(initialConfig, reconfigurer.activeConfig());
+        assertEquals(0, reconfigurer.reconfigurations);
     }
 
     private ZookeeperServerConfig createConfig(int numberOfServers, boolean dynamicReconfiguration) {
@@ -69,49 +83,36 @@ public class ReconfigurerTest {
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
         IntStream.range(0, numberOfServers).forEach(i -> {
-            builder.server(newServer(i, "localhost", i, i + 1));
+            builder.server(newServer(i, "node" + i));
         });
         builder.myid(0);
         builder.dynamicReconfiguration(dynamicReconfiguration);
         return builder.build();
     }
 
-    private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, int electionPort, int quorumPort) {
+    private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName) {
         ZookeeperServerConfig.Server.Builder builder = new ZookeeperServerConfig.Server.Builder();
         builder.id(id);
         builder.hostname(hostName);
-        builder.electionPort(electionPort);
-        builder.quorumPort(quorumPort);
         return builder;
     }
 
-    private void assertReconfiguration(int numberOfServers, Reconfigurer reconfigurer) {
-        ZookeeperServerConfig existingConfig = reconfigurer.existingConfig();
-        int currentServerCount = reconfigurer.existingConfig().server().size();
-        int expectedLeavingServers = Math.max(0, currentServerCount - numberOfServers);
-        ZookeeperServerConfig newConfig = createConfigAllowReconfiguring(numberOfServers);
-        assertTrue(reconfigurer.shouldReconfigure(newConfig));
-        Reconfigurer.ReconfigurationInfo reconfigurationInfo = new Reconfigurer.ReconfigurationInfo(existingConfig, newConfig);
-        StringBuilder joiningServers = new StringBuilder();
-        for (int electionPort = 0; electionPort < numberOfServers; electionPort++) {
-            int quorumPort = electionPort + 1;
-            joiningServers.append(electionPort)
-                          .append("=localhost:")
-                          .append(quorumPort).append(":")
-                          .append(electionPort)
-                          .append(",");
+    private static class TestableReconfigurer extends Reconfigurer {
+
+        private int reconfigurations = 0;
+
+        private String connectionSpec;
+        private String joiningServers;
+        private String leavingServers;
+
+        @Override
+        void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) {
+            this.connectionSpec = connectionSpec;
+            this.joiningServers = joiningServers;
+            this.leavingServers = leavingServers;
+            this.reconfigurations++;
         }
-        joiningServers.setLength(joiningServers.length() - 1); // Remove trailing comma
-        assertEquals(joiningServers.toString(), reconfigurationInfo.joiningServers());
-        StringBuilder leavingServers = new StringBuilder();
-        for (int i = 0; i < expectedLeavingServers; i++) {
-            leavingServers.append(i + 1)
-                          .append(",");
-        }
-        if (leavingServers.length() > 0) {
-            leavingServers.setLength(leavingServers.length() - 1); // Remove trailing comma
-        }
-        assertEquals(leavingServers.toString(), reconfigurationInfo.leavingServers());
+
     }
 
 }
