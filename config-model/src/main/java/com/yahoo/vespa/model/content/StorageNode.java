@@ -3,12 +3,11 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -39,7 +38,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     }
 
     StorageNode(ModelContext.Properties properties, StorageCluster cluster, Double capacity, int distributionKey, boolean retired) {
-        super(properties, cluster, cluster.getClusterName(),
+        super(properties.featureFlags(), cluster, cluster.getClusterName(),
               rootFolder + cluster.getClusterName() + "/storage/" + distributionKey,
               distributionKey);
         this.retired = retired;

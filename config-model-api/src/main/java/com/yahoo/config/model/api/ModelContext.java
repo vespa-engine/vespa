@@ -49,8 +49,35 @@ public interface ModelContext {
     /** The Vespa version we want nodes to become */
     Version wantedNodeVespaVersion();
 
+    /**
+     * How to remove temporary feature flags:
+     * 1)
+     * - Remove flag definition from Flags
+     * - Remove method implementation from ModelContextImpl.FeatureFlags
+     * - Modify default implementation of below method to return the new default value
+     * - Remove all usage of below method from config-model
+     *
+     * 2)
+     *  - Wait for all config-model versions in hosted production to include above changes
+     *  - Remove below method
+     */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}) default boolean enableAutomaticReindexing() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2020") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"geirst"}, comment = "Remove on 7.XXX when this is default on") default boolean useDirectStorageApiRpc() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"geirst"}, comment = "Remove on 7.XXX when this is default on") default boolean useFastValueTensorImplementation() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int defaultNumResponseThreads() { return 2; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipCommunicationManagerThread() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusRequestThread() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusReplyThread() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"tokle"}) default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int contentNodeBucketDBStripeBits() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int mergeChunkSize() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -68,38 +95,7 @@ public interface ModelContext {
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
 
-        // TODO: Only needed for LbServicesProducerTest
-        default boolean useDedicatedNodeForLogserver() { return true; }
-
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
-
-        // TODO Revisit in May or June 2020
-        double defaultTermwiseLimit();
-
-        default int defaultNumResponseThreads() { return 2; }
-
-        /// Default setting for the gc-options attribute if not specified explicit by application
-        String jvmGCOptions();
-
-        // Select sequencer type use while feeding.
-        String feedSequencerType();
-        String responseSequencerType();
-        boolean skipCommunicationManagerThread();
-        boolean skipMbusRequestThread();
-        boolean skipMbusReplyThread();
-
-        boolean useAsyncMessageHandlingOnSchedule();
-        int contentNodeBucketDBStripeBits();
-        int mergeChunkSize();
-        double feedConcurrency();
-
-        boolean useThreePhaseUpdates();
-
-        // TODO Remove on 7.XXX when this is default on.
-        boolean useDirectStorageApiRpc();
-
-        // TODO Remove on 7.XXX when this is default on.
-        boolean useFastValueTensorImplementation();
 
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
@@ -109,9 +105,27 @@ public interface ModelContext {
             return Quota.unlimited();
         }
 
-        // TODO(mortent): Temporary feature flag
-        default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
+        /// Default setting for the gc-options attribute if not specified explicit by application
+        String jvmGCOptions();
+        // TODO(somebody): Only needed for LbServicesProducerTest
+        default boolean useDedicatedNodeForLogserver() { return true; }
 
+        // NOTE: Use FeatureFlags interface above instead of non-permament flags
+        @Deprecated double defaultTermwiseLimit();
+        @Deprecated default int defaultNumResponseThreads() { return 2; }
+        @Deprecated String feedSequencerType();
+        @Deprecated String responseSequencerType();
+        @Deprecated boolean skipCommunicationManagerThread();
+        @Deprecated boolean skipMbusRequestThread();
+        @Deprecated boolean skipMbusReplyThread();
+        @Deprecated boolean useAsyncMessageHandlingOnSchedule();
+        @Deprecated int contentNodeBucketDBStripeBits();
+        @Deprecated int mergeChunkSize();
+        @Deprecated double feedConcurrency();
+        @Deprecated boolean useThreePhaseUpdates();
+        @Deprecated boolean useDirectStorageApiRpc();
+        @Deprecated boolean useFastValueTensorImplementation();
+        @Deprecated default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
     }
 
     @Retention(RetentionPolicy.RUNTIME)

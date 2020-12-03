@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Ulf Lilleengen
  */
+@SuppressWarnings("deprecation")
 public class ModelContextImplTest {
 
     @Test

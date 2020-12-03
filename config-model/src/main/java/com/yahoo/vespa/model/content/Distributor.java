@@ -35,7 +35,7 @@ public class Distributor extends ContentNode {
     }
 
     Distributor(ModelContext.Properties properties, DistributorCluster parent, int distributionKey, Integer distributorBasePort, PersistenceEngine provider) {
-        super(properties, parent, parent.getClusterName(),
+        super(properties.featureFlags(), parent, parent.getClusterName(),
              StorageNode.rootFolder + parent.getClusterName() + "/distributor/" + distributionKey, distributionKey);
 
         this.provider = provider;

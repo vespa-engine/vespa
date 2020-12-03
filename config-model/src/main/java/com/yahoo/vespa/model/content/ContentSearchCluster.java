@@ -95,7 +95,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
             ContentSearchCluster search = new ContentSearchCluster(ancestor,
                                                                    clusterName,
-                                                                   deployState.getProperties(),
+                                                                   deployState.getProperties().featureFlags(),
                                                                    documentDefinitions,
                                                                    globallyDistributedDocuments,
                                                                    getFlushOnShutdown(flushOnShutdownElem, deployState),
@@ -191,7 +191,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     private ContentSearchCluster(AbstractConfigProducer parent,
                                  String clusterName,
-                                 ModelContext.Properties featureFlags,
+                                 ModelContext.FeatureFlags featureFlags,
                                  Map<String, NewDocumentType> documentDefinitions,
                                  Set<NewDocumentType> globallyDistributedDocuments,
                                  boolean flushOnShutdown,
