@@ -17,6 +17,7 @@ private:
 public:
     MutableDenseTensorView(const ValueType &type_in);
     void setCells(TypedCells cells_in) {
+        assert(cells_in.type == _type.cell_type());
         _cells = cells_in;
     }
     const ValueType &type() const final override { return _type; }
