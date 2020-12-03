@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_type.h>
 
 #include <vespa/log/log.h>
@@ -17,8 +18,7 @@ using namespace search::fef;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
-using vespalib::tensor::DirectSparseTensorBuilder;
-using vespalib::tensor::SparseTensorAddressBuilder;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
@@ -91,15 +91,16 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
     if (prop.found() && !prop.get().empty()) {
         std::vector<vespalib::string> vector;
         ArrayParser::parse(prop.get(), vector);
-        DirectSparseTensorBuilder<double> tensorBuilder(type);
-        tensorBuilder.reserve(vector.size());
-        SparseTensorAddressBuilder address;
+        auto factory = FastValueBuilderFactory::get();
+        auto builder = factory.create_value_builder<double>(type, 1, 1, vector.size());
+        std::vector<vespalib::stringref> addr_ref;
         for (const auto &elem : vector) {
-            address.clear();
-            address.add(elem);
-            tensorBuilder.insertCell(address, 1.0, [](double, double v){ return v; });
+            addr_ref.clear();
+            addr_ref.push_back(elem);
+            auto cell_array = builder->add_subspace(addr_ref);
+            cell_array[0] = 1.0;
         }
-        return ConstantTensorExecutor::create(tensorBuilder.build(), stash);
+        return ConstantTensorExecutor::create(builder->build(std::move(builder)), stash);
     }
     return ConstantTensorExecutor::createEmpty(type, stash);
 }
