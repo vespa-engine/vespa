@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/scheduler.h>
+#include <vespa/fnet/task.h>
 
 class MyTask : public FNET_Task
 {
@@ -17,14 +18,14 @@ public:
 
 
 TEST("slow event loop") {
-  FNET_Scheduler::time_point t(std::chrono::milliseconds(0));
+  vespalib::steady_time t(vespalib::duration::zero());
 
   FNET_Scheduler scheduler(&t, &t);
   MyTask         task(scheduler);
   MyTask         task2(scheduler);
 
   scheduler.CheckTasks();
-  t += std::chrono::milliseconds(10000);
+  t += 10s;
   task.Schedule(5.0);
 
   uint32_t cnt = 0;
@@ -34,7 +35,7 @@ TEST("slow event loop") {
           break;
       }
       ++cnt;
-      t += std::chrono::milliseconds(1);
+      t += 1ms;
   }
 
   if (!EXPECT_TRUE(cnt > 4700 && cnt < 4800)) {
@@ -42,7 +43,7 @@ TEST("slow event loop") {
   }
 
   scheduler.CheckTasks();
-  t += std::chrono::milliseconds(10000);
+  t += 10s;
   task2.Schedule(5.0);
 
   uint32_t cnt2 = 0;
@@ -52,7 +53,7 @@ TEST("slow event loop") {
           break;
       }
       ++cnt2;
-      t += std::chrono::milliseconds(10000);
+      t += 10s;
   }
 
   if (!EXPECT_TRUE(cnt2 > 15 && cnt2 < 25)) {

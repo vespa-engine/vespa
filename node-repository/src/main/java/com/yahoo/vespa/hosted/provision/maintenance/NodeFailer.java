@@ -153,7 +153,9 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : activeNodes) {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
-                nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
+                // Allow a grace period after node re-activation
+                if ( ! node.history().hasEventAfter(History.Event.Type.activated, graceTimeEnd))
+                    nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
             }
             else if (hostSuspended(node, activeNodes)) {
                 Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);

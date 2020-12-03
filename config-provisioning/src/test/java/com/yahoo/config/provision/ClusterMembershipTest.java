@@ -48,10 +48,10 @@ public class ClusterMembershipTest {
             assertEquals(dockerImageRepo.get(), instance.cluster().dockerImageRepo().get());
         }
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37", Vtag.currentVersion, Optional.empty());
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/stateful", Vtag.currentVersion, Optional.empty());
             ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
             assertEquals(instance, serialized);
-            assertFalse("Skips serialization of stateful property", instance.cluster().isStateful());
+            assertTrue(instance.cluster().isStateful());
         }
     }
 
@@ -117,7 +117,7 @@ public class ClusterMembershipTest {
         assertFalse(instance.cluster().group().isPresent());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1/37", instance.stringValue());
+        assertEquals("content/id1/37/stateful", instance.stringValue());
     }
 
     private void assertContentServiceWithGroup(ClusterMembership instance) {
@@ -126,7 +126,7 @@ public class ClusterMembershipTest {
         assertEquals(4, instance.cluster().group().get().index());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1/4/37", instance.stringValue());
+        assertEquals("content/id1/4/37/stateful", instance.stringValue());
     }
 
     /** Serializing a spec without a group assigned works, but not deserialization */
@@ -135,7 +135,7 @@ public class ClusterMembershipTest {
         assertEquals("id1", instance.cluster().id().value());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1/37/retired", instance.stringValue());
+        assertEquals("content/id1/37/retired/stateful", instance.stringValue());
     }
 
     private void assertContentServiceWithGroupAndRetire(ClusterMembership instance) {
@@ -144,7 +144,7 @@ public class ClusterMembershipTest {
         assertEquals(4, instance.cluster().group().get().index());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1/4/37/retired", instance.stringValue());
+        assertEquals("content/id1/4/37/retired/stateful", instance.stringValue());
     }
 
 }

@@ -4,6 +4,7 @@ vespa_add_library(storage_distributoroperationexternal OBJECT
     getoperation.cpp
     newest_replica.cpp
     putoperation.cpp
+    read_for_write_visitor_operation.cpp
     removelocationoperation.cpp
     removeoperation.cpp
     statbucketlistoperation.cpp

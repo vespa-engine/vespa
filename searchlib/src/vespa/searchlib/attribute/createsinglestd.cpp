@@ -7,8 +7,10 @@
 #include "singlenumericattribute.hpp"
 #include "singlestringattribute.h"
 #include "singleboolattribute.h"
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_tensor_attribute.h>
+#include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 
 namespace search {
 
@@ -45,6 +47,8 @@ AttributeFactory::createSingleStd(stringref name, const Config & info)
     case BasicType::TENSOR:
         if (info.tensorType().is_dense()) {
             return std::make_shared<tensor::DenseTensorAttribute>(name, info);
+        } else if (vespalib::eval::EngineOrFactory::get().is_factory()) {
+            return std::make_shared<tensor::SerializedFastValueAttribute>(name, info);
         } else {
             return std::make_shared<tensor::SerializedTensorAttribute>(name, info);
         }

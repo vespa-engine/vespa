@@ -4,7 +4,7 @@
 #include "node_traverser.h"
 #include "node_visitor.h"
 #include "interpreted_function.h"
-#include "simple_tensor_engine.h"
+#include "simple_value.h"
 
 namespace vespalib::eval::nodes {
 
@@ -23,7 +23,8 @@ struct Frame {
 double
 Node::get_const_value() const {
     assert(is_const());
-    InterpretedFunction function(SimpleTensorEngine::ref(), *this, NodeTypes());
+    NodeTypes node_types(*this);
+    InterpretedFunction function(SimpleValueBuilderFactory::get(), *this, node_types);
     NoParams no_params;
     InterpretedFunction::Context ctx(function);
     return function.eval(ctx, no_params).as_double();

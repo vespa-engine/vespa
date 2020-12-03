@@ -253,6 +253,9 @@ public:
     bool prioritize_global_bucket_merges() const noexcept {
         return _prioritize_global_bucket_merges;
     }
+    bool enable_revert() const noexcept {
+        return _enable_revert;
+    }
 
     bool containsTimeStatement(const std::string& documentSelection) const;
     
@@ -303,9 +306,10 @@ private:
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
     bool _prioritize_global_bucket_merges;
+    bool _enable_revert;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
-    
+
     friend struct distributor::DistributorTest;
     void configureMaintenancePriorities(
             const vespa::config::content::core::StorDistributormanagerConfig&);

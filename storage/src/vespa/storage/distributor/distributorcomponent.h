@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "distributor_node_context.h"
+#include "distributor_operation_context.h"
 #include "distributorinterface.h"
+#include "document_selection_parser.h"
 #include "operationowner.h"
 #include "statechecker.h"
 #include <vespa/storage/common/distributorcomponent.h>
@@ -25,7 +28,10 @@ struct DatabaseUpdate {
  * Takes care of subscribing to document manager config and
  * making those values available to other subcomponents.
  */
-class DistributorComponent : public storage::DistributorComponent
+class DistributorComponent : public storage::DistributorComponent,
+                             public DistributorNodeContext,
+                             public DistributorOperationContext,
+                             public DocumentSelectionParser
 {
 public:
     DistributorComponent(DistributorInterface& distributor,
@@ -37,40 +43,10 @@ public:
     ~DistributorComponent() override;
 
     /**
-     * Returns the ownership status of a bucket as decided with the given
-     * distribution and cluster state -and- that of the pending cluster
-     * state and distribution (if any pending exists).
-     */
-    BucketOwnership checkOwnershipInPendingAndCurrentState(
-            const document::Bucket &bucket) const;
-
-    bool ownsBucketInState(const lib::Distribution& distribution,
-                           const lib::ClusterState& clusterState,
-                           const document::Bucket &bucket) const;
-
-    /**
-     * Returns true if this distributor owns the given bucket in the
-     * given cluster and current distribution config.
-     */
-    bool ownsBucketInState(const lib::ClusterState& clusterState,
-                           const document::Bucket &bucket) const;
-
-    /**
-     * Returns true if this distributor owns the given bucket with the current
-     * cluster state and distribution config.
-     */
-    bool ownsBucketInCurrentState(const document::Bucket &bucket) const;
-
-    /**
      * Returns a reference to the current cluster state bundle. Valid until the
      * next time the distributor main thread processes its message queue.
      */
     const lib::ClusterStateBundle& getClusterStateBundle() const;
-
-    /**
-     * Returns the ideal nodes for the given bucket.
-     */
-    std::vector<uint16_t> getIdealNodes(const document::Bucket &bucket) const;
 
     /**
       * Returns the slobrok address of the given storage node.
@@ -168,6 +144,52 @@ public:
      * Returns true if the node is currently initializing.
      */
     bool initializing() const;
+
+    // Implements DistributorNodeContext
+    const framework::Clock& clock() const noexcept override { return getClock(); }
+    const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
+    const vespalib::string& cluster_name() const noexcept override { return getClusterName(); }
+    uint16_t node_index() const noexcept override { return getIndex(); }
+
+    // Implements DistributorOperationContext
+    api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
+    void update_bucket_database(const document::Bucket& bucket,
+                                const BucketCopy& changed_node,
+                                uint32_t update_flags = 0) override {
+        updateBucketDatabase(bucket, changed_node, update_flags);
+    }
+    virtual void update_bucket_database(const document::Bucket& bucket,
+                                        const std::vector<BucketCopy>& changed_nodes,
+                                        uint32_t update_flags = 0) override {
+        updateBucketDatabase(bucket, changed_nodes, update_flags);
+    }
+    void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override {
+        removeNodeFromDB(bucket, node_index);
+    }
+    const DistributorBucketSpaceRepo& bucket_space_repo() const override {
+        return getBucketSpaceRepo();
+    }
+    void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,
+                                               const BucketDatabase::Entry& entry,
+                                               uint8_t pri) override {
+        getDistributor().checkBucketForSplit(bucket_space, entry, pri);
+    }
+    const DistributorConfiguration& distributor_config() const override {
+        return getDistributor().getConfig();
+    }
+    bool has_pending_message(uint16_t node_index,
+                             const document::Bucket& bucket,
+                             uint32_t message_type) const override;
+    const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const override {
+        return getDistributor().pendingClusterStateOrNull(bucket_space);
+    }
+    const char* storage_node_up_states() const override {
+        return getDistributor().getStorageNodeUpStates();
+    }
+
+    // Implements DocumentSelectionParser
+    std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;
+
 
 private:
     void enumerateUnavailableNodes(

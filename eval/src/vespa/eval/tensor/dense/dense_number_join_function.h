@@ -27,7 +27,7 @@ public:
     ~DenseNumberJoinFunction() override;
     Primary primary() const { return _primary; }
     bool inplace() const;
-    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 

@@ -3,7 +3,8 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
@@ -28,10 +29,12 @@ private:
     FRT_RPCRequest *_req;
 
 public:
-    App() : _frt(),
-            _target(nullptr),
-            _req(nullptr) {}
-    virtual ~App()
+    App()
+        : _frt(),
+          _target(nullptr),
+          _req(nullptr)
+    {}
+    ~App() override
     {
         assert(!_frt);
         assert(_target == nullptr);

@@ -72,7 +72,7 @@ DenseSimpleMapFunction::DenseSimpleMapFunction(const ValueType &result_type,
 DenseSimpleMapFunction::~DenseSimpleMapFunction() = default;
 
 Instruction
-DenseSimpleMapFunction::compile_self(eval::EngineOrFactory, Stash &) const
+DenseSimpleMapFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     auto op = typify_invoke<3,MyTypify,MyGetFun>(result_type().cell_type(), function(), inplace());
     static_assert(sizeof(uint64_t) == sizeof(function()));

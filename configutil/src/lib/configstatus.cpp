@@ -2,7 +2,6 @@
 
 #include "configstatus.h"
 #include "tags.h"
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vbench/http/http_result_handler.h>
 #include <vbench/http/server_spec.h>

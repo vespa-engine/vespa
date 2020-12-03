@@ -68,12 +68,10 @@ public:
     }
 
     DistributorMetricSet& getMetrics() override { return *_metrics; }
-    
+
     PendingMessageTracker& getPendingMessageTracker() override {
         return _pendingMessageTracker;
     }
-
-    BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const override;
 
     const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
 

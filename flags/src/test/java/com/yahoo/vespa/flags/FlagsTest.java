@@ -4,8 +4,6 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.yahoo.vespa.flags.custom.HostResources;
-import com.yahoo.vespa.flags.custom.SharedHost;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -34,7 +32,7 @@ public class FlagsTest {
     public void testBoolean() {
         final boolean defaultValue = false;
         FlagSource source = mock(FlagSource.class);
-        BooleanFlag booleanFlag = Flags.defineFeatureFlag("id", defaultValue, "description",
+        BooleanFlag booleanFlag = Flags.defineFeatureFlag("id", defaultValue, List.of("owner"), "1970-01-01", "2100-01-01", "description",
                 "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME)
                 .with(FetchVector.Dimension.ZONE_ID, "a-zone")
                 .bindTo(source);
@@ -69,29 +67,29 @@ public class FlagsTest {
 
     @Test
     public void testString() {
-        testGeneric(Flags.defineStringFlag("string-id", "default value", "description",
+        testGeneric(Flags.defineStringFlag("string-id", "default value", List.of("owner"), "1970-01-01", "2100-01-01", "description",
                 "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME),
                 "other value");
     }
 
     @Test
     public void testInt() {
-        testGeneric(Flags.defineIntFlag("int-id", 2, "desc", "mod"), 3);
+        testGeneric(Flags.defineIntFlag("int-id", 2, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), 3);
     }
 
     @Test
     public void testLong() {
-        testGeneric(Flags.defineLongFlag("long-id", 1L, "desc", "mod"), 2L);
+        testGeneric(Flags.defineLongFlag("long-id", 1L, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), 2L);
     }
 
     @Test
     public void testDouble() {
-        testGeneric(Flags.defineDoubleFlag("double-id", 3.142, "desc", "mod"), 2.718);
+        testGeneric(Flags.defineDoubleFlag("double-id", 3.142, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), 2.718);
     }
 
     @Test
     public void testList() {
-        testGeneric(Flags.defineListFlag("list-id", List.of("a"), String.class, "desc", "mod"), List.of("a", "b", "c"));
+        testGeneric(Flags.defineListFlag("list-id", List.of("a"), String.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), List.of("a", "b", "c"));
     }
 
     @Test
@@ -102,23 +100,14 @@ public class FlagsTest {
         instance.string = "foo";
 
         testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
-                "description", "modification effect", FetchVector.Dimension.HOSTNAME),
+                List.of("owner"), "1970-01-01", "2100-01-01", "description", "modification effect", FetchVector.Dimension.HOSTNAME),
                 instance);
 
-        testGeneric(Flags.defineListFlag("jackson-list-id", List.of(defaultInstance), ExampleJacksonClass.class, "desc", "mod"),
+        testGeneric(Flags.defineListFlag("jackson-list-id", List.of(defaultInstance), ExampleJacksonClass.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"),
                 List.of(instance));
     }
 
-    @Test
-    public void testSharedHostFlag() {
-        SharedHost sharedHost = new SharedHost(List.of(new HostResources(
-                4.0, 16.0, 50.0, null,
-                "fast", "local",
-                10)));
-        testGeneric(Flags.SHARED_HOST, sharedHost);
-    }
-
-    private <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T value) {
+    static <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T value) {
         FlagSource source = mock(FlagSource.class);
         Flag<T, ?> flag = unboundFlag.bindTo(source);
 

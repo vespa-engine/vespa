@@ -15,9 +15,10 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
@@ -102,57 +103,21 @@ public class DynamicProvisioningMaintainerTest {
     }
 
     @Test
-    public void does_not_deprovision_when_preprovisioning_enabled__legacy() {
-        var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new ClusterCapacity(1, 1, 3, 2, 1.0)), ClusterCapacity.class);
-        tester.flagSource.withBooleanFlag(Flags.COMPACT_PREPROVISION_CAPACITY.id(), false);
-        Optional<Node> failedHost = tester.nodeRepository.getNode("host2");
-        assertTrue(failedHost.isPresent());
-
-        tester.maintainer.maintain();
-        assertTrue("Failed host is deprovisioned", tester.nodeRepository.getNode(failedHost.get().hostname()).isEmpty());
-        assertEquals(1, tester.hostProvisioner.deprovisionedHosts);
-    }
-
-    @Test
     public void does_not_deprovision_when_preprovisioning_enabled() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new ClusterCapacity(1, 1, 3, 2, 1.0)), ClusterCapacity.class);
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(), List.of(new ClusterCapacity(1, 1, 3, 2, 1.0)), ClusterCapacity.class);
         Optional<Node> failedHost = tester.nodeRepository.getNode("host2");
         assertTrue(failedHost.isPresent());
 
         tester.maintainer.maintain();
         assertTrue("Failed host is deprovisioned", tester.nodeRepository.getNode(failedHost.get().hostname()).isEmpty());
         assertEquals(1, tester.hostProvisioner.deprovisionedHosts);
-    }
-
-    @Test
-    public void provision_deficit_and_deprovision_excess__legacy() {
-        var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(2, 48, 128, 1000, 10.0),
-                        new ClusterCapacity(1, 16, 24, 100, 1.0)),
-                ClusterCapacity.class);
-        tester.flagSource.withBooleanFlag(Flags.COMPACT_PREPROVISION_CAPACITY.id(), false);
-        assertTrue(tester.nodeRepository.getNode("host2").isPresent());
-        assertEquals(0, tester.hostProvisioner.provisionedHosts.size());
-
-        // failed host2 is removed
-        Optional<Node> failedHost = tester.nodeRepository.getNode("host2");
-        assertTrue(failedHost.isPresent());
-        tester.maintainer.maintain();
-        assertTrue("Failed host is deprovisioned", tester.nodeRepository.getNode(failedHost.get().hostname()).isEmpty());
-        assertTrue("Host with matching resources is kept", tester.nodeRepository.getNode("host3").isPresent());
-
-        // Two more hosts are provisioned with expected resources
-        NodeResources resources = new NodeResources(48, 128, 1000, 10);
-        assertEquals(2, tester.provisionedHostsMatching(resources));
     }
 
     @Test
     public void provision_deficit_and_deprovision_excess() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                                        List.of(new ClusterCapacity(2, 48, 128, 1000, 10.0),
                                                new ClusterCapacity(1, 16, 24, 100, 1.0)),
                                        ClusterCapacity.class);
@@ -184,7 +149,7 @@ public class DynamicProvisioningMaintainerTest {
         // Makes provisioned hosts 48-128-1000-10
         tester.hostProvisioner.provisionSharedHost("host4");
 
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(2, 1, 30, 20, 3.0)),
                 ClusterCapacity.class);
 
@@ -206,7 +171,7 @@ public class DynamicProvisioningMaintainerTest {
 
         // Add a second cluster equal to the first.  It should fit on existing host3 and hostname100.
 
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(2, 1, 30, 20, 3.0),
                         new ClusterCapacity(2, 1, 30, 20, 3.0)),
                 ClusterCapacity.class);
@@ -220,7 +185,7 @@ public class DynamicProvisioningMaintainerTest {
         // in this test, due to skew), so host3 will be deprovisioned when hostname101 is provisioned.
         // host3 is a 24-64-100-10 while hostname100 is 48-128-1000-10.
 
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(2, 1, 30, 20, 3.0),
                         new ClusterCapacity(2, 24, 64, 100, 1.0)),
                 ClusterCapacity.class);
@@ -236,7 +201,7 @@ public class DynamicProvisioningMaintainerTest {
 
         // If the preprovision capacity is reduced, we should see shared hosts deprovisioned.
 
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(1, 1, 30, 20, 3.0)),
                 ClusterCapacity.class);
 
@@ -267,6 +232,50 @@ public class DynamicProvisioningMaintainerTest {
     }
 
     @Test
+    public void verify_min_count_of_shared_hosts() {
+        // What's going on here?  We are trying to verify the impact of varying the minimum number of
+        // shared hosts (SharedHost.minCount()).
+        //
+        // addInitialNodes() adds 4 tenant hosts:
+        //   host1    shared   !removable   # not removable because it got child nodes w/allocation
+        //   host2   !shared    removable   # not counted as a shared host because it is failed
+        //   host3    shared    removable
+        //   host4    shared   !removable   # not removable because it got child nodes w/allocation
+        //
+        // Hosts 1, 3, and 4 count as "shared hosts" with respect to the minCount lower boundary.
+        // Hosts 3 and 4 are removable, that is they will be deprovisioned as excess hosts unless
+        // prevented by minCount.
+
+        // minCount=0: All (2) removable hosts are deprovisioned
+        assertWithMinCount(0, 0, 2);
+        // minCount=1: The same thing happens, because there are 2 shared hosts left
+        assertWithMinCount(1, 0, 2);
+        assertWithMinCount(2, 0, 2);
+        // minCount=3: since we require 3 shared hosts, host3 is not deprovisioned.
+        assertWithMinCount(3, 0, 1);
+        // 4 shared hosts require we provision 1 shared host
+        assertWithMinCount(4, 1, 1);
+        // 5 shared hosts require we provision 2 shared hosts
+        assertWithMinCount(5, 2, 1);
+        assertWithMinCount(6, 3, 1);
+    }
+
+    private void assertWithMinCount(int minCount, int provisionCount, int deprovisionCount) {
+        var tester = new DynamicProvisioningTester().addInitialNodes();
+        tester.hostProvisioner.provisionSharedHost("host4");
+
+        tester.flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(null, minCount), SharedHost.class);
+        tester.maintainer.maintain();
+        assertEquals(provisionCount, tester.hostProvisioner.provisionedHosts.size());
+        assertEquals(deprovisionCount, tester.hostProvisioner.deprovisionedHosts);
+
+        // Verify next maintain is a no-op
+        tester.maintainer.maintain();
+        assertEquals(provisionCount, tester.hostProvisioner.provisionedHosts.size());
+        assertEquals(deprovisionCount, tester.hostProvisioner.deprovisionedHosts);
+    }
+
+    @Test
     public void does_not_remove_if_host_provisioner_failed() {
         var tester = new DynamicProvisioningTester();
         Node host2 = tester.addNode("host2", Optional.empty(), NodeType.host, Node.State.failed, DynamicProvisioningTester.tenantApp);
@@ -280,7 +289,7 @@ public class DynamicProvisioningMaintainerTest {
     public void test_minimum_capacity() {
         var tester = new DynamicProvisioningTester();
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(), resources1.bandwidthGbps())),
                 ClusterCapacity.class);
         tester.maintainer.maintain();
@@ -300,7 +309,7 @@ public class DynamicProvisioningMaintainerTest {
         tester.assertNodesUnchanged();
 
         // Must be able to allocate 2 nodes with "no resource requirement"
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(2, 0, 0, 0, 0.0)),
                 ClusterCapacity.class);
 
@@ -321,11 +330,11 @@ public class DynamicProvisioningMaintainerTest {
         tester.assertNodesUnchanged();
 
         // Clearing flag does nothing
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), ClusterCapacity.class);
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(), List.of(), ClusterCapacity.class);
         tester.assertNodesUnchanged();
 
         // Increasing the capacity provisions additional hosts
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(3, 0, 0, 0, 0.0)),
                 ClusterCapacity.class);
         assertEquals(0, tester.provisionedHostsMatching(sharedHostNodeResources));
@@ -338,7 +347,7 @@ public class DynamicProvisioningMaintainerTest {
         tester.assertNodesUnchanged();
 
         // Requiring >0 capacity does nothing as long as it fits on the 3 hosts
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(3,
                         resources1.vcpu() - applicationNodeResources.vcpu(),
                         resources1.memoryGb() - applicationNodeResources.memoryGb(),
@@ -348,7 +357,7 @@ public class DynamicProvisioningMaintainerTest {
         tester.assertNodesUnchanged();
 
         // But requiring a bit more in the cluster => provisioning of 2 shared hosts.
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(new ClusterCapacity(3,
                         resources1.vcpu() - applicationNodeResources.vcpu() + 1,
                         resources1.memoryGb() - applicationNodeResources.memoryGb() + 1,

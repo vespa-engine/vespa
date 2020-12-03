@@ -1,13 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "make_tensor_function.h"
+#include "value_codec.h"
 #include "tensor_function.h"
 #include "node_visitor.h"
 #include "node_traverser.h"
 #include "tensor_spec.h"
 #include "operation.h"
 #include "node_types.h"
-#include "tensor_engine.h"
 #include <vespa/eval/eval/llvm/compile_cache.h>
 
 namespace vespalib::eval {
@@ -19,13 +19,13 @@ using namespace nodes;
 //-----------------------------------------------------------------------------
 
 struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
-    Stash              &stash;
-    EngineOrFactory     tensor_engine;
-    const NodeTypes    &types;
+    Stash                     &stash;
+    const ValueBuilderFactory &factory;
+    const NodeTypes           &types;
     std::vector<TensorFunction::CREF> stack;
 
-    TensorFunctionBuilder(Stash &stash_in, EngineOrFactory tensor_engine_in, const NodeTypes &types_in)
-        : stash(stash_in), tensor_engine(tensor_engine_in), types(types_in), stack() {}
+    TensorFunctionBuilder(Stash &stash_in, const ValueBuilderFactory &factory_in, const NodeTypes &types_in)
+        : stash(stash_in), factory(factory_in), types(types_in), stack() {}
 
     //-------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
                 for (size_t i = 0; i < create->num_children(); ++i) {
                     spec.add(create->get_child_address(i), create->get_child(i).get_const_value());
                 }
-                make_const(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
+                make_const(node, *stash.create<Value::UP>(value_from_spec(spec, factory)));
                 return true;
             }
         }
@@ -105,9 +105,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void make_lambda(const TensorLambda &node) {
         if (node.bindings().empty()) {
             NoParams no_bound_params;
-            InterpretedFunction my_fun(tensor_engine, node.lambda().root(), types);
+            InterpretedFunction my_fun(factory, node.lambda().root(), types);
             TensorSpec spec = tensor_function::Lambda::create_spec_impl(node.type(), no_bound_params, node.bindings(), my_fun);
-            make_const(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
+            make_const(node, *stash.create<Value::UP>(value_from_spec(spec, factory)));
         } else {
             stack.push_back(tensor_function::lambda(node.type(), node.bindings(), node.lambda(), types.export_types(node.lambda().root()), stash));
         }
@@ -356,8 +356,8 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
 } // namespace vespalib::eval::<unnamed>
 
-const TensorFunction &make_tensor_function(EngineOrFactory engine, const nodes::Node &root, const NodeTypes &types, Stash &stash) {
-    TensorFunctionBuilder builder(stash, engine, types);
+const TensorFunction &make_tensor_function(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types, Stash &stash) {
+    TensorFunctionBuilder builder(stash, factory, types);
     root.traverse(builder);
     assert(builder.stack.size() == 1);
     return builder.stack[0];

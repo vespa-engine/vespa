@@ -61,7 +61,7 @@ DenseTensorPeekFunction::push_children(std::vector<Child::CREF> &target) const
 }
 
 InterpretedFunction::Instruction
-DenseTensorPeekFunction::compile_self(EngineOrFactory, Stash &) const
+DenseTensorPeekFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     using MyTypify = TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorPeekOp>(_children[0].get().result_type().cell_type());

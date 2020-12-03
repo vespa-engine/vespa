@@ -106,7 +106,19 @@ class ReindexerTest {
         assertEquals(Map.of("reindexing.progress", Map.of(Map.of("documenttype", "music",
                                                                  "clusterid", "cluster",
                                                                  "state", "successful"),
-                                                          1.0)),
+                                                          1.0,
+                                                          Map.of("documenttype", "music",
+                                                                 "clusterid", "cluster",
+                                                                 "state", "pending"),
+                                                          -1.0,
+                                                          Map.of("documenttype", "music",
+                                                                 "clusterid", "cluster",
+                                                                 "state", "failed"),
+                                                          -1.0,
+                                                          Map.of("documenttype", "music",
+                                                                 "clusterid", "cluster",
+                                                                 "state", "running"),
+                                                          -1.0)),
                      metric.metrics());
 
         // New config tells reindexer to reindex "music" documents no earlier than at 10 millis after EPOCH, which isn't yet.
@@ -146,11 +158,11 @@ class ReindexerTest {
         reindexing = reindexing.with(music, Status.ready(clock.instant()).running().progressed(new ProgressToken()).halted());
         assertEquals(reindexing, database.readReindexing());
         assertTrue(shutDown.get(), "Session was shut down");
-        assertEquals(Map.of("reindexing.progress", Map.of(Map.of("documenttype", "music",
-                                                                 "clusterid", "cluster",
-                                                                 "state", "pending"),
-                                                          1.0)), // new ProgressToken() is 100% done.
-                     metric.metrics());
+        assertEquals(1.0, // new ProgressToken() is 100% done.
+                     metric.metrics().get("reindexing.progress")
+                           .get(Map.of("documenttype", "music",
+                                       "clusterid", "cluster",
+                                       "state", "pending")));
 
         // Last reindexing fails.
         clock.advance(Duration.ofMillis(10));

@@ -150,12 +150,6 @@ SpiBmFeedHandler::get_name() const
 }
 
 bool
-SpiBmFeedHandler::manages_buckets() const
-{
-    return false;
-}
-
-bool
 SpiBmFeedHandler::manages_timestamp() const
 {
     return false;

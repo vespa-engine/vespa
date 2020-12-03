@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
-import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -29,6 +27,8 @@ import org.w3c.dom.Element;
 
 import java.util.HashMap;
 import java.util.Optional;
+
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Represents a search node (proton).
@@ -142,7 +142,7 @@ public class SearchNode extends AbstractService implements
         // Properties are set in DomSearchBuilder
         this.tuning = tuning;
         this.resourceLimits = resourceLimits;
-        this.useFastValueTensorImplementation = props.useFastValueTensorImplementation();
+        this.useFastValueTensorImplementation = props.featureFlags().useFastValueTensorImplementation();
     }
 
     private void setPropertiesElastic(String clusterName, int distributionKey) {

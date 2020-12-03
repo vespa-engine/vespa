@@ -236,7 +236,7 @@ DenseSingleReduceFunction::DenseSingleReduceFunction(const DenseSingleReduceSpec
 DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 
 InterpretedFunction::Instruction
-DenseSingleReduceFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
+DenseSingleReduceFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     auto op = typify_invoke<4,MyTypify,MyGetFun>(result_type().cell_type(), _aggr,
                                                  (_reduce_size >= 8), (_inner_size == 1));

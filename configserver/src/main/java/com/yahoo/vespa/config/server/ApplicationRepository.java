@@ -32,8 +32,11 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ClusterReindexing;
+import com.yahoo.vespa.config.server.application.ClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.application.DefaultClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -134,6 +137,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
+    private final ClusterReindexingStatusClient clusterReindexingStatusClient;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -157,7 +161,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              Clock.systemUTC(),
              testerClient,
              metric,
-             flagSource);
+             flagSource,
+             new DefaultClusterReindexingStatusClient());
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -171,7 +176,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   Clock clock,
                                   TesterClient testerClient,
                                   Metric metric,
-                                  FlagSource flagSource) {
+                                  FlagSource flagSource,
+                                  ClusterReindexingStatusClient clusterReindexingStatusClient) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
         this.infraDeployer = Objects.requireNonNull(infraDeployer);
@@ -183,6 +189,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clock = Objects.requireNonNull(clock);
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
+        this.clusterReindexingStatusClient = clusterReindexingStatusClient;
     }
 
     public static class Builder {
@@ -266,7 +273,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              clock,
                                              testerClient,
                                              metric,
-                                             flagSource);
+                                             flagSource,
+                                             ClusterReindexingStatusClient.DUMMY_INSTANCE);
         }
 
     }
@@ -526,6 +534,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         return httpProxy.get(getApplication(applicationId), hostName,
                              CLUSTERCONTROLLER_CONTAINER.serviceName, relativePath);
+    }
+
+    public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {
+        return uncheck(() -> clusterReindexingStatusClient.getReindexingStatus(getApplication(applicationId)));
     }
 
     public Long getApplicationGeneration(ApplicationId applicationId) {

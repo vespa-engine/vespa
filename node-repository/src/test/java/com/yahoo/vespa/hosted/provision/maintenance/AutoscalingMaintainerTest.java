@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Test;
@@ -13,7 +14,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -89,11 +89,11 @@ public class AutoscalingMaintainerTest {
         assertTrue(tester.deployer().lastDeployTime(app1).isPresent());
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
         List<ScalingEvent> events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
-        assertEquals(1, events.size());
-        assertEquals(2, events.get(0).from().nodes());
-        assertEquals(4, events.get(0).to().nodes());
-        assertEquals(1, events.get(0).generation());
-        assertEquals(firstMaintenanceTime.toEpochMilli(), events.get(0).at().toEpochMilli());
+        assertEquals(2, events.size());
+        assertEquals(2, events.get(1).from().nodes());
+        assertEquals(4, events.get(1).to().nodes());
+        assertEquals(1, events.get(1).generation());
+        assertEquals(firstMaintenanceTime.toEpochMilli(), events.get(1).at().toEpochMilli());
 
         // Measure overload still, since change is not applied, but metrics are discarded
         tester.clock().advance(Duration.ofSeconds(1));
@@ -116,7 +116,7 @@ public class AutoscalingMaintainerTest {
         tester.maintainer().maintain();
         assertEquals(lastMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
         events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
-        assertEquals(2, events.get(0).generation());
+        assertEquals(2, events.get(2).generation());
     }
 
     @Test
@@ -126,6 +126,33 @@ public class AutoscalingMaintainerTest {
 
         assertEquals("4 nodes (in 2 groups) with [vcpu: 1.0, memory: 2.0 Gb, disk 4.0 Gb, bandwidth: 1.0 Gbps] (total: [vcpu: 4.0, memory: 8.0 Gb, disk 16.0 Gb, bandwidth: 4.0 Gbps])",
                 AutoscalingMaintainer.toString(new ClusterResources(4, 2, new NodeResources(1, 2, 4, 1))));
+    }
+
+    @Test
+    public void testScalingEventRecording() {
+        ApplicationId app1 = AutoscalingMaintainerTester.makeApplicationId("app1");
+        ClusterSpec cluster1 = AutoscalingMaintainerTester.containerClusterSpec();
+        NodeResources lowResources = new NodeResources(4, 4, 10, 0.1);
+        NodeResources highResources = new NodeResources(8, 8, 20, 0.1);
+        Capacity app1Capacity = Capacity.from(new ClusterResources(2, 1, lowResources),
+                                              new ClusterResources(4, 2, highResources));
+        var tester = new AutoscalingMaintainerTester(new MockDeployer.ApplicationContext(app1, cluster1, app1Capacity));
+
+        // deploy
+        tester.deploy(app1, cluster1, app1Capacity);
+
+        for (int i = 0; i < 20; i++) {
+            tester.clock().advance(Duration.ofDays(1));
+
+            if (i % 2 == 0) // high load
+                tester.addMeasurements(0.9f, 0.9f, 0.9f, i, 200, app1);
+            else // low load
+                tester.addMeasurements(0.1f, 0.1f, 0.1f, i, 200, app1);
+            tester.maintainer().maintain();
+        }
+
+        var events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
+        assertEquals(Cluster.maxScalingEvents, events.size());
     }
 
 }

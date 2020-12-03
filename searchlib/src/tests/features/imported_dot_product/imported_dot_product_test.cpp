@@ -6,7 +6,8 @@
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/rankresult.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -17,6 +18,7 @@ using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::index;
 
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 
 template <typename T>
@@ -118,7 +120,7 @@ struct ArrayFixture : FixtureBase {
 
     template <typename ExpectedType>
     void check_prepare_state_output(const TensorSpec & spec, const ExpectedType & expected) {
-        auto value = vespalib::eval::EngineOrFactory::get().from_spec(spec);
+        auto value = SimpleValue::from_spec(spec);
         check_prepare_state_output(*value, expected);
     }
 

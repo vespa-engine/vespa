@@ -1,19 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_from_weighted_set_feature.h"
-
 #include "constant_tensor_executor.h"
 #include "utils.h"
 #include "tensor_from_attribute_executor.h"
 #include "weighted_set_parser.hpp"
-
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.tensor_from_weighted_set_feature");
@@ -22,8 +19,7 @@ using namespace search::fef;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
-using vespalib::tensor::DirectSparseTensorBuilder;
-using vespalib::tensor::SparseTensorAddressBuilder;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
@@ -106,15 +102,17 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
     if (prop.found() && !prop.get().empty()) {
         WeightedStringVector vector;
         WeightedSetParser::parse(prop.get(), vector);
-        DirectSparseTensorBuilder<double> tensorBuilder(type);
-        tensorBuilder.reserve(vector._data.size());
-        SparseTensorAddressBuilder address;
+        auto factory = FastValueBuilderFactory::get();
+        size_t sz = vector._data.size();
+        auto builder = factory.create_value_builder<double>(type, 1, 1, sz);
+        std::vector<vespalib::stringref> addr_ref;
         for (const auto &elem : vector._data) {
-            address.clear();
-            address.add(elem.value());
-            tensorBuilder.insertCell(address, elem.weight(), [](double, double v){ return v; });
+            addr_ref.clear();
+            addr_ref.push_back(elem.value());
+            auto cell_array = builder->add_subspace(addr_ref);
+            cell_array[0] = elem.weight();
         }
-        return ConstantTensorExecutor::create(tensorBuilder.build(), stash);
+        return ConstantTensorExecutor::create(builder->build(std::move(builder)), stash);
     }
     return ConstantTensorExecutor::createEmpty(type, stash);
 }

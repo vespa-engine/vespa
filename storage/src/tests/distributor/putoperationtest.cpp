@@ -3,6 +3,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
@@ -73,6 +74,7 @@ public:
 
     void sendPut(std::shared_ptr<api::PutCommand> msg) {
         op = std::make_unique<PutOperation>(getExternalOperationHandler(),
+                                            getExternalOperationHandler(),
                                             getDistributorBucketSpace(),
                                             msg,
                                             getDistributor().getMetrics().
@@ -482,7 +484,7 @@ PutOperationTest::getNodes(const std::string& infoString) {
 
     std::vector<uint16_t> targetNodes;
     std::vector<uint16_t> createNodes;
-    PutOperation::getTargetNodes(getExternalOperationHandler().getIdealNodes(makeDocumentBucket(bid)),
+    PutOperation::getTargetNodes(getDistributorBucketSpace().get_ideal_nodes(bid),
                                  targetNodes, createNodes, entry, 2);
 
     ost << "target( ";

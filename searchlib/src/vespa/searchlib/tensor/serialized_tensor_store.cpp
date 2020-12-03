@@ -2,8 +2,8 @@
 
 #include "serialized_tensor_store.h"
 #include "tensor_deserialize.h"
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -99,7 +99,7 @@ TensorStore::EntryRef
 SerializedTensorStore::setTensor(const vespalib::eval::Value &tensor)
 {
     vespalib::nbostream stream;
-    vespalib::eval::EngineOrFactory::get().encode(tensor, stream);
+    encode_value(tensor, stream);
     auto raw = allocRawBuffer(stream.size());
     memcpy(raw.data, stream.peek(), stream.size());
     return raw.ref;

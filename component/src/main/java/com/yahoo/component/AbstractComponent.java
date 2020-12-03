@@ -20,7 +20,7 @@ public class AbstractComponent implements Component {
 
     // We must store the class name, as this.getClass() will yield an exception when a bundled component's
     // bundle has been uninstalled.
-    private String className = getClass().getName();
+    private final String className = getClass().getName();
     protected final boolean isDeconstructable;
 
     /**

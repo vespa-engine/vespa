@@ -4,7 +4,7 @@
   "failedTenantParent": "dockerhost1.yahoo.com",
   "failedTenant": "host4.yahoo.com",
   "failedTenantResources": "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: local]",
-  "failedTenantAllocation": "allocated to tenant3.application3.instance3 as 'content/id3/0/0'",
+  "failedTenantAllocation": "allocated to tenant3.application3.instance3 as 'content/id3/0/0/stateful'",
   "hostCandidateRejectionReasons": {
     "singularReasonFailures": {
       "insufficientVcpu": 0,

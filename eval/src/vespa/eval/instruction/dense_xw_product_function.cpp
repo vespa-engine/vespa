@@ -137,7 +137,7 @@ DenseXWProductFunction::DenseXWProductFunction(const ValueType &result_type,
 }
 
 InterpretedFunction::Instruction
-DenseXWProductFunction::compile_self(EngineOrFactory, Stash &stash) const
+DenseXWProductFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
     using MyTypify = TypifyValue<TypifyCellType,vespalib::TypifyBool>;

@@ -40,7 +40,7 @@ public class NodeMetricsDbTest {
         MetricsDb db = MetricsDb.createTestInstance(tester.nodeRepository());
         Collection<Pair<String, MetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0, true)));
+            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0, true, false)));
             clock.advance(Duration.ofMinutes(120));
         }
         db.add(values);

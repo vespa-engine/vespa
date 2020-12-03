@@ -74,6 +74,9 @@ public class AutoscalingTest {
         tester.assertResources("Scaling down to minimum since usage has gone down significantly",
                                14, 1, 1.0, 30.8, 30.8,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
+
+        var events = tester.nodeRepository().applications().get(application1).get().cluster(cluster1.id()).get().scalingEvents();
+        events.forEach(e -> System.out.println(e));
     }
 
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
@@ -222,6 +225,40 @@ public class AutoscalingTest {
         tester.assertResources("Scaling up since resource usage is too high",
                                7, 1, 2.5,  80.0, 80.0,
                                tester.suggest(application1, cluster1.id(), min, max).target());
+    }
+
+    @Test
+    public void not_using_out_of_service_measurements() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources(2, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(5, 1, new NodeResources(100, 1000, 1000, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 2, 1, resources);
+        tester.addMeasurements(0.5f, 0.6f, 0.7f, 1, false, true, 120, application1);
+        assertTrue("Not scaling up since nodes were measured while cluster was unstable",
+                   tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
+    }
+
+    @Test
+    public void not_using_unstable_measurements() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources(2, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(5, 1, new NodeResources(100, 1000, 1000, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 2, 1, resources);
+        tester.addMeasurements(0.5f, 0.6f, 0.7f, 1, true, false, 120, application1);
+        assertTrue("Not scaling up since nodes were measured while cluster was unstable",
+                   tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
     }
 
     @Test

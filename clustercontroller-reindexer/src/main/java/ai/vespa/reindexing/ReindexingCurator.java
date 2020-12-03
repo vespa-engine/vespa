@@ -140,7 +140,7 @@ public class ReindexingCurator {
 
     }
 
-    /** Indicates that taking the reindexing lock failed within the alotted time. */
+    /** Indicates that taking the reindexing lock failed within the allotted time. */
     static class ReindexingLockException extends Exception {
 
         ReindexingLockException(UncheckedTimeoutException cause) {

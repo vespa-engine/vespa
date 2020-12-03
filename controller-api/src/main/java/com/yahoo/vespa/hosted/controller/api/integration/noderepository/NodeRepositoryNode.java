@@ -94,6 +94,8 @@ public class NodeRepositoryNode {
     private String reservedTo;
     @JsonProperty("exclusiveTo")
     private String exclusiveTo;
+    @JsonProperty("switchHostname")
+    private String switchHostname;
 
     public String getUrl() {
         return url;
@@ -397,6 +399,14 @@ public class NodeRepositoryNode {
 
     public void setExclusiveTo(String exclusiveTo) { this.exclusiveTo = exclusiveTo; }
 
+    public String getSwitchHostname() {
+        return switchHostname;
+    }
+
+    public void setSwitchHostname(String switchHostname) {
+        this.switchHostname = switchHostname;
+    }
+
     @Override
     public String toString() {
         return "NodeRepositoryNode{" +
@@ -436,6 +446,8 @@ public class NodeRepositoryNode {
                ", modelName=" + modelName +
                ", reservedTo=" + reservedTo +
                ", exclusiveTo=" + exclusiveTo +
+               ", switchHostname=" + switchHostname +
                '}';
     }
+
 }

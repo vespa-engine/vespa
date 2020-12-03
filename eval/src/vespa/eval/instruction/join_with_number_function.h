@@ -26,7 +26,7 @@ public:
     bool inplace() const;
     bool result_is_mutable() const override { return true; }
 
-    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };

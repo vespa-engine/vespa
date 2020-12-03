@@ -70,7 +70,7 @@ public class CuratorDatabaseClient {
     private static final Path containerImagesPath = root.append("dockerImages");
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
 
-    private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
+    private static final Duration defaultLockTimeout = Duration.ofMinutes(6);
 
     private final NodeSerializer nodeSerializer;
     private final CuratorDatabase db;

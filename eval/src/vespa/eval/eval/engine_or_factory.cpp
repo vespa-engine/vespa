@@ -4,7 +4,6 @@
 #include "fast_value.h"
 #include "simple_value.h"
 #include "value_codec.h"
-#include "simple_tensor_engine.h"
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_map.h>
@@ -139,6 +138,7 @@ EngineOrFactory::rename(const Value &a, const std::vector<vespalib::string> &fro
 void
 EngineOrFactory::set(EngineOrFactory wanted)
 {
+    assert(wanted.is_factory());
     auto engine = get_shared(wanted);
     if (engine._value != wanted._value) {
         auto msg = fmt("EngineOrFactory: trying to set implementation to [%s] when [%s] is already in use",
@@ -159,9 +159,6 @@ EngineOrFactory::to_string() const
     if (is_engine()) {
         if (&engine() == &tensor::DefaultTensorEngine::ref()) {
             return "DefaultTensorEngine";
-        }
-        if (&engine() == &SimpleTensorEngine::ref()) {
-            return "SimpleTensorEngine";
         }
     }
     if (is_factory()) {

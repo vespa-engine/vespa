@@ -83,7 +83,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
       _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, manageActiveBucketCopies),
-      _externalOperationHandler(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, _idealStateManager, compReg),
+      _externalOperationHandler(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo,
+                                _idealStateManager, _operationOwner, compReg),
       _threadPool(threadPool),
       _initializingIsUp(true),
       _doneInitializeHandler(doneInitHandler),
@@ -142,12 +143,6 @@ const PendingMessageTracker&
 Distributor::getPendingMessageTracker() const
 {
     return _pendingMessageTracker;
-}
-
-BucketOwnership
-Distributor::checkOwnershipInPendingState(const document::Bucket &b) const
-{
-    return _bucketDBUpdater.checkOwnershipInPendingState(b);
 }
 
 const lib::ClusterState*
@@ -217,6 +212,7 @@ void Distributor::onClose() {
     }
 
     LOG(debug, "Distributor::onClose invoked");
+    _pendingMessageTracker.abort_deferred_tasks();
     _bucketDBUpdater.flush();
     _externalOperationHandler.close_pending();
     _operationOwner.onClose();

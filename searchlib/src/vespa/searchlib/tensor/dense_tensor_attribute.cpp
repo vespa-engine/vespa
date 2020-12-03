@@ -19,7 +19,6 @@ using search::attribute::LoadUtils;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::slime::ObjectInserter;
-using vespalib::tensor::MutableDenseTensorView;
 
 namespace search::tensor {
 
@@ -173,14 +172,14 @@ DenseTensorAttribute::getTensor(DocId docId) const
     return _denseTensorStore.getTensor(ref);
 }
 
-void
-DenseTensorAttribute::extract_dense_view(DocId docId, MutableDenseTensorView &tensor) const
+vespalib::eval::TypedCells
+DenseTensorAttribute::extract_cells_ref(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
         ref = _refVector[docId];
     }
-    _denseTensorStore.getTensor(ref, tensor);
+    return _denseTensorStore.get_typed_cells(ref);
 }
 
 bool

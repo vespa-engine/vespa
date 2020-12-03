@@ -72,8 +72,7 @@ public class ClusterMembership {
                "/" + index +
                ( cluster.isExclusive() ? "/exclusive" : "") +
                ( retired ? "/retired" : "") +
-               // TODO(mpolden): Write stateful tag once all nodes can read it
-               // ( cluster.isStateful() ? "/stateful" : "") +
+               ( cluster.isStateful() ? "/stateful" : "") +
                ( cluster.combinedId().isPresent() ? "/" + cluster.combinedId().get().value() : "");
 
     }

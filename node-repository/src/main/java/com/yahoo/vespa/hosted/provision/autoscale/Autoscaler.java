@@ -15,8 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The autoscaler makes decisions about the flavor and node count that should be allocated to a cluster
- * based on observed behavior.
+ * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
  *
  * @author bratseth
  */
@@ -60,8 +59,8 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        if (unstable(clusterNodes, nodeRepository))
+        ClusterSpec clusterSpec = clusterNodes.get(0).allocation().get().membership().cluster();
+        if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
         AllocatableClusterResources currentAllocation =
@@ -70,9 +69,13 @@ public class Autoscaler {
         ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
         int measurementsPerNode = clusterTimeseries.measurementsPerNode();
-        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterType))
+        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterSpec))
             return Advice.none("Collecting more data before making new scaling decisions" +
-                               ": Has " + measurementsPerNode + " data points per node");
+                               ": Has " + measurementsPerNode + " data points per node" +
+                               " (all: " + clusterTimeseries.measurementCount +
+                               ", without stale: " + clusterTimeseries.measurementCountWithoutStale +
+                               ", without out of service: " + clusterTimeseries.measurementCountWithoutStaleOutOfService +
+                               ", without unstable: " + clusterTimeseries.measurementCountWithoutStaleOutOfServiceUnstable + ")");
 
         int nodesMeasured = clusterTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
@@ -121,14 +124,14 @@ public class Autoscaler {
     }
 
     private boolean recentlyScaled(Cluster cluster, List<Node> clusterNodes) {
-        Duration downscalingDelay = downscalingDelay(clusterNodes.get(0).allocation().get().membership().cluster().type());
+        Duration downscalingDelay = downscalingDelay(clusterNodes.get(0).allocation().get().membership().cluster());
         return cluster.lastScalingEvent().map(event -> event.at()).orElse(Instant.MIN)
                       .isAfter(nodeRepository.clock().instant().minus(downscalingDelay));
     }
 
     /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */
-    static Duration scalingWindow(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return Duration.ofHours(12);
+    static Duration scalingWindow(ClusterSpec cluster) {
+        if (cluster.isStateful()) return Duration.ofHours(12);
         return Duration.ofMinutes(30);
     }
 
@@ -137,8 +140,8 @@ public class Autoscaler {
     }
 
     /** Measurements are currently taken once a minute. See also scalingWindow */
-    static int minimumMeasurementsPerNode(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return 60;
+    static int minimumMeasurementsPerNode(ClusterSpec cluster) {
+        if (cluster.isStateful()) return 60;
         return 7;
     }
 
@@ -146,23 +149,23 @@ public class Autoscaler {
      * We should wait a while before scaling down after a scaling event as a peak in usage
      * indicates more peaks may arrive in the near future.
      */
-    static Duration downscalingDelay(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return Duration.ofHours(12);
+    static Duration downscalingDelay(ClusterSpec cluster) {
+        if (cluster.isStateful()) return Duration.ofHours(12);
         return Duration.ofHours(1);
     }
 
-    public static boolean unstable(List<Node> nodes, NodeRepository nodeRepository) {
+    public static boolean stable(List<Node> nodes, NodeRepository nodeRepository) {
         // The cluster is processing recent changes
         if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                             node.allocation().get().membership().retired() ||
                                             node.allocation().get().isRemovable()))
-            return true;
+            return false;
 
         // A deployment is ongoing
         if (nodeRepository.getNodes(nodes.get(0).allocation().get().owner(), Node.State.reserved).size() > 0)
-            return true;
+            return false;
 
-        return false;
+        return true;
     }
 
     public static class Advice {
@@ -197,6 +200,13 @@ public class Autoscaler {
         private static Advice scaleTo(ClusterResources target) {
             return new Advice(Optional.of(target), true, "Scaling due to load changes");
         }
+
+        @Override
+        public String toString() {
+            return "autoscaling advice: " +
+                   (present ? (target.isPresent() ? "Scale to " + target.get() : "Don't scale") : " None");
+        }
+
     }
 
 }

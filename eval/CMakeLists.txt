@@ -30,7 +30,6 @@ vespa_define_module(
     src/tests/eval/param_usage
     src/tests/eval/reference_evaluation
     src/tests/eval/reference_operations
-    src/tests/eval/simple_tensor
     src/tests/eval/simple_value
     src/tests/eval/tensor_function
     src/tests/eval/tensor_lambda
@@ -61,7 +60,6 @@ vespa_define_module(
     src/tests/tensor/dense_fast_rename_optimizer
     src/tests/tensor/dense_generic_join
     src/tests/tensor/dense_inplace_join_function
-    src/tests/tensor/dense_number_join_function
     src/tests/tensor/dense_pow_as_map_optimizer
     src/tests/tensor/dense_remove_dimension_optimizer
     src/tests/tensor/dense_replace_type_function

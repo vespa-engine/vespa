@@ -81,6 +81,7 @@ public class ScalingSuggestionsMaintainerTest {
                                                                               memory,
                                                                               disk,
                                                                               generation,
+                                                                              true,
                                                                               true))));
         }
     }

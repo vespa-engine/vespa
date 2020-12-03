@@ -31,7 +31,6 @@ public:
     virtual void attach_bucket_info_queue(PendingTracker& tracker) = 0;
     virtual uint32_t get_error_count() const = 0;
     virtual const vespalib::string &get_name() const = 0;
-    virtual bool manages_buckets() const = 0;
     virtual bool manages_timestamp() const = 0;
 };
 

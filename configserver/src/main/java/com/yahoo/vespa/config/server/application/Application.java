@@ -102,6 +102,7 @@ public class Application implements ModelResult {
     /**
      * Gets a config from ZK. Returns null if not found.
      */
+    @SuppressWarnings("deprecation")
     public ConfigResponse resolveConfig(GetConfigRequest req, ConfigResponseFactory responseFactory) {
         long start = System.currentTimeMillis();
         metricUpdater.incrementRequests();
@@ -137,15 +138,23 @@ public class Application implements ModelResult {
 
         ConfigInstance.Builder builder;
         ConfigPayload payload;
+        boolean applyOnRestart = false;
         try {
             builder = model.getConfigInstance(configKey, def);
-            if (builder instanceof GenericConfig.GenericConfigBuilder) {
+            if (builder == null) { // TODO: Remove this condition after December 2020
+                payload = model.getConfig(configKey, def);
+                if (def.getCNode() != null)
+                    payload.applyDefaultsFromDef(def.getCNode());
+            }
+            else if (builder instanceof GenericConfig.GenericConfigBuilder) {
                 payload = ((GenericConfig.GenericConfigBuilder) builder).getPayload();
+                applyOnRestart = builder.getApplyOnRestart();
             }
             else {
                 try {
-                    ConfigInstance instance = builder.buildInstance(def.getCNode());
+                    ConfigInstance instance = ConfigInstanceBuilder.buildInstance(builder, def.getCNode());
                     payload = ConfigPayload.fromInstance(instance);
+                    applyOnRestart = builder.getApplyOnRestart();
                 } catch (ConfigurationRuntimeException e) {
                     // This can happen in cases where services ask for config that no longer exist before they have been able
                     // to reconfigure themselves
@@ -163,7 +172,7 @@ public class Application implements ModelResult {
         ConfigResponse configResponse = responseFactory.createResponse(payload,
                                                                        applicationGeneration,
                                                                        internalRedeploy,
-                                                                       builder.getApplyOnRestart());
+                                                                       applyOnRestart);
         metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
         if (useCache(req)) {
             cache.put(cacheKey, configResponse, configResponse.getConfigMd5());
@@ -218,4 +227,5 @@ public class Application implements ModelResult {
     public Set<String> allConfigIds() {
         return model.allConfigIds();
     }
+
 }

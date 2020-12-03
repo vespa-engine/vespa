@@ -35,7 +35,6 @@ private:
     static EngineOrFactory _default;
     static EngineOrFactory get_shared(EngineOrFactory hint);
 public:
-    EngineOrFactory(const TensorEngine &engine_in) : _value(&engine_in) {}
     EngineOrFactory(const ValueBuilderFactory &factory_in) : _value(&factory_in) {}
     bool is_engine() const { return std::holds_alternative<engine_t>(_value); }
     bool is_factory() const { return std::holds_alternative<factory_t>(_value); }

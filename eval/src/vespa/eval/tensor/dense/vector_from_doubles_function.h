@@ -30,7 +30,7 @@ public:
         return _self.resultType.dimensions()[0].name;
     }
     size_t size() const { return _self.resultSize; }
-    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };

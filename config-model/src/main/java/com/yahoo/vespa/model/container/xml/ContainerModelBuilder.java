@@ -207,17 +207,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
-        Element zkElement = XML.getChild(spec, "zookeeper");
-        if (zkElement == null) return;
+        if (!hasZooKeeper(spec)) return;
         Element nodesElement = XML.getChild(spec, "nodes");
         boolean isCombined = nodesElement != null && nodesElement.hasAttribute("of");
         if (isCombined) {
             throw new IllegalArgumentException("A combined cluster cannot run ZooKeeper");
         }
-        int nodeCount = cluster.getContainers().size();
-        if (nodeCount < MIN_ZOOKEEPER_NODE_COUNT || nodeCount > MAX_ZOOKEEPER_NODE_COUNT || nodeCount % 2 == 0) {
-            throw new IllegalArgumentException("Clusters running ZooKeeper must have an odd number of nodes, between " +
-                                               MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT);
+        long nonRetiredNodes = cluster.getContainers().stream().filter(c -> !c.isRetired()).count();
+        if (nonRetiredNodes < MIN_ZOOKEEPER_NODE_COUNT || nonRetiredNodes > MAX_ZOOKEEPER_NODE_COUNT || nonRetiredNodes % 2 == 0) {
+            throw new IllegalArgumentException("Cluster with ZooKeeper needs an odd number of nodes, between " +
+                                               MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT +
+                                               ", have " + nonRetiredNodes + " non-retired");
         }
         cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
 
@@ -377,7 +377,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
 
-            boolean enforceHandshakeClientAuth = context.properties().useAccessControlTlsHandshakeClientAuth() &&
+            boolean enforceHandshakeClientAuth = context.properties().featureFlags().useAccessControlTlsHandshakeClientAuth() &&
                     cluster.getHttp().getAccessControl()
                     .map(accessControl -> accessControl.clientAuthentication)
                     .map(clientAuth -> clientAuth.equals(AccessControl.ClientAuthentication.need))
@@ -589,7 +589,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                       Element nodesElement, ConfigModelContext context) {
         applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
 
-        if (!cluster.getJvmGCOptions().isPresent()) {
+        if (cluster.getJvmGCOptions().isEmpty()) {
             String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
             cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState(), jvmGCOptions));
         }
@@ -617,7 +617,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (nodesElement == null) {
             cluster.addContainers(allocateWithoutNodesTag(cluster, context));
         } else {
-            List<ApplicationContainer> nodes = createNodes(cluster, nodesElement, context);
+            List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
             Element jvmElement = XML.getChild(nodesElement, "jvm");
             if (jvmElement == null) {
@@ -628,7 +628,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
-            if (environmentVars != null && !environmentVars.isEmpty()) {
+            if (!environmentVars.isEmpty()) {
                 cluster.setEnvironmentVars(environmentVars);
             }
             if (useCpuSocketAffinity(nodesElement))
@@ -648,15 +648,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return sb.toString();
     }
     
-    private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+    private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
         if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
             return createNodesFromNodeType(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("of")) // hosted node spec referencing a content cluster
             return createNodesFromContentServiceReference(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("count")) // regular, hosted node spec
-            return createNodesFromNodeCount(cluster, nodesElement, context);
+            return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
         else if (cluster.isHostedVespa() && cluster.getZone().environment().isManuallyDeployed()) // default to 1 in manual zones
-            return createNodesFromNodeCount(cluster, nodesElement, context);
+            return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }
@@ -720,12 +720,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return List.of(node);
     }
 
-    private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
+    private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
-                                                                                  log);
+                                                                                  log,
+                                                                                  hasZooKeeper(containerElement));
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
@@ -862,7 +863,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addIncludes(Element parentElement) {
         List<Element> includes = XML.getChildren(parentElement, IncludeDirs.INCLUDE);
-        if (includes == null || includes.isEmpty()) {
+        if (includes.isEmpty()) {
             return;
         }
         if (app == null) {
@@ -938,6 +939,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                     .map(ConfigServerSpec::getHostName)
                                                     .orElse("unknown") // Currently unable to test this, hence the unknown
                         ));
+    }
+
+    private static boolean hasZooKeeper(Element spec) {
+        return XML.getChild(spec, "zookeeper") != null;
     }
 
     /** Disallow renderers named "XmlRenderer" or "JsonRenderer" */

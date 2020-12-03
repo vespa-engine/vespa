@@ -54,15 +54,6 @@ TensorSpec perform_partial_add(const TensorSpec &a, const TensorSpec &b) {
     return spec_from_value(*up);
 }
 
-TensorSpec perform_old_add(const TensorSpec &a, const TensorSpec &b) {
-    const auto &engine = tensor::DefaultTensorEngine::ref();
-    auto lhs = engine.from_spec(a);
-    auto rhs = engine.from_spec(b);
-    auto up = tensor::TensorPartialUpdate::add(*lhs, *rhs, engine);
-    EXPECT_TRUE(up);
-    return engine.to_spec(*up);
-}
-
 TEST(PartialAddTest, partial_add_works_for_simple_values) {
     ASSERT_TRUE((add_layouts.size() % 2) == 0);
     for (size_t i = 0; i < add_layouts.size(); i += 2) {
@@ -70,18 +61,6 @@ TEST(PartialAddTest, partial_add_works_for_simple_values) {
         TensorSpec rhs = spec(add_layouts[i + 1], Div16(N()));
         SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
         auto expect = reference_add(lhs, rhs);
-        auto actual = perform_partial_add(lhs, rhs);
-        EXPECT_EQ(actual, expect);
-    }
-}
-
-TEST(PartialAddTest, partial_add_works_like_old_add) {
-    ASSERT_TRUE((add_layouts.size() % 2) == 0);
-    for (size_t i = 0; i < add_layouts.size(); i += 2) {
-        TensorSpec lhs = spec(add_layouts[i], N());
-        TensorSpec rhs = spec(add_layouts[i + 1], Div16(N()));
-        SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-        auto expect = perform_old_add(lhs, rhs);
         auto actual = perform_partial_add(lhs, rhs);
         EXPECT_EQ(actual, expect);
     }

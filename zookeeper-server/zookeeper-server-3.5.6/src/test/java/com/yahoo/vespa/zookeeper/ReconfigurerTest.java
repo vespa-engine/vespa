@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.stream.IntStream;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -36,13 +37,18 @@ public class ReconfigurerTest {
     @Test
     public void testStartupAndReconfigure() {
         Reconfigurer reconfigurer = new Reconfigurer();
-        reconfigurer.startOrReconfigure(createConfig(1));
+        ZookeeperServerConfig initialConfig = createConfig(3);
+        reconfigurer.startOrReconfigure(initialConfig);
+        assertEquals(initialConfig, reconfigurer.existingConfig());
 
         // Created config has dynamicReconfig set to false
-        assertFalse(reconfigurer.shouldReconfigure(createConfig(2)));
+        assertFalse(reconfigurer.shouldReconfigure(createConfig(3)));
 
-        // Created config has dynamicReconfig set to true
-        assertTrue(reconfigurer.shouldReconfigure(createConfigAllowReconfiguring(2)));
+        // Increase number of servers, created config has dynamicReconfig set to true
+        assertReconfiguration(5, reconfigurer);
+
+        // Decrease number of servers, Created config has dynamicReconfig set to true
+        assertReconfiguration(1, reconfigurer);
 
         // Test that equal config does not cause reconfiguration
         Reconfigurer reconfigurer2 = new Reconfigurer();
@@ -77,6 +83,35 @@ public class ReconfigurerTest {
         builder.electionPort(electionPort);
         builder.quorumPort(quorumPort);
         return builder;
+    }
+
+    private void assertReconfiguration(int numberOfServers, Reconfigurer reconfigurer) {
+        ZookeeperServerConfig existingConfig = reconfigurer.existingConfig();
+        int currentServerCount = reconfigurer.existingConfig().server().size();
+        int expectedLeavingServers = Math.max(0, currentServerCount - numberOfServers);
+        ZookeeperServerConfig newConfig = createConfigAllowReconfiguring(numberOfServers);
+        assertTrue(reconfigurer.shouldReconfigure(newConfig));
+        Reconfigurer.ReconfigurationInfo reconfigurationInfo = new Reconfigurer.ReconfigurationInfo(existingConfig, newConfig);
+        StringBuilder joiningServers = new StringBuilder();
+        for (int electionPort = 0; electionPort < numberOfServers; electionPort++) {
+            int quorumPort = electionPort + 1;
+            joiningServers.append(electionPort)
+                          .append("=localhost:")
+                          .append(quorumPort).append(":")
+                          .append(electionPort)
+                          .append(",");
+        }
+        joiningServers.setLength(joiningServers.length() - 1); // Remove trailing comma
+        assertEquals(joiningServers.toString(), reconfigurationInfo.joiningServers());
+        StringBuilder leavingServers = new StringBuilder();
+        for (int i = 0; i < expectedLeavingServers; i++) {
+            leavingServers.append(i + 1)
+                          .append(",");
+        }
+        if (leavingServers.length() > 0) {
+            leavingServers.setLength(leavingServers.length() - 1); // Remove trailing comma
+        }
+        assertEquals(leavingServers.toString(), reconfigurationInfo.leavingServers());
     }
 
 }

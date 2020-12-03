@@ -39,7 +39,7 @@ struct StreamedFilterView : Value::Index::View
 
     bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override {
         while (const auto block = label_blocks.next_block()) {
-            idx_out = block.ss_idx;
+            idx_out = block.subspace_index;
             bool matches = true;
             size_t out_idx = 0;
             size_t vdm_idx = 0;
@@ -73,7 +73,7 @@ struct StreamedIterationView : Value::Index::View
 
     bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override {
         if (auto block = label_blocks.next_block()) {
-            idx_out = block.ss_idx;
+            idx_out = block.subspace_index;
             size_t i = 0;
             assert(addr_out.size() == block.address.size());
             for (auto ptr : addr_out) {

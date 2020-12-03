@@ -23,6 +23,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
@@ -75,7 +76,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         super(parentCtx);
         this.users = users;
         this.controller = controller;
-        this.enable_public_signup_flow = Flags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
+        this.enable_public_signup_flow = PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
         this.maxTrialTenants = Flags.MAX_TRIAL_TENANTS.bindTo(flagSource);
     }
 

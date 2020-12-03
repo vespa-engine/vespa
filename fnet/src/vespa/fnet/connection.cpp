@@ -347,7 +347,7 @@ done_read:
     }
 
     UpdateTimeOut();
-    uint32_t maxSize = GetConfig()->_maxInputBufferSize;
+    uint32_t maxSize = getConfig()._maxInputBufferSize;
     if (maxSize > 0 && _input.GetBufSize() > maxSize)
     {
         if (!_flags._gotheader || _packetLength < maxSize) {
@@ -430,7 +430,7 @@ FNET_Connection::Write()
         }
     }
 
-    uint32_t maxSize = GetConfig()->_maxOutputBufferSize;
+    uint32_t maxSize = getConfig()._maxOutputBufferSize;
     if (maxSize > 0 && _output.GetBufSize() > maxSize) {
         _output.Shrink(maxSize);
     }

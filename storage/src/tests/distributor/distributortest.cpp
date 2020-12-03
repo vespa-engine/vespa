@@ -13,6 +13,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <thread>
@@ -556,10 +557,8 @@ TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state
     getBucketDBUpdater().onSetSystemState(stateCmd);
 
     document::BucketId nonOwnedBucket(16, 3);
-    EXPECT_FALSE(getBucketDBUpdater().checkOwnershipInPendingState(makeDocumentBucket(nonOwnedBucket)).isOwned());
-    EXPECT_FALSE(getBucketDBUpdater().getDistributorComponent()
-                     .checkOwnershipInPendingAndCurrentState(makeDocumentBucket(nonOwnedBucket))
-                     .isOwned());
+    EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_state(nonOwnedBucket).isOwned());
+    EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_and_current_state(nonOwnedBucket).isOwned());
 
     std::vector<BucketCopy> copies;
     copies.emplace_back(1234, 0, api::BucketInfo(0x567, 1, 2));

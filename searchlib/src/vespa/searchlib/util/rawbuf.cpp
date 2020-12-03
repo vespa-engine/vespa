@@ -220,7 +220,7 @@ RawBuf::operator+=(const RawBuf& buffer)
 
 
 bool
-RawBuf::operator==(const RawBuf &buffer)
+RawBuf::operator==(const RawBuf &buffer) const
 {
     size_t nbytes = buffer.GetUsedLen();
     if (nbytes != GetUsedLen())

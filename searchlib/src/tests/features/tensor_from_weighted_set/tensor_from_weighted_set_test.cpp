@@ -12,8 +12,8 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
@@ -28,7 +28,7 @@ using search::StringAttribute;
 using vespalib::eval::Value;
 using vespalib::eval::Function;
 using vespalib::eval::TensorSpec;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 
 typedef search::attribute::Config AVC;
 typedef search::attribute::BasicType AVBT;
@@ -37,7 +37,7 @@ typedef search::AttributeVector::SP AttributePtr;
 typedef FtTestApp FTA;
 
 Value::UP make_tensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 Value::UP make_empty(const vespalib::string &type) {

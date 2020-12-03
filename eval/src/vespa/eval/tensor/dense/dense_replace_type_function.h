@@ -16,7 +16,7 @@ public:
     DenseReplaceTypeFunction(const eval::ValueType &result_type,
                              const eval::TensorFunction &child);
     ~DenseReplaceTypeFunction();
-    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return child().result_is_mutable(); }
     static const DenseReplaceTypeFunction &create_compact(const eval::ValueType &result_type,
             const eval::TensorFunction &child,

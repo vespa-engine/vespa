@@ -72,7 +72,7 @@ ProtonConfigurer::setAllowReconfig(bool allowReconfig)
         _allowReconfig = allowReconfig;
         if (allowReconfig) {
             // Ensure that pending config is applied
-            _executor.execute(makeLambdaTask([=]() { performReconfigure(); }));
+            _executor.execute(makeLambdaTask([this]() { performReconfigure(); }));
         }
     }
     if (!allowReconfig) {
@@ -102,7 +102,7 @@ ProtonConfigurer::reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     std::lock_guard<std::mutex> guard(_mutex);
     _pendingConfigSnapshot = configSnapshot;
     if (_allowReconfig) {
-        _executor.execute(makeLambdaTask([=]() { performReconfigure(); }));
+        _executor.execute(makeLambdaTask([&]() { performReconfigure(); }));
     }
 }
 

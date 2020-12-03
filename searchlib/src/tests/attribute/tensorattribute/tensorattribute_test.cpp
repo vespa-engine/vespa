@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/exceptions.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/fastos/file.h>
@@ -16,7 +17,7 @@
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index_factory.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index_saver.h>
-#include <vespa/searchlib/tensor/serialized_tensor_attribute.h>
+#include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -40,7 +41,7 @@ using search::tensor::DefaultNearestNeighborIndexFactory;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::DirectTensorAttribute;
 using search::tensor::DocVectorAccess;
-using search::tensor::SerializedTensorAttribute;
+using search::tensor::SerializedFastValueAttribute;
 using search::tensor::HnswIndex;
 using search::tensor::HnswNode;
 using search::tensor::NearestNeighborIndex;
@@ -52,7 +53,7 @@ using vespalib::eval::TensorSpec;
 using vespalib::eval::CellType;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 
 using DoubleVector = std::vector<double>;
 using generation_t = vespalib::GenerationHandler::generation_t;
@@ -62,7 +63,7 @@ vespalib::string denseSpec("tensor(x[2],y[3])");
 vespalib::string vec_2d_spec("tensor(x[2])");
 
 Value::UP createTensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 TensorSpec
@@ -344,7 +345,7 @@ struct Fixture {
         } else if (_traits.use_direct_tensor_attribute) {
             return std::make_shared<DirectTensorAttribute>(_name, _cfg);
         } else {
-            return std::make_shared<SerializedTensorAttribute>(_name, _cfg);
+            return std::make_shared<SerializedFastValueAttribute>(_name, _cfg);
         }
     }
 
@@ -904,7 +905,7 @@ public:
     }
 
     std::unique_ptr<Value> createDenseTensor(const TensorSpec &spec) {
-        return EngineOrFactory::get().from_spec(spec);
+        return SimpleValue::from_spec(spec);
     }
 
     std::unique_ptr<NearestNeighborBlueprint> make_blueprint(double brute_force_limit = 0.05) {

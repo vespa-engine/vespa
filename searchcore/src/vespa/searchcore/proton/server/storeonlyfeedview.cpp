@@ -687,7 +687,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     std::shared_ptr<search::IDestructorCallback> onWriteDone;
     vespalib::Executor::Task::UP removeBatchDoneTask;
     if (explicitReuseLids) {
-        removeBatchDoneTask = makeLambdaTask([=]() { _metaStore.removeBatchComplete(lidsToRemove); });
+        removeBatchDoneTask = makeLambdaTask([this, lidsToRemove]() { _metaStore.removeBatchComplete(lidsToRemove); });
     } else {
         removeBatchDoneTask = makeLambdaTask([]() {});
     }

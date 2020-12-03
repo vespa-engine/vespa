@@ -2,6 +2,8 @@
 #include "distributorcomponent.h"
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
+#include "pendingmessagetracker.h"
+#include <vespa/document/select/parser.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 
@@ -45,47 +47,6 @@ DistributorComponent::getClusterStateBundle() const
 {
     return _distributor.getClusterStateBundle();
 };
-
-std::vector<uint16_t>
-DistributorComponent::getIdealNodes(const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.get_ideal_nodes(bucket.getBucketId());
-}
-
-BucketOwnership
-DistributorComponent::checkOwnershipInPendingAndCurrentState(
-        const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.check_ownership_in_pending_and_current_state(bucket.getBucketId());
-}
-
-bool
-DistributorComponent::ownsBucketInState(
-        const lib::Distribution& distribution,
-        const lib::ClusterState& clusterState,
-        const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_state(distribution, clusterState, bucket.getBucketId());
-}
-
-bool
-DistributorComponent::ownsBucketInState(
-        const lib::ClusterState& clusterState,
-        const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_state(clusterState, bucket.getBucketId());
-}
-
-bool
-DistributorComponent::ownsBucketInCurrentState(const document::Bucket &bucket) const
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucket_space.owns_bucket_in_current_state(bucket.getBucketId());
-}
 
 api::StorageMessageAddress
 DistributorComponent::nodeAddress(uint16_t nodeIndex) const
@@ -167,6 +128,62 @@ DistributorComponent::enumerateUnavailableNodes(
     }
 }
 
+namespace {
+
+/**
+ * Helper class to update entry in bucket database when bucket copies from nodes have changed.
+ */
+class UpdateBucketDatabaseProcessor : public BucketDatabase::EntryUpdateProcessor {
+    const framework::Clock& _clock;
+    const std::vector<BucketCopy>& _changed_nodes;
+    std::vector<uint16_t> _ideal_nodes;
+    bool _reset_trusted;
+public:
+    UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, std::vector<uint16_t> ideal_nodes, bool reset_trusted);
+    virtual ~UpdateBucketDatabaseProcessor();
+    virtual BucketDatabase::Entry create_entry(const document::BucketId& bucket) const override;
+    virtual bool process_entry(BucketDatabase::Entry &entry) const override;
+};
+
+UpdateBucketDatabaseProcessor::UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, std::vector<uint16_t> ideal_nodes, bool reset_trusted)
+    : BucketDatabase::EntryUpdateProcessor(),
+      _clock(clock),
+      _changed_nodes(changed_nodes),
+      _ideal_nodes(std::move(ideal_nodes)),
+      _reset_trusted(reset_trusted)
+{
+}
+
+UpdateBucketDatabaseProcessor::~UpdateBucketDatabaseProcessor() = default;
+
+BucketDatabase::Entry
+UpdateBucketDatabaseProcessor::create_entry(const document::BucketId &bucket) const
+{
+    return BucketDatabase::Entry(bucket, BucketInfo());
+}
+
+bool
+UpdateBucketDatabaseProcessor::process_entry(BucketDatabase::Entry &entry) const
+{
+    // 0 implies bucket was just added. Since we don't know if any other
+    // distributor has run GC on it, we just have to assume this and set the
+    // timestamp to the current time to avoid duplicate work.
+    if (entry->getLastGarbageCollectionTime() == 0) {
+        entry->setLastGarbageCollectionTime(_clock.getTimeInSeconds().getTime());
+    }
+    entry->addNodes(_changed_nodes, _ideal_nodes);
+    if (_reset_trusted) {
+        entry->resetTrusted();
+    }
+    if (entry->getNodeCount() == 0) {
+        LOG(warning, "all nodes in changedNodes set (size %zu) are down, removing dbentry", _changed_nodes.size());
+        return false; // remove entry
+    }
+    return true; // keep entry
+}
+
+}
+
 void
 DistributorComponent::updateBucketDatabase(
         const document::Bucket &bucket,
@@ -175,7 +192,6 @@ DistributorComponent::updateBucketDatabase(
 {
     auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
     assert(!(bucket.getBucketId() == document::BucketId()));
-    BucketDatabase::Entry dbentry = bucketSpace.getBucketDatabase().get(bucket.getBucketId());
 
     BucketOwnership ownership(bucketSpace.check_ownership_in_pending_and_current_state(bucket.getBucketId()));
     if (!ownership.isOwned()) {
@@ -185,22 +201,6 @@ DistributorComponent::updateBucketDatabase(
             bucket.toString().c_str(),
             ownership.getNonOwnedState().toString().c_str());
         return;
-    }
-
-    if (!dbentry.valid()) {
-        if (updateFlags & DatabaseUpdate::CREATE_IF_NONEXISTING) {
-            dbentry = BucketDatabase::Entry(bucket.getBucketId(), BucketInfo());
-        } else {
-            return;
-        }
-    }
-
-    // 0 implies bucket was just added. Since we don't know if any other
-    // distributor has run GC on it, we just have to assume this and set the
-    // timestamp to the current time to avoid duplicate work.
-    if (dbentry->getLastGarbageCollectionTime() == 0) {
-        dbentry->setLastGarbageCollectionTime(
-                getClock().getTimeInSeconds().getTime());
     }
 
     // Ensure that we're not trying to bring any zombie copies into the
@@ -215,27 +215,20 @@ DistributorComponent::updateBucketDatabase(
     }
     // Optimize for common case where we don't have to create a new
     // bucket copy vector
-    if (!found_down_node) {
-        dbentry->addNodes(changedNodes, bucketSpace.get_ideal_nodes(bucket.getBucketId()));
-    } else {
-        std::vector<BucketCopy> upNodes;
+    std::vector<BucketCopy> up_nodes;
+    if (found_down_node) {
+        up_nodes.reserve(changedNodes.size());
         for (uint32_t i = 0; i < changedNodes.size(); ++i) {
             const BucketCopy& copy(changedNodes[i]);
             if (copy.getNode() < available_nodes.size() && available_nodes[copy.getNode()]) {
-                upNodes.emplace_back(copy);
+                up_nodes.emplace_back(copy);
             }
         }
-        dbentry->addNodes(upNodes, bucketSpace.get_ideal_nodes(bucket.getBucketId()));
     }
-    if (updateFlags & DatabaseUpdate::RESET_TRUSTED) {
-        dbentry->resetTrusted();
-    }
-    if (dbentry->getNodeCount() == 0) {
-        LOG(warning, "all nodes in changedNodes set (size %zu) are down, removing dbentry", changedNodes.size());
-        bucketSpace.getBucketDatabase().remove(bucket.getBucketId());
-        return;
-    }
-    bucketSpace.getBucketDatabase().update(dbentry);
+
+    UpdateBucketDatabaseProcessor processor(getClock(), found_down_node ? up_nodes : changedNodes, bucketSpace.get_ideal_nodes(bucket.getBucketId()), (updateFlags & DatabaseUpdate::RESET_TRUSTED) != 0);
+
+    bucketSpace.getBucketDatabase().process_update(bucket.getBucketId(), processor, (updateFlags & DatabaseUpdate::CREATE_IF_NONEXISTING) != 0);
 }
 
 void
@@ -301,6 +294,22 @@ DistributorComponent::createAppropriateBucket(const document::Bucket &bucket)
 bool
 DistributorComponent::initializing() const {
     return _distributor.initializing();
+}
+
+bool
+DistributorComponent::has_pending_message(uint16_t node_index,
+                                          const document::Bucket& bucket,
+                                          uint32_t message_type) const
+{
+    const auto& sender = static_cast<const DistributorMessageSender&>(getDistributor());
+    return sender.getPendingMessageTracker().hasPendingMessage(node_index, bucket, message_type);
+}
+
+std::unique_ptr<document::select::Node>
+DistributorComponent::parse_selection(const vespalib::string& selection) const
+{
+    document::select::Parser parser(*getTypeRepo()->documentTypeRepo, getBucketIdFactory());
+    return parser.parse(selection);
 }
 
 }

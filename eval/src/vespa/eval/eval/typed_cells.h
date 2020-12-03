@@ -4,7 +4,7 @@
 
 #include <assert.h>
 #include <vespa/vespalib/util/arrayref.h>
-#include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/cell_type.h>
 
 namespace vespalib::eval {
 

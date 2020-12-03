@@ -625,6 +625,22 @@ struct InsertAtEndMergingProcessor : BucketDatabase::MergingProcessor {
     }
 };
 
+struct EntryUpdateProcessor : BucketDatabase::EntryUpdateProcessor {
+    using Entry = BucketDatabase::Entry;
+    std::function<bool(Entry&)> _func;
+    EntryUpdateProcessor(std::function<bool(Entry&)> func)
+        : _func(std::move(func))
+    {
+    }
+    ~EntryUpdateProcessor() override = default;
+    BucketDatabase::Entry create_entry(const document::BucketId& bucket) const override {
+        return BucketDatabase::Entry(bucket, BucketInfo());
+    }
+    bool process_entry(Entry& entry) const override {
+        return(_func(entry));
+    }
+};
+
 }
 
 TEST_P(BucketDatabaseTest, merge_keep_unchanged_result_does_not_alter_db_contents) {
@@ -702,6 +718,25 @@ TEST_P(BucketDatabaseTest, merge_can_insert_entry_at_end) {
               "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
               "BucketId(0x4000000000000003) : "
               "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n");
+}
+
+TEST_P(BucketDatabaseTest, process_update)
+{
+    using Entry = BucketDatabase::Entry;
+    document::BucketId bucket(16, 2);
+    EXPECT_EQ(dump_db(db()), "");
+    auto update_entry = [](Entry& entry) { entry->addNode(BC(0), toVector<uint16_t>(0)); return true; };
+    EntryUpdateProcessor update_processor(update_entry);
+    db().process_update(bucket, update_processor, false);
+    EXPECT_EQ(dump_db(db()), "");
+    db().process_update(bucket, update_processor, true);
+    EXPECT_EQ(dump_db(db()),
+              "BucketId(0x4000000000000002) : "
+              "node(idx=0,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n");
+    auto remove_entry = [](Entry&) noexcept { return false; };
+    EntryUpdateProcessor remove_processor(remove_entry);
+    db().process_update(bucket, remove_processor, false);
+    EXPECT_EQ(dump_db(db()), "");
 }
 
 TEST_P(BucketDatabaseTest, DISABLED_benchmark_const_iteration) {

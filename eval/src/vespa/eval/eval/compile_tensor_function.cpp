@@ -32,11 +32,11 @@ struct Frame {
 };
 
 struct ProgramCompiler {
-    EngineOrFactory engine;
+    const ValueBuilderFactory &factory;
     Stash &stash;
     std::vector<Frame> stack;
     std::vector<Instruction> prog;
-    ProgramCompiler(EngineOrFactory engine_in, Stash &stash_in) : engine(engine_in), stash(stash_in), stack(), prog() {}
+    ProgramCompiler(const ValueBuilderFactory &factory_in, Stash &stash_in) : factory(factory_in), stash(stash_in), stack(), prog() {}
 
     void append(const std::vector<Instruction> &other_prog) {
         prog.insert(prog.end(), other_prog.begin(), other_prog.end());
@@ -44,9 +44,9 @@ struct ProgramCompiler {
 
     void open(const TensorFunction &node) {
         if (auto if_node = as<tensor_function::If>(node)) {
-            append(compile_tensor_function(engine, if_node->cond(), stash));
-            auto true_prog = compile_tensor_function(engine, if_node->true_child(), stash);
-            auto false_prog = compile_tensor_function(engine, if_node->false_child(), stash);
+            append(compile_tensor_function(factory, if_node->cond(), stash));
+            auto true_prog = compile_tensor_function(factory, if_node->true_child(), stash);
+            auto false_prog = compile_tensor_function(factory, if_node->false_child(), stash);
             true_prog.emplace_back(op_skip, false_prog.size());
             prog.emplace_back(op_skip_if_false, true_prog.size());
             append(true_prog);
@@ -57,7 +57,7 @@ struct ProgramCompiler {
     }
 
     void close(const TensorFunction &node) {
-        prog.push_back(node.compile_self(engine, stash));
+        prog.push_back(node.compile_self(factory, stash));
     }
 
     std::vector<Instruction> compile(const TensorFunction &function) {
@@ -76,8 +76,8 @@ struct ProgramCompiler {
 
 } // namespace vespalib::eval::<unnamed>
 
-std::vector<Instruction> compile_tensor_function(EngineOrFactory engine, const TensorFunction &function, Stash &stash) {
-    ProgramCompiler compiler(engine, stash);
+std::vector<Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash) {
+    ProgramCompiler compiler(factory, stash);
     return compiler.compile(function);
 }
 

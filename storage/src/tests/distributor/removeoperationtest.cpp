@@ -36,6 +36,7 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
 
         op = std::make_unique<RemoveOperation>(
                 getExternalOperationHandler(),
+                getExternalOperationHandler(),
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().

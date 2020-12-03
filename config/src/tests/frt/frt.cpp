@@ -11,9 +11,8 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/simple_buffer.h>
-#include <vespa/fnet/fnet.h>
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/fnet/frt/error.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/config/frt/protocol.h>
 #include <lz4.h>
 #include "config-my.h"

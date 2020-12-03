@@ -147,25 +147,14 @@ public class MetricsReporterTest {
 
         // Verify sum of values across dimensions, and remove these metrics to avoid checking against
         // metric.values below, which is not sensitive to dimensions.
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquire", 3);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquireFailed", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquireTimedOut", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.locked", 3);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.release", 3);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.releaseFailed", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.reentry", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.deadlock", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.nakedRelease", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquireWithoutRelease", 0);
-        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.foreignRelease", 0);
-        metric.remove("lockAttempt.acquireLatency");
         metric.remove("lockAttempt.acquireMaxActiveLatency");
         metric.remove("lockAttempt.acquireHz");
         metric.remove("lockAttempt.acquireLoad");
         metric.remove("lockAttempt.lockedLatency");
-        metric.remove("lockAttempt.lockedMaxActiveLatency");
-        metric.remove("lockAttempt.lockedHz");
         metric.remove("lockAttempt.lockedLoad");
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.acquireTimedOut", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.deadlock", 0);
+        verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.errors", 0);
 
         assertEquals(expectedMetrics, new TreeMap<>(metric.values));
     }

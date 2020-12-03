@@ -4,10 +4,10 @@
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/time.h>
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbmirror.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/fastos/thread.h>
 #include <thread>
 
 using slobrok::api::IMirrorAPI;

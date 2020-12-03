@@ -469,7 +469,7 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
-    if (tensorAttribute->supports_extract_dense_view()) {
+    if (tensorAttribute->supports_extract_cells_ref()) {
         return stash.create<DenseTensorAttributeExecutor>(*tensorAttribute);
     }
     if (tensorAttribute->supports_get_tensor_ref()) {

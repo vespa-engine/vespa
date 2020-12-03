@@ -3,9 +3,13 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
+#include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldset/fieldsets.h>
@@ -129,7 +133,7 @@ ExternalOperationHandlerTest::findNonOwnedUserBucketInState(
     lib::ClusterState state(statestr);
     for (uint64_t i = 1; i < 1000; ++i) {
         document::BucketId bucket(32, i);
-        if (!getExternalOperationHandler().ownsBucketInState(state, makeDocumentBucket(bucket))) {
+        if (!getDistributorBucketSpace().owns_bucket_in_state(state, bucket)) {
             return bucket;
         }
     }
@@ -145,8 +149,8 @@ ExternalOperationHandlerTest::findOwned1stNotOwned2ndInStates(
     lib::ClusterState state2(statestr2);
     for (uint64_t i = 1; i < 1000; ++i) {
         document::BucketId bucket(32, i);
-        if (getExternalOperationHandler().ownsBucketInState(state1, makeDocumentBucket(bucket))
-            && !getExternalOperationHandler().ownsBucketInState(state2, makeDocumentBucket(bucket)))
+        if (getDistributorBucketSpace().owns_bucket_in_state(state1, bucket)
+            && !getDistributorBucketSpace().owns_bucket_in_state(state2, bucket))
         {
             return bucket;
         }
@@ -558,6 +562,80 @@ TEST_F(ExternalOperationHandlerTest, gets_are_sent_with_strong_consistency_by_de
 
 TEST_F(ExternalOperationHandlerTest, gets_are_sent_with_weak_consistency_if_config_enabled) {
     do_test_get_weak_consistency_is_propagated(true);
+}
+
+struct OperationHandlerSequencingTest : ExternalOperationHandlerTest {
+    void SetUp() override {
+        set_up_distributor_for_sequencing_test();
+    }
+
+    static documentapi::TestAndSetCondition bucket_lock_bypass_tas_condition() {
+        return documentapi::TestAndSetCondition(reindexing_bucket_lock_bypass_value());
+    }
+};
+
+TEST_F(OperationHandlerSequencingTest, put_not_allowed_through_locked_bucket_if_special_tas_token_not_present) {
+    auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
+    auto bucket = makeDocumentBucket(document::BucketId(16, 1));
+    auto bucket_handle = getExternalOperationHandler().operation_sequencer().try_acquire(bucket);
+    ASSERT_TRUE(bucket_handle.valid());
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(put));
+}
+
+TEST_F(OperationHandlerSequencingTest, put_allowed_through_locked_bucket_if_special_tas_token_present) {
+    set_up_distributor_for_sequencing_test();
+
+    auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
+    put->setCondition(bucket_lock_bypass_tas_condition());
+
+    auto bucket = makeDocumentBucket(document::BucketId(16, 1));
+    auto bucket_handle = getExternalOperationHandler().operation_sequencer().try_acquire(bucket);
+    ASSERT_TRUE(bucket_handle.valid());
+
+    Operation::SP op;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(put, op));
+}
+
+TEST_F(OperationHandlerSequencingTest, put_with_bucket_lock_tas_token_is_rejected_if_no_bucket_lock_present) {
+    auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
+    put->setCondition(bucket_lock_bypass_tas_condition());
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(put));
+    // TODO determine most appropriate error code here. Want to fail the bucket but
+    // not the entire visitor operation. Will likely need to be revisited (heh!) soon.
+    EXPECT_EQ("ReturnCode(REJECTED, Operation expects a read-for-write bucket lock to be present, "
+              "but none currently exists)",
+              _sender.reply(0)->getResult().toString());
+}
+
+// This test is a variation of the above, but whereas it tests the case where _no_ lock is
+// present, this tests the case where a lock is present but it's not a bucket-level lock.
+TEST_F(OperationHandlerSequencingTest, put_with_bucket_lock_tas_token_is_rejected_if_document_lock_present) {
+    auto put = makePutCommand("testdoctype1", _dummy_id);
+    put->setCondition(bucket_lock_bypass_tas_condition());
+    Operation::SP op;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeUpdateCommand("testdoctype1", _dummy_id), op));
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(put)));
+    EXPECT_EQ("ReturnCode(REJECTED, Operation expects a read-for-write bucket lock to be present, "
+              "but none currently exists)",
+              _sender.reply(0)->getResult().toString());
+}
+
+TEST_F(OperationHandlerSequencingTest, reindexing_visitor_creates_read_for_write_operation) {
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(
+            document::FixedBucketSpaces::default_space(), "reindexingvisitor", "foo", "");
+    Operation::SP op;
+    getExternalOperationHandler().handleMessage(cmd, op);
+    ASSERT_TRUE(op.get() != nullptr);
+    ASSERT_TRUE(dynamic_cast<ReadForWriteVisitorOperationStarter*>(op.get()) != nullptr);
+}
+
+TEST_F(OperationHandlerSequencingTest, reindexing_visitor_library_check_is_case_insensitive) {
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(
+            document::FixedBucketSpaces::default_space(), "ReIndexingVisitor", "foo", "");
+    Operation::SP op;
+    getExternalOperationHandler().handleMessage(cmd, op);
+    ASSERT_TRUE(op.get() != nullptr);
+    ASSERT_TRUE(dynamic_cast<ReadForWriteVisitorOperationStarter*>(op.get()) != nullptr);
 }
 
 // TODO support sequencing of RemoveLocation? It's a mutating operation, but supporting it with

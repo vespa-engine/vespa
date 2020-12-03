@@ -44,7 +44,7 @@ DiskMemUsageForwarder::removeDiskMemUsageListener(IDiskMemUsageListener *listene
 void
 DiskMemUsageForwarder::notifyDiskMemUsage(DiskMemUsageState state)
 {
-    _executor.execute(makeLambdaTask([=]() { forward(state); }));
+    _executor.execute(makeLambdaTask([this, state]() { forward(state); }));
 }
 
 

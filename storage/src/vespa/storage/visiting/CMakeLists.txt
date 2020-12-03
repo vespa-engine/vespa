@@ -6,6 +6,7 @@ vespa_add_library(storage_visitor OBJECT
     dumpvisitorsingle.cpp
     memory_bounded_trace.cpp
     recoveryvisitor.cpp
+    reindexing_visitor.cpp
     testvisitor.cpp
     visitor.cpp
     visitormanager.cpp

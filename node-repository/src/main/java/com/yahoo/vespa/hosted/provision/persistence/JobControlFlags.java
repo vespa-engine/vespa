@@ -3,8 +3,8 @@ package com.yahoo.vespa.hosted.provision.persistence;
 import com.yahoo.concurrent.maintenance.JobControlState;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 
 import java.util.Set;
 
@@ -20,7 +20,7 @@ public class JobControlFlags implements JobControlState {
 
     public JobControlFlags(CuratorDatabaseClient curator, FlagSource flagSource) {
         this.curator = curator;
-        this.inactiveJobsFlag = Flags.INACTIVE_MAINTENANCE_JOBS.bindTo(flagSource);
+        this.inactiveJobsFlag = PermanentFlags.INACTIVE_MAINTENANCE_JOBS.bindTo(flagSource);
     }
 
     @Override
