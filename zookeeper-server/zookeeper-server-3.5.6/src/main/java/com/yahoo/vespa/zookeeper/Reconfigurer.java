@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
@@ -10,8 +11,6 @@ import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -58,35 +57,22 @@ public class Reconfigurer extends AbstractComponent {
         return new ZooKeeperRunner(zookeeperServerConfig);
     }
 
-    void reconfigure(ReconfigurationInfo reconfigurationInfo) {
-        List<String> joiningServers = reconfigurationInfo.joiningServers();
-        List<String> leavingServers = reconfigurationInfo.leavingServers();
+    void reconfigure(ReconfigurationInfo info) {
 
-        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
-                            ", leaving servers: " + leavingServers);
+        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + info.joiningServers() +
+                            ", leaving servers: " + info.leavingServers());
         try {
-            ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(reconfigurationInfo.existingConfig()),
+            ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(info.existingConfig()),
                                                                (int) sessionTimeout.toMillis(),
                                                                null);
 
             long fromConfig = -1;
-            String joiningServersString = String.join(",", joiningServers);
-            String leavingServersString = String.join(",", leavingServers);
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
-            byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServersString, leavingServersString, null, fromConfig, null);
+            byte[] appliedConfig = zooKeeperAdmin.reconfigure(info.joiningServers(), info.leavingServers(), null, fromConfig, null);
             log.log(Level.INFO, "Applied ZooKeeper config: " + new String(appliedConfig, StandardCharsets.UTF_8));
         } catch (IOException | KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Returns items in set a that are not in set b
-     */
-    static List<String> setDifference(List<String> a, List<String> b) {
-        Set<String> ret = new HashSet<>(a);
-        ret.removeAll(b);
-        return new ArrayList<>(ret);
     }
 
     private String connectionSpec(ZookeeperServerConfig config) {
@@ -109,26 +95,26 @@ public class Reconfigurer extends AbstractComponent {
     static class ReconfigurationInfo {
 
         private final ZookeeperServerConfig existingConfig;
-        private final List<String> joiningServers;
-        private final List<String> leavingServers;
+        private final String joiningServers;
+        private final String leavingServers;
 
         public ReconfigurationInfo(ZookeeperServerConfig existingConfig, ZookeeperServerConfig newConfig) {
             this.existingConfig = existingConfig;
-            List<String> originalServers = List.copyOf(servers(existingConfig));
-
-            this.joiningServers = servers(newConfig);
-            this.leavingServers = setDifference(originalServers, servers(newConfig));
+            Set<Integer> existingIds = existingConfig.server().stream().map(ZookeeperServerConfig.Server::id).collect(Collectors.toSet());
+            Set<Integer> newIds = newConfig.server().stream().map(ZookeeperServerConfig.Server::id).collect(Collectors.toSet());
+            this.leavingServers = Sets.difference(existingIds, newIds).stream().map(String::valueOf).collect(Collectors.joining(","));
+            this.joiningServers = servers(newConfig).stream().collect(Collectors.joining(","));
         }
 
         public ZookeeperServerConfig existingConfig() {
             return existingConfig;
         }
 
-        public List<String> joiningServers() {
+        public String joiningServers() {
             return joiningServers;
         }
 
-        public List<String> leavingServers() {
+        public String leavingServers() {
             return leavingServers;
         }
 
