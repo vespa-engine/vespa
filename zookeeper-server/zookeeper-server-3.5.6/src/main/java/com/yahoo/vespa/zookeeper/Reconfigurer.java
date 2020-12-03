@@ -88,14 +88,14 @@ public class Reconfigurer extends AbstractComponent {
 
     private String connectionSpec(ZookeeperServerConfig config) {
         return config.server().stream()
-                     .map(server -> server.hostname() + ":" + server.quorumPort())
+                     .map(server -> server.hostname() + ":" + config.clientPort())
                      .collect(Collectors.joining(","));
     }
 
     private static List<String> servers(ZookeeperServerConfig config) {
         return config.server().stream()
-                .map(server -> server.hostname() + ":" + server.quorumPort() + ":" + server.electionPort())
-                .collect(Collectors.toList());
+                     .map(server -> server.hostname() + ":" + server.quorumPort() + ":" + server.electionPort())
+                     .collect(Collectors.toList());
     }
 
     ZookeeperServerConfig existingConfig() {
