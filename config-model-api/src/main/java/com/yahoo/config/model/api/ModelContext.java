@@ -17,7 +17,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.URI;
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -79,12 +78,6 @@ public interface ModelContext {
 
         default int defaultNumResponseThreads() { return 2; }
 
-        // TODO(bjorncs) Temporary feature flag
-        default double threadPoolSizeFactor() { return 2.0; }
-
-        // TODO(bjorncs) Temporary feature flag
-        default double queueSizeFactor() { return 40.0; };
-
         /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();
 
@@ -108,31 +101,16 @@ public interface ModelContext {
         // TODO Remove on 7.XXX when this is default on.
         boolean useFastValueTensorImplementation();
 
-        // TODO(bjorncs) Temporary feature flag
-        default String proxyProtocol() { return "https+proxy-protocol"; }
-
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
         Optional<ApplicationRoles> applicationRoles();
-
-        // TODO(bjorncs): Temporary feature flag, revisit August 2020
-        default Duration jdiscHealthCheckProxyClientTimeout() { return Duration.ofMillis(100); }
-
-        // TODO(bjorncs): Temporary feature flag
-        default double feedCoreThreadPoolSizeFactor() { return 4.0; }
 
         default Quota quota() {
             return Quota.unlimited();
         }
 
-        // TODO(bjorncs): Temporary feature flag
-        default boolean useNewRestapiHandler() { return true; }
-
         // TODO(mortent): Temporary feature flag
         default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
-
-        // TODO(bjorncs): Temporary feature flag
-        default double jettyThreadpoolSizeFactor() { return 1.0; }
 
     }
 
