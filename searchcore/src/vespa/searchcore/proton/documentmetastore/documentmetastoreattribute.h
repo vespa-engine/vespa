@@ -13,9 +13,6 @@ namespace proton {
  **/
 class DocumentMetaStoreAttribute : public search::NotImplementedAttribute
 {
-protected:
-    void notImplemented() const override __attribute__((noinline));
-
 public:
     DocumentMetaStoreAttribute(const vespalib::string &name=getFixedName());
     ~DocumentMetaStoreAttribute() override;
