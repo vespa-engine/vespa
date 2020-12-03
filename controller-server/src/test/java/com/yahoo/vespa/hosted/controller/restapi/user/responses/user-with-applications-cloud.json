@@ -2,7 +2,7 @@
   "isPublic": true,
   "isCd": false,
   "enable-public-signup-flow": (ignore),
-  "maxTrialTenants": (ignore),
+  "hasTrialCapacity": true,
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",

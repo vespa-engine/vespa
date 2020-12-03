@@ -164,7 +164,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         root.setBool("isCd", controller.system().isCd());
         root.setBool(enable_public_signup_flow.id().toString(),
                 enable_public_signup_flow.with(FetchVector.Dimension.CONSOLE_USER_EMAIL, user.email()).value());
-        root.setBool("maxTrialTenants", maxTrialTenants());
+        root.setBool("hasTrialCapacity", hasTrialCapacity());
 
         toSlime(root.setObject("user"), user);
 
@@ -348,11 +348,11 @@ public class UserApiHandler extends LoggingRequestHandler {
         return new MessageResponse(user + " is no longer a member of " + role);
     }
 
-    private boolean maxTrialTenants() {
-        if (! controller.system().isPublic()) return false;
+    private boolean hasTrialCapacity() {
+        if (! controller.system().isPublic()) return true;
         var existing = controller.tenants().asList().stream().map(Tenant::name).collect(Collectors.toList());
         var trialTenants = controller.serviceRegistry().billingController().tenantsWithPlan(existing, PlanId.from("trial"));
-        return maxTrialTenants.value() > 0 && maxTrialTenants.value() >= trialTenants.size();
+        return maxTrialTenants.value() < 0 || trialTenants.size() < maxTrialTenants.value();
     }
 
     private static Inspector bodyInspector(HttpRequest request) {

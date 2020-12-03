@@ -1,0 +1,12 @@
+{
+  "isPublic": true,
+  "isCd": false,
+  "enable-public-signup-flow": true,
+  "hasTrialCapacity": false,
+  "user": {
+    "name": "Joe Developer",
+    "email": "dev@domail",
+    "nickname": "dev"
+  },
+  "tenants": {}
+}
