@@ -481,10 +481,11 @@ FNET_TransportThread::EventLoopIteration() {
         // sample current time (performed once per event loop iteration)
         _now = steady_clock::now();
 
-        handle_wakeup_events();
-
         // handle io-events
         _selector.dispatch(*this);
+
+        // Must be called after selector.dispatch
+        handle_wakeup_events();
 
         // handle IOC time-outs
         if (getConfig()._iocTimeOut > vespalib::duration::zero()) {
