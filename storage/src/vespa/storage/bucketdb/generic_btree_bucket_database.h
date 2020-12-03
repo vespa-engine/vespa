@@ -99,6 +99,8 @@ public:
     // Returns true if bucket pre-existed in the DB, false otherwise
     bool update(const document::BucketId& bucket, const ValueType& new_entry);
     bool update_by_raw_key(uint64_t bucket_key, const ValueType& new_entry);
+    template <typename EntryUpdateProcessor>
+    void process_update(const document::BucketId &bucket, EntryUpdateProcessor& processor, bool create_if_nonexisting);
 
     template <typename IterValueExtractor, typename Func>
     void find_parents_and_self(const document::BucketId& bucket, Func func) const;
