@@ -15,7 +15,6 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::tensor::MutableDenseTensorView;
 
 using EntryRef = DenseTensorStore::EntryRef;
 
@@ -46,8 +45,8 @@ struct Fixture
         assertTensorView(ref, *expTensor);
     }
     void assertTensorView(EntryRef ref, const Value &expTensor) {
-        MutableDenseTensorView actTensor(store.type());
-        store.getTensor(ref, actTensor);
+        auto cells = store.get_typed_cells(ref);
+        vespalib::eval::DenseValueView actTensor(store.type(), cells);
         EXPECT_EQUAL(expTensor, actTensor);
     }
 };

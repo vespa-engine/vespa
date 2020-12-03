@@ -17,15 +17,6 @@ DocumentMetaStoreAttribute::getFixedName()
     return _G_documentMetaStoreName;
 }
 
-
-void
-DocumentMetaStoreAttribute::notImplemented() const
-{
-    throw vespalib::IllegalStateException(
-            "The function is not implemented for DocumentMetaStoreAttribute");
-}
-
-
 DocumentMetaStoreAttribute::DocumentMetaStoreAttribute(const vespalib::string &name)
     : NotImplementedAttribute(name, Config(BasicType::NONE))
 { }

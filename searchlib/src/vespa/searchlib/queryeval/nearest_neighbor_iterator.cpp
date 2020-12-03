@@ -5,7 +5,6 @@
 
 using search::tensor::DenseTensorAttribute;
 using vespalib::ConstArrayRef;
-using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::TypedCells;
 using vespalib::eval::CellType;
 
@@ -36,10 +35,10 @@ public:
     NearestNeighborImpl(Params params_in)
         : NearestNeighborIterator(params_in),
           _lhs(params().queryTensor.cells()),
-          _fieldTensor(params().tensorAttribute.getTensorType()),
           _lastScore(0.0)
     {
-        assert(is_compatible(_fieldTensor.fast_type(), params().queryTensor.type()));
+        assert(is_compatible(params().tensorAttribute.getTensorType(),
+                             params().queryTensor.type()));
     }
 
     ~NearestNeighborImpl();
@@ -74,13 +73,11 @@ public:
 
 private:
     double computeDistance(uint32_t docId, double limit) {
-        params().tensorAttribute.extract_dense_view(docId, _fieldTensor);
-        auto rhs = _fieldTensor.cells();
+        auto rhs = params().tensorAttribute.extract_cells_ref(docId);
         return params().distanceFunction->calc_with_limit(_lhs, rhs, limit);
     }
 
     TypedCells             _lhs;
-    MutableDenseTensorView _fieldTensor;
     double                 _lastScore;
 };
 
