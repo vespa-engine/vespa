@@ -9,7 +9,7 @@ namespace vespalib { class Stash; }
 
 namespace vespalib::eval {
 
-class ValueBuilderFactory;
+struct ValueBuilderFactory;
 struct TensorFunction;
 
 std::vector<InterpretedFunction::Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash);
