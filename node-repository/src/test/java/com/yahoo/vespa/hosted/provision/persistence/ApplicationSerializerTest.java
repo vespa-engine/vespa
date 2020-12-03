@@ -45,7 +45,8 @@ public class ApplicationSerializerTest {
                                  List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
                                                           new ClusterResources(12, 6, minResources),
                                                           7L,
-                                                          Instant.ofEpochMilli(12345L))),
+                                                          Instant.ofEpochMilli(12345L),
+                                                          Optional.of(Instant.ofEpochMilli(67890L)))),
                                  "Autoscaling status"));
         Application original = new Application(ApplicationId.from("myTenant", "myApplication", "myInstance"),
                                                clusters);

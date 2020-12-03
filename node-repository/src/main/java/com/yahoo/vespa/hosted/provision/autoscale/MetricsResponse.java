@@ -64,7 +64,7 @@ public class MetricsResponse {
 
     private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
         ClusterSpec cluster = node.allocation().get().membership().cluster();
-        return Autoscaler.stable(applicationNodes.cluster(cluster.id()).asList(), nodeRepository);
+        return Autoscaler.stable(applicationNodes.cluster(cluster.id()), nodeRepository);
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {

@@ -257,6 +257,10 @@ public class NodeRepository extends AbstractComponent {
         return NodeList.copyOf(getNodes(inState));
     }
 
+    public NodeList list(ApplicationId application, State ... inState) {
+        return NodeList.copyOf(getNodes(application, inState));
+    }
+
     /** Returns a filterable list of all nodes of an application */
     public NodeList list(ApplicationId application) {
         return NodeList.copyOf(getNodes(application));

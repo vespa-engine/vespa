@@ -14,6 +14,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -90,6 +91,7 @@ public class AutoscalingMaintainerTest {
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
         List<ScalingEvent> events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
         assertEquals(2, events.size());
+        assertEquals(Optional.of(firstMaintenanceTime), events.get(0).completion());
         assertEquals(2, events.get(1).from().nodes());
         assertEquals(4, events.get(1).to().nodes());
         assertEquals(1, events.get(1).generation());
