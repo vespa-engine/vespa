@@ -50,7 +50,7 @@ public interface ModelContext {
     Version wantedNodeVespaVersion();
 
     /**
-     * How to remove temporary feature flags:
+     * How to remove a temporary feature flags:
      * 1)
      * - Remove flag definition from Flags
      * - Remove method implementation from ModelContextImpl.FeatureFlags
@@ -58,8 +58,10 @@ public interface ModelContext {
      * - Remove all usage of below method from config-model
      *
      * 2)
-     *  - Wait for all config-model versions in hosted production to include above changes
-     *  - Remove below method
+     * - (optional) Track Vespa version that introduced changes from 1) in annotation field 'removeAfter'
+     *
+     * 3)
+     *  - Remove below method once all config-model versions in hosted production include changes from 1)
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}) default boolean enableAutomaticReindexing() { return false; }
@@ -132,6 +134,7 @@ public interface ModelContext {
     @Target(ElementType.METHOD)
     @interface ModelFeatureFlag {
         String[] owners();
+        String removeAfter() default "";
         String comment() default "";
     }
 
