@@ -1,14 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "vector_from_doubles_function.h"
-#include "dense_tensor_view.h"
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::tensor {
 
+using eval::CellType;
+using eval::DenseValueView;
+using eval::TensorFunction;
+using eval::TypedCells;
 using eval::Value;
 using eval::ValueType;
-using eval::TensorFunction;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;
@@ -34,7 +36,7 @@ void my_vector_from_doubles_op(eval::InterpretedFunction::State &state, uint64_t
     size_t numCells = self.resultSize;
     using MyTypify = eval::TypifyCellType;
     TypedCells cells = typify_invoke<1,MyTypify,CallVectorFromDoubles>(ct, state, numCells);
-    const Value &result = state.stash.create<DenseTensorView>(self.resultType, cells);
+    const Value &result = state.stash.create<DenseValueView>(self.resultType, cells);
     state.stack.emplace_back(result);
 }
 

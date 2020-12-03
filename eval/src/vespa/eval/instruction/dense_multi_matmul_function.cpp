@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_multi_matmul_function.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
@@ -36,7 +35,7 @@ void my_cblas_double_multi_matmul_op(InterpretedFunction::State &state, uint64_t
                     rhs, self.rhs_common_inner() ? self.common_size() : self.rhs_size(),
                     0.0, dst, self.rhs_size());
     }
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type(), TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type(), TypedCells(dst_cells)));
 }
 
 void my_cblas_float_multi_matmul_op(InterpretedFunction::State &state, uint64_t param) {
@@ -57,7 +56,7 @@ void my_cblas_float_multi_matmul_op(InterpretedFunction::State &state, uint64_t 
                     rhs, self.rhs_common_inner() ? self.common_size() : self.rhs_size(),
                     0.0, dst, self.rhs_size());
     }
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type(), TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type(), TypedCells(dst_cells)));
 }
 
 InterpretedFunction::op_function my_select(CellType cell_type) {

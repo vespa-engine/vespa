@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_simple_map_function.h"
-#include "dense_tensor_view.h"
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
@@ -11,10 +10,12 @@ namespace vespalib::tensor {
 
 using vespalib::ArrayRef;
 
+using eval::DenseValueView;
+using eval::TensorFunction;
+using eval::TypedCells;
+using eval::TypifyCellType;
 using eval::Value;
 using eval::ValueType;
-using eval::TensorFunction;
-using eval::TypifyCellType;
 using eval::as;
 
 using namespace eval::operation;
@@ -43,7 +44,7 @@ void my_simple_map_op(State &state, uint64_t param) {
     auto dst_cells = make_dst_cells<CT, inplace>(src_cells, state.stash);
     apply_op1_vec(dst_cells.begin(), src_cells.begin(), dst_cells.size(), my_fun);
     if (!inplace) {
-        state.pop_push(state.stash.create<DenseTensorView>(child.type(), TypedCells(dst_cells)));
+        state.pop_push(state.stash.create<DenseValueView>(child.type(), TypedCells(dst_cells)));
     }
 }
 

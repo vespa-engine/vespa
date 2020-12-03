@@ -103,7 +103,7 @@ void my_dense_simple_concat_op(State &state, uint64_t param_in) {
     for (size_t i = 0; i < b.size(); ++i) {
         *pos++ = b[i];
     }
-    Value &ref = state.stash.create<tensor::DenseTensorView>(param.res_type, TypedCells(result));
+    Value &ref = state.stash.create<DenseValueView>(param.res_type, TypedCells(result));
     state.pop_pop_push(ref);
 }
 

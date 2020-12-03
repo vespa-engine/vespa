@@ -49,7 +49,7 @@ void my_simple_expand_op(State &state, uint64_t param) {
         apply_op2_vec_num(dst, inner_cells.begin(), outer_cell, inner_cells.size(), my_op);
         dst += inner_cells.size();
     }
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(params.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(params.result_type, TypedCells(dst_cells)));
 }
 
 //-----------------------------------------------------------------------------

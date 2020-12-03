@@ -7,6 +7,7 @@
 
 namespace vespalib::tensor {
 
+using eval::DenseValueView;
 using eval::Value;
 using eval::DoubleValue;
 using eval::ValueType;
@@ -27,7 +28,7 @@ void my_tensor_create_op(eval::InterpretedFunction::State &state, uint64_t param
         cells[pending_cells] = (CT) state.peek(0).as_double();
         state.stack.pop_back();
     }
-    const Value &result = state.stash.create<DenseTensorView>(self.result_type, TypedCells(cells)); 
+    const Value &result = state.stash.create<DenseValueView>(self.result_type, TypedCells(cells)); 
     state.stack.emplace_back(result);
 }
 
