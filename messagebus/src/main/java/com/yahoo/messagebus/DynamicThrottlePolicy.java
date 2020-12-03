@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  * <p>
  * The algorithm works by increasing the number of messages allowed to be pending, the <em>winidow size</em>, until
  * this no longer increases throughput. At this point, the algorithm is driven by synthetic attraction towards latencies
- * which satisfy <code>log10(1 / latency) % 1 = e</code>, for some constant <code>0 < e < 1</code>. Weird? Most certainly!
+ * which satisfy <code>log10(1 / latency) % 1 = e</code>, for some constant <code>0 &lt; e &lt; 1</code>. Weird? Most certainly!
  * </p><p>
  * The effect is that the window size the algorithm produces, for a saturated ideal server, has a level for each power
  * of ten with an attractor the window size tends towards while on this level, determined by the <code>e</code> above.
