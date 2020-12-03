@@ -8,7 +8,7 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
@@ -126,7 +126,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.healthChecker = healthChecker;
         this.clock = clock;
         this.warmUpDuration = warmUpDuration;
-        this.containerCpuCap = Flags.CONTAINER_CPU_CAP.bindTo(flagSource);
+        this.containerCpuCap = PermanentFlags.CONTAINER_CPU_CAP.bindTo(flagSource);
     }
 
     @Override
