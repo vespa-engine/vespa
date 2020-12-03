@@ -8,6 +8,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -23,8 +24,9 @@ import java.util.stream.Collectors;
  * @author hmusum
  */
 public class Reconfigurer extends AbstractComponent {
+
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
-    private static final int sessionTimeoutInSeconds = 30;
+    private static final Duration sessionTimeout = Duration.ofSeconds(30);
 
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig zookeeperServerConfig;
@@ -64,7 +66,9 @@ public class Reconfigurer extends AbstractComponent {
                             ", leaving servers: " + leavingServers +
                             ", new members: " + addedServers);
         try {
-            ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(reconfigurationInfo.existingConfig()), sessionTimeoutInSeconds, null);
+            ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(reconfigurationInfo.existingConfig()),
+                                                               (int) sessionTimeout.toMillis(),
+                                                               null);
 
             long fromConfig = -1;
             String joiningServersString = String.join(",", joiningServers);
