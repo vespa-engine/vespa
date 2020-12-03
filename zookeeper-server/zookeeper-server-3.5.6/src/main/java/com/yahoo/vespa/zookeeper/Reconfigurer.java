@@ -8,6 +8,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -61,7 +62,7 @@ public class Reconfigurer extends AbstractComponent {
         List<String> joiningServers = reconfigurationInfo.joiningServers();
         List<String> leavingServers = reconfigurationInfo.leavingServers();
 
-        log.log(Level.INFO, "Will reconfigure zookeeper cluster. Joining servers: " + joiningServers +
+        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers);
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(reconfigurationInfo.existingConfig()),
@@ -72,7 +73,8 @@ public class Reconfigurer extends AbstractComponent {
             String joiningServersString = String.join(",", joiningServers);
             String leavingServersString = String.join(",", leavingServers);
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
-            zooKeeperAdmin.reconfigure(joiningServersString, leavingServersString, null, fromConfig, null);
+            byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServersString, leavingServersString, null, fromConfig, null);
+            log.log(Level.INFO, "Applied ZooKeeper config: " + new String(appliedConfig, StandardCharsets.UTF_8));
         } catch (IOException | KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
         }
