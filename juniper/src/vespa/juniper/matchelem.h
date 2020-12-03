@@ -4,7 +4,7 @@
 #pragma once
 
 #include <string>
-#include "multiset.h"
+#include <set>
 #include "querynode.h"
 
 class Matcher;
@@ -20,7 +20,7 @@ struct sequential_elem
         return m1->starttoken() < m2->starttoken();
     }
 };
-typedef JUNIPER_SET<key_occ*, sequential_elem<key_occ*> > keylist;
+typedef std::set<key_occ*, sequential_elem<key_occ*> > keylist;
 
 class MatchElement
 {

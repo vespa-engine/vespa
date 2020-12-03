@@ -16,7 +16,6 @@
 
 #include <vector>
 #include <list>
-#include "multiset.h"
 #include <map>
 #include <string>
 #include "ITokenProcessor.h"
