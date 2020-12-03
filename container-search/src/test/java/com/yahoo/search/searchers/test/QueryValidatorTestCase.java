@@ -30,7 +30,7 @@ public class QueryValidatorTestCase {
         new QueryValidator().search(new Query("?query=mystring:foo"), execution);
 
         try {
-            new QueryValidator().search(new Query("?query=sddocname%3Aproduct%20lfmModel25KeysV0%3A9%2A%20mytensor1%3A%3E0"), execution);
+            new QueryValidator().search(new Query("?query=mytensor1:foo"), execution);
             fail("Expected validation error");
         }
         catch (IllegalArgumentException e) {
@@ -39,7 +39,7 @@ public class QueryValidatorTestCase {
         }
 
         try {
-            new QueryValidator().search(new Query("?query=sddocname%3Aproduct%20lfmModel25KeysV0%3A9%2A%20mytensor2%3A%3E0"), execution);
+            new QueryValidator().search(new Query("?query=mytensor2:foo"), execution);
             fail("Expected validation error");
         }
         catch (IllegalArgumentException e) {
