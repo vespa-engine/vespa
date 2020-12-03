@@ -1,15 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor.h"
-#include "default_tensor_engine.h"
 #include <sstream>
 
 namespace vespalib::tensor {
 
-Tensor::Tensor()
-    : eval::Tensor(DefaultTensorEngine::ref())
-{
-}
+Tensor::Tensor() : eval::Tensor() {}
 
 bool
 Tensor::supported(TypeList types)
