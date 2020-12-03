@@ -3,7 +3,6 @@
 #include "dense_lambda_function.h"
 #include "dense_tensor_view.h"
 #include <vespa/vespalib/objects/objectvisitor.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <assert.h>
@@ -15,7 +14,6 @@ using eval::CompiledFunction;
 using eval::InterpretedFunction;
 using eval::LazyParams;
 using eval::PassParams;
-using eval::TensorEngine;
 using eval::TensorFunction;
 using eval::Value;
 using eval::DoubleValue;
@@ -103,11 +101,11 @@ struct InterpretedParams {
     const std::vector<size_t> &bindings;
     size_t num_cells;
     InterpretedFunction fun;
-    InterpretedParams(const Lambda &lambda, eval::EngineOrFactory engine)
+    InterpretedParams(const Lambda &lambda, const ValueBuilderFactory &factory)
         : result_type(lambda.result_type()),
           bindings(lambda.bindings()),
           num_cells(result_type.dense_subspace_size()),
-          fun(engine, lambda.lambda().root(), lambda.types())
+          fun(factory, lambda.lambda().root(), lambda.types())
     {
         assert(lambda.lambda().num_params() == (result_type.dimensions().size() + bindings.size()));
     }
@@ -157,7 +155,7 @@ DenseLambdaFunction::eval_mode() const
 }
 
 Instruction
-DenseLambdaFunction::compile_self(eval::EngineOrFactory engine, Stash &stash) const
+DenseLambdaFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
     auto mode = eval_mode();
     using MyTypify = eval::TypifyCellType;
@@ -167,7 +165,7 @@ DenseLambdaFunction::compile_self(eval::EngineOrFactory engine, Stash &stash) co
         return Instruction(op, wrap_param<CompiledParams>(params));
     } else {
         assert(mode == EvalMode::INTERPRETED);
-        InterpretedParams &params = stash.create<InterpretedParams>(_lambda, engine);
+        InterpretedParams &params = stash.create<InterpretedParams>(_lambda, factory);
         auto op = typify_invoke<1,MyTypify,MyInterpretedLambdaOp>(result_type().cell_type());
         return Instruction(op, wrap_param<InterpretedParams>(params));
     }

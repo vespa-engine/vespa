@@ -2,8 +2,8 @@
 
 #include "constant_tensor_loader.h"
 #include <vespa/eval/eval/tensor.h>
-#include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/lz4_input_decoder.h>
@@ -82,7 +82,7 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         vespalib::Memory content = file.get();
         vespalib::nbostream stream(content.data, content.size);
         try {
-            return std::make_unique<SimpleConstantValue>(_engine.decode(stream));
+            return std::make_unique<SimpleConstantValue>(decode_value(stream, _factory));
         } catch (std::exception &) {
             return std::make_unique<BadConstantValue>();
         }
@@ -104,7 +104,7 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         spec.add(address, cells[i]["value"].asDouble());
     }
     try {
-        return std::make_unique<SimpleConstantValue>(_engine.from_spec(spec));
+        return std::make_unique<SimpleConstantValue>(value_from_spec(spec, _factory));
     } catch (std::exception &) {
         return std::make_unique<BadConstantValue>();
     }

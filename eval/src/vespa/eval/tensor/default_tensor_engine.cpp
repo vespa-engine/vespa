@@ -27,6 +27,7 @@
 #include "dense/dense_tensor_create_function.h"
 #include <vespa/eval/instruction/dense_tensor_peek_function.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/operation.h>

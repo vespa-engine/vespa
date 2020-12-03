@@ -24,7 +24,7 @@ public:
     ~DenseCellRangeFunction() override;
     size_t offset() const { return _offset; }
     size_t length() const { return _length; }
-    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return child().result_is_mutable(); }
 };
 

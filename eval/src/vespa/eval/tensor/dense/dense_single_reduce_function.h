@@ -48,7 +48,7 @@ public:
     size_t inner_size() const { return _inner_size; }
     eval::Aggr aggr() const { return _aggr; }
     bool result_is_mutable() const override { return true; }
-    eval::InterpretedFunction::Instruction compile_self(eval::EngineOrFactory engine, Stash &stash) const override;
+    eval::InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
 };
 

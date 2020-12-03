@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/tensor/dense/dense_replace_type_function.h>
@@ -13,7 +14,7 @@ using namespace vespalib::eval;
 using namespace vespalib::tensor;
 using namespace vespalib;
 
-EngineOrFactory prod_factory{FastValueBuilderFactory::get()};
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 TypedCells getCellsRef(const eval::Value &value) {
     return value.cells();
@@ -23,7 +24,7 @@ struct ChildMock : Leaf {
     bool is_mutable;
     ChildMock(const ValueType &type) : Leaf(type), is_mutable(true) {}
     bool result_is_mutable() const override { return is_mutable; }
-    InterpretedFunction::Instruction compile_self(EngineOrFactory, Stash &) const override { abort(); }
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &, Stash &) const override { abort(); }
 };
 
 struct Fixture {
@@ -34,7 +35,7 @@ struct Fixture {
     std::vector<TensorFunction::Child::CREF> children;
     InterpretedFunction::State               state;
     Fixture()
-        : my_value(prod_factory.from_spec(spec({x(10)}, N()))),
+        : my_value(value_from_spec(spec({x(10)}, N()), prod_factory)),
           new_type(ValueType::from_spec("tensor(x[5],y[2])")),
           mock_child(my_value->type()),
           my_fun(new_type, mock_child),

@@ -53,7 +53,7 @@ DenseLambdaPeekFunction::DenseLambdaPeekFunction(const ValueType &result_type,
 DenseLambdaPeekFunction::~DenseLambdaPeekFunction() = default;
 
 InterpretedFunction::Instruction
-DenseLambdaPeekFunction::compile_self(EngineOrFactory, Stash &stash) const
+DenseLambdaPeekFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     const Self &self = stash.create<Self>(result_type(), *_idx_fun);
     using MyTypify = TypifyCellType;

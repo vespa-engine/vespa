@@ -4,6 +4,7 @@
 #include "eval_fixture.h"
 #include "reference_evaluation.h"
 #include <vespa/eval/eval/make_tensor_function.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/optimize_tensor_function.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -81,14 +82,14 @@ const TensorFunction &maybe_patch(bool allow_mutable, const TensorFunction &plai
     return root.get();
 }
 
-std::vector<Value::UP> make_params(EngineOrFactory engine, const Function &function,
+std::vector<Value::UP> make_params(const ValueBuilderFactory &factory, const Function &function,
                                    const ParamRepo &param_repo)
 {
     std::vector<Value::UP> result;
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
         ASSERT_TRUE(pos != param_repo.map.end());
-        result.push_back(engine.from_spec(pos->second.value));
+        result.push_back(value_from_spec(pos->second.value, factory));
     }
     return result;
 }
@@ -188,29 +189,29 @@ EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_muta
         ASSERT_TRUE(pos != param_repo.map.end());
         bool allow_tampering = allow_mutable && pos->second.is_mutable;
         if (!allow_tampering) {
-            ASSERT_EQUAL(pos->second.value, _engine.to_spec(*_param_values[i]));
+            ASSERT_EQUAL(pos->second.value, spec_from_value(*_param_values[i]));
         }
     }
 }
 
-EvalFixture::EvalFixture(EngineOrFactory engine,
+EvalFixture::EvalFixture(const ValueBuilderFactory &factory,
                          const vespalib::string &expr,
                          const ParamRepo &param_repo,
                          bool optimized,
                          bool allow_mutable)
-    : _engine(engine),
+    : _factory(factory),
       _stash(),
       _function(verify_function(Function::parse(expr))),
       _node_types(get_types(*_function, param_repo)),
       _mutable_set(get_mutable(*_function, param_repo)),
-      _plain_tensor_function(make_tensor_function(_engine, _function->root(), _node_types, _stash)),
+      _plain_tensor_function(make_tensor_function(_factory, _function->root(), _node_types, _stash)),
       _patched_tensor_function(maybe_patch(allow_mutable, _plain_tensor_function, _mutable_set, _stash)),
-      _tensor_function(optimized ? optimize_tensor_function(engine, _patched_tensor_function, _stash) : _patched_tensor_function),
-      _ifun(_engine, _tensor_function),
+      _tensor_function(optimized ? optimize_tensor_function(_factory, _patched_tensor_function, _stash) : _patched_tensor_function),
+      _ifun(_factory, _tensor_function),
       _ictx(_ifun),
-      _param_values(make_params(_engine, *_function, param_repo)),
+      _param_values(make_params(_factory, *_function, param_repo)),
       _params(get_refs(_param_values)),
-      _result(_engine.to_spec(_ifun.eval(_ictx, _params)))
+      _result(spec_from_value(_ifun.eval(_ictx, _params)))
 {
     auto result_type = ValueType::from_spec(_result.type());
     ASSERT_TRUE(!result_type.is_error());
@@ -221,7 +222,7 @@ const TensorSpec
 EvalFixture::get_param(size_t idx) const
 {
     ASSERT_LESS(idx, _param_values.size());
-    return _engine.to_spec(*(_param_values[idx]));
+    return spec_from_value(*(_param_values[idx]));
 }
 
 size_t

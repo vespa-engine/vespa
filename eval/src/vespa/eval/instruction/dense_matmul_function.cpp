@@ -160,7 +160,7 @@ DenseMatMulFunction::DenseMatMulFunction(const ValueType &result_type,
 DenseMatMulFunction::~DenseMatMulFunction() = default;
 
 InterpretedFunction::Instruction
-DenseMatMulFunction::compile_self(EngineOrFactory, Stash &stash) const
+DenseMatMulFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     using MyTypify = TypifyValue<TypifyCellType,TypifyBool>;
     Self &self = stash.create<Self>(result_type(), _lhs_size, _common_size, _rhs_size);
