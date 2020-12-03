@@ -69,17 +69,6 @@ TensorSpec perform_partial_modify(const TensorSpec &a, const TensorSpec &b, join
     return spec_from_value(*up);
 }
 
-TensorSpec perform_old_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
-    const auto &engine = tensor::DefaultTensorEngine::ref();
-    auto lhs = engine.from_spec(a);
-    auto rhs = engine.from_spec(b);
-    EXPECT_TRUE(tensor::TensorPartialUpdate::check_suitably_sparse(*rhs, engine));
-    auto up = tensor::TensorPartialUpdate::modify(*lhs, fun, *rhs, engine);
-    EXPECT_TRUE(up);
-    return engine.to_spec(*up);
-}
-
-
 TEST(PartialModifyTest, partial_modify_works_for_simple_values) {
     ASSERT_TRUE((modify_layouts.size() % 2) == 0);
     for (size_t i = 0; i < modify_layouts.size(); i += 2) {
@@ -95,20 +84,6 @@ TEST(PartialModifyTest, partial_modify_works_for_simple_values) {
         auto expect = reference_modify(lhs, rhs, fun);
         auto actual = perform_partial_modify(lhs, rhs, fun);
         EXPECT_EQ(actual, expect);
-    }
-}
-
-TEST(PartialModifyTest, partial_modify_works_like_old_modify) {
-    ASSERT_TRUE((modify_layouts.size() % 2) == 0);
-    for (size_t i = 0; i < modify_layouts.size(); i += 2) {
-        TensorSpec lhs = spec(modify_layouts[i], N());
-        TensorSpec rhs = spec(modify_layouts[i + 1], Div16(N()));
-        SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-        for (auto fun: {operation::Add::f, operation::Mul::f, operation::Sub::f}) {
-            auto expect = perform_old_modify(lhs, rhs, fun);
-            auto actual = perform_partial_modify(lhs, rhs, fun);
-            EXPECT_EQ(actual, expect);
-        }
     }
 }
 

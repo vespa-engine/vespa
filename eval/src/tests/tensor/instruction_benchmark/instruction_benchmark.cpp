@@ -254,22 +254,18 @@ struct Impl {
 //-----------------------------------------------------------------------------
 
 Impl             optimized_fast_value_impl(0, "          Optimized FastValue", "NEW PROD", FastValueBuilderFactory::get(), true);
-Impl  optimized_default_tensor_engine_impl(1, "Optimized DefaultTensorEngine", "OLD PROD", DefaultTensorEngine::ref(), true);
-Impl                       fast_value_impl(2, "                    FastValue", "   FastV", FastValueBuilderFactory::get(), false);
-Impl            default_tensor_engine_impl(3, "          DefaultTensorEngine", "DefaultT", DefaultTensorEngine::ref(), false);
-Impl                     simple_value_impl(4, "                  SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
+Impl                       fast_value_impl(1, "                    FastValue", "   FastV", FastValueBuilderFactory::get(), false);
+Impl                     simple_value_impl(2, "                  SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
 vespalib::string                                                  short_header("--------");
 
 constexpr double budget = 5.0;
 constexpr double best_limit = 0.95; // everything within 95% of best performance gets a star
-constexpr double bad_limit = 0.90;  // BAD: new prod has performance lower than 90% of old prod
-constexpr double good_limit = 1.10; // GOOD: new prod has performance higher than 110% of old prod
+constexpr double bad_limit = 0.90;  // BAD: optimized has performance lower than 90% of un-optimized
+constexpr double good_limit = 1.10; // GOOD: optimized has performance higher than 110% of un-optimized
 
 std::vector<CREF<Impl>> impl_list = {simple_value_impl,
                                      optimized_fast_value_impl,
-                                     optimized_default_tensor_engine_impl,
-                                     fast_value_impl,
-                                     default_tensor_engine_impl};
+                                     fast_value_impl};
 
 //-----------------------------------------------------------------------------
 
@@ -1086,7 +1082,7 @@ int main(int argc, char **argv) {
     if ((argc > 1) && (argv[1] == run_only_prod_option )) {
         impl_list.clear();
         impl_list.push_back(optimized_fast_value_impl);
-        impl_list.push_back(optimized_default_tensor_engine_impl);
+        impl_list.push_back(fast_value_impl);
         ++argv;
         --argc;
     }
