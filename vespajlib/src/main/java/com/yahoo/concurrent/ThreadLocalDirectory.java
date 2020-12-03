@@ -95,7 +95,7 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
          * This might be an empty list, creating a new counter set to zero, or
          * even copying the current state of LocalInstance.current.
          * LocalInstance.current will be set to the value received from this
-         * factory after invokation this method.
+         * factory after invocation this method.
          *
          * <p>
          * The first time this method is invoked for a thread, previous will be
@@ -223,7 +223,7 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
         // Has to set registered before adding to the list. Otherwise, the
         // instance might be removed from the list, set as unregistered, and
         // then the local thread might happily remove that information. The Java
-        // memory model is a guarantuee for the minimum amount of visibility,
+        // memory model is a guarantee for the minimum amount of visibility,
         // not a definition of the actual amount.
         q.setRegistered(true);
         synchronized (directoryLock) {
