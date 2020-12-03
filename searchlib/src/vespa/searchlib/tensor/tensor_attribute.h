@@ -47,7 +47,7 @@ public:
     void onGenerationChange(generation_t generation) override;
     bool addDoc(DocId &docId) override;
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
-    void extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const override;
+    vespalib::eval::TypedCells extract_dense_view(uint32_t docid) const override;
     const vespalib::eval::Value& get_tensor_ref(uint32_t docid) const override;
     bool supports_extract_dense_view() const override { return false; }
     bool supports_get_tensor_ref() const override { return false; }

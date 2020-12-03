@@ -186,20 +186,16 @@ TensorAttribute::getEmptyTensor() const
     return EngineOrFactory::get().copy(*_emptyTensor);
 }
 
-void
-TensorAttribute::extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const
+vespalib::eval::TypedCells
+TensorAttribute::extract_dense_view(uint32_t /*docid*/) const
 {
-    (void) docid;
-    (void) tensor;
     notImplemented();
 }
 
 const vespalib::eval::Value&
-TensorAttribute::get_tensor_ref(uint32_t docid) const
+TensorAttribute::get_tensor_ref(uint32_t /*docid*/) const
 {
-    (void) docid;
     notImplemented();
-    abort(); // Needed to avoid compile error
 }
 
 const vespalib::eval::ValueType &

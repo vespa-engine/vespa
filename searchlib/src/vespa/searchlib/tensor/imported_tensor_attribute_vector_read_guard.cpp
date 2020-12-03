@@ -48,10 +48,10 @@ ImportedTensorAttributeVectorReadGuard::getEmptyTensor() const
     return _target_tensor_attribute.getEmptyTensor();
 }
 
-void
-ImportedTensorAttributeVectorReadGuard::extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const
+vespalib::eval::TypedCells
+ImportedTensorAttributeVectorReadGuard::extract_dense_view(uint32_t docid) const
 {
-    _target_tensor_attribute.extract_dense_view(getTargetLid(docid), tensor);
+    return _target_tensor_attribute.extract_dense_view(getTargetLid(docid));
 }
 
 const vespalib::eval::Value&
