@@ -37,7 +37,7 @@ public class ReconfigurerTest {
     @Test
     public void testStartupAndReconfigure() {
         Reconfigurer reconfigurer = new Reconfigurer();
-        ZookeeperServerConfig initialConfig = createConfig(2);
+        ZookeeperServerConfig initialConfig = createConfig(3);
         reconfigurer.startOrReconfigure(initialConfig);
         assertEquals(initialConfig, reconfigurer.existingConfig());
 
@@ -45,7 +45,7 @@ public class ReconfigurerTest {
         assertFalse(reconfigurer.shouldReconfigure(createConfig(3)));
 
         // Increase number of servers, created config has dynamicReconfig set to true
-        assertReconfiguration(3, reconfigurer);
+        assertReconfiguration(5, reconfigurer);
 
         // Decrease number of servers, Created config has dynamicReconfig set to true
         assertReconfiguration(1, reconfigurer);
@@ -89,14 +89,29 @@ public class ReconfigurerTest {
         ZookeeperServerConfig existingConfig = reconfigurer.existingConfig();
         int currentServerCount = reconfigurer.existingConfig().server().size();
         int expectedLeavingServers = Math.max(0, currentServerCount - numberOfServers);
-        int expectedAddedServers = Math.max(0, numberOfServers - currentServerCount);
-
         ZookeeperServerConfig newConfig = createConfigAllowReconfiguring(numberOfServers);
         assertTrue(reconfigurer.shouldReconfigure(newConfig));
         Reconfigurer.ReconfigurationInfo reconfigurationInfo = new Reconfigurer.ReconfigurationInfo(existingConfig, newConfig);
-        assertEquals(numberOfServers, reconfigurationInfo.joiningServers().size());
-        assertEquals(expectedLeavingServers, reconfigurationInfo.leavingServers().size());
-        assertEquals(expectedAddedServers, reconfigurationInfo.addedServers().size());
+        StringBuilder joiningServers = new StringBuilder();
+        for (int electionPort = 0; electionPort < numberOfServers; electionPort++) {
+            int quorumPort = electionPort + 1;
+            joiningServers.append(electionPort)
+                          .append("=localhost:")
+                          .append(quorumPort).append(":")
+                          .append(electionPort)
+                          .append(",");
+        }
+        joiningServers.setLength(joiningServers.length() - 1); // Remove trailing comma
+        assertEquals(joiningServers.toString(), reconfigurationInfo.joiningServers());
+        StringBuilder leavingServers = new StringBuilder();
+        for (int i = 0; i < expectedLeavingServers; i++) {
+            leavingServers.append(i + 1)
+                          .append(",");
+        }
+        if (leavingServers.length() > 0) {
+            leavingServers.setLength(leavingServers.length() - 1); // Remove trailing comma
+        }
+        assertEquals(leavingServers.toString(), reconfigurationInfo.leavingServers());
     }
 
 }
