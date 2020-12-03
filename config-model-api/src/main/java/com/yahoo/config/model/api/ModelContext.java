@@ -134,7 +134,7 @@ public interface ModelContext {
     @Target(ElementType.METHOD)
     @interface ModelFeatureFlag {
         String[] owners();
-        String removeAfter() default "";
+        String removeAfter() default ""; // On the form "7.100.10"
         String comment() default "";
     }
 
