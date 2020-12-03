@@ -25,14 +25,14 @@ QueryLimiter::grabToken(const Doom & doom)
             _cond.wait_for(guard, left);
         }
     }
-    _activeThreads++;
+    _activeThreads = _activeThreads + 1;
 }
 
 void
 QueryLimiter::releaseToken()
 {
     std::lock_guard<std::mutex> guard(_lock);
-    _activeThreads--;
+    _activeThreads = _activeThreads - 1;
     _cond.notify_one();
 }
 

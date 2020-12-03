@@ -27,16 +27,16 @@ std::ostream & operator << (std::ostream & os, const Array<T> & a)
 
 class Clever {
 public:
-    Clever() : _counter(&_global) { (*_counter)++; }
+    Clever() : _counter(&_global) { *_counter = *_counter + 1; }
     Clever(volatile size_t * counter) :
         _counter(counter)
     {
-        (*_counter)++;
+        *_counter = *_counter + 1;
     }
     Clever(const Clever & rhs) :
         _counter(rhs._counter)
     {
-        (*_counter)++;
+        *_counter = *_counter + 1;
     }
     Clever & operator = (const Clever & rhs)
     {
@@ -50,7 +50,7 @@ public:
     {
         std::swap(_counter, rhs._counter);
     }
-    ~Clever() { (*_counter)--; }
+    ~Clever() { *_counter = *_counter - 1; }
     static size_t getGlobal() { return _global; }
     bool operator == (const Clever & b) const { return _counter == b._counter; }
 private:
