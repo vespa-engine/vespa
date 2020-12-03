@@ -8,9 +8,8 @@ import java.time.Instant;
  *
  * @author bratseth
  */
-public class MetricSnapshot {
+public class MetricSnapshot implements Comparable<MetricSnapshot> {
 
-    // TODO: Order by timestamp
     private final Instant at;
 
     private final double cpu;
@@ -38,6 +37,11 @@ public class MetricSnapshot {
     public long generation() { return generation; }
     public boolean inService() { return inService; }
     public boolean stable() { return stable; }
+
+    @Override
+    public int compareTo(MetricSnapshot other) {
+        return at.compareTo(other.at);
+    }
 
     @Override
     public String toString() { return "metrics at " + at + ":" +

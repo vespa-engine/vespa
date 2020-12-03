@@ -27,8 +27,8 @@ public class ClusterTimeseries {
     final int measurementCountWithoutStaleOutOfService;
     final int measurementCountWithoutStaleOutOfServiceUnstable;
 
-    /** The measurements for all hosts in this snapshot */
-    private final List<NodeTimeseries> nodeTimeseries;
+    /** The measurements for all nodes in this snapshot */
+    private final List<NodeTimeseries> allNodeTimeseries;
 
     public ClusterTimeseries(Cluster cluster, List<Node> clusterNodes, MetricsDb db, NodeRepository nodeRepository) {
         this.clusterNodes = clusterNodes;
@@ -48,7 +48,7 @@ public class ClusterTimeseries {
         timeseries = filter(timeseries, snapshot -> snapshot.stable());
         measurementCountWithoutStaleOutOfServiceUnstable = timeseries.stream().mapToInt(m -> m.size()).sum();
 
-        this.nodeTimeseries = timeseries;
+        this.allNodeTimeseries = timeseries;
     }
 
     /**
@@ -57,23 +57,22 @@ public class ClusterTimeseries {
      */
     private Map<String, Instant> metricStartTimes(Cluster cluster,
                                                   List<Node> clusterNodes,
-                                                  List<NodeTimeseries> nodeTimeseries,
+                                                  List<NodeTimeseries> allNodeTimeseries,
                                                   NodeRepository nodeRepository) {
+        if (cluster.lastScalingEvent().isEmpty()) return Map.of();
+
+        var deployment = cluster.lastScalingEvent().get();
         Map<String, Instant> startTimePerHost = new HashMap<>();
-        if (cluster.lastScalingEvent().isPresent()) {
-            var deployment = cluster.lastScalingEvent().get();
-            for (Node node : clusterNodes) {
-                startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
-                var nodeGenerationMeasurements =
-                        nodeTimeseries.stream().filter(m -> m.hostname().equals(node.hostname())).findAny();
-                if (nodeGenerationMeasurements.isPresent()) {
-                    var firstMeasurementOfCorrectGeneration =
-                            nodeGenerationMeasurements.get().asList().stream()
-                                                      .filter(m -> m.generation() >= deployment.generation())
-                                                      .findFirst();
-                    if (firstMeasurementOfCorrectGeneration.isPresent()) {
-                        startTimePerHost.put(node.hostname(), firstMeasurementOfCorrectGeneration.get().at());
-                    }
+        for (Node node : clusterNodes) {
+            startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
+            var nodeTimeseries = allNodeTimeseries.stream().filter(m -> m.hostname().equals(node.hostname())).findAny();
+            if (nodeTimeseries.isPresent()) {
+                var firstMeasurementOfCorrectGeneration =
+                        nodeTimeseries.get().asList().stream()
+                                                     .filter(m -> m.generation() >= deployment.generation())
+                                                     .findFirst();
+                if (firstMeasurementOfCorrectGeneration.isPresent()) {
+                    startTimePerHost.put(node.hostname(), firstMeasurementOfCorrectGeneration.get().at());
                 }
             }
         }
@@ -82,19 +81,19 @@ public class ClusterTimeseries {
 
     /** Returns the average number of measurements per node */
     public int measurementsPerNode() {
-        int measurementCount = nodeTimeseries.stream().mapToInt(m -> m.size()).sum();
+        int measurementCount = allNodeTimeseries.stream().mapToInt(m -> m.size()).sum();
         return measurementCount / clusterNodes.size();
     }
 
     /** Returns the number of nodes measured in this */
     public int nodesMeasured() {
-        return nodeTimeseries.size();
+        return allNodeTimeseries.size();
     }
 
     /** Returns the average load of this resource in this */
     public double averageLoad(Resource resource) {
-        int measurementCount = nodeTimeseries.stream().mapToInt(m -> m.size()).sum();
-        double measurementSum = nodeTimeseries.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
+        int measurementCount = allNodeTimeseries.stream().mapToInt(m -> m.size()).sum();
+        double measurementSum = allNodeTimeseries.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
         return measurementSum / measurementCount;
     }
 
