@@ -74,12 +74,8 @@ vespa_define_module(
     src/tests/tensor/partial_add
     src/tests/tensor/partial_modify
     src/tests/tensor/partial_remove
-    src/tests/tensor/tensor_add_operation
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance
-    src/tests/tensor/tensor_modify_operation
-    src/tests/tensor/tensor_remove_operation
-    src/tests/tensor/tensor_serialization
     src/tests/tensor/typed_cells
     src/tests/tensor/vector_from_doubles_function
 

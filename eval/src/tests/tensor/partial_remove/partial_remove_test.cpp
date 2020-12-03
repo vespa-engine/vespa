@@ -3,7 +3,6 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/partial_update.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/util/stringfmt.h>

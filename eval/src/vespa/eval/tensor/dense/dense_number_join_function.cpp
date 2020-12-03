@@ -15,7 +15,6 @@ using eval::CellType;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
-using eval::TensorEngine;
 using eval::TypifyCellType;
 using eval::as;
 

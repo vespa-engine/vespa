@@ -10,7 +10,7 @@
 #include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/instruction/generic_rename.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include "tensor_engine.h"
 #include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -156,11 +156,6 @@ EngineOrFactory::get()
 vespalib::string
 EngineOrFactory::to_string() const
 {
-    if (is_engine()) {
-        if (&engine() == &tensor::DefaultTensorEngine::ref()) {
-            return "DefaultTensorEngine";
-        }
-    }
     if (is_factory()) {
         if (&factory() == &FastValueBuilderFactory::get()) {
             return "FastValueBuilderFactory";
