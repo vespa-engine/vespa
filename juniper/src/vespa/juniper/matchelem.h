@@ -15,7 +15,7 @@ class MatchCandidate;
 template <typename _Elem>
 struct sequential_elem
 {
-    inline bool operator()(_Elem m1, _Elem m2)
+    inline bool operator()(_Elem m1, _Elem m2) const
     {
         return m1->starttoken() < m2->starttoken();
     }
