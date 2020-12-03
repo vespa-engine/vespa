@@ -61,6 +61,12 @@ public class Reconfigurer extends AbstractComponent {
         }
     }
 
+    void shutdown() {
+        if (zooKeeperRunner != null) {
+            zooKeeperRunner.shutdown();
+        }
+    }
+
     private boolean shouldReconfigure(ZookeeperServerConfig newConfig) {
         if (!newConfig.dynamicReconfiguration()) return false;
         if (activeConfig == null) return false;

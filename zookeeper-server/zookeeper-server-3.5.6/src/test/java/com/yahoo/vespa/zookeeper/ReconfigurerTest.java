@@ -2,6 +2,7 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -24,6 +25,7 @@ public class ReconfigurerTest {
 
     private File cfgFile;
     private File idFile;
+    private TestableReconfigurer reconfigurer;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -32,11 +34,11 @@ public class ReconfigurerTest {
     public void setup() throws IOException {
         cfgFile = folder.newFile();
         idFile = folder.newFile("myid");
+        reconfigurer = new TestableReconfigurer();
     }
 
     @Test
     public void testReconfigure() {
-        TestableReconfigurer reconfigurer = new TestableReconfigurer();
         ZookeeperServerConfig initialConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(initialConfig);
         assertSame(initialConfig, reconfigurer.activeConfig());
@@ -67,7 +69,6 @@ public class ReconfigurerTest {
 
     @Test
     public void testDynamicReconfigurationDisabled() {
-        TestableReconfigurer reconfigurer = new TestableReconfigurer();
         ZookeeperServerConfig initialConfig = createConfig(3, false);
         reconfigurer.startOrReconfigure(initialConfig);
         assertSame(initialConfig, reconfigurer.activeConfig());
@@ -76,6 +77,11 @@ public class ReconfigurerTest {
         reconfigurer.startOrReconfigure(nextConfig);
         assertSame(initialConfig, reconfigurer.activeConfig());
         assertEquals(0, reconfigurer.reconfigurations);
+    }
+
+    @After
+    public void stopReconfigurer() {
+       reconfigurer.shutdown();
     }
 
     private ZookeeperServerConfig createConfig(int numberOfServers, boolean dynamicReconfiguration) {
