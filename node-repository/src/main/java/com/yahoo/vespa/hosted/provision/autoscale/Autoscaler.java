@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
@@ -43,7 +44,7 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Advice suggest(Cluster cluster, List<Node> clusterNodes) {
+    public Advice suggest(Cluster cluster, NodeList clusterNodes) {
         return autoscale(cluster, clusterNodes, Limits.empty(), cluster.exclusive());
     }
 
@@ -53,23 +54,22 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Advice autoscale(Cluster cluster, List<Node> clusterNodes) {
+    public Advice autoscale(Cluster cluster, NodeList clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is disabled"); // Shortcut
         return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive());
     }
 
-    private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        ClusterSpec clusterSpec = clusterNodes.get(0).allocation().get().membership().cluster();
+    private Advice autoscale(Cluster cluster, NodeList clusterNodes, Limits limits, boolean exclusive) {
         if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
         AllocatableClusterResources currentAllocation =
-                new AllocatableClusterResources(clusterNodes, nodeRepository, cluster.exclusive());
+                new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
 
         ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
 
         int measurementsPerNode = clusterTimeseries.measurementsPerNode();
-        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterSpec))
+        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterNodes.clusterSpec()))
             return Advice.none("Collecting more data before making new scaling decisions" +
                                ": Has " + measurementsPerNode + " data points per node" +
                                " (all: " + clusterTimeseries.measurementCount +
@@ -123,8 +123,8 @@ public class Autoscaler {
         return ! targetTotal.justNumbers().satisfies(currentTotal.justNumbers());
     }
 
-    private boolean recentlyScaled(Cluster cluster, List<Node> clusterNodes) {
-        Duration downscalingDelay = downscalingDelay(clusterNodes.get(0).allocation().get().membership().cluster());
+    private boolean recentlyScaled(Cluster cluster, NodeList clusterNodes) {
+        Duration downscalingDelay = downscalingDelay(clusterNodes.first().get().allocation().get().membership().cluster());
         return cluster.lastScalingEvent().map(event -> event.at()).orElse(Instant.MIN)
                       .isAfter(nodeRepository.clock().instant().minus(downscalingDelay));
     }
@@ -154,7 +154,7 @@ public class Autoscaler {
         return Duration.ofHours(1);
     }
 
-    public static boolean stable(List<Node> nodes, NodeRepository nodeRepository) {
+    public static boolean stable(NodeList nodes, NodeRepository nodeRepository) {
         // The cluster is processing recent changes
         if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                             node.allocation().get().membership().retired() ||
@@ -162,7 +162,7 @@ public class Autoscaler {
             return false;
 
         // A deployment is ongoing
-        if (nodeRepository.getNodes(nodes.get(0).allocation().get().owner(), Node.State.reserved).size() > 0)
+        if (nodeRepository.getNodes(nodes.first().get().allocation().get().owner(), Node.State.reserved).size() > 0)
             return false;
 
         return true;

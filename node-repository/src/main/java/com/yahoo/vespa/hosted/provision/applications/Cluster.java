@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.applications;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -99,9 +100,16 @@ public class Cluster {
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
+    /** Add or update (based on "at" time) a scaling event */
     public Cluster with(ScalingEvent scalingEvent) {
         List<ScalingEvent> scalingEvents = new ArrayList<>(this.scalingEvents);
-        scalingEvents.add(scalingEvent);
+
+        int existingIndex = eventIndexAt(scalingEvent.at());
+        if (existingIndex >= 0)
+            scalingEvents.set(existingIndex, scalingEvent);
+        else
+            scalingEvents.add(scalingEvent);
+
         prune(scalingEvents);
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
@@ -128,6 +136,14 @@ public class Cluster {
     private void prune(List<ScalingEvent> scalingEvents) {
         while (scalingEvents.size() > maxScalingEvents)
             scalingEvents.remove(0);
+    }
+
+    private int eventIndexAt(Instant at) {
+        for (int i = 0; i < scalingEvents.size(); i++) {
+            if (scalingEvents.get(i).at().equals(at))
+                return i;
+        }
+        return -1;
     }
 
 }

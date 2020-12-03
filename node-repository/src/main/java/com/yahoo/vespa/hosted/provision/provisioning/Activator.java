@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -60,6 +61,7 @@ class Activator {
      *                    while holding the node repository lock on this application
      */
     private void activateNodes(Collection<HostSpec> hosts, long generation, ApplicationTransaction transaction) {
+        Instant activationTime = nodeRepository.clock().instant(); // Use one timestamp for all activation changes
         ApplicationId application = transaction.application();
         Set<String> hostnames = hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
         NodeList allNodes = nodeRepository.list();
@@ -69,7 +71,7 @@ class Activator {
         List<Node> reservedToActivate = updatePortsFrom(hosts, retainHostsInList(hostnames, reserved));
         List<Node> oldActive = applicationNodes.state(Node.State.active).asList(); // All nodes active now
         List<Node> continuedActive = retainHostsInList(hostnames, oldActive);
-        List<Node> newActive = updateFrom(hosts, continuedActive); // All nodes that will be active when this is committed
+        List<Node> newActive = updateFrom(hosts, continuedActive, activationTime); // All nodes that will be active when this is committed
         newActive.addAll(reservedToActivate);
         if ( ! containsAll(hostnames, newActive))
             throw new IllegalArgumentException("Activation of " + application + " failed. " +
@@ -84,16 +86,16 @@ class Activator {
 
         List<Node> activeToRemove = removeHostsFromList(hostnames, oldActive);
         activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired. TODO: Move this line to deactivate
-        nodeRepository.deactivate(activeToRemove, transaction);
+        nodeRepository.deactivate(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
         nodeRepository.activate(newActive, transaction.nested()); // activate also continued active to update node state
 
-        rememberResourceChange(transaction, generation,
+        rememberResourceChange(transaction, generation, activationTime,
                                NodeList.copyOf(oldActive).not().retired(),
                                NodeList.copyOf(newActive).not().retired());
         unreserveParentsOf(reservedToActivate);
     }
 
-    private void rememberResourceChange(ApplicationTransaction transaction, long generation,
+    private void rememberResourceChange(ApplicationTransaction transaction, long generation, Instant at,
                                         NodeList oldNodes, NodeList newNodes) {
         Optional<Application> application = nodeRepository.applications().get(transaction.application());
         if (application.isEmpty()) return; // infrastructure app, hopefully :-|
@@ -106,10 +108,10 @@ class Activator {
             var currentResources = NodeList.copyOf(clusterEntry.getValue()).toResources();
             if ( ! previousResources.equals(currentResources)) {
                 modified = modified.with(application.get().cluster(clusterEntry.getKey()).get()
-                                                          .with(new ScalingEvent(previousResources,
-                                                                                 currentResources,
-                                                                                 generation,
-                                                                                 nodeRepository.clock().instant())));
+                                                          .with(ScalingEvent.create(previousResources,
+                                                                                    currentResources,
+                                                                                    generation,
+                                                                                    at)));
             }
         }
 
@@ -202,11 +204,11 @@ class Activator {
     }
 
     /** Returns the input nodes with the changes resulting from applying the settings in hosts to the given list of nodes. */
-    private List<Node> updateFrom(Collection<HostSpec> hosts, List<Node> nodes) {
+    private List<Node> updateFrom(Collection<HostSpec> hosts, List<Node> nodes, Instant at) {
         List<Node> updated = new ArrayList<>();
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
-            node = hostSpec.membership().get().retired() ? node.retire(nodeRepository.clock().instant()) : node.unretire();
+            node = hostSpec.membership().get().retired() ? node.retire(at) : node.unretire();
             if (! hostSpec.advertisedResources().equals(node.resources())) // A resized node
                 node = node.with(new Flavor(hostSpec.advertisedResources()));
             Allocation allocation = node.allocation().get()

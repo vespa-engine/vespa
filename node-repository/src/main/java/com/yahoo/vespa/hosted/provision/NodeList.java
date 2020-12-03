@@ -183,6 +183,24 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                                                        .findFirst());
     }
 
+    /**
+     * Returns the cluster spec of the nodes in this, without any group designation
+     *
+     * @throws IllegalStateException if there are no nodes in thus list or they do niot all belong
+     *                               to the same cluster
+     */
+    public ClusterSpec clusterSpec() {
+        if (first().isEmpty()) throw new IllegalStateException("No nodes");
+        if (stream().anyMatch(node -> node.allocation().isEmpty()))
+            throw new IllegalStateException("Some nodes are not allocated to a cluster");
+
+        ClusterSpec firstNodeSpec = first().get().allocation().get().membership().cluster().with(Optional.empty());
+        if (stream().map(node -> node.allocation().get().membership().cluster().with(Optional.empty()))
+                    .anyMatch(clusterSpec -> ! clusterSpec.equals(firstNodeSpec)))
+            throw new IllegalStateException("Nodes belong to multiple clusters");
+        return firstNodeSpec;
+    }
+
     public ClusterResources toResources() {
         if (isEmpty()) return new ClusterResources(0, 0, NodeResources.unspecified());
         return new ClusterResources(size(),

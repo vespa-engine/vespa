@@ -204,7 +204,7 @@ class AutoscalingTester {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.autoscale(application.clusters().get(clusterId),
-                                    nodeRepository().getNodes(applicationId, Node.State.active));
+                                    nodeRepository().list(applicationId, Node.State.active));
     }
 
     public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
@@ -215,7 +215,7 @@ class AutoscalingTester {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.suggest(application.clusters().get(clusterId),
-                                  nodeRepository().getNodes(applicationId, Node.State.active));
+                                  nodeRepository().list(applicationId, Node.State.active));
     }
 
     public ClusterResources assertResources(String message,
