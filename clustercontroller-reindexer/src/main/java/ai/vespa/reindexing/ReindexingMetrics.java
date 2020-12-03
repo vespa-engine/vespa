@@ -34,7 +34,7 @@ class ReindexingMetrics {
                        metric.createContext(Map.of("clusterid", cluster,
                                                    "documenttype", type.getName(),
                                                    "state", toString(state))));
-            // Set metric value to -1 for all states not currently active, so we only have one value >= at any given time.
+            // Set metric value to -1 for all states not currently active, so we only have one value >= 0 at any given time.
             for (Reindexing.State unset : EnumSet.complementOf(EnumSet.of(state)))
                 metric.set("reindexing.progress",
                            -1,
