@@ -1,21 +1,22 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/testhelper.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
-#include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
-#include <vespa/storage/storageserver/rpc/message_codec_provider.h>
-#include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
 #include <vespa/storage/storageserver/communicationmanager.h>
-#include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storage/storageserver/message_dispatcher.h>
+#include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
+#include <vespa/storage/storageserver/rpc/message_codec_provider.h>
+#include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
+#include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
+#include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -33,6 +34,8 @@
 using namespace ::testing;
 using namespace document::test;
 using namespace std::chrono_literals;
+
+using storage::spi::BucketLimits;
 
 namespace storage::rpc {
 
@@ -161,7 +164,8 @@ public:
         auto doc_type = _doc_type_repo->getDocumentType("testdoctype1");
         auto doc = std::make_shared<document::Document>(*doc_type, document::DocumentId("id:foo:testdoctype1::bar"));
         doc->setFieldValue(doc->getField("hstringval"), std::make_unique<document::StringFieldValue>("hello world"));
-        return std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), std::move(doc), 100);
+        return std::make_shared<api::PutCommand>
+                (makeDocumentBucket(document::BucketId(BucketLimits::MinUsedBits, 0)), std::move(doc), 100);
     }
 
     void send_request_verify_not_bounced(std::shared_ptr<api::StorageCommand> req) {
