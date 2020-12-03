@@ -11,7 +11,7 @@ namespace storage {
 /**
  * Returns the super bucket key of the given bucket id key based on the minimum used bits allowed.
  */
-uint64_t get_super_bucket_key(const document::BucketId& bucket_id) {
+inline uint64_t get_super_bucket_key(const document::BucketId& bucket_id) noexcept {
     assert(bucket_id.getUsedBits() >= spi::BucketLimits::MinUsedBits);
     // Since bucket keys have count-bits at the LSB positions, we want to look at the MSBs instead.
     return (bucket_id.toKey() >> (64 - spi::BucketLimits::MinUsedBits));
