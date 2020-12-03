@@ -138,6 +138,7 @@ EngineOrFactory::rename(const Value &a, const std::vector<vespalib::string> &fro
 void
 EngineOrFactory::set(EngineOrFactory wanted)
 {
+    assert(wanted.is_factory());
     auto engine = get_shared(wanted);
     if (engine._value != wanted._value) {
         auto msg = fmt("EngineOrFactory: trying to set implementation to [%s] when [%s] is already in use",

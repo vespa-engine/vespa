@@ -19,7 +19,6 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
@@ -78,7 +77,7 @@ void
 set_tensor_implementation(const ProtonConfig& cfg)
 {
     if (cfg.tensorImplementation == ProtonConfig::TensorImplementation::TENSOR_ENGINE) {
-        EngineOrFactory::set(vespalib::tensor::DefaultTensorEngine::ref());
+        LOG(error, "Old tensor engine implementation no longer available");
     } else if (cfg.tensorImplementation == ProtonConfig::TensorImplementation::FAST_VALUE) {
         EngineOrFactory::set(vespalib::eval::FastValueBuilderFactory::get());
     }
