@@ -191,7 +191,7 @@ DenseSimpleJoinFunction::factor() const
 }
 
 Instruction
-DenseSimpleJoinFunction::compile_self(eval::EngineOrFactory, Stash &stash) const
+DenseSimpleJoinFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     const JoinParams &params = stash.create<JoinParams>(result_type(), factor(), function());
     auto op = typify_invoke<6,MyTypify,MyGetFun>(lhs().result_type().cell_type(),

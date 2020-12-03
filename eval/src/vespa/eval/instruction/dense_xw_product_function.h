@@ -44,7 +44,7 @@ public:
     size_t result_size() const { return _result_size; }
     bool common_inner() const { return _common_inner; }
 
-    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };

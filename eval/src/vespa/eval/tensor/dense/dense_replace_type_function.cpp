@@ -34,7 +34,7 @@ DenseReplaceTypeFunction::~DenseReplaceTypeFunction()
 }
 
 eval::InterpretedFunction::Instruction
-DenseReplaceTypeFunction::compile_self(eval::EngineOrFactory, Stash &) const
+DenseReplaceTypeFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     return eval::InterpretedFunction::Instruction(my_replace_type_op, wrap_param<ValueType>(result_type()));
 }

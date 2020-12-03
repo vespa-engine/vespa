@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include "engine_or_factory.h"
-
 namespace vespalib { class Stash; }
 
 namespace vespalib::eval {
 
+class ValueBuilderFactory;
 struct TensorFunction;
 
-const TensorFunction &optimize_tensor_function(EngineOrFactory engine, const TensorFunction &function, Stash &stash);
+const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash);
 
 } // namespace vespalib::eval
