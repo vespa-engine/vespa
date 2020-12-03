@@ -1,19 +1,15 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers.test;
 
-import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.search.Query;
-import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.QueryValidator;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -33,7 +29,7 @@ public class QueryValidatorTestCase {
         new QueryValidator().search(new Query("?query=mystring:foo"), execution);
 
         try {
-            new QueryValidator().search(new Query("?query=mytensor:foo"), execution);
+            new QueryValidator().search(new Query("?query=sddocname%3Aproduct%20lfmModel25KeysV0%3A9%2A%20mytensor%3A%3E0"), execution);
             fail("Excpected validation error");
         }
         catch (IllegalArgumentException e) {
