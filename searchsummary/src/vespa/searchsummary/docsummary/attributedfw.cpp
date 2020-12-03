@@ -3,8 +3,8 @@
 #include "attributedfw.h"
 #include "docsumstate.h"
 #include "docsumwriter.h"
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -25,7 +25,6 @@ using search::attribute::IAttributeVector;
 using vespalib::Memory;
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
-using vespalib::eval::EngineOrFactory;
 using vespalib::eval::Value;
 
 namespace search::docsummary {
@@ -106,7 +105,7 @@ SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type
             const auto tensor = tv->getTensor(docid);
             if (tensor) {
                 vespalib::nbostream str;
-                EngineOrFactory::get().encode(*tensor, str);
+                encode_value(*tensor, str);
                 target.insertData(vespalib::Memory(str.peek(), str.size()));
             }
         }
