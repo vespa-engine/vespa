@@ -81,60 +81,6 @@ EngineOrFactory::copy(const Value &value)
     return decode(stream);
 }
 
-const Value &
-EngineOrFactory::map(const Value &a, operation::op1_t function, Stash &stash) const {
-    if (is_engine()) {
-        return engine().map(a, function, stash);
-    } else {
-        return *stash.create<Value::UP>(GenericMap::perform_map(a, function, factory()));
-    }
-}
-
-const Value &
-EngineOrFactory::join(const Value &a, const Value &b, operation::op2_t function, Stash &stash) const {
-    if (is_engine()) {
-        return engine().join(a, b, function, stash);
-    } else {
-        return *stash.create<Value::UP>(GenericJoin::perform_join(a, b, function, factory()));
-    }
-}
-
-const Value &
-EngineOrFactory::merge(const Value &a, const Value &b, operation::op2_t function, Stash &stash) const {
-    if (is_engine()) {
-        return engine().merge(a, b, function, stash);
-    } else {
-        return *stash.create<Value::UP>(GenericMerge::perform_merge(a, b, function, factory()));
-    }
-}
-
-const Value &
-EngineOrFactory::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const {
-    if (is_engine()) {
-        return engine().reduce(a, aggr, dimensions, stash);
-    } else {
-        return *stash.create<Value::UP>(GenericReduce::perform_reduce(a, aggr, dimensions, factory()));
-    }
-}
-
-const Value &
-EngineOrFactory::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const {
-    if (is_engine()) {
-        return engine().concat(a, b, dimension, stash);
-    } else {
-        return *stash.create<Value::UP>(GenericConcat::perform_concat(a, b, dimension, factory()));
-    }
-}
-
-const Value &
-EngineOrFactory::rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const {
-    if (is_engine()) {
-        return engine().rename(a, from, to, stash);
-    } else {
-        return *stash.create<Value::UP>(GenericRename::perform_rename(a, from, to, factory()));
-    }
-}
-
 void
 EngineOrFactory::set(EngineOrFactory wanted)
 {
