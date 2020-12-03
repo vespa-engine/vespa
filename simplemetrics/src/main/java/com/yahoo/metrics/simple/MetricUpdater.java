@@ -6,7 +6,7 @@ import com.yahoo.concurrent.ThreadLocalDirectory.Updater;
 /**
  * The link between each single thread and the central data store.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 class MetricUpdater implements Updater<Bucket, Sample> {
 
