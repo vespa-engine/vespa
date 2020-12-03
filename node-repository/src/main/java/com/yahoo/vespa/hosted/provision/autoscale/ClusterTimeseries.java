@@ -35,11 +35,11 @@ public class ClusterTimeseries {
         ClusterSpec clusterSpec = clusterNodes.get(0).allocation().get().membership().cluster();
         var timeseries = db.getNodeTimeseries(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterSpec)),
                                               clusterNodes.stream().map(Node::hostname).collect(Collectors.toSet()));
-        Map<String, Instant> startTimePerNode = metricStartTimes(cluster, clusterNodes, timeseries, nodeRepository);
 
         measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
 
-        timeseries = filterStale(timeseries, startTimePerNode);
+        if (cluster.lastScalingEvent().isPresent())
+            timeseries = filter(timeseries, snapshot -> snapshot.generation() >= cluster.lastScalingEvent().get().generation());
         measurementCountWithoutStale = timeseries.stream().mapToInt(m -> m.size()).sum();
 
         timeseries = filter(timeseries, snapshot -> snapshot.inService());
@@ -104,12 +104,6 @@ public class ClusterTimeseries {
             case disk: return snapshot.disk();
             default: throw new IllegalArgumentException("Got an unknown resource " + resource);
         }
-    }
-
-    private List<NodeTimeseries> filterStale(List<NodeTimeseries> timeseries,
-                                             Map<String, Instant> startTimePerHost) {
-        if (startTimePerHost.isEmpty()) return timeseries; // Map is either empty or complete
-        return timeseries.stream().map(m -> m.justAfter(startTimePerHost.get(m.hostname()))).collect(Collectors.toList());
     }
 
     private List<NodeTimeseries> filter(List<NodeTimeseries> timeseries, Predicate<MetricSnapshot> filter) {
