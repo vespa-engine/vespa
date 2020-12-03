@@ -34,11 +34,10 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public Map<TenantName, PlanId> getPlans(List<TenantName> tenants) {
-        return tenants.stream().collect(Collectors.toMap(
-                (TenantName t) -> t,
-                (TenantName t) -> plans.getOrDefault(t, PlanId.from("trial"))
-        ));
+    public List<TenantName> tenantsWithPlan(List<TenantName> tenants, PlanId planId) {
+        return tenants.stream()
+                .filter(t -> plans.getOrDefault(t, PlanId.from("trial")).equals(planId))
+                .collect(Collectors.toList());
     }
 
     @Override

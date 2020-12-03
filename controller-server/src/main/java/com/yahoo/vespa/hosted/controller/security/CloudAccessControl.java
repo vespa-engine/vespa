@@ -70,9 +70,7 @@ public class CloudAccessControl implements AccessControl {
     private void requireTenantTrialLimitNotReached(List<Tenant> existing) {
         var trialPlanId = PlanId.from("trial");
         var tenantNames = existing.stream().map(Tenant::name).collect(Collectors.toList());
-        var trialTenants = billingController.getPlans(tenantNames).values().stream()
-                .filter(trialPlanId::equals)
-                .count();
+        var trialTenants = billingController.tenantsWithPlan(tenantNames, trialPlanId).size();
 
         if (maxTrialTenants.value() >= 0 && maxTrialTenants.value() <= trialTenants) {
             throw new ForbiddenException("Too many tenants with trial plans, please contact the Vespa support team");

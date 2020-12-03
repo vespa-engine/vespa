@@ -16,7 +16,7 @@ public interface BillingController {
 
     PlanId getPlan(TenantName tenant);
 
-    Map<TenantName, PlanId> getPlans(List<TenantName> tenants);
+    List<TenantName> tenantsWithPlan(List<TenantName> existing, PlanId planId);
 
     String getPlanDisplayName(PlanId planId);
 
