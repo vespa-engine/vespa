@@ -90,6 +90,5 @@ vespa_define_module(
     src/vespa/eval/streamed
     src/vespa/eval/tensor
     src/vespa/eval/tensor/dense
-    src/vespa/eval/tensor/serialization
     src/vespa/eval/tensor/sparse
 )
