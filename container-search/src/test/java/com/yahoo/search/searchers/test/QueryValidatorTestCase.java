@@ -20,7 +20,8 @@ public class QueryValidatorTestCase {
     @Test
     public void testValidation() {
         SearchDefinition sd = new SearchDefinition("test");
-        sd.addCommand("mytensor", "type tensor(x[100]");
+        sd.addCommand("mytensor1", "type tensor(x[100]");
+        sd.addCommand("mytensor2", "type tensor<float>(x[100]");
         sd.addCommand("mystring", "type string");
         IndexModel model = new IndexModel(sd);
 
@@ -29,12 +30,21 @@ public class QueryValidatorTestCase {
         new QueryValidator().search(new Query("?query=mystring:foo"), execution);
 
         try {
-            new QueryValidator().search(new Query("?query=sddocname%3Aproduct%20lfmModel25KeysV0%3A9%2A%20mytensor%3A%3E0"), execution);
-            fail("Excpected validation error");
+            new QueryValidator().search(new Query("?query=sddocname%3Aproduct%20lfmModel25KeysV0%3A9%2A%20mytensor1%3A%3E0"), execution);
+            fail("Expected validation error");
         }
         catch (IllegalArgumentException e) {
             // success
-            assertEquals("Cannot search 'mytensor': It is a tensor field", e.getMessage());
+            assertEquals("Cannot search 'mytensor1': It is a tensor field", e.getMessage());
+        }
+
+        try {
+            new QueryValidator().search(new Query("?query=sddocname%3Aproduct%20lfmModel25KeysV0%3A9%2A%20mytensor2%3A%3E0"), execution);
+            fail("Expected validation error");
+        }
+        catch (IllegalArgumentException e) {
+            // success
+            assertEquals("Cannot search 'mytensor2': It is a tensor field", e.getMessage());
         }
     }
 
