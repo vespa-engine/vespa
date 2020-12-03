@@ -6,6 +6,28 @@
 
 namespace vespalib {
 
+namespace {
+
+/// TODO Currently we require that you have atleast one element in _nodes to avoid one extra branch
+/// However that means that empty unused hashtables are larger than necessary.
+/// This we should probably reconsider.
+template<typename Modulator>
+uint32_t
+computeModulo(size_t size) {
+    return (size > 0) ? Modulator::selectHashTableSize(roundUp2inN(size) / 3) : 1;
+}
+
+template <typename NodeStore>
+NodeStore
+createStore(size_t size, uint32_t modulo) {
+    size = (size > 0) ? roundUp2inN(std::max(size_t(modulo), roundUp2inN(size))) : 1;
+    NodeStore store;
+    store.reserve(size);
+    store.resize(modulo);
+    return store;
+}
+
+}
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::swap(hashtable & rhs)
 {
@@ -19,26 +41,19 @@ void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::swap(hashtable &
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(size_t reservedSpace) :
-    _modulator(1),
+    _modulator(computeModulo<Modulator>(reservedSpace)),
     _count(0),
-    _nodes(1)
-{
-    if (reservedSpace > 0) {
-        resize(reservedSpace);
-    }
-}
+    _nodes(createStore<NodeStore>(reservedSpace, _modulator.getTableSize()))
+{ }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::hashtable(size_t reservedSpace, const Hash & hasher, const Equal & equal) :
-    _modulator(1),
+    _modulator(computeModulo<Modulator>(reservedSpace)),
     _count(0),
-    _nodes(1),
+    _nodes(createStore<NodeStore>(reservedSpace, _modulator.getTableSize())),
     _hasher(hasher),
     _equal(equal)
 {
-    if (reservedSpace > 0) {
-        resize(reservedSpace);
-    }
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
@@ -169,7 +184,8 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && n
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template<typename MoveHandler>
-void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHandler & moveHandler, next_t node)
+void
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHandler & moveHandler, next_t node)
 {
     size_t last(_nodes.size()-1);
     if (last >= getTableSize()) {
@@ -187,7 +203,8 @@ void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::reclaim(MoveHand
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template <typename Func>
-void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::for_each(Func func) const
+void
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::for_each(Func func) const
 {
     uint32_t i(0);
     for (; i < _modulator.getTableSize(); i++) {
@@ -232,14 +249,8 @@ template< typename Key, typename Value, typename Hash, typename Equal, typename 
 void
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::resize(size_t newSize)
 {
-    newSize = roundUp2inN(newSize);
-    next_t newModulo = Modulator::selectHashTableSize(newSize/3);
-    if (newModulo > newSize) {
-        newSize = newModulo;
-    }
-    NodeStore newStore;
-    newStore.reserve(roundUp2inN(newSize));
-    newStore.resize(newModulo);
+    next_t newModulo = computeModulo<Modulator>(newSize);
+    NodeStore newStore = createStore<NodeStore>(newSize, newModulo);
     _modulator = Modulator(newModulo);
     _count = 0;
     _nodes.swap(newStore);
@@ -250,9 +261,9 @@ template< typename Key, typename Value, typename Hash, typename Equal, typename 
 void
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::move(NodeStore && oldStore)
 {
-    for(typename NodeStore::iterator it(oldStore.begin()), mt(oldStore.end()); it != mt; it++) {
-        if (it->valid()) {
-            insert(std::move(it->getValue()));
+    for (auto & entry : oldStore) {
+        if (entry.valid()) {
+            insert(std::move(entry.getValue()));
         }
     }
 }

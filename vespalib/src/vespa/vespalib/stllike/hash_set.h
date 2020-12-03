@@ -23,7 +23,8 @@ public:
     hash_set & operator = (hash_set &&) noexcept = default;
     hash_set(const hash_set &) = default;
     hash_set & operator = (const hash_set &) = default;
-    hash_set(size_t reserveSize=0);
+    hash_set();
+    explicit hash_set(size_t reserveSize);
     hash_set(size_t reserveSize, const H & hasher, const EQ & equal);
     template <typename InputIterator>
     hash_set(InputIterator first, InputIterator last);
