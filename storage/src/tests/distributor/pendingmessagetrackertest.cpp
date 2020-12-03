@@ -93,6 +93,16 @@ public:
         return cmd;
     }
 
+    std::shared_ptr<api::GetCommand> create_get_to_node(uint16_t node) const {
+        document::BucketId bucket(16, 1234);
+        auto cmd = std::make_shared<api::GetCommand>(
+                makeDocumentBucket(bucket),
+                document::DocumentId("id::testdoctype1:n=1234:foo"),
+                "[all]");
+        cmd->setAddress(makeStorageAddress(node));
+        return cmd;
+    }
+
     PendingMessageTracker& tracker() { return *_tracker; }
     auto& clock() { return _clock; }
 
@@ -444,9 +454,21 @@ document::BucketId bucket_of(const document::DocumentId& id) {
 
 }
 
-TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_no_pending_ops) {
+TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_no_pending_write_ops) {
     Fixture f;
     auto cmd = f.createPutToNode(0);
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    auto state = TaskRunState::Aborted;
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
+        state = s;
+    }));
+    EXPECT_EQ(state, TaskRunState::OK);
+}
+
+TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_only_pending_read_ops) {
+    Fixture f;
+    auto cmd = f.create_get_to_node(0);
+    f.tracker().insert(cmd);
     auto bucket_id = bucket_of(cmd->getDocumentId());
     auto state = TaskRunState::Aborted;
     f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
@@ -465,6 +487,20 @@ TEST_F(PendingMessageTrackerTest, deferred_task_not_started_before_pending_ops_c
     }));
     EXPECT_EQ(state, TaskRunState::Aborted);
     f.sendPutReply(*cmd, RequestBuilder()); // Deferred task should be run as part of this.
+    EXPECT_EQ(state, TaskRunState::OK);
+}
+
+TEST_F(PendingMessageTrackerTest, deferred_task_can_be_started_with_pending_read_op) {
+    Fixture f;
+    auto cmd = f.sendPut(RequestBuilder().toNode(0));
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    auto state = TaskRunState::Aborted;
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
+        state = s;
+    }));
+    EXPECT_EQ(state, TaskRunState::Aborted);
+    f.tracker().insert(f.create_get_to_node(0)); // Concurrent Get and Put
+    f.sendPutReply(*cmd, RequestBuilder()); // Deferred task should be allowed to run
     EXPECT_EQ(state, TaskRunState::OK);
 }
 
