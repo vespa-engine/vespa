@@ -39,7 +39,8 @@ public class ClusterTimeseries {
         measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
 
         if (cluster.lastScalingEvent().isPresent())
-            timeseries = filter(timeseries, snapshot -> snapshot.generation() >= cluster.lastScalingEvent().get().generation());
+            timeseries = filter(timeseries, snapshot -> snapshot.generation() < 0 || // Content nodes do not yet send generation
+                                                        snapshot.generation() >= cluster.lastScalingEvent().get().generation());
         measurementCountWithoutStale = timeseries.stream().mapToInt(m -> m.size()).sum();
 
         timeseries = filter(timeseries, snapshot -> snapshot.inService());
