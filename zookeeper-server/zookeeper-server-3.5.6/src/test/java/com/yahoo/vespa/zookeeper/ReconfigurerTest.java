@@ -89,14 +89,12 @@ public class ReconfigurerTest {
         ZookeeperServerConfig existingConfig = reconfigurer.existingConfig();
         int currentServerCount = reconfigurer.existingConfig().server().size();
         int expectedLeavingServers = Math.max(0, currentServerCount - numberOfServers);
-        int expectedAddedServers = Math.max(0, numberOfServers - currentServerCount);
 
         ZookeeperServerConfig newConfig = createConfigAllowReconfiguring(numberOfServers);
         assertTrue(reconfigurer.shouldReconfigure(newConfig));
         Reconfigurer.ReconfigurationInfo reconfigurationInfo = new Reconfigurer.ReconfigurationInfo(existingConfig, newConfig);
         assertEquals(numberOfServers, reconfigurationInfo.joiningServers().size());
         assertEquals(expectedLeavingServers, reconfigurationInfo.leavingServers().size());
-        assertEquals(expectedAddedServers, reconfigurationInfo.addedServers().size());
     }
 
 }

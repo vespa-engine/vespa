@@ -60,11 +60,9 @@ public class Reconfigurer extends AbstractComponent {
     void reconfigure(ReconfigurationInfo reconfigurationInfo) {
         List<String> joiningServers = reconfigurationInfo.joiningServers();
         List<String> leavingServers = reconfigurationInfo.leavingServers();
-        List<String> addedServers = reconfigurationInfo.addedServers();
 
         log.log(Level.INFO, "Will reconfigure zookeeper cluster. Joining servers: " + joiningServers +
-                            ", leaving servers: " + leavingServers +
-                            ", new members: " + addedServers);
+                            ", leaving servers: " + leavingServers);
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec(reconfigurationInfo.existingConfig()),
                                                                (int) sessionTimeout.toMillis(),
@@ -73,9 +71,8 @@ public class Reconfigurer extends AbstractComponent {
             long fromConfig = -1;
             String joiningServersString = String.join(",", joiningServers);
             String leavingServersString = String.join(",", leavingServers);
-            String addedServersString = String.join(",", addedServers);
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
-            zooKeeperAdmin.reconfigure(joiningServersString, leavingServersString, addedServersString, fromConfig, null);
+            zooKeeperAdmin.reconfigure(joiningServersString, leavingServersString, null, fromConfig, null);
         } catch (IOException | KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -111,7 +108,6 @@ public class Reconfigurer extends AbstractComponent {
         private final ZookeeperServerConfig existingConfig;
         private final List<String> joiningServers;
         private final List<String> leavingServers;
-        private final List<String> addedServers;
 
         public ReconfigurationInfo(ZookeeperServerConfig existingConfig, ZookeeperServerConfig newConfig) {
             this.existingConfig = existingConfig;
@@ -119,7 +115,6 @@ public class Reconfigurer extends AbstractComponent {
 
             this.joiningServers = servers(newConfig);
             this.leavingServers = setDifference(originalServers, servers(newConfig));
-            this.addedServers = setDifference(servers(newConfig), originalServers);
         }
 
         public ZookeeperServerConfig existingConfig() {
@@ -132,10 +127,6 @@ public class Reconfigurer extends AbstractComponent {
 
         public List<String> leavingServers() {
             return leavingServers;
-        }
-
-        public List<String> addedServers() {
-            return addedServers;
         }
 
     }
