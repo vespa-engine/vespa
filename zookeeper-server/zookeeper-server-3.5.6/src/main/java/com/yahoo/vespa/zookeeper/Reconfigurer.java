@@ -96,8 +96,9 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     private static List<String> servers(ZookeeperServerConfig config) {
+        // See https://zookeeper.apache.org/doc/r3.5.8/zookeeperReconfig.html#sc_reconfig_clientport for format
         return config.server().stream()
-                     .map(server -> server.hostname() + ":" + server.quorumPort() + ":" + server.electionPort())
+                     .map(server -> server.id() + "=" + server.hostname() + ":" + server.quorumPort() + ":" + server.electionPort())
                      .collect(Collectors.toList());
     }
 

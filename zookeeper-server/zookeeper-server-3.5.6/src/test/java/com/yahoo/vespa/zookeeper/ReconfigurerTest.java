@@ -93,6 +93,11 @@ public class ReconfigurerTest {
         ZookeeperServerConfig newConfig = createConfigAllowReconfiguring(numberOfServers);
         assertTrue(reconfigurer.shouldReconfigure(newConfig));
         Reconfigurer.ReconfigurationInfo reconfigurationInfo = new Reconfigurer.ReconfigurationInfo(existingConfig, newConfig);
+        for (int electionPort = 0; electionPort < numberOfServers; electionPort++) {
+            String joiningServer = reconfigurationInfo.joiningServers().get(electionPort);
+            int quorumPort = electionPort + 1;
+            assertEquals(electionPort + "=localhost:" + quorumPort + ":" + electionPort, joiningServer);
+        }
         assertEquals(numberOfServers, reconfigurationInfo.joiningServers().size());
         assertEquals(expectedLeavingServers, reconfigurationInfo.leavingServers().size());
     }
