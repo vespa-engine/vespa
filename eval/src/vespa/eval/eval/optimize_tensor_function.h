@@ -6,7 +6,7 @@ namespace vespalib { class Stash; }
 
 namespace vespalib::eval {
 
-class ValueBuilderFactory;
+struct ValueBuilderFactory;
 struct TensorFunction;
 
 const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash);

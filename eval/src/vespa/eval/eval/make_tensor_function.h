@@ -6,7 +6,7 @@ namespace vespalib { class Stash; }
 
 namespace vespalib::eval {
 
-class ValueBuilderFactory;
+struct ValueBuilderFactory;
 class NodeTypes;
 struct TensorFunction;
 
