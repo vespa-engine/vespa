@@ -165,7 +165,6 @@ private:
     api::Timestamp _toTime;
 
     std::vector<uint32_t> _activeNodes;
-    uint32_t _bucketCount;
 
     vdslib::VisitorStatistics _visitorStatistics;
 
