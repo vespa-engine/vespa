@@ -25,8 +25,7 @@ class MaintenanceOperationGenerator;
 class DirectDispatchSender;
 class OperationOwner;
 
-class ExternalOperationHandler : public DistributorComponent,
-                                 public api::MessageHandler
+class ExternalOperationHandler : public api::MessageHandler
 {
 public:
     using Clock = std::chrono::system_clock;
@@ -42,11 +41,13 @@ public:
     bool onGetBucketList(const std::shared_ptr<api::GetBucketListCommand>&) override;
 
     ExternalOperationHandler(Distributor& owner,
-                             DistributorBucketSpaceRepo& bucketSpaceRepo,
-                             DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+                             DistributorNodeContext& node_ctx,
+                             DistributorOperationContext& op_ctx,
+                             DistributorMetricSet& metrics,
+                             ChainedMessageSender& msg_sender,
+                             DocumentSelectionParser& parser,
                              const MaintenanceOperationGenerator& gen,
-                             OperationOwner& operation_owner,
-                             DistributorComponentRegister& compReg);
+                             OperationOwner& operation_owner);
 
     ~ExternalOperationHandler() override;
 
@@ -84,6 +85,11 @@ public:
     }
 
 private:
+    DistributorNodeContext& _node_ctx;
+    DistributorOperationContext& _op_ctx;
+    DistributorMetricSet& _metrics;
+    ChainedMessageSender& _msg_sender;
+    DocumentSelectionParser& _parser;
     std::unique_ptr<DirectDispatchSender> _direct_dispatch_sender;
     const MaintenanceOperationGenerator& _operationGenerator;
     OperationSequencer _operation_sequencer;
@@ -124,7 +130,7 @@ private:
 
     api::InternalReadConsistency desired_get_read_consistency() const noexcept;
 
-    DistributorMetricSet& getMetrics() { return getDistributor().getMetrics(); }
+    DistributorMetricSet& getMetrics() { return _metrics; }
 };
 
 }

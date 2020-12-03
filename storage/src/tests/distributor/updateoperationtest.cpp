@@ -59,15 +59,15 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_m
             document::DocumentId("id:ns:" + _html_type->getName() + "::1"));
     update->setCreateIfNonExistent(create_if_missing);
 
-    _bId = getExternalOperationHandler().getBucketId(update->getId());
+    _bId = distributor_component().getBucketId(update->getId());
 
     addNodesToBucketDB(_bId, bucketState);
 
     auto msg = std::make_shared<api::UpdateCommand>(makeDocumentBucket(document::BucketId(0)), update, 100);
 
-    ExternalOperationHandler& handler = getExternalOperationHandler();
+    auto& comp = distributor_component();
     return std::make_shared<UpdateOperation>(
-            handler, handler, getDistributorBucketSpace(), msg,
+            comp, comp, getDistributorBucketSpace(), msg,
             getDistributor().getMetrics().updates);
 }
 

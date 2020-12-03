@@ -169,13 +169,31 @@ public:
     const DistributorBucketSpaceRepo& bucket_space_repo() const override {
         return getBucketSpaceRepo();
     }
+    DistributorBucketSpaceRepo& bucket_space_repo() override {
+        return getBucketSpaceRepo();
+    }
+    const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const override {
+        return getReadOnlyBucketSpaceRepo();
+    }
+    DistributorBucketSpaceRepo& read_only_bucket_space_repo() override {
+        return getReadOnlyBucketSpaceRepo();
+    }
+    document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId& docId) const override {
+        return getBucketId(docId);
+    }
+    const DistributorConfiguration& distributor_config() const override {
+        return getDistributor().getConfig();
+    }
     void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,
                                                const BucketDatabase::Entry& entry,
                                                uint8_t pri) override {
         getDistributor().checkBucketForSplit(bucket_space, entry, pri);
     }
-    const DistributorConfiguration& distributor_config() const override {
-        return getDistributor().getConfig();
+    OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket& bucket) const override {
+        return getDistributor().read_snapshot_for_bucket(bucket);
+    }
+    PendingMessageTracker& pending_message_tracker() override {
+        return getDistributor().getPendingMessageTracker();
     }
     bool has_pending_message(uint16_t node_index,
                              const document::Bucket& bucket,

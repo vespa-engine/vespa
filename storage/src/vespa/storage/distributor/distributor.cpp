@@ -1,18 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 //
-#include "distributor.h"
 #include "blockingoperationstarter.h"
-#include "throttlingoperationstarter.h"
-#include "idealstatemetricsset.h"
-#include "ownership_transfer_safe_time_point_calculator.h"
+#include "distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
-#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
-#include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storage/common/hostreporter/hostinfo.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
-#include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+#include "idealstatemetricsset.h"
+#include "ownership_transfer_safe_time_point_calculator.h"
+#include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
+#include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/storage/common/node_identity.h>
+#include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
+#include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
 #include <vespa/log/log.h>
@@ -62,6 +63,7 @@ public:
 };
 
 Distributor::Distributor(DistributorComponentRegister& compReg,
+                         const NodeIdentity& node_identity,
                          framework::TickingThreadPool& threadPool,
                          DoneInitializeHandler& doneInitHandler,
                          bool manageActiveBucketCopies,
@@ -71,10 +73,9 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       DistributorInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _clusterStateBundle(lib::ClusterState()),
-      _compReg(compReg),
-      _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(_component.getIndex())),
-      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(_component.getIndex())),
+      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
+      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
+      _component(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, "distributor"),
       _metrics(std::make_shared<DistributorMetricSet>()),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
@@ -83,13 +84,14 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
       _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, manageActiveBucketCopies),
-      _externalOperationHandler(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo,
-                                _idealStateManager, _operationOwner, compReg),
+      _messageSender(messageSender),
+      _externalOperationHandler(*this, _component, _component,
+                                getMetrics(), getMessageSender(), _component,
+                                _idealStateManager, _operationOwner),
       _threadPool(threadPool),
       _initializingIsUp(true),
       _doneInitializeHandler(doneInitHandler),
       _doneInitializing(false),
-      _messageSender(messageSender),
       _bucketPriorityDb(std::make_unique<SimpleBucketPriorityDatabase>()),
       _scanner(std::make_unique<SimpleMaintenanceScanner>(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
       _throttlingStarter(std::make_unique<ThrottlingOperationStarter>(_maintenanceOperationOwner)),

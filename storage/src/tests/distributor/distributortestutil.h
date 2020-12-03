@@ -2,14 +2,14 @@
 #pragma once
 
 #include "distributor_message_sender_stub.h"
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/frameworkimpl/component/distributorcomponentregisterimpl.h>
 #include <vespa/storage/storageutil/utils.h>
-#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 
 namespace storage {
 
@@ -21,6 +21,7 @@ class BucketDBUpdater;
 class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
+class DistributorComponent;
 class IdealStateManager;
 class ExternalOperationHandler;
 class Operation;
@@ -111,6 +112,7 @@ public:
     BucketDBUpdater& getBucketDBUpdater();
     IdealStateManager& getIdealStateManager();
     ExternalOperationHandler& getExternalOperationHandler();
+    storage::distributor::DistributorComponent& distributor_component();
 
     Distributor& getDistributor() {
         return *_distributor;

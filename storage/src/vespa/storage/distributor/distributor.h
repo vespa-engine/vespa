@@ -12,10 +12,10 @@
 #include "pendingmessagetracker.h"
 #include "statusreporterdelegate.h"
 #include <vespa/config/config.h>
-#include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
+#include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
@@ -26,16 +26,17 @@
 namespace storage {
     struct DoneInitializeHandler;
     class HostInfo;
+    class NodeIdentity;
 }
 
 namespace storage::distributor {
 
-class DistributorBucketSpaceRepo;
-class SimpleMaintenanceScanner;
 class BlockingOperationStarter;
-class ThrottlingOperationStarter;
 class BucketPriorityDatabase;
+class DistributorBucketSpaceRepo;
 class OwnershipTransferSafeTimePointCalculator;
+class SimpleMaintenanceScanner;
+class ThrottlingOperationStarter;
 
 class Distributor : public StorageLink,
                     public DistributorInterface,
@@ -47,6 +48,7 @@ class Distributor : public StorageLink,
 {
 public:
     Distributor(DistributorComponentRegister&,
+                const NodeIdentity& node_identity,
                 framework::TickingThreadPool&,
                 DoneInitializeHandler&,
                 bool manageActiveBucketCopies,
@@ -260,13 +262,12 @@ private:
 
     lib::ClusterStateBundle _clusterStateBundle;
 
-    DistributorComponentRegister& _compReg;
-    storage::DistributorComponent _component;
     std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
     // Read-only bucket space repo with DBs that only contain buckets transiently
     // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
     // and the DBs are empty during non-transition phases.
     std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
+    storage::distributor::DistributorComponent _component;
     std::shared_ptr<DistributorMetricSet> _metrics;
 
     OperationOwner _operationOwner;
@@ -277,6 +278,7 @@ private:
     StatusReporterDelegate _distributorStatusDelegate;
     StatusReporterDelegate _bucketDBStatusDelegate;
     IdealStateManager _idealStateManager;
+    ChainedMessageSender* _messageSender;
     ExternalOperationHandler _externalOperationHandler;
 
     std::shared_ptr<lib::Distribution> _distribution;
@@ -307,7 +309,6 @@ private:
     DoneInitializeHandler& _doneInitializeHandler;
     bool _doneInitializing;
 
-    ChainedMessageSender* _messageSender;
 
     std::unique_ptr<BucketPriorityDatabase> _bucketPriorityDb;
     std::unique_ptr<SimpleMaintenanceScanner> _scanner;

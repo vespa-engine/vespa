@@ -108,7 +108,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     // manager, which is safe since the lifetime of said state manager
     // extends to the end of the process.
     builder.add(std::make_unique<storage::distributor::Distributor>
-                (dcr, *_threadPool, getDoneInitializeHandler(),
+                (dcr, *_node_identity, *_threadPool, getDoneInitializeHandler(),
                  _manageActiveBucketCopies,
                  stateManager->getHostInfo()));
 
