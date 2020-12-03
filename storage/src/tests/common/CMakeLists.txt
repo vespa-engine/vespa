@@ -12,7 +12,6 @@ vespa_add_library(storage_testcommon TEST
 
 vespa_add_executable(storage_common_gtest_runner_app TEST
     SOURCES
-    bucket_utils_test.cpp
     global_bucket_space_distribution_converter_test.cpp
     gtest_runner.cpp
     metricstest.cpp
