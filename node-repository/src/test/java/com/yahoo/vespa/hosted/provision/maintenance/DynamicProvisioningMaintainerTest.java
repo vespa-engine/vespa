@@ -103,19 +103,6 @@ public class DynamicProvisioningMaintainerTest {
     }
 
     @Test
-    public void does_not_deprovision_when_preprovisioning_enabled__legacy() {
-        var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new ClusterCapacity(1, 1, 3, 2, 1.0)), ClusterCapacity.class);
-        tester.flagSource.withBooleanFlag(Flags.COMPACT_PREPROVISION_CAPACITY.id(), false);
-        Optional<Node> failedHost = tester.nodeRepository.getNode("host2");
-        assertTrue(failedHost.isPresent());
-
-        tester.maintainer.maintain();
-        assertTrue("Failed host is deprovisioned", tester.nodeRepository.getNode(failedHost.get().hostname()).isEmpty());
-        assertEquals(1, tester.hostProvisioner.deprovisionedHosts);
-    }
-
-    @Test
     public void does_not_deprovision_when_preprovisioning_enabled() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
         tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new ClusterCapacity(1, 1, 3, 2, 1.0)), ClusterCapacity.class);
@@ -125,29 +112,6 @@ public class DynamicProvisioningMaintainerTest {
         tester.maintainer.maintain();
         assertTrue("Failed host is deprovisioned", tester.nodeRepository.getNode(failedHost.get().hostname()).isEmpty());
         assertEquals(1, tester.hostProvisioner.deprovisionedHosts);
-    }
-
-    @Test
-    public void provision_deficit_and_deprovision_excess__legacy() {
-        var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(2, 48, 128, 1000, 10.0),
-                        new ClusterCapacity(1, 16, 24, 100, 1.0)),
-                ClusterCapacity.class);
-        tester.flagSource.withBooleanFlag(Flags.COMPACT_PREPROVISION_CAPACITY.id(), false);
-        assertTrue(tester.nodeRepository.getNode("host2").isPresent());
-        assertEquals(0, tester.hostProvisioner.provisionedHosts.size());
-
-        // failed host2 is removed
-        Optional<Node> failedHost = tester.nodeRepository.getNode("host2");
-        assertTrue(failedHost.isPresent());
-        tester.maintainer.maintain();
-        assertTrue("Failed host is deprovisioned", tester.nodeRepository.getNode(failedHost.get().hostname()).isEmpty());
-        assertTrue("Host with matching resources is kept", tester.nodeRepository.getNode("host3").isPresent());
-
-        // Two more hosts are provisioned with expected resources
-        NodeResources resources = new NodeResources(48, 128, 1000, 10);
-        assertEquals(2, tester.provisionedHostsMatching(resources));
     }
 
     @Test

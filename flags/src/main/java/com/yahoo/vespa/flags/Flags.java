@@ -101,13 +101,6 @@ public class Flags {
             "Only applies to dynamically provisioned zones.",
             "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
-    public static final UnboundBooleanFlag COMPACT_PREPROVISION_CAPACITY = defineFeatureFlag(
-            "compact-preprovision-capacity", true,
-            List.of("nobody"), "2020-12-02", "2021-02-01",
-            "Whether preprovision capacity can be satisfied with available capacity on hosts with " +
-            "existing allocations.  Historically preprovision-capacity referred to empty hosts.",
-            "Takes effect on next iteration of DynamicProvisioningMaintainer.");
-
     public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
             "shared-host", SharedHost.createDisabled(), SharedHost.class,
             List.of("nobody"), "2020-12-02", "2021-02-01",

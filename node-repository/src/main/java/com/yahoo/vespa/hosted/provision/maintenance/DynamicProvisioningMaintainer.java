@@ -12,7 +12,6 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.JacksonFlag;
@@ -42,7 +41,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +61,6 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     private final HostProvisioner hostProvisioner;
     private final ListFlag<ClusterCapacity> preprovisionCapacityFlag;
-    private final BooleanFlag compactPreprovisionCapacityFlag;
     private final JacksonFlag<SharedHost> sharedHostFlag;
 
     DynamicProvisioningMaintainer(NodeRepository nodeRepository,
@@ -74,7 +71,6 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
         this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
-        this.compactPreprovisionCapacityFlag = Flags.COMPACT_PREPROVISION_CAPACITY.bindTo(flagSource);
         this.sharedHostFlag = Flags.SHARED_HOST.bindTo(flagSource);
     }
 
@@ -146,70 +142,12 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     /**
      * Provision hosts to ensure there is room to allocate spare nodes.
      *
-     * @param nodes list of all nodes
+     * @param nodeList list of all nodes
      * @return excess hosts that can safely be deprovisioned: An excess host 1. contains no nodes allocated
      *         to an application, and assuming the spare nodes have been allocated, and 2. is not parked
      *         without wantToDeprovision (which means an operator is looking at the node).
      */
-    private List<Node> provision(NodeList nodes) {
-        boolean compactPreprovisionCapacity = compactPreprovisionCapacityFlag.value();
-        if (compactPreprovisionCapacity) {
-            return findExcessHosts(nodes);
-        } else {
-            return legacyProvision(nodes);
-        }
-    }
-
-    private List<Node> legacyProvision(NodeList nodes) {
-        Map<String, Node> hostsByHostname = new HashMap<>(nodes.hosts().asList().stream()
-                .filter(host -> host.state() != Node.State.parked || host.status().wantToDeprovision())
-                .collect(Collectors.toMap(Node::hostname, Function.identity())));
-
-        nodes.asList().stream()
-                .filter(node -> node.allocation().isPresent())
-                .flatMap(node -> node.parentHostname().stream())
-                .distinct()
-                .forEach(hostsByHostname::remove);
-
-        List<Node> excessHosts = new ArrayList<>(hostsByHostname.values());
-
-        var capacity = new ArrayList<>(targetCapacity());
-        for (Iterator<NodeResources> it = capacity.iterator(); it.hasNext() && !excessHosts.isEmpty(); ) {
-            NodeResources resources = it.next();
-            excessHosts.stream()
-                       .filter(nodeRepository()::canAllocateTenantNodeTo)
-                       .filter(host -> nodeRepository().resourcesCalculator()
-                                                       .advertisedResourcesOf(host.flavor())
-                                                       .satisfies(resources))
-                       .min(Comparator.comparingInt(n -> n.flavor().cost()))
-                       .ifPresent(host -> {
-                           excessHosts.remove(host);
-                           it.remove();
-                       });
-        }
-
-        // Pre-provisioning is best effort, do one host at a time
-        capacity.forEach(resources -> {
-            try {
-                Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
-                List<Node> hosts = hostProvisioner.provisionHosts(nodeRepository().database().getProvisionIndexes(1),
-                                                                  resources, ApplicationId.defaultId(), osVersion,
-                                                                  HostSharing.shared)
-                                                  .stream()
-                                                  .map(ProvisionedHost::generateHost)
-                                                  .collect(Collectors.toList());
-                nodeRepository().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
-            } catch (OutOfCapacityException | IllegalArgumentException | IllegalStateException e) {
-                log.log(Level.WARNING, "Failed to pre-provision " + resources + ": " + e.getMessage());
-            } catch (RuntimeException e) {
-                log.log(Level.WARNING, "Failed to pre-provision " + resources + ", will retry in " + interval(), e);
-            }
-        });
-
-        return excessHosts;
-    }
-
-    private List<Node> findExcessHosts(NodeList nodeList) {
+    private List<Node> provision(NodeList nodeList) {
         final List<Node> nodes = new ArrayList<>(provisionUntilNoDeficit(nodeList));
 
 
