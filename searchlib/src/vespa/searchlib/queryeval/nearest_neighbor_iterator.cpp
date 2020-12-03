@@ -73,7 +73,7 @@ public:
 
 private:
     double computeDistance(uint32_t docId, double limit) {
-        auto rhs = params().tensorAttribute.extract_dense_view(docId);
+        auto rhs = params().tensorAttribute.extract_cells_ref(docId);
         return params().distanceFunction->calc_with_limit(_lhs, rhs, limit);
     }
 

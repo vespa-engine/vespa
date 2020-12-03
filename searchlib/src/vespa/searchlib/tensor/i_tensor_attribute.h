@@ -19,9 +19,9 @@ public:
     virtual ~ITensorAttribute() {}
     virtual std::unique_ptr<vespalib::eval::Value> getTensor(uint32_t docId) const = 0;
     virtual std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const = 0;
-    virtual vespalib::eval::TypedCells extract_dense_view(uint32_t docid) const = 0;
+    virtual vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const = 0;
     virtual const vespalib::eval::Value& get_tensor_ref(uint32_t docid) const = 0;
-    virtual bool supports_extract_dense_view() const = 0;
+    virtual bool supports_extract_cells_ref() const = 0;
     virtual bool supports_get_tensor_ref() const = 0;
 
     virtual const vespalib::eval::ValueType & getTensorType() const = 0;

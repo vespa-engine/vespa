@@ -17,7 +17,7 @@ DenseTensorAttributeExecutor(const ITensorAttribute& attribute)
 void
 DenseTensorAttributeExecutor::execute(uint32_t docId)
 {
-    _tensorView.setCells(_attribute.extract_dense_view(docId));
+    _tensorView.setCells(_attribute.extract_cells_ref(docId));
     outputs().set_object(0, _tensorView);
 }
 

@@ -187,7 +187,7 @@ TensorAttribute::getEmptyTensor() const
 }
 
 vespalib::eval::TypedCells
-TensorAttribute::extract_dense_view(uint32_t /*docid*/) const
+TensorAttribute::extract_cells_ref(uint32_t /*docid*/) const
 {
     notImplemented();
 }

@@ -173,7 +173,7 @@ DenseTensorAttribute::getTensor(DocId docId) const
 }
 
 vespalib::eval::TypedCells
-DenseTensorAttribute::extract_dense_view(DocId docId) const
+DenseTensorAttribute::extract_cells_ref(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
