@@ -23,6 +23,7 @@ class Tensor : public Value
 {
 private:
     const TensorEngine &_engine;
+    const TensorEngine &engine() const { return _engine; }
 protected:
     explicit Tensor(const TensorEngine &engine_in)
         : _engine(engine_in) {}
@@ -33,7 +34,6 @@ public:
     Tensor &operator=(Tensor &&) = delete;
     bool is_tensor() const override { return true; }
     const Tensor *as_tensor() const override { return this; }
-    const TensorEngine &engine() const { return _engine; }
     virtual ~Tensor() {}
 };
 

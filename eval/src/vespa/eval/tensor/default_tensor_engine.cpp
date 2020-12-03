@@ -27,7 +27,7 @@
 #include "dense/dense_tensor_create_function.h"
 #include <vespa/eval/instruction/dense_tensor_peek_function.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/operation.h>
@@ -71,7 +71,7 @@ const Value &to_simple(const Value &value, Stash &stash) {
             return wrapped->unwrap();
         }
         nbostream data;
-        tensor->engine().encode(*tensor, data);
+        encode_value(*tensor, data);
         return *stash.create<Value::UP>(simple_engine().decode(data));
     }
     return value;
@@ -164,15 +164,7 @@ const DefaultTensorEngine DefaultTensorEngine::_engine;
 TensorSpec
 DefaultTensorEngine::to_spec(const Value &value) const
 {
-    if (value.is_double()) {
-        return TensorSpec("double").add({}, value.as_double());
-    } else if (auto tensor = value.as_tensor()) {
-        assert(&tensor->engine() == this);
-        const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(*tensor);
-        return my_tensor.toSpec();
-    } else {
-        return TensorSpec("error");
-    }
+    return TensorSpec::from_value(value);
 }
 
 struct CallDenseTensorBuilder {
@@ -324,7 +316,6 @@ const Value &
 DefaultTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
 {
     if (auto tensor = a.as_tensor()) {
-        assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
         if (!tensor::Tensor::supported({my_a.type()})) {
             return to_default(simple_engine().map(to_simple(a, stash), function, stash), stash);
@@ -340,10 +331,8 @@ const Value &
 DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
 {
     if (auto tensor_a = a.as_tensor()) {
-        assert(&tensor_a->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor_a);
         if (auto tensor_b = b.as_tensor()) {
-            assert(&tensor_b->engine() == this);
             const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
             if (!tensor::Tensor::supported({my_a.type(), my_b.type()})) {
                 return fallback_join(a, b, function, stash);
@@ -358,7 +347,6 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
         }
     } else {
         if (auto tensor_b = b.as_tensor()) {
-            assert(&tensor_b->engine() == this);
             const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
             if (!tensor::Tensor::supported({my_b.type()})) {
                 return fallback_join(a, b, function, stash);
@@ -377,8 +365,6 @@ DefaultTensorEngine::merge(const Value &a, const Value &b, join_fun_t function, 
     if (auto tensor_a = a.as_tensor()) {
         auto tensor_b = b.as_tensor();
         assert(tensor_b);
-        assert(&tensor_a->engine() == this);
-        assert(&tensor_b->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor_a);
         const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
         if (!tensor::Tensor::supported({my_a.type(), my_b.type()})) {
@@ -394,7 +380,6 @@ const Value &
 DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const
 {
     if (auto tensor = a.as_tensor()) {
-        assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
         if (!tensor::Tensor::supported({my_a.type()})) {
             return fallback_reduce(a, aggr, dimensions, stash);
