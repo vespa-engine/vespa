@@ -6,10 +6,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -50,34 +47,6 @@ public class ClusterTimeseries {
         measurementCountWithoutStaleOutOfServiceUnstable = timeseries.stream().mapToInt(m -> m.size()).sum();
 
         this.allNodeTimeseries = timeseries;
-    }
-
-    /**
-     * Returns the instant of the oldest metric to consider for each node, or an empty map if metrics from the
-     * entire (max) window should be considered.
-     */
-    private Map<String, Instant> metricStartTimes(Cluster cluster,
-                                                  List<Node> clusterNodes,
-                                                  List<NodeTimeseries> allNodeTimeseries,
-                                                  NodeRepository nodeRepository) {
-        if (cluster.lastScalingEvent().isEmpty()) return Map.of();
-
-        var deployment = cluster.lastScalingEvent().get();
-        Map<String, Instant> startTimePerHost = new HashMap<>();
-        for (Node node : clusterNodes) {
-            startTimePerHost.put(node.hostname(), nodeRepository.clock().instant()); // Discard all unless we can prove otherwise
-            var nodeTimeseries = allNodeTimeseries.stream().filter(m -> m.hostname().equals(node.hostname())).findAny();
-            if (nodeTimeseries.isPresent()) {
-                var firstMeasurementOfCorrectGeneration =
-                        nodeTimeseries.get().asList().stream()
-                                                     .filter(m -> m.generation() >= deployment.generation())
-                                                     .findFirst();
-                if (firstMeasurementOfCorrectGeneration.isPresent()) {
-                    startTimePerHost.put(node.hostname(), firstMeasurementOfCorrectGeneration.get().at());
-                }
-            }
-        }
-        return startTimePerHost;
     }
 
     /** Returns the average number of measurements per node */

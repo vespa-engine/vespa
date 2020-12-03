@@ -34,7 +34,10 @@ public class MetricSnapshot implements Comparable<MetricSnapshot> {
     public double cpu() { return cpu; }
     public double memory() { return memory; }
     public double disk() { return disk; }
+
+    /** The configuration generation at the time of this measurement, or -1 if not known */
     public long generation() { return generation; }
+
     public boolean inService() { return inService; }
     public boolean stable() { return stable; }
 
