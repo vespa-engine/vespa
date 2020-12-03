@@ -101,6 +101,7 @@ public class MetricsResponse {
         generation { // application config generation active on the node
             public String metricResponseName() { return "application_generation"; }
             double convertValue(double metricValue) { return (float)metricValue; } // Really a long
+            double defaultValue() { return -1.0; }
         },
         inService {
             public String metricResponseName() { return "in_service"; }
