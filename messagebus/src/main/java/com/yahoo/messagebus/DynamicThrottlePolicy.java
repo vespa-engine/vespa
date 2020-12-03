@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  * This is an implementation of the {@link ThrottlePolicy} that offers dynamic limits to the number of pending messages a
  * {@link SourceSession} is allowed to have. Pending means the number of sent messages that have not been replied to yet.
  * <p>
- * The algorithm works by increasing the number of messages allowed to be pending, the <em>winidow size</em>, until
+ * The algorithm works by increasing the number of messages allowed to be pending, the <em>window size</em>, until
  * this no longer increases throughput. At this point, the algorithm is driven by synthetic attraction towards latencies
  * which satisfy <code>log10(1 / latency) % 1 = e</code>, for some constant <code>0 &lt; e &lt; 1</code>. Weird? Most certainly!
  * </p><p>
@@ -148,7 +148,6 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
                 period *= 0.1;
             }
             double efficiency = throughput * period / windowSize; // "efficiency" is a strange name. This is where on the level it is.
-            if (Math.random() < 1e-2) System.err.println(efficiency);
             if (efficiency < efficiencyThreshold) {
                 windowSize = Math.min(windowSize * windowSizeBackOff, windowSize - decrementFactor * windowSizeIncrement);
                 localMaxThroughput = 0;
