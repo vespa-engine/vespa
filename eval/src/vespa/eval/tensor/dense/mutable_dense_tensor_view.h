@@ -2,25 +2,27 @@
 
 #pragma once
 
-#include "dense_tensor_view.h"
+#include <vespa/eval/eval/value.h>
 #include <cassert>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
- * A mutable view to a dense tensor where all dimensions are indexed.
+ * A dense tensor with a cells reference that can be modified.
  */
-class MutableDenseTensorView : public DenseTensorView
-{
+class MutableDenseTensorView : public Value {
 private:
-    eval::ValueType _type;
-
+    const ValueType _type;
+    TypedCells _cells;
 public:
-    MutableDenseTensorView(eval::ValueType type_in);
-    MutableDenseTensorView(MutableDenseTensorView &&) = default;
+    MutableDenseTensorView(const ValueType &type_in);
     void setCells(TypedCells cells_in) {
-        initCellsRef(cells_in);
+        _cells = cells_in;
     }
+    const ValueType &type() const final override { return _type; }
+    TypedCells cells() const final override { return _cells; }
+    const Index &index() const final override { return TrivialIndex::get(); }
+    MemoryUsage get_memory_usage() const final override { return self_memory_usage<MutableDenseTensorView>(); }
 };
 
 }
