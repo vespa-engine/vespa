@@ -77,9 +77,9 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
         Slime slime = new Slime();
         Cursor clustersObject = slime.setObject().setObject("clusters");
         for (String clusterName : clusterNames) {
-            Cursor clusterObject = clustersObject.setObject(clusterName);
+            Cursor documentTypesObject = clustersObject.setObject(clusterName).setObject("documentTypes");
             database.readReindexing(clusterName).status().forEach((type, status) -> {
-                Cursor statusObject = clusterObject.setObject(type.getName());
+                Cursor statusObject = documentTypesObject.setObject(type.getName());
                 statusObject.setLong("startedMillis", status.startedAt().toEpochMilli());
                 status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedMillis", endedAt.toEpochMilli()));
                 status.progress().ifPresent(progress -> statusObject.setString("progress", progress.serializeToString()));

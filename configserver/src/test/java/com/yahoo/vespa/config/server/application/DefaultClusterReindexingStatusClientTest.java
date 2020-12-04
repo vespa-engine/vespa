@@ -7,10 +7,12 @@ import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +23,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.serverError;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,25 +43,50 @@ public class DefaultClusterReindexingStatusClientTest {
         String uriPath = "/reindexing/v1/status";
         server1.stubFor(get(urlEqualTo(uriPath)).willReturn(serverError()));
         server2.stubFor(get(urlEqualTo(uriPath)).willReturn(okJson(
-                "{\"status\":[{" +
-                        "\"type\":\"music\"," +
-                        "\"startedMillis\":0," +
-                        "\"endedMillis\":123," +
-                        "\"progress\":\"" + new ProgressToken().serializeToString() + "\"," +
-                        "\"state\": \"" + ClusterReindexing.State.FAILED.asString() + "\"," +
-                        "\"message\":\"something went wrong\"}" +
-                        "]}")));
+                "{" +
+                "  \"clusters\": {" +
+                "    \"cluster1\": {" +
+                "      \"documentTypes\": {" +
+                "        \"music\": {" +
+                "          \"startedMillis\":0," +
+                "          \"state\": \"" + ClusterReindexing.State.RUNNING.asString() + "\"" +
+                "        }" +
+                "      }" +
+                "    }" +
+                "  }" +
+                "}")));
         server3.stubFor(get(urlEqualTo(uriPath)).willReturn(okJson(
-                "{\"status\":[{" +
-                        "\"type\":\"artist\"," +
-                        "\"startedMillis\":10," +
-                        "\"endedMillis\":150," +
-                        "\"progress\":\"" + new ProgressToken().serializeToString() + "\"," +
-                        "\"state\": \"" + ClusterReindexing.State.SUCCESSFUL.asString() + "\"," +
-                        "\"message\":\"successs\"}" +
-                        "]}")));
+                "{" +
+                "  \"clusters\": {" +
+                "    \"cluster2\": {" +
+                "      \"documentTypes\": {" +
+                "        \"artist\": {" +
+                "          \"startedMillis\":50," +
+                "          \"endedMillis\":150," +
+                "          \"progress\":\"half-done\"," +
+                "          \"state\": \"" + ClusterReindexing.State.SUCCESSFUL.asString() + "\"," +
+                "          \"message\":\"success\"" +
+                "        }" +
+                "      }" +
+                "    }" +
+                "  }" +
+                "}")));
+        Map<String, ClusterReindexing> expected = Map.of("cluster1",
+                                                         new ClusterReindexing(Map.of("music",
+                                                                                      new ClusterReindexing.Status(Instant.ofEpochMilli(0),
+                                                                                                                   null,
+                                                                                                                   ClusterReindexing.State.RUNNING,
+                                                                                                                   null,
+                                                                                                                   null))),
+                                                         "cluster2",
+                                                         new ClusterReindexing(Map.of("artist",
+                                                                                      new ClusterReindexing.Status(Instant.ofEpochMilli(50),
+                                                                                                                   Instant.ofEpochMilli(150),
+                                                                                                                   ClusterReindexing.State.SUCCESSFUL,
+                                                                                                                   "success",
+                                                                                                                   "half-done"))));
         Map<String, ClusterReindexing> result = client.getReindexingStatus(app);
-        System.out.println(result);
+        assertEquals(expected, result);
     }
 
 

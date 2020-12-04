@@ -45,7 +45,7 @@ class ReindexingV1ApiTest {
 
         // GET at status with empty database
         response = driver.sendRequest("http://localhost/reindexing/v1/status");
-        assertEquals("{\"clusters\":{\"cluster\":{},\"oyster\":{}}}", response.readAll());
+        assertEquals("{\"clusters\":{\"cluster\":{\"documentTypes\":{}},\"oyster\":{\"documentTypes\":{}}}}", response.readAll());
         assertEquals(200, response.getStatus());
 
         // GET at status with a failed status
@@ -58,14 +58,18 @@ class ReindexingV1ApiTest {
         assertEquals("{" +
                      "\"clusters\":{" +
                        "\"cluster\":{" +
-                         "\"music\":{" +
-                           "\"startedMillis\":0," +
-                           "\"endedMillis\":123," +
-                           "\"progress\":\"" + new ProgressToken().serializeToString() + "\"," +
-                           "\"state\":\"failed\"," +
-                           "\"message\":\"ヽ(。_°)ノ\"}" +
+                         "\"documentTypes\":{" +
+                           "\"music\":{" +
+                             "\"startedMillis\":0," +
+                             "\"endedMillis\":123," +
+                             "\"progress\":\"" + new ProgressToken().serializeToString() + "\"," +
+                             "\"state\":\"failed\"," +
+                             "\"message\":\"ヽ(。_°)ノ\"}" +
+                           "}" +
                          "}," +
-                         "\"oyster\":{}" +
+                         "\"oyster\":{" +
+                           "\"documentTypes\":{}" +
+                         "}" +
                        "}" +
                      "}",
                      response.readAll());
