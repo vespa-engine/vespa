@@ -203,6 +203,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     private void propagateRestartOnDeploy() {
+        if (applicationPackage.getMetaData().isInternalRedeploy()) return;
+
         // Propagate application config setting of restartOnDeploy to cluster deferChangesUntilRestart
         for (ApplicationContainerCluster containerCluster : getContainerClusters().values()) {
             QrConfig config = getConfig(QrConfig.class, containerCluster.getConfigId());
