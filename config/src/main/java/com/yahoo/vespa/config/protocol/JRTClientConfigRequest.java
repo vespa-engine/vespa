@@ -53,9 +53,6 @@ public interface JRTClientConfigRequest extends JRTConfigRequest {
      */
     long getNewGeneration();
 
-    /** Returns whether this config change is due to an internal change not an application package change */
-    boolean responseIsInternalRedeploy();
-
     /** Returns true if this config should only be applied at the last restart, false if it should be applied immediately */
     boolean responseIsApplyOnRestart();
 

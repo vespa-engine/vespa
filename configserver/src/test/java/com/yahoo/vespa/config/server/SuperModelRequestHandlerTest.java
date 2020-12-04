@@ -125,7 +125,7 @@ public class SuperModelRequestHandlerTest {
     private static class TestApplication extends Application {
 
         TestApplication(VespaModel vespaModel, ServerCache cache, long appGeneration, ApplicationId app) {
-            super(vespaModel, cache, appGeneration, false, new Version(1, 2, 3), MetricUpdater.createTestUpdater(), app);
+            super(vespaModel, cache, appGeneration, new Version(1, 2, 3), MetricUpdater.createTestUpdater(), app);
         }
 
     }

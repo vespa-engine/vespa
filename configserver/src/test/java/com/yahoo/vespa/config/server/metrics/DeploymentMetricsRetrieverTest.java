@@ -34,8 +34,8 @@ public class DeploymentMetricsRetrieverTest {
     public void getMetrics()  {
         MockModel mockModel = new MockModel(mockHosts());
         MockDeploymentMetricsRetriever mockMetricsRetriever = new MockDeploymentMetricsRetriever();
-        Application application = new Application(mockModel, null, 0, false,
-        null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
+        Application application = new Application(mockModel, null, 0,
+                                                  null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
         DeploymentMetricsRetriever clusterMetricsRetriever = new DeploymentMetricsRetriever(mockMetricsRetriever);
         clusterMetricsRetriever.getMetrics(application);

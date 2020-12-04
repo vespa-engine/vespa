@@ -43,9 +43,6 @@ public class ConfigSubscriber implements AutoCloseable {
     /** The last complete config generation received by this */
     private long generation = -1;
 
-    /** Whether the last generation received was due to a system-internal redeploy, not an application package change */
-    private boolean internalRedeploy = false;
-
     /**
      * Whether the last generation should only be applied on restart, not immediately.
      * Once this is set it will not be unset, as no future generation should be applied
@@ -262,7 +259,6 @@ public class ConfigSubscriber implements AutoCloseable {
             h.setChanged(false); // Reset this flag, if it was set, the user should have acted on it the last time this method returned true.
         }
         boolean reconfigDue;
-        boolean internalRedeployOnly = true;
         do {
             boolean allGenerationsChanged = true;
             boolean allGenerationsTheSame = true;
@@ -279,7 +275,6 @@ public class ConfigSubscriber implements AutoCloseable {
                 allGenerationsTheSame &= currentGen.equals(config.getGeneration());
                 allGenerationsChanged &= config.isGenerationChanged();
                 anyConfigChanged      |= config.isConfigChanged();
-                internalRedeployOnly  &= config.isInternalRedeploy();
                 applyOnRestartOnly    |= requireChange && config.applyOnRestart(); // only if this is reconfig
                 timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
             }
@@ -301,7 +296,6 @@ public class ConfigSubscriber implements AutoCloseable {
             // Also if appropriate update the changed flag on the handler, which clients use.
             markSubsChangedSeen(currentGen);
             synchronized (monitor) {
-                internalRedeploy = internalRedeployOnly;
                 generation = currentGen;
             }
         }
@@ -489,12 +483,6 @@ public class ConfigSubscriber implements AutoCloseable {
             return generation;
         }
     }
-
-    /**
-     * Whether the current config generation received by this was due to a system-internal redeploy,
-     * not an application package change
-     */
-    public boolean isInternalRedeploy() { synchronized (monitor) { return internalRedeploy; } }
 
     /**
      * Convenience interface for clients who only subscribe to one config. Implement this, and pass it to {@link ConfigSubscriber#subscribe(SingleSubscriber, Class, String)}.

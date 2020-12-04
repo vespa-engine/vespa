@@ -92,7 +92,6 @@ public class TenantRepositoryTest {
         applicationRepo.activateApplication(ApplicationSet.from(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                                                                 new ServerCache(),
                                                                                 4L,
-                                                                                false,
                                                                                 new Version(1, 2, 3),
                                                                                 MetricUpdater.createTestUpdater(),
                                                                                 id)),
