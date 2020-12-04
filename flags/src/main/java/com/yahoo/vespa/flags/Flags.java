@@ -199,6 +199,13 @@ public class Flags {
             "Takes effect immediately on new hosts, on next redeploy for applications",
             APPLICATION_ID);
 
+    public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
+            "max-trial-tenants", -1,
+            List.of("ogronnesby"), "2020-12-03", "2021-04-01",
+            "The maximum nr. of tenants with trial plan, -1 is unlimited",
+            "Takes effect immediately"
+    );
+
     public static final UnboundBooleanFlag CONTROLLER_PROVISION_LB = defineFeatureFlag(
             "controller-provision-lb", false,
             List.of("mpolden"), "2020-12-02", "2021-02-01",

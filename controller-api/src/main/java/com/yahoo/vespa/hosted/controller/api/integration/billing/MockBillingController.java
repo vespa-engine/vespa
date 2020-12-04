@@ -34,6 +34,13 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
+    public List<TenantName> tenantsWithPlan(List<TenantName> tenants, PlanId planId) {
+        return tenants.stream()
+                .filter(t -> plans.getOrDefault(t, PlanId.from("trial")).equals(planId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public String getPlanDisplayName(PlanId planId) {
         return "Plan with id: " + planId.value();
     }
