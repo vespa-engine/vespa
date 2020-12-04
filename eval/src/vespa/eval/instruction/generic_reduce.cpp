@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <cassert>
+#include <array>
 
 using namespace vespalib::eval::tensor_function;
 

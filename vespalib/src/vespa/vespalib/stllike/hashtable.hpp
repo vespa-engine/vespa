@@ -3,6 +3,7 @@
 
 #include "hashtable.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <algorithm>
 
 namespace vespalib {
 

@@ -8,6 +8,7 @@
 #include <xxhash.h>
 #include <mutex>
 #include <vector>
+#include <array>
 
 namespace vespalib {
 
