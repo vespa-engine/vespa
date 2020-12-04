@@ -47,7 +47,7 @@ public class ReconfigurerTest {
         ZookeeperServerConfig nextConfig = createConfig(5, true);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals("node0:2181,node1:2181,node2:2181", reconfigurer.connectionSpec);
-        assertEquals("3=node3:2182:2183,4=node4:2182:2183", reconfigurer.joiningServers);
+        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers);
         assertNull("No servers are leaving", reconfigurer.leavingServers);
         assertEquals(1, reconfigurer.reconfigurations);
         assertSame(nextConfig, reconfigurer.activeConfig());
