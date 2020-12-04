@@ -70,7 +70,7 @@ public class ApplicationMapperTest {
     }
 
     private Application createApplication(Version version) {
-        return new Application(new ModelStub(), null, 0, version, MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
+        return new Application(new ModelStub(), null, 0, false, version, MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
     }
 
 }

@@ -30,9 +30,8 @@ public class CloudSubscriberFactory implements SubscriberFactory {
     private static final Logger log = Logger.getLogger(CloudSubscriberFactory.class.getName());
 
     private final ConfigSource configSource;
-    private final Map<CloudSubscriber, Integer> activeSubscribers = new WeakHashMap<>();
-
     private Optional<Long> testGeneration = Optional.empty();
+    private Map<CloudSubscriber, Integer> activeSubscribers = new WeakHashMap<>();
 
     public CloudSubscriberFactory(ConfigSource configSource) {
         this.configSource = configSource;
@@ -71,6 +70,9 @@ public class CloudSubscriberFactory implements SubscriberFactory {
         // if waitNextGeneration has not yet been called, -1 should be returned
         private long generation = -1L;
 
+        // True if this reconfiguration was caused by a system-internal redeploy, not an external application change
+        private boolean internalRedeploy = false;
+
         private CloudSubscriber(Set<ConfigKey<ConfigInstance>> keys, ConfigSource configSource) {
             this.subscriber = new ConfigSubscriber(configSource);
             keys.forEach(k -> handles.put(k, subscriber.subscribe(k.getConfigClass(), k.getConfigId())));
@@ -84,6 +86,11 @@ public class CloudSubscriberFactory implements SubscriberFactory {
         @Override
         public long generation() {
             return generation;
+        }
+
+        @Override
+        public boolean internalRedeploy() {
+            return internalRedeploy;
         }
 
         //mapValues returns a view,, so we need to force evaluation of it here to prevent deferred evaluation.
@@ -121,6 +128,7 @@ public class CloudSubscriberFactory implements SubscriberFactory {
             }
 
             generation = subscriber.getGeneration();
+            internalRedeploy = subscriber.isInternalRedeploy();
             return generation;
         }
 

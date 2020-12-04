@@ -131,6 +131,7 @@ public class RpcServerTest {
         Application app = new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                           new ServerCache(),
                                           2L,
+                                          false,
                                           new Version(1, 2, 3),
                                           MetricUpdater.createTestUpdater(),
                                           applicationId);
