@@ -10,6 +10,7 @@ import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -47,7 +48,7 @@ public class Reconfigurer extends AbstractComponent {
         return activeConfig;
     }
 
-    void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) {
+    void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec,
                                                                (int) sessionTimeout.toMillis(),
@@ -56,7 +57,7 @@ public class Reconfigurer extends AbstractComponent {
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
             byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
             log.log(Level.INFO, "Applied ZooKeeper config: " + new String(appliedConfig, StandardCharsets.UTF_8));
-        } catch (IOException | KeeperException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -86,7 +87,26 @@ public class Reconfigurer extends AbstractComponent {
         joiningServers = joiningServers.isEmpty() ? null : joiningServers;
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers);
-        zooKeeperReconfigure(connectionSpec(activeConfig), joiningServers, leavingServers);
+        String connectionSpec = connectionSpec(activeConfig);
+        boolean reconfigured = false;
+        Instant end = Instant.now().plus(Duration.ofMinutes(5));
+
+        // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
+        while ( ! reconfigured && Instant.now().isBefore(end)) {
+            try {
+                zooKeeperReconfigure(connectionSpec, joiningServers, leavingServers);
+                reconfigured = true;
+            } catch (KeeperException e) {
+                if ( ! (e instanceof KeeperException.ReconfigInProgress))
+                    throw new RuntimeException(e);
+                log.log(Level.INFO, "Will retry in 1 second");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException interruptedException) {
+                    log.log(Level.INFO, "Interrupted waiting for reconfiguration to be done", interruptedException);
+                }
+            }
+        }
         activeConfig = newConfig;
     }
 
