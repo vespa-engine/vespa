@@ -24,6 +24,8 @@ PartitionDocidRangeScheduler::PartitionDocidRangeScheduler(size_t num_threads, u
     }
 }
 
+PartitionDocidRangeScheduler::~PartitionDocidRangeScheduler() = default;
+
 //-----------------------------------------------------------------------------
 
 DocidRange
@@ -49,6 +51,8 @@ TaskDocidRangeScheduler::TaskDocidRangeScheduler(size_t num_threads, size_t num_
       _unassigned(_splitter.full_range().size())
 {
 }
+
+TaskDocidRangeScheduler::~TaskDocidRangeScheduler() = default;
 
 //-----------------------------------------------------------------------------
 

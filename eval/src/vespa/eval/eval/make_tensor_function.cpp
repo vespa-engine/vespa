@@ -26,6 +26,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     TensorFunctionBuilder(Stash &stash_in, const ValueBuilderFactory &factory_in, const NodeTypes &types_in)
         : stash(stash_in), factory(factory_in), types(types_in), stack() {}
+    ~TensorFunctionBuilder() override;
 
     //-------------------------------------------------------------------------
 
@@ -353,6 +354,8 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     bool open(const Node &node) override { return !maybe_make_const(node); }
     void close(const Node &node) override { node.accept(*this); }
 };
+
+TensorFunctionBuilder::~TensorFunctionBuilder() = default;
 
 } // namespace vespalib::eval::<unnamed>
 
