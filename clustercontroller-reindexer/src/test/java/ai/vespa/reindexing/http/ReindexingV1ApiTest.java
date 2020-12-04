@@ -15,6 +15,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
@@ -28,8 +29,9 @@ class ReindexingV1ApiTest {
     DocumentmanagerConfig musicConfig = Deriver.getDocumentManagerConfig("src/test/resources/schemas/music.sd").build();
     DocumentTypeManager manager = new DocumentTypeManager(musicConfig);
     DocumentType musicType = manager.getDocumentType("music");
-    ReindexingCurator database = new ReindexingCurator(new MockCurator(), "cluster", manager);
-    ReindexingV1ApiHandler handler = new ReindexingV1ApiHandler(Executors.newSingleThreadExecutor(), new MockMetric(), database);
+    ReindexingCurator database = new ReindexingCurator(new MockCurator(), manager);
+    ReindexingV1ApiHandler handler = new ReindexingV1ApiHandler(Executors.newSingleThreadExecutor(), new MockMetric(),
+                                                                List.of("cluster", "oyster"), database);
 
     @Test
     void testResponses() {
@@ -43,23 +45,33 @@ class ReindexingV1ApiTest {
 
         // GET at status with empty database
         response = driver.sendRequest("http://localhost/reindexing/v1/status");
-        assertEquals("{\"status\":[]}", response.readAll());
+        assertEquals("{\"clusters\":{\"cluster\":{\"documentTypes\":{}},\"oyster\":{\"documentTypes\":{}}}}", response.readAll());
         assertEquals(200, response.getStatus());
 
         // GET at status with a failed status
         database.writeReindexing(Reindexing.empty().with(musicType, Status.ready(Instant.EPOCH)
                                                                           .running()
                                                                           .progressed(new ProgressToken())
-                                                                          .failed(Instant.ofEpochMilli(123), "ヽ(。_°)ノ")));
+                                                                          .failed(Instant.ofEpochMilli(123), "ヽ(。_°)ノ")),
+                                 "cluster");
         response = driver.sendRequest("http://localhost/reindexing/v1/status");
-        assertEquals("{\"status\":[{" +
-                     "\"type\":\"music\"," +
-                     "\"startedMillis\":0," +
-                     "\"endedMillis\":123," +
-                     "\"progress\":\"" + new ProgressToken().serializeToString() + "\"," +
-                     "\"state\":\"failed\"," +
-                     "\"message\":\"ヽ(。_°)ノ\"}" +
-                     "]}",
+        assertEquals("{" +
+                     "\"clusters\":{" +
+                       "\"cluster\":{" +
+                         "\"documentTypes\":{" +
+                           "\"music\":{" +
+                             "\"startedMillis\":0," +
+                             "\"endedMillis\":123," +
+                             "\"progress\":\"" + new ProgressToken().serializeToString() + "\"," +
+                             "\"state\":\"failed\"," +
+                             "\"message\":\"ヽ(。_°)ノ\"}" +
+                           "}" +
+                         "}," +
+                         "\"oyster\":{" +
+                           "\"documentTypes\":{}" +
+                         "}" +
+                       "}" +
+                     "}",
                      response.readAll());
         assertEquals(200, response.getStatus());
 
