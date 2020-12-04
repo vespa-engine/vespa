@@ -15,4 +15,4 @@ clusterName            string default=""
 status{}.readyAtMillis long
 
 # Epoch millis after which latest reprocessing may begin, per document type, per cluster
-clusters{}.status{}.readyAtMillis long
+clusters{}.documentTypes{}.readyAtMillis long
