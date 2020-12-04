@@ -223,8 +223,7 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _pseudo_thread(),
       _started(false),
       _shutdown(false),
-      _finished(false),
-      _waitFinished(false)
+      _finished(false)
 {
     trapsigpipe();
 }
@@ -377,7 +376,6 @@ FNET_TransportThread::WaitFinished()
         return;
 
     std::unique_lock<std::mutex> guard(_shutdownLock);
-    _waitFinished = true;
     while (!_finished)
         _shutdownCond.wait(guard);
 }
@@ -551,9 +549,7 @@ FNET_TransportThread::endEventLoop() {
     {
         std::lock_guard<std::mutex> guard(_shutdownLock);
         _finished = true;
-        if (_waitFinished) {
-            _shutdownCond.notify_all();
-        }
+        _shutdownCond.notify_all();
     }
 
     LOG(spam, "Transport: event loop finished.");

@@ -50,7 +50,6 @@ private:
     std::atomic<bool>        _started;        // event loop started ?
     std::atomic<bool>        _shutdown;       // should stop event loop ?
     bool                     _finished;       // event loop stopped ?
-    bool                     _waitFinished;   // someone is waiting for _finished
 
     /**
      * Add an IOComponent to the list of components. This operation is
