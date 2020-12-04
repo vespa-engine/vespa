@@ -148,9 +148,7 @@ public class ReconfigurerTest {
 
         @Override
         void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
-            attempts++;
-            System.out.println("attempt " + attempts + " at reconfiguring");
-            if (attempts < 3)
+            if (++attempts < 3)
                 throw new KeeperException.ReconfigInProgress();
             else
                 super.zooKeeperReconfigure(connectionSpec, joiningServers, leavingServers);
