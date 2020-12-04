@@ -141,7 +141,7 @@ public class Autoscaler {
 
         if (completedEventCount == 0) { // Use defaults
             if (clusterSpec.isStateful()) return Duration.ofHours(12);
-            return Duration.ofMinutes(30);
+            return Duration.ofMinutes(10);
         }
         else {
             Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
