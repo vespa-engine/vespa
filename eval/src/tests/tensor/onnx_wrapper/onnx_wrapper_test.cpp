@@ -1,8 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/tensor/dense/onnx_wrapper.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
-#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -165,13 +164,13 @@ TEST(OnnxTest, simple_onnx_model_can_be_evaluated)
     auto cells = output.cells();
     EXPECT_EQ(cells.type, CellType::FLOAT);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
+    EXPECT_EQ(cells.typify<float>()[0], 79.0);
     //-------------------------------------------------------------------------
     std::vector<float> new_bias_values({10.0});
     DenseValueView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(GetCell::from(output.cells(), 0), 80.0);
+    EXPECT_EQ(output.cells().typify<float>()[0], 80.0);
     //-------------------------------------------------------------------------
 }
 
@@ -211,13 +210,13 @@ TEST(OnnxTest, dynamic_onnx_model_can_be_evaluated)
     auto cells = output.cells();
     EXPECT_EQ(cells.type, CellType::FLOAT);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
+    EXPECT_EQ(cells.typify<float>()[0], 79.0);
     //-------------------------------------------------------------------------
     std::vector<float> new_bias_values({5.0,6.0});
     DenseValueView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(GetCell::from(output.cells(), 0), 81.0);
+    EXPECT_EQ(output.cells().typify<float>()[0], 81.0);
     //-------------------------------------------------------------------------
 }
 
@@ -257,13 +256,13 @@ TEST(OnnxTest, int_types_onnx_model_can_be_evaluated)
     auto cells = output.cells();
     EXPECT_EQ(cells.type, CellType::DOUBLE);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
+    EXPECT_EQ(cells.typify<double>()[0], 79.0);
     //-------------------------------------------------------------------------
     std::vector<double> new_bias_values({10.0});
     DenseValueView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(GetCell::from(output.cells(), 0), 80.0);
+    EXPECT_EQ(output.cells().typify<double>()[0], 80.0);
     //-------------------------------------------------------------------------
 }
 

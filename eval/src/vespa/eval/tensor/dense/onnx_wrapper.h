@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "dense_tensor_view.h"
 #ifdef __APPLE__
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #else
@@ -10,6 +9,7 @@
 #endif
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/value.h>
 #include <vector>
 #include <map>
 #include <set>

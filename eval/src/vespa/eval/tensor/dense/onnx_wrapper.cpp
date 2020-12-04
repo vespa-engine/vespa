@@ -1,8 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "onnx_wrapper.h"
+#include <vespa/eval/eval/dense_cells_value.h>
 #include <vespa/eval/eval/value_type.h>
-#include "dense_tensor.h"
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/typify.h>
@@ -20,6 +20,7 @@ using vespalib::ArrayRef;
 using vespalib::ConstArrayRef;
 using vespalib::eval::CellType;
 using vespalib::eval::DenseValueView;
+using vespalib::eval::DenseCellsValue;
 using vespalib::eval::TypedCells;
 using vespalib::eval::TypifyCellType;
 using vespalib::eval::ValueType;
@@ -85,7 +86,7 @@ struct CreateVespaTensor {
     template <typename T> static eval::Value::UP invoke(const eval::ValueType &type) {
         size_t num_cells = type.dense_subspace_size();
         std::vector<T> cells(num_cells, T{});
-        return std::make_unique<DenseTensor<T>>(type, std::move(cells));
+        return std::make_unique<DenseCellsValue<T>>(type, std::move(cells));
     }
     eval::Value::UP operator()(const eval::ValueType &type) {
         return typify_invoke<1,MyTypify,CreateVespaTensor>(type.cell_type(), type);
