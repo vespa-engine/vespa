@@ -90,28 +90,5 @@ TEST(GenericReduceTest, generic_reduce_works_for_fast_values) {
     test_generic_reduce_with(FastValueBuilderFactory::get());
 }
 
-TensorSpec immediate_generic_reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims) {
-    const auto &factory = SimpleValueBuilderFactory::get();
-    auto lhs = value_from_spec(a, factory);
-    auto up = GenericReduce::perform_reduce(*lhs, aggr, dims, factory);
-    return spec_from_value(*up);
-}
-
-TEST(GenericReduceTest, immediate_generic_reduce_works) {
-    for (const Layout &layout: layouts) {
-        TensorSpec input = spec(layout, Div16(N()));
-        for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
-            for (const Domain &domain: layout) {
-                auto expect = ReferenceOperations::reduce(input, aggr, {domain.dimension}).normalize();
-                auto actual = immediate_generic_reduce(input, aggr, {domain.dimension});
-                EXPECT_EQ(actual, expect);
-            }
-            auto expect = ReferenceOperations::reduce(input, aggr, {}).normalize();
-            auto actual = immediate_generic_reduce(input, aggr, {});
-            EXPECT_EQ(actual, expect);
-        }
-    }
-}
-
 
 GTEST_MAIN_RUN_ALL_TESTS()

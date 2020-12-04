@@ -10,7 +10,6 @@ namespace vespalib::tensor {
 
 using eval::Aggr;
 using eval::InterpretedFunction;
-using eval::TensorEngine;
 using eval::TensorFunction;
 using eval::Value;
 using eval::ValueType;

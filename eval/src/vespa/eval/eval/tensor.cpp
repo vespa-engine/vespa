@@ -10,15 +10,15 @@ namespace eval {
 bool
 operator==(const Tensor &lhs, const Tensor &rhs)
 {
-    auto lhs_spec = lhs.engine().to_spec(lhs);
-    auto rhs_spec = rhs.engine().to_spec(rhs);
+    auto lhs_spec = TensorSpec::from_value(lhs);
+    auto rhs_spec = TensorSpec::from_value(rhs);
     return (lhs_spec == rhs_spec);
 }
 
 std::ostream &
 operator<<(std::ostream &out, const Tensor &tensor)
 {
-    out << tensor.engine().to_spec(tensor).to_string();
+    out << TensorSpec::from_value(tensor).to_string();
     return out;
 }
 

@@ -9,7 +9,6 @@ namespace vespalib::tensor {
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
-using eval::TensorEngine;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;

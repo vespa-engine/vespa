@@ -8,8 +8,6 @@
 #include <cassert>
 #include <set>
 #include "tensor.h"
-#include "cell_values.h"
-#include <vespa/eval/tensor/sparse/sparse_tensor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.tensor.partial_update");
@@ -424,57 +422,37 @@ TensorPartialUpdate::modify(const Value &input, join_fun_t function,
                             const Value &modifier, EngineOrFactory engine)
 {
     if (engine.is_engine()) {
-        auto inp_ptr = dynamic_cast<const tensor::Tensor *>(&input);
-        auto mod_ptr = dynamic_cast<const SparseTensor *>(&modifier);
-        if (inp_ptr && mod_ptr) {
-            vespalib::tensor::CellValues cellValues(*mod_ptr);
-            return inp_ptr->modify(function, cellValues);
-        }
-        return {};
-    } else {
-        return modify(input, function, modifier, engine.factory());
+        abort();
     }
+    return modify(input, function, modifier, engine.factory());
+
 }
 
 Value::UP
 TensorPartialUpdate::add(const Value &input, const Value &add_cells, EngineOrFactory engine)
 {
     if (engine.is_engine()) {
-        auto inp_ptr = dynamic_cast<const tensor::Tensor *>(&input);
-        auto add_ptr = dynamic_cast<const tensor::Tensor *>(&add_cells);
-        if (inp_ptr && add_ptr) {
-            return inp_ptr->add(*add_ptr);
-        }
-        return {};
-    } else {
-        return add(input, add_cells, engine.factory());
+        abort();
     }
+    return add(input, add_cells, engine.factory());
 }
 
 Value::UP
 TensorPartialUpdate::remove(const Value &input, const Value &remove_spec, EngineOrFactory engine)
 {
     if (engine.is_engine()) {
-        auto inp_ptr = dynamic_cast<const tensor::Tensor *>(&input);
-        auto rem_ptr = dynamic_cast<const SparseTensor *>(&remove_spec);
-        if (inp_ptr && rem_ptr) {
-            vespalib::tensor::CellValues cellAddresses(*rem_ptr);
-            return inp_ptr->remove(cellAddresses);
-        }
-        return {};
-    } else {
-        return remove(input, remove_spec, engine.factory());
+        abort();
     }
+    return remove(input, remove_spec, engine.factory());
 }
 
 bool
 TensorPartialUpdate::check_suitably_sparse(const Value &modifier, const EngineOrFactory engine)
 {
     if (engine.is_engine()) {
-        return (dynamic_cast<const SparseTensor *>(&modifier) != nullptr);
-    } else {
-        return modifier.type().is_sparse();
+        abort();
     }
+    return modifier.type().is_sparse();
 }
 
 } // namespace

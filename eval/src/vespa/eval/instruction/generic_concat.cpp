@@ -121,15 +121,6 @@ struct SelectGenericConcatOp {
     }
 };
 
-struct PerformGenericConcat {
-    template <typename LCT, typename RCT, typename OCT>
-    static auto invoke(const Value &a, const Value &b, const ConcatParam &param) {
-        return generic_concat<LCT, RCT, OCT>(a, b,
-                                             param.sparse_plan, param.dense_plan,
-                                             param.res_type, param.factory);
-    }
-};
-
 enum class Case { NONE, OUT, CONCAT, BOTH };
 
 } // namespace <unnamed>
@@ -217,17 +208,6 @@ GenericConcat::make_instruction(const ValueType &lhs_type, const ValueType &rhs_
             lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(),
             param);
     return Instruction(fun, wrap_param<ConcatParam>(param));
-}
-
-Value::UP
-GenericConcat::perform_concat(const Value &a, const Value &b,
-                              const vespalib::string &dimension,
-                              const ValueBuilderFactory &factory)
-{
-    ConcatParam param(a.type(), b.type(), dimension, factory);
-    return typify_invoke<3,TypifyCellType,PerformGenericConcat>(
-            a.type().cell_type(), b.type().cell_type(), param.res_type.cell_type(),
-            a, b, param);
 }
 
 } // namespace

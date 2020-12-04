@@ -41,11 +41,6 @@ struct GenericReduce {
     make_instruction(const ValueType &type, Aggr aggr,
                      const std::vector<vespalib::string> &dimensions,
                      const ValueBuilderFactory &factory, Stash &stash);
-
-    static Value::UP
-    perform_reduce(const Value &a, Aggr aggr,
-                   const std::vector<vespalib::string> &dimensions,
-                   const ValueBuilderFactory &factory);
 };
 
 //-----------------------------------------------------------------------------

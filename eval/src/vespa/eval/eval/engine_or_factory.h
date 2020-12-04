@@ -46,13 +46,6 @@ public:
     void encode(const Value &value, nbostream &output) const;
     std::unique_ptr<Value> decode(nbostream &input) const;
     std::unique_ptr<Value> copy(const Value &value);
-    // engine-only forwarding functions
-    const Value &map(const Value &a, operation::op1_t function, Stash &stash) const;
-    const Value &join(const Value &a, const Value &b, operation::op2_t function, Stash &stash) const;
-    const Value &merge(const Value &a, const Value &b, operation::op2_t function, Stash &stash) const;
-    const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const;
-    const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const;
-    const Value &rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const;
     // global switch with default; call set before get to override the default
     static void set(EngineOrFactory wanted);
     static EngineOrFactory get();
