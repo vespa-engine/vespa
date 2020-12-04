@@ -166,13 +166,6 @@ public class Flags {
             "Whether to use an alternative CA when provisioning new certificates",
             "Takes effect only on initial application deployment - not on later certificate refreshes!");
 
-    public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
-            "docker-image-repo", "",
-            List.of("valerijf"), "2020-12-02", "2021-02-01",
-            "Override default docker image repo. Docker image version will be Vespa version.",
-            "Takes effect on next deployment from controller",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundStringFlag YUM_DIST_HOST = defineStringFlag(
             "yum-dist-host", "",
             List.of("aressem"), "2020-12-02", "2021-02-01",
