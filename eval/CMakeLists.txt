@@ -55,9 +55,7 @@ vespa_define_module(
     src/tests/instruction/join_with_number
     src/tests/streamed/value
     src/tests/tensor/dense_add_dimension_optimizer
-    src/tests/tensor/dense_dimension_combiner
     src/tests/tensor/dense_fast_rename_optimizer
-    src/tests/tensor/dense_generic_join
     src/tests/tensor/dense_inplace_join_function
     src/tests/tensor/dense_pow_as_map_optimizer
     src/tests/tensor/dense_remove_dimension_optimizer
@@ -66,13 +64,11 @@ vespa_define_module(
     src/tests/tensor/dense_simple_map_function
     src/tests/tensor/dense_single_reduce_function
     src/tests/tensor/dense_tensor_create_function
-    src/tests/tensor/direct_dense_tensor_builder
     src/tests/tensor/instruction_benchmark
     src/tests/tensor/onnx_wrapper
     src/tests/tensor/partial_add
     src/tests/tensor/partial_modify
     src/tests/tensor/partial_remove
-    src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance
     src/tests/tensor/typed_cells
     src/tests/tensor/vector_from_doubles_function

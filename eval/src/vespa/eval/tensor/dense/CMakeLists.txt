@@ -2,26 +2,15 @@
 vespa_add_library(eval_tensor_dense OBJECT
     SOURCES
     dense_add_dimension_optimizer.cpp
-    dense_dimension_combiner.cpp
     dense_fast_rename_optimizer.cpp
-    dense_lambda_function.cpp
-    dense_number_join_function.cpp
     dense_pow_as_map_optimizer.cpp
     dense_remove_dimension_optimizer.cpp
     dense_replace_type_function.cpp
     dense_simple_join_function.cpp
     dense_simple_map_function.cpp
     dense_single_reduce_function.cpp
-    dense_tensor.cpp
-    dense_tensor_address_mapper.cpp
-    dense_tensor_cells_iterator.cpp
     dense_tensor_create_function.cpp
-    dense_tensor_reduce.cpp
-    dense_tensor_value_builder.cpp
-    dense_tensor_view.cpp
     mutable_dense_tensor_view.cpp
     onnx_wrapper.cpp
-    typed_cells_dispatch.cpp
-    typed_dense_tensor_builder.cpp
     vector_from_doubles_function.cpp
 )

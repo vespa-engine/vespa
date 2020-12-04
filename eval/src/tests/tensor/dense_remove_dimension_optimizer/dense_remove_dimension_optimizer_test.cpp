@@ -4,7 +4,6 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/tensor/dense/dense_replace_type_function.h>
 #include <vespa/eval/tensor/dense/dense_fast_rename_optimizer.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
 

@@ -2,7 +2,6 @@
 
 #include "dense_fast_rename_optimizer.h"
 #include "dense_replace_type_function.h"
-#include "dense_tensor_view.h"
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::tensor {

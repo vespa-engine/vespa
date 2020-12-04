@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor_create_function.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
