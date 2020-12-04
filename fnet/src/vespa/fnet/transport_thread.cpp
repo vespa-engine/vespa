@@ -116,7 +116,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
 {
     size_t qLen;
     {
-        std::unique_lock<std::mutex> guard(_qLock);
+        std::unique_lock<std::mutex> guard(_lock);
         if (IsShutDown()) {
             guard.unlock();
             SafeDiscardEvent(cpacket, context);
@@ -217,9 +217,9 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _selector(),
       _queue(),
       _myQueue(),
-      _qLock(),
       _lock(),
-      _cond(),
+      _shutdownLock(),
+      _shutdownCond(),
       _pseudo_thread(),
       _started(false),
       _shutdown(false),
@@ -233,9 +233,9 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
 FNET_TransportThread::~FNET_TransportThread()
 {
     {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_shutdownLock);
     }
-    if (_started.load(std::memory_order_relaxed) && !_finished) {
+    if (_started.load() && !_finished) {
         LOG(error, "Transport: delete called on active object!");
     } else {
         std::lock_guard guard(_pseudo_thread);
@@ -355,7 +355,7 @@ FNET_TransportThread::ShutDown(bool waitFinished)
 {
     bool wasEmpty = false;
     {
-        std::lock_guard<std::mutex> guard(_qLock);
+        std::lock_guard<std::mutex> guard(_lock);
         if (!IsShutDown()) {
             _shutdown.store(true, std::memory_order_relaxed);
             wasEmpty  = _queue.IsEmpty_NoLock();
@@ -376,10 +376,10 @@ FNET_TransportThread::WaitFinished()
     if (_finished)
         return;
 
-    std::unique_lock<std::mutex> guard(_lock);
+    std::unique_lock<std::mutex> guard(_shutdownLock);
     _waitFinished = true;
     while (!_finished)
-        _cond.wait(guard);
+        _shutdownCond.wait(guard);
 }
 
 
@@ -398,7 +398,7 @@ void
 FNET_TransportThread::handle_wakeup_events()
 {
     {
-        std::lock_guard<std::mutex> guard(_qLock);
+        std::lock_guard<std::mutex> guard(_lock);
         _queue.FlushPackets_NoLock(&_myQueue);
     }
 
@@ -516,7 +516,7 @@ void
 FNET_TransportThread::endEventLoop() {
     // flush event queue
     {
-        std::lock_guard<std::mutex> guard(_qLock);
+        std::lock_guard<std::mutex> guard(_lock);
         _queue.FlushPackets_NoLock(&_myQueue);
     }
 
@@ -549,10 +549,10 @@ FNET_TransportThread::endEventLoop() {
            _myQueue.IsEmpty_NoLock());
 
     {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_shutdownLock);
         _finished = true;
         if (_waitFinished) {
-            _cond.notify_all();
+            _shutdownCond.notify_all();
         }
     }
 

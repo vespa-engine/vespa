@@ -43,9 +43,9 @@ private:
     Selector                 _selector;       // I/O event generator
     FNET_PacketQueue_NoLock  _queue;          // outer event queue
     FNET_PacketQueue_NoLock  _myQueue;        // inner event queue
-    std::mutex               _qLock;          // protects the Q
-    std::mutex               _lock;           // used for synchronization during shutdown
-    std::condition_variable  _cond;           // used for synchronization during shutdown
+    std::mutex               _lock;           // protects the Q
+    std::mutex               _shutdownLock;   // used for synchronization during shutdown
+    std::condition_variable  _shutdownCond;   // used for synchronization during shutdown
     std::recursive_mutex     _pseudo_thread;  // used after transport thread has shut down
     std::atomic<bool>        _started;        // event loop started ?
     std::atomic<bool>        _shutdown;       // should stop event loop ?
