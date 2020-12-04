@@ -100,6 +100,9 @@ struct SparseSketch : Sketch<BucketBits, HashT> {
         }
         return true;
     }
+    bool operator==(const SparseSketch<BucketBits, HashT>& other) const {
+        return operator==(static_cast<const SketchType&>(other));
+    }
 
     void print(std::ostream &out) const override {
         out << " (" << hash_set.size() << " elements)";
@@ -160,6 +163,9 @@ struct NormalSketch : Sketch<BucketBits, HashT> {
             }
         }
         return true;
+    }
+    bool operator==(const NormalSketch<BucketBits, HashT>& other) const {
+        return operator==(static_cast<const SketchType&>(other));
     }
 
     virtual void print(std::ostream &out) const override {

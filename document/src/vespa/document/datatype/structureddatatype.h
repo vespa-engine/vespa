@@ -37,6 +37,7 @@ public:
 
     virtual StructuredDataType* clone() const override = 0;
     bool operator==(const DataType& type) const override;
+    bool operator==(const StructuredDataType& type) const { return operator==(static_cast<const DataType&>(type)); }
 
     static int32_t createId(vespalib::stringref name);
 

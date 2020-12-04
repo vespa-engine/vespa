@@ -87,6 +87,7 @@ public:
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     bool operator==(const DataType& type) const override;
+    bool operator==(const DocumentType& type) const { return operator==(static_cast<const DataType&>(type)); }
     uint32_t getFieldCount() const override {
         return _fields->getFieldCount();
     }
