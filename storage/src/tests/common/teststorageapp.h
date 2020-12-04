@@ -87,7 +87,7 @@ public:
         { return _compReg.getDistribution(); }
     TestNodeStateUpdater& getNodeStateUpdater() { return _nodeStateUpdater; }
     uint16_t getIndex() const { return _compReg.getIndex(); }
-    const NodeIdentity& node_identity() const { return _node_identity; }
+    const NodeIdentity& node_identity() const noexcept { return _node_identity; }
 
     // The storage app also implements the done initializer interface, so it can
     // be sent to components needing this.
