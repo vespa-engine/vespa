@@ -9,7 +9,7 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/tensor/partial_update.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -20,7 +20,7 @@
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::tensor::TensorPartialUpdate;
 
 namespace document {
@@ -86,8 +86,8 @@ TensorAddUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
     auto addTensor = _tensor->getAsTensorPtr();
     if (addTensor) {
-        auto engine = EngineOrFactory::get();
-        return TensorPartialUpdate::add(tensor, *addTensor, engine);
+        const auto &factory = FastValueBuilderFactory::get();
+        return TensorPartialUpdate::add(tensor, *addTensor, factory);
     }
     return {};
 }

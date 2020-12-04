@@ -17,8 +17,6 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
@@ -56,7 +54,6 @@ using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
 using vespalib::compression::CompressionConfig;
-using vespalib::eval::EngineOrFactory;
 
 namespace proton {
 
@@ -71,17 +68,6 @@ convert(InternalProtonType::Packetcompresstype type)
       case InternalProtonType::Packetcompresstype::LZ4: return CompressionConfig::LZ4;
       default: return CompressionConfig::LZ4;
     }
-}
-
-void
-set_tensor_implementation(const ProtonConfig& cfg)
-{
-    if (cfg.tensorImplementation == ProtonConfig::TensorImplementation::TENSOR_ENGINE) {
-        LOG(error, "Old tensor engine implementation no longer available");
-    } else if (cfg.tensorImplementation == ProtonConfig::TensorImplementation::FAST_VALUE) {
-        EngineOrFactory::set(vespalib::eval::FastValueBuilderFactory::get());
-    }
-    LOG(info, "Tensor implementation used: %s", EngineOrFactory::get().to_string().c_str());
 }
 
 void
@@ -268,7 +254,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     const HwInfo & hwInfo = configSnapshot->getHwInfo();
 
-    set_tensor_implementation(protonConfig);
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir,

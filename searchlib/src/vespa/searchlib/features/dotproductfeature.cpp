@@ -10,7 +10,8 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multienumattribute.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -19,7 +20,7 @@ LOG_SETUP(".features.dotproduct");
 
 using namespace search::attribute;
 using namespace search::fef;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TypedCells;
 using vespalib::hwaccelrated::IAccelrated;
 
@@ -500,7 +501,7 @@ template <typename T>
 ArrayParam<T>::ArrayParam(vespalib::nbostream & stream) {
     using vespalib::typify_invoke;
     using vespalib::eval::TypifyCellType;
-    auto tensor = EngineOrFactory::get().decode(stream);
+    auto tensor = vespalib::eval::decode_value(stream, FastValueBuilderFactory::get());
     if (tensor->type().is_dense()) {
         TypedCells cells = tensor->cells();
         typify_invoke<1,TypifyCellType,CopyCellsToVector<T>>(cells.type, cells, values);

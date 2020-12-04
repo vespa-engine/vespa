@@ -417,42 +417,4 @@ TensorPartialUpdate::remove(const Value &input, const Value &remove_spec, const 
             input, remove_spec, factory);
 }
 
-Value::UP
-TensorPartialUpdate::modify(const Value &input, join_fun_t function,
-                            const Value &modifier, EngineOrFactory engine)
-{
-    if (engine.is_engine()) {
-        abort();
-    }
-    return modify(input, function, modifier, engine.factory());
-
-}
-
-Value::UP
-TensorPartialUpdate::add(const Value &input, const Value &add_cells, EngineOrFactory engine)
-{
-    if (engine.is_engine()) {
-        abort();
-    }
-    return add(input, add_cells, engine.factory());
-}
-
-Value::UP
-TensorPartialUpdate::remove(const Value &input, const Value &remove_spec, EngineOrFactory engine)
-{
-    if (engine.is_engine()) {
-        abort();
-    }
-    return remove(input, remove_spec, engine.factory());
-}
-
-bool
-TensorPartialUpdate::check_suitably_sparse(const Value &modifier, const EngineOrFactory engine)
-{
-    if (engine.is_engine()) {
-        abort();
-    }
-    return modifier.type().is_sparse();
-}
-
 } // namespace
