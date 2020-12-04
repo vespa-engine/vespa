@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bucketownership.h"
+#include "operation_routing_snapshot.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/common/distributorcomponent.h>
@@ -15,6 +16,7 @@ namespace storage { class DistributorConfiguration; }
 namespace storage::distributor {
 
 class DistributorBucketSpaceRepo;
+class PendingMessageTracker;
 
 /**
  * Interface with functionality that is used when handling distributor operations.
@@ -30,12 +32,18 @@ public:
                                         const std::vector<BucketCopy>& changed_nodes,
                                         uint32_t update_flags = 0) = 0;
     virtual void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) = 0;
-    virtual const DistributorBucketSpaceRepo& bucket_space_repo() const = 0;
+    virtual const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept= 0;
+    virtual DistributorBucketSpaceRepo& bucket_space_repo() noexcept = 0;
+    virtual const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept = 0;
+    virtual DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept = 0;
+    virtual document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId& docId) const = 0;
 
+    virtual const DistributorConfiguration& distributor_config() const noexcept = 0;
     virtual void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,
                                                        const BucketDatabase::Entry& entry,
                                                        uint8_t pri) = 0;
-    virtual const DistributorConfiguration& distributor_config() const = 0;
+    virtual OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket& bucket) const = 0;
+    virtual PendingMessageTracker& pending_message_tracker() noexcept = 0;
     virtual bool has_pending_message(uint16_t node_index,
                                      const document::Bucket& bucket,
                                      uint32_t message_type) const = 0;

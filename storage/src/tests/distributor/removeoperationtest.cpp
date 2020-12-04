@@ -23,7 +23,7 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
         createLinks();
 
         docId = document::DocumentId("id:test:test::uri");
-        bucketId = getExternalOperationHandler().getBucketId(docId);
+        bucketId = distributor_component().getBucketId(docId);
         enableDistributorClusterState("distributor:1 storage:4");
     };
 
@@ -35,8 +35,8 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
         auto msg = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)), dId, 100);
 
         op = std::make_unique<RemoveOperation>(
-                getExternalOperationHandler(),
-                getExternalOperationHandler(),
+                distributor_component(),
+                distributor_component(),
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().

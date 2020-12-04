@@ -29,43 +29,52 @@ LOG_SETUP(".distributor.manager");
 namespace storage::distributor {
 
 class DirectDispatchSender : public DistributorMessageSender {
-    Distributor& _distributor;
+    DistributorNodeContext& _node_ctx;
+    NonTrackingMessageSender& _msg_sender;
 public:
-    explicit DirectDispatchSender(Distributor& distributor)
-        : _distributor(distributor)
+    DirectDispatchSender(DistributorNodeContext& node_ctx,
+                         NonTrackingMessageSender& msg_sender)
+        : _node_ctx(node_ctx),
+          _msg_sender(msg_sender)
     {}
     ~DirectDispatchSender() override = default;
 
     void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
-        _distributor.send_up_without_tracking(cmd);
+        _msg_sender.send_up_without_tracking(cmd);
     }
     void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
-        _distributor.send_up_without_tracking(reply);
+        _msg_sender.send_up_without_tracking(reply);
     }
     int getDistributorIndex() const override {
-        return _distributor.getDistributorIndex(); // Thread safe
+        return _node_ctx.node_index();
     }
     const vespalib::string& getClusterName() const override {
-        return _distributor.getClusterName(); // Thread safe
+        return _node_ctx.cluster_name();
     }
     const PendingMessageTracker& getPendingMessageTracker() const override {
         abort(); // Never called by the messages using this component.
     }
 };
 
-ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
-                                                   DistributorBucketSpaceRepo& bucketSpaceRepo,
-                                                   DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_ctx,
+                                                   DistributorOperationContext& op_ctx,
+                                                   DistributorMetricSet& metrics,
+                                                   ChainedMessageSender& msg_sender,
+                                                   NonTrackingMessageSender& non_tracking_sender,
+                                                   DocumentSelectionParser& parser,
                                                    const MaintenanceOperationGenerator& gen,
-                                                   OperationOwner& operation_owner,
-                                                   DistributorComponentRegister& compReg)
-    : DistributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "External operation handler"),
-      _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(owner)),
+                                                   OperationOwner& operation_owner)
+    : _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
+      _metrics(metrics),
+      _msg_sender(msg_sender),
+      _parser(parser),
+      _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(node_ctx, non_tracking_sender)),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached(), // At epoch
       _distributor_operation_owner(operation_owner),
       _non_main_thread_ops_mutex(),
-      _non_main_thread_ops_owner(*_direct_dispatch_sender, getClock()),
+      _non_main_thread_ops_owner(*_direct_dispatch_sender, _node_ctx.clock()),
       _concurrent_gets_enabled(false),
       _use_weak_internal_read_consistency_for_gets(false)
 {
@@ -103,11 +112,11 @@ ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime)
 bool
 ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
 {
-    const auto now = TimePoint(std::chrono::seconds(getClock().getTimeInSeconds().getTime()));
+    const auto now = TimePoint(std::chrono::seconds(_node_ctx.clock().getTimeInSeconds().getTime()));
     if (now < _rejectFeedBeforeTimeReached) {
         api::StorageReply::UP reply(cmd.makeReply());
         reply->setResult(makeSafeTimeRejectionResult(now));
-        sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+        _msg_sender.sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
         return false;
     }
     return true;
@@ -116,7 +125,7 @@ ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
 void ExternalOperationHandler::bounce_with_result(api::StorageCommand& cmd, const api::ReturnCode& result) {
     api::StorageReply::UP reply(cmd.makeReply());
     reply->setResult(result);
-    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+    _msg_sender.sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
 
 void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd,
@@ -141,7 +150,7 @@ void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageComman
 }
 
 void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd) {
-    const auto& cluster_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
+    const auto& cluster_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
     bounce_with_wrong_distribution(cmd, cluster_state);
 }
 
@@ -157,7 +166,7 @@ void ExternalOperationHandler::bounce_with_busy_during_state_transition(
     api::StorageReply::UP reply(cmd.makeReply());
     api::ReturnCode ret(api::ReturnCode::BUSY, status_str);
     reply->setResult(ret);
-    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+    _msg_sender.sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
 
 bool
@@ -165,7 +174,7 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
                                                               const document::BucketId &bucketId,
                                                               PersistenceOperationMetricSet& persistenceMetrics)
 {
-    auto &bucket_space(_bucketSpaceRepo.get(cmd.getBucket().getBucketSpace()));
+    auto &bucket_space(_op_ctx.bucket_space_repo().get(cmd.getBucket().getBucketSpace()));
     if (!bucket_space.owns_bucket_in_current_state(bucketId)) {
         document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
@@ -179,7 +188,7 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
     if (!pending.isOwned()) {
         // We return BUSY here instead of WrongDistributionReply to avoid clients potentially
         // ping-ponging between cluster state versions during a state transition.
-        auto& current_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
+        auto& current_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
         auto& pending_state = pending.getNonOwnedState();
         bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
         return false;
@@ -207,7 +216,7 @@ ExternalOperationHandler::makeConcurrentMutationRejectionReply(api::StorageComma
 }
 
 bool ExternalOperationHandler::allowMutation(const SequencingHandle& handle) const {
-    const auto& config(getDistributor().getConfig());
+    const auto& config(_op_ctx.distributor_config());
     if (!config.getSequenceMutatingOperations()) {
         // Sequencing explicitly disabled, so always allow.
         return true;
@@ -222,7 +231,7 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         PersistenceOperationMetricSet& metrics,
         Func func)
 {
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    auto &bucket_space(_op_ctx.bucket_space_repo().get(bucket.getBucketSpace()));
     if (!bucket_space.owns_bucket_in_current_state(bucket.getBucketId())) {
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
@@ -233,12 +242,12 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
 
     auto pending = bucket_space.check_ownership_in_pending_state(bucket.getBucketId());
     if (pending.isOwned()) {
-        func(_bucketSpaceRepo);
+        func(_op_ctx.bucket_space_repo());
     } else {
-        if (getDistributor().getConfig().allowStaleReadsDuringClusterStateTransitions()) {
-            func(_readOnlyBucketSpaceRepo);
+        if (_op_ctx.distributor_config().allowStaleReadsDuringClusterStateTransitions()) {
+            func(_op_ctx.read_only_bucket_space_repo());
         } else {
-            auto& current_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
+            auto& current_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
             auto& pending_state = pending.getNonOwnedState();
             bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
         }
@@ -256,12 +265,12 @@ bool put_is_allowed_through_bucket_lock(const api::PutCommand& cmd) {
 
 bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
     auto& metrics = getMetrics().puts;
-    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
     if (cmd->getTimestamp() == 0) {
-        cmd->setTimestamp(getUniqueTimestamp());
+        cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
     }
 
     const auto bucket_space = cmd->getBucket().getBucketSpace();
@@ -279,11 +288,11 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
         }
     }
     if (allow) {
-        _op = std::make_shared<PutOperation>(*this, *this,
-                                             _bucketSpaceRepo.get(bucket_space),
+        _op = std::make_shared<PutOperation>(_node_ctx, _op_ctx,
+                                             _op_ctx.bucket_space_repo().get(bucket_space),
                                              std::move(cmd), getMetrics().puts, std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;
@@ -292,21 +301,21 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
 
 bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand>& cmd) {
     auto& metrics = getMetrics().updates;
-    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
     if (cmd->getTimestamp() == 0) {
-        cmd->setTimestamp(getUniqueTimestamp());
+        cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
     }
     const auto bucket_space = cmd->getBucket().getBucketSpace();
     auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     if (allowMutation(handle)) {
-        _op = std::make_shared<TwoPhaseUpdateOperation>(*this, *this, *this,
-                                                        _bucketSpaceRepo.get(bucket_space),
+        _op = std::make_shared<TwoPhaseUpdateOperation>(_node_ctx, _op_ctx, _parser,
+                                                        _op_ctx.bucket_space_repo().get(bucket_space),
                                                         std::move(cmd), getMetrics(), std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;
@@ -315,22 +324,22 @@ bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand
 
 bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand>& cmd) {
     auto& metrics = getMetrics().removes;
-    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
     if (cmd->getTimestamp() == 0) {
-        cmd->setTimestamp(getUniqueTimestamp());
+        cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
     }
     const auto bucket_space = cmd->getBucket().getBucketSpace();
     auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     if (allowMutation(handle)) {
-        auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket_space));
+        auto &distributorBucketSpace(_op_ctx.bucket_space_repo().get(bucket_space));
 
-        _op = std::make_shared<RemoveOperation>(*this, *this, distributorBucketSpace, std::move(cmd),
+        _op = std::make_shared<RemoveOperation>(_node_ctx, _op_ctx, distributorBucketSpace, std::move(cmd),
                                                 getMetrics().removes, std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;
@@ -338,7 +347,7 @@ bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand
 
 bool ExternalOperationHandler::onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>& cmd) {
     document::BucketId bid;
-    RemoveLocationOperation::getBucketId(*this, *this, *cmd, bid);
+    RemoveLocationOperation::getBucketId(_node_ctx, _parser, *cmd, bid);
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), bid);
 
     auto& metrics = getMetrics().removelocations;
@@ -346,8 +355,8 @@ bool ExternalOperationHandler::onRemoveLocation(const std::shared_ptr<api::Remov
         return true;
     }
 
-    _op = std::make_shared<RemoveLocationOperation>(*this, *this, *this,
-                                                    _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
+    _op = std::make_shared<RemoveLocationOperation>(_node_ctx, _op_ctx, _parser,
+                                                    _op_ctx.bucket_space_repo().get(cmd->getBucket().getBucketSpace()),
                                                     std::move(cmd), getMetrics().removelocations);
     return true;
 }
@@ -359,9 +368,9 @@ api::InternalReadConsistency ExternalOperationHandler::desired_get_read_consiste
 }
 
 std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(const std::shared_ptr<api::GetCommand>& cmd) {
-    document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
+    document::Bucket bucket(cmd->getBucket().getBucketSpace(), _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()));
     auto& metrics = getMetrics().gets;
-    auto snapshot = getDistributor().read_snapshot_for_bucket(bucket);
+    auto snapshot = _op_ctx.read_snapshot_for_bucket(bucket);
     if (!snapshot.is_routable()) {
         const auto& ctx = snapshot.context();
         if (ctx.has_pending_state_transition()) {
@@ -376,7 +385,7 @@ std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(
     // The snapshot is aware of whether stale reads are enabled, so we don't have to check that here.
     const auto* space_repo = snapshot.bucket_space_repo();
     assert(space_repo != nullptr);
-    return std::make_shared<GetOperation>(*this, space_repo->get(bucket.getBucketSpace()),
+    return std::make_shared<GetOperation>(_node_ctx, space_repo->get(bucket.getBucketSpace()),
                                           snapshot.steal_read_guard(), cmd, metrics,
                                           desired_get_read_consistency());
 }
@@ -400,21 +409,21 @@ bool ExternalOperationHandler::onGetBucketList(const std::shared_ptr<api::GetBuc
     bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
         auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
         auto& bucket_database = bucket_space.getBucketDatabase();
-        _op = std::make_shared<StatBucketListOperation>(bucket_database, _operationGenerator, getIndex(), cmd);
+        _op = std::make_shared<StatBucketListOperation>(bucket_database, _operationGenerator, _node_ctx.node_index(), cmd);
     });
     return true;
 }
 
 bool ExternalOperationHandler::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>& cmd) {
     // TODO same handling as Gets (VisitorOperation needs to change)
-    const DistributorConfiguration& config(getDistributor().getConfig());
+    const auto& config(_op_ctx.distributor_config());
     VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(), config.getMaxVisitorsPerNodePerClientVisitor());
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
-    auto visit_op = std::make_shared<VisitorOperation>(*this, *this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits);
+    auto &distributorBucketSpace(_op_ctx.bucket_space_repo().get(cmd->getBucket().getBucketSpace()));
+    auto visit_op = std::make_shared<VisitorOperation>(_node_ctx, _op_ctx, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits);
     if (visit_op->is_read_for_write()) {
         _op = std::make_shared<ReadForWriteVisitorOperationStarter>(std::move(visit_op), _operation_sequencer,
                                                                     _distributor_operation_owner,
-                                                                    getDistributor().getPendingMessageTracker());
+                                                                    _op_ctx.pending_message_tracker());
     } else {
         _op = std::move(visit_op);
     }

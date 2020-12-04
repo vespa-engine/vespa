@@ -102,8 +102,8 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
             const VisitorOperation::Config& config)
     {
         return std::make_unique<VisitorOperation>(
-                getExternalOperationHandler(),
-                getExternalOperationHandler(),
+                distributor_component(),
+                distributor_component(),
                 getDistributorBucketSpace(),
                 msg,
                 config,

@@ -45,7 +45,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
         createLinks();
 
         docId = document::DocumentId("id:ns:text/html::uri");
-        bucketId = getExternalOperationHandler().getBucketId(docId);
+        bucketId = distributor_component().getBucketId(docId);
     };
 
     void TearDown() override {
@@ -56,7 +56,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
     void sendGet(api::InternalReadConsistency consistency = api::InternalReadConsistency::Strong) {
         auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::AllFields::NAME);
         op = std::make_unique<GetOperation>(
-                getExternalOperationHandler(), getDistributorBucketSpace(),
+                distributor_component(), getDistributorBucketSpace(),
                 getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
                 msg, getDistributor().getMetrics().gets,
                 consistency);

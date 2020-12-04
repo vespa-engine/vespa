@@ -115,7 +115,7 @@ OperationTargetResolverTest::getInstances(const BucketId& id,
                                           bool stripToRedundancy)
 {
     lib::IdealNodeCalculatorImpl idealNodeCalc;
-    auto &bucketSpaceRepo(getExternalOperationHandler().getBucketSpaceRepo());
+    auto &bucketSpaceRepo(distributor_component().getBucketSpaceRepo());
     auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
     idealNodeCalc.setDistribution(distributorBucketSpace.getDistribution());
     idealNodeCalc.setClusterState(distributorBucketSpace.getClusterState());
@@ -144,7 +144,7 @@ TEST_F(OperationTargetResolverTest, simple) {
 TEST_F(OperationTargetResolverTest, multiple_nodes) {
     setupDistributor(1, 2, "storage:2 distributor:1");
 
-    auto &bucketSpaceRepo(getExternalOperationHandler().getBucketSpaceRepo());
+    auto &bucketSpaceRepo(distributor_component().getBucketSpaceRepo());
     auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
     for (int i = 0; i < 100; ++i) {
         addNodesToBucketDB(BucketId(16, i), "0=0,1=0");
