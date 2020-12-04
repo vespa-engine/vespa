@@ -40,7 +40,7 @@ public:
             return ((index == rhs.index) &&
                     (name == rhs.name));
         }
-        bool operator<(const Label &rhs) const {
+        bool operator<(const Label &rhs) const noexcept {
             if (index != rhs.index) {
                 return (index < rhs.index);
             }
