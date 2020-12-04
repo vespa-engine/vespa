@@ -8,6 +8,7 @@ vespa_add_library(eval_eval OBJECT
     cell_type.cpp
     compile_tensor_function.cpp
     delete_node.cpp
+    dense_cells_value.cpp
     double_value_builder.cpp
     fast_forest.cpp
     fast_sparse_map.cpp
