@@ -32,8 +32,8 @@ class DirectDispatchSender : public DistributorMessageSender {
     DistributorNodeContext& _node_ctx;
     NonTrackingMessageSender& _msg_sender;
 public:
-    explicit DirectDispatchSender(DistributorNodeContext& node_ctx,
-                                  NonTrackingMessageSender& msg_sender)
+    DirectDispatchSender(DistributorNodeContext& node_ctx,
+                         NonTrackingMessageSender& msg_sender)
         : _node_ctx(node_ctx),
           _msg_sender(msg_sender)
     {}
