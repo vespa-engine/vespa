@@ -178,7 +178,7 @@ public class ConfiguratorTest {
                "quorumListenOnAllIPs=true\n" +
                "standaloneEnabled=false\n" +
                "reconfigEnabled=true\n" +
-               "skipACL=true\n";
+               "skipACL=yes\n";
     }
 
     private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
