@@ -198,6 +198,7 @@ struct ValueBuilderFactory {
     {
         return create_value_builder<T>(type, type.count_mapped_dimensions(), type.dense_subspace_size(), 1);
     }
+    std::unique_ptr<Value> copy(const Value &value) const;
     virtual ~ValueBuilderFactory() {}
 protected:
     virtual std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,

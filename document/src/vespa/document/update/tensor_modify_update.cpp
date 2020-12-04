@@ -10,7 +10,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/tensor/partial_update.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -22,7 +22,7 @@ using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 using vespalib::eval::ValueType;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::tensor::TensorPartialUpdate;
 
 using join_fun_t = double (*)(double, double);
@@ -163,8 +163,8 @@ TensorModifyUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
     auto cellsTensor = _tensor->getAsTensorPtr();
     if (cellsTensor) {
-        auto engine = EngineOrFactory::get();
-        return TensorPartialUpdate::modify(tensor, getJoinFunction(_operation), *cellsTensor, engine);
+        const auto &factory = FastValueBuilderFactory::get();
+        return TensorPartialUpdate::modify(tensor, getJoinFunction(_operation), *cellsTensor, factory);
     }
     return {};
 }
@@ -213,8 +213,7 @@ verifyCellsTensorIsSparse(const vespalib::eval::Value *cellsTensor)
     if (cellsTensor == nullptr) {
         return;
     }
-    auto engine = EngineOrFactory::get();
-    if (TensorPartialUpdate::check_suitably_sparse(*cellsTensor, engine)) {
+    if (cellsTensor->type().is_sparse()) {
         return;
     }
     vespalib::string err = make_string("Expected cells tensor to be sparse, but has type '%s'",

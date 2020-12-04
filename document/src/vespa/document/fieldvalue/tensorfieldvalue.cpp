@@ -4,14 +4,14 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value.h>
 #include <ostream>
 #include <cassert>
 
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using namespace vespalib::xml;
@@ -51,7 +51,7 @@ TensorFieldValue::TensorFieldValue(const TensorFieldValue &rhs)
       _altered(true)
 {
     if (rhs._tensor) {
-        _tensor = EngineOrFactory::get().copy(*rhs._tensor);
+        _tensor = FastValueBuilderFactory::get().copy(*rhs._tensor);
     }
 }
 
@@ -78,7 +78,7 @@ TensorFieldValue::operator=(const TensorFieldValue &rhs)
         if (&_dataType == &rhs._dataType || !rhs._tensor ||
             _dataType.isAssignableType(rhs._tensor->type())) {
             if (rhs._tensor) {
-                _tensor = EngineOrFactory::get().copy(*rhs._tensor);
+                _tensor = FastValueBuilderFactory::get().copy(*rhs._tensor);
             } else {
                 _tensor.reset();
             }
@@ -109,7 +109,7 @@ TensorFieldValue::make_empty_if_not_existing()
 {
     if (!_tensor) {
         TensorSpec empty_spec(_dataType.getTensorType().to_spec());
-        _tensor = EngineOrFactory::get().from_spec(empty_spec);
+        _tensor = value_from_spec(empty_spec, FastValueBuilderFactory::get());
     }
 }
 
