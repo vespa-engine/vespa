@@ -27,26 +27,6 @@ public class ClusterReindexing {
 
     public Map<String, Status> documentTypeStatus() { return documentTypeStatus; }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ClusterReindexing that = (ClusterReindexing) o;
-        return documentTypeStatus.equals(that.documentTypeStatus);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(documentTypeStatus);
-    }
-
-    @Override
-    public String toString() {
-        return "ClusterReindexing{" +
-               "documentTypeStatus=" + documentTypeStatus +
-               '}';
-    }
-
 
     public static class Status {
 
@@ -69,35 +49,6 @@ public class ClusterReindexing {
         public Optional<State> state() { return Optional.ofNullable(state); }
         public Optional<String> message() { return Optional.ofNullable(message); }
         public Optional<String> progress() { return Optional.ofNullable(progress); }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Status status = (Status) o;
-            return startedAt.equals(status.startedAt) &&
-                   Objects.equals(endedAt, status.endedAt) &&
-                   state == status.state &&
-                   Objects.equals(message, status.message) &&
-                   Objects.equals(progress, status.progress);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(startedAt, endedAt, state, message, progress);
-        }
-
-        @Override
-        public String toString() {
-            return "Status{" +
-                   "startedAt=" + startedAt +
-                   ", endedAt=" + endedAt +
-                   ", state=" + state +
-                   ", message='" + message + '\'' +
-                   ", progress='" + progress + '\'' +
-                   '}';
-        }
-
     }
 
 
@@ -116,7 +67,5 @@ public class ClusterReindexing {
         }
 
         public String asString() { return stringValue; }
-
     }
-
 }

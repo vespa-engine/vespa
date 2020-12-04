@@ -29,41 +29,43 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 public class ReindexingCurator {
 
     private final Curator curator;
+    private final String clusterName;
     private final ReindexingSerializer serializer;
     private final Duration lockTimeout;
 
-    public ReindexingCurator(Curator curator, DocumentTypeManager manager) {
-        this(curator, manager, Duration.ofSeconds(1));
+    public ReindexingCurator(Curator curator, String clusterName, DocumentTypeManager manager) {
+        this(curator, clusterName, manager, Duration.ofSeconds(1));
     }
 
-    ReindexingCurator(Curator curator, DocumentTypeManager manager, Duration lockTimeout) {
+    ReindexingCurator(Curator curator, String clusterName, DocumentTypeManager manager, Duration lockTimeout) {
         this.curator = curator;
+        this.clusterName = clusterName;
         this.serializer = new ReindexingSerializer(manager);
         this.lockTimeout = lockTimeout;
     }
 
-    public Reindexing readReindexing(String cluster) {
-        return curator.getData(statusPath(cluster)).map(serializer::deserialize)
+    public Reindexing readReindexing() {
+        return curator.getData(statusPath()).map(serializer::deserialize)
                       .orElse(Reindexing.empty());
     }
 
-    public void writeReindexing(Reindexing reindexing, String cluster) {
-        curator.set(statusPath(cluster), serializer.serialize(reindexing));
+    public void writeReindexing(Reindexing reindexing) {
+        curator.set(statusPath(), serializer.serialize(reindexing));
     }
 
     /** This lock must be held to manipulate reindexing state, or by whoever has a running visitor. */
-    public Lock lockReindexing(String cluster) throws ReindexingLockException {
+    public Lock lockReindexing() throws ReindexingLockException {
         try {
-            return curator.lock(lockPath(cluster), lockTimeout);
+            return curator.lock(lockPath(), lockTimeout);
         }
         catch (UncheckedTimeoutException e) { // TODO jonmv: Avoid use of guava classes.
             throw new ReindexingLockException(e);
         }
     }
 
-    private Path rootPath(String clusterName) { return Path.fromString("/reindexing/v1/" + clusterName); }
-    private Path statusPath(String clusterName) { return rootPath(clusterName).append("status"); }
-    private Path lockPath(String clusterName) { return rootPath(clusterName).append("lock"); }
+    private Path rootPath() { return Path.fromString("/reindexing/v1/" + clusterName); }
+    private Path statusPath() { return rootPath().append("status"); }
+    private Path lockPath() { return rootPath().append("lock"); }
 
 
     private static class ReindexingSerializer {
