@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/value.h>
+#include <cassert>
 
 namespace vespalib::eval {
 
@@ -15,7 +16,9 @@ private:
 public:
     DenseCellsValue(const ValueType &type_ref, std::vector<T> cells)
       : _type(type_ref), _cells(std::move(cells))
-    {}
+    {
+        assert(check_cell_type<T>(_type.cell_type()));
+    }
     const ValueType &type() const override { return _type; }
     TypedCells cells() const override { return TypedCells(_cells); }
     const Index &index() const override { return TrivialIndex::get(); }
