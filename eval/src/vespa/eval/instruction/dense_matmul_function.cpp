@@ -43,7 +43,7 @@ void my_matmul_op(InterpretedFunction::State &state, uint64_t param) {
         }
         lhs += (lhs_common_inner ? self.common_size : 1);
     }
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool lhs_common_inner, bool rhs_common_inner>
@@ -57,7 +57,7 @@ void my_cblas_double_matmul_op(InterpretedFunction::State &state, uint64_t param
                 lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
                 rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
                 0.0, dst_cells.begin(), self.rhs_size);
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool lhs_common_inner, bool rhs_common_inner>
@@ -71,7 +71,7 @@ void my_cblas_float_matmul_op(InterpretedFunction::State &state, uint64_t param)
                 lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
                 rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
                 0.0, dst_cells.begin(), self.rhs_size);
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 bool is_matrix(const ValueType &type) {

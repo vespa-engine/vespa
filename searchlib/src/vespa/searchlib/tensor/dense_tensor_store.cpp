@@ -133,7 +133,7 @@ DenseTensorStore::getTensor(EntryRef ref) const
         return {};
     }
     vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
-    return std::make_unique<vespalib::tensor::DenseTensorView>(_type, cells_ref);
+    return std::make_unique<vespalib::eval::DenseValueView>(_type, cells_ref);
 }
 
 vespalib::eval::TypedCells

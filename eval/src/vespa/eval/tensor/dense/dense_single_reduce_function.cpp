@@ -9,10 +9,12 @@
 namespace vespalib::tensor {
 
 using eval::Aggr;
+using eval::DenseValueView;
 using eval::InterpretedFunction;
 using eval::TensorFunction;
 using eval::Value;
 using eval::ValueType;
+using eval::TypedCells;
 using eval::TypifyCellType;
 using eval::TypifyAggr;
 using eval::as;
@@ -124,7 +126,7 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
     } else {
         trace_reduce_impl<CT,AGGR,atleast_8,is_inner>(params, src, dst);
     }
-    state.pop_push(state.stash.create<DenseTensorView>(params.result_type, TypedCells(dst_cells)));
+    state.pop_push(state.stash.create<DenseValueView>(params.result_type, TypedCells(dst_cells)));
 }
 
 struct MyGetFun {
