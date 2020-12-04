@@ -39,8 +39,9 @@ class ReindexingMaintainerTest {
                                 manager));
 
         // Unknown document type fails
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                      () -> parseReady(new ReindexingConfig.Builder()
+                                              .clusterName("cluster")
                                               .status("poetry", new ReindexingConfig.Status.Builder().readyAtMillis(123))
                                               .build(),
                                       manager));
