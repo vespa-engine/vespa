@@ -50,7 +50,7 @@ public class NodeMetricsDbTest {
 
         assertEquals(35, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
         db.gc();
-        assertEquals( 5, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
+        assertEquals(23, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
     }
 
     private int measurementCount(List<NodeTimeseries> measurements) {
