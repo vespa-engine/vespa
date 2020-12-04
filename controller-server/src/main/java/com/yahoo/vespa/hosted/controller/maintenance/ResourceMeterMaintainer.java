@@ -11,14 +11,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -33,9 +36,11 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     private final Metric metric;
     private final NodeRepository nodeRepository;
     private final MeteringClient meteringClient;
+    private final CuratorDb curator;
 
     private static final String METERING_LAST_REPORTED = "metering_last_reported";
     private static final String METERING_TOTAL_REPORTED = "metering_total_reported";
+    private static final int METERING_REFRESH_INTERVAL_SECONDS = 1800;
 
     @SuppressWarnings("WeakerAccess")
     public ResourceMeterMaintainer(Controller controller,
@@ -47,6 +52,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.metric = metric;
         this.meteringClient = meteringClient;
+        this.curator = controller.curator();
     }
 
     @Override
@@ -71,6 +77,15 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                    resourceSnapshots.stream()
                            .mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()).sum(),
                    metric.createContext(Collections.emptyMap()));
+
+        try (var lock = curator.lockMeteringRefreshTime()) {
+            if (needsRefresh(curator.readMeteringRefreshTime())) {
+                meteringClient.refresh();
+                curator.writeMeteringRefreshTime(clock.millis());
+            }
+        } catch (TimeoutException ignored) {
+            // If it's locked, it means we're currently refreshing
+        }
     }
 
     private Collection<ResourceSnapshot> getAllResourceSnapshots() {
@@ -115,6 +130,12 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private boolean isNodeStateMeterable(Node node) {
         return METERABLE_NODE_STATES.contains(node.state());
+    }
+
+    private boolean needsRefresh(long lastRefreshTimestamp) {
+        return clock.instant()
+                .minusSeconds(METERING_REFRESH_INTERVAL_SECONDS)
+                .isAfter(Instant.ofEpochMilli(lastRefreshTimestamp));
     }
 
 }
