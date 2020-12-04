@@ -10,8 +10,10 @@ import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -26,6 +28,8 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
     private static final Duration sessionTimeout = Duration.ofSeconds(30);
+    private static final Duration retryReconfigurationPeriod = Duration.ofSeconds(30);
+    private static final Duration timeBetweenRetries = Duration.ofSeconds(1);
 
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
@@ -36,18 +40,22 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     void startOrReconfigure(ZookeeperServerConfig newConfig) {
+        startOrReconfigure(newConfig, Reconfigurer::defaultSleeper);
+    }
+
+    void startOrReconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper) {
         if (zooKeeperRunner == null)
             zooKeeperRunner = startServer(newConfig);
 
         if (shouldReconfigure(newConfig))
-            reconfigure(newConfig);
+            reconfigure(newConfig, sleeper);
     }
 
     ZookeeperServerConfig activeConfig() {
         return activeConfig;
     }
 
-    void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) {
+    void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec,
                                                                (int) sessionTimeout.toMillis(),
@@ -56,7 +64,7 @@ public class Reconfigurer extends AbstractComponent {
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
             byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
             log.log(Level.INFO, "Applied ZooKeeper config: " + new String(appliedConfig, StandardCharsets.UTF_8));
-        } catch (IOException | KeeperException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -79,14 +87,31 @@ public class Reconfigurer extends AbstractComponent {
         return runner;
     }
 
-    private void reconfigure(ZookeeperServerConfig newConfig) {
+    private void reconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper) {
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
         String joiningServers = String.join(",", difference(servers(newConfig), servers(activeConfig)));
         leavingServers = leavingServers.isEmpty() ? null : leavingServers;
         joiningServers = joiningServers.isEmpty() ? null : joiningServers;
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers);
-        zooKeeperReconfigure(connectionSpec(activeConfig), joiningServers, leavingServers);
+
+        String connectionSpec = connectionSpec(activeConfig);
+        boolean reconfigured = false;
+        Instant end = Instant.now().plus(retryReconfigurationPeriod);
+        // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
+        while ( ! reconfigured && Instant.now().isBefore(end)) {
+            try {
+                Instant start = Instant.now();
+                zooKeeperReconfigure(connectionSpec, joiningServers, leavingServers);
+                log.log(Level.INFO, "Reconfiguration finished after " + Duration.between(start, Instant.now()));
+                reconfigured = true;
+            } catch (KeeperException e) {
+                if ( ! (e instanceof KeeperException.ReconfigInProgress))
+                    throw new RuntimeException(e);
+                log.log(Level.INFO, "Will retry in " + timeBetweenRetries);
+                sleeper.accept(timeBetweenRetries);
+            }
+        }
         activeConfig = newConfig;
     }
 
@@ -115,6 +140,14 @@ public class Reconfigurer extends AbstractComponent {
         List<T> copy = new ArrayList<>(list1);
         copy.removeAll(list2);
         return copy;
+    }
+
+    private static void defaultSleeper(Duration duration) {
+        try {
+            Thread.sleep(duration.toMillis());
+        } catch (InterruptedException interruptedException) {
+            interruptedException.printStackTrace();
+        }
     }
 
 }

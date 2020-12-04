@@ -2,6 +2,7 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -68,6 +69,22 @@ public class ReconfigurerTest {
     }
 
     @Test
+    public void testReconfigureFailsWithReconfigInProgressThenSucceeds() {
+        reconfigurer = new TemporarilyFailWithReconfigInProgressReconfigurer();
+        ZookeeperServerConfig initialConfig = createConfig(3, true);
+        reconfigurer.startOrReconfigure(initialConfig);
+        assertSame(initialConfig, reconfigurer.activeConfig());
+
+        ZookeeperServerConfig nextConfig = createConfig(5, true);
+        reconfigurer.startOrReconfigure(nextConfig);
+        assertEquals("node0:2181,node1:2181,node2:2181", reconfigurer.connectionSpec);
+        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers);
+        assertNull("No servers are leaving", reconfigurer.leavingServers);
+        assertEquals(1, reconfigurer.reconfigurations);
+        assertSame(nextConfig, reconfigurer.activeConfig());
+    }
+
+    @Test
     public void testDynamicReconfigurationDisabled() {
         ZookeeperServerConfig initialConfig = createConfig(3, false);
         reconfigurer.startOrReconfigure(initialConfig);
@@ -88,9 +105,7 @@ public class ReconfigurerTest {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
-        IntStream.range(0, numberOfServers).forEach(i -> {
-            builder.server(newServer(i, "node" + i));
-        });
+        IntStream.range(0, numberOfServers).forEach(i -> builder.server(newServer(i, "node" + i)));
         builder.myid(0);
         builder.dynamicReconfiguration(dynamicReconfiguration);
         return builder.build();
@@ -112,11 +127,33 @@ public class ReconfigurerTest {
         private String leavingServers;
 
         @Override
-        void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) {
+        void startOrReconfigure(ZookeeperServerConfig newConfig) {
+            super.startOrReconfigure(newConfig, l->{});
+        }
+
+        @Override
+        void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
             this.connectionSpec = connectionSpec;
             this.joiningServers = joiningServers;
             this.leavingServers = leavingServers;
             this.reconfigurations++;
+        }
+
+    }
+
+    // Fails 3 times with KeeperException.ReconfigInProgress(), then succeeds
+    private static class TemporarilyFailWithReconfigInProgressReconfigurer extends TestableReconfigurer {
+
+        private int attempts = 0;
+
+        @Override
+        void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
+            attempts++;
+            System.out.println("attempt " + attempts + " at reconfiguring");
+            if (attempts < 3)
+                throw new KeeperException.ReconfigInProgress();
+            else
+                super.zooKeeperReconfigure(connectionSpec, joiningServers, leavingServers);
         }
 
     }
