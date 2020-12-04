@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 import java.io.IOException;
@@ -59,7 +61,7 @@ public class Reconfigurer extends AbstractComponent {
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec,
                                                                (int) sessionTimeout.toMillis(),
-                                                               null);
+                                                               new NoopWatcher());
             long fromConfig = -1;
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
             byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
@@ -154,6 +156,15 @@ public class Reconfigurer extends AbstractComponent {
         } catch (InterruptedException interruptedException) {
             interruptedException.printStackTrace();
         }
+    }
+
+    private static class NoopWatcher implements Watcher {
+
+        @Override
+        public void process(WatchedEvent event) {
+            // Ignored
+        }
+
     }
 
 }
