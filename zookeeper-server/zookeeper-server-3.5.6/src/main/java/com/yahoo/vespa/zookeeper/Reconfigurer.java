@@ -88,6 +88,7 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     private void reconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper) {
+        Instant reconfigTriggered = Instant.now();
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
         String joiningServers = String.join(",", difference(servers(newConfig), servers(activeConfig)));
         leavingServers = leavingServers.isEmpty() ? null : leavingServers;
@@ -99,16 +100,21 @@ public class Reconfigurer extends AbstractComponent {
         boolean reconfigured = false;
         Instant end = Instant.now().plus(retryReconfigurationPeriod);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
-        while ( ! reconfigured && Instant.now().isBefore(end)) {
+        for (int attempts = 1; ! reconfigured && Instant.now().isBefore(end); attempts++) {
             try {
-                Instant start = Instant.now();
+                Instant reconfigStarted = Instant.now();
                 zooKeeperReconfigure(connectionSpec, joiningServers, leavingServers);
-                log.log(Level.INFO, "Reconfiguration finished after " + Duration.between(start, Instant.now()));
+                Instant reconfigEnded = Instant.now();
+                log.log(Level.INFO, "Reconfiguration completed in " +
+                                    Duration.between(reconfigTriggered, reconfigEnded) +
+                                    ", after " + attempts + " attempt(s). ZooKeeper reconfig call took " +
+                                    Duration.between(reconfigStarted, reconfigEnded));
                 reconfigured = true;
             } catch (KeeperException e) {
                 if ( ! (e instanceof KeeperException.ReconfigInProgress))
                     throw new RuntimeException(e);
-                log.log(Level.INFO, "Will retry in " + timeBetweenRetries);
+                log.log(Level.INFO, "Reconfiguration failed due to colliding with another reconfig. Retrying in " +
+                                    timeBetweenRetries);
                 sleeper.accept(timeBetweenRetries);
             }
         }
