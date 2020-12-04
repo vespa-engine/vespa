@@ -977,4 +977,34 @@ public class ControllerTest {
         app1.submit().deploy();
     }
 
+    @Test
+    public void testClashingEndpointIdAndInstanceName() {
+        String deploymentXml = "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
+                               "  <instance id=\"default\">\n" +
+                               "    <prod>\n" +
+                               "      <region active=\"true\">us-west-1</region>\n" +
+                               "    </prod>\n" +
+                               "    <endpoints>\n" +
+                               "      <endpoint id=\"dev\" container-id=\"qrs\"/>\n" +
+                               "    </endpoints>\n" +
+                               "  </instance>\n" +
+                               "  <instance id=\"dev\">\n" +
+                               "    <prod>\n" +
+                               "      <region active=\"true\">us-west-1</region>\n" +
+                               "    </prod>\n" +
+                               "    <endpoints>\n" +
+                               "      <endpoint id=\"default\" container-id=\"qrs\"/>\n" +
+                               "    </endpoints>\n" +
+                               "  </instance>\n" +
+                               "</deployment>\n";
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentXml);
+        try {
+            tester.newDeploymentContext().submit(applicationPackage);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Endpoint with ID 'default' in instance 'dev' clashes with endpoint 'dev' in instance 'default'",
+                         e.getMessage());
+        }
+    }
+
 }
