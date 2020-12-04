@@ -4,8 +4,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/onnx_model.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
-#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
 

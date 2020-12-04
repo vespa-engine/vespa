@@ -8,7 +8,6 @@
 #include "attribute_blueprint_params.h"
 #include "document_weight_or_filter_search.h"
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
