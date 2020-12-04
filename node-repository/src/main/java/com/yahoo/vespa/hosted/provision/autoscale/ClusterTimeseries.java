@@ -18,31 +18,18 @@ public class ClusterTimeseries {
 
     private final NodeList clusterNodes;
 
-    final int measurementCount;
-    final int measurementCountWithoutStale;
-    final int measurementCountWithoutStaleOutOfService;
-    final int measurementCountWithoutStaleOutOfServiceUnstable;
-
     /** The measurements for all nodes in this snapshot */
     private final List<NodeTimeseries> allTimeseries;
 
     public ClusterTimeseries(Cluster cluster, NodeList clusterNodes, MetricsDb db, NodeRepository nodeRepository) {
         this.clusterNodes = clusterNodes;
-        var timeseries = db.getNodeTimeseries(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterNodes.clusterSpec())),
+        var timeseries = db.getNodeTimeseries(nodeRepository.clock().instant().minus(Autoscaler.scalingWindow(clusterNodes.clusterSpec(), cluster)),
                                               clusterNodes);
-
-        measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
 
         if (cluster.lastScalingEvent().isPresent())
             timeseries = filter(timeseries, snapshot -> snapshot.generation() < 0 || // Content nodes do not yet send generation
                                                         snapshot.generation() >= cluster.lastScalingEvent().get().generation());
-        measurementCountWithoutStale = timeseries.stream().mapToInt(m -> m.size()).sum();
-
-        timeseries = filter(timeseries, snapshot -> snapshot.inService());
-        measurementCountWithoutStaleOutOfService = timeseries.stream().mapToInt(m -> m.size()).sum();
-
-        timeseries = filter(timeseries, snapshot -> snapshot.stable());
-        measurementCountWithoutStaleOutOfServiceUnstable = timeseries.stream().mapToInt(m -> m.size()).sum();
+        timeseries = filter(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
 
         this.allTimeseries = timeseries;
     }

@@ -77,17 +77,19 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         if (application.cluster(clusterId).isEmpty()) return;
         Cluster cluster = application.cluster(clusterId).get();
         cluster = updateCompletion(cluster, clusterNodes);
-
         var advice = autoscaler.autoscale(cluster, clusterNodes);
         cluster = cluster.withAutoscalingStatus(advice.reason());
-        if (advice.isEmpty()) {
+
+        if (advice.isPresent() && !cluster.targetResources().equals(advice.target())) { // autoscale
+            cluster = cluster.withTarget(advice.target());
             applications().put(application.with(cluster), deployment.applicationLock().get());
-        } else if (!cluster.targetResources().equals(advice.target())) {
-            applications().put(application.with(cluster.withTarget(advice.target())), deployment.applicationLock().get());
             if (advice.target().isPresent()) {
                 logAutoscaling(advice.target().get(), applicationId, cluster, clusterNodes);
                 deployment.activate();
             }
+        }
+        else { // store cluster update
+            applications().put(application.with(cluster), deployment.applicationLock().get());
         }
     }
 
@@ -106,7 +108,6 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         if (clusterNodes.retired().stream()
                         .anyMatch(node -> node.history().hasEventAt(History.Event.Type.retired, event.at())))
             return cluster;
-
         // - 2. all nodes have switched to the right config generation
         for (NodeTimeseries nodeTimeseries : metricsDb.getNodeTimeseries(event.at(), clusterNodes)) {
             Optional<MetricSnapshot> firstOnNewGeneration =

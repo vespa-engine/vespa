@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ClusterResources;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,6 +47,12 @@ public class ScalingEvent {
 
     /** Returns the instant this completed, or empty if it is not yet complete as far as we know */
     public Optional<Instant> completion() { return completion; }
+
+    /** Returns the time this event took to completion, or empty if it's not yet complete */
+    public Optional<Duration> duration() {
+        if (completion.isEmpty()) return Optional.empty();
+        return Optional.of(Duration.between(at, completion.get()));
+    }
 
     public ScalingEvent withCompletion(Instant completion) {
         return new ScalingEvent(from, to, generation, at, Optional.of(completion));
