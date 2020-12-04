@@ -391,6 +391,7 @@ struct MyTokenProcessor : public ITokenProcessor
     Matcher &_m;
     std::vector<size_t> _cands;
     MyTokenProcessor(Matcher &m) : _m(m), _cands() {}
+    ~MyTokenProcessor() override;
     void handle_token(Token &token) override {
         _m.handle_token(token);
         const match_sequence *ms = _m.GetWorkSet();
@@ -402,6 +403,7 @@ struct MyTokenProcessor : public ITokenProcessor
     }
 };
 
+MyTokenProcessor::~MyTokenProcessor() = default;
 
 /**
  * Test that max number of match candidates can be controlled.

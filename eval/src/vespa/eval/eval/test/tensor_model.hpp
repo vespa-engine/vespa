@@ -77,11 +77,14 @@ struct Seq : Sequence {
     std::vector<double> seq;
     Seq() : seq() {}
     Seq(const std::vector<double> &seq_in) : seq(seq_in) {}
+    ~Seq() override;
     double operator[](size_t i) const override {
         ASSERT_LESS(i, seq.size());
         return seq[i];
     }
 };
+
+Seq::~Seq() = default;
 
 // Random access bit mask
 struct Mask {
