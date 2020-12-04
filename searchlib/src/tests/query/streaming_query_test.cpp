@@ -226,7 +226,7 @@ public:
     virtual bool getRewriteFloatTerms() const override { return true; }
 };
 
-const char TERM_UNIQ = ParseItem::ITEM_TERM | ParseItem::IF_UNIQUEID;
+const char TERM_UNIQ = static_cast<char>(ParseItem::ITEM_TERM) | static_cast<char>(ParseItem::IF_UNIQUEID);
 
 TEST("e is not rewritten even if allowed") {
     const char term[6] = {TERM_UNIQ, 3, 1, 'c', 1, 'e'};

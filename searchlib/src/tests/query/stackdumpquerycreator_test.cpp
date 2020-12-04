@@ -32,9 +32,9 @@ void appendString(RawBuf &buf, const string &s) {
 }
 
 void appendNumTerm(RawBuf &buf, const string &term_string) {
-    uint8_t typefield = ParseItem::ITEM_NUMTERM |
-                         ParseItem::IF_WEIGHT |
-                         ParseItem::IF_UNIQUEID;
+    uint8_t typefield = static_cast<uint8_t>(ParseItem::ITEM_NUMTERM) |
+                        static_cast<uint8_t>(ParseItem::IF_WEIGHT) |
+                        static_cast<uint8_t>(ParseItem::IF_UNIQUEID);
     buf.append(typefield);
     buf.appendCompressedNumber(2);  // weight
     buf.appendCompressedPositiveNumber(42);  // id
