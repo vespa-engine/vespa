@@ -226,7 +226,7 @@ public class CapacityCheckerTester {
                 return m;
             }
             public String toString() {
-                return String.format("%s/%s/%s/%d%s", clustertype, clusterid, group, index, retired ? "/retired" : "");
+                return String.format("%s/%s/%s/%d%s%s", clustertype, clusterid, group, index, retired ? "/retired" : "", clustertype.isContent() ? "/stateful" : "");
             }
         }
         static class OwnerModel {

@@ -79,7 +79,7 @@ public class NodeSerializerTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
-                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion, Optional.empty()),
+                             ClusterMembership.from("content/myId/0/0/stateful", Vtag.currentVersion, Optional.empty()),
                              requestedResources,
                              clock.instant());
         assertEquals(1, node.history().events().size());
@@ -134,7 +134,7 @@ public class NodeSerializerTest {
                 "      \"applicationId\" : \"myApplication\",\n" +
                 "      \"tenantId\" : \"myTenant\",\n" +
                 "      \"instanceId\" : \"myInstance\",\n" +
-                "      \"serviceId\" : \"content/myId/0/0\",\n" +
+                "      \"serviceId\" : \"content/myId/0/0/stateful\",\n" +
                 "      \"restartGeneration\" : 3,\n" +
                 "      \"currentRestartGeneration\" : 4,\n" +
                 "      \"removable\" : true,\n" +
@@ -167,7 +167,7 @@ public class NodeSerializerTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
-                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion, Optional.empty()),
+                             ClusterMembership.from("content/myId/0/0/stateful", Vtag.currentVersion, Optional.empty()),
                              node.flavor().resources(),
                              clock.instant());
         assertEquals(1, node.history().events().size());
@@ -217,7 +217,7 @@ public class NodeSerializerTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                              ApplicationName.from("myApplication"),
                              InstanceName.from("myInstance")),
-                             ClusterMembership.from("content/myId/0/0", Vtag.currentVersion, Optional.empty()),
+                             ClusterMembership.from("content/myId/0/0/stateful", Vtag.currentVersion, Optional.empty()),
                              node.flavor().resources(),
                              clock.instant());
 
@@ -315,7 +315,7 @@ public class NodeSerializerTest {
                         "   \"hostname\" : \"myHostname\",\n" +
                         "   \"ipAddresses\" : [\"127.0.0.1\"],\n" +
                         "   \"instance\": {\n" +
-                        "     \"serviceId\": \"content/myId/0/0\",\n" +
+                        "     \"serviceId\": \"content/myId/0/0/stateful\",\n" +
                         "     \"wantedVespaVersion\": \"6.42.2\"\n" +
                         "   }\n" +
                         "}";
@@ -408,7 +408,7 @@ public class NodeSerializerTest {
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                 ApplicationName.from("myApplication"),
                 InstanceName.from("myInstance")),
-                ClusterMembership.from("content/myId/0/0", Vtag.currentVersion, Optional.empty()),
+                ClusterMembership.from("content/myId/0/0/stateful", Vtag.currentVersion, Optional.empty()),
                 node.flavor().resources(),
                 clock.instant());
         assertTrue(node.allocation().isPresent());
