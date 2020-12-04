@@ -27,6 +27,7 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
     private static final Duration sessionTimeout = Duration.ofSeconds(30);
+    private static final Duration retryReconfigurationPeriod = Duration.ofMinutes(5);
 
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
@@ -87,10 +88,10 @@ public class Reconfigurer extends AbstractComponent {
         joiningServers = joiningServers.isEmpty() ? null : joiningServers;
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers);
+
         String connectionSpec = connectionSpec(activeConfig);
         boolean reconfigured = false;
-        Instant end = Instant.now().plus(Duration.ofMinutes(5));
-
+        Instant end = Instant.now().plus(retryReconfigurationPeriod);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         while ( ! reconfigured && Instant.now().isBefore(end)) {
             try {
