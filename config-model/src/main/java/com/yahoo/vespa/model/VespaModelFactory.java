@@ -22,8 +22,10 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
