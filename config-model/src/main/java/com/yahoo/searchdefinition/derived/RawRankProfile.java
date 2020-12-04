@@ -191,7 +191,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             numThreadsPerSearch = rankProfile.getNumThreadsPerSearch();
             minHitsPerThread = rankProfile.getMinHitsPerThread();
             numSearchPartitions = rankProfile.getNumSearchPartitions();
-            termwiseLimit = rankProfile.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
+            termwiseLimit = rankProfile.getTermwiseLimit().orElse(deployProperties.defaultTermwiseLimit());
             keepRankCount = rankProfile.getKeepRankCount();
             rankScoreDropLimit = rankProfile.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = rankProfile.getIgnoreDefaultRankFeatures();

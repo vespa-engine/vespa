@@ -6,7 +6,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
@@ -24,9 +24,7 @@ import javax.ws.rs.ForbiddenException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.api.role.RoleDefinition.administrator;
-import static com.yahoo.vespa.hosted.controller.api.role.RoleDefinition.hostedOperator;
-import static com.yahoo.vespa.hosted.controller.api.role.RoleDefinition.hostedSupporter;
+import static com.yahoo.vespa.hosted.controller.api.role.RoleDefinition.*;
 
 /**
  * @author jonmv
@@ -41,7 +39,7 @@ public class CloudAccessControl implements AccessControl {
     @Inject
     public CloudAccessControl(UserManagement userManagement, FlagSource flagSource, ServiceRegistry serviceRegistry) {
         this.userManagement = userManagement;
-        this.enablePublicSignup = PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
+        this.enablePublicSignup = Flags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
         billingController = serviceRegistry.billingController();
     }
 

@@ -13,9 +13,9 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.JacksonFlag;
 import com.yahoo.vespa.flags.ListFlag;
-import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
 import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
@@ -70,8 +70,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                                   Metric metric) {
         super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
-        this.preprovisionCapacityFlag = PermanentFlags.PREPROVISION_CAPACITY.bindTo(flagSource);
-        this.sharedHostFlag = PermanentFlags.SHARED_HOST.bindTo(flagSource);
+        this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
+        this.sharedHostFlag = Flags.SHARED_HOST.bindTo(flagSource);
     }
 
     @Override

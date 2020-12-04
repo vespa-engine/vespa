@@ -5,14 +5,15 @@ import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.concurrent.maintenance.JobControlState;
 import com.yahoo.concurrent.maintenance.JobMetrics;
 import com.yahoo.concurrent.maintenance.Maintainer;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
-import com.yahoo.vespa.flags.PermanentFlags;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -63,7 +64,7 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
         public JobControlFlags(Curator curator, FlagSource flagSource) {
             this.curator = curator;
-            this.inactiveJobsFlag = PermanentFlags.INACTIVE_MAINTENANCE_JOBS.bindTo(flagSource);
+            this.inactiveJobsFlag = Flags.INACTIVE_MAINTENANCE_JOBS.bindTo(flagSource);
         }
 
         @Override

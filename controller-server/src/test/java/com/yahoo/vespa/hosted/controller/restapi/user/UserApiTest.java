@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.controller.restapi.user;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -19,6 +19,7 @@ import java.util.Set;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.POST;
+import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -202,7 +203,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
     public void userMetadataTest() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         ((InMemoryFlagSource) tester.controller().flagSource())
-                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
+                .withBooleanFlag(Flags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
         ControllerTester controller = new ControllerTester(tester);
         Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
         User user = new User("dev@domail", "Joe Developer", "dev", null);

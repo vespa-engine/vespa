@@ -26,7 +26,6 @@ import java.util.Set;
  *
  * @author hakonhall
  */
-@SuppressWarnings("deprecation")
 public class TestProperties implements ModelContext.Properties, ModelContext.FeatureFlags {
 
     private boolean multitenant = false;

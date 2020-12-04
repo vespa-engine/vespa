@@ -5,8 +5,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -142,7 +142,7 @@ public class NodeRebooterTest {
     }
 
     private static ProvisioningTester createTester(Duration rebootInterval, InMemoryFlagSource flagSource) {
-        flagSource = flagSource.withIntFlag(PermanentFlags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
+        flagSource = flagSource.withIntFlag(Flags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
         ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
         tester.clock().setInstant(Instant.ofEpochMilli(1605522619000L)); // Use a fixed random seed
         ((MockCurator) tester.getCurator()).setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");

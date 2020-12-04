@@ -13,7 +13,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
 
     public static class Builder {
         protected FileStorProducer build(ModelContext.Properties properties, ContentCluster parent, ModelElement clusterElem) {
-            return new FileStorProducer(properties.featureFlags(), parent, getThreads(clusterElem));
+            return new FileStorProducer(properties, parent, getThreads(clusterElem));
         }
 
        private Integer getThreads(ModelElement clusterElem) {
@@ -60,13 +60,13 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         final int twoMB = 0x200000;
         return ((value + twoMB - 1)/twoMB) * twoMB;
     }
-    public FileStorProducer(ModelContext.FeatureFlags featureFlags, ContentCluster parent, Integer numThreads) {
+    public FileStorProducer(ModelContext.Properties properties, ContentCluster parent, Integer numThreads) {
         this.numThreads = numThreads;
         this.cluster = parent;
-        this.reponseNumThreads = featureFlags.defaultNumResponseThreads();
-        this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
-        useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
-        mergeChunkSize = alignUp2MiB(featureFlags.mergeChunkSize()); // Align up to default huge page size.
+        this.reponseNumThreads = properties.defaultNumResponseThreads();
+        this.responseSequencerType = convertResponseSequencerType(properties.responseSequencerType());
+        useAsyncMessageHandlingOnSchedule = properties.useAsyncMessageHandlingOnSchedule();
+        mergeChunkSize = alignUp2MiB(properties.mergeChunkSize()); // Align up to default huge page size.
     }
 
     @Override
