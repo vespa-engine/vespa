@@ -36,7 +36,7 @@ public:
         Label(const char *name_in) : index(npos), name(name_in) {}
         bool is_mapped() const { return (index == npos); }
         bool is_indexed() const { return (index != npos); }
-        bool operator==(const Label &rhs) const {
+        bool operator==(const Label &rhs) const noexcept {
             return ((index == rhs.index) &&
                     (name == rhs.name));
         }
