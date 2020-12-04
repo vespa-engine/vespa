@@ -38,11 +38,8 @@ public:
     Tensor::UP join(join_fun_t function, const Tensor &arg) const override;
     Tensor::UP merge(join_fun_t function, const Tensor &arg) const override;
     Tensor::UP reduce(join_fun_t op, const std::vector<vespalib::string> &dimensions) const override;
-    std::unique_ptr<Tensor> modify(join_fun_t op, const CellValues &cellValues) const override;
-    std::unique_ptr<Tensor> add(const Tensor &arg) const override;
-    std::unique_ptr<Tensor> remove(const CellValues &) const override;
     eval::TensorSpec toSpec() const override;
-    void accept(TensorVisitor &visitor) const override;
+
     MemoryUsage get_memory_usage() const override {
         size_t sz = sizeof(DenseTensorView);
         return MemoryUsage(sz, sz, 0, 0);

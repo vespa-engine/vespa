@@ -3,13 +3,10 @@
 #include "dense_tensor_view.h"
 #include "dense_generic_join.hpp"
 #include "dense_tensor_reduce.hpp"
-#include "dense_tensor_modify.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/eval/tensor/cell_values.h>
 #include <vespa/eval/tensor/tensor_address_builder.h>
-#include <vespa/eval/tensor/tensor_visitor.h>
 #include <vespa/eval/eval/operation.h>
 #include <sstream>
 
@@ -217,27 +214,6 @@ DenseTensorView::toSpec() const
     return result;
 }
 
-void
-DenseTensorView::accept(TensorVisitor &visitor) const
-{
-    CellsIterator iterator(_typeRef, _cellsRef);
-    TensorAddressBuilder addressBuilder;
-    TensorAddress address;
-    vespalib::string label;
-    while (iterator.valid()) {
-        addressBuilder.clear();
-        auto rawIndex = iterator.address().begin();
-        for (const auto &dimension : _typeRef.dimensions()) {
-            label = vespalib::make_string("%u", *rawIndex);
-            addressBuilder.add(dimension.name, label);
-            ++rawIndex;
-        }
-        address = addressBuilder.build();
-        visitor.visit(address, iterator.cell());
-        iterator.next();
-    }
-}
-
 Tensor::UP
 DenseTensorView::join(join_fun_t function, const Tensor &arg) const
 {
@@ -286,39 +262,6 @@ DenseTensorView::reduce(join_fun_t op, const std::vector<vespalib::string> &dime
     return dimensions.empty()
             ? reduce_all(op, _typeRef.dimension_names())
             : reduce_all(op, dimensions);
-}
-
-struct CallModify
-{
-    using join_fun_t = vespalib::eval::operation::op2_t;
-
-    template <typename CT>
-    static std::unique_ptr<Tensor>
-    call(const ConstArrayRef<CT> &arr, join_fun_t op, const eval::ValueType &typeRef, const CellValues &cellValues)
-    {
-        std::vector newCells(arr.begin(), arr.end());
-        DenseTensorModify<CT> modifier(op, typeRef, std::move(newCells));
-        cellValues.accept(modifier);
-        return modifier.build();
-    }
-};
-
-std::unique_ptr<Tensor>
-DenseTensorView::modify(join_fun_t op, const CellValues &cellValues) const
-{
-    return dispatch_1<CallModify>(_cellsRef, op, _typeRef, cellValues);
-}
-
-std::unique_ptr<Tensor>
-DenseTensorView::add(const Tensor &) const
-{
-    LOG_ABORT("should not be reached");
-}
-
-std::unique_ptr<Tensor>
-DenseTensorView::remove(const CellValues &) const
-{
-    LOG_ABORT("should not be reached");
 }
 
 }

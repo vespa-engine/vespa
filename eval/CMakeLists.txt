@@ -67,7 +67,6 @@ vespa_define_module(
     src/tests/tensor/dense_single_reduce_function
     src/tests/tensor/dense_tensor_create_function
     src/tests/tensor/direct_dense_tensor_builder
-    src/tests/tensor/direct_sparse_tensor_builder
     src/tests/tensor/instruction_benchmark
     src/tests/tensor/onnx_wrapper
     src/tests/tensor/partial_add
@@ -89,5 +88,4 @@ vespa_define_module(
     src/vespa/eval/streamed
     src/vespa/eval/tensor
     src/vespa/eval/tensor/dense
-    src/vespa/eval/tensor/sparse
 )
