@@ -127,6 +127,11 @@ public class ReconfigurerTest {
         private String leavingServers;
 
         @Override
+        void startOrReconfigure(ZookeeperServerConfig newConfig) {
+            super.startOrReconfigure(newConfig, l->{});
+        }
+
+        @Override
         void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
             this.connectionSpec = connectionSpec;
             this.joiningServers = joiningServers;
