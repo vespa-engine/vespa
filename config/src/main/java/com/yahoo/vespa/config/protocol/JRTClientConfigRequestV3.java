@@ -180,7 +180,6 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                 .append("'\n");
         sb.append("response='").append(getNewConfigMd5())
                 .append(",").append(getNewGeneration())
-                .append(",").append(responseIsInternalRedeploy())
                 .append(",").append(responseIsApplyOnRestart())
                 .append("'\n");
         return sb.toString();
@@ -288,11 +287,6 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     @Override
     public long getNewGeneration() {
         return responseData.getResponseConfigGeneration();
-    }
-
-    @Override
-    public boolean responseIsInternalRedeploy() {
-        return responseData.getResponseInternalRedeployment();
     }
 
     @Override
