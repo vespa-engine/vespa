@@ -43,4 +43,13 @@ struct ChainedMessageSender {
     virtual void sendDown(const std::shared_ptr<api::StorageMessage>&) = 0;
 };
 
+/**
+ * Interface to send messages "up" that bypasses message tracking.
+ */
+class NonTrackingMessageSender {
+public:
+    virtual ~NonTrackingMessageSender() = default;
+    virtual void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) = 0;
+};
+
 } // storage

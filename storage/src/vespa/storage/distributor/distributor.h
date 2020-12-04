@@ -44,7 +44,8 @@ class Distributor : public StorageLink,
                     public framework::StatusReporter,
                     public framework::TickingThread,
                     public MinReplicaProvider,
-                    public BucketSpacesStatsProvider
+                    public BucketSpacesStatsProvider,
+                    public NonTrackingMessageSender
 {
 public:
     Distributor(DistributorComponentRegister&,
@@ -63,7 +64,7 @@ public:
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
     void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
     // Bypasses message tracker component. Thread safe.
-    void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&);
+    void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) override;
 
     ChainedMessageSender& getMessageSender() override {
         return (_messageSender == 0 ? *this : *_messageSender);

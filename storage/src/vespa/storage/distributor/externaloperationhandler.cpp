@@ -29,35 +29,38 @@ LOG_SETUP(".distributor.manager");
 namespace storage::distributor {
 
 class DirectDispatchSender : public DistributorMessageSender {
-    Distributor& _distributor;
+    DistributorNodeContext& _node_ctx;
+    NonTrackingMessageSender& _msg_sender;
 public:
-    explicit DirectDispatchSender(Distributor& distributor)
-        : _distributor(distributor)
+    explicit DirectDispatchSender(DistributorNodeContext& node_ctx,
+                                  NonTrackingMessageSender& msg_sender)
+        : _node_ctx(node_ctx),
+          _msg_sender(msg_sender)
     {}
     ~DirectDispatchSender() override = default;
 
     void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
-        _distributor.send_up_without_tracking(cmd);
+        _msg_sender.send_up_without_tracking(cmd);
     }
     void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
-        _distributor.send_up_without_tracking(reply);
+        _msg_sender.send_up_without_tracking(reply);
     }
     int getDistributorIndex() const override {
-        return _distributor.getDistributorIndex(); // Thread safe
+        return _node_ctx.node_index();
     }
     const vespalib::string& getClusterName() const override {
-        return _distributor.getClusterName(); // Thread safe
+        return _node_ctx.cluster_name();
     }
     const PendingMessageTracker& getPendingMessageTracker() const override {
         abort(); // Never called by the messages using this component.
     }
 };
 
-ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
-                                                   DistributorNodeContext& node_ctx,
+ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_ctx,
                                                    DistributorOperationContext& op_ctx,
                                                    DistributorMetricSet& metrics,
                                                    ChainedMessageSender& msg_sender,
+                                                   NonTrackingMessageSender& non_tracking_sender,
                                                    DocumentSelectionParser& parser,
                                                    const MaintenanceOperationGenerator& gen,
                                                    OperationOwner& operation_owner)
@@ -66,7 +69,7 @@ ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
       _metrics(metrics),
       _msg_sender(msg_sender),
       _parser(parser),
-      _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(owner)),
+      _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(node_ctx, non_tracking_sender)),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached(), // At epoch
       _distributor_operation_owner(operation_owner),

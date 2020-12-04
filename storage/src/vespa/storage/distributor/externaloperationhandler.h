@@ -40,11 +40,11 @@ public:
     bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
     bool onGetBucketList(const std::shared_ptr<api::GetBucketListCommand>&) override;
 
-    ExternalOperationHandler(Distributor& owner,
-                             DistributorNodeContext& node_ctx,
+    ExternalOperationHandler(DistributorNodeContext& node_ctx,
                              DistributorOperationContext& op_ctx,
                              DistributorMetricSet& metrics,
                              ChainedMessageSender& msg_sender,
+                             NonTrackingMessageSender& non_tracking_sender,
                              DocumentSelectionParser& parser,
                              const MaintenanceOperationGenerator& gen,
                              OperationOwner& operation_owner);
