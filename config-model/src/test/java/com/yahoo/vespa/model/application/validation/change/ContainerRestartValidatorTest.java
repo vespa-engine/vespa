@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -13,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -42,6 +44,19 @@ public class ContainerRestartValidatorTest {
         VespaModel next = createModel(false);
         List<ConfigChangeAction> result = validateModel(current, next);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void restart_on_deploy_is_propagated_to_cluster() {
+        VespaModel model1 = createModel(false);
+        assertFalse(model1.getContainerClusters().get("cluster1").getDeferChangesUntilRestart());
+        assertFalse(model1.getContainerClusters().get("cluster2").getDeferChangesUntilRestart());
+        assertFalse(model1.getContainerClusters().get("cluster3").getDeferChangesUntilRestart());
+
+        VespaModel model2 = createModel(true);
+        assertTrue(model2.getContainerClusters().get("cluster1").getDeferChangesUntilRestart());
+        assertTrue(model2.getContainerClusters().get("cluster2").getDeferChangesUntilRestart());
+        assertFalse(model2.getContainerClusters().get("cluster3").getDeferChangesUntilRestart());
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {

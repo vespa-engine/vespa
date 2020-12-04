@@ -29,6 +29,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.container.QrConfig;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
@@ -190,12 +191,23 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             configModelRepo.prepareConfigModels(deployState);
             validateWrapExceptions();
             hostSystem.dumpPortAllocations();
+            propagateRestartOnDeploy();
             // must happen after stuff above
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
         }
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
             this.fileDistributor = fileDistributor;
+        }
+
+    }
+
+    private void propagateRestartOnDeploy() {
+        // Propagate application config setting of restartOnDeploy to cluster deferChangesUntilRestart
+        for (ApplicationContainerCluster containerCluster : getContainerClusters().values()) {
+            QrConfig config = getConfig(QrConfig.class, containerCluster.getConfigId());
+            if (config.restartOnDeploy())
+                containerCluster.setDeferChangesUntilRestart(true);
         }
     }
 
