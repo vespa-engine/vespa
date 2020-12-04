@@ -146,7 +146,7 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void visit(Phrase &node) override {
-        createComplexIntermediate(node, node.getChildren(), (ParseItem::ITEM_PHRASE | ParseItem::IF_WEIGHT));
+        createComplexIntermediate(node, node.getChildren(), (static_cast<uint8_t>(ParseItem::ITEM_PHRASE) | static_cast<uint8_t>(ParseItem::IF_WEIGHT)));
     }
 
     template <typename NODE>
@@ -173,17 +173,17 @@ class QueryNodeConverter : public QueryVisitor {
     }
 
     void visit(WeightedSetTerm &node) override {
-        createWeightedSet(node, ParseItem::ITEM_WEIGHTED_SET | ParseItem::IF_WEIGHT);
+        createWeightedSet(node, static_cast<uint8_t>(ParseItem::ITEM_WEIGHTED_SET) | static_cast<uint8_t>(ParseItem::IF_WEIGHT));
         visitNodes(node.getChildren());
     }
 
     void visit(DotProduct &node) override {
-        createWeightedSet(node, ParseItem::ITEM_DOT_PRODUCT | ParseItem::IF_WEIGHT);
+        createWeightedSet(node, static_cast<uint8_t>(ParseItem::ITEM_DOT_PRODUCT) | static_cast<uint8_t>(ParseItem::IF_WEIGHT));
         visitNodes(node.getChildren());
     }
 
     void visit(WandTerm &node) override {
-        createWeightedSet(node, ParseItem::ITEM_WAND | ParseItem::IF_WEIGHT);
+        createWeightedSet(node, static_cast<uint8_t>(ParseItem::ITEM_WAND) | static_cast<uint8_t>(ParseItem::IF_WEIGHT));
         appendCompressedPositiveNumber(node.getTargetNumHits());
         appendDouble(node.getScoreThreshold());
         appendDouble(node.getThresholdBoostFactor());
