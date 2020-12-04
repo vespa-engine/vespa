@@ -22,6 +22,7 @@ private:
     const search::attribute::IAttributeVector *_attribute;
     vespalib::eval::ValueType _type;
     WeightedBufferType _attrBuffer;
+    std::vector<vespalib::stringref> _addr_ref;
     std::unique_ptr<vespalib::eval::Value> _tensor;
 
 public:
@@ -30,9 +31,11 @@ public:
         : _attribute(attribute),
           _type(vespalib::eval::ValueType::tensor_type({{dimension}})),
           _attrBuffer(),
+          _addr_ref(),
           _tensor()
     {
         _attrBuffer.allocate(_attribute->getMaxValueCount());
+        _addr_ref.reserve(1);
     }
     void execute(uint32_t docId) override;
 };
@@ -44,12 +47,11 @@ TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
     _attrBuffer.fill(*_attribute, docId);
     auto factory = FastValueBuilderFactory::get();
     auto builder = factory.create_value_builder<double>(_type, 1, 1, _attrBuffer.size());
-    std::vector<vespalib::stringref> addr_ref;
     for (size_t i = 0; i < _attrBuffer.size(); ++i) {
         vespalib::string label(_attrBuffer[i].value());
-        addr_ref.clear();
-        addr_ref.push_back(label);
-        auto cell_array = builder->add_subspace(addr_ref);
+        _addr_ref.clear();
+        _addr_ref.push_back(label);
+        auto cell_array = builder->add_subspace(_addr_ref);
         cell_array[0] = _attrBuffer[i].weight();
     }
     _tensor = builder->build(std::move(builder));
