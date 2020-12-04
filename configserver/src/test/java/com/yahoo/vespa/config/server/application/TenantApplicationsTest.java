@@ -181,6 +181,7 @@ public class TenantApplicationsTest {
         applications.activateApplication(ApplicationSet.from(new Application(model,
                                                                              new ServerCache(),
                                                                              1,
+                                                                             false,
                                                                              vespaVersion,
                                                                              MetricUpdater.createTestUpdater(),
                                                                              applicationId)),

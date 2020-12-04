@@ -261,12 +261,16 @@ public final class ConfiguredApplication implements Application {
 
     private void startReconfigurerThread() {
         reconfigurerThread = new Thread(() -> {
+            boolean restartOnDeploy = false;
             while ( ! Thread.interrupted()) {
                 try {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
+                    // Restart on deploy is sticky: Once it is set no future generation should be applied until restart
+                    restartOnDeploy = restartOnDeploy || qrConfig.restartOnDeploy();
+
                     // Block until new config arrives, and it should be applied
-                    configurer.getNewComponentGraph(builder.guiceModules().activate());
+                    configurer.getNewComponentGraph(builder.guiceModules().activate(), restartOnDeploy);
                     initializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException e) {
                     break;
