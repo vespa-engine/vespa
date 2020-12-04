@@ -31,18 +31,15 @@ class ReindexingMaintainerTest {
         DocumentTypeManager manager = new DocumentTypeManager(musicConfig);
 
         assertEquals(Map.of(manager.getDocumentType("music"), Instant.ofEpochMilli(123)),
-                     parseReady(new ReindexingConfig.Builder()
-                                        .enabled(true)
-                                        .clusterName("cluster")
-                                        .status("music", new ReindexingConfig.Status.Builder().readyAtMillis(123))
+                     parseReady(new ReindexingConfig.Clusters.Builder()
+                                        .documentTypes("music", new ReindexingConfig.Clusters.DocumentTypes.Builder().readyAtMillis(123))
                                         .build(),
                                 manager));
 
         // Unknown document type fails
         assertThrows(NullPointerException.class,
-                     () -> parseReady(new ReindexingConfig.Builder()
-                                              .clusterName("cluster")
-                                              .status("poetry", new ReindexingConfig.Status.Builder().readyAtMillis(123))
+                     () -> parseReady(new ReindexingConfig.Clusters.Builder()
+                                              .documentTypes("poetry", new ReindexingConfig.Clusters.DocumentTypes.Builder().readyAtMillis(123))
                                               .build(),
                                       manager));
 
