@@ -6,9 +6,11 @@ namespace=vespa.config.content.reindexing
 # Whether reindexing should run at all
 enabled                bool default=false
 
+# TODO jonmv: remove after 7.310 is gone
 # The name of the content cluster to reindex documents from
 clusterName            string default=""
 
+# TODO jonmv: remove after 7.310 is gone
 # Epoch millis after which latest reprocessing may begin, per document type
 status{}.readyAtMillis long
 
