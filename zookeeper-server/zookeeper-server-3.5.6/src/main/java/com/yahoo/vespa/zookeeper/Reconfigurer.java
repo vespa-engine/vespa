@@ -61,7 +61,7 @@ public class Reconfigurer extends AbstractComponent {
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec,
                                                                (int) sessionTimeout.toMillis(),
-                                                               new NoopWatcher());
+                                                               new LoggingWatcher());
             long fromConfig = -1;
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
             byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
@@ -158,11 +158,11 @@ public class Reconfigurer extends AbstractComponent {
         }
     }
 
-    private static class NoopWatcher implements Watcher {
+    private static class LoggingWatcher implements Watcher {
 
         @Override
         public void process(WatchedEvent event) {
-            // Ignored
+            log.log(Level.INFO, event.toString());
         }
 
     }
