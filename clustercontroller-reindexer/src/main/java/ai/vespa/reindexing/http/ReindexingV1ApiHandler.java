@@ -22,8 +22,6 @@ import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Executor;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
@@ -36,7 +34,6 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
 
     private final ReindexingCurator database;
-    private final List<String> clusterNames;
 
     @Inject
     public ReindexingV1ApiHandler(Executor executor, Metric metric,
@@ -44,15 +41,14 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
                                   ReindexingConfig reindexingConfig, DocumentmanagerConfig documentmanagerConfig) {
         this(executor,
              metric,
-             reindexingConfig.clusters().keySet(),
              new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()),
+                                   reindexingConfig.clusterName(),
                                    new DocumentTypeManager(documentmanagerConfig)));
     }
 
-    ReindexingV1ApiHandler(Executor executor, Metric metric, Collection<String> clusterNames, ReindexingCurator database) {
+    ReindexingV1ApiHandler(Executor executor, Metric metric, ReindexingCurator database) {
         super(executor, metric);
         this.database = database;
-        this.clusterNames = List.copyOf(clusterNames);
     }
 
     @Override
@@ -75,18 +71,16 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
 
     HttpResponse getStatus() {
         Slime slime = new Slime();
-        Cursor clustersObject = slime.setObject().setObject("clusters");
-        for (String clusterName : clusterNames) {
-            Cursor documentTypesObject = clustersObject.setObject(clusterName).setObject("documentTypes");
-            database.readReindexing(clusterName).status().forEach((type, status) -> {
-                Cursor statusObject = documentTypesObject.setObject(type.getName());
-                statusObject.setLong("startedMillis", status.startedAt().toEpochMilli());
-                status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedMillis", endedAt.toEpochMilli()));
-                status.progress().ifPresent(progress -> statusObject.setString("progress", progress.serializeToString()));
-                statusObject.setString("state", toString(status.state()));
-                status.message().ifPresent(message -> statusObject.setString("message", message));
-            });
-        }
+        Cursor statusArray = slime.setObject().setArray("status");
+        database.readReindexing().status().forEach((type, status) -> {
+            Cursor statusObject = statusArray.addObject();
+            statusObject.setString("type", type.getName());
+            statusObject.setLong("startedMillis", status.startedAt().toEpochMilli());
+            status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedMillis", endedAt.toEpochMilli()));
+            status.progress().ifPresent(progress -> statusObject.setString("progress", progress.serializeToString()));
+            statusObject.setString("state", toString(status.state()));
+            status.message().ifPresent(message -> statusObject.setString("message", message));
+        });
         return new SlimeJsonResponse(slime);
     }
 
