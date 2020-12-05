@@ -219,12 +219,12 @@ class ConstTextFieldGenerator : public FieldGenerator
 {
     string _value;
 public:
-    ConstTextFieldGenerator(std::vector<string> argv);
+    ConstTextFieldGenerator(std::vector<string> argv) noexcept;
     virtual ~ConstTextFieldGenerator() override;
     virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
-ConstTextFieldGenerator::ConstTextFieldGenerator(std::vector<string> argv)
+ConstTextFieldGenerator::ConstTextFieldGenerator(std::vector<string> argv) noexcept
     : FieldGenerator(argv[0]),
       _value()
 {

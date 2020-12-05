@@ -65,7 +65,7 @@ using queryeval::SimpleResult;
 class DocSet : public std::set<uint32_t>
 {
 public:
-    DocSet();
+    DocSet() noexcept;
     ~DocSet();
     DocSet(const uint32_t *b, const uint32_t *e) : std::set<uint32_t>(b, e) {}
     DocSet & put(const uint32_t &v) {
@@ -74,7 +74,7 @@ public:
     }
 };
 
-DocSet::DocSet() = default;
+DocSet::DocSet() noexcept = default;
 DocSet::~DocSet() = default;
 
 template <typename V, typename T>

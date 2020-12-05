@@ -82,6 +82,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     using Vector = std::vector<B>;
     using BaseType = B;
+    ~ResultNodeVectorT() override;
     const Vector & getVector() const { return _result; }
     Vector & getVector() { return _result; }
     const ResultNode * find(const ResultNode & key) const override;
@@ -107,6 +108,9 @@ private:
     int onCmp(const Identifiable & b) const override;
     Vector _result;
 };
+
+template <typename B, typename C, typename G>
+ResultNodeVectorT<B, C, G>::~ResultNodeVectorT() = default;
 
 template <typename B, typename C, typename G>
 ResultNodeVector & ResultNodeVectorT<B, C, G>::set(size_t index, const ResultNode & node)

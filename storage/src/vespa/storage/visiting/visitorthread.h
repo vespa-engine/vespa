@@ -54,9 +54,9 @@ class VisitorThread : public framework::Runnable,
         metrics::MetricTimer _timer;
         Type _type;
 
-        Event() : _visitorId(0), _message(), _timer(), _type(NONE) {}
-        Event(Event&& other);
-        Event& operator= (Event&& other);
+        Event() noexcept : _visitorId(0), _message(), _timer(), _type(NONE) {}
+        Event(Event&& other) noexcept;
+        Event& operator= (Event&& other) noexcept;
         Event(const Event& other) = delete;
         Event& operator= (const Event& other) = delete;
         Event(api::VisitorId visitor, mbus::Reply::UP reply);

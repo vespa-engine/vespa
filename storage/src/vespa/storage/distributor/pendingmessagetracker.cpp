@@ -22,7 +22,7 @@ PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr)
 PendingMessageTracker::~PendingMessageTracker() = default;
 
 PendingMessageTracker::MessageEntry::MessageEntry(TimePoint timeStamp_, uint32_t msgType_, uint32_t priority_,
-                                                  uint64_t msgId_, document::Bucket bucket_, uint16_t nodeIdx_)
+                                                  uint64_t msgId_, document::Bucket bucket_, uint16_t nodeIdx_) noexcept
     : timeStamp(timeStamp_),
       msgType(msgType_),
       priority(priority_),
