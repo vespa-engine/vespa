@@ -320,7 +320,7 @@ void test_dump(const char* s, unsigned int len)
 
 namespace {
 
-#if __cplusplus > 201703L
+#if defined(__cpp_char8_t)
 const char *
 char_from_u8(const char8_t * p) {
     return reinterpret_cast<const char *>(p);
