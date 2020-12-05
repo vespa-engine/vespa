@@ -22,7 +22,7 @@ using storage::api::ReturnCode;
 
 namespace storage {
 
-VisitorThread::Event::Event(Event&& other)
+VisitorThread::Event::Event(Event&& other) noexcept
     : _visitorId(other._visitorId),
       _message(other._message),
       _mbusReply(std::move(other._mbusReply)),
@@ -34,7 +34,7 @@ VisitorThread::Event::Event(Event&& other)
 VisitorThread::Event::~Event() = default;
 
 VisitorThread::Event&
-VisitorThread::Event::operator= (Event&& other)
+VisitorThread::Event::operator= (Event&& other) noexcept
 {
     _visitorId = other._visitorId;
     _message = other._message;

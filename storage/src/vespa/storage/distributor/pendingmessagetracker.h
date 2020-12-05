@@ -136,7 +136,7 @@ private:
         uint16_t         nodeIdx;
 
         MessageEntry(TimePoint timeStamp, uint32_t msgType, uint32_t priority,
-                     uint64_t msgId, document::Bucket bucket, uint16_t nodeIdx);
+                     uint64_t msgId, document::Bucket bucket, uint16_t nodeIdx) noexcept;
         vespalib::string toHtml() const;
     };
 

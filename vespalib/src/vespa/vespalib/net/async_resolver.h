@@ -104,7 +104,7 @@ private:
         void store(const vespalib::string &host_name, const vespalib::string &ip_address);
 
     public:
-        CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age);
+        CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age) noexcept;
         vespalib::string ip_address(const vespalib::string &host_name) override;
     };
 

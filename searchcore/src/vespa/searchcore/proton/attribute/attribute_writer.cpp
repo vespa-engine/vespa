@@ -76,7 +76,7 @@ AttributeWriter::WriteField::buildFieldPath(const DocumentType &docType)
     _fieldPath = std::move(fp);
 }
 
-AttributeWriter::WriteContext::WriteContext(ExecutorId executorId)
+AttributeWriter::WriteContext::WriteContext(ExecutorId executorId) noexcept
     : _executorId(executorId),
       _fields(),
       _hasStructFieldAttribute(false),
