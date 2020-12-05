@@ -15,12 +15,13 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author olaa
@@ -34,8 +35,9 @@ public class ResourceMeterMaintainerTest {
     @Test
     public void testMaintainer() {
         setUpZones();
-
         ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), metrics, snapshotConsumer);
+        long lastRefreshTime = tester.clock().millis();
+        tester.curator().writeMeteringRefreshTime(lastRefreshTime);
         resourceMeterMaintainer.maintain();
         Collection<ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
 
@@ -54,6 +56,16 @@ public class ResourceMeterMaintainerTest {
 
         assertEquals(tester.clock().millis()/1000, metrics.getMetric("metering_last_reported"));
         assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), Double.MIN_VALUE);
+
+        // Metering is not refreshed
+        assertFalse(snapshotConsumer.isRefreshed());
+        assertEquals(lastRefreshTime, tester.curator().readMeteringRefreshTime());
+
+        var millisAdvanced = 3600 * 1000;
+        tester.clock().advance(Duration.ofMillis(millisAdvanced));
+        resourceMeterMaintainer.maintain();
+        assertTrue(snapshotConsumer.isRefreshed());
+        assertEquals(lastRefreshTime + millisAdvanced, tester.curator().readMeteringRefreshTime());
     }
 
     private void setUpZones() {
