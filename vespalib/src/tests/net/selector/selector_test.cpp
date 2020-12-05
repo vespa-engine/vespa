@@ -77,7 +77,12 @@ struct Fixture {
     }
     Fixture &poll(int timeout_ms = 60000) {
         selector.poll(timeout_ms);
-        selector.dispatch(*this);
+        auto dispatchResult = selector.dispatch(*this);
+        if (wakeup) {
+            EXPECT_TRUE(dispatchResult == SelectorDispatchResult::WAKEUP_CALLED);
+        } else {
+            EXPECT_TRUE(dispatchResult == SelectorDispatchResult::NO_WAKEUP);
+        }
         return *this;
     }
     void verify(bool expect_wakeup, std::vector<std::pair<bool,bool> > expect_events) {

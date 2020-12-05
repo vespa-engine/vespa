@@ -172,8 +172,6 @@ private:
         return _shutdown.load(std::memory_order_relaxed);
     }
 
-    void handle_wakeup_events();
-
 public:
     FNET_TransportThread(const FNET_TransportThread &) = delete;
     FNET_TransportThread &operator=(const FNET_TransportThread &) = delete;
@@ -405,7 +403,7 @@ public:
 
 
     // Empty selector call-back for selector wakeup
-    void handle_wakeup() { }
+    void handle_wakeup();
 
     // selector call-back for io-events
     void handle_event(FNET_IOComponent &ctx, bool read, bool write);
