@@ -29,6 +29,7 @@ public class ExpressionTransforms {
                                  new OnnxModelTransformer(),
                                  new XgboostFeatureConverter(),
                                  new LightGBMFeatureConverter(),
+                                 new TokenTransformer(),
                                  new ConstantDereferencer(),
                                  new ConstantTensorTransformer(),
                                  new FunctionInliner(),
