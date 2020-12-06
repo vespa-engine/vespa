@@ -29,9 +29,18 @@ import java.util.stream.Collectors;
 public class Reconfigurer extends AbstractComponent {
 
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
+
+    // Timeout for connecting to ZooKeeper to reconfigure
     private static final Duration sessionTimeout = Duration.ofSeconds(30);
-    private static final Duration retryReconfigurationPeriod = Duration.ofSeconds(30);
-    private static final Duration timeBetweenRetries = Duration.ofSeconds(1);
+
+    // How long to wait before triggering reconfig. This is multiplied by the node ID
+    private static final Duration reconfigInterval = Duration.ofSeconds(5);
+
+    // Total timeout for a reconfiguration
+    private static final Duration reconfigTimeout = Duration.ofSeconds(30);
+
+    // How long to wait between each retry
+    private static final Duration retryWait = Duration.ofSeconds(1);
 
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
@@ -95,12 +104,12 @@ public class Reconfigurer extends AbstractComponent {
         String joiningServers = String.join(",", difference(servers(newConfig), servers(activeConfig)));
         leavingServers = leavingServers.isEmpty() ? null : leavingServers;
         joiningServers = joiningServers.isEmpty() ? null : joiningServers;
-        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
-                            ", leaving servers: " + leavingServers);
-
+        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster in " + reconfigWaitPeriod() +
+                            ". Joining servers: " + joiningServers + ", leaving servers: " + leavingServers);
+        sleeper.accept(reconfigWaitPeriod());
         String connectionSpec = connectionSpec(activeConfig);
         boolean reconfigured = false;
-        Instant end = Instant.now().plus(retryReconfigurationPeriod);
+        Instant end = Instant.now().plus(reconfigTimeout);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         for (int attempts = 1; ! reconfigured && Instant.now().isBefore(end); attempts++) {
             try {
@@ -116,11 +125,17 @@ public class Reconfigurer extends AbstractComponent {
                 if ( ! (e instanceof KeeperException.ReconfigInProgress))
                     throw new RuntimeException(e);
                 log.log(Level.INFO, "Reconfiguration failed due to colliding with another reconfig. Retrying in " +
-                                    timeBetweenRetries);
-                sleeper.accept(timeBetweenRetries);
+                                    retryWait);
+                sleeper.accept(retryWait);
             }
         }
         activeConfig = newConfig;
+    }
+
+    /** Returns how long this node should wait before reconfiguring the cluster */
+    private Duration reconfigWaitPeriod() {
+        if (activeConfig == null) return Duration.ZERO;
+        return reconfigInterval.multipliedBy(activeConfig.myid());
     }
 
     private static String connectionSpec(ZookeeperServerConfig config) {
