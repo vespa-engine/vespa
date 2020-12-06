@@ -227,6 +227,8 @@ struct UrlFieldInverterTest : public ::testing::Test {
                         _inverters[urlField._hostname].get());
     }
 
+    ~UrlFieldInverterTest() override;
+
     void invertDocument(uint32_t docId, const Document &doc) {
         _urlInverter->invertField(docId, doc.getValue(url));
     }
@@ -244,6 +246,8 @@ struct UrlFieldInverterTest : public ::testing::Test {
         _urlInverter->setUseAnnotations(true);
     }
 };
+
+UrlFieldInverterTest::~UrlFieldInverterTest() = default;
 
 struct SingleInverterTest : public UrlFieldInverterTest {
     SingleInverterTest() : UrlFieldInverterTest(CollectionType::SINGLE) {}
