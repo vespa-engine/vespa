@@ -73,7 +73,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         // Don't need to maintain spare capacity in dynamically provisioned zones; can provision more on demand.
         if (nodeRepository().zone().getCloud().dynamicProvisioning()) return success;
 
-        NodeList allNodes = nodeRepository().list();
+        NodeList allNodes = nodeRepository().list(Node.State.active);
         CapacityChecker capacityChecker = new CapacityChecker(allNodes);
 
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
