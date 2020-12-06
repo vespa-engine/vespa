@@ -118,8 +118,8 @@ Test::Main()
         return -1;
     }
     _type = _argv[1];
-    _strict = _argv[2] == vespalib::string("strict");
-    _optimize = _argv[3] == vespalib::string("optimize");
+    _strict = vespalib::string(_argv[2]) == vespalib::string("strict");
+    _optimize = vespalib::string(_argv[3]) == vespalib::string("optimize");
     _numSearch = strtoul(_argv[4], NULL, 0);
     _numDocs = strtoul(_argv[5], NULL, 0);
     for (int i(6); i < _argc; i++) {
