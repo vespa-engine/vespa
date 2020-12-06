@@ -4,6 +4,7 @@ package com.yahoo.vespa.zookeeper;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.yolean.Exceptions;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -122,10 +123,10 @@ public class Reconfigurer extends AbstractComponent {
                                     Duration.between(reconfigStarted, reconfigEnded));
                 reconfigured = true;
             } catch (KeeperException e) {
-                if ( ! (e instanceof KeeperException.ReconfigInProgress))
+                if (!retryOn(e))
                     throw new RuntimeException(e);
-                log.log(Level.INFO, "Reconfiguration failed due to colliding with another reconfig. Retrying in " +
-                                    retryWait);
+                log.log(Level.INFO, "Reconfiguration failed. Retrying in " + retryWait + ": " +
+                                    Exceptions.toMessageString(e));
                 sleeper.accept(retryWait);
             }
         }
@@ -136,6 +137,11 @@ public class Reconfigurer extends AbstractComponent {
     private Duration reconfigWaitPeriod() {
         if (activeConfig == null) return Duration.ZERO;
         return reconfigInterval.multipliedBy(activeConfig.myid());
+    }
+
+    private static boolean retryOn(KeeperException e) {
+        return e instanceof KeeperException.ReconfigInProgress ||
+               e instanceof  KeeperException.ConnectionLossException;
     }
 
     private static String connectionSpec(ZookeeperServerConfig config) {
