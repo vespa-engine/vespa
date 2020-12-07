@@ -89,10 +89,9 @@ public class Reconfigurer extends AbstractComponent {
                             ". Joining servers: " + joiningServers + ", leaving servers: " + leavingServers);
         sleeper.accept(reconfigWaitPeriod());
         String connectionSpec = connectionSpec(activeConfig);
-        boolean reconfigured = false;
         Instant end = Instant.now().plus(reconfigTimeout);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
-        for (int attempts = 1; ! reconfigured && Instant.now().isBefore(end); attempts++) {
+        for (int attempts = 1; Instant.now().isBefore(end); attempts++) {
             try {
                 Instant reconfigStarted = Instant.now();
                 zkAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
@@ -101,14 +100,14 @@ public class Reconfigurer extends AbstractComponent {
                                     Duration.between(reconfigTriggered, reconfigEnded) +
                                     ", after " + attempts + " attempt(s). ZooKeeper reconfig call took " +
                                     Duration.between(reconfigStarted, reconfigEnded));
-                reconfigured = true;
+                activeConfig = newConfig;
+                return;
             } catch (ReconfigException e) {
                 log.log(Level.INFO, "Reconfiguration failed. Retrying in " + retryWait + ": " +
                                     Exceptions.toMessageString(e));
                 sleeper.accept(retryWait);
             }
         }
-        activeConfig = newConfig;
     }
 
     /** Returns how long this node should wait before reconfiguring the cluster */

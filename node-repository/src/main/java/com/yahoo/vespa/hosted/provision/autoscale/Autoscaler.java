@@ -55,7 +55,7 @@ public class Autoscaler {
      * @return scaling advice for this cluster
      */
     public Advice autoscale(Cluster cluster, NodeList clusterNodes) {
-        if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is disabled"); // Shortcut
+        if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is not enabled");
         return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive());
     }
 
@@ -71,7 +71,7 @@ public class Autoscaler {
         int measurementsPerNode = clusterTimeseries.measurementsPerNode();
         if  (measurementsPerNode < minimumMeasurementsPerNode(clusterNodes.clusterSpec()))
             return Advice.none("Collecting more data before making new scaling decisions" +
-                               " (as " + measurementsPerNode + " data points per node but need " +
+                               " (has " + measurementsPerNode + " measurements per node but need " +
                                minimumMeasurementsPerNode(clusterNodes.clusterSpec()) + ")");
 
         int nodesMeasured = clusterTimeseries.nodesMeasured();

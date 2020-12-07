@@ -160,7 +160,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && n
         _nodes[h] = std::forward<V>(node);
         _count++;
         return insert_result(iterator(this, h), true);
-    } else if (_nodes.size() <= _nodes.capacity()) {
+    } else {
         for (next_t c(h); c != Node::npos; c = _nodes[c].getNext()) {
             if (_equal(_keyExtractor(_nodes[c].getValue()), _keyExtractor(node))) {
                 return insert_result(iterator(this, c), false);
@@ -177,9 +177,6 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && n
             resize(_nodes.capacity()*2);
             return insertInternal(std::forward<V>(node));
         }
-    } else {
-        resize(_nodes.capacity()*2);
-        return insertInternal(std::forward<V>(node));
     }
 }
 

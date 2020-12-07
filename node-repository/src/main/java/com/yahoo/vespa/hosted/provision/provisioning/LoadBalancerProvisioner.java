@@ -2,10 +2,12 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -82,7 +84,8 @@ public class LoadBalancerProvisioner {
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             List<Node> nodes = nodesOf(clusterId, application);
-            provision(application, clusterId, nodes, false);
+            LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
+            provision(loadBalancerId, nodes, false);
         }
     }
 
@@ -149,9 +152,30 @@ public class LoadBalancerProvisioner {
         return canForwardTo;
     }
 
+    /** Find all load balancer IDs owned by given tenant and application */
+    private List<LoadBalancerId> findLoadBalancers(TenantName tenant, ApplicationName application) {
+        return db.readLoadBalancerIds().stream()
+                 .filter(id -> id.application().tenant().equals(tenant) &&
+                               id.application().application().equals(application))
+                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    /** Require that load balancer IDs do not clash. This prevents name clashing when compacting endpoint DNS names */
+    private LoadBalancerId requireNonClashing(LoadBalancerId loadBalancerId) {
+        List<LoadBalancerId> loadBalancerIds = findLoadBalancers(loadBalancerId.application().tenant(),
+                                                                 loadBalancerId.application().application());
+        List<String> nonCompactableIds = withoutCompactableIds(loadBalancerId);
+        for (var id : loadBalancerIds) {
+            if (id.equals(loadBalancerId)) continue;
+            if (nonCompactableIds.equals(withoutCompactableIds(id))) {
+                throw new IllegalArgumentException(loadBalancerId + " clashes with " + id);
+            }
+        }
+        return loadBalancerId;
+    }
+
     /** Idempotently provision a load balancer for given application and cluster */
-    private void provision(ApplicationId application, ClusterSpec.Id clusterId, List<Node> nodes, boolean activate) {
-        var id = new LoadBalancerId(application, clusterId);
+    private void provision(LoadBalancerId id, List<Node> nodes, boolean activate) {
         var now = nodeRepository.clock().instant();
         var loadBalancer = db.readLoadBalancer(id);
         if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
@@ -169,6 +193,10 @@ public class LoadBalancerProvisioner {
             }
         }
         db.writeLoadBalancer(newLoadBalancer);
+    }
+
+    private void provision(ApplicationId application, ClusterSpec.Id clusterId, List<Node> nodes, boolean activate) {
+        provision(new LoadBalancerId(application, clusterId), nodes, activate);
     }
 
     private LoadBalancerInstance provisionInstance(LoadBalancerId id, List<Node> nodes, boolean force) {
@@ -206,6 +234,18 @@ public class LoadBalancerProvisioner {
         return nodes.stream().collect(Collectors.groupingBy(node -> effectiveId(node.allocation().get().membership().cluster())));
     }
 
+    /** Returns a list of the non-compactable IDs of given load balancer */
+    private static List<String> withoutCompactableIds(LoadBalancerId id) {
+        List<String> ids = new ArrayList<>(2);
+        if (!"default".equals(id.cluster().value())) {
+            ids.add(id.cluster().value());
+        }
+        if (!id.application().instance().isDefault()) {
+            ids.add(id.application().instance().value());
+        }
+        return ids;
+    }
+
     /** Find IP addresses reachable by the load balancer service */
     private Set<String> reachableIpAddresses(Node node) {
         Set<String> reachable = new LinkedHashSet<>(node.ipConfig().primary());
@@ -224,5 +264,6 @@ public class LoadBalancerProvisioner {
     private static ClusterSpec.Id effectiveId(ClusterSpec cluster) {
         return cluster.combinedId().orElse(cluster.id());
     }
+
 
 }

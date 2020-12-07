@@ -115,7 +115,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     // The node count to enforce in a cluster running ZooKeeper
-    private static final int MIN_ZOOKEEPER_NODE_COUNT = 3;
+    private static final int MIN_ZOOKEEPER_NODE_COUNT = 1;
     private static final int MAX_ZOOKEEPER_NODE_COUNT = 7;
 
     public enum Networking { disable, enable }

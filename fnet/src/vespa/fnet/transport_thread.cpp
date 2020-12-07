@@ -393,7 +393,7 @@ FNET_TransportThread::InitEventLoop()
 }
 
 void
-FNET_TransportThread::handle_wakeup_events()
+FNET_TransportThread::handle_wakeup()
 {
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -473,10 +473,11 @@ FNET_TransportThread::EventLoopIteration() {
         _now = steady_clock::now();
 
         // handle io-events
-        _selector.dispatch(*this);
+        auto dispatchResult = _selector.dispatch(*this);
 
-        // Must be called after selector.dispatch
-        handle_wakeup_events();
+        if ((dispatchResult == vespalib::SelectorDispatchResult::NO_WAKEUP) && (getConfig()._events_before_wakeup > 1)) {
+            handle_wakeup();
+        }
 
         // handle IOC time-outs
         if (getConfig()._iocTimeOut > vespalib::duration::zero()) {
