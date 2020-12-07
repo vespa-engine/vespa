@@ -19,7 +19,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -381,7 +380,7 @@ public class ContainerTest extends ContainerTestBase {
 
     public static class TestDeconstructor implements ComponentDeconstructor {
         @Override
-        public void deconstruct(List<Object> components, Collection<Bundle> bundles) {
+        public void deconstruct(Collection<Object> components, Collection<Bundle> bundles) {
             components.forEach(component -> {
                 if (component instanceof DestructableComponent) {
                     DestructableComponent vespaComponent = (DestructableComponent) component;
