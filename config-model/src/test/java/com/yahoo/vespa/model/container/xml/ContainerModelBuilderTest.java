@@ -899,7 +899,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         }
         {
             try {
-                tester.createModel(servicesXml.apply(1), true);
+                tester.createModel(servicesXml.apply(2), true);
                 fail("Expected exception");
             } catch (IllegalArgumentException ignored) {}
         }
