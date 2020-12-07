@@ -35,7 +35,8 @@ public class ZkAdminImpl implements ZkAdmin {
 
     private static boolean retryOn(KeeperException e) {
         return e instanceof KeeperException.ReconfigInProgress ||
-               e instanceof KeeperException.ConnectionLossException;
+               e instanceof KeeperException.ConnectionLossException ||
+               e instanceof KeeperException.NewConfigNoQuorum;
     }
 
 }
