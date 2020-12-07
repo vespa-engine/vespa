@@ -95,7 +95,14 @@ TEST("require that you can insert duplicates") {
     EXPECT_EQUAL(8u, m.capacity());
     m.force_insert(Pair(1, "1.3"));
     EXPECT_EQUAL(3u, m.size());
-    EXPECT_EQUAL(16u, m.capacity());
+    EXPECT_EQUAL(16u, m.capacity()); // Resize has been conducted
+    Pair expected[3] = {{1,"1"},{1,"1.2"},{1,"1.3"}};
+    size_t index(0);
+    for (const auto & e : m) {
+        EXPECT_EQUAL(expected[index].first, e.first);
+        EXPECT_EQUAL(expected[index].second, e.second);
+        index++;
+    }
     found = m.find(1);
     ASSERT_TRUE(found != m.end());
     EXPECT_EQUAL(found->second, "1");
