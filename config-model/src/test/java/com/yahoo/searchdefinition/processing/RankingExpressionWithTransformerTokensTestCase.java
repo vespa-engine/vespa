@@ -28,7 +28,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
         String a = "tensor(d0[2]):[1,2]";
         String b = "tensor(d0[3]):[3,4,5]";
         String c = "tensor(d0[2]):[6,7]";
-        String expression = "token_input_ids(12, a, b, c)";
+        String expression = "tokenInputIds(12, a, b, c)";
         Tensor result = evaluateExpression(expression, a, b, c);
         assertEquals(Tensor.from(expected), result);
     }
@@ -38,7 +38,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
         String expected = "tensor(d0[1],d1[10]):[0,0,0,0,1,1,1,1,1,1]";
         String a = "tensor(d0[2]):[1,2]";
         String b = "tensor(d0[3]):[3,4,5]";
-        String expression = "token_type_ids(10, a, b)";
+        String expression = "tokenTypeIds(10, a, b)";
         Tensor result = evaluateExpression(expression, a, b);
         assertEquals(Tensor.from(expected), result);
     }
@@ -48,7 +48,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
         String expected = "tensor(d0[1],d1[10]):[1,1,1,1,1,1,1,1,0,0]";
         String a = "tensor(d0[2]):[1,2]";
         String b = "tensor(d0[3]):[3,4,5]";
-        String expression = "token_attention_mask(10, a, b)";
+        String expression = "tokenAttentionMask(10, a, b)";
         Tensor result = evaluateExpression(expression, a, b);
         assertEquals(Tensor.from(expected), result);
     }
