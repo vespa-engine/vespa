@@ -16,6 +16,6 @@ public class DummyVespaZooKeeperServer extends AbstractComponent implements Vesp
     @Inject public DummyVespaZooKeeperServer() {}
 
     @Override
-    public void start(Path path) {}
+    public void start(Path configFilePath) {}
 
 }

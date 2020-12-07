@@ -28,8 +28,8 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Vespa
         super.deconstruct();
     }
 
-    public void start(Path path) {
-        new Server().start(path);
+    public void start(Path configFilePath) {
+        new ZooKeeperServer().start(configFilePath);
     }
 
 }

@@ -19,8 +19,8 @@ public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implem
         reconfigurer.startOrReconfigure(zookeeperServerConfig, this);
     }
 
-    public void start(Path path) {
-        new Server().start(path);
+    public void start(Path configFilePath) {
+        new ZooKeeperServer().start(configFilePath);
     }
 
 }
