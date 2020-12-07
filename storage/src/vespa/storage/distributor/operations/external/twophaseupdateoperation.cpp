@@ -88,6 +88,10 @@ struct IntermediateMessageSender : DistributorMessageSender {
     const PendingMessageTracker& getPendingMessageTracker() const override {
         return forward.getPendingMessageTracker();
     }
+
+    const OperationSequencer& operation_sequencer() const noexcept override {
+        return forward.operation_sequencer();
+    }
 };
 
 IntermediateMessageSender::IntermediateMessageSender(SentMessageMap& mm,

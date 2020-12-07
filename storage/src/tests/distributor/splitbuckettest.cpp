@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <tests/common/dummystoragelink.h>
-#include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
+#include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <tests/common/dummystoragelink.h>
+#include <tests/distributor/distributortestutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
@@ -260,6 +261,7 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
     PendingMessageTracker tracker(compReg);
+    OperationSequencer op_seq;
 
     enableDistributorClusterState("distributor:1 storage:2");
 
@@ -281,17 +283,39 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
                       splitCount,
                       splitByteSize);
 
-    EXPECT_TRUE(op.isBlocked(tracker));
+    EXPECT_TRUE(op.isBlocked(tracker, op_seq));
 
     // Now, pretend there's a join for another node in the same bucket. This
     // will happen when a join is partially completed.
     tracker.clearMessagesForNode(0);
-    EXPECT_FALSE(op.isBlocked(tracker));
+    EXPECT_FALSE(op.isBlocked(tracker, op_seq));
 
     joinCmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
     tracker.insert(joinCmd);
 
-    EXPECT_TRUE(op.isBlocked(tracker));
+    EXPECT_TRUE(op.isBlocked(tracker, op_seq));
+}
+
+TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
+    StorageComponentRegisterImpl compReg;
+    framework::defaultimplementation::FakeClock clock;
+    compReg.setClock(clock);
+    clock.setAbsoluteTimeInSeconds(1);
+    PendingMessageTracker tracker(compReg);
+    OperationSequencer op_seq;
+
+    enableDistributorClusterState("distributor:1 storage:2");
+
+    document::BucketId source_bucket(16, 1);
+    insertBucketInfo(source_bucket, 0, 0xabc, 1000, tooLargeBucketSize, 250);
+
+    SplitOperation op("storage", BucketAndNodes(makeDocumentBucket(source_bucket), toVector<uint16_t>(0)),
+                      maxSplitBits, splitCount, splitByteSize);
+
+    EXPECT_FALSE(op.isBlocked(tracker, op_seq));
+    auto token = op_seq.try_acquire(makeDocumentBucket(source_bucket));
+    EXPECT_TRUE(token.valid());
+    EXPECT_TRUE(op.isBlocked(tracker, op_seq));
 }
 
 } // storage::distributor

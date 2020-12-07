@@ -5,6 +5,7 @@
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
 #include "idealstatemetricsset.h"
+#include "operation_sequencer.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -79,14 +80,15 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _metrics(std::make_shared<DistributorMetricSet>()),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
+      _operation_sequencer(std::make_unique<OperationSequencer>()),
       _pendingMessageTracker(compReg),
       _bucketDBUpdater(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, *this, compReg),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
       _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, manageActiveBucketCopies),
       _messageSender(messageSender),
-      _externalOperationHandler(_component, _component,
-                                getMetrics(), getMessageSender(), *this, _component,
+      _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(),
+                                *_operation_sequencer, *this, _component,
                                 _idealStateManager, _operationOwner),
       _threadPool(threadPool),
       _initializingIsUp(true),
@@ -95,7 +97,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _bucketPriorityDb(std::make_unique<SimpleBucketPriorityDatabase>()),
       _scanner(std::make_unique<SimpleMaintenanceScanner>(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
       _throttlingStarter(std::make_unique<ThrottlingOperationStarter>(_maintenanceOperationOwner)),
-      _blockingStarter(std::make_unique<BlockingOperationStarter>(_pendingMessageTracker, *_throttlingStarter)),
+      _blockingStarter(std::make_unique<BlockingOperationStarter>(_pendingMessageTracker, *_operation_sequencer,
+                                                                  *_throttlingStarter)),
       _scheduler(std::make_unique<MaintenanceScheduler>(_idealStateManager, *_bucketPriorityDb, *_blockingStarter)),
       _schedulingMode(MaintenanceScheduler::NORMAL_SCHEDULING_MODE),
       _recoveryTimeStarted(_component.getClock()),

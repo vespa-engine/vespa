@@ -61,8 +61,11 @@ TEST_F(OperationSequencerTest, releasing_handle_allows_for_getting_new_handles_f
 }
 
 TEST_F(OperationSequencerTest, cannot_get_handle_for_gid_contained_in_locked_bucket) {
-    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)));
+    const auto bucket = document::Bucket(default_space(), document::BucketId(16, 1));
+    EXPECT_FALSE(sequencer.is_blocked(bucket));
+    auto bucket_handle = sequencer.try_acquire(bucket);
     EXPECT_TRUE(bucket_handle.valid());
+    EXPECT_TRUE(sequencer.is_blocked(bucket));
     auto doc_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test:n=1:abcd"));
     EXPECT_FALSE(doc_handle.valid());
     ASSERT_TRUE(doc_handle.is_blocked());
@@ -78,10 +81,12 @@ TEST_F(OperationSequencerTest, can_get_handle_for_gid_not_contained_in_active_bu
 }
 
 TEST_F(OperationSequencerTest, releasing_bucket_lock_allows_gid_handles_to_be_acquired) {
-    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)));
+    const auto bucket = document::Bucket(default_space(), document::BucketId(16, 1));
+    auto bucket_handle = sequencer.try_acquire(bucket);
     bucket_handle.release();
     auto doc_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test:n=1:abcd"));
     EXPECT_TRUE(doc_handle.valid());
+    EXPECT_FALSE(sequencer.is_blocked(bucket));
 }
 
 TEST_F(OperationSequencerTest, can_get_handle_for_gid_when_locked_bucket_is_in_separate_bucket_space) {
@@ -89,6 +94,11 @@ TEST_F(OperationSequencerTest, can_get_handle_for_gid_when_locked_bucket_is_in_s
     EXPECT_TRUE(bucket_handle.valid());
     auto doc_handle = sequencer.try_acquire(global_space(), DocumentId("id:foo:test:n=1:abcd"));
     EXPECT_TRUE(doc_handle.valid());
+}
+
+TEST_F(OperationSequencerTest, is_blocked_is_bucket_space_aware) {
+    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)));
+    EXPECT_FALSE(sequencer.is_blocked(document::Bucket(global_space(), document::BucketId(16, 1))));
 }
 
 } // storage::distributor

@@ -3,6 +3,7 @@
 #include "bucket_space_distribution_context.h"
 #include "externaloperationhandler.h"
 #include "distributor.h"
+#include "operation_sequencer.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
@@ -54,12 +55,16 @@ public:
     const PendingMessageTracker& getPendingMessageTracker() const override {
         abort(); // Never called by the messages using this component.
     }
+    const OperationSequencer& operation_sequencer() const noexcept override {
+        abort(); // Never called by the messages using this component.
+    }
 };
 
 ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_ctx,
                                                    DistributorOperationContext& op_ctx,
                                                    DistributorMetricSet& metrics,
                                                    ChainedMessageSender& msg_sender,
+                                                   OperationSequencer& operation_sequencer,
                                                    NonTrackingMessageSender& non_tracking_sender,
                                                    DocumentSelectionParser& parser,
                                                    const MaintenanceOperationGenerator& gen,
@@ -68,6 +73,7 @@ ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_
       _op_ctx(op_ctx),
       _metrics(metrics),
       _msg_sender(msg_sender),
+      _operation_sequencer(operation_sequencer),
       _parser(parser),
       _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(node_ctx, non_tracking_sender)),
       _operationGenerator(gen),

@@ -47,6 +47,10 @@ SequencingHandle OperationSequencer::try_acquire(const document::Bucket& bucket)
     }
 }
 
+bool OperationSequencer::is_blocked(const document::Bucket& bucket) const noexcept {
+    return (_active_buckets.find(bucket) != _active_buckets.end());
+}
+
 void OperationSequencer::release(const SequencingHandle& handle) {
     assert(handle.valid());
     if (handle.has_gid()) {
