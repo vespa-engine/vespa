@@ -402,7 +402,7 @@ public:
     void WaitFinished();
 
 
-    // Empty selector call-back for selector wakeup
+    // selector call-back for wakeup events
     void handle_wakeup();
 
     // selector call-back for io-events
