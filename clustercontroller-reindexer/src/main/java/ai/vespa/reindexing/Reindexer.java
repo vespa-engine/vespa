@@ -13,6 +13,7 @@ import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.DynamicThrottlePolicy;
+import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
@@ -191,12 +192,9 @@ public class Reindexer {
 
     VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
         VisitorParameters parameters = new VisitorParameters(type.getName());
-        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(0.5)
-                                                                .setWindowSizeDecrementFactor(5)
-                                                                .setResizeRate(10)
-                                                                .setMinWindowSize(1));
+        parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(2));
         parameters.setRemoteDataHandler(cluster.name());
-        parameters.setMaxPending(8);
+        parameters.setMaxPending(32);
         parameters.setResumeToken(progress);
         parameters.setFieldSet(type.getName() + ":[document]");
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_3);
