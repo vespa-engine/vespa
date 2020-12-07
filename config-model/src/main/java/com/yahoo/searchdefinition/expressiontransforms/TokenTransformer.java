@@ -30,9 +30,9 @@ import static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode.wrap
  *
  * Replaces features of the form
  *
- *     token_input_ids
- *     token_type_ids
- *     token_attention_mask
+ *     tokenInputIds
+ *     tokenTypeIds
+ *     tokenAttentionMask
  *
  * to tensor generation expressions that generate the required input.
  * In general, these models expect input of the form:
@@ -60,11 +60,11 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
     }
 
     private ExpressionNode transformFeature(ReferenceNode feature, RankProfileTransformContext context) {
-        if (feature.getName().equals("token_input_ids") && shouldTransform(feature, context))
+        if (feature.getName().equals("tokenInputIds") && shouldTransform(feature, context))
             return transformTokenInputIds(feature, context);
-        if (feature.getName().equals("token_type_ids") && shouldTransform(feature, context))
+        if (feature.getName().equals("tokenTypeIds") && shouldTransform(feature, context))
             return transformTokenTypeIds(feature, context);
-        if (feature.getName().equals("token_attention_mask") && shouldTransform(feature, context))
+        if (feature.getName().equals("tokenAttentionMask") && shouldTransform(feature, context))
             return transformTokenAttentionMask(feature, context);
         return feature;
     }
@@ -72,7 +72,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
     /**
      * Transforms a feature of the form
      *
-     *     token_input_ids(128, a, b, ...)
+     *     tokenInputIds(128, a, b, ...)
      *
      * to an expression that concatenates the arguments a, b, ... using the
      * special Transformers sequences of CLS and SEP, up to length 128, so
@@ -114,7 +114,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
     /**
      * Transforms a feature of the form
      *
-     *     token_type_ids(128, a, ...)
+     *     tokenTypeIds(128, a, ...)
      *
      * to an expression that generates a tensor that has values 0 for "a"
      * (including CLS and SEP tokens) and 1 for the rest of the sequence.
@@ -142,7 +142,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
     /**
      * Transforms a feature of the form
      *
-     *     token_attention_mask(128, a, b, ...)
+     *     tokenAttentionMask(128, a, b, ...)
      *
      * to an expression that generates a tensor that has values 1 for all
      * arguments (including CLS and SEP tokens) and 0 for the rest of the
