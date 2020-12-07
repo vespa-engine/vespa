@@ -140,7 +140,8 @@ public class Reconfigurer extends AbstractComponent {
 
     private static boolean retryOn(KeeperException e) {
         return e instanceof KeeperException.ReconfigInProgress ||
-               e instanceof  KeeperException.ConnectionLossException;
+               e instanceof KeeperException.ConnectionLossException ||
+               e instanceof KeeperException.NewConfigNoQuorum;
     }
 
     private static String connectionSpec(ZookeeperServerConfig config) {
