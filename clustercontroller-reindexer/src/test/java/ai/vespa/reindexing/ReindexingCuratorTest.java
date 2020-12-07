@@ -25,24 +25,24 @@ class ReindexingCuratorTest {
         DocumentTypeManager manager = new DocumentTypeManager(musicConfig);
         DocumentType music = manager.getDocumentType("music");
         MockCurator mockCurator = new MockCurator();
-        ReindexingCurator curator = new ReindexingCurator(mockCurator, "cluster", manager);
+        ReindexingCurator curator = new ReindexingCurator(mockCurator, manager);
 
-        assertEquals(Reindexing.empty(), curator.readReindexing());
+        assertEquals(Reindexing.empty(), curator.readReindexing("cluster"));
 
         Reindexing.Status status = Reindexing.Status.ready(Instant.ofEpochMilli(123))
                                                     .running()
                                                     .progressed(new ProgressToken());
         Reindexing reindexing = Reindexing.empty().with(music, status);
-        curator.writeReindexing(reindexing);
-        assertEquals(reindexing, curator.readReindexing());
+        curator.writeReindexing(reindexing, "cluster");
+        assertEquals(reindexing, curator.readReindexing("cluster"));
 
         status = status.halted().running().failed(Instant.ofEpochMilli(321), "error");
         reindexing = reindexing.with(music, status);
-        curator.writeReindexing(reindexing);
-        assertEquals(reindexing, curator.readReindexing());
+        curator.writeReindexing(reindexing, "cluster");
+        assertEquals(reindexing, curator.readReindexing("cluster"));
 
         // Unknown document types are forgotten.
-        assertEquals(Reindexing.empty(), new ReindexingCurator(mockCurator, "cluster", new DocumentTypeManager(emptyConfig)).readReindexing());
+        assertEquals(Reindexing.empty(), new ReindexingCurator(mockCurator, new DocumentTypeManager(emptyConfig)).readReindexing("cluster"));
     }
 
 }

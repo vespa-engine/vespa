@@ -91,10 +91,10 @@ public class Reindexer {
         if (phaser.isTerminated())
             throw new IllegalStateException("Already shut down");
 
-        try (Lock lock = database.lockReindexing()) {
-            AtomicReference<Reindexing> reindexing = new AtomicReference<>(database.readReindexing());
+        try (Lock lock = database.lockReindexing(cluster.name())) {
+            AtomicReference<Reindexing> reindexing = new AtomicReference<>(database.readReindexing(cluster.name()));
             reindexing.set(updateWithReady(ready, reindexing.get(), clock.instant()));
-            database.writeReindexing(reindexing.get());
+            database.writeReindexing(reindexing.get(), cluster.name());
             metrics.dump(reindexing.get());
 
             for (DocumentType type : ready.keySet()) { // We consider only document types for which we have config.
@@ -150,7 +150,7 @@ public class Reindexer {
                 status.updateAndGet(value -> value.progressed(token));
                 if (progressLastStored.get().isBefore(clock.instant().minusSeconds(10))) {
                     progressLastStored.set(clock.instant());
-                    database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())));
+                    database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())), cluster.name());
                     metrics.dump(reindexing.get());
                 }
             }
@@ -184,7 +184,7 @@ public class Reindexer {
                 log.log(INFO, "Completed reindexing of " + type + " after " + Duration.between(status.get().startedAt(), clock.instant()));
                 status.updateAndGet(value -> value.successful(clock.instant()));
         }
-        database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())));
+        database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())), cluster.name());
         metrics.dump(reindexing.get());
     }
 
