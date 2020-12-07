@@ -5,7 +5,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -165,7 +164,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             if (context.getParentProducer().getRoot() == null) return c;
 
-            addClusterControllers(containers, context, c.rootGroup, contentElement, c.clusterId, c, documentDefinitions);
+            addClusterControllers(containers, context, c.rootGroup, contentElement, c.clusterId, c);
             return c;
         }
 
@@ -278,10 +277,9 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
         }
 
-        private void addClusterControllers(Collection<ContainerModel> containers, ConfigModelContext context, 
-                                           StorageGroup rootGroup, ModelElement contentElement, 
-                                           String contentClusterName, ContentCluster contentCluster,
-                                           Map<String, NewDocumentType> documentDefinitions) {
+        private void addClusterControllers(Collection<ContainerModel> containers, ConfigModelContext context,
+                                           StorageGroup rootGroup, ModelElement contentElement,
+                                           String contentClusterName, ContentCluster contentCluster) {
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
 
@@ -303,13 +301,11 @@ public class ContentCluster extends AbstractConfigProducer implements
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
                                                  drawControllerHosts(nodesSpecification.minResources().nodes(), rootGroup, containers);
-                ReindexingContext reindexingContext = createReindexingContent(context, contentClusterName, documentDefinitions);
                 clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
                                                               hosts,
                                                               clusterName,
                                                               true,
-                                                              context.getDeployState(),
-                                                              reindexingContext);
+                                                              context.getDeployState());
                 contentCluster.clusterControllers = clusterControllers;
             }
             else {
@@ -320,22 +316,15 @@ public class ContentCluster extends AbstractConfigProducer implements
                         context.getDeployState().getDeployLogger().log(Level.INFO,
                                                                        "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
                     }
-                    ReindexingContext reindexingContext = createReindexingContent(context, contentClusterName, documentDefinitions);
-                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState(), reindexingContext);
+                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState());
                     admin.setClusterControllers(clusterControllers);
                 }
             }
 
             addClusterControllerComponentsForThisCluster(clusterControllers, contentCluster);
-        }
-
-        private static ReindexingContext createReindexingContent(
-                ConfigModelContext ctx, String contentClusterName, Map<String, NewDocumentType> documentDefinitions) {
-            class DisabledReindexing implements Reindexing {}
-            Reindexing reindexing = ctx.properties().featureFlags().enableAutomaticReindexing()
-                    ? ctx.getDeployState().reindexing().orElse(new DisabledReindexing())
-                    : new DisabledReindexing();
-            return new ReindexingContext(reindexing, contentClusterName, documentDefinitions.values());
+            ReindexingContext reindexingContext = clusterControllers.reindexingContext();
+            contentCluster.documentDefinitions.values()
+                    .forEach(type -> reindexingContext.addDocumentType(contentCluster.clusterId, type));
         }
 
         /** Returns any other content cluster which shares nodes with this, or null if none are built */
@@ -468,8 +457,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                            Collection<HostResource> hosts,
                                                                            String name,
                                                                            boolean multitenant,
-                                                                           DeployState deployState,
-                                                                           ReindexingContext reindexingContext) {
+                                                                           DeployState deployState) {
             var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
             List<ClusterControllerContainer> containers = new ArrayList<>();
             // Add a cluster controller on each config server (there is always at least one).
@@ -481,8 +469,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                     clusterControllers,
                                     index,
                                     multitenant,
-                                    deployState.isHosted(),
-                                    reindexingContext);
+                                    deployState.isHosted());
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin")
