@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.container.ContainerCluster;
  * Container cluster for cluster-controller containers.
  *
  * @author gjoranv
+ * @author bjorncs
  */
 public class ClusterControllerContainerCluster extends ContainerCluster<ClusterControllerContainer>
 {
@@ -20,7 +21,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
             AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState, false);
         addDefaultHandlersWithVip();
-        this.reindexingContext = new ReindexingContext(deployState.reindexing().orElse(Reindexing.DISABLED_INSTANCE));
+        this.reindexingContext = createReindexingContext(deployState);
     }
 
     @Override
@@ -29,5 +30,12 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     @Override protected boolean messageBusEnabled() { return false; }
 
     public ReindexingContext reindexingContext() { return reindexingContext; }
+
+    private static ReindexingContext createReindexingContext(DeployState deployState) {
+        Reindexing reindexing = deployState.featureFlags().enableAutomaticReindexing()
+                ? deployState.reindexing().orElse(Reindexing.DISABLED_INSTANCE)
+                : Reindexing.DISABLED_INSTANCE;
+        return new ReindexingContext(reindexing);
+    }
 
 }
