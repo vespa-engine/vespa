@@ -136,12 +136,12 @@ public class Reindexer {
                 return;
             case RUNNING:
                 log.log(WARNING, "Unexpected state 'RUNNING' of reindexing of " + type);
-            case READY: // Intentional fallthrough — must just assume we failed updating state when exiting previously.
-                log.log(FINE, () -> "Running reindexing of " + type);
+                break;
+            case READY:
+                status.updateAndGet(Status::running);
         }
 
         // Visit buckets until they're all done, or until we are shut down.
-        status.updateAndGet(Status::running);
         AtomicReference<Instant> progressLastStored = new AtomicReference<>(clock.instant());
         VisitorControlHandler control = new VisitorControlHandler() {
             @Override
@@ -164,6 +164,7 @@ public class Reindexer {
         VisitorParameters parameters = createParameters(type, status.get().progress().orElse(null));
         parameters.setControlHandler(control);
         Runnable sessionShutdown = visitorSessions.apply(parameters); // Also starts the visitor session.
+        log.log(FINE, () -> "Running reindexing of " + type);
 
         // Wait until done; or until termination is forced, in which we shut down the visitor session immediately.
         phaser.arriveAndAwaitAdvance(); // Synchronize with visitor completion.
