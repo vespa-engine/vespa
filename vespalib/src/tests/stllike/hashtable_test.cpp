@@ -7,6 +7,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <memory>
 #include <vector>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 using vespalib::hashtable;
 using std::vector;
@@ -38,17 +39,12 @@ TEST("require that hashtable can store unique_ptrs") {
     // it = table.find(42);  // This will crash, since the key is removed.
 }
 
-template<typename To, typename Entry>
-struct First : std::unary_function<To, Entry> {
-    To &operator()(Entry& p) const { return p.first; }
-    const To& operator()(const Entry& p) const { return p.first; }
-};
 
 template <typename K, typename V> using Entry =
     std::pair<K, std::unique_ptr<V>>;
 typedef hashtable<int, Entry<int, int>,
                   vespalib::hash<int>, std::equal_to<int>,
-                  First<int, Entry<int, int>>> PairHashtable;
+                  Select1st<Entry<int, int>>> PairHashtable;
 
 TEST("require that hashtable can store pairs of <key, unique_ptr to value>") {
     PairHashtable table(100);
@@ -75,7 +71,7 @@ TEST("require that hashtable<int> can be copied") {
 
 TEST("require that you can insert duplicates") {
     using Pair = std::pair<int, vespalib::string>;
-    using Map = hashtable<int, Pair, vespalib::hash<int>, std::equal_to<int>, First<int, Pair>>;
+    using Map = hashtable<int, Pair, vespalib::hash<int>, std::equal_to<int>, Select1st<Pair>>;
 
     Map m(1);
     EXPECT_EQUAL(0u, m.size());
