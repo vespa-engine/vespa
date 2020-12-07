@@ -63,6 +63,10 @@ public class ClusterResources {
                             .withBandwidthGbps(nodeResources.bandwidthGbps() * nodes);
     }
 
+    public ClusterResources justNumbers() {
+        return new ClusterResources(nodes, groups, nodeResources.justNumbers());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
