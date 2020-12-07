@@ -73,6 +73,48 @@ TEST("require that hashtable<int> can be copied") {
     EXPECT_EQUAL(42, *table2.find(42));
 }
 
+TEST("require that you can insert duplicates") {
+    using Pair = std::pair<int, vespalib::string>;
+    using Map = hashtable<int, Pair, vespalib::hash<int>, std::equal_to<int>, First<int, Pair>>;
+
+    Map m(1);
+    EXPECT_EQUAL(0u, m.size());
+    EXPECT_EQUAL(8u, m.capacity());
+    auto res = m.insert(Pair(1, "1"));
+    EXPECT_TRUE(res.second);
+    EXPECT_EQUAL(1u, m.size());
+    EXPECT_EQUAL(8u, m.capacity());
+    res = m.insert(Pair(1, "1.2"));
+    EXPECT_FALSE(res.second);
+    auto found = m.find(1);
+    ASSERT_TRUE(found != m.end());
+    EXPECT_EQUAL(found->second, "1");
+
+    m.force_insert(Pair(1, "1.2"));
+    EXPECT_EQUAL(2u, m.size());
+    EXPECT_EQUAL(8u, m.capacity());
+    m.force_insert(Pair(1, "1.3"));
+    EXPECT_EQUAL(3u, m.size());
+    EXPECT_EQUAL(16u, m.capacity());
+    found = m.find(1);
+    ASSERT_TRUE(found != m.end());
+    EXPECT_EQUAL(found->second, "1");
+
+    m.erase(1);
+    EXPECT_EQUAL(2u, m.size());
+    EXPECT_EQUAL(16u, m.capacity());
+    found = m.find(1);
+    ASSERT_TRUE(found != m.end());
+    EXPECT_EQUAL(found->second, "1.3");
+
+    m.erase(1);
+    EXPECT_EQUAL(1u, m.size());
+    EXPECT_EQUAL(16u, m.capacity());
+    found = m.find(1);
+    ASSERT_TRUE(found != m.end());
+    EXPECT_EQUAL(found->second, "1.2");
+}
+
 template<typename To, typename Vector>
 struct FirstInVector : std::unary_function<To, Vector> {
     To &operator()(Vector& v) const { return v[0]; }

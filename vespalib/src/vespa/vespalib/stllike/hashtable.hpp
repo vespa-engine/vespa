@@ -180,6 +180,29 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::insertInternal(V && n
     }
 }
 
+
+template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
+void
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value && value)
+{
+    const next_t h = hash(_keyExtractor(value));
+    if ( ! _nodes[h].valid() ) {
+        _nodes[h] = std::move(value);
+        _count++;
+    } else {
+        if (_nodes.size() < _nodes.capacity()) {
+            const next_t p(_nodes[h].getNext());
+            const next_t newIdx(_nodes.size());
+            _nodes[h].setNext(newIdx);
+            new (_nodes.push_back_fast()) Node(std::move(value), p);
+            _count++;
+        } else {
+            resize(_nodes.capacity()*2);
+            force_insert(std::move(value));
+        }
+    }
+}
+
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template<typename MoveHandler>
 void
@@ -261,7 +284,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::move(NodeStore && old
 {
     for (auto & entry : oldStore) {
         if (entry.valid()) {
-            insert(std::move(entry.getValue()));
+            force_insert(std::move(entry.getValue()));
         }
     }
 }
