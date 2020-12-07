@@ -46,13 +46,13 @@ public class Reconfigurer extends AbstractComponent {
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
-    void startOrReconfigure(ZookeeperServerConfig newConfig) {
-        startOrReconfigure(newConfig, Reconfigurer::defaultSleeper);
+    void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
+        startOrReconfigure(newConfig, Reconfigurer::defaultSleeper, server);
     }
 
-    void startOrReconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper) {
+    void startOrReconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper, VespaZooKeeperServer server) {
         if (zooKeeperRunner == null)
-            zooKeeperRunner = startServer(newConfig);
+            zooKeeperRunner = startServer(newConfig, server);
 
         if (shouldReconfigure(newConfig))
             reconfigure(newConfig, sleeper);
@@ -74,8 +74,8 @@ public class Reconfigurer extends AbstractComponent {
         return !newConfig.equals(activeConfig());
     }
 
-    private ZooKeeperRunner startServer(ZookeeperServerConfig zookeeperServerConfig) {
-        ZooKeeperRunner runner = new ZooKeeperRunner(zookeeperServerConfig);
+    private ZooKeeperRunner startServer(ZookeeperServerConfig zookeeperServerConfig, VespaZooKeeperServer server) {
+        ZooKeeperRunner runner = new ZooKeeperRunner(zookeeperServerConfig, server);
         activeConfig = zookeeperServerConfig;
         return runner;
     }

@@ -2,7 +2,8 @@
 package com.yahoo.vespa.zookeeper;
 
 /**
- * Interface for reconfiguring a zookeeper cluster.
+ * Exception used to wrap zookeeper exception when reconfiguration fails in a
+ * class that can be used without depending on ZooKeeper.
  *
  * @author hmusum
  */
@@ -16,4 +17,5 @@ public class ReconfigException extends RuntimeException {
     public ReconfigException(String message) {
         super(message);
     }
+
 }

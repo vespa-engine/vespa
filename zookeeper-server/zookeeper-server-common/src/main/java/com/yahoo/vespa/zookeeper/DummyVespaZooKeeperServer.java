@@ -4,6 +4,8 @@ package com.yahoo.vespa.zookeeper;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 
+import java.nio.file.Path;
+
 /**
  * A dummy {@link VespaZooKeeperServer} implementation that can be used when a container cluster is not configured with standalone ZK cluster.
  *
@@ -12,5 +14,8 @@ import com.yahoo.component.AbstractComponent;
 public class DummyVespaZooKeeperServer extends AbstractComponent implements VespaZooKeeperServer {
 
     @Inject public DummyVespaZooKeeperServer() {}
+
+    @Override
+    public void start(Path path) {}
 
 }

@@ -11,6 +11,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -118,7 +119,7 @@ public class ReconfigurerTest {
         return builder;
     }
 
-    private static class TestableReconfigurer extends Reconfigurer {
+    private static class TestableReconfigurer extends Reconfigurer implements VespaZooKeeperServer{
 
         private final TestableZkAdmin zkReconfigurer;
 
@@ -128,9 +129,13 @@ public class ReconfigurerTest {
             HostName.setHostNameForTestingOnly("node1");
         }
 
-        @Override
         void startOrReconfigure(ZookeeperServerConfig newConfig) {
-            super.startOrReconfigure(newConfig, l -> { });
+            startOrReconfigure(newConfig, this);
+        }
+
+        @Override
+        void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
+            super.startOrReconfigure(newConfig, l -> {}, this);
         }
 
         String connectionSpec() {
@@ -148,6 +153,9 @@ public class ReconfigurerTest {
         int reconfigurations() {
             return zkReconfigurer.reconfigurations;
         }
+
+        @Override
+        public void start(Path path) { }
 
     }
 
