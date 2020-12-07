@@ -246,6 +246,9 @@ public:
     insert_result insert(V && node) {
         return insertInternal(std::forward<V>(node));
     }
+    // This will insert unconditionally, without checking presence, and might cause duplicates.
+    // Use at you own risk.
+    void force_insert(Value && value);
     
     /// This gives faster iteration than can be achieved by the iterators.
     template <typename Func>
@@ -274,10 +277,10 @@ public:
     size_t getMemoryUsed() const;
 
 protected:
-    /// These two methods are only for the ones that know what they are doing.
-    /// valid input here are stuff returned from iterator.getInternalIndex.
     template <typename V>
     insert_result insertInternal(V && node);
+    /// These two methods are only for the ones that know what they are doing.
+    /// valid input here are stuff returned from iterator.getInternalIndex.
     Value & getByInternalIndex(size_t index)             { return _nodes[index].getValue(); }
     const Value & getByInternalIndex(size_t index) const { return _nodes[index].getValue(); }
     template <typename MoveHandler>
