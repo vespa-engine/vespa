@@ -375,6 +375,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
 {
     // Only allow dynamic (live) reconfiguration of message bus limits.
     _skip_thread = config->skipThread;
+    _use_direct_storageapi_rpc = config->useDirectStorageapiRpc;
     if (_mbus) {
         configureMessageBusLimits(*config);
         if (_mbus->getRPCNetwork().getPort() != config->mbusport) {
@@ -427,7 +428,6 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         configureMessageBusLimits(*config);
     }
 
-    _use_direct_storageapi_rpc = config->useDirectStorageapiRpc;
     _message_codec_provider = std::make_unique<rpc::MessageCodecProvider>(_component.getTypeRepo()->documentTypeRepo);
     _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport, config->rpc.numNetworkThreads);
     _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
@@ -476,7 +476,7 @@ void
 CommunicationManager::enqueue_or_process(std::shared_ptr<api::StorageMessage> msg)
 {
     assert(msg);
-    if (_skip_thread) {
+    if (_skip_thread.load(std::memory_order_relaxed)) {
         LOG(spam, "Process storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
         process(msg);
     } else {
@@ -573,7 +573,9 @@ CommunicationManager::sendCommand(
         case api::StorageMessageAddress::Protocol::STORAGE:
     {
         LOG(debug, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
-        if (_use_direct_storageapi_rpc && _storage_api_rpc_service->target_supports_direct_rpc(address)) {
+        if (_use_direct_storageapi_rpc.load(std::memory_order_relaxed) &&
+            _storage_api_rpc_service->target_supports_direct_rpc(address))
+        {
             _storage_api_rpc_service->send_rpc_v1_request(msg);
         } else {
             auto cmd = std::make_unique<mbusprot::StorageCommand>(msg);

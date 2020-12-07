@@ -18,39 +18,39 @@ mbus_distributor_node_max_pending_size int default=0
 mbus_content_node_max_pending_size int default=0
 
 # Minimum size of packets to compress (0 means no compression)
-mbus.compress.limit int default=1024
+mbus.compress.limit int default=1024 restart
 
 ## Compression level for packets
-mbus.compress.level int default=3
+mbus.compress.level int default=3 restart
 
 ## Compression type for packets.
-mbus.compress.type enum {NONE, LZ4, ZSTD} default=LZ4
+mbus.compress.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
 
 ## TTL for rpc target cache
-mbus.rpctargetcache.ttl double default = 600
+mbus.rpctargetcache.ttl double default = 600 restart
 
 ## Number of threads for mbus threadpool
 ## Any value below 1 will be 1.
-mbus.num_threads int default=4
+mbus.num_threads int default=4 restart
 
 mbus.optimize_for enum {LATENCY, THROUGHPUT, ADAPTIVE} default = LATENCY
 
 ## Enable to use above thread pool for encoding replies
 ## False will use network(fnet) thread
-mbus.dispatch_on_encode bool default=true
+mbus.dispatch_on_encode bool default=true restart
 
 ## Enable to use above thread pool for decoding replies
 ## False will use network(fnet) thread
 ## Todo: Change default once verified in large scale deployment.
-mbus.dispatch_on_decode bool default=false
+mbus.dispatch_on_decode bool default=false restart
 
 ## Skip messenger thread on reply
 ## Experimental
-mbus.skip_reply_thread bool default=false
+mbus.skip_reply_thread bool default=false restart
 
 ## Skip messenger thread on reply
 ## Experimental
-mbus.skip_request_thread bool default=false
+mbus.skip_request_thread bool default=false restart
 
 ## Skip communication manager thread on mbus requests
 ## Experimental
@@ -61,7 +61,7 @@ skip_thread bool default=false
 use_direct_storageapi_rpc bool default=false
 
 ## The number of network (FNET) threads used by the shared rpc resource.
-rpc.num_network_threads int default=2
+rpc.num_network_threads int default=2 restart
 
 ## The number of (FNET) RPC targets to use per node in the cluster.
 ##
@@ -70,13 +70,13 @@ rpc.num_network_threads int default=2
 ## and the RPC target itself handles sequencing of these messages.
 ## NB !! It is vital that this number is kept in sync with stor-filestor:num_network_threads.
 ## Only skilled vespa core developers should touch this.
-rpc.num_targets_per_node int default=1
+rpc.num_targets_per_node int default=1 restart
 
 # Minimum size of packets to compress (0 means no compression)
-rpc.compress.limit int default=1024
+rpc.compress.limit int default=1024 restart
 
 ## Compression level for packets
-rpc.compress.level int default=3
+rpc.compress.level int default=3 restart
 
 ## Compression type for packets.
-rpc.compress.type enum {NONE, LZ4, ZSTD} default=LZ4
+rpc.compress.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
