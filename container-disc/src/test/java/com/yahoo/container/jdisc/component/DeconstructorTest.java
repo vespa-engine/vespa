@@ -9,6 +9,8 @@ import com.yahoo.jdisc.SharedResource;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertTrue;
@@ -28,7 +30,7 @@ public class DeconstructorTest {
     public void require_abstract_component_destructed() throws InterruptedException {
         TestAbstractComponent abstractComponent = new TestAbstractComponent();
         // Done by executor, so it takes some time even with a 0 delay.
-        deconstructor.deconstruct(singleton(abstractComponent), emptyList());
+        deconstructor.deconstruct(List.of(abstractComponent), emptyList());
         int cnt = 0;
         while (! abstractComponent.destructed && (cnt++ < 12000)) {
             Thread.sleep(10);
@@ -39,14 +41,14 @@ public class DeconstructorTest {
     @Test
     public void require_provider_destructed() {
         TestProvider provider = new TestProvider();
-        deconstructor.deconstruct(singleton(provider), emptyList());
+        deconstructor.deconstruct(List.of(provider), emptyList());
         assertTrue(provider.destructed);
     }
 
     @Test
     public void require_shared_resource_released() {
         TestSharedResource sharedResource = new TestSharedResource();
-        deconstructor.deconstruct(singleton(sharedResource), emptyList());
+        deconstructor.deconstruct(List.of(sharedResource), emptyList());
         assertTrue(sharedResource.released);
     }
 
