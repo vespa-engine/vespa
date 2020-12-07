@@ -118,8 +118,8 @@ private:
     std::atomic<bool>     _closed;
     DocumentApiConverter  _docApiConverter;
     framework::Thread::UP _thread;
-    bool                  _skip_thread;
-    bool                  _use_direct_storageapi_rpc;
+    std::atomic<bool>     _skip_thread;
+    std::atomic<bool>     _use_direct_storageapi_rpc;
 
     void updateMetrics(const MetricLockGuard &) override;
     void enqueue_or_process(std::shared_ptr<api::StorageMessage> msg);

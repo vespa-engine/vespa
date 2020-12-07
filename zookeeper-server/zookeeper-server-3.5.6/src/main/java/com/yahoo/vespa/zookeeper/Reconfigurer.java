@@ -4,6 +4,7 @@ package com.yahoo.vespa.zookeeper;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.net.HostName;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -88,7 +89,7 @@ public class Reconfigurer extends AbstractComponent {
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster in " + reconfigWaitPeriod() +
                             ". Joining servers: " + joiningServers + ", leaving servers: " + leavingServers);
         sleeper.accept(reconfigWaitPeriod());
-        String connectionSpec = connectionSpec(activeConfig);
+        String connectionSpec = localConnectionSpec(activeConfig);
         Instant end = Instant.now().plus(reconfigTimeout);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         for (int attempts = 1; Instant.now().isBefore(end); attempts++) {
@@ -116,10 +117,8 @@ public class Reconfigurer extends AbstractComponent {
         return reconfigInterval.multipliedBy(activeConfig.myid());
     }
 
-    private static String connectionSpec(ZookeeperServerConfig config) {
-        return config.server().stream()
-                     .map(server -> server.hostname() + ":" + config.clientPort())
-                     .collect(Collectors.joining(","));
+    private static String localConnectionSpec(ZookeeperServerConfig config) {
+        return HostName.getLocalhost() + ":" + config.clientPort();
     }
 
     private static List<String> serverIds(ZookeeperServerConfig config) {

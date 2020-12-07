@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
-import com.yahoo.vespa.hosted.controller.api.integration.repair.MockRepairClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
@@ -61,7 +60,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
     private final ApplicationRoleService applicationRoleService = new NoopApplicationRoleService();
     private final BillingController billingController = new MockBillingController();
-    private final MockRepairClient repairClient = new MockRepairClient();
     private final ContainerRegistryMock containerRegistry = new ContainerRegistryMock();
 
     public ServiceRegistryMock(SystemName system) {
@@ -192,11 +190,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public BillingController billingController() {
         return billingController;
-    }
-
-    @Override
-    public MockRepairClient hostRepairClient() {
-        return repairClient;
     }
 
     @Override
