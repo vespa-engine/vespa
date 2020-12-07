@@ -151,7 +151,7 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public void getConfig(ReindexingConfig.Builder builder) {
         ReindexingContext ctx = reindexingContext();
-        if (ctx.reindexing().enabled()) return;
+        if (!ctx.reindexing().enabled()) return;
 
         builder.enabled(ctx.reindexing().enabled());
         for (String clusterId : ctx.clusterIds()) {
