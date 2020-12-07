@@ -9,9 +9,12 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.application.provider.SimpleApplicationValidator;
+import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.Environment;
@@ -21,11 +24,13 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Before;
@@ -34,8 +39,10 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -390,6 +397,9 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
         assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());
+
+        assertReindexingConfigPresent(model);
+        assertReindexingConfiguredOnAdminCluster(model);
     }
 
     @Test
@@ -477,11 +487,40 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         DeployLogger logger = new DeployLoggerStub();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
+                .reindexing(new DummyReindexing())
                 .deployLogger(logger)
                 .zone(new Zone(SystemName.cd, Environment.dev, RegionName.from("here")))
-                .properties(new TestProperties().setHostedVespa(isHosted))
+                .properties(new TestProperties().setHostedVespa(isHosted).enableAutomaticReindexing(true))
                 .build());
         SimpleApplicationValidator.checkServices(new StringReader(servicesXml), new Version(7));
         return model;
+    }
+
+    private static void assertReindexingConfigPresent(VespaModel model) {
+        ReindexingConfig reindexingConfig = model.getConfig(ReindexingConfig.class, "admin/cluster-controllers/0");
+        assertTrue(reindexingConfig.enabled());
+        assertEquals(1, reindexingConfig.clusters().size());
+        String contentClusterId = "bar";
+        assertEquals(Instant.EPOCH.toEpochMilli(), reindexingConfig.clusters(contentClusterId).documentTypes("type1").readyAtMillis());
+    }
+
+    private static void assertReindexingConfiguredOnAdminCluster(VespaModel model) {
+        ClusterControllerContainerCluster clusterControllerCluster = model.getAdmin().getClusterControllers();
+        assertReindexingMaintainerConfiguredOnClusterController(clusterControllerCluster);
+    }
+
+    private static void assertReindexingMaintainerConfiguredOnClusterController(ClusterControllerContainerCluster clusterControllerCluster) {
+        ClusterControllerContainer container = clusterControllerCluster.getContainers().get(0);
+        Component<?, ?> reindexingMaintainer = container.getComponents().getComponents().stream()
+                .filter(component -> component.getComponentId().getName().equals("reindexing-maintainer"))
+                .findAny()
+                .get();
+        assertEquals("ai.vespa.reindexing.ReindexingMaintainer", reindexingMaintainer.getClassId().getName());
+    }
+
+    private static class DummyReindexing implements Reindexing, Reindexing.Status {
+        @Override public Optional<Status> status(String cluster, String documentType) { return Optional.of(this); }
+        @Override public boolean enabled() { return true; }
+        @Override public Instant ready() { return Instant.EPOCH; }
     }
 }
