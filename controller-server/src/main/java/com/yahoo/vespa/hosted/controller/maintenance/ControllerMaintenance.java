@@ -50,7 +50,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ResourceTagMaintainer resourceTagMaintainer;
     private final SystemRoutingPolicyMaintainer systemRoutingPolicyMaintainer;
     private final ApplicationMetaDataGarbageCollector applicationMetaDataGarbageCollector;
-    private final HostRepairMaintainer hostRepairMaintainer;
     private final ContainerImageExpirer containerImageExpirer;
     private final HostSwitchUpdater hostSwitchUpdater;
 
@@ -80,7 +79,6 @@ public class ControllerMaintenance extends AbstractComponent {
         resourceTagMaintainer = new ResourceTagMaintainer(controller, intervals.resourceTagMaintainer, controller.serviceRegistry().resourceTagger());
         systemRoutingPolicyMaintainer = new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer);
         applicationMetaDataGarbageCollector = new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector);
-        hostRepairMaintainer = new HostRepairMaintainer(controller, intervals.hostRepairMaintainer);
         containerImageExpirer = new ContainerImageExpirer(controller, intervals.containerImageExpirer);
         hostSwitchUpdater = new HostSwitchUpdater(controller, intervals.hostSwitchUpdater);
     }
@@ -111,7 +109,6 @@ public class ControllerMaintenance extends AbstractComponent {
         resourceTagMaintainer.close();
         systemRoutingPolicyMaintainer.close();
         applicationMetaDataGarbageCollector.close();
-        hostRepairMaintainer.close();
         containerImageExpirer.close();
         hostSwitchUpdater.close();
     }
@@ -149,7 +146,6 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration resourceTagMaintainer;
         private final Duration systemRoutingPolicyMaintainer;
         private final Duration applicationMetaDataGarbageCollector;
-        private final Duration hostRepairMaintainer;
         private final Duration containerImageExpirer;
         private final Duration hostSwitchUpdater;
 
@@ -172,7 +168,6 @@ public class ControllerMaintenance extends AbstractComponent {
             this.resourceTagMaintainer = duration(30, MINUTES);
             this.systemRoutingPolicyMaintainer = duration(10, MINUTES);
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
-            this.hostRepairMaintainer = duration(12, HOURS);
             this.containerImageExpirer = duration(2, HOURS);
             this.hostSwitchUpdater = duration(12, HOURS);
         }
