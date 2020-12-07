@@ -4,7 +4,6 @@ package com.yahoo.container.di;
 import org.osgi.framework.Bundle;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * @author gjoranv
@@ -12,7 +11,6 @@ import java.util.List;
  */
 public interface ComponentDeconstructor {
 
-    /** Deconstructs the given components in order, then the given bundles. */
-    void deconstruct(List<Object> components, Collection<Bundle> bundles);
+    void deconstruct(Collection<Object> components, Collection<Bundle> bundles);
 
 }

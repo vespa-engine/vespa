@@ -21,7 +21,6 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 import org.osgi.framework.Bundle;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -160,16 +159,10 @@ public class Container {
     private void deconstructObsoleteComponents(ComponentGraph oldGraph,
                                                ComponentGraph newGraph,
                                                Collection<Bundle> obsoleteBundles) {
-        Map<Object, ?> newComponents = new IdentityHashMap<>(newGraph.size());
-        for (Object component : newGraph.allConstructedComponentsAndProviders())
-            newComponents.put(component, null);
-
-        List<Object> obsoleteComponents = new ArrayList<>();
-        for (Object component : oldGraph.allConstructedComponentsAndProviders())
-            if ( ! newComponents.containsKey(component))
-                obsoleteComponents.add(component);
-
-        componentDeconstructor.deconstruct(obsoleteComponents, obsoleteBundles);
+        IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
+        oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
+        newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
+        componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
     }
 
     private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
