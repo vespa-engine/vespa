@@ -166,6 +166,7 @@ public class ComponentGraph {
         }
     }
 
+    /** All constructed components and providers of this, in reverse creation order, i.e., suited for ordered deconstruction. */
     public List<Object> allConstructedComponentsAndProviders() {
         List<Node> orderedNodes = topologicalSort(nodes());
         Collections.reverse(orderedNodes);
