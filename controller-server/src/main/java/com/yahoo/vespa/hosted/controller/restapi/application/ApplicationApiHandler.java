@@ -699,7 +699,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
-            if (cluster.target().isPresent() && ! cluster.target().get().equals(cluster.current()))
+            if (cluster.target().isPresent()
+                && ! cluster.target().get().justNumbers().equals(cluster.current().justNumbers()))
                 toSlime(cluster.target().get(), clusterObject.setObject("target"));
             cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
