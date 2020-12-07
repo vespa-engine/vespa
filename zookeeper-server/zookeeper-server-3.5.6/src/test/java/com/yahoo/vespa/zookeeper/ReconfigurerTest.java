@@ -2,6 +2,7 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.net.HostName;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +48,7 @@ public class ReconfigurerTest {
         // Cluster grows
         ZookeeperServerConfig nextConfig = createConfig(5, true);
         reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals("node0:2181,node1:2181,node2:2181", reconfigurer.connectionSpec);
+        assertEquals("node1:2181", reconfigurer.connectionSpec);
         assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers);
         assertNull("No servers are leaving", reconfigurer.leavingServers);
         assertEquals(1, reconfigurer.reconfigurations);
@@ -62,7 +63,7 @@ public class ReconfigurerTest {
         nextConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals(2, reconfigurer.reconfigurations);
-        assertEquals("node0:2181,node1:2181,node2:2181,node3:2181,node4:2181", reconfigurer.connectionSpec);
+        assertEquals("node1:2181", reconfigurer.connectionSpec);
         assertNull("No servers are joining", reconfigurer.joiningServers);
         assertEquals("3,4", reconfigurer.leavingServers);
         assertSame(nextConfig, reconfigurer.activeConfig());
@@ -77,7 +78,7 @@ public class ReconfigurerTest {
 
         ZookeeperServerConfig nextConfig = createConfig(5, true);
         reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals("node0:2181,node1:2181,node2:2181", reconfigurer.connectionSpec);
+        assertEquals("node1:2181", reconfigurer.connectionSpec);
         assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers);
         assertNull("No servers are leaving", reconfigurer.leavingServers);
         assertEquals(1, reconfigurer.reconfigurations);
@@ -125,6 +126,10 @@ public class ReconfigurerTest {
         private String connectionSpec;
         private String joiningServers;
         private String leavingServers;
+
+        public TestableReconfigurer() {
+            HostName.setHostNameForTestingOnly("node1");
+        }
 
         @Override
         void startOrReconfigure(ZookeeperServerConfig newConfig) {
