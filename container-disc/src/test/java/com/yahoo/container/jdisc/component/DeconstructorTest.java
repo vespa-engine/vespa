@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -31,17 +32,17 @@ public class DeconstructorTest {
         TestAbstractComponent abstractComponent = new TestAbstractComponent();
         // Done by executor, so it takes some time even with a 0 delay.
         deconstructor.deconstruct(List.of(abstractComponent), emptyList());
-        int cnt = 0;
-        while (! abstractComponent.destructed && (cnt++ < 12000)) {
-            Thread.sleep(10);
-        }
+        deconstructor.executor.shutdown();
+        deconstructor.executor.awaitTermination(1, TimeUnit.MINUTES);
         assertTrue(abstractComponent.destructed);
     }
 
     @Test
-    public void require_provider_destructed() {
+    public void require_provider_destructed() throws InterruptedException {
         TestProvider provider = new TestProvider();
         deconstructor.deconstruct(List.of(provider), emptyList());
+        deconstructor.executor.shutdown();
+        deconstructor.executor.awaitTermination(1, TimeUnit.MINUTES);
         assertTrue(provider.destructed);
     }
 
@@ -57,10 +58,8 @@ public class DeconstructorTest {
         var bundle = new UninstallableMockBundle();
         // Done by executor, so it takes some time even with a 0 delay.
         deconstructor.deconstruct(emptyList(), singleton(bundle));
-        int cnt = 0;
-        while (! bundle.uninstalled && (cnt++ < 12000)) {
-            Thread.sleep(10);
-        }
+        deconstructor.executor.shutdown();
+        deconstructor.executor.awaitTermination(1, TimeUnit.MINUTES);
         assertTrue(bundle.uninstalled);
     }
 
