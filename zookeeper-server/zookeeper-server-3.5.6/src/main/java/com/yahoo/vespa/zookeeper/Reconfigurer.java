@@ -5,13 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.yolean.Exceptions;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,9 +25,6 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
 
-    // Timeout for connecting to ZooKeeper to reconfigure
-    private static final Duration sessionTimeout = Duration.ofSeconds(30);
-
     // How long to wait before triggering reconfig. This is multiplied by the node ID
     private static final Duration reconfigInterval = Duration.ofSeconds(5);
 
@@ -46,8 +37,11 @@ public class Reconfigurer extends AbstractComponent {
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
 
+    protected final ZkAdmin zkAdmin;
+
     @Inject
-    public Reconfigurer() {
+    public Reconfigurer(ZkAdmin zkAdmin) {
+        this.zkAdmin = zkAdmin;
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
@@ -65,20 +59,6 @@ public class Reconfigurer extends AbstractComponent {
 
     ZookeeperServerConfig activeConfig() {
         return activeConfig;
-    }
-
-    void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
-        try {
-            ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec,
-                                                               (int) sessionTimeout.toMillis(),
-                                                               new LoggingWatcher());
-            long fromConfig = -1;
-            // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
-            byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
-            log.log(Level.INFO, "Applied ZooKeeper config: " + new String(appliedConfig, StandardCharsets.UTF_8));
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     void shutdown() {
@@ -115,16 +95,14 @@ public class Reconfigurer extends AbstractComponent {
         for (int attempts = 1; ! reconfigured && Instant.now().isBefore(end); attempts++) {
             try {
                 Instant reconfigStarted = Instant.now();
-                zooKeeperReconfigure(connectionSpec, joiningServers, leavingServers);
+                zkAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
                 Instant reconfigEnded = Instant.now();
                 log.log(Level.INFO, "Reconfiguration completed in " +
                                     Duration.between(reconfigTriggered, reconfigEnded) +
                                     ", after " + attempts + " attempt(s). ZooKeeper reconfig call took " +
                                     Duration.between(reconfigStarted, reconfigEnded));
                 reconfigured = true;
-            } catch (KeeperException e) {
-                if (!retryOn(e))
-                    throw new RuntimeException(e);
+            } catch (ReconfigException e) {
                 log.log(Level.INFO, "Reconfiguration failed. Retrying in " + retryWait + ": " +
                                     Exceptions.toMessageString(e));
                 sleeper.accept(retryWait);
@@ -137,11 +115,6 @@ public class Reconfigurer extends AbstractComponent {
     private Duration reconfigWaitPeriod() {
         if (activeConfig == null) return Duration.ZERO;
         return reconfigInterval.multipliedBy(activeConfig.myid());
-    }
-
-    private static boolean retryOn(KeeperException e) {
-        return e instanceof KeeperException.ReconfigInProgress ||
-               e instanceof  KeeperException.ConnectionLossException;
     }
 
     private static String connectionSpec(ZookeeperServerConfig config) {
@@ -177,15 +150,6 @@ public class Reconfigurer extends AbstractComponent {
         } catch (InterruptedException interruptedException) {
             interruptedException.printStackTrace();
         }
-    }
-
-    private static class LoggingWatcher implements Watcher {
-
-        @Override
-        public void process(WatchedEvent event) {
-            log.log(Level.INFO, event.toString());
-        }
-
     }
 
 }
