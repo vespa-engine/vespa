@@ -9,6 +9,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * @author hmusum
+ */
 @SuppressWarnings("unused") // Created by injection
 public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
