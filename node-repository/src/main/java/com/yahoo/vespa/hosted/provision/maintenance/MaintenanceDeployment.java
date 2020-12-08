@@ -225,7 +225,7 @@ class MaintenanceDeployment implements Closeable {
         @Override
         public String toString() {
             return "move " +
-                   ( isEmpty() ? "none" : (node.hostname() + " from " + fromHost + " to " + toHost));
+                   ( isEmpty() ? "none" : (node + " from " + fromHost.hostname() + " to " + toHost.hostname()));
         }
 
         public static Move empty() { return new Move(null, null, null); }
