@@ -1,18 +1,17 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_create_function.h"
-#include "dense_tensor_view.h"
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/tensor.h>
 
 namespace vespalib::tensor {
 
 using eval::DenseValueView;
-using eval::Value;
 using eval::DoubleValue;
-using eval::ValueType;
-using eval::TensorSpec;
 using eval::TensorFunction;
+using eval::TensorSpec;
+using eval::TypedCells;
+using eval::Value;
+using eval::ValueType;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;

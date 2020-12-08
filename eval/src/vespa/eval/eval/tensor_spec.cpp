@@ -4,8 +4,6 @@
 #include "array_array_map.h"
 #include "function.h"
 #include "interpreted_function.h"
-#include "tensor.h"
-#include "tensor_engine.h"
 #include "value.h"
 #include "value_codec.h"
 #include "value_type.h"

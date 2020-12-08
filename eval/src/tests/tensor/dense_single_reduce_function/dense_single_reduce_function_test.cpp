@@ -4,8 +4,6 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/tensor/dense/dense_single_reduce_function.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
 

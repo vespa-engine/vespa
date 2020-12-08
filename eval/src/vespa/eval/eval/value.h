@@ -12,8 +12,6 @@
 
 namespace vespalib::eval {
 
-class Tensor;
-
 /**
  * An abstract Value.
  **/
@@ -69,7 +67,6 @@ struct Value {
     virtual bool is_tensor() const { return type().is_tensor(); }
     virtual double as_double() const;
     bool as_bool() const { return (as_double() != 0.0); }
-    virtual const Tensor *as_tensor() const { return nullptr; }
 // --- end of old interface
 };
 

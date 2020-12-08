@@ -13,7 +13,6 @@
 #include <vespa/eval/tensor/dense/dense_single_reduce_function.h>
 #include <vespa/eval/tensor/dense/dense_remove_dimension_optimizer.h>
 #include <vespa/eval/instruction/dense_lambda_peek_optimizer.h>
-#include <vespa/eval/tensor/dense/dense_lambda_function.h>
 #include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/eval/tensor/dense/dense_simple_join_function.h>
 #include <vespa/eval/instruction/join_with_number_function.h>

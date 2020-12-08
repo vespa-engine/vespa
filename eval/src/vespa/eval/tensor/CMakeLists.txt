@@ -2,6 +2,4 @@
 vespa_add_library(eval_tensor OBJECT
     SOURCES
     partial_update.cpp
-    tensor.cpp
-    tensor_address.cpp
 )

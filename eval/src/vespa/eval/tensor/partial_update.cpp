@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <cassert>
 #include <set>
-#include "tensor.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.tensor.partial_update");
