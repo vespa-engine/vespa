@@ -169,7 +169,7 @@ public class Reindexer {
 
         // Wait until done; or until termination is forced, in which we shut down the visitor session immediately.
         phaser.arriveAndAwaitAdvance(); // Synchronize with visitor completion.
-        sessionShutdown.run(); // Shutdown aborts the session, then waits for it to terminate normally.
+        sessionShutdown.run(); // Shutdown aborts the session unless already complete, then waits for it to terminate normally.
 
         switch (control.getResult().getCode()) {
             default:
