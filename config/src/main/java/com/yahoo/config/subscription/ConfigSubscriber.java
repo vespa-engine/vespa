@@ -244,11 +244,13 @@ public class ConfigSubscriber implements AutoCloseable {
      *         the config should be applied at this time, false otherwise
      */
     private boolean acquireSnapshot(long timeoutInMillis, boolean requireChange) {
+        boolean initialConfiguration;
         boolean applyOnRestartOnly;
         synchronized (monitor) {
             if (state == State.CLOSED) return false;
             state = State.FROZEN;
             applyOnRestartOnly = applyOnRestart;
+            initialConfiguration = generation == -1;
         }
         long started = System.currentTimeMillis();
         long timeLeftMillis = timeoutInMillis;
@@ -274,14 +276,14 @@ public class ConfigSubscriber implements AutoCloseable {
                 if (currentGen == null) currentGen = config.getGeneration();
                 allGenerationsTheSame &= currentGen.equals(config.getGeneration());
                 allGenerationsChanged &= config.isGenerationChanged();
-                anyConfigChanged      |= config.isConfigChanged();
-                applyOnRestartOnly    |= requireChange && config.applyOnRestart(); // only if this is reconfig
+                anyConfigChanged      |= config.isConfigChanged();		
+                applyOnRestartOnly    |= config.applyOnRestart();
                 timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
             }
-            reconfigDue = ((anyConfigChanged && !applyOnRestartOnly) || !requireChange)
+            reconfigDue = ( initialConfiguration || (anyConfigChanged && !applyOnRestartOnly))
                           && allGenerationsChanged && allGenerationsTheSame;
 
-            if (requireChange && applyOnRestartOnly) { // if this is a reconfig, disable future reconfigs until restart
+            if (applyOnRestartOnly && ! initialConfiguration) { // disable any reconfig until restart
                 synchronized (monitor) {
                     applyOnRestart = applyOnRestartOnly;
                 }

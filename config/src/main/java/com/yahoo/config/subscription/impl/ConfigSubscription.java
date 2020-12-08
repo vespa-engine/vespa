@@ -25,7 +25,7 @@ import com.yahoo.vespa.config.protocol.DefContent;
  */
 public abstract class ConfigSubscription<T extends ConfigInstance> {
 
-    protected static Logger log = Logger.getLogger(ConfigSubscription.class.getName());
+    protected static final Logger log = Logger.getLogger(ConfigSubscription.class.getName());
     protected final ConfigSubscriber subscriber;
     private final AtomicReference<ConfigState<T>> config = new AtomicReference<>();
     protected final ConfigKey<T> key;

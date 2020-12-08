@@ -86,7 +86,7 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
             @Override
             protected com.yahoo.jdisc.Response newResponse() {
                 com.yahoo.jdisc.Response response = new com.yahoo.jdisc.Response(com.yahoo.jdisc.Response.Status.OK);
-                response.headers().add("Content-Type", Arrays.asList(new String[]{"application/json"}));
+                response.headers().add("Content-Type", List.of("application/json"));
                 return response;
             }
         }.connect(handler));
