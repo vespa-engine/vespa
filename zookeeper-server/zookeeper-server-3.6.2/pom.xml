@@ -1,27 +1,40 @@
 <?xml version="1.0"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.yahoo.vespa</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>zookeeper-server</artifactId>
     <version>7-SNAPSHOT</version>
-    <relativePath>../parent/pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>zookeeper-server</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>zookeeper-server-3.6.2</artifactId>
+  <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
-  <modules>
-    <module>zookeeper-server-common</module>
-    <module>zookeeper-server-3.5.6</module>
-    <module>zookeeper-server-3.6.2</module>
-  </modules>
   <dependencies>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-dev</artifactId>
+      <artifactId>zookeeper-server-common</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+      <version>3.6.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-jdk14</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.5</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
@@ -57,6 +70,7 @@
         <extensions>true</extensions>
         <configuration>
           <importPackage>com.sun.management</importPackage>
+          <bundleSymbolicName>zookeeper-server</bundleSymbolicName>
         </configuration>
       </plugin>
     </plugins>

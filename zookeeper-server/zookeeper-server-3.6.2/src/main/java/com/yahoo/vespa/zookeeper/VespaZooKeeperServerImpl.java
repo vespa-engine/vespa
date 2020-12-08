@@ -11,7 +11,7 @@ import java.nio.file.Path;
  * Main component controlling startup and stop of zookeeper server
  *
  * @author Ulf Lilleengen
- * @author hmusum
+ * @author Harald Musum
  */
 public class VespaZooKeeperServerImpl extends AbstractComponent implements VespaZooKeeperServer {
 
