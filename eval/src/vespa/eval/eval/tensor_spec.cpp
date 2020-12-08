@@ -130,7 +130,7 @@ TensorSpec::add(Address address, double value) {
         // to simplify reference implementations, allow
         // adding the same address several times to a Spec, but
         // only with the same value every time:
-        assert(iter->second.value == value);
+        assert(iter->second == Value(value));
     }
     return *this;
 }

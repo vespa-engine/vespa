@@ -11,6 +11,5 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_single_reduce_function.cpp
     dense_tensor_create_function.cpp
     mutable_dense_tensor_view.cpp
-    onnx_wrapper.cpp
     vector_from_doubles_function.cpp
 )
