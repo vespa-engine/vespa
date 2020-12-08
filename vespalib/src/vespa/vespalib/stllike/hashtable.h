@@ -79,8 +79,10 @@ public:
     private:
         next_t _mask;
     };
-    static size_t getModuloStl(size_t newSize);
-    static size_t getModuloSimple(size_t newSize);
+    static size_t getModuloStl(size_t size);
+    static size_t getModuloSimple(size_t size) {
+        return std::max(size_t(8), roundUp2inN(size));
+    }
 protected:
     struct DefaultMoveHandler
     {
