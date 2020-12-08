@@ -8,7 +8,7 @@ import java.time.Duration;
  *
  * @author hmusum
  */
-public interface ZkAdmin {
+public interface VespaZooKeeperAdmin {
 
     void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException;
 

@@ -891,7 +891,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             cluster.getContainers().forEach(container -> {
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.Reconfigurer");
-                assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ZkAdminImpl");
+                assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl");
 
                 ZookeeperServerConfig config = model.getConfig(ZookeeperServerConfig.class, container.getConfigId());
                 assertEquals(container.index(), config.myid());

@@ -38,11 +38,11 @@ public class Reconfigurer extends AbstractComponent {
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
 
-    protected final ZkAdmin zkAdmin;
+    protected final VespaZooKeeperAdmin vespaZooKeeperAdmin;
 
     @Inject
-    public Reconfigurer(ZkAdmin zkAdmin) {
-        this.zkAdmin = zkAdmin;
+    public Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin) {
+        this.vespaZooKeeperAdmin = vespaZooKeeperAdmin;
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
@@ -95,7 +95,7 @@ public class Reconfigurer extends AbstractComponent {
         for (int attempts = 1; Instant.now().isBefore(end); attempts++) {
             try {
                 Instant reconfigStarted = Instant.now();
-                zkAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
+                vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
                 Instant reconfigEnded = Instant.now();
                 log.log(Level.INFO, "Reconfiguration completed in " +
                                     Duration.between(reconfigTriggered, reconfigEnded) +

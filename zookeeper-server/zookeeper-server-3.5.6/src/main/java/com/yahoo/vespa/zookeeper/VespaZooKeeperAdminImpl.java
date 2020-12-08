@@ -9,16 +9,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ZkAdminImpl implements ZkAdmin {
+@SuppressWarnings("unused") // Created by injection
+public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
-    private static final Logger log = java.util.logging.Logger.getLogger(ZkAdminImpl.class.getName());
+    private static final Logger log = java.util.logging.Logger.getLogger(VespaZooKeeperAdminImpl.class.getName());
 
     @Override
     public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec,
                                                                (int) sessionTimeout().toMillis(),
-                                                               new LoggingWatcher());
+                                                               (event) -> log.log(Level.INFO, event.toString()));
             long fromConfig = -1;
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
             byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);

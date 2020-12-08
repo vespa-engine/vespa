@@ -36,7 +36,7 @@ public class ReconfigurerTest {
     public void setup() throws IOException {
         cfgFile = folder.newFile();
         idFile = folder.newFile("myid");
-        reconfigurer = new TestableReconfigurer(new TestableZkAdmin());
+        reconfigurer = new TestableReconfigurer(new TestableVespaZooKeeperAdmin());
     }
 
     @Test
@@ -71,7 +71,7 @@ public class ReconfigurerTest {
 
     @Test
     public void testReconfigureFailsWithReconfigInProgressThenSucceeds() {
-        reconfigurer = new TestableReconfigurer(new TemporarilyFailZkAdmin());
+        reconfigurer = new TestableReconfigurer(new TemporarilyFailVespaZooKeeperAdmin());
         ZookeeperServerConfig initialConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(initialConfig);
         assertSame(initialConfig, reconfigurer.activeConfig());
@@ -121,9 +121,9 @@ public class ReconfigurerTest {
 
     private static class TestableReconfigurer extends Reconfigurer implements VespaZooKeeperServer{
 
-        private final TestableZkAdmin zkReconfigurer;
+        private final TestableVespaZooKeeperAdmin zkReconfigurer;
 
-        TestableReconfigurer(TestableZkAdmin zkReconfigurer) {
+        TestableReconfigurer(TestableVespaZooKeeperAdmin zkReconfigurer) {
             super(zkReconfigurer);
             this.zkReconfigurer = zkReconfigurer;
             HostName.setHostNameForTestingOnly("node1");
@@ -159,7 +159,7 @@ public class ReconfigurerTest {
 
     }
 
-    private static class TestableZkAdmin implements ZkAdmin {
+    private static class TestableVespaZooKeeperAdmin implements VespaZooKeeperAdmin {
 
         String connectionSpec;
         String joiningServers;
@@ -177,7 +177,7 @@ public class ReconfigurerTest {
     }
 
     // Fails 3 times with KeeperException.ReconfigInProgress(), then succeeds
-    private static class TemporarilyFailZkAdmin extends TestableZkAdmin {
+    private static class TemporarilyFailVespaZooKeeperAdmin extends TestableVespaZooKeeperAdmin {
 
         private int attempts = 0;
 
