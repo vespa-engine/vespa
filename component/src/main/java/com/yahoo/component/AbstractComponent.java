@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
  *
  * @author bratseth
  */
-public class AbstractComponent implements Component {
+public class AbstractComponent implements Component, Deconstructable {
 
     private static final MethodCache deconstructMethods = new MethodCache("deconstruct");
 
@@ -129,6 +129,7 @@ public class AbstractComponent implements Component {
      * <p>
      * This default implementation does nothing.
      */
+    @Override
     public void deconstruct() { }
 
     /**

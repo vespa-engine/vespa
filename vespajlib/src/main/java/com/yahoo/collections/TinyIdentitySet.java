@@ -18,7 +18,7 @@ import java.util.Set;
  * in IdentityHashMap, where the key set is often used as an identity set.
  * </p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @since 5.1.4
  * @see java.util.IdentityHashMap
  *
