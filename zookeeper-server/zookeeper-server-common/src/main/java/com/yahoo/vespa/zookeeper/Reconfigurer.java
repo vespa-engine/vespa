@@ -26,18 +26,12 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
 
-    // How long to wait before triggering reconfig. This is multiplied by the node ID
-    private static final Duration reconfigInterval = Duration.ofSeconds(5);
-
-    // Total timeout for a reconfiguration
-    private static final Duration reconfigTimeout = Duration.ofSeconds(30);
-
-    // How long to wait between each retry
-    private static final Duration retryWait = Duration.ofSeconds(1);
+    private static final Duration RECONFIG_TIMEOUT = Duration.ofMinutes(3);
 
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
 
+    private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(10));
     protected final VespaZooKeeperAdmin vespaZooKeeperAdmin;
 
     @Inject
@@ -86,35 +80,29 @@ public class Reconfigurer extends AbstractComponent {
         String joiningServers = String.join(",", difference(servers(newConfig), servers(activeConfig)));
         leavingServers = leavingServers.isEmpty() ? null : leavingServers;
         joiningServers = joiningServers.isEmpty() ? null : joiningServers;
-        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster in " + reconfigWaitPeriod() +
-                            ". Joining servers: " + joiningServers + ", leaving servers: " + leavingServers);
-        sleeper.accept(reconfigWaitPeriod());
+        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
+                            ", leaving servers: " + leavingServers);
         String connectionSpec = localConnectionSpec(activeConfig);
-        Instant end = Instant.now().plus(reconfigTimeout);
+        Instant end = Instant.now().plus(RECONFIG_TIMEOUT);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
-        for (int attempts = 1; Instant.now().isBefore(end); attempts++) {
+        for (int attempt = 1; Instant.now().isBefore(end); attempt++) {
             try {
                 Instant reconfigStarted = Instant.now();
                 vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
                 Instant reconfigEnded = Instant.now();
                 log.log(Level.INFO, "Reconfiguration completed in " +
                                     Duration.between(reconfigTriggered, reconfigEnded) +
-                                    ", after " + attempts + " attempt(s). ZooKeeper reconfig call took " +
+                                    ", after " + attempt + " attempt(s). ZooKeeper reconfig call took " +
                                     Duration.between(reconfigStarted, reconfigEnded));
                 activeConfig = newConfig;
                 return;
             } catch (ReconfigException e) {
-                log.log(Level.INFO, "Reconfiguration failed. Retrying in " + retryWait + ": " +
+                Duration delay = backoff.delay(attempt);
+                log.log(Level.INFO, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay + ": " +
                                     Exceptions.toMessageString(e));
-                sleeper.accept(retryWait);
+                sleeper.accept(delay);
             }
         }
-    }
-
-    /** Returns how long this node should wait before reconfiguring the cluster */
-    private Duration reconfigWaitPeriod() {
-        if (activeConfig == null) return Duration.ZERO;
-        return reconfigInterval.multipliedBy(activeConfig.myid());
     }
 
     private static String localConnectionSpec(ZookeeperServerConfig config) {

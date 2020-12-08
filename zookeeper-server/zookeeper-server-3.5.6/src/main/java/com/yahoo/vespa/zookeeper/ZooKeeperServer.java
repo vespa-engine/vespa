@@ -11,6 +11,8 @@ import java.nio.file.Path;
 /**
  * Class to start zookeeper server. Extends QuorumPeerMain to be able to call initializeAndRun() and wraps
  * exceptions so it can be used by code that does not depend on zookeeper.
+ *
+ * @author hmusum
  */
 class ZooKeeperServer extends QuorumPeerMain {
 
