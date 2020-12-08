@@ -177,7 +177,7 @@ class MaintenanceDeployment implements Closeable {
                     if ( deployment.activate().isEmpty()) return false;
 
                     log.info(agent + " redeployed " + application + " to " +
-                             ( verifyTarget ? this : "move " + (node.hostname() + " from " + fromHost)));
+                             ( verifyTarget ? this : "move " + (node + " from " + fromHost.hostname())));
                     return true;
                 }
                 finally {
