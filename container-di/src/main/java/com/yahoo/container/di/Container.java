@@ -72,10 +72,10 @@ public class Container {
         });
     }
 
-    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean restartOnRedeploy) {
+    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
-            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, restartOnRedeploy, obsoleteBundles);
+            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, obsoleteBundles);
             newGraph.reuseNodes(oldGraph);
             constructComponents(newGraph);
             deconstructObsoleteComponents(oldGraph, newGraph, obsoleteBundles);
@@ -88,12 +88,11 @@ public class Container {
 
     private ComponentGraph getConfigAndCreateGraph(ComponentGraph graph,
                                                    Injector fallbackInjector,
-                                                   boolean restartOnRedeploy,
                                                    Collection<Bundle> obsoleteBundles) // NOTE: Return value
     {
         ConfigSnapshot snapshot;
         while (true) {
-            snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, restartOnRedeploy);
+            snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration);
 
             log.log(FINE, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
                                         graph.configKeys(), graph.generation(), snapshot));

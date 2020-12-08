@@ -352,7 +352,6 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy returnOkResponse()");
         request.addOkResponse(config.getPayload(),
                               config.getGeneration(),
-                              config.isInternalRedeploy(),
                               config.applyOnRestart(),
                               config.getConfigMd5());
         log.log(Level.FINE, () -> "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
