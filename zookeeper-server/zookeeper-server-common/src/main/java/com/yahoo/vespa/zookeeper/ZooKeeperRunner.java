@@ -4,11 +4,9 @@ package com.yahoo.vespa.zookeeper;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import org.apache.zookeeper.server.admin.AdminServer;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
-import org.apache.zookeeper.server.quorum.QuorumPeerMain;
 
-import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -29,9 +27,11 @@ public class ZooKeeperRunner implements Runnable {
 
     private final ExecutorService executorService;
     private final ZookeeperServerConfig zookeeperServerConfig;
+    private final VespaZooKeeperServer server;
 
-    public ZooKeeperRunner(ZookeeperServerConfig zookeeperServerConfig) {
+    public ZooKeeperRunner(ZookeeperServerConfig zookeeperServerConfig, VespaZooKeeperServer server) {
         this.zookeeperServerConfig = zookeeperServerConfig;
+        this.server = server;
         new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getOptions());
         executorService = Executors.newSingleThreadExecutor(new DaemonThreadFactory("zookeeper server"));
         executorService.submit(this);
@@ -53,26 +53,10 @@ public class ZooKeeperRunner implements Runnable {
 
     @Override
     public void run() {
-        String[] args = new String[]{getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile())};
-        log.log(Level.INFO, "Starting ZooKeeper server with config file " + args[0] +
+        Path path = Paths.get(getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile()));
+        log.log(Level.INFO, "Starting ZooKeeper server with config file " + path.toFile().getAbsolutePath() +
                             ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
-        new Server().initializeAndRun(args);
-    }
-
-    /**
-     * Extends QuoroumPeerMain to be able to call initializeAndRun()
-     */
-    private static class Server extends QuorumPeerMain {
-
-        @Override
-        protected void initializeAndRun(String[] args) {
-            try {
-                super.initializeAndRun(args);
-            } catch (QuorumPeerConfig.ConfigException | IOException | AdminServer.AdminServerException e) {
-                throw new RuntimeException("Exception when initializing or running ZooKeeper server", e);
-            }
-        }
-
+        server.start(path);
     }
 
 }

@@ -3,7 +3,6 @@ package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.net.HostName;
-import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -12,6 +11,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -36,7 +36,7 @@ public class ReconfigurerTest {
     public void setup() throws IOException {
         cfgFile = folder.newFile();
         idFile = folder.newFile("myid");
-        reconfigurer = new TestableReconfigurer();
+        reconfigurer = new TestableReconfigurer(new TestableVespaZooKeeperAdmin());
     }
 
     @Test
@@ -48,40 +48,40 @@ public class ReconfigurerTest {
         // Cluster grows
         ZookeeperServerConfig nextConfig = createConfig(5, true);
         reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals("node1:2181", reconfigurer.connectionSpec);
-        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers);
-        assertNull("No servers are leaving", reconfigurer.leavingServers);
-        assertEquals(1, reconfigurer.reconfigurations);
+        assertEquals("node1:2181", reconfigurer.connectionSpec());
+        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers());
+        assertNull("No servers are leaving", reconfigurer.leavingServers());
+        assertEquals(1, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
         // No reconfiguration happens with same config
         reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals(1, reconfigurer.reconfigurations);
+        assertEquals(1, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
         // Cluster shrinks
         nextConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals(2, reconfigurer.reconfigurations);
-        assertEquals("node1:2181", reconfigurer.connectionSpec);
-        assertNull("No servers are joining", reconfigurer.joiningServers);
-        assertEquals("3,4", reconfigurer.leavingServers);
+        assertEquals(2, reconfigurer.reconfigurations());
+        assertEquals("node1:2181", reconfigurer.connectionSpec());
+        assertNull("No servers are joining", reconfigurer.joiningServers());
+        assertEquals("3,4", reconfigurer.leavingServers());
         assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
     @Test
     public void testReconfigureFailsWithReconfigInProgressThenSucceeds() {
-        reconfigurer = new TemporarilyFailWithReconfigInProgressReconfigurer();
+        reconfigurer = new TestableReconfigurer(new TemporarilyFailVespaZooKeeperAdmin());
         ZookeeperServerConfig initialConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(initialConfig);
         assertSame(initialConfig, reconfigurer.activeConfig());
 
         ZookeeperServerConfig nextConfig = createConfig(5, true);
         reconfigurer.startOrReconfigure(nextConfig);
-        assertEquals("node1:2181", reconfigurer.connectionSpec);
-        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers);
-        assertNull("No servers are leaving", reconfigurer.leavingServers);
-        assertEquals(1, reconfigurer.reconfigurations);
+        assertEquals("node1:2181", reconfigurer.connectionSpec());
+        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers());
+        assertNull("No servers are leaving", reconfigurer.leavingServers());
+        assertEquals(1, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
@@ -94,7 +94,7 @@ public class ReconfigurerTest {
         ZookeeperServerConfig nextConfig = createConfig(5, false);
         reconfigurer.startOrReconfigure(nextConfig);
         assertSame(initialConfig, reconfigurer.activeConfig());
-        assertEquals(0, reconfigurer.reconfigurations);
+        assertEquals(0, reconfigurer.reconfigurations());
     }
 
     @After
@@ -119,25 +119,55 @@ public class ReconfigurerTest {
         return builder;
     }
 
-    private static class TestableReconfigurer extends Reconfigurer {
+    private static class TestableReconfigurer extends Reconfigurer implements VespaZooKeeperServer{
 
-        private int reconfigurations = 0;
+        private final TestableVespaZooKeeperAdmin zkReconfigurer;
 
-        private String connectionSpec;
-        private String joiningServers;
-        private String leavingServers;
-
-        public TestableReconfigurer() {
+        TestableReconfigurer(TestableVespaZooKeeperAdmin zkReconfigurer) {
+            super(zkReconfigurer);
+            this.zkReconfigurer = zkReconfigurer;
             HostName.setHostNameForTestingOnly("node1");
         }
 
-        @Override
         void startOrReconfigure(ZookeeperServerConfig newConfig) {
-            super.startOrReconfigure(newConfig, l->{});
+            startOrReconfigure(newConfig, this);
         }
 
         @Override
-        void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
+        void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
+            super.startOrReconfigure(newConfig, l -> {}, this);
+        }
+
+        String connectionSpec() {
+            return zkReconfigurer.connectionSpec;
+        }
+
+        String joiningServers() {
+            return zkReconfigurer.joiningServers;
+        }
+
+        String leavingServers() {
+            return zkReconfigurer.leavingServers;
+        }
+
+        int reconfigurations() {
+            return zkReconfigurer.reconfigurations;
+        }
+
+        @Override
+        public void start(Path configFilePath) { }
+
+    }
+
+    private static class TestableVespaZooKeeperAdmin implements VespaZooKeeperAdmin {
+
+        String connectionSpec;
+        String joiningServers;
+        String leavingServers;
+        int reconfigurations = 0;
+
+        @Override
+        public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
             this.connectionSpec = connectionSpec;
             this.joiningServers = joiningServers;
             this.leavingServers = leavingServers;
@@ -147,18 +177,18 @@ public class ReconfigurerTest {
     }
 
     // Fails 3 times with KeeperException.ReconfigInProgress(), then succeeds
-    private static class TemporarilyFailWithReconfigInProgressReconfigurer extends TestableReconfigurer {
+    private static class TemporarilyFailVespaZooKeeperAdmin extends TestableVespaZooKeeperAdmin {
 
         private int attempts = 0;
 
-        @Override
-        void zooKeeperReconfigure(String connectionSpec, String joiningServers, String leavingServers) throws KeeperException {
+        public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
             if (++attempts < 3)
-                throw new KeeperException.ReconfigInProgress();
+                throw new ReconfigException("Reconfig failed");
             else
-                super.zooKeeperReconfigure(connectionSpec, joiningServers, leavingServers);
+                super.reconfigure(connectionSpec, joiningServers, leavingServers);
         }
 
     }
+
 
 }

@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 
+import java.nio.file.Path;
+
 /**
  * Main component controlling startup and stop of zookeeper server
  *
@@ -17,13 +19,17 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Vespa
 
     @Inject
     public VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig) {
-        this.zooKeeperRunner = new ZooKeeperRunner(zookeeperServerConfig);
+        this.zooKeeperRunner = new ZooKeeperRunner(zookeeperServerConfig, this);
     }
 
     @Override
     public void deconstruct() {
         zooKeeperRunner.shutdown();
         super.deconstruct();
+    }
+
+    public void start(Path configFilePath) {
+        new ZooKeeperServer().start(configFilePath);
     }
 
 }
