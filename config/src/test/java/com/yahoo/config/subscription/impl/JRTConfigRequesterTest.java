@@ -184,7 +184,7 @@ public class JRTConfigRequesterTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         final TimingValues timingValues = getTestTimingValues();
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(subscriber, timingValues);
-        sub.setConfig(1L, false, config());
+        sub.setConfig(1L, false, false, config());
 
         final MockConnection connection = new MockConnection(new ErrorResponseHandler());
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
@@ -212,7 +212,7 @@ public class JRTConfigRequesterTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         final TimingValues timingValues = getTestTimingValues();
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(subscriber, timingValues);
-        sub.setConfig(1L, false, config());
+        sub.setConfig(1L, false, false, config());
 
         final MockConnection connection = new MockConnection(new ErrorResponseHandler(com.yahoo.jrt.ErrorCode.TIMEOUT));
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
@@ -227,7 +227,7 @@ public class JRTConfigRequesterTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         final TimingValues timingValues = getTestTimingValues();
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(subscriber, timingValues);
-        sub.setConfig(1L, false, config());
+        sub.setConfig(1L, false, false, config());
 
         final MockConnection connection = new MockConnection(new ErrorResponseHandler(ErrorCode.UNKNOWN_DEFINITION));
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);

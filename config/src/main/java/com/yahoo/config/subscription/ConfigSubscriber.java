@@ -43,6 +43,9 @@ public class ConfigSubscriber implements AutoCloseable {
     /** The last complete config generation received by this */
     private long generation = -1;
 
+    /** Whether the last generation received was due to a system-internal redeploy, not an application package change */
+    private boolean internalRedeploy = false;
+
     /**
      * Whether the last generation should only be applied on restart, not immediately.
      * Once this is set it will not be unset, as no future generation should be applied
@@ -244,13 +247,11 @@ public class ConfigSubscriber implements AutoCloseable {
      *         the config should be applied at this time, false otherwise
      */
     private boolean acquireSnapshot(long timeoutInMillis, boolean requireChange) {
-        boolean initialConfiguration;
         boolean applyOnRestartOnly;
         synchronized (monitor) {
             if (state == State.CLOSED) return false;
             state = State.FROZEN;
             applyOnRestartOnly = applyOnRestart;
-            initialConfiguration = generation == -1;
         }
         long started = System.currentTimeMillis();
         long timeLeftMillis = timeoutInMillis;
@@ -261,6 +262,7 @@ public class ConfigSubscriber implements AutoCloseable {
             h.setChanged(false); // Reset this flag, if it was set, the user should have acted on it the last time this method returned true.
         }
         boolean reconfigDue;
+        boolean internalRedeployOnly = true;
         do {
             boolean allGenerationsChanged = true;
             boolean allGenerationsTheSame = true;
@@ -276,14 +278,15 @@ public class ConfigSubscriber implements AutoCloseable {
                 if (currentGen == null) currentGen = config.getGeneration();
                 allGenerationsTheSame &= currentGen.equals(config.getGeneration());
                 allGenerationsChanged &= config.isGenerationChanged();
-                anyConfigChanged      |= config.isConfigChanged();		
-                applyOnRestartOnly    |= config.applyOnRestart();
+                anyConfigChanged      |= config.isConfigChanged();
+                internalRedeployOnly  &= config.isInternalRedeploy();
+                applyOnRestartOnly    |= requireChange && config.applyOnRestart(); // only if this is reconfig
                 timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
             }
-            reconfigDue = ( initialConfiguration || (anyConfigChanged && !applyOnRestartOnly))
+            reconfigDue = ((anyConfigChanged && !applyOnRestartOnly) || !requireChange)
                           && allGenerationsChanged && allGenerationsTheSame;
 
-            if (applyOnRestartOnly && ! initialConfiguration) { // disable any reconfig until restart
+            if (requireChange && applyOnRestartOnly) { // if this is a reconfig, disable future reconfigs until restart
                 synchronized (monitor) {
                     applyOnRestart = applyOnRestartOnly;
                 }
@@ -298,6 +301,7 @@ public class ConfigSubscriber implements AutoCloseable {
             // Also if appropriate update the changed flag on the handler, which clients use.
             markSubsChangedSeen(currentGen);
             synchronized (monitor) {
+                internalRedeploy = internalRedeployOnly;
                 generation = currentGen;
             }
         }
@@ -485,6 +489,12 @@ public class ConfigSubscriber implements AutoCloseable {
             return generation;
         }
     }
+
+    /**
+     * Whether the current config generation received by this was due to a system-internal redeploy,
+     * not an application package change
+     */
+    public boolean isInternalRedeploy() { synchronized (monitor) { return internalRedeploy; } }
 
     /**
      * Convenience interface for clients who only subscribe to one config. Implement this, and pass it to {@link ConfigSubscriber#subscribe(SingleSubscriber, Class, String)}.

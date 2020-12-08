@@ -110,6 +110,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         return new Application(modelFactory.createModel(modelContext),
                                serverCache,
                                applicationGeneration,
+                               applicationPackage.getMetaData().isInternalRedeploy(),
                                modelFactory.version(),
                                applicationMetricUpdater,
                                applicationId);

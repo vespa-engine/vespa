@@ -125,7 +125,7 @@ class GetConfigProcessor implements Runnable {
         // config == null is not an error, but indicates that the config will be returned later.
         if ((config != null) && (!config.hasEqualConfig(request) || config.hasNewerGeneration(request) || forceResponse)) {
             // debugLog(trace, "config response before encoding:" + config.toString());
-            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.applyOnRestart(), config.getConfigMd5());
+            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.isInternalRedeploy(), config.applyOnRestart(), config.getConfigMd5());
             if (logDebug(trace)) {
                 debugLog(trace, "return response: " + request.getShortDescription());
             }
@@ -166,8 +166,8 @@ class GetConfigProcessor implements Runnable {
         log.log(Level.FINE, () -> "Returning empty sentinel config for request from " + request.getClientHostName());
         ConfigPayload emptyPayload = ConfigPayload.empty();
         String configMd5 = ConfigUtils.getMd5(emptyPayload);
-        ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, 0, false, configMd5);
-        request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, config.getConfigMd5());
+        ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, 0, false, false, configMd5);
+        request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, false, config.getConfigMd5());
         respond(request);
     }
 

@@ -26,10 +26,10 @@ public class ConfigApiTest {
         subscriber.nextConfig();
         assertNotNull(h.getConfig());
         assertEquals(AppConfig.CONFIG_DEF_NAME, ConfigInstance.getDefName(h.getConfig().getClass()));
-        assertTrue(h.isChanged());
+        assertThat(h.isChanged(), is(true));
         assertTrue(h.toString().startsWith("Handle changed: true\nSub:\n"));
         subscriber.close();
-        assertEquals(ConfigSubscriber.State.CLOSED, subscriber.state());
+        assertThat(subscriber.state(), is(ConfigSubscriber.State.CLOSED));
     }
 
     /**

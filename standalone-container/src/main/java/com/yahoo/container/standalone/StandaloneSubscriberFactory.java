@@ -36,6 +36,9 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
         }
 
         @Override
+        public boolean internalRedeploy() { return false; }
+
+        @Override
         public boolean configChanged() {
             return generation == 0;
         }

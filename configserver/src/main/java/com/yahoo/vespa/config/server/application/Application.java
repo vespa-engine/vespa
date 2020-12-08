@@ -44,18 +44,20 @@ public class Application implements ModelResult {
 
     /** The config generation for this application. */
     private final long applicationGeneration;
+    private final boolean internalRedeploy;
     private final Version vespaVersion;
     private final Model model;
     private final ServerCache cache;
     private final MetricUpdater metricUpdater;
     private final ApplicationId app;
 
-    public Application(Model model, ServerCache cache, long applicationGeneration,
+    public Application(Model model, ServerCache cache, long applicationGeneration, boolean internalRedeploy,
                        Version vespaVersion, MetricUpdater metricUpdater, ApplicationId app) {
         Objects.requireNonNull(model, "The model cannot be null");
         this.model = model;
         this.cache = cache;
         this.applicationGeneration = applicationGeneration;
+        this.internalRedeploy = internalRedeploy;
         this.vespaVersion = vespaVersion;
         this.metricUpdater = metricUpdater;
         this.app = app;
@@ -169,6 +171,7 @@ public class Application implements ModelResult {
 
         ConfigResponse configResponse = responseFactory.createResponse(payload,
                                                                        applicationGeneration,
+                                                                       internalRedeploy,
                                                                        applyOnRestart);
         metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
         if (useCache(req)) {
