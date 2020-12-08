@@ -1,16 +1,15 @@
 {
   "com.yahoo.container.di.componentgraph.Provider": {
     "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.component.Deconstructable"
-    ],
+    "interfaces": [],
     "attributes": [
       "public",
       "interface",
       "abstract"
     ],
     "methods": [
-      "public abstract java.lang.Object get()"
+      "public abstract java.lang.Object get()",
+      "public abstract void deconstruct()"
     ],
     "fields": []
   }
