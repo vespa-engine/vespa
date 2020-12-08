@@ -2,6 +2,7 @@
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/distributor/blockingoperationstarter.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
 #include <tests/distributor/maintenancemocks.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -26,6 +27,7 @@ struct BlockingOperationStarterTest : Test {
     std::unique_ptr<MockOperationStarter> _starterImpl;
     std::unique_ptr<StorageComponentRegisterImpl> _compReg;
     std::unique_ptr<PendingMessageTracker> _messageTracker;
+    std::unique_ptr<OperationSequencer> _operation_sequencer;
     std::unique_ptr<BlockingOperationStarter> _operationStarter;
 
     void SetUp() override;
@@ -39,7 +41,8 @@ BlockingOperationStarterTest::SetUp()
     _compReg->setClock(_clock);
     _clock.setAbsoluteTimeInSeconds(1);
     _messageTracker = std::make_unique<PendingMessageTracker>(*_compReg);
-    _operationStarter = std::make_unique<BlockingOperationStarter>(*_messageTracker, *_starterImpl);
+    _operation_sequencer = std::make_unique<OperationSequencer>();
+    _operationStarter = std::make_unique<BlockingOperationStarter>(*_messageTracker, *_operation_sequencer, *_starterImpl);
 }
 
 TEST_F(BlockingOperationStarterTest, operation_not_blocked_when_no_messages_pending) {

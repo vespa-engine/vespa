@@ -51,7 +51,7 @@ public:
     }
     void onStart(DistributorMessageSender&) override {}
     void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
-    bool isBlocked(const PendingMessageTracker&) const override {
+    bool isBlocked(const PendingMessageTracker&, const OperationSequencer&) const override {
         return _shouldBlock;
     }
     void setShouldBlock(bool shouldBlock) {
@@ -64,7 +64,7 @@ class MockMaintenanceOperationGenerator
 {
 public:
     MaintenanceOperation::SP generate(const document::Bucket&bucket) const override {
-        return MaintenanceOperation::SP(new MockOperation(bucket));
+        return std::make_shared<MockOperation>(bucket);
     }
 
     std::vector<MaintenanceOperation::SP> generateAll(
@@ -73,7 +73,7 @@ public:
     {
         (void) tracker;
         std::vector<MaintenanceOperation::SP> ret;
-        ret.push_back(MaintenanceOperation::SP(new MockOperation(bucket)));
+        ret.emplace_back(std::make_shared<MockOperation>(bucket));
         return ret;
     }
 

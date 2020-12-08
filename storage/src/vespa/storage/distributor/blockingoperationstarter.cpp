@@ -7,7 +7,7 @@ namespace storage::distributor {
 bool
 BlockingOperationStarter::start(const std::shared_ptr<Operation>& operation, Priority priority)
 {
-    if (operation->isBlocked(_messageTracker)) {
+    if (operation->isBlocked(_messageTracker, _operation_sequencer)) {
         return true;
     }
     return _starterImpl.start(operation, priority);

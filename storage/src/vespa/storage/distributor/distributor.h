@@ -34,6 +34,7 @@ namespace storage::distributor {
 class BlockingOperationStarter;
 class BucketPriorityDatabase;
 class DistributorBucketSpaceRepo;
+class OperationSequencer;
 class OwnershipTransferSafeTimePointCalculator;
 class SimpleMaintenanceScanner;
 class ThrottlingOperationStarter;
@@ -74,6 +75,10 @@ public:
 
     PendingMessageTracker& getPendingMessageTracker() override {
         return _pendingMessageTracker;
+    }
+
+    const OperationSequencer& operation_sequencer() const noexcept override {
+        return *_operation_sequencer;
     }
 
     const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
@@ -274,6 +279,7 @@ private:
     OperationOwner _operationOwner;
     OperationOwner _maintenanceOperationOwner;
 
+    std::unique_ptr<OperationSequencer> _operation_sequencer;
     PendingMessageTracker _pendingMessageTracker;
     BucketDBUpdater _bucketDBUpdater;
     StatusReporterDelegate _distributorStatusDelegate;
@@ -309,7 +315,6 @@ private:
 
     DoneInitializeHandler& _doneInitializeHandler;
     bool _doneInitializing;
-
 
     std::unique_ptr<BucketPriorityDatabase> _bucketPriorityDb;
     std::unique_ptr<SimpleMaintenanceScanner> _scanner;

@@ -8,6 +8,7 @@ namespace storage::lib { class NodeType; }
 namespace storage::distributor {
 
 class PendingMessageTracker;
+class OperationSequencer;
 
 class DistributorMessageSender : public MessageSender {
 public:
@@ -21,6 +22,7 @@ public:
     virtual int getDistributorIndex() const = 0;
     virtual const vespalib::string& getClusterName() const = 0;
     virtual const PendingMessageTracker& getPendingMessageTracker() const = 0;
+    virtual const OperationSequencer& operation_sequencer() const noexcept = 0;
 };
 
 }

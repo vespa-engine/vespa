@@ -18,6 +18,7 @@ class StorageComponent;
 namespace distributor {
 
 class PendingMessageTracker;
+class OperationSequencer;
 
 class Operation
 {
@@ -61,7 +62,7 @@ public:
      * Returns true if we are blocked to start this operation given
      * the pending messages.
      */
-    virtual bool isBlocked(const PendingMessageTracker&) const {
+    virtual bool isBlocked(const PendingMessageTracker&, const OperationSequencer&) const {
         return false;
     }
 

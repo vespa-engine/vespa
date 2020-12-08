@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "operation_sequencer.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -23,6 +22,8 @@ class DistributorMetricSet;
 class Distributor;
 class MaintenanceOperationGenerator;
 class DirectDispatchSender;
+class SequencingHandle;
+class OperationSequencer;
 class OperationOwner;
 
 class ExternalOperationHandler : public api::MessageHandler
@@ -44,6 +45,7 @@ public:
                              DistributorOperationContext& op_ctx,
                              DistributorMetricSet& metrics,
                              ChainedMessageSender& msg_sender,
+                             OperationSequencer& operation_sequencer,
                              NonTrackingMessageSender& non_tracking_sender,
                              DocumentSelectionParser& parser,
                              const MaintenanceOperationGenerator& gen,
@@ -89,10 +91,10 @@ private:
     DistributorOperationContext& _op_ctx;
     DistributorMetricSet& _metrics;
     ChainedMessageSender& _msg_sender;
+    OperationSequencer& _operation_sequencer;
     DocumentSelectionParser& _parser;
     std::unique_ptr<DirectDispatchSender> _direct_dispatch_sender;
     const MaintenanceOperationGenerator& _operationGenerator;
-    OperationSequencer _operation_sequencer;
     Operation::SP _op;
     TimePoint _rejectFeedBeforeTimeReached;
     OperationOwner& _distributor_operation_owner;
