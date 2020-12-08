@@ -11,20 +11,19 @@ namespace vespalib::eval {
 template<typename T>
 class DenseCellsValue : public Value {
 private:
-    const ValueType &_type;
+    ValueType _type;
     std::vector<T> _cells;
 public:
     DenseCellsValue(const ValueType &type_ref, std::vector<T> cells)
       : _type(type_ref), _cells(std::move(cells))
     {
         assert(check_cell_type<T>(_type.cell_type()));
+        assert(_cells.size() == _type.dense_subspace_size());
     }
     const ValueType &type() const override { return _type; }
     TypedCells cells() const override { return TypedCells(_cells); }
     const Index &index() const override { return TrivialIndex::get(); }
-    MemoryUsage get_memory_usage() const override {
-        return self_memory_usage<DenseCellsValue<T>>();
-    }
+    MemoryUsage get_memory_usage() const override;
     ~DenseCellsValue();
 };
 
