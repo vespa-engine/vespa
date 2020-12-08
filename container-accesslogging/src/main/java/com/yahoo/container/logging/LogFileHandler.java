@@ -298,14 +298,7 @@ public class LogFileHandler extends StreamHandler {
         if (symlinkName == null) return;
         File f = new File(fileName);
         File f2 = new File(f.getParent(), symlinkName);
-        String canonicalPath;
-        try {
-            canonicalPath = f.getCanonicalPath();
-        } catch (IOException e) {
-            logger.warning("Got '" + e + "' while doing f.getCanonicalPath() on file '" + f.getPath() + "'.");
-            return;
-        }
-        String [] cmd = new String[]{"/bin/ln", "-sf", canonicalPath, f2.getPath()};
+        String [] cmd = new String[]{"/bin/ln", "-sf", f.getName(), f2.getPath()};
         try {
             int retval = new ProcessExecuter().exec(cmd).getFirst();
             // Detonator pattern: Think of all the fun we can have if ln isn't what we
