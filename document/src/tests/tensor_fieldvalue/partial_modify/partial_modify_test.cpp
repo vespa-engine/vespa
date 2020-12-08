@@ -3,11 +3,12 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/tensor/partial_update.h>
+#include <vespa/document/update/tensor_partial_update.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <optional>
 
+using namespace document;
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
@@ -58,7 +59,7 @@ Value::UP try_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_
     const auto &factory = SimpleValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    return tensor::TensorPartialUpdate::modify(*lhs, fun, *rhs, factory);
+    return TensorPartialUpdate::modify(*lhs, fun, *rhs, factory);
 }
 
 TensorSpec perform_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {

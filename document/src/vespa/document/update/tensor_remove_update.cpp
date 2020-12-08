@@ -1,13 +1,13 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_remove_update.h"
+#include "tensor_partial_update.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/tensor/partial_update.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -20,7 +20,6 @@ using vespalib::make_string;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::FastValueBuilderFactory;
-using vespalib::tensor::TensorPartialUpdate;
 
 namespace document {
 

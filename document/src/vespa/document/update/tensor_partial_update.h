@@ -6,7 +6,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
 
-namespace vespalib::tensor {
+namespace document {
 
 struct TensorPartialUpdate {
     using join_fun_t = vespalib::eval::operation::op2_t;
