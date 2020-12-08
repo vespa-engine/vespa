@@ -12,6 +12,8 @@ with a specific type gives rise to 3 new formats:
 sparse_with_cell_type[5], dense_with_cell_type[6] and
 mixed_with_cell_type[7].
 
+(the C++ binary format implementation is located in 'value_codec.cpp')
+
 //-----------------------------------------------------------------------------
 
 1_4_int: type (1/5:sparse, 2/6:dense, 3/7:mixed)

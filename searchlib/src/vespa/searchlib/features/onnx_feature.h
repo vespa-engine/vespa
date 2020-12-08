@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/eval/tensor/dense/onnx_wrapper.h>
+#include <vespa/eval/onnx/onnx_wrapper.h>
 
 namespace search::features {
 
