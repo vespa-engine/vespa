@@ -64,7 +64,6 @@ public class ConfigConvergenceCheckerTest {
         application = new Application(mockModel,
                                       new ServerCache(),
                                       3,
-                                      false,
                                       new Version(0, 0, 0),
                                       MetricUpdater.createTestUpdater(), appId);
         checker = new ConfigConvergenceChecker();
@@ -137,7 +136,6 @@ public class ConfigConvergenceCheckerTest {
                     MockModel.createContainerHost(service2.getHost(), service2.getPort()))
             );
             Application application = new Application(model, new ServerCache(), 4,
-                                                      false,
                                                       new Version(0, 0, 0),
                                                       MetricUpdater.createTestUpdater(), appId);
 

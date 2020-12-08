@@ -36,7 +36,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     protected final Request request;
     private final SlimeRequestData requestData;
     /** Response field */
-    private boolean internalRedeploy = false;
     private boolean applyOnRestart = false;
     // Response values
     private boolean isDelayed = false;
@@ -68,9 +67,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public void addOkResponse(Payload payload, long generation, boolean internalRedeploy, boolean applyOnRestart,
-                              String configMd5) {
-        this.internalRedeploy = internalRedeploy;
+    public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, String configMd5) {
         this.applyOnRestart = applyOnRestart;
         boolean changedConfig = !configMd5.equals(getRequestConfigMd5());
         boolean changedConfigAndNewGeneration = changedConfig && ConfigUtils.isGenerationNewer(generation, getRequestGeneration());
@@ -82,7 +79,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
             addCommonReturnValues(jsonGenerator);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, configMd5);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_GENERATION, generation);
-            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_INTERNAL_REDEPLOY, internalRedeploy);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_APPLY_ON_RESTART, applyOnRestart);
             jsonGenerator.writeObjectFieldStart(SlimeResponseData.RESPONSE_COMPRESSION_INFO);
             if (responsePayload == null) {
@@ -113,9 +109,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     public long getProtocolVersion() {
         return 3;
     }
-
-    @Override
-    public boolean isInternalRedeploy() { return internalRedeploy; }
 
     @Override
     public boolean applyOnRestart() { return applyOnRestart; }
