@@ -35,8 +35,7 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceL
       _persistenceProvider(persistenceProvider),
       _externalVisitors(externalVisitors),
       _fileStorManager(nullptr),
-      _init_has_been_called(false),
-      _noUsablePartitionMode(false)
+      _init_has_been_called(false)
 {
 }
 
@@ -162,14 +161,6 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     _communicationManager = communication_manager.get();
     builder.add(std::move(communication_manager));
     builder.add(std::make_unique<Bouncer>(compReg, _configUri));
-    if (_noUsablePartitionMode) {
-        /*
-         * No usable partitions. Use minimal chain. Still needs to be
-         * able to report state back to cluster controller.
-         */
-        builder.add(releaseStateManager());
-        return;
-    }
     builder.add(std::make_unique<OpsLogger>(compReg, _configUri));
     auto merge_throttler_up = std::make_unique<MergeThrottler>(_configUri, compReg);
     auto merge_throttler = merge_throttler_up.get();

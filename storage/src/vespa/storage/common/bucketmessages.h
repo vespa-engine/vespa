@@ -11,7 +11,7 @@ namespace storage {
  * @class ReadBucketList
  * @ingroup common
  *
- * @brief List buckets existing on a partition.
+ * @brief List buckets existing in a bucket space.
  */
 class ReadBucketList : public api::InternalCommand {
     document::BucketSpace _bucketSpace;

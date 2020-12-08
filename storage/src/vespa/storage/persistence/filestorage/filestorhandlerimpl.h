@@ -249,8 +249,6 @@ private:
     mutable std::condition_variable _pauseCond;
     std::atomic<bool>               _paused;
 
-    void reply(api::StorageMessage&, DiskState state) const;
-
     // Returns the index in the targets array we are sending to, or -1 if none of them match.
     int calculateTargetBasedOnDocId(const api::StorageMessage& msg, std::vector<RemapInfo*>& targets);
 
