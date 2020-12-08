@@ -112,7 +112,7 @@ public final class ConfigRetriever {
     }
 
     private Optional<ConfigSnapshot> configIfChanged(Subscriber subscriber,
-            Function<Map<ConfigKey<? extends ConfigInstance>, ConfigInstance>, ConfigSnapshot> constructor) {
+                                                     Function<Map<ConfigKey<? extends ConfigInstance>, ConfigInstance>, ConfigSnapshot> constructor) {
         if (subscriber.configChanged()) {
             return Optional.of(constructor.apply(Keys.covariantCopy(subscriber.config())));
         } else {

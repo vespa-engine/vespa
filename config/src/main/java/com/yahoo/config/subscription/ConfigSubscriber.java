@@ -280,7 +280,7 @@ public class ConfigSubscriber implements AutoCloseable {
                 applyOnRestartOnly    |= config.applyOnRestart();
                 timeLeftMillis = timeoutInMillis + started - System.currentTimeMillis();
             }
-            reconfigDue = ( initialConfiguration || (anyConfigChanged && !applyOnRestartOnly))
+            reconfigDue = (initialConfiguration || !applyOnRestartOnly) && (anyConfigChanged || !requireChange)
                           && allGenerationsChanged && allGenerationsTheSame;
 
             if (applyOnRestartOnly && ! initialConfiguration) { // disable any reconfig until restart
