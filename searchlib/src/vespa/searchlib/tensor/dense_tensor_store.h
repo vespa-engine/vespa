@@ -6,7 +6,6 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/typed_cells.h>
 
-namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
 namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
@@ -66,7 +65,6 @@ public:
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
     std::unique_ptr<vespalib::eval::Value> getTensor(EntryRef ref) const;
-    void getTensor(EntryRef ref, vespalib::tensor::MutableDenseTensorView &tensor) const;
     vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const;
     EntryRef setTensor(const vespalib::eval::Value &tensor);
     // The following method is meant to be used only for unit tests.

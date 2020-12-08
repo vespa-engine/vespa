@@ -218,7 +218,6 @@
       "public boolean isClosed()",
       "public com.yahoo.config.subscription.ConfigHandle subscribe(com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber, java.lang.Class, java.lang.String)",
       "public long getGeneration()",
-      "public boolean isInternalRedeploy()",
       "protected void finalize()"
     ],
     "fields": [

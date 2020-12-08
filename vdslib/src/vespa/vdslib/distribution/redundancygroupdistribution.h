@@ -31,6 +31,8 @@ public:
     RedundancyGroupDistribution(const RedundancyGroupDistribution& spec,
                                 uint16_t redundancy);
 
+    ~RedundancyGroupDistribution() override;
+
     uint16_t size() const { return _values.size(); }
     uint16_t operator[](uint16_t i) const { return _values[i]; }
 

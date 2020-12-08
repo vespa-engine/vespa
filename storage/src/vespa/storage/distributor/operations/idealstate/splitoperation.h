@@ -20,7 +20,7 @@ public:
     const char* getName() const override { return "split"; };
     Type getType() const override { return SPLIT_BUCKET; }
     uint32_t getMaxSplitBits() const { return _maxBits; }
-    bool isBlocked(const PendingMessageTracker&) const override;
+    bool isBlocked(const PendingMessageTracker&, const OperationSequencer&) const override;
     bool shouldBlockThisOperation(uint32_t, uint8_t) const override;
 protected:
     MessageTracker _tracker;

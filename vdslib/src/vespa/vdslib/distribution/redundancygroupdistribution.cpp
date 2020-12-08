@@ -94,6 +94,8 @@ RedundancyGroupDistribution::RedundancyGroupDistribution(
     assert(_values.front() >= _values.back());
 }
 
+RedundancyGroupDistribution::~RedundancyGroupDistribution() = default;
+
 void
 RedundancyGroupDistribution::print(std::ostream& out,
                                    bool, const std::string&) const

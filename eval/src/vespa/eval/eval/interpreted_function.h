@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "engine_or_factory.h"
+#include "value.h"
 #include "function.h"
 #include "node_types.h"
 #include "lazy_params.h"
@@ -28,14 +28,14 @@ class InterpretedFunction
 {
 public:
     struct State {
-        EngineOrFactory          engine;
-        const LazyParams        *params;
-        Stash                    stash;
-        std::vector<Value::CREF> stack;
-        uint32_t                 program_offset;
-        uint32_t                 if_cnt;
+        const ValueBuilderFactory &factory;
+        const LazyParams          *params;
+        Stash                      stash;
+        std::vector<Value::CREF>   stack;
+        uint32_t                   program_offset;
+        uint32_t                   if_cnt;
 
-        State(EngineOrFactory engine_in);
+        State(const ValueBuilderFactory &factory_in);
         ~State();
 
         void init(const LazyParams &params_in);
@@ -85,17 +85,17 @@ public:
     };
 
 private:
-    std::vector<Instruction> _program;
-    Stash                    _stash;
-    EngineOrFactory          _tensor_engine;
+    std::vector<Instruction>   _program;
+    Stash                      _stash;
+    const ValueBuilderFactory &_factory;
 
 public:
     typedef std::unique_ptr<InterpretedFunction> UP;
     // for testing; use with care; the tensor function must be kept alive
-    InterpretedFunction(EngineOrFactory engine, const TensorFunction &function);
-    InterpretedFunction(EngineOrFactory engine, const nodes::Node &root, const NodeTypes &types);
-    InterpretedFunction(EngineOrFactory engine, const Function &function, const NodeTypes &types)
-        : InterpretedFunction(engine, function.root(), types) {}
+    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function);
+    InterpretedFunction(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types);
+    InterpretedFunction(const ValueBuilderFactory &factory, const Function &function, const NodeTypes &types)
+        : InterpretedFunction(factory, function.root(), types) {}
     InterpretedFunction(InterpretedFunction &&rhs) = default;
     ~InterpretedFunction();
     size_t program_size() const { return _program.size(); }
@@ -116,8 +116,8 @@ public:
         State _state;
         Instruction _op;
     public:
-        EvalSingle(EngineOrFactory engine, Instruction op, const LazyParams &params);
-        EvalSingle(EngineOrFactory engine, Instruction op) : EvalSingle(engine, op, NoParams::params) {}
+        EvalSingle(const ValueBuilderFactory &factory, Instruction op, const LazyParams &params);
+        EvalSingle(const ValueBuilderFactory &factory, Instruction op) : EvalSingle(factory, op, NoParams::params) {}
         const Value &eval(const std::vector<Value::CREF> &stack);
     };
 };

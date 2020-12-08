@@ -302,7 +302,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     }
     update->setCreateIfNonExistent(options._createIfNonExistent);
 
-    document::BucketId id = getExternalOperationHandler().getBucketId(update->getId());
+    document::BucketId id = distributor_component().getBucketId(update->getId());
     document::BucketId id2 = document::BucketId(id.getUsedBits() + 1, id.getRawId());
 
     if (bucketState.length()) {
@@ -325,9 +325,9 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     msg->setCondition(options._condition);
     msg->setTransportContext(std::make_unique<DummyTransportContext>());
 
-    ExternalOperationHandler& handler = getExternalOperationHandler();
+    auto& comp = distributor_component();
     return std::make_shared<TwoPhaseUpdateOperation>(
-            handler, handler, handler, getDistributorBucketSpace(), msg, getDistributor().getMetrics());
+            comp, comp, comp, getDistributorBucketSpace(), msg, getDistributor().getMetrics());
 }
 
 TEST_F(TwoPhaseUpdateOperationTest, simple) {

@@ -21,6 +21,7 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 import org.osgi.framework.Bundle;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -71,10 +72,10 @@ public class Container {
         });
     }
 
-    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean restartOnRedeploy) {
+    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
-            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, restartOnRedeploy, obsoleteBundles);
+            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, obsoleteBundles);
             newGraph.reuseNodes(oldGraph);
             constructComponents(newGraph);
             deconstructObsoleteComponents(oldGraph, newGraph, obsoleteBundles);
@@ -87,12 +88,11 @@ public class Container {
 
     private ComponentGraph getConfigAndCreateGraph(ComponentGraph graph,
                                                    Injector fallbackInjector,
-                                                   boolean restartOnRedeploy,
                                                    Collection<Bundle> obsoleteBundles) // NOTE: Return value
     {
         ConfigSnapshot snapshot;
         while (true) {
-            snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, restartOnRedeploy);
+            snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration);
 
             log.log(FINE, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
                                         graph.configKeys(), graph.generation(), snapshot));
@@ -159,10 +159,16 @@ public class Container {
     private void deconstructObsoleteComponents(ComponentGraph oldGraph,
                                                ComponentGraph newGraph,
                                                Collection<Bundle> obsoleteBundles) {
-        IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
-        oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
-        newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
-        componentDeconstructor.deconstruct(oldComponents.keySet(), obsoleteBundles);
+        Map<Object, ?> newComponents = new IdentityHashMap<>(newGraph.size());
+        for (Object component : newGraph.allConstructedComponentsAndProviders())
+            newComponents.put(component, null);
+
+        List<Object> obsoleteComponents = new ArrayList<>();
+        for (Object component : oldGraph.allConstructedComponentsAndProviders())
+            if ( ! newComponents.containsKey(component))
+                obsoleteComponents.add(component);
+
+        componentDeconstructor.deconstruct(obsoleteComponents, obsoleteBundles);
     }
 
     private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {

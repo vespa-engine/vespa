@@ -32,9 +32,9 @@ public:
 
     std::unique_ptr<vespalib::eval::Value> getTensor(uint32_t docId) const override;
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
-    void extract_dense_view(uint32_t docid, vespalib::tensor::MutableDenseTensorView& tensor) const override;
+    vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const override;
     const vespalib::eval::Value& get_tensor_ref(uint32_t docid) const override;
-    bool supports_extract_dense_view() const override { return _target_tensor_attribute.supports_extract_dense_view(); }
+    bool supports_extract_cells_ref() const override { return _target_tensor_attribute.supports_extract_cells_ref(); }
     bool supports_get_tensor_ref() const override { return _target_tensor_attribute.supports_get_tensor_ref(); }
     const vespalib::eval::ValueType &getTensorType() const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;

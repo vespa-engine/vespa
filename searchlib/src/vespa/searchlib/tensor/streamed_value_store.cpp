@@ -34,17 +34,12 @@ struct CellsMemBlock {
 };
 
 template<typename T>
-T *fix_alignment(T *ptr, size_t align)
+void check_alignment(T *ptr, size_t align)
 {
     static_assert(sizeof(T) == 1);
-    assert((align & (align-1)) == 0); // must be 2^N
     size_t ptr_val = (size_t)ptr;
     size_t unalign = ptr_val & (align - 1);
-    if (unalign == 0) {
-        return ptr;
-    } else {
-        return ptr + (align - unalign);
-    }
+    assert(unalign == 0);
 }
 
 } // namespace <unnamed>
@@ -60,6 +55,11 @@ StreamedValueStore::StreamedValueStore(const ValueType &tensor_type)
 {
     _store.addType(&_bufferType);
     _store.initActiveBuffers();
+    size_t align = CellTypeUtils::alignment(_data_from_type.cell_type);
+    // max alignment we can handle is 8:
+    assert(align <= 8);
+    // alignment must be a power of two:
+    assert((align & (align-1)) == 0);
 }
 
 StreamedValueStore::~StreamedValueStore()
@@ -132,17 +132,12 @@ StreamedValueStore::get_tensor_data(EntryRef ref) const
     }
     vespalib::nbostream source(raw.first, raw.second);
     uint32_t num_cells = source.readValue<uint32_t>();
-    {
-        uint32_t alignment = CellTypeUtils::alignment(_data_from_type.cell_type);
-        const char *aligned_ptr = fix_alignment(source.peek(), alignment);
-        size_t adjustment = aligned_ptr - source.peek();
-        source.adjustReadPos(adjustment);
-    }
+    check_alignment(source.peek(), CellTypeUtils::alignment(_data_from_type.cell_type));
     retval.cells_ref = TypedCells(source.peek(), _data_from_type.cell_type, num_cells);
     source.adjustReadPos(CellTypeUtils::mem_size(_data_from_type.cell_type, num_cells));
-    retval.num_subspaces = source.readValue<uint32_t>();
+    assert((num_cells % _data_from_type.dense_subspace_size) == 0);
+    retval.num_subspaces = num_cells / _data_from_type.dense_subspace_size;
     retval.labels_buffer = vespalib::ConstArrayRef<char>(source.peek(), source.size());
-    assert(retval.num_subspaces * _data_from_type.dense_subspace_size == num_cells);
     retval.valid = true;
     return retval;
 }
@@ -166,7 +161,6 @@ StreamedValueStore::serialize_labels(const Value::Index &index,
                                      vespalib::nbostream &target) const
 {
     uint32_t num_subspaces = index.size();
-    target << num_subspaces;
     uint32_t num_mapped_dims = _data_from_type.num_mapped_dimensions;
     std::vector<vespalib::stringref> labels(num_mapped_dims * num_subspaces);
     auto view = index.create_view({});
@@ -197,18 +191,16 @@ StreamedValueStore::store_tensor(const Value &tensor)
 {
     assert(tensor.type() == _tensor_type);
     CellsMemBlock cells_mem(tensor.cells());
-    size_t alignment = CellTypeUtils::alignment(_data_from_type.cell_type);
-    size_t padding = alignment - 1;
     vespalib::nbostream stream;
     stream << uint32_t(cells_mem.num);
     serialize_labels(tensor.index(), stream);
-    size_t mem_size = stream.size() + cells_mem.total_sz + padding;
+    size_t mem_size = stream.size() + cells_mem.total_sz;
     auto raw = allocRawBuffer(mem_size);
     char *target = raw.data;
     memcpy(target, stream.peek(), sizeof(uint32_t));
     stream.adjustReadPos(sizeof(uint32_t));
     target += sizeof(uint32_t);
-    target = fix_alignment(target, alignment);
+    check_alignment(target, CellTypeUtils::alignment(_data_from_type.cell_type));
     memcpy(target, cells_mem.ptr, cells_mem.total_sz);
     target += cells_mem.total_sz;
     memcpy(target, stream.peek(), stream.size());

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -97,6 +98,7 @@ public class TenantController {
     public void create(TenantSpec tenantSpec, Credentials credentials) {
         try (Lock lock = lock(tenantSpec.tenant())) {
             requireNonExistent(tenantSpec.tenant());
+            TenantId.validate(tenantSpec.tenant().value());
             curator.writeTenant(accessControl.createTenant(tenantSpec, credentials, asList()));
         }
     }

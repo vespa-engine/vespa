@@ -40,7 +40,7 @@ public class ClusterMembershipTest {
         }
         {
             Optional<DockerImage> dockerImageRepo = Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"));
-            ClusterMembership instance = ClusterMembership.from("combined/id1/4/37/exclusive/containerId1", Vtag.currentVersion, dockerImageRepo);
+            ClusterMembership instance = ClusterMembership.from("combined/id1/4/37/exclusive/stateful/containerId1", Vtag.currentVersion, dockerImageRepo);
             ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, dockerImageRepo);
             assertTrue(serialized.cluster().isStateful());
             assertEquals(instance, serialized);
@@ -53,14 +53,6 @@ public class ClusterMembershipTest {
             assertEquals(instance, serialized);
             assertTrue(instance.cluster().isStateful());
         }
-    }
-
-    @Test
-    public void testLegacyFormat() { // TODO(mpolden): Remove after December 2020
-        ClusterMembership instance = ClusterMembership.from("content/id1/4/37/exclusive", Vtag.currentVersion, Optional.empty());
-        ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
-        assertEquals(instance, serialized);
-        assertTrue(serialized.cluster().isStateful());
     }
 
     @Test
@@ -80,7 +72,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstanceWithGroupFromString() {
-        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37", Vtag.currentVersion, Optional.empty()));
+        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37/stateful", Vtag.currentVersion, Optional.empty()));
     }
 
     @Test
@@ -100,7 +92,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstanceWithGroupAndRetireFromString() {
-        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired", Vtag.currentVersion, Optional.empty()));
+        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired/stateful", Vtag.currentVersion, Optional.empty()));
     }
 
     private void assertContainerService(ClusterMembership instance) {

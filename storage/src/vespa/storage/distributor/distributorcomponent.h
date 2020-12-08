@@ -43,23 +43,10 @@ public:
     ~DistributorComponent() override;
 
     /**
-     * Returns the ownership status of a bucket as decided with the given
-     * distribution and cluster state -and- that of the pending cluster
-     * state and distribution (if any pending exists).
-     */
-    BucketOwnership checkOwnershipInPendingAndCurrentState(
-            const document::Bucket &bucket) const;
-
-    /**
      * Returns a reference to the current cluster state bundle. Valid until the
      * next time the distributor main thread processes its message queue.
      */
     const lib::ClusterStateBundle& getClusterStateBundle() const;
-
-    /**
-     * Returns the ideal nodes for the given bucket.
-     */
-    std::vector<uint16_t> getIdealNodes(const document::Bucket &bucket) const;
 
     /**
       * Returns the slobrok address of the given storage node.
@@ -166,9 +153,6 @@ public:
 
     // Implements DistributorOperationContext
     api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
-    BucketOwnership check_ownership_in_pending_and_current_state(const document::Bucket &bucket) const override {
-        return checkOwnershipInPendingAndCurrentState(bucket);
-    }
     void update_bucket_database(const document::Bucket& bucket,
                                 const BucketCopy& changed_node,
                                 uint32_t update_flags = 0) override {
@@ -182,16 +166,34 @@ public:
     void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override {
         removeNodeFromDB(bucket, node_index);
     }
-    const DistributorBucketSpaceRepo& bucket_space_repo() const override {
+    const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept override {
         return getBucketSpaceRepo();
+    }
+    DistributorBucketSpaceRepo& bucket_space_repo() noexcept override {
+        return getBucketSpaceRepo();
+    }
+    const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept override {
+        return getReadOnlyBucketSpaceRepo();
+    }
+    DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept override {
+        return getReadOnlyBucketSpaceRepo();
+    }
+    document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId& docId) const override {
+        return getBucketId(docId);
+    }
+    const DistributorConfiguration& distributor_config() const noexcept override {
+        return getDistributor().getConfig();
     }
     void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,
                                                const BucketDatabase::Entry& entry,
                                                uint8_t pri) override {
         getDistributor().checkBucketForSplit(bucket_space, entry, pri);
     }
-    const DistributorConfiguration& distributor_config() const override {
-        return getDistributor().getConfig();
+    OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket& bucket) const override {
+        return getDistributor().read_snapshot_for_bucket(bucket);
+    }
+    PendingMessageTracker& pending_message_tracker() noexcept override {
+        return getDistributor().getPendingMessageTracker();
     }
     bool has_pending_message(uint16_t node_index,
                              const document::Bucket& bucket,

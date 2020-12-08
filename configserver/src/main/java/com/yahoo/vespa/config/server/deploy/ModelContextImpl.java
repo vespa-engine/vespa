@@ -25,6 +25,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.UnboundFlag;
 
 import java.io.File;
@@ -148,12 +149,57 @@ public class ModelContextImpl implements ModelContext {
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
         private final boolean enableAutomaticReindexing;
+        private final double defaultTermwiseLimit;
+        private final boolean useThreePhaseUpdates;
+        private final boolean useDirectStorageApiRpc;
+        private final boolean useFastValueTensorImplementation;
+        private final String feedSequencer;
+        private final String responseSequencer;
+        private final int numResponseThreads;
+        private final boolean skipCommunicationManagerThread;
+        private final boolean skipMbusRequestThread;
+        private final boolean skipMbusReplyThread;
+        private final boolean useAccessControlTlsHandshakeClientAuth;
+        private final boolean useAsyncMessageHandlingOnSchedule;
+        private final int contentNodeBucketDBStripeBits;
+        private final int mergeChunkSize;
+        private final double feedConcurrency;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.enableAutomaticReindexing = flagValue(source, appId, Flags.ENABLE_AUTOMATIC_REINDEXING);
+            defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
+            useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
+            useDirectStorageApiRpc = flagValue(source, appId, Flags.USE_DIRECT_STORAGE_API_RPC);
+            useFastValueTensorImplementation = flagValue(source, appId, Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION);
+            feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
+            responseSequencer = flagValue(source, appId, Flags.RESPONSE_SEQUENCER_TYPE);
+            numResponseThreads = flagValue(source, appId, Flags.RESPONSE_NUM_THREADS);
+            skipCommunicationManagerThread = flagValue(source, appId, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
+            skipMbusRequestThread = flagValue(source, appId, Flags.SKIP_MBUS_REQUEST_THREAD);
+            skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
+            this.useAccessControlTlsHandshakeClientAuth = flagValue(source, appId, Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION);
+            useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
+            contentNodeBucketDBStripeBits = flagValue(source, appId, Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS);
+            mergeChunkSize = flagValue(source, appId, Flags.MERGE_CHUNK_SIZE);
+            feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
         }
 
         @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
+        @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
+        @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
+        @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
+        @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
+        @Override public String feedSequencerType() { return feedSequencer; }
+        @Override public String responseSequencerType() { return responseSequencer; }
+        @Override public int defaultNumResponseThreads() { return numResponseThreads; }
+        @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
+        @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
+        @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
+        @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
+        @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
+        @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
+        @Override public int mergeChunkSize() { return mergeChunkSize; }
+        @Override public double feedConcurrency() { return feedConcurrency; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
@@ -163,6 +209,7 @@ public class ModelContextImpl implements ModelContext {
 
     }
 
+    @SuppressWarnings("deprecation") // for old feature flag methods in ModelContext.Properties
     public static class Properties implements ModelContext.Properties {
 
         private final ModelContext.FeatureFlags featureFlags;
@@ -177,21 +224,24 @@ public class ModelContextImpl implements ModelContext {
         private final Set<ContainerEndpoint> endpoints;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
+        private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
+        private final Optional<AthenzDomain> athenzDomain;
+        private final Optional<ApplicationRoles> applicationRoles;
+        private final Quota quota;
+
+        private final String jvmGCOPtions;
+
+        // Old non-permanent feature flags. Use ModelContext.FeatureFlag instead
+        private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final boolean useDirectStorageApiRpc;
         private final boolean useFastValueTensorImplementation;
-        private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
-        private final double defaultTermwiseLimit;
-        private final String jvmGCOPtions;
         private final String feedSequencer;
         private final String responseSequencer;
         private final int numResponseThreads;
         private final boolean skipCommunicationManagerThread;
         private final boolean skipMbusRequestThread;
         private final boolean skipMbusReplyThread;
-        private final Optional<AthenzDomain> athenzDomain;
-        private final Optional<ApplicationRoles> applicationRoles;
-        private final Quota quota;
         private final boolean useAccessControlTlsHandshakeClientAuth;
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final int contentNodeBucketDBStripeBits;
@@ -222,43 +272,28 @@ public class ModelContextImpl implements ModelContext {
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.endpointCertificateSecrets = endpointCertificateSecrets;
-            defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            useThreePhaseUpdates = Flags.USE_THREE_PHASE_UPDATES.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            useDirectStorageApiRpc = Flags.USE_DIRECT_STORAGE_API_RPC.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            useFastValueTensorImplementation = Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            jvmGCOPtions = Flags.JVM_GC_OPTIONS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            feedSequencer = Flags.FEED_SEQUENCER_TYPE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            skipCommunicationManagerThread = Flags.SKIP_COMMUNICATIONMANAGER_THREAD.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            skipMbusRequestThread = Flags.SKIP_MBUS_REQUEST_THREAD.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            skipMbusReplyThread = Flags.SKIP_MBUS_REPLY_THREAD.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
-            this.useAccessControlTlsHandshakeClientAuth =
-                    Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION.bindTo(flagSource)
-                            .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm())
-                            .value();
-            useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            contentNodeBucketDBStripeBits = Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            mergeChunkSize = Flags.MERGE_CHUNK_SIZE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            feedConcurrency = Flags.FEED_CONCURRENCY.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+
+            jvmGCOPtions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
+
+            // Old non-permanent feature flags. Use ModelContext.FeatureFlag instead
+            defaultTermwiseLimit = flagValue(flagSource, applicationId, Flags.DEFAULT_TERM_WISE_LIMIT);
+            useThreePhaseUpdates = flagValue(flagSource, applicationId, Flags.USE_THREE_PHASE_UPDATES);
+            useDirectStorageApiRpc = flagValue(flagSource, applicationId, Flags.USE_DIRECT_STORAGE_API_RPC);
+            useFastValueTensorImplementation = flagValue(flagSource, applicationId, Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION);
+            feedSequencer = flagValue(flagSource, applicationId, Flags.FEED_SEQUENCER_TYPE);
+            responseSequencer = flagValue(flagSource, applicationId, Flags.RESPONSE_SEQUENCER_TYPE);
+            numResponseThreads = flagValue(flagSource, applicationId, Flags.RESPONSE_NUM_THREADS);
+            skipCommunicationManagerThread = flagValue(flagSource, applicationId, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
+            skipMbusRequestThread = flagValue(flagSource, applicationId, Flags.SKIP_MBUS_REQUEST_THREAD);
+            skipMbusReplyThread = flagValue(flagSource, applicationId, Flags.SKIP_MBUS_REPLY_THREAD);
+            this.useAccessControlTlsHandshakeClientAuth = flagValue(flagSource, applicationId, Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION);
+            useAsyncMessageHandlingOnSchedule = flagValue(flagSource, applicationId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
+            contentNodeBucketDBStripeBits = flagValue(flagSource, applicationId, Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS);
+            mergeChunkSize = flagValue(flagSource, applicationId, Flags.MERGE_CHUNK_SIZE);
+            feedConcurrency = flagValue(flagSource, applicationId, Flags.FEED_CONCURRENCY);
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -304,24 +339,6 @@ public class ModelContextImpl implements ModelContext {
         public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
 
         @Override
-        public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-
-        @Override
-        public boolean useThreePhaseUpdates() {
-            return useThreePhaseUpdates;
-        }
-
-        @Override
-        public boolean useDirectStorageApiRpc() {
-            return useDirectStorageApiRpc;
-        }
-
-        @Override
-        public boolean useFastValueTensorImplementation() {
-            return useFastValueTensorImplementation;
-        }
-
-        @Override
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
         @Override
@@ -329,19 +346,32 @@ public class ModelContextImpl implements ModelContext {
             return applicationRoles;
         }
 
+        @Override public Quota quota() { return quota; }
+
         @Override public String jvmGCOptions() { return jvmGCOPtions; }
+
+        // Old non-permanent feature flags. Use ModelContext.FeatureFlag instead
+        @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
+        @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
+        @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
+        @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
         @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
         @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
-        @Override public Quota quota() { return quota; }
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
         @Override public int mergeChunkSize() { return mergeChunkSize; }
         @Override public double feedConcurrency() { return feedConcurrency; }
+
+        private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
+            return flag.bindTo(source)
+                    .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                    .boxedValue();
+        }
     }
 
 }

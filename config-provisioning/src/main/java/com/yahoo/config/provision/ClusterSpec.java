@@ -19,6 +19,7 @@ public final class ClusterSpec {
 
     /** The group id of these hosts, or empty if this is represents a request for hosts */
     private final Optional<Group> groupId;
+
     private final Version vespaVersion;
     private final boolean exclusive;
     private final Optional<Id> combinedId;
@@ -237,8 +238,7 @@ public final class ClusterSpec {
         private final String id;
 
         public Id(String id) {
-            Objects.requireNonNull(id, "Id cannot be null");
-            this.id = id;
+            this.id = Objects.requireNonNull(id, "Id cannot be null");
         }
 
         public static Id from(String id) {

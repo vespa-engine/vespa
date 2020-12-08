@@ -891,6 +891,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             cluster.getContainers().forEach(container -> {
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
                 assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.Reconfigurer");
+                assertComponentConfigured(container, "com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl");
 
                 ZookeeperServerConfig config = model.getConfig(ZookeeperServerConfig.class, container.getConfigId());
                 assertEquals(container.index(), config.myid());
@@ -899,7 +900,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         }
         {
             try {
-                tester.createModel(servicesXml.apply(1), true);
+                tester.createModel(servicesXml.apply(2), true);
                 fail("Expected exception");
             } catch (IllegalArgumentException ignored) {}
         }

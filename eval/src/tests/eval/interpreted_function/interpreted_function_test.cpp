@@ -70,14 +70,14 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         }
     }
 
-    void verify_result(EngineOrFactory engine,
+    void verify_result(const ValueBuilderFactory &factory,
                        const Function &function,
                        const vespalib::string &description,
                        const SimpleParams &params,
                        double expected_result)
     {
         auto node_types = NodeTypes(function, std::vector<ValueType>(params.params.size(), ValueType::double_type()));
-        InterpretedFunction ifun(engine, function, node_types);
+        InterpretedFunction ifun(factory, function, node_types);
         InterpretedFunction::Context ictx(ifun);
         const Value &result_value = ifun.eval(ictx, params);
         report_result(result_value.is_double(), result_value.as_double(), expected_result, description);

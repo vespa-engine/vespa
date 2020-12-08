@@ -218,12 +218,12 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _queue(),
       _myQueue(),
       _lock(),
-      _cond(),
+      _shutdownLock(),
+      _shutdownCond(),
       _pseudo_thread(),
       _started(false),
       _shutdown(false),
-      _finished(false),
-      _waitFinished(false)
+      _finished(false)
 {
     trapsigpipe();
 }
@@ -232,9 +232,9 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
 FNET_TransportThread::~FNET_TransportThread()
 {
     {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_shutdownLock);
     }
-    if (_started && !_finished) {
+    if (_started.load() && !_finished) {
         LOG(error, "Transport: delete called on active object!");
     } else {
         std::lock_guard guard(_pseudo_thread);
@@ -375,25 +375,16 @@ FNET_TransportThread::WaitFinished()
     if (_finished)
         return;
 
-    std::unique_lock<std::mutex> guard(_lock);
-    _waitFinished = true;
+    std::unique_lock<std::mutex> guard(_shutdownLock);
     while (!_finished)
-        _cond.wait(guard);
+        _shutdownCond.wait(guard);
 }
 
 
 bool
 FNET_TransportThread::InitEventLoop()
 {
-    bool wasStarted;
-    {
-        std::lock_guard<std::mutex> guard(_lock);
-        wasStarted = _started;
-        if (!_started) {
-            _started = true;
-        }
-    }
-    if (wasStarted) {
+    if (_started.exchange(true)) {
         LOG(error, "Transport: InitEventLoop: object already active!");
         return false;
     }
@@ -402,7 +393,7 @@ FNET_TransportThread::InitEventLoop()
 }
 
 void
-FNET_TransportThread::handle_wakeup_events()
+FNET_TransportThread::handle_wakeup()
 {
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -481,10 +472,12 @@ FNET_TransportThread::EventLoopIteration() {
         // sample current time (performed once per event loop iteration)
         _now = steady_clock::now();
 
-        handle_wakeup_events();
-
         // handle io-events
-        _selector.dispatch(*this);
+        auto dispatchResult = _selector.dispatch(*this);
+
+        if ((dispatchResult == vespalib::SelectorDispatchResult::NO_WAKEUP) && (getConfig()._events_before_wakeup > 1)) {
+            handle_wakeup();
+        }
 
         // handle IOC time-outs
         if (getConfig()._iocTimeOut > vespalib::duration::zero()) {
@@ -555,11 +548,9 @@ FNET_TransportThread::endEventLoop() {
            _myQueue.IsEmpty_NoLock());
 
     {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_shutdownLock);
         _finished = true;
-        if (_waitFinished) {
-            _cond.notify_all();
-        }
+        _shutdownCond.notify_all();
     }
 
     LOG(spam, "Transport: event loop finished.");

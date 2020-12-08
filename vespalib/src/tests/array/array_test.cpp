@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <deque>
+#include <atomic>
 
 using namespace vespalib;
 
@@ -28,7 +29,7 @@ std::ostream & operator << (std::ostream & os, const Array<T> & a)
 class Clever {
 public:
     Clever() : _counter(&_global) { (*_counter)++; }
-    Clever(volatile size_t * counter) :
+    Clever(std::atomic<size_t> * counter) :
         _counter(counter)
     {
         (*_counter)++;
@@ -54,8 +55,8 @@ public:
     static size_t getGlobal() { return _global; }
     bool operator == (const Clever & b) const { return _counter == b._counter; }
 private:
-    volatile size_t * _counter;
-    static size_t _global;
+    std::atomic<size_t> * _counter;
+    static std::atomic<size_t> _global;
 };
 
 std::ostream & operator << (std::ostream & os, const Clever & clever)
@@ -114,7 +115,7 @@ TEST("test basic array functionality")
     testArray(a, b);
     EXPECT_TRUE(a == a);
     EXPECT_FALSE(a == b);
-    size_t counter(0);
+    std::atomic<size_t> counter(0);
     testArray(Clever(&counter),  Clever(&counter));
     EXPECT_EQUAL(0ul, counter);
 }
@@ -155,11 +156,11 @@ TEST("test that organic growth is by 2 in N and reserve resize are exact")
     EXPECT_EQUAL(2048u, c.capacity());
 }
 
-size_t Clever::_global = 0;
+std::atomic<size_t> Clever::_global = 0;
 
 TEST("test complicated")
 {
-    volatile size_t counter(0);
+    std::atomic<size_t> counter(0);
     {
         EXPECT_EQUAL(0ul, Clever::getGlobal());
         Clever c(&counter);

@@ -139,6 +139,12 @@ void BTreeBucketDatabase::update(const Entry& newEntry) {
     _impl->update(newEntry.getBucketId(), newEntry);
 }
 
+void
+BTreeBucketDatabase::process_update(const document::BucketId& bucket, EntryUpdateProcessor &processor, bool create_if_nonexisting)
+{
+    _impl->process_update(bucket, processor, create_if_nonexisting);
+}
+
 // TODO need snapshot read with guarding
 // FIXME semantics of for-each in judy and bit tree DBs differ, former expects lbound, latter ubound..!
 // FIXME but bit-tree code says "lowerBound" in impl and "after" in declaration???

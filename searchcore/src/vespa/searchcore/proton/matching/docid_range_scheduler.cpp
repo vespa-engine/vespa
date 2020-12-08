@@ -24,6 +24,8 @@ PartitionDocidRangeScheduler::PartitionDocidRangeScheduler(size_t num_threads, u
     }
 }
 
+PartitionDocidRangeScheduler::~PartitionDocidRangeScheduler() = default;
+
 //-----------------------------------------------------------------------------
 
 DocidRange
@@ -35,8 +37,8 @@ TaskDocidRangeScheduler::next_task(size_t thread_id)
         ++_next_task;
     }
     _assigned[thread_id] += work.size();
-    size_t todo = _unassigned.load(std::memory_order::memory_order_relaxed);
-    _unassigned.store(clamped_sub(todo, work.size()), std::memory_order::memory_order_relaxed);
+    size_t todo = _unassigned.load(std::memory_order_relaxed);
+    _unassigned.store(clamped_sub(todo, work.size()), std::memory_order_relaxed);
     return work;
 }
 
@@ -50,6 +52,8 @@ TaskDocidRangeScheduler::TaskDocidRangeScheduler(size_t num_threads, size_t num_
 {
 }
 
+TaskDocidRangeScheduler::~TaskDocidRangeScheduler() = default;
+
 //-----------------------------------------------------------------------------
 
 size_t
@@ -57,7 +61,7 @@ AdaptiveDocidRangeScheduler::take_idle(const Guard &)
 {
     size_t thread_id = _idle.back();
     _idle.pop_back();
-    _num_idle.store(_idle.size(), std::memory_order::memory_order_relaxed);
+    _num_idle.store(_idle.size(), std::memory_order_relaxed);
     assert(_workers[thread_id].is_idle);
     return thread_id;
 }
@@ -68,7 +72,7 @@ AdaptiveDocidRangeScheduler::make_idle(const Guard &, size_t thread_id)
     assert(!_workers[thread_id].is_idle);
     _workers[thread_id].is_idle = true;
     _idle.push_back(thread_id);
-    _num_idle.store(_idle.size(), std::memory_order::memory_order_relaxed);    
+    _num_idle.store(_idle.size(), std::memory_order_relaxed);
 }
 
 void
@@ -113,7 +117,7 @@ AdaptiveDocidRangeScheduler::AdaptiveDocidRangeScheduler(size_t num_threads, uin
     }
 }
 
-AdaptiveDocidRangeScheduler::~AdaptiveDocidRangeScheduler() {}
+AdaptiveDocidRangeScheduler::~AdaptiveDocidRangeScheduler() = default;
 
 DocidRange
 AdaptiveDocidRangeScheduler::first_range(size_t thread_id)

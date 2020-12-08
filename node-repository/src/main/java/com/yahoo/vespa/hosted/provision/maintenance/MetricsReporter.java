@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
@@ -26,10 +27,12 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -41,6 +44,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
  */
 public class MetricsReporter extends NodeRepositoryMaintainer {
 
+    private final Set<Pair<Metric.Context, String>> nonZeroMetrics = new HashSet<>();
     private final Metric metric;
     private final Orchestrator orchestrator;
     private final ServiceMonitor serviceMonitor;
@@ -285,7 +289,13 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     private void setNonZero(String key, Number value, Metric.Context context) {
+        var metricKey = new Pair<>(context, key);
         if (Double.compare(value.doubleValue(), 0.0) != 0) {
+            metric.set(key, value, context);
+            nonZeroMetrics.add(metricKey);
+        } else if (nonZeroMetrics.remove(metricKey)) {
+            // Need to set the metric to 0 after it has been set to non-zero, to avoid carrying
+            // a non-zero 'last' from earlier periods.
             metric.set(key, value, context);
         }
     }

@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
@@ -52,7 +53,7 @@ public class ConfigServerFlagSourceTest {
 
     private void initialize() {
         flagSource = new ConfigServerFlagSource(fileSystem, flagsDb);
-        flag = Flags.defineFeatureFlag(flagId.toString(), false, "", "").bindTo(flagSource);
+        flag = Flags.defineFeatureFlag(flagId.toString(), false, List.of("joe"), "2010-01-01", "2030-01-01", "", "").bindTo(flagSource);
     }
 
     @Test

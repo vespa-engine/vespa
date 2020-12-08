@@ -2,14 +2,13 @@
 
 #include "mutable_dense_tensor_view.h"
 
-using vespalib::eval::ValueType;
+namespace vespalib::eval {
 
-namespace vespalib::tensor {
-
-MutableDenseTensorView::MutableDenseTensorView(ValueType type_in)
-    : DenseTensorView(_type),
-      _type(type_in)
+MutableDenseTensorView::MutableDenseTensorView(const ValueType &type_in)
+  : _type(type_in),
+    _cells()
 {
+    assert(_type.is_dense());
 }
 
 }

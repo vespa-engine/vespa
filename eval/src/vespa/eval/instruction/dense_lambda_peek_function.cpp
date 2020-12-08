@@ -32,7 +32,7 @@ void my_lambda_peek_op(InterpretedFunction::State &state, uint64_t param) {
     for (uint32_t idx: lookup_table) {
         *dst++ = src_cells[idx];
     }
-    state.pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 struct MyLambdaPeekOp {
@@ -53,7 +53,7 @@ DenseLambdaPeekFunction::DenseLambdaPeekFunction(const ValueType &result_type,
 DenseLambdaPeekFunction::~DenseLambdaPeekFunction() = default;
 
 InterpretedFunction::Instruction
-DenseLambdaPeekFunction::compile_self(EngineOrFactory, Stash &stash) const
+DenseLambdaPeekFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     const Self &self = stash.create<Self>(result_type(), *_idx_fun);
     using MyTypify = TypifyCellType;

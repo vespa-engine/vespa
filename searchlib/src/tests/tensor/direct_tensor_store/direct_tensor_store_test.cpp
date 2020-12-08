@@ -2,14 +2,15 @@
 
 #include <vespa/searchlib/tensor/direct_tensor_store.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 
 using namespace search::tensor;
 
 using vespalib::datastore::EntryRef;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
@@ -40,7 +41,7 @@ public:
 Value::UP
 make_tensor(const TensorSpec& spec)
 {
-    auto value = EngineOrFactory::get().from_spec(spec);
+    auto value = SimpleValue::from_spec(spec);
     return std::make_unique<MockBigTensor>(std::move(value));
 }
 

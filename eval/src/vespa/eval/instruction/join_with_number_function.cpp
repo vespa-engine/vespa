@@ -73,7 +73,7 @@ JoinWithNumberFunction::inplace() const {
 using MyTypify = TypifyValue<TypifyCellType,vespalib::TypifyBool,operation::TypifyOp2>;
 
 InterpretedFunction::Instruction
-JoinWithNumberFunction::compile_self(EngineOrFactory, Stash &) const
+JoinWithNumberFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     auto op = typify_invoke<4,MyTypify,SelectJoinWithNumberOp>(result_type().cell_type(),
                                                                _function,

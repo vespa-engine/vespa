@@ -3,7 +3,6 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/partial_update.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -62,16 +61,6 @@ TensorSpec perform_partial_remove(const TensorSpec &a, const TensorSpec &b) {
     return spec_from_value(*up);
 }
 
-TensorSpec perform_old_remove(const TensorSpec &a, const TensorSpec &b) {
-    const auto &engine = tensor::DefaultTensorEngine::ref();
-    auto lhs = engine.from_spec(a);
-    auto rhs = engine.from_spec(b);
-    EXPECT_TRUE(tensor::TensorPartialUpdate::check_suitably_sparse(*rhs, engine));
-    auto up = tensor::TensorPartialUpdate::remove(*lhs, *rhs, engine);
-    EXPECT_TRUE(up);
-    return engine.to_spec(*up);
-}
-
 TEST(PartialRemoveTest, partial_remove_works_for_simple_values) {
     ASSERT_TRUE((remove_layouts.size() % 2) == 0);
     for (size_t i = 0; i < remove_layouts.size(); i += 2) {
@@ -79,18 +68,6 @@ TEST(PartialRemoveTest, partial_remove_works_for_simple_values) {
         TensorSpec rhs = spec(remove_layouts[i + 1], Div16(N()));
         SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
         auto expect = reference_remove(lhs, rhs);
-        auto actual = perform_partial_remove(lhs, rhs);
-        EXPECT_EQ(actual, expect);
-    }
-}
-
-TEST(PartialRemoveTest, partial_remove_works_like_old_remove) {
-    ASSERT_TRUE((remove_layouts.size() % 2) == 0);
-    for (size_t i = 0; i < remove_layouts.size(); i += 2) {
-        TensorSpec lhs = spec(remove_layouts[i], N());
-        TensorSpec rhs = spec(remove_layouts[i + 1], Div16(N()));
-        SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-        auto expect = perform_old_remove(lhs, rhs);
         auto actual = perform_partial_remove(lhs, rhs);
         EXPECT_EQ(actual, expect);
     }

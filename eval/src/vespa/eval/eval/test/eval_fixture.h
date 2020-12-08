@@ -7,7 +7,6 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/vespalib/util/stash.h>
 #include <set>
 #include <functional>
@@ -45,7 +44,7 @@ public:
     };
 
 private:
-    EngineOrFactory                 _engine;
+    const ValueBuilderFactory      &_factory;
     Stash                           _stash;
     std::shared_ptr<Function const> _function;
     NodeTypes                       _node_types;
@@ -74,7 +73,7 @@ private:
     void detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const;
 
 public:
-    EvalFixture(EngineOrFactory engine, const vespalib::string &expr, const ParamRepo &param_repo,
+    EvalFixture(const ValueBuilderFactory &factory, const vespalib::string &expr, const ParamRepo &param_repo,
                 bool optimized = true, bool allow_mutable = false);
     ~EvalFixture() {}
     template <typename T>

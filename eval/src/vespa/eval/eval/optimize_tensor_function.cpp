@@ -2,7 +2,6 @@
 
 #include "optimize_tensor_function.h"
 #include "tensor_function.h"
-#include "tensor_engine.h"
 #include "simple_value.h"
 
 #include <vespa/eval/instruction/dense_dot_product_function.h>
@@ -82,11 +81,9 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, c
 
 } // namespace vespalib::eval::<unnamed>
 
-const TensorFunction &optimize_tensor_function(EngineOrFactory engine, const TensorFunction &function, Stash &stash) {
+const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash) {
     LOG(debug, "tensor function before optimization:\n%s\n", function.as_string().c_str());
-    const TensorFunction &optimized = (engine.is_engine())
-                                      ? engine.engine().optimize(function, stash)
-                                      : optimize_for_factory(engine.factory(), function, stash);
+    const TensorFunction &optimized = optimize_for_factory(factory, function, stash);
     LOG(debug, "tensor function after optimization:\n%s\n", optimized.as_string().c_str());
     return optimized;
 }

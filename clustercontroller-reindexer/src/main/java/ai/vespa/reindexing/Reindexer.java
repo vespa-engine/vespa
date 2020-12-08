@@ -91,17 +91,18 @@ public class Reindexer {
         if (phaser.isTerminated())
             throw new IllegalStateException("Already shut down");
 
-        try (Lock lock = database.lockReindexing()) {
-            Reindexing reindexing = updateWithReady(ready, database.readReindexing(), clock.instant());
-            database.writeReindexing(reindexing);
-            metrics.dump(reindexing);
+        try (Lock lock = database.lockReindexing(cluster.name())) {
+            AtomicReference<Reindexing> reindexing = new AtomicReference<>(database.readReindexing(cluster.name()));
+            reindexing.set(updateWithReady(ready, reindexing.get(), clock.instant()));
+            database.writeReindexing(reindexing.get(), cluster.name());
+            metrics.dump(reindexing.get());
 
             for (DocumentType type : ready.keySet()) { // We consider only document types for which we have config.
                 if (ready.get(type).isAfter(clock.instant()))
                     log.log(INFO, "Received config for reindexing which is ready in the future — will process later " +
                                   "(" + ready.get(type) + " is after " + clock.instant() + ")");
                 else
-                    progress(type, new AtomicReference<>(reindexing), new AtomicReference<>(reindexing.status().get(type)));
+                    progress(type, reindexing, new AtomicReference<>(reindexing.get().status().get(type)));
 
                 if (phaser.isTerminated())
                     break;
@@ -126,10 +127,6 @@ public class Reindexer {
 
     @SuppressWarnings("fallthrough") // (ノಠ ∩ಠ)ノ彡( \o°o)\
     private void progress(DocumentType type, AtomicReference<Reindexing> reindexing, AtomicReference<Status> status) {
-
-        database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())));
-        metrics.dump(reindexing.get());
-
         switch (status.get().state()) {
             default:
                 log.log(WARNING, "Unknown reindexing state '" + status.get().state() + "'");
@@ -139,12 +136,12 @@ public class Reindexer {
                 return;
             case RUNNING:
                 log.log(WARNING, "Unexpected state 'RUNNING' of reindexing of " + type);
-            case READY: // Intentional fallthrough — must just assume we failed updating state when exiting previously.
-            log.log(FINE, () -> "Running reindexing of " + type);
+                break;
+            case READY:
+                status.updateAndGet(Status::running);
         }
 
-        // Visit buckets until they're all done, or until we are interrupted.
-        status.updateAndGet(Status::running);
+        // Visit buckets until they're all done, or until we are shut down.
         AtomicReference<Instant> progressLastStored = new AtomicReference<>(clock.instant());
         VisitorControlHandler control = new VisitorControlHandler() {
             @Override
@@ -153,7 +150,7 @@ public class Reindexer {
                 status.updateAndGet(value -> value.progressed(token));
                 if (progressLastStored.get().isBefore(clock.instant().minusSeconds(10))) {
                     progressLastStored.set(clock.instant());
-                    database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())));
+                    database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())), cluster.name());
                     metrics.dump(reindexing.get());
                 }
             }
@@ -167,10 +164,11 @@ public class Reindexer {
         VisitorParameters parameters = createParameters(type, status.get().progress().orElse(null));
         parameters.setControlHandler(control);
         Runnable sessionShutdown = visitorSessions.apply(parameters); // Also starts the visitor session.
+        log.log(FINE, () -> "Running reindexing of " + type);
 
         // Wait until done; or until termination is forced, in which we shut down the visitor session immediately.
         phaser.arriveAndAwaitAdvance(); // Synchronize with visitor completion.
-        sessionShutdown.run(); // Shutdown aborts the session, then waits for it to terminate normally.
+        sessionShutdown.run(); // Shutdown aborts the session unless already complete, then waits for it to terminate normally.
 
         switch (control.getResult().getCode()) {
             default:
@@ -187,24 +185,25 @@ public class Reindexer {
                 log.log(INFO, "Completed reindexing of " + type + " after " + Duration.between(status.get().startedAt(), clock.instant()));
                 status.updateAndGet(value -> value.successful(clock.instant()));
         }
-        database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())));
+        database.writeReindexing(reindexing.updateAndGet(value -> value.with(type, status.get())), cluster.name());
         metrics.dump(reindexing.get());
     }
 
     VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
         VisitorParameters parameters = new VisitorParameters(type.getName());
-        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(0.5)
+        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(0.2)
                                                                 .setWindowSizeDecrementFactor(5)
                                                                 .setResizeRate(10)
                                                                 .setMinWindowSize(1));
         parameters.setRemoteDataHandler(cluster.name());
-        parameters.setMaxPending(8);
+        parameters.setMaxPending(32);
         parameters.setResumeToken(progress);
         parameters.setFieldSet(type.getName() + ":[document]");
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_3);
         parameters.setRoute(cluster.route());
         parameters.setBucketSpace(cluster.bucketSpaceOf(type));
-        // parameters.setVisitorLibrary("ReindexVisitor"); // TODO jonmv: Use when ready, or perhaps an argument to the DumpVisitor is enough?
+        parameters.setMaxBucketsPerVisitor(1);
+        parameters.setVisitorLibrary("ReindexingVisitor");
         return parameters;
     }
 

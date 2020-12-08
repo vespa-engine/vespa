@@ -8,8 +8,6 @@
 namespace vespalib {
 namespace eval {
 
-struct TensorEngine;
-
 /**
  * Base class for all tensors. Tensor operations are defined by the
  * TensorEngine interface. The Tensor class itself is used as a tagged
@@ -21,11 +19,8 @@ struct TensorEngine;
  **/
 class Tensor : public Value
 {
-private:
-    const TensorEngine &_engine;
 protected:
-    explicit Tensor(const TensorEngine &engine_in)
-        : _engine(engine_in) {}
+    Tensor() {}
 public:
     Tensor(const Tensor &) = delete;
     Tensor(Tensor &&) = delete;
@@ -33,7 +28,6 @@ public:
     Tensor &operator=(Tensor &&) = delete;
     bool is_tensor() const override { return true; }
     const Tensor *as_tensor() const override { return this; }
-    const TensorEngine &engine() const { return _engine; }
     virtual ~Tensor() {}
 };
 

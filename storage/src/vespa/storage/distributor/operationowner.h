@@ -48,6 +48,10 @@ public:
             return _sender.getPendingMessageTracker();
         }
 
+        const OperationSequencer& operation_sequencer() const noexcept override {
+            return _sender.operation_sequencer();
+        }
+
     private:
         OperationOwner& _owner;
         DistributorMessageSender& _sender;

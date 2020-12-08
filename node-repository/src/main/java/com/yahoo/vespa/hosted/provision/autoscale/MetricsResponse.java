@@ -64,7 +64,7 @@ public class MetricsResponse {
 
     private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
         ClusterSpec cluster = node.allocation().get().membership().cluster();
-        return Autoscaler.stable(applicationNodes.cluster(cluster.id()).asList(), nodeRepository);
+        return Autoscaler.stable(applicationNodes.cluster(cluster.id()), nodeRepository);
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
@@ -101,6 +101,7 @@ public class MetricsResponse {
         generation { // application config generation active on the node
             public String metricResponseName() { return "application_generation"; }
             double convertValue(double metricValue) { return (float)metricValue; } // Really a long
+            double defaultValue() { return -1.0; }
         },
         inService {
             public String metricResponseName() { return "in_service"; }

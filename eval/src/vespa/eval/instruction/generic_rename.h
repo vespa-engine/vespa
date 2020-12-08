@@ -44,12 +44,6 @@ struct GenericRename {
                      const std::vector<vespalib::string> &rename_dimension_from,
                      const std::vector<vespalib::string> &rename_dimension_to,
                      const ValueBuilderFactory &factory, Stash &stash);
-
-    static Value::UP
-    perform_rename(const Value &a,
-                   const std::vector<vespalib::string> &rename_dimension_from,
-                   const std::vector<vespalib::string> &rename_dimension_to,
-                   const ValueBuilderFactory &factory);
 };
 
 } // namespace

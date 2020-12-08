@@ -14,19 +14,6 @@ static const unsigned long __stl_prime_list[] =
     402653189ul, 805306457ul, 1610612741ul, 3221225473ul, 4294967291ul
 };
 
-static const unsigned long __simple_modulator_list[] =
-{
-                                                    0x8ul,
-         0x10ul,       0x20ul,       0x40ul,       0x80ul,
-        0x100ul,      0x200ul,      0x400ul,      0x800ul,
-       0x1000ul,     0x2000ul,     0x4000ul,     0x8000ul,
-      0x10000ul,    0x20000ul,    0x40000ul,    0x80000ul,
-     0x100000ul,   0x200000ul,   0x400000ul,   0x800000ul,
-    0x1000000ul,  0x2000000ul,  0x4000000ul,  0x8000000ul,
-   0x10000000ul, 0x20000000ul, 0x40000000ul, 0x80000000ul,
-  0x100000000ul
-};
-
 }
 
 namespace vespalib {
@@ -41,15 +28,9 @@ hashtable_base::getModulo(size_t newSize, const unsigned long * list, size_t sz)
 }
 
 size_t
-hashtable_base::getModuloStl(size_t newSize)
+hashtable_base::getModuloStl(size_t size)
 {
-    return getModulo(newSize, __stl_prime_list, sizeof(__stl_prime_list)/sizeof(__stl_prime_list[0]));
-}
-
-size_t
-hashtable_base::getModuloSimple(size_t newSize)
-{
-    return getModulo(newSize, __simple_modulator_list, sizeof(__simple_modulator_list)/sizeof(__simple_modulator_list[0]));
+    return getModulo(size, __stl_prime_list, sizeof(__stl_prime_list)/sizeof(__stl_prime_list[0]));
 }
 
 }

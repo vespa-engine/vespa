@@ -136,7 +136,7 @@ private:
         uint16_t         nodeIdx;
 
         MessageEntry(TimePoint timeStamp, uint32_t msgType, uint32_t priority,
-                     uint64_t msgId, document::Bucket bucket, uint16_t nodeIdx);
+                     uint64_t msgId, document::Bucket bucket, uint16_t nodeIdx) noexcept;
         vespalib::string toHtml() const;
     };
 
@@ -189,7 +189,7 @@ private:
     framework::Component  _component;
     NodeInfo              _nodeInfo;
     std::chrono::seconds  _nodeBusyDuration;
-    DeferredBucketTaskMap _deferred_bucket_tasks;
+    DeferredBucketTaskMap _deferred_read_tasks;
 
     // Since distributor is currently single-threaded, this will only
     // contend when status page is being accessed. It is, however, required
@@ -213,7 +213,8 @@ private:
     void getStatusPerBucket(std::ostream& out) const;
     TimePoint currentTime() const;
 
-    std::vector<std::unique_ptr<DeferredTask>> get_deferred_ops_if_bucket_pending_drained(const document::Bucket&);
+    [[nodiscard]] bool bucket_has_no_pending_write_ops(const document::Bucket& bucket) const noexcept;
+    std::vector<std::unique_ptr<DeferredTask>> get_deferred_ops_if_bucket_writes_drained(const document::Bucket&);
 };
 
 }

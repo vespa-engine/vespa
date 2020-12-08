@@ -1,8 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/tensor/dense/onnx_wrapper.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
-#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -136,17 +135,17 @@ TEST(OnnxTest, simple_onnx_model_can_be_evaluated)
 
     ValueType query_type = ValueType::from_spec("tensor<float>(a[1],b[4])");
     std::vector<float> query_values({1.0, 2.0, 3.0, 4.0});
-    DenseTensorView query(query_type, TypedCells(query_values));
+    DenseValueView query(query_type, TypedCells(query_values));
     EXPECT_TRUE(planner.bind_input_type(query_type, model.inputs()[0]));
 
     ValueType attribute_type = ValueType::from_spec("tensor<float>(a[4],b[1])");
     std::vector<float> attribute_values({5.0, 6.0, 7.0, 8.0});
-    DenseTensorView attribute(attribute_type, TypedCells(attribute_values));
+    DenseValueView attribute(attribute_type, TypedCells(attribute_values));
     EXPECT_TRUE(planner.bind_input_type(attribute_type, model.inputs()[1]));
 
     ValueType bias_type = ValueType::from_spec("tensor<float>(a[1],b[1])");
     std::vector<float> bias_values({9.0});
-    DenseTensorView bias(bias_type, TypedCells(bias_values));
+    DenseValueView bias(bias_type, TypedCells(bias_values));
     EXPECT_TRUE(planner.bind_input_type(bias_type, model.inputs()[2]));
 
     EXPECT_EQ(planner.make_output_type(model.outputs()[0]).to_spec(),
@@ -165,13 +164,13 @@ TEST(OnnxTest, simple_onnx_model_can_be_evaluated)
     auto cells = output.cells();
     EXPECT_EQ(cells.type, CellType::FLOAT);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
+    EXPECT_EQ(cells.typify<float>()[0], 79.0);
     //-------------------------------------------------------------------------
     std::vector<float> new_bias_values({10.0});
-    DenseTensorView new_bias(bias_type, TypedCells(new_bias_values));
+    DenseValueView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(GetCell::from(output.cells(), 0), 80.0);
+    EXPECT_EQ(output.cells().typify<float>()[0], 80.0);
     //-------------------------------------------------------------------------
 }
 
@@ -182,17 +181,17 @@ TEST(OnnxTest, dynamic_onnx_model_can_be_evaluated)
 
     ValueType query_type = ValueType::from_spec("tensor<float>(a[1],b[4])");
     std::vector<float> query_values({1.0, 2.0, 3.0, 4.0});
-    DenseTensorView query(query_type, TypedCells(query_values));
+    DenseValueView query(query_type, TypedCells(query_values));
     EXPECT_TRUE(planner.bind_input_type(query_type, model.inputs()[0]));
 
     ValueType attribute_type = ValueType::from_spec("tensor<float>(a[4],b[1])");
     std::vector<float> attribute_values({5.0, 6.0, 7.0, 8.0});
-    DenseTensorView attribute(attribute_type, TypedCells(attribute_values));
+    DenseValueView attribute(attribute_type, TypedCells(attribute_values));
     EXPECT_TRUE(planner.bind_input_type(attribute_type, model.inputs()[1]));
 
     ValueType bias_type = ValueType::from_spec("tensor<float>(a[1],b[2])");
     std::vector<float> bias_values({4.0, 5.0});
-    DenseTensorView bias(bias_type, TypedCells(bias_values));
+    DenseValueView bias(bias_type, TypedCells(bias_values));
     EXPECT_TRUE(planner.bind_input_type(bias_type, model.inputs()[2]));
 
     EXPECT_EQ(planner.make_output_type(model.outputs()[0]).to_spec(),
@@ -211,13 +210,13 @@ TEST(OnnxTest, dynamic_onnx_model_can_be_evaluated)
     auto cells = output.cells();
     EXPECT_EQ(cells.type, CellType::FLOAT);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
+    EXPECT_EQ(cells.typify<float>()[0], 79.0);
     //-------------------------------------------------------------------------
     std::vector<float> new_bias_values({5.0,6.0});
-    DenseTensorView new_bias(bias_type, TypedCells(new_bias_values));
+    DenseValueView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(GetCell::from(output.cells(), 0), 81.0);
+    EXPECT_EQ(output.cells().typify<float>()[0], 81.0);
     //-------------------------------------------------------------------------
 }
 
@@ -228,17 +227,17 @@ TEST(OnnxTest, int_types_onnx_model_can_be_evaluated)
 
     ValueType query_type = ValueType::from_spec("tensor<float>(a[1],b[4])");
     std::vector<float> query_values({1.0, 2.0, 3.0, 4.0});
-    DenseTensorView query(query_type, TypedCells(query_values));
+    DenseValueView query(query_type, TypedCells(query_values));
     EXPECT_TRUE(planner.bind_input_type(query_type, model.inputs()[0]));
 
     ValueType attribute_type = ValueType::from_spec("tensor<double>(a[4],b[1])");
     std::vector<double> attribute_values({5.0, 6.0, 7.0, 8.0});
-    DenseTensorView attribute(attribute_type, TypedCells(attribute_values));
+    DenseValueView attribute(attribute_type, TypedCells(attribute_values));
     EXPECT_TRUE(planner.bind_input_type(attribute_type, model.inputs()[1]));
 
     ValueType bias_type = ValueType::from_spec("tensor<double>(a[1],b[1])");
     std::vector<double> bias_values({9.0});
-    DenseTensorView bias(bias_type, TypedCells(bias_values));
+    DenseValueView bias(bias_type, TypedCells(bias_values));
     EXPECT_TRUE(planner.bind_input_type(bias_type, model.inputs()[2]));
 
     EXPECT_EQ(planner.make_output_type(model.outputs()[0]),
@@ -257,13 +256,13 @@ TEST(OnnxTest, int_types_onnx_model_can_be_evaluated)
     auto cells = output.cells();
     EXPECT_EQ(cells.type, CellType::DOUBLE);
     EXPECT_EQ(cells.size, 1);
-    EXPECT_EQ(GetCell::from(cells, 0), 79.0);
+    EXPECT_EQ(cells.typify<double>()[0], 79.0);
     //-------------------------------------------------------------------------
     std::vector<double> new_bias_values({10.0});
-    DenseTensorView new_bias(bias_type, TypedCells(new_bias_values));
+    DenseValueView new_bias(bias_type, TypedCells(new_bias_values));
     ctx.bind_param(2, new_bias);
     ctx.eval();
-    EXPECT_EQ(GetCell::from(output.cells(), 0), 80.0);
+    EXPECT_EQ(output.cells().typify<double>()[0], 80.0);
     //-------------------------------------------------------------------------
 }
 
@@ -274,13 +273,13 @@ TEST(OnnxTest, we_guess_batch_dimension_size_when_inference_fails) {
 
     ValueType in_3_type = ValueType::from_spec("tensor<float>(a[3])");
     std::vector<float> in_3_values({1.0, 2.0, 3.0});
-    DenseTensorView in_3(in_3_type, TypedCells(in_3_values));
+    DenseValueView in_3(in_3_type, TypedCells(in_3_values));
     EXPECT_TRUE(planner_3.bind_input_type(in_3_type, model.inputs()[0]));
     EXPECT_TRUE(planner_3.bind_input_type(in_3_type, model.inputs()[1]));
 
     ValueType in_4_type = ValueType::from_spec("tensor<float>(a[4])");
     std::vector<float> in_4_values({1.0, 2.0, 3.0, 4.0});
-    DenseTensorView in_4(in_4_type, TypedCells(in_4_values));
+    DenseValueView in_4(in_4_type, TypedCells(in_4_values));
     EXPECT_TRUE(planner_4.bind_input_type(in_4_type, model.inputs()[0]));
     EXPECT_TRUE(planner_4.bind_input_type(in_4_type, model.inputs()[1]));
 

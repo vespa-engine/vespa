@@ -1,15 +1,15 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_replace_type_function.h"
-#include "dense_tensor_view.h"
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::tensor {
 
+using eval::DenseValueView;
+using eval::TypedCells;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
-using eval::TensorEngine;
 using eval::as;
 using namespace eval::tensor_function;
 
@@ -18,7 +18,7 @@ namespace {
 void my_replace_type_op(eval::InterpretedFunction::State &state, uint64_t param) {
     const ValueType &type = unwrap_param<ValueType>(param);
     TypedCells cells = state.peek(0).cells();
-    state.pop_push(state.stash.create<DenseTensorView>(type, cells));
+    state.pop_push(state.stash.create<DenseValueView>(type, cells));
 }
 
 } // namespace vespalib::tensor::<unnamed>
@@ -34,7 +34,7 @@ DenseReplaceTypeFunction::~DenseReplaceTypeFunction()
 }
 
 eval::InterpretedFunction::Instruction
-DenseReplaceTypeFunction::compile_self(eval::EngineOrFactory, Stash &) const
+DenseReplaceTypeFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     return eval::InterpretedFunction::Instruction(my_replace_type_op, wrap_param<ValueType>(result_type()));
 }

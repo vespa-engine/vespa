@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/exceptions.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/fastos/file.h>
@@ -52,7 +53,7 @@ using vespalib::eval::TensorSpec;
 using vespalib::eval::CellType;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 
 using DoubleVector = std::vector<double>;
 using generation_t = vespalib::GenerationHandler::generation_t;
@@ -62,7 +63,7 @@ vespalib::string denseSpec("tensor(x[2],y[3])");
 vespalib::string vec_2d_spec("tensor(x[2])");
 
 Value::UP createTensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 TensorSpec
@@ -904,7 +905,7 @@ public:
     }
 
     std::unique_ptr<Value> createDenseTensor(const TensorSpec &spec) {
-        return EngineOrFactory::get().from_spec(spec);
+        return SimpleValue::from_spec(spec);
     }
 
     std::unique_ptr<NearestNeighborBlueprint> make_blueprint(double brute_force_limit = 0.05) {

@@ -15,7 +15,6 @@ vespa_define_module(
     src/tests/eval/array_array_map
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
-    src/tests/eval/engine_or_factory
     src/tests/eval/fast_sparse_map
     src/tests/eval/fast_value
     src/tests/eval/function
@@ -30,7 +29,6 @@ vespa_define_module(
     src/tests/eval/param_usage
     src/tests/eval/reference_evaluation
     src/tests/eval/reference_operations
-    src/tests/eval/simple_tensor
     src/tests/eval/simple_value
     src/tests/eval/tensor_function
     src/tests/eval/tensor_lambda
@@ -61,7 +59,6 @@ vespa_define_module(
     src/tests/tensor/dense_fast_rename_optimizer
     src/tests/tensor/dense_generic_join
     src/tests/tensor/dense_inplace_join_function
-    src/tests/tensor/dense_number_join_function
     src/tests/tensor/dense_pow_as_map_optimizer
     src/tests/tensor/dense_remove_dimension_optimizer
     src/tests/tensor/dense_replace_type_function
@@ -76,12 +73,8 @@ vespa_define_module(
     src/tests/tensor/partial_add
     src/tests/tensor/partial_modify
     src/tests/tensor/partial_remove
-    src/tests/tensor/tensor_add_operation
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_conformance
-    src/tests/tensor/tensor_modify_operation
-    src/tests/tensor/tensor_remove_operation
-    src/tests/tensor/tensor_serialization
     src/tests/tensor/typed_cells
     src/tests/tensor/vector_from_doubles_function
 
@@ -96,6 +89,5 @@ vespa_define_module(
     src/vespa/eval/streamed
     src/vespa/eval/tensor
     src/vespa/eval/tensor/dense
-    src/vespa/eval/tensor/serialization
     src/vespa/eval/tensor/sparse
 )

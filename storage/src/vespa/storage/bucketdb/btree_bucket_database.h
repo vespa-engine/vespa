@@ -43,6 +43,7 @@ public:
     void getAll(const document::BucketId& bucket,
                 std::vector<Entry>& entries) const override;
     void update(const Entry& newEntry) override;
+    void process_update(const document::BucketId& bucket, EntryUpdateProcessor &processor, bool create_if_nonexisting) override;
     void forEach(EntryProcessor&, const document::BucketId& after) const override;
     Entry upperBound(const document::BucketId& value) const override;
     uint64_t size() const override;

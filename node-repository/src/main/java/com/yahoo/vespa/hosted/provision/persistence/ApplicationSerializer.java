@@ -52,6 +52,7 @@ public class ApplicationSerializer {
     private static final String toKey = "to";
     private static final String generationKey = "generation";
     private static final String atKey = "at";
+    private static final String completionKey = "completion";
 
     public static byte[] toJson(Application application) {
         Slime slime = new Slime();
@@ -140,13 +141,19 @@ public class ApplicationSerializer {
         toSlime(event.to(), object.setObject(toKey));
         object.setLong(generationKey, event.generation());
         object.setLong(atKey, event.at().toEpochMilli());
+        event.completion().ifPresent(completion -> object.setLong(completionKey, completion.toEpochMilli()));
     }
 
     private static ScalingEvent scalingEventFromSlime(Inspector inspector) {
         return new ScalingEvent(clusterResourcesFromSlime(inspector.field(fromKey)),
                                 clusterResourcesFromSlime(inspector.field(toKey)),
                                 inspector.field(generationKey).asLong(),
-                                Instant.ofEpochMilli(inspector.field(atKey).asLong()));
+                                Instant.ofEpochMilli(inspector.field(atKey).asLong()),
+                                optionalInstant(inspector.field(completionKey)));
+    }
+
+    private static Optional<Instant> optionalInstant(Inspector inspector) {
+        return inspector.valid() ? Optional.of(Instant.ofEpochMilli(inspector.asLong())) : Optional.empty();
     }
 
 }

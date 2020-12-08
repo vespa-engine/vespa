@@ -29,14 +29,14 @@ public abstract class ContentNode extends AbstractService
     private final boolean skipMbusReplyThread;
     private final boolean useDirectStorageApiRpc;
 
-    public ContentNode(ModelContext.Properties properties, AbstractConfigProducer parent, String clusterName, String rootDirectory, int distributionKey) {
+    public ContentNode(ModelContext.FeatureFlags featureFlags, AbstractConfigProducer<?> parent, String clusterName, String rootDirectory, int distributionKey) {
         super(parent, "" + distributionKey);
         this.distributionKey = distributionKey;
-        this.skipCommunicationManagerThread = properties.skipCommunicationManagerThread();
-        this.skipMbusRequestThread = properties.skipMbusRequestThread();
-        this.skipMbusReplyThread = properties.skipMbusReplyThread();
+        this.skipCommunicationManagerThread = featureFlags.skipCommunicationManagerThread();
+        this.skipMbusRequestThread = featureFlags.skipMbusRequestThread();
+        this.skipMbusReplyThread = featureFlags.skipMbusReplyThread();
         this.rootDirectory = rootDirectory;
-        this.useDirectStorageApiRpc = properties.useDirectStorageApiRpc();
+        this.useDirectStorageApiRpc = featureFlags.useDirectStorageApiRpc();
 
         initialize();
         setProp("clustertype", "content");

@@ -56,6 +56,7 @@ public class ScalingSuggestionsMaintainerTest {
                                                     new ClusterResources(10, 1, new NodeResources(6.5, 5, 15, 0.1)),
                                                     false, true));
 
+        tester.clock().advance(Duration.ofHours(13));
         addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository(), metricsDb);
         addMeasurements(0.99f, 0.99f, 0.99f, 0, 500, app2, tester.nodeRepository(), metricsDb);
 

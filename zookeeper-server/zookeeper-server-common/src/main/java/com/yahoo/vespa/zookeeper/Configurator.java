@@ -79,7 +79,6 @@ public class Configurator {
         sb.append("maxClientCnxns=").append(config.maxClientConnections()).append("\n");
         sb.append("snapCount=").append(config.snapshotCount()).append("\n");
         sb.append("dataDir=").append(getDefaults().underVespaHome(config.dataDir())).append("\n");
-        sb.append("clientPort=").append(config.clientPort()).append("\n");
         sb.append("secureClientPort=").append(config.secureClientPort()).append("\n");
         sb.append("autopurge.purgeInterval=").append(config.autopurge().purgeInterval()).append("\n");
         sb.append("autopurge.snapRetainCount=").append(config.autopurge().snapRetainCount()).append("\n");
@@ -92,8 +91,9 @@ public class Configurator {
         sb.append("quorumListenOnAllIPs=true").append("\n");
         sb.append("standaloneEnabled=false").append("\n");
         sb.append("reconfigEnabled=true").append("\n");
+        sb.append("skipACL=yes").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
-        config.server().forEach(server -> addServerToCfg(sb, server));
+        config.server().forEach(server -> addServerToCfg(sb, server, config.clientPort()));
         SSLContext sslContext = new SslContextBuilder().build();
         sb.append(new TlsQuorumConfig(sslContext, jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
         sb.append(new TlsClientServerConfig(sslContext, jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
@@ -138,8 +138,18 @@ public class Configurator {
         }
     }
 
-    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server) {
-        sb.append("server.").append(server.id()).append("=").append(server.hostname()).append(":").append(server.quorumPort()).append(":").append(server.electionPort()).append("\n");
+    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server, int clientPort) {
+        sb.append("server.")
+          .append(server.id())
+          .append("=")
+          .append(server.hostname())
+          .append(":")
+          .append(server.quorumPort())
+          .append(":")
+          .append(server.electionPort())
+          .append(";")
+          .append(clientPort)
+          .append("\n");
     }
 
     static Set<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {

@@ -342,6 +342,40 @@ bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update(const BucketId& bucket
     return update_by_raw_key(bucket.toKey(), new_entry);
 }
 
+template <typename DataStoreTraitsT>
+template <typename EntryUpdateProcessor>
+void
+GenericBTreeBucketDatabase<DataStoreTraitsT>::process_update(const BucketId& bucket, EntryUpdateProcessor& processor, bool create_if_nonexisting)
+{
+    uint64_t bucket_key = bucket.toKey();
+    auto iter = _tree.lowerBound(bucket_key);
+    bool found = true;
+    if (!iter.valid() || bucket_key < iter.getKey()) {
+        if (!create_if_nonexisting) {
+            return;
+        }
+        found = false;
+    }
+    ValueType entry(found ? entry_from_iterator(iter) : processor.create_entry(bucket));
+    bool keep = processor.process_entry(entry);
+    if (found) {
+        DataStoreTraitsT::remove_by_wrapped_value(_store, iter.getData());
+        if (keep) {
+            const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, entry);
+            std::atomic_thread_fence(std::memory_order_release);
+            iter.writeData(new_value);
+        } else {
+            _tree.remove(iter);
+        }
+    } else {
+        if (keep) {
+            const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, entry);
+            _tree.insert(iter, bucket_key, new_value);
+        }
+    }
+    commit_tree_changes();
+}
+
 /*
  * Returns the bucket ID which, based on the buckets already existing in the DB,
  * is the most specific location in the tree in which it should reside. This may

@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation");
@@ -200,8 +201,12 @@ checkNullBucketRequestBucketInfoMessage(uint16_t node,
 
 bool
 IdealStateOperation::checkBlock(const document::Bucket &bucket,
-                                const PendingMessageTracker& tracker) const
+                                const PendingMessageTracker& tracker,
+                                const OperationSequencer& seq) const
 {
+    if (seq.is_blocked(bucket)) {
+        return true;
+    }
     IdealStateOpChecker ichk(*this);
     const std::vector<uint16_t>& nodes(getNodes());
     for (auto node : nodes) {
@@ -219,8 +224,12 @@ IdealStateOperation::checkBlock(const document::Bucket &bucket,
 bool
 IdealStateOperation::checkBlockForAllNodes(
         const document::Bucket &bucket,
-        const PendingMessageTracker& tracker) const
+        const PendingMessageTracker& tracker,
+        const OperationSequencer& seq) const
 {
+    if (seq.is_blocked(bucket)) {
+        return true;
+    }
     IdealStateOpChecker ichk(*this);
     // Check messages sent to _any node_ for _this_ particular bucket.
     tracker.checkPendingMessages(bucket, ichk);
@@ -238,9 +247,9 @@ IdealStateOperation::checkBlockForAllNodes(
 
 
 bool
-IdealStateOperation::isBlocked(const PendingMessageTracker& tracker) const
+IdealStateOperation::isBlocked(const PendingMessageTracker& tracker, const OperationSequencer& op_seq) const
 {
-    return checkBlock(getBucket(), tracker);
+    return checkBlock(getBucket(), tracker, op_seq);
 }
 
 std::string

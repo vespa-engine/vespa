@@ -57,14 +57,14 @@ bool matches_all_policy_requirements(const PeerCredentials& peer_creds, const Pe
 class PolicyConfiguredCertificateVerifier : public CertificateVerificationCallback {
     AuthorizedPeers _authorized_peers;
 public:
-    explicit PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers);
+    explicit PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers) noexcept;
 
     ~PolicyConfiguredCertificateVerifier() override;
 
     bool verify(const PeerCredentials& peer_creds) const override;
 };
 
-PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers)
+PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers) noexcept
     : _authorized_peers(std::move(authorized_peers)) {}
 
 PolicyConfiguredCertificateVerifier::~PolicyConfiguredCertificateVerifier() = default;

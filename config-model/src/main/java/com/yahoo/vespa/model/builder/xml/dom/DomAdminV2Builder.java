@@ -207,7 +207,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
         @Override
         protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
-            return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState.isHosted(), /*reindexingContext*/null);
+            return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState.isHosted());
         }
     }
 }

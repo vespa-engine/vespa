@@ -8,8 +8,6 @@
 #include "tensor_attribute.h"
 #include <memory>
 
-namespace vespalib::tensor { class MutableDenseTensorView; }
-
 namespace search::tensor {
 
 class NearestNeighborIndex;
@@ -37,8 +35,8 @@ public:
     std::unique_ptr<PrepareResult> prepare_set_tensor(DocId docid, const vespalib::eval::Value& tensor) const override;
     void complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor, std::unique_ptr<PrepareResult> prepare_result) override;
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
-    void extract_dense_view(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
-    bool supports_extract_dense_view() const override { return true; }
+    vespalib::eval::TypedCells extract_cells_ref(DocId docId) const override;
+    bool supports_extract_cells_ref() const override { return true; }
     bool onLoad() override;
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     void compactWorst() override;

@@ -15,6 +15,7 @@
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/vespalib/util/closuretask.h>
 
 using vespa::config::search::RankProfilesConfig;
@@ -27,7 +28,7 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::SerialNum;
 using vespalib::ThreadStackExecutorBase;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::FastValueBuilderFactory;
 using namespace searchcorespi;
 
 namespace proton {
@@ -39,7 +40,7 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
       _indexWriter(),
       _rSearchView(),
       _rFeedView(),
-      _tensorLoader(EngineOrFactory::get()),
+      _tensorLoader(FastValueBuilderFactory::get()),
       _constantValueCache(_tensorLoader),
       _constantValueRepo(_constantValueCache),
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueRepo, ctx._clock,

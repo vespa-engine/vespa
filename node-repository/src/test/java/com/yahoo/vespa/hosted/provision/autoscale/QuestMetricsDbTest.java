@@ -109,9 +109,9 @@ public class QuestMetricsDbTest {
 
         assertEquals(24 * 10, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
         db.gc();
-        assertEquals(24 * 1 + dayOffset, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
+        assertEquals(48 * 1 + dayOffset, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
         db.gc(); // no-op
-        assertEquals(24 * 1 + dayOffset, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
+        assertEquals(48 * 1 + dayOffset, db.getNodeTimeseries(startTime, Set.of("host1")).get(0).size());
     }
 
     /** To manually test that we can read existing data */

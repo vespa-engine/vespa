@@ -141,6 +141,39 @@ public class CppClassBuilder implements ClassBuilder {
         return removeDashesAndUpperCaseAllFirstChars(name, false);
     }
 
+    /**
+     * Class to generate noexcept specifier if default constructor, copy constructor or copy assignment is non-throwing
+     */
+    private static class NoExceptSpecifier {
+        private boolean enabled;
+
+        public NoExceptSpecifier(CNode node) {
+                enabled = checkNode(node);
+        }
+
+        private static boolean checkNode(CNode node) {
+            if (node instanceof InnerCNode) {
+                for (CNode child: node.getChildren()) {
+                    if (child.isArray || child.isMap) {
+                        return false;
+                    }
+                    if (!checkNode(child)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        public String toString() {
+            if (enabled) {
+                return " noexcept";
+            } else {
+                return "";
+            }
+        }
+    }
+
     void writeHeaderFile(Writer w, CNode root) throws IOException {
         writeHeaderHeader(w, root);
         writeHeaderPublic(w, root);
@@ -327,29 +360,31 @@ public class CppClassBuilder implements ClassBuilder {
         w.write(indent + "void serialize(vespalib::slime::Cursor & __cursor) const;\n");
     }
 
-    void writeClassCopyConstructorDeclaration(Writer w, String className, String indent) throws IOException {
-        w.write(indent + className + "(const " + className + " & __rhs);\n");
+    void writeClassCopyConstructorDeclaration(Writer w, String className, NoExceptSpecifier noexcept, String indent) throws IOException {
+        w.write(indent + className + "(const " + className + " & __rhs)" + noexcept + ";\n");
     }
-    void writeClassAssignmentOperatorDeclaration(Writer w, String className, String indent) throws IOException {
-        w.write(indent + className + " & operator = (const " + className + " & __rhs);\n");
+    void writeClassAssignmentOperatorDeclaration(Writer w, String className, NoExceptSpecifier noexcept, String indent) throws IOException {
+        w.write(indent + className + " & operator = (const " + className + " & __rhs)" + noexcept + ";\n");
     }
 
-    void writeConfigClassCopyConstructorDefinition(Writer w, String parent, String className) throws IOException {
-        w.write(parent + "::" + className + "(const " + className + " & __rhs) = default;\n");
+    void writeConfigClassCopyConstructorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
+        w.write(parent + "::" + className + "(const " + className + " & __rhs)" + noexcept + " = default;\n");
     }
-    void writeConfigClassAssignmentOperatorDefinition(Writer w, String parent, String className) throws IOException {
-        w.write(parent + " & " + parent + "::" + "operator =(const " + className + " & __rhs) = default;\n");
+    void writeConfigClassAssignmentOperatorDefinition(Writer w, String parent, String className, NoExceptSpecifier noexcept) throws IOException {
+        w.write(parent + " & " + parent + "::" + "operator =(const " + className + " & __rhs)" + noexcept + " = default;\n");
     }
 
     void writeClassCopyConstructorDefinition(Writer w, String parent, CNode node) throws IOException {
         String typeName = getTypeName(node, false);
-        w.write(parent + "::" + typeName + "(const " + typeName + " & __rhs) = default;\n");
+        NoExceptSpecifier noexcept = new NoExceptSpecifier(node);
+        w.write(parent + "::" + typeName + "(const " + typeName + " & __rhs)" + noexcept + " = default;\n");
     }
 
     void writeClassAssignmentOperatorDefinition(Writer w, String parent, CNode node) throws IOException {
         String typeName = getTypeName(node, false);
+        NoExceptSpecifier noexcept = new NoExceptSpecifier(node);
         // Write empty constructor
-        w.write(parent + " & " + parent + "::" + "operator = (const " + typeName + " & __rhs) = default;\n");
+        w.write(parent + " & " + parent + "::" + "operator = (const " + typeName + " & __rhs)" + noexcept + " = default;\n");
     }
 
     void writeDestructor(Writer w, String parent, String className) throws IOException {
@@ -357,13 +392,14 @@ public class CppClassBuilder implements ClassBuilder {
     }
 
     void writeCommonFunctionDeclarations(Writer w, String className, CNode node, String indent) throws IOException {
-        w.write("" + indent + className + "();\n");
-        writeClassCopyConstructorDeclaration(w, className, indent);
-        writeClassAssignmentOperatorDeclaration(w, className, indent);
+        NoExceptSpecifier noexcept = new NoExceptSpecifier(node);
+        w.write("" + indent + className + "() " + noexcept + ";\n");
+        writeClassCopyConstructorDeclaration(w, className, noexcept, indent);
+        writeClassAssignmentOperatorDeclaration(w, className, noexcept, indent);
         w.write("" + indent + "~" + className + "();\n");
         w.write("\n"
-                + indent + "bool operator==(const " + className + "& __rhs) const;\n"
-                + indent + "bool operator!=(const " + className + "& __rhs) const;\n"
+                + indent + "bool operator==(const " + className + "& __rhs) const noexcept;\n"
+                + indent + "bool operator!=(const " + className + "& __rhs) const noexcept;\n"
                 + "\n"
                 );
     }
@@ -665,8 +701,9 @@ public class CppClassBuilder implements ClassBuilder {
         }
         String tmpName = getTypeName(node, false);
         String typeName = root ? getInternalClassName(node) : tmpName;
+        NoExceptSpecifier noexcept = new NoExceptSpecifier(node);
         // Write empty constructor
-        w.write(parent + typeName + "()\n");
+        w.write(parent + typeName + "()" + noexcept + "\n");
         for (int i=0; i<node.getChildren().length; ++i) {
             CNode child = node.getChildren()[i];
             String childName = getIdentifier(child.getName());
@@ -712,8 +749,8 @@ public class CppClassBuilder implements ClassBuilder {
                 );
         // Write copy constructor
         if (root) {
-            writeConfigClassCopyConstructorDefinition(w, fullClassName, typeName);
-            writeConfigClassAssignmentOperatorDefinition(w, fullClassName, typeName);
+            writeConfigClassCopyConstructorDefinition(w, fullClassName, typeName, noexcept);
+            writeConfigClassAssignmentOperatorDefinition(w, fullClassName, typeName, noexcept);
         } else {
             writeClassCopyConstructorDefinition(w, fullClassName, node);
             writeClassAssignmentOperatorDefinition(w, fullClassName, node);
@@ -825,7 +862,7 @@ public class CppClassBuilder implements ClassBuilder {
         // Write operator==
         String lineBreak = (parent.length() + typeName.length() < 50 ? "" : "\n");
         w.write("bool\n"
-                + parent + lineBreak + "operator==(const " + typeName + "& __rhs) const\n"
+                + parent + lineBreak + "operator==(const " + typeName + "& __rhs) const noexcept\n"
                 + "{\n"
                 + "    return ("
                 );
@@ -844,7 +881,7 @@ public class CppClassBuilder implements ClassBuilder {
         // Write operator!=
         lineBreak = (parent.length() + typeName.length() < 50 ? "" : "\n");
         w.write("bool\n"
-                + parent + lineBreak + "operator!=(const " + typeName + "& __rhs) const\n"
+                + parent + lineBreak + "operator!=(const " + typeName + "& __rhs) const noexcept\n"
                 + "{\n"
                 + "    return !(operator==(__rhs));\n"
                 + "}\n"

@@ -3,26 +3,25 @@
 LOG_SETUP("dense_tensor_store_test");
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/tensor/dense_tensor_store.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 
 using search::tensor::DenseTensorStore;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::eval::EngineOrFactory;
-using vespalib::tensor::MutableDenseTensorView;
 
 using EntryRef = DenseTensorStore::EntryRef;
 
 Value::UP
 makeTensor(const TensorSpec &spec)
 {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 struct Fixture
@@ -46,8 +45,8 @@ struct Fixture
         assertTensorView(ref, *expTensor);
     }
     void assertTensorView(EntryRef ref, const Value &expTensor) {
-        MutableDenseTensorView actTensor(store.type());
-        store.getTensor(ref, actTensor);
+        auto cells = store.get_typed_cells(ref);
+        vespalib::eval::DenseValueView actTensor(store.type(), cells);
         EXPECT_EQUAL(expTensor, actTensor);
     }
 };

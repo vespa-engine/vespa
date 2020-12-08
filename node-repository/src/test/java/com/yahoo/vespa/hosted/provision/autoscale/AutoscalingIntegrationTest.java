@@ -59,7 +59,7 @@ public class AutoscalingIntegrationTest {
             tester.nodeRepository().applications().put(application, lock);
         }
         var scaledResources = autoscaler.suggest(application.clusters().get(cluster1.id()),
-                                                 tester.nodeRepository().getNodes(application1));
+                                                 tester.nodeRepository().list(application1));
         assertTrue(scaledResources.isPresent());
     }
 

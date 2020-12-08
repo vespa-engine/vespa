@@ -30,21 +30,22 @@ namespace document { class DocumentTypeRepo; }
 
 namespace storage {
 
-class StatusMetricConsumer;
-class StateReporter;
+class ApplicationGenerationFetcher;
 class CommunicationManager;
 class FileStorManager;
 class HostInfo;
-class StateManager;
+class IStorageChainBuilder;
 class MemoryStatusViewer;
+class NodeIdentity;
+class StateManager;
+class StateReporter;
+class StatusMetricConsumer;
 class StatusWebServer;
+class StorageComponent;
 class StorageLink;
 struct DeadLockDetector;
 struct StorageMetricSet;
 struct StorageNodeContext;
-class ApplicationGenerationFetcher;
-class IStorageChainBuilder;
-class StorageComponent;
 
 namespace lib { class NodeType; }
 
@@ -156,6 +157,7 @@ protected:
     std::unique_ptr<document::DocumenttypesConfig> _newDoctypesConfig;
     std::unique_ptr<BucketspacesConfig> _newBucketSpacesConfig;
     std::unique_ptr<StorageComponent> _component;
+    std::unique_ptr<NodeIdentity> _node_identity;
     config::ConfigUri _configUri;
     CommunicationManager* _communicationManager;
 private:

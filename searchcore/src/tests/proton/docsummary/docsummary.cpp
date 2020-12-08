@@ -2,7 +2,8 @@
 
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -59,7 +60,7 @@ using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using vespalib::eval::TensorSpec;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 using namespace vespalib::slime;
 
 typedef std::unique_ptr<GeneralResult> GeneralResultPtr;
@@ -139,7 +140,7 @@ getDocTypeName()
 }
 
 vespalib::eval::Value::UP make_tensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 vespalib::string asVstring(vespalib::Memory str) {
@@ -334,7 +335,7 @@ assertTensor(const vespalib::eval::Value::UP & exp, const std::string & fieldNam
     EXPECT_EQUAL(exp.get() == nullptr, data.size == 0u);
     if (exp) {
         vespalib::nbostream x(data.data, data.size);
-        auto tensor = EngineOrFactory::get().decode(x);
+        auto tensor = SimpleValue::from_stream(x);
         EXPECT_TRUE(tensor.get() != nullptr);
         EXPECT_EQUAL(*exp, *tensor);
     }

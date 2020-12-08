@@ -41,6 +41,7 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
       _docMan(),
       _nodeStateUpdater(type),
       _configId(configId),
+      _node_identity("test_cluster", type, index),
       _initialized(false)
 {
         // Use config to adjust values

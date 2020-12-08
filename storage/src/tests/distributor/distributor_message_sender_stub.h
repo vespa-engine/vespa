@@ -13,6 +13,7 @@ class DistributorMessageSenderStub : public distributor::DistributorMessageSende
     MessageSenderStub _stub_impl;
     vespalib::string _cluster_name;
     distributor::PendingMessageTracker* _pending_message_tracker;
+    distributor::OperationSequencer* _operation_sequencer;
 public:
 
     DistributorMessageSenderStub();
@@ -93,6 +94,15 @@ public:
 
     void setPendingMessageTracker(distributor::PendingMessageTracker& tracker) {
         _pending_message_tracker = &tracker;
+    }
+
+    const distributor::OperationSequencer& operation_sequencer() const noexcept override {
+        assert(_operation_sequencer);
+        return *_operation_sequencer;
+    }
+
+    void set_operation_sequencer(distributor::OperationSequencer& op_seq) {
+        _operation_sequencer = &op_seq;
     }
 };
 

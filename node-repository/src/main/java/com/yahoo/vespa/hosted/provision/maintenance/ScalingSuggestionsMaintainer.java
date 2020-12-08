@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
@@ -51,7 +52,7 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
     private int suggest(ApplicationId application, List<Node> applicationNodes) {
         int successes = 0;
         for (var cluster : nodesByCluster(applicationNodes).entrySet())
-            successes += suggest(application, cluster.getKey(), cluster.getValue()) ? 1 : 0;
+            successes += suggest(application, cluster.getKey(), NodeList.copyOf(cluster.getValue())) ? 1 : 0;
         return successes;
     }
 
@@ -61,7 +62,7 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
 
     private boolean suggest(ApplicationId applicationId,
                             ClusterSpec.Id clusterId,
-                            List<Node> clusterNodes) {
+                            NodeList clusterNodes) {
         Application application = applications().get(applicationId).orElse(new Application(applicationId));
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return true;

@@ -174,7 +174,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
      *
      * @param e the exception indicating corruption
      */
-    private void repair(CairoException e) {
+    private void repair(Exception e) {
         log.log(Level.WARNING, "QuestDb seems corrupted, wiping data and starting over", e);
         IOUtils.recursiveDeleteDir(new File(dataDir));
         initializeDb();
@@ -182,22 +182,34 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private void ensureExists(String table) {
         SqlExecutionContext context = newContext();
+        if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table)) { // table exists
+            ensureUpdated(table, context);
+        } else {
+            create(table, context);
+        }
+    }
+
+    private void ensureUpdated(String table, SqlExecutionContext context) {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table)) {
                 ensureColumnExists("inService", "boolean", table, compiler, context); // TODO: Remove after December 2020
                 ensureColumnExists("stable", "boolean", table, compiler, context); // TODO: Remove after December 2020
             }
-            else {
-                compiler.compile("create table " + table +
-                                 " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
-                                 "  application_generation long, inService boolean, stable boolean)" +
-                                 " timestamp(at)" +
-                                 "PARTITION BY DAY;",
-                                 context);
-                // We should do this if we get a version where selecting on strings work embedded, see below
-                // compiler.compile("alter table " + tableName + " alter column hostname add index", context);
-            }
+        } catch (SqlException e) {
+            repair(e);
+        }
+    }
 
+    private void create(String table, SqlExecutionContext context) {
+        try (SqlCompiler compiler = new SqlCompiler(engine)) {
+            compiler.compile("create table " + table +
+                             " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
+                             "  application_generation long, inService boolean, stable boolean)" +
+                             " timestamp(at)" +
+                             "PARTITION BY DAY;",
+                             context);
+            // We should do this if we get a version where selecting on strings work embedded, see below
+            // compiler.compile("alter table " + tableName + " alter column hostname add index", context);
         }
         catch (SqlException e) {
             throw new IllegalStateException("Could not create Quest db table '" + table + "'", e);

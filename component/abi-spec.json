@@ -2,7 +2,8 @@
   "com.yahoo.component.AbstractComponent": {
     "superClass": "java.lang.Object",
     "interfaces": [
-      "com.yahoo.component.Component"
+      "com.yahoo.component.Component",
+      "com.yahoo.component.Deconstructable"
     ],
     "attributes": [
       "public"
@@ -102,6 +103,19 @@
       "public boolean matches(com.yahoo.component.ComponentId)",
       "public com.yahoo.component.ComponentSpecification intersect(com.yahoo.component.ComponentSpecification)",
       "public com.yahoo.component.ComponentSpecification withoutNamespace()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.component.Deconstructable": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void deconstruct()"
     ],
     "fields": []
   },

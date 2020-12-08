@@ -6,7 +6,6 @@
 #include <vespa/vespalib/datastore/datastore.hpp>
 
 using vespalib::datastore::Handle;
-using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using CellType = vespalib::eval::CellType;
@@ -134,19 +133,7 @@ DenseTensorStore::getTensor(EntryRef ref) const
         return {};
     }
     vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
-    return std::make_unique<vespalib::tensor::DenseTensorView>(_type, cells_ref);
-}
-
-void
-DenseTensorStore::getTensor(EntryRef ref, MutableDenseTensorView &tensor) const
-{
-    if (!ref.valid()) {
-        vespalib::eval::TypedCells cells_ref(&_emptySpace[0], _type.cell_type(), getNumCells());
-        tensor.setCells(cells_ref);
-    } else {
-        vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
-        tensor.setCells(cells_ref);
-    }
+    return std::make_unique<vespalib::eval::DenseValueView>(_type, cells_ref);
 }
 
 vespalib::eval::TypedCells

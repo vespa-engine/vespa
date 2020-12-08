@@ -29,13 +29,11 @@
 #include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_merge.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/optimize_tensor_function.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -132,16 +130,16 @@ void my_multi_instruction_op(InterpretedFunction::State &state, uint64_t param_i
     }
 }
 
-void collect_op1_chain(const TensorFunction &node, const EngineOrFactory &engine, Stash &stash, std::vector<Instruction> &list) {
+void collect_op1_chain(const TensorFunction &node, const ValueBuilderFactory &factory, Stash &stash, std::vector<Instruction> &list) {
     if (auto op1 = as<tensor_function::Op1>(node)) {
-        collect_op1_chain(op1->child(), engine, stash, list);
-        list.push_back(node.compile_self(engine, stash));
+        collect_op1_chain(op1->child(), factory, stash, list);
+        list.push_back(node.compile_self(factory, stash));
     }
 }
 
-Instruction compile_op1_chain(const TensorFunction &node, const EngineOrFactory &engine, Stash &stash) {
+Instruction compile_op1_chain(const TensorFunction &node, const ValueBuilderFactory &factory, Stash &stash) {
     auto &param = stash.create<MultiOpParam>();
-    collect_op1_chain(node, engine, stash, param.list);
+    collect_op1_chain(node, factory, stash, param.list);
     return {my_multi_instruction_op,(uint64_t)(&param)};
 }
 
@@ -151,60 +149,60 @@ struct Impl {
     size_t order;
     vespalib::string name;
     vespalib::string short_name;
-    EngineOrFactory engine;
+    const ValueBuilderFactory &factory;
     bool optimize;
-    Impl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in, EngineOrFactory engine_in, bool optimize_in)
-        : order(order_in), name(name_in), short_name(short_name_in), engine(engine_in), optimize(optimize_in) {}
-    Value::UP create_value(const TensorSpec &spec) const { return engine.from_spec(spec); }
-    TensorSpec create_spec(const Value &value) const { return engine.to_spec(value); }
+    Impl(size_t order_in, const vespalib::string &name_in, const vespalib::string &short_name_in, const ValueBuilderFactory &factory_in, bool optimize_in)
+        : order(order_in), name(name_in), short_name(short_name_in), factory(factory_in), optimize(optimize_in) {}
+    Value::UP create_value(const TensorSpec &spec) const { return value_from_spec(spec, factory); }
+    TensorSpec create_spec(const Value &value) const { return spec_from_value(value); }
     Instruction create_join(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &join_node = tensor_function::join(lhs_node, rhs_node, function, stash);
-        const auto &node = optimize ? optimize_tensor_function(engine, join_node, stash) : join_node;
-        return node.compile_self(engine, stash);
+        const auto &node = optimize ? optimize_tensor_function(factory, join_node, stash) : join_node;
+        return node.compile_self(factory, stash);
     }
     Instruction create_reduce(const ValueType &lhs, Aggr aggr, const std::vector<vespalib::string> &dims, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &reduce_node = tensor_function::reduce(lhs_node, aggr, dims, stash);
-        const auto &node = optimize ? optimize_tensor_function(engine, reduce_node, stash) : reduce_node;
+        const auto &node = optimize ? optimize_tensor_function(factory, reduce_node, stash) : reduce_node;
         // since reduce might be optimized into multiple chained
         // instructions, we need some extra magic to package these
         // instructions into a single compound instruction.
-        return compile_op1_chain(node, engine, stash);
+        return compile_op1_chain(node, factory, stash);
     }
     Instruction create_rename(const ValueType &lhs, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rename_node = tensor_function::rename(lhs_node, from, to, stash);
-        const auto &node = optimize ? optimize_tensor_function(engine, rename_node, stash) : rename_node;
-        return node.compile_self(engine, stash);
+        const auto &node = optimize ? optimize_tensor_function(factory, rename_node, stash) : rename_node;
+        return node.compile_self(factory, stash);
     }
     Instruction create_merge(const ValueType &lhs, const ValueType &rhs, operation::op2_t function, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &merge_node = tensor_function::merge(lhs_node, rhs_node, function, stash); 
-        const auto &node = optimize ? optimize_tensor_function(engine, merge_node, stash) : merge_node;
-        return node.compile_self(engine, stash);
+        const auto &node = optimize ? optimize_tensor_function(factory, merge_node, stash) : merge_node;
+        return node.compile_self(factory, stash);
     }
     Instruction create_concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &rhs_node = tensor_function::inject(rhs, 1, stash);
         const auto &concat_node = tensor_function::concat(lhs_node, rhs_node, dimension, stash); 
-        return concat_node.compile_self(engine, stash);
-        const auto &node = optimize ? optimize_tensor_function(engine, concat_node, stash) : concat_node;
-        return node.compile_self(engine, stash);
+        return concat_node.compile_self(factory, stash);
+        const auto &node = optimize ? optimize_tensor_function(factory, concat_node, stash) : concat_node;
+        return node.compile_self(factory, stash);
     }
     Instruction create_map(const ValueType &lhs, operation::op1_t function, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
         const auto &lhs_node = tensor_function::inject(lhs, 0, stash);
         const auto &map_node = tensor_function::map(lhs_node, function, stash); 
-        const auto &node = optimize ? optimize_tensor_function(engine, map_node, stash) : map_node;
-        return node.compile_self(engine, stash);
+        const auto &node = optimize ? optimize_tensor_function(factory, map_node, stash) : map_node;
+        return node.compile_self(factory, stash);
     }
     Instruction create_tensor_create(const ValueType &proto_type, const TensorSpec &proto, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
@@ -214,8 +212,8 @@ struct Impl {
             spec.emplace(cell.first, my_double);
         }
         const auto &create_tensor_node = tensor_function::create(proto_type, spec, stash); 
-        const auto &node = optimize ? optimize_tensor_function(engine, create_tensor_node, stash) : create_tensor_node;
-        return node.compile_self(engine, stash);
+        const auto &node = optimize ? optimize_tensor_function(factory, create_tensor_node, stash) : create_tensor_node;
+        return node.compile_self(factory, stash);
     }
     Instruction create_tensor_lambda(const ValueType &type, const Function &function, const ValueType &p0_type, Stash &stash) const {
         std::vector<ValueType> arg_types(type.dimensions().size(), ValueType::double_type());
@@ -223,8 +221,8 @@ struct Impl {
         NodeTypes types(function, arg_types);
         EXPECT_EQ(types.errors(), std::vector<vespalib::string>());
         const auto &tensor_lambda_node = tensor_function::lambda(type, {0}, function, std::move(types), stash);
-        const auto &node = optimize ? optimize_tensor_function(engine, tensor_lambda_node, stash) : tensor_lambda_node;
-        return node.compile_self(engine, stash);
+        const auto &node = optimize ? optimize_tensor_function(factory, tensor_lambda_node, stash) : tensor_lambda_node;
+        return node.compile_self(factory, stash);
     }
     Instruction create_tensor_peek(const ValueType &type, const MyPeekSpec &my_spec, Stash &stash) const {
         // create a complete tensor function, but only compile the relevant instruction
@@ -247,30 +245,26 @@ struct Impl {
             }
         }
         const auto &peek_node = tensor_function::peek(my_param, spec, stash);
-        const auto &node = optimize ? optimize_tensor_function(engine, peek_node, stash) : peek_node;
-        return node.compile_self(engine, stash);
+        const auto &node = optimize ? optimize_tensor_function(factory, peek_node, stash) : peek_node;
+        return node.compile_self(factory, stash);
     }
 };
 
 //-----------------------------------------------------------------------------
 
 Impl             optimized_fast_value_impl(0, "          Optimized FastValue", "NEW PROD", FastValueBuilderFactory::get(), true);
-Impl  optimized_default_tensor_engine_impl(1, "Optimized DefaultTensorEngine", "OLD PROD", DefaultTensorEngine::ref(), true);
-Impl                       fast_value_impl(2, "                    FastValue", "   FastV", FastValueBuilderFactory::get(), false);
-Impl            default_tensor_engine_impl(3, "          DefaultTensorEngine", "DefaultT", DefaultTensorEngine::ref(), false);
-Impl                     simple_value_impl(4, "                  SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
+Impl                       fast_value_impl(1, "                    FastValue", "   FastV", FastValueBuilderFactory::get(), false);
+Impl                     simple_value_impl(2, "                  SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
 vespalib::string                                                  short_header("--------");
 
 constexpr double budget = 5.0;
 constexpr double best_limit = 0.95; // everything within 95% of best performance gets a star
-constexpr double bad_limit = 0.90;  // BAD: new prod has performance lower than 90% of old prod
-constexpr double good_limit = 1.10; // GOOD: new prod has performance higher than 110% of old prod
+constexpr double bad_limit = 0.90;  // BAD: optimized has performance lower than 90% of un-optimized
+constexpr double good_limit = 1.10; // GOOD: optimized has performance higher than 110% of un-optimized
 
 std::vector<CREF<Impl>> impl_list = {simple_value_impl,
                                      optimized_fast_value_impl,
-                                     optimized_default_tensor_engine_impl,
-                                     fast_value_impl,
-                                     default_tensor_engine_impl};
+                                     fast_value_impl};
 
 //-----------------------------------------------------------------------------
 
@@ -362,7 +356,7 @@ struct EvalOp {
     EvalOp(const EvalOp &) = delete;
     EvalOp &operator=(const EvalOp &) = delete;
     EvalOp(Stash &&stash_in, Instruction op, const std::vector<CREF<TensorSpec>> &stack_spec, const Impl &impl_in)
-        : my_stash(std::move(stash_in)), impl(impl_in), my_param(), values(), stack(), single(impl.engine, op)
+        : my_stash(std::move(stash_in)), impl(impl_in), my_param(), values(), stack(), single(impl.factory, op)
     {
         for (const TensorSpec &spec: stack_spec) {
             values.push_back(impl.create_value(spec));
@@ -372,7 +366,7 @@ struct EvalOp {
         }
     }
     EvalOp(Stash &&stash_in, Instruction op, const TensorSpec &p0, const Impl &impl_in)
-        : my_stash(std::move(stash_in)), impl(impl_in), my_param(p0, impl), values(), stack(), single(impl.engine, op, my_param)
+        : my_stash(std::move(stash_in)), impl(impl_in), my_param(p0, impl), values(), stack(), single(impl.factory, op, my_param)
     {
     }
     TensorSpec result() { return impl.create_spec(single.eval(stack)); }
@@ -650,10 +644,10 @@ void benchmark_encode_decode(const vespalib::string &desc, const TensorSpec &pro
     for (const Impl &impl: impl_list) {
         vespalib::nbostream data;
         auto value = impl.create_value(proto);
-        impl.engine.encode(*value, data);
-        auto new_value = impl.engine.decode(data);
+        encode_value(*value, data);
+        auto new_value = decode_value(data, impl.factory);
         ASSERT_EQ(data.size(), 0);
-        ASSERT_EQ(proto, impl.engine.to_spec(*new_value));
+        ASSERT_EQ(proto, spec_from_value(*new_value));
     }
     fprintf(stderr, "--------------------------------------------------------\n");
     fprintf(stderr, "Benchmarking encode/decode for: [%s]\n", desc.c_str());
@@ -669,12 +663,12 @@ void benchmark_encode_decode(const vespalib::string &desc, const TensorSpec &pro
             std::array<Value::UP, loop_cnt> object;
             encode_timer.before();
             for (size_t i = 0; i < loop_cnt; ++i) {
-                impl.engine.encode(*value, data[i]);
+                encode_value(*value, data[i]);
             }
             encode_timer.after();
             decode_timer.before();
             for (size_t i = 0; i < loop_cnt; ++i) {
-                object[i] = impl.engine.decode(data[i]);
+                object[i] = decode_value(data[i], impl.factory);
             }
             decode_timer.after();
         }
@@ -1087,7 +1081,7 @@ int main(int argc, char **argv) {
     if ((argc > 1) && (argv[1] == run_only_prod_option )) {
         impl_list.clear();
         impl_list.push_back(optimized_fast_value_impl);
-        impl_list.push_back(optimized_default_tensor_engine_impl);
+        impl_list.push_back(fast_value_impl);
         ++argv;
         --argc;
     }

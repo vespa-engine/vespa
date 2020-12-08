@@ -101,7 +101,7 @@ AsyncResolver::CachingHostResolver::store(const vespalib::string &host_name, con
     assert(_map.size() == _queue.size());
 }
 
-AsyncResolver::CachingHostResolver::CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age)
+AsyncResolver::CachingHostResolver::CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age) noexcept
     : _clock(std::move(clock)),
       _resolver(std::move(resolver)),
       _max_cache_size(max_cache_size),

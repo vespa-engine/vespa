@@ -1,21 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "config_logging.h"
-#include "storagenode.h"
 #include "communicationmanager.h"
+#include "config_logging.h"
 #include "statemanager.h"
 #include "statereporter.h"
 #include "storagemetricsset.h"
+#include "storagenode.h"
 #include "storagenodecontext.h"
 
-#include <vespa/storage/frameworkimpl/status/statuswebserver.h>
-#include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
+#include <vespa/metrics/metricmanager.h>
+#include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
 #include <vespa/storage/common/storage_chain_builder.h>
+#include <vespa/storage/frameworkimpl/status/statuswebserver.h>
+#include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/metrics/metricmanager.h>
 #include <fcntl.h>
 
 #include <vespa/log/log.h>
@@ -96,6 +97,7 @@ StorageNode::StorageNode(
       _newDoctypesConfig(),
       _newBucketSpacesConfig(),
       _component(),
+      _node_identity(),
       _configUri(configUri),
       _communicationManager(nullptr),
       _chain_builder(std::make_unique<StorageChainBuilder>())
@@ -143,6 +145,7 @@ StorageNode::initialize()
     _context.getComponentRegister().setBucketIdFactory(document::BucketIdFactory());
     _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(*_distributionConfig));
     _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
+    _node_identity = std::make_unique<NodeIdentity>(_serverConfig->clusterName, getNodeType(), _serverConfig->nodeIndex);
 
     _metrics = std::make_shared<StorageMetricSet>();
     _component = std::make_unique<StorageComponent>(_context.getComponentRegister(), "storagenode");

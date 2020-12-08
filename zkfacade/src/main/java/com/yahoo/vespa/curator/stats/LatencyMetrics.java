@@ -77,6 +77,6 @@ public class LatencyMetrics {
                 '}';
     }
 
-    private double secondsWithMillis(Duration duration) { return round(duration.toMillis()) / 1000.0; }
+    private double secondsWithMillis(Duration duration) { return duration.toMillis() / 1000.0; }
     private double roundTo3DecimalPlaces(double value) { return round(value * 1000) / 1000.0; }
 }

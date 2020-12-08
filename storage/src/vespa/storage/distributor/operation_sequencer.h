@@ -130,6 +130,8 @@ public:
     SequencingHandle try_acquire(document::BucketSpace bucket_space, const document::DocumentId& id);
 
     SequencingHandle try_acquire(const document::Bucket& bucket);
+
+    bool is_blocked(const document::Bucket&) const noexcept;
 private:
     void release(const SequencingHandle& handle);
 };

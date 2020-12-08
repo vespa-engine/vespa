@@ -38,16 +38,13 @@ public class ClusterControllerContainer extends Container implements
     private static final ComponentSpecification REINDEXING_CONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-reindexer");
 
     private final Set<String> bundles = new TreeSet<>();
-    private final ReindexingContext reindexingContext;
 
     public ClusterControllerContainer(
             AbstractConfigProducer<?> parent,
             int index,
             boolean runStandaloneZooKeeper,
-            boolean isHosted,
-            ReindexingContext reindexingContext) {
+            boolean isHosted) {
         super(parent, "" + index, index, isHosted);
-        this.reindexingContext = reindexingContext;
 
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
@@ -122,8 +119,12 @@ public class ClusterControllerContainer extends Container implements
         addHandler(new Handler(createComponentModel(id, className, bundle)), path);
     }
 
+    private ReindexingContext reindexingContext() {
+        return ((ClusterControllerContainerCluster) parent).reindexingContext();
+    }
+
     private void configureReindexing() {
-        if (reindexingContext != null) {
+        if (reindexingContext().reindexing().enabled()) {
             addFileBundle(REINDEXING_CONTROLLER_BUNDLE.getName());
             addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
             addComponent("reindexing-maintainer",
@@ -149,17 +150,21 @@ public class ClusterControllerContainer extends Container implements
 
     @Override
     public void getConfig(ReindexingConfig.Builder builder) {
-        if (reindexingContext == null)
-            return;
+        ReindexingContext ctx = reindexingContext();
+        if (!ctx.reindexing().enabled()) return;
 
-        builder.clusterName(reindexingContext.contentClusterName());
-        builder.enabled(reindexingContext.reindexing().enabled());
-        for (NewDocumentType type : reindexingContext.documentTypes()) {
-            String typeName = type.getFullName().getName();
-            reindexingContext.reindexing().status(reindexingContext.contentClusterName(), typeName)
-                             .ifPresent(status -> builder.status(typeName,
-                                                                 new ReindexingConfig.Status.Builder()
-                                                                         .readyAtMillis(status.ready().toEpochMilli())));
+        builder.enabled(ctx.reindexing().enabled());
+        for (String clusterId : ctx.clusterIds()) {
+            ReindexingConfig.Clusters.Builder clusterBuilder = new ReindexingConfig.Clusters.Builder();
+            for (NewDocumentType type : ctx.documentTypesForCluster(clusterId)) {
+                String typeName = type.getFullName().getName();
+                ctx.reindexing().status(clusterId, typeName).ifPresent(
+                        status -> clusterBuilder.documentTypes(
+                                typeName,
+                                new ReindexingConfig.Clusters.DocumentTypes.Builder()
+                                        .readyAtMillis(status.ready().toEpochMilli())));
+            }
+            builder.clusters(clusterId, clusterBuilder);
         }
     }
 

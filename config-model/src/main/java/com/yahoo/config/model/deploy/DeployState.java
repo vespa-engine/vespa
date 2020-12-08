@@ -248,6 +248,8 @@ public class DeployState implements ConfigDefinitionStore {
 
     public ModelContext.Properties getProperties() { return properties; }
 
+    public ModelContext.FeatureFlags featureFlags() { return properties.featureFlags(); }
+
     public Version getVespaVersion() { return vespaVersion; }
 
     public Optional<Model> getPreviousModel() { return previousModel; }

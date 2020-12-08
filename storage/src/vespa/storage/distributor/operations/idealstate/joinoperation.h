@@ -41,7 +41,8 @@ public:
         return JOIN_BUCKET;
     }
 
-    bool isBlocked(const PendingMessageTracker& pendingMessages) const override;
+    bool isBlocked(const PendingMessageTracker& pendingMessages,
+                   const OperationSequencer& op_seq) const override;
 
 protected:
     using NodeToBuckets = std::map<uint16_t, std::vector<document::BucketId>>;

@@ -4,10 +4,12 @@
 
 #include "spin_lock.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/stllike/identity.h>
+#include <vespa/vespalib/stllike/hashtable.hpp>
 #include <xxhash.h>
 #include <mutex>
 #include <vector>
+#include <array>
 
 namespace vespalib {
 
@@ -33,17 +35,20 @@ private:
     class alignas(64) Partition {
     public:
         struct Entry {
+            static constexpr uint32_t npos = -1;
             uint32_t hash;
             uint32_t ref_cnt;
             vespalib::string str;
-            Entry(const AltKey &key) noexcept : hash(key.hash), ref_cnt(1), str(key.str) {}
-            void reset() {
-                str.reset();
-            }
-            void reuse(const AltKey &key) {
+            explicit Entry(uint32_t next) noexcept : hash(), ref_cnt(next), str() {}
+            uint32_t init(const AltKey &key) {
+                uint32_t next = ref_cnt;
                 hash = key.hash;
                 ref_cnt = 1;
                 str = key.str;
+                return next;
+            }
+            void fini(uint32_t next) {
+                ref_cnt = next;
             }
         };
         struct Key {
@@ -61,30 +66,31 @@ private:
             bool operator()(const Key &a, const Key &b) const { return (a.idx == b.idx); }
             bool operator()(const Key &a, const AltKey &b) const { return ((a.hash == b.hash) && (entries[a.idx].str == b.str)); }
         };
-        using HashType = vespalib::hash_set<Key,Hash,Equal>;
+        using HashType = hashtable<Key,Key,Hash,Equal,Identity,hashtable_base::and_modulator>;
 
     private:
         SpinLock              _lock;
         std::vector<Entry>    _entries;
-        std::vector<uint32_t> _free;
+        uint32_t              _free;
         HashType              _hash;
 
+        void make_entries(size_t hint);
+
         uint32_t make_entry(const AltKey &alt_key) {
-            if (_free.empty()) {
-                uint32_t idx = _entries.size();
-                _entries.emplace_back(alt_key);
-                return idx;
-            } else {
-                uint32_t idx = _free.back();
-                _free.pop_back();
-                _entries[idx].reuse(alt_key);
-                return idx;
+            if (__builtin_expect(_free == Entry::npos, false)) {
+                make_entries(_entries.size() * 2);
             }
+            uint32_t idx = _free;
+            _free = _entries[idx].init(alt_key);
+            return idx;
         }
 
     public:
         Partition()
-            : _lock(), _entries(), _free(), _hash(0, Hash(), Equal(_entries)) {}
+            : _lock(), _entries(), _free(Entry::npos), _hash(128, Hash(), Equal(_entries))
+        {
+            make_entries(64);
+        }
         ~Partition();
 
         uint32_t resolve(const AltKey &alt_key) {
@@ -95,7 +101,7 @@ private:
                 return pos->idx;
             } else {
                 uint32_t idx = make_entry(alt_key);
-                _hash.insert(Key{idx, alt_key.hash});
+                _hash.force_insert(Key{idx, alt_key.hash});
                 return idx;
             }
         }
@@ -115,8 +121,8 @@ private:
             Entry &entry = _entries[idx];
             if (--entry.ref_cnt == 0) {
                 _hash.erase(Key{idx, entry.hash});
-                entry.reset();
-                _free.push_back(idx);
+                entry.fini(_free);
+                _free = idx;
             }
         }
     };
@@ -168,6 +174,7 @@ private:
 public:
     static SharedStringRepo &get();
 
+    // A single stand-alone string handle with ownership
     class Handle {
     private:
         uint32_t _id;
@@ -193,6 +200,38 @@ public:
         uint32_t id() const { return _id; }
         vespalib::string as_string() const { return get().as_string(_id); }
         ~Handle() { get().reclaim(_id); }
+    };
+
+    // Read-only access to a collection of string handles
+    class HandleView {
+    private:
+        const std::vector<uint32_t> &_handles;
+    public:
+        HandleView(const std::vector<uint32_t> &handles_in) : _handles(handles_in) {}
+        const std::vector<uint32_t> &handles() const { return _handles; }
+    };
+
+    // A collection of string handles without ownership
+    class WeakHandles {
+    private:
+        std::vector<uint32_t> _handles;
+    public:
+        WeakHandles(size_t expect_size);
+        ~WeakHandles();
+        void add(uint32_t handle) { _handles.push_back(handle); }
+        HandleView view() const { return HandleView(_handles); }
+    };
+
+    // A collection of string handles with ownership
+    class StrongHandles {
+    private:
+        SharedStringRepo &_repo;
+        std::vector<uint32_t> _handles;        
+    public:
+        StrongHandles(size_t expect_size);
+        ~StrongHandles();
+        void add(vespalib::stringref str) { _handles.push_back(_repo.resolve(str)); }
+        HandleView view() const { return HandleView(_handles); }
     };
 };
 

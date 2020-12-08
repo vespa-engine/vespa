@@ -852,7 +852,7 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::Stora
 { }
 
 
-FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry)
+FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry) noexcept
     : _command(entry._command),
       _timer(entry._timer),
       _bucket(entry._bucket),

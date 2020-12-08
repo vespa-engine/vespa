@@ -64,17 +64,17 @@ public class ApplicationReindexing {
 
     public static class Cluster {
 
-        private final Status common;
+        private final Optional<Status> common;
         private final Map<String, Long> pending;
         private final Map<String, Status> ready;
 
         public Cluster(Status common, Map<String, Long> pending, Map<String, Status> ready) {
-            this.common = requireNonNull(common);
+            this.common = Optional.ofNullable(common);
             this.pending = Map.copyOf(pending);
             this.ready = Map.copyOf(ready);
         }
 
-        public Status common() {
+        public Optional<Status> common() {
             return common;
         }
 

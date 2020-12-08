@@ -24,6 +24,7 @@
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/encoding/base64.h>
@@ -31,7 +32,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -510,7 +510,7 @@ private:
         const auto &tensor = value.getAsTensorPtr();
         vespalib::nbostream s;
         if (tensor) {
-            vespalib::eval::EngineOrFactory::get().encode(*tensor, s);
+            encode_value(*tensor, s);
         }
         _inserter.insertData(vespalib::Memory(s.peek(), s.size()));
     }

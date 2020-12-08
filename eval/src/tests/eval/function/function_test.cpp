@@ -418,6 +418,7 @@ struct MyTraverser : public NodeTraverser {
     std::vector<std::pair<bool, const nodes::Node &> > history;
     explicit MyTraverser(size_t open_true_cnt_in)
         : open_true_cnt(open_true_cnt_in), history() {}
+    ~MyTraverser() override;
     virtual bool open(const nodes::Node &node) override {
         history.emplace_back(true, node);
         if (open_true_cnt == 0) {
@@ -447,6 +448,8 @@ struct MyTraverser : public NodeTraverser {
         ++offset;
     }
 };
+
+MyTraverser::~MyTraverser() = default;
 
 size_t verify_traversal(size_t open_true_cnt, const vespalib::string &expression) {
     auto function = Function::parse(expression);

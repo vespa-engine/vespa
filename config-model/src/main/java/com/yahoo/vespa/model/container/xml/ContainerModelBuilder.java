@@ -115,7 +115,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     // The node count to enforce in a cluster running ZooKeeper
-    private static final int MIN_ZOOKEEPER_NODE_COUNT = 3;
+    private static final int MIN_ZOOKEEPER_NODE_COUNT = 1;
     private static final int MAX_ZOOKEEPER_NODE_COUNT = 7;
 
     public enum Networking { disable, enable }
@@ -213,10 +213,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (isCombined) {
             throw new IllegalArgumentException("A combined cluster cannot run ZooKeeper");
         }
-        int nodeCount = cluster.getContainers().size();
-        if (nodeCount < MIN_ZOOKEEPER_NODE_COUNT || nodeCount > MAX_ZOOKEEPER_NODE_COUNT || nodeCount % 2 == 0) {
-            throw new IllegalArgumentException("Clusters running ZooKeeper must have an odd number of nodes, between " +
-                                               MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT);
+        long nonRetiredNodes = cluster.getContainers().stream().filter(c -> !c.isRetired()).count();
+        if (nonRetiredNodes < MIN_ZOOKEEPER_NODE_COUNT || nonRetiredNodes > MAX_ZOOKEEPER_NODE_COUNT || nonRetiredNodes % 2 == 0) {
+            throw new IllegalArgumentException("Cluster with ZooKeeper needs an odd number of nodes, between " +
+                                               MIN_ZOOKEEPER_NODE_COUNT + " and " + MAX_ZOOKEEPER_NODE_COUNT +
+                                               ", have " + nonRetiredNodes + " non-retired");
         }
         cluster.addSimpleComponent("com.yahoo.vespa.curator.Curator", null, "zkfacade");
 
@@ -225,6 +226,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.getContainers().forEach(container -> {
             container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer", container));
             container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.Reconfigurer", container));
+            container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl", container));
         });
     }
 
@@ -376,7 +378,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
 
-            boolean enforceHandshakeClientAuth = context.properties().useAccessControlTlsHandshakeClientAuth() &&
+            boolean enforceHandshakeClientAuth = context.properties().featureFlags().useAccessControlTlsHandshakeClientAuth() &&
                     cluster.getHttp().getAccessControl()
                     .map(accessControl -> accessControl.clientAuthentication)
                     .map(clientAuth -> clientAuth.equals(AccessControl.ClientAuthentication.need))

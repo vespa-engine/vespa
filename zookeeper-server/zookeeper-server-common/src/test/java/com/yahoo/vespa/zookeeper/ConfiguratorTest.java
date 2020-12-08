@@ -168,7 +168,6 @@ public class ConfiguratorTest {
                "maxClientCnxns=0\n" +
                "snapCount=50000\n" +
                "dataDir=" + getDefaults().underVespaHome("var/zookeeper") + "\n" +
-               "clientPort=2181\n" +
                "secureClientPort=2184\n" +
                "autopurge.purgeInterval=1\n" +
                "autopurge.snapRetainCount=15\n" +
@@ -177,7 +176,8 @@ public class ConfiguratorTest {
                "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n" +
                "quorumListenOnAllIPs=true\n" +
                "standaloneEnabled=false\n" +
-               "reconfigEnabled=true\n";
+               "reconfigEnabled=true\n" +
+               "skipACL=yes\n";
     }
 
     private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
@@ -203,7 +203,7 @@ public class ConfiguratorTest {
     private void validateConfigFileSingleHost(File cfgFile) throws IOException {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
+                "server.0=foo:321:123;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
@@ -231,9 +231,9 @@ public class ConfiguratorTest {
     private void validateConfigFileMultipleHosts(File cfgFile) throws IOException {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
-                "server.1=bar:432:234\n" +
-                "server.2=baz:543:345\n" +
+                "server.0=foo:321:123;2181\n" +
+                "server.1=bar:432:234;2181\n" +
+                "server.2=baz:543:345;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
@@ -245,7 +245,7 @@ public class ConfiguratorTest {
     private void validateConfigFilePortUnification(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) throws IOException {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
+                "server.0=foo:321:123;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
                 "portUnification=true\n" +
@@ -259,7 +259,7 @@ public class ConfiguratorTest {
     private void validateConfigFileTlsWithPortUnification(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) throws IOException {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
+                "server.0=foo:321:123;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=true\n" +
                 "portUnification=true\n" +
@@ -273,7 +273,7 @@ public class ConfiguratorTest {
     private void validateConfigFileTlsOnly(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) throws IOException {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
+                "server.0=foo:321:123;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=true\n" +
                 "portUnification=false\n" +

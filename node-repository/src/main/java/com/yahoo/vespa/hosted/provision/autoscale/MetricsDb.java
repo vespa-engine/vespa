@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Clock;
@@ -9,6 +11,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * An in-memory time-series database of node metrics.
@@ -25,6 +28,10 @@ public interface MetricsDb {
      * the snapshots recorded after the given time (or an empty snapshot if none).
      */
     List<NodeTimeseries> getNodeTimeseries(Instant startTime, Set<String> hostnames);
+
+    default List<NodeTimeseries> getNodeTimeseries(Instant startTime, NodeList nodes) {
+        return getNodeTimeseries(startTime, nodes.stream().map(Node::hostname).collect(Collectors.toSet()));
+    }
 
     /** Must be called intermittently (as long as add is called) to gc old data */
     void gc();

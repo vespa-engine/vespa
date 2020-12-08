@@ -3,6 +3,7 @@
 #include "integerbase.hpp"
 #include "attributevector.hpp"
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <charconv>
 
 namespace search {
 
@@ -14,7 +15,7 @@ IntegerAttribute::IntegerAttribute(const vespalib::string & name, const Config &
 {
 }
 
-IntegerAttribute::~IntegerAttribute() { }
+IntegerAttribute::~IntegerAttribute() = default;
 
 uint32_t IntegerAttribute::clearDoc(DocId doc)
 {
@@ -27,14 +28,23 @@ uint32_t IntegerAttribute::clearDoc(DocId doc)
     return removed;
 }
 
+namespace {
+
+// TODO Move to vespalib::to_string and template on value type
+vespalib::string
+to_string(int64_t v) {
+    char tmp[32];
+    auto res = std::to_chars(tmp, tmp + sizeof(tmp) - 1, v, 10);
+    return vespalib::string(tmp, res.ptr - tmp);
+}
+
+}
 uint32_t IntegerAttribute::get(DocId doc, WeightedString * s, uint32_t sz) const
 {
     WeightedInt * v = new WeightedInt[sz];
     unsigned num(static_cast<const AttributeVector *>(this)->get(doc, v, sz));
     for(unsigned i(0); i < num; i++) {
-        char tmp[32];
-        snprintf(tmp, sizeof(tmp), "%" PRId64, v[i].getValue());
-        s[i] = WeightedString(tmp, v[i].getWeight());
+        s[i] = WeightedString(to_string(v[i].getValue()), v[i].getWeight());
     }
     delete [] v;
     return num;
@@ -49,8 +59,15 @@ uint32_t IntegerAttribute::get(DocId doc, WeightedConstChar * v, uint32_t sz) co
 }
 const char *
 IntegerAttribute::getString(DocId doc, char * s, size_t sz) const {
-    largeint_t v = getInt(doc);
-    snprintf(s, sz, "%" PRId64, v);
+    if (sz > 1) {
+        largeint_t v = getInt(doc);
+        auto res = std::to_chars(s, s + sz - 1, v, 10);
+        if (res.ec == std::errc()) {
+            res.ptr[0] = 0;
+        } else {
+            s[0] = 0;
+        }
+    }
     return s;
 }
 uint32_t IntegerAttribute::get(DocId doc, vespalib::string * s, uint32_t sz) const
@@ -58,9 +75,7 @@ uint32_t IntegerAttribute::get(DocId doc, vespalib::string * s, uint32_t sz) con
     largeint_t * v = new largeint_t[sz];
     unsigned num(static_cast<const AttributeVector *>(this)->get(doc, v, sz));
     for(unsigned i(0); i < num; i++) {
-        char tmp[32];
-        snprintf(tmp, sizeof(tmp), "%" PRId64, v[i]);
-        s[i] = tmp;
+        s[i] = to_string(v[i]);
     }
     delete [] v;
     return num;

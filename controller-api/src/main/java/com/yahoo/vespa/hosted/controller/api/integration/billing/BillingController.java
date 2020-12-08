@@ -16,6 +16,8 @@ public interface BillingController {
 
     PlanId getPlan(TenantName tenant);
 
+    List<TenantName> tenantsWithPlan(List<TenantName> existing, PlanId planId);
+
     String getPlanDisplayName(PlanId planId);
 
     Quota getQuota(TenantName tenant);

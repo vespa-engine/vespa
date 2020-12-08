@@ -43,13 +43,13 @@ private:
     Selector                 _selector;       // I/O event generator
     FNET_PacketQueue_NoLock  _queue;          // outer event queue
     FNET_PacketQueue_NoLock  _myQueue;        // inner event queue
-    std::mutex               _lock;           // used for synchronization
-    std::condition_variable  _cond;           // used for synchronization
+    std::mutex               _lock;           // protects the Q
+    std::mutex               _shutdownLock;   // used for synchronization during shutdown
+    std::condition_variable  _shutdownCond;   // used for synchronization during shutdown
     std::recursive_mutex     _pseudo_thread;  // used after transport thread has shut down
-    bool                     _started;        // event loop started ?
+    std::atomic<bool>        _started;        // event loop started ?
     std::atomic<bool>        _shutdown;       // should stop event loop ?
     bool                     _finished;       // event loop stopped ?
-    bool                     _waitFinished;   // someone is waiting for _finished
 
     /**
      * Add an IOComponent to the list of components. This operation is
@@ -171,8 +171,6 @@ private:
     bool IsShutDown() const noexcept {
         return _shutdown.load(std::memory_order_relaxed);
     }
-
-    void handle_wakeup_events();
 
 public:
     FNET_TransportThread(const FNET_TransportThread &) = delete;
@@ -404,8 +402,8 @@ public:
     void WaitFinished();
 
 
-    // Empty selector call-back for selector wakeup
-    void handle_wakeup() { }
+    // selector call-back for wakeup events
+    void handle_wakeup();
 
     // selector call-back for io-events
     void handle_event(FNET_IOComponent &ctx, bool read, bool write);

@@ -54,7 +54,7 @@ public:
 
         MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd, const document::Bucket &bId);
         MessageEntry(MessageEntry &&) noexcept ;
-        MessageEntry(const MessageEntry &);
+        MessageEntry(const MessageEntry &) noexcept;
         MessageEntry & operator = (const MessageEntry &) = delete;
         ~MessageEntry();
 

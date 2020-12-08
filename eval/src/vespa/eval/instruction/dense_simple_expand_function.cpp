@@ -49,7 +49,7 @@ void my_simple_expand_op(State &state, uint64_t param) {
         apply_op2_vec_num(dst, inner_cells.begin(), outer_cell, inner_cells.size(), my_op);
         dst += inner_cells.size();
     }
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(params.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(params.result_type, TypedCells(dst_cells)));
 }
 
 //-----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ DenseSimpleExpandFunction::DenseSimpleExpandFunction(const ValueType &result_typ
 DenseSimpleExpandFunction::~DenseSimpleExpandFunction() = default;
 
 Instruction
-DenseSimpleExpandFunction::compile_self(EngineOrFactory, Stash &stash) const
+DenseSimpleExpandFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     size_t result_size = result_type().dense_subspace_size();
     const ExpandParams &params = stash.create<ExpandParams>(result_type(), result_size, function());

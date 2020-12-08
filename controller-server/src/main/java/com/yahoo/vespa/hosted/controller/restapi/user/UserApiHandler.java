@@ -22,8 +22,11 @@ import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -34,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.security.PublicKey;
@@ -65,13 +69,15 @@ public class UserApiHandler extends LoggingRequestHandler {
     private final UserManagement users;
     private final Controller controller;
     private final BooleanFlag enable_public_signup_flow;
+    private final IntFlag maxTrialTenants;
 
     @Inject
     public UserApiHandler(Context parentCtx, UserManagement users, Controller controller, FlagSource flagSource) {
         super(parentCtx);
         this.users = users;
         this.controller = controller;
-        this.enable_public_signup_flow = Flags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
+        this.enable_public_signup_flow = PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
+        this.maxTrialTenants = Flags.MAX_TRIAL_TENANTS.bindTo(flagSource);
     }
 
     @Override
@@ -159,6 +165,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         root.setBool("isCd", controller.system().isCd());
         root.setBool(enable_public_signup_flow.id().toString(),
                 enable_public_signup_flow.with(FetchVector.Dimension.CONSOLE_USER_EMAIL, user.email()).value());
+        root.setBool("hasTrialCapacity", hasTrialCapacity());
 
         toSlime(root.setObject("user"), user);
 
@@ -340,6 +347,13 @@ public class UserApiHandler extends LoggingRequestHandler {
         Role role = Roles.toRole(TenantName.from(tenantName), ApplicationName.from(applicationName), roleName);
         users.removeUsers(role, List.of(user));
         return new MessageResponse(user + " is no longer a member of " + role);
+    }
+
+    private boolean hasTrialCapacity() {
+        if (! controller.system().isPublic()) return true;
+        var existing = controller.tenants().asList().stream().map(Tenant::name).collect(Collectors.toList());
+        var trialTenants = controller.serviceRegistry().billingController().tenantsWithPlan(existing, PlanId.from("trial"));
+        return maxTrialTenants.value() < 0 || trialTenants.size() < maxTrialTenants.value();
     }
 
     private static Inspector bodyInspector(HttpRequest request) {

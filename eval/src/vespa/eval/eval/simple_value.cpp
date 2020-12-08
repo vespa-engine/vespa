@@ -2,6 +2,8 @@
 
 #include "simple_value.h"
 #include "inline_operation.h"
+#include "value_codec.h"
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -201,6 +203,24 @@ SimpleValue::create_view(const std::vector<size_t> &dims) const
     } else {
         return std::make_unique<SimpleFilterView>(_index, dims, _num_mapped_dims);
     }
+}
+
+std::unique_ptr<Value>
+SimpleValue::from_spec(const TensorSpec &spec)
+{
+    return value_from_spec(spec, SimpleValueBuilderFactory::get());
+}
+
+std::unique_ptr<Value>
+SimpleValue::from_value(const Value& value)
+{
+    return from_spec(spec_from_value(value));
+}
+
+std::unique_ptr<Value>
+SimpleValue::from_stream(nbostream &stream)
+{
+    return decode_value(stream, SimpleValueBuilderFactory::get());
 }
 
 //-----------------------------------------------------------------------------

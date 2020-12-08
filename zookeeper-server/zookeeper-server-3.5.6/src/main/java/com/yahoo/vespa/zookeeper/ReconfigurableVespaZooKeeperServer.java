@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 
+import java.nio.file.Path;
+
 /**
  * Starts or reconfigures zookeeper cluster
  *
@@ -14,7 +16,11 @@ public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implem
 
     @Inject
     public ReconfigurableVespaZooKeeperServer(Reconfigurer reconfigurer, ZookeeperServerConfig zookeeperServerConfig) {
-        reconfigurer.startOrReconfigure(zookeeperServerConfig);
+        reconfigurer.startOrReconfigure(zookeeperServerConfig, this);
+    }
+
+    public void start(Path configFilePath) {
+        new ZooKeeperServer().start(configFilePath);
     }
 
 }

@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value.h"
+#include "value_codec.h"
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace vespalib {
 namespace eval {
@@ -61,6 +63,14 @@ ValueType ScalarValue<T>::_type = ValueType::make_type(get_cell_type<T>(), {});
 
 template class ScalarValue<double>;
 template class ScalarValue<float>;
+
+std::unique_ptr<Value>
+ValueBuilderFactory::copy(const Value &value) const
+{
+    nbostream stream;
+    encode_value(value, stream);
+    return decode_value(stream, *this);
+}
 
 } // namespace vespalib::eval
 } // namespace vespalib

@@ -26,6 +26,7 @@ import java.util.Set;
  *
  * @author hakonhall
  */
+@SuppressWarnings("deprecation")
 public class TestProperties implements ModelContext.Properties, ModelContext.FeatureFlags {
 
     private boolean multitenant = false;
@@ -52,6 +53,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int contentNodeBucketDBStripeBits = 0;
     private int mergeChunkSize = 0x400000 - 0x1000; // 4M -4k
     private double feedConcurrency = 0.5;
+    private boolean enableAutomaticReindexing = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -86,6 +88,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
     @Override public int mergeChunkSize() { return mergeChunkSize; }
     @Override public double feedConcurrency() { return feedConcurrency; }
+    @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -196,6 +199,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         this.useAccessControlTlsHandshakeClientAuth = useAccessControlTlsHandshakeClientAuth;
         return this;
     }
+
+    public TestProperties enableAutomaticReindexing(boolean enabled) { this.enableAutomaticReindexing = enabled; return this; }
 
     public static class Spec implements ConfigServerSpec {
 

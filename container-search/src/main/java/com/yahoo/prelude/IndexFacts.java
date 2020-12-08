@@ -333,10 +333,8 @@ public class IndexFacts {
         /**
          * Returns the index for this name.
          *
-         * @param indexName the name of the index. If this is null or empty the index
-         *                  named "default" is returned
-         * @return the index best matching the input parameters or the nullIndex
-         *         (never null) if none is found
+         * @param indexName the name of the index. If this is null or empty the index named "default" is returned
+         * @return the index best matching the input parameters or the null Index (never null) if none is found
          */
         public Index getIndex(String indexName) {
             return IndexFacts.this.getIndexFromDocumentTypes(indexName, documentTypes);

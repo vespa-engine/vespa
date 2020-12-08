@@ -57,7 +57,7 @@ public class ApplicationTest {
                                               ApplicationName.from("foobar"), InstanceName.defaultName());
         ServerCache cache = new ServerCache();
         Version vespaVersion = new Version(1, 2, 3);
-        Application app = new Application(new ModelStub(), cache, 1337L, false, vespaVersion, MetricUpdater.createTestUpdater(), appId);
+        Application app = new Application(new ModelStub(), cache, 1337L, vespaVersion, MetricUpdater.createTestUpdater(), appId);
         assertThat(app.getApplicationGeneration(), is(1337L));
         assertNotNull(app.getModel());
         assertThat(app.getCache(), is(cache));
@@ -76,7 +76,7 @@ public class ApplicationTest {
         ServerCache cache = createCacheAndAddContent();
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(testApp));
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("foo").build();
-        handler = new Application(model, cache, 1L, false, new Version(1, 2, 3),
+        handler = new Application(model, cache, 1L, new Version(1, 2, 3),
                                   new MetricUpdater(Metrics.createTestMetrics(), Metrics.createDimensions(applicationId)), applicationId);
     }
 

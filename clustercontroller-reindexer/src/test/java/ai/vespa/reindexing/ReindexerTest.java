@@ -53,7 +53,7 @@ class ReindexerTest {
 
     @BeforeEach
     void setUp() {
-        database = new ReindexingCurator(new MockCurator(), "cluster", manager, Duration.ofMillis(1));
+        database = new ReindexingCurator(new MockCurator(), manager, Duration.ofMillis(1));
     }
 
     @Test
@@ -70,7 +70,7 @@ class ReindexerTest {
     @Test
     void throwsWhenLockHeldElsewhere() throws InterruptedException, ExecutionException {
         Reindexer reindexer = new Reindexer(cluster, Map.of(music, Instant.EPOCH), database, failIfCalled, metric, clock);
-        Executors.newSingleThreadExecutor().submit(database::lockReindexing).get();
+        Executors.newSingleThreadExecutor().submit(() -> database.lockReindexing("cluster")).get();
         assertThrows(ReindexingLockException.class, reindexer::reindex);
     }
 
@@ -102,30 +102,42 @@ class ReindexerTest {
         // Since "music" is a new document type, it is stored as just reindexed, and nothing else happens.
         new Reindexer(cluster, Map.of(music, Instant.EPOCH), database, failIfCalled, metric, clock).reindex();
         Reindexing reindexing = Reindexing.empty().with(music, Status.ready(Instant.EPOCH).running().successful(Instant.EPOCH));
-        assertEquals(reindexing, database.readReindexing());
+        assertEquals(reindexing, database.readReindexing("cluster"));
         assertEquals(Map.of("reindexing.progress", Map.of(Map.of("documenttype", "music",
                                                                  "clusterid", "cluster",
                                                                  "state", "successful"),
-                                                          1.0)),
+                                                          1.0,
+                                                          Map.of("documenttype", "music",
+                                                                 "clusterid", "cluster",
+                                                                 "state", "pending"),
+                                                          -1.0,
+                                                          Map.of("documenttype", "music",
+                                                                 "clusterid", "cluster",
+                                                                 "state", "failed"),
+                                                          -1.0,
+                                                          Map.of("documenttype", "music",
+                                                                 "clusterid", "cluster",
+                                                                 "state", "running"),
+                                                          -1.0)),
                      metric.metrics());
 
         // New config tells reindexer to reindex "music" documents no earlier than at 10 millis after EPOCH, which isn't yet.
         // Nothing happens, since it's not yet time. This isn't supposed to happen unless high clock skew.
         clock.advance(Duration.ofMillis(5));
         new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(10)), database, failIfCalled, metric, clock).reindex();
-        assertEquals(reindexing, database.readReindexing());
+        assertEquals(reindexing, database.readReindexing("cluster"));
 
         // It's time to reindex the "music" documents — let this complete successfully.
         clock.advance(Duration.ofMillis(10));
         AtomicBoolean shutDown = new AtomicBoolean();
         Executor executor = Executors.newSingleThreadExecutor();
         new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(10)), database, parameters -> {
-            database.writeReindexing(Reindexing.empty()); // Wipe database to verify we write data from reindexer.
+            database.writeReindexing(Reindexing.empty(), "cluster"); // Wipe database to verify we write data from reindexer.
             executor.execute(() -> parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "OK"));
             return () -> shutDown.set(true);
         }, metric, clock).reindex();
         reindexing = reindexing.with(music, Status.ready(clock.instant()).running().successful(clock.instant()));
-        assertEquals(reindexing, database.readReindexing());
+        assertEquals(reindexing, database.readReindexing("cluster"));
         assertTrue(shutDown.get(), "Session was shut down");
 
         // One more reindexing, this time shut down before visit completes, but after progress is reported.
@@ -134,7 +146,7 @@ class ReindexerTest {
         shutDown.set(false);
         AtomicReference<Reindexer> aborted = new AtomicReference<>();
         aborted.set(new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(20)), database, parameters -> {
-            database.writeReindexing(Reindexing.empty()); // Wipe database to verify we write data from reindexer.
+            database.writeReindexing(Reindexing.empty(), "cluster"); // Wipe database to verify we write data from reindexer.
             parameters.getControlHandler().onProgress(new ProgressToken());
             aborted.get().shutdown();
             return () -> {
@@ -144,29 +156,29 @@ class ReindexerTest {
         }, metric, clock));
         aborted.get().reindex();
         reindexing = reindexing.with(music, Status.ready(clock.instant()).running().progressed(new ProgressToken()).halted());
-        assertEquals(reindexing, database.readReindexing());
+        assertEquals(reindexing, database.readReindexing("cluster"));
         assertTrue(shutDown.get(), "Session was shut down");
-        assertEquals(Map.of("reindexing.progress", Map.of(Map.of("documenttype", "music",
-                                                                 "clusterid", "cluster",
-                                                                 "state", "pending"),
-                                                          1.0)), // new ProgressToken() is 100% done.
-                     metric.metrics());
+        assertEquals(1.0, // new ProgressToken() is 100% done.
+                     metric.metrics().get("reindexing.progress")
+                           .get(Map.of("documenttype", "music",
+                                       "clusterid", "cluster",
+                                       "state", "pending")));
 
         // Last reindexing fails.
         clock.advance(Duration.ofMillis(10));
         shutDown.set(false);
         new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(30)), database, parameters -> {
-            database.writeReindexing(Reindexing.empty()); // Wipe database to verify we write data from reindexer.
+            database.writeReindexing(Reindexing.empty(), "cluster"); // Wipe database to verify we write data from reindexer.
             executor.execute(() -> parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "Error"));
             return () -> shutDown.set(true);
         }, metric, clock).reindex();
         reindexing = reindexing.with(music, Status.ready(clock.instant()).running().failed(clock.instant(), "Error"));
-        assertEquals(reindexing, database.readReindexing());
+        assertEquals(reindexing, database.readReindexing("cluster"));
         assertTrue(shutDown.get(), "Session was shut down");
 
         // Document type is ignored in next run, as it has failed fatally.
         new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(30)), database, failIfCalled, metric, clock).reindex();
-        assertEquals(reindexing, database.readReindexing());
+        assertEquals(reindexing, database.readReindexing("cluster"));
     }
 
 }

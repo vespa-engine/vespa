@@ -18,8 +18,10 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -46,6 +48,7 @@ public class ApplicationPackageValidator {
         validateSteps(applicationPackage.deploymentSpec());
         validateEndpointRegions(applicationPackage.deploymentSpec());
         validateEndpointChange(application, applicationPackage, instant);
+        validateCompactedEndpoint(applicationPackage);
         validateSecurityClientsPem(applicationPackage);
     }
 
@@ -96,6 +99,25 @@ public class ApplicationPackageValidator {
                                                                                                    instance.name(),
                                                                                                    applicationPackage,
                                                                                                    instant));
+    }
+
+    /** Verify that compactable endpoint parts (instance aname nd endpoint ID) do not clash */
+    private void validateCompactedEndpoint(ApplicationPackage applicationPackage) {
+        Map<List<String>, InstanceEndpoint> instanceEndpoints = new HashMap<>();
+        for (var instanceSpec : applicationPackage.deploymentSpec().instances()) {
+            for (var endpoint : instanceSpec.endpoints()) {
+                List<String> nonCompactableIds = nonCompactableIds(instanceSpec.name(), endpoint);
+                InstanceEndpoint instanceEndpoint = new InstanceEndpoint(instanceSpec.name(), endpoint.endpointId());
+                InstanceEndpoint existingEndpoint = instanceEndpoints.get(nonCompactableIds);
+                if (existingEndpoint != null) {
+                    throw new IllegalArgumentException("Endpoint with ID '" + endpoint.endpointId() + "' in instance '"
+                                                       + instanceSpec.name().value() +
+                                                       "' clashes with endpoint '" + existingEndpoint.endpointId +
+                                                       "' in instance '" + existingEndpoint.instance + "'");
+                }
+                instanceEndpoints.put(nonCompactableIds, instanceEndpoint);
+            }
+        }
     }
 
     /** Verify changes to endpoint configuration by comparing given application package to the existing one, if any */
@@ -159,6 +181,30 @@ public class ApplicationPackageValidator {
                                   .collect(Collectors.toSet());
             return new Endpoint(Optional.of(EndpointId.defaultId().id()), globalServiceId, regions);
         });
+    }
+
+    /** Returns a list of the non-compactable IDs of given instance and endpoint */
+    private static List<String> nonCompactableIds(InstanceName instance, Endpoint endpoint) {
+        List<String> ids = new ArrayList<>(2);
+        if (!instance.isDefault()) {
+            ids.add(instance.value());
+        }
+        if (!"default".equals(endpoint.endpointId())) {
+            ids.add(endpoint.endpointId());
+        }
+        return ids;
+    }
+
+    private static class InstanceEndpoint {
+
+        private final InstanceName instance;
+        private final String endpointId;
+
+        public InstanceEndpoint(InstanceName instance, String endpointId) {
+            this.instance = instance;
+            this.endpointId = endpointId;
+        }
+
     }
 
 }

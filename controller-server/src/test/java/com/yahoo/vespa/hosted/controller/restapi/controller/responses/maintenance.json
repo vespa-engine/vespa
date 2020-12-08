@@ -31,9 +31,6 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
-      "name": "HostRepairMaintainer"
-    },
-    {
       "name": "HostSwitchUpdater"
     },
     {

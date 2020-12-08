@@ -45,8 +45,7 @@ public class QueryValidator extends Searcher {
         public boolean visit(Item item) {
             if (item instanceof HasIndexItem) {
                 String indexName = ((HasIndexItem)item).getIndexName();
-                Index index = session.getIndex(indexName);
-                if (index != null && index.isTensor())
+                if (session.getIndex(indexName).isTensor())
                     throw new IllegalArgumentException("Cannot search '" + indexName + "': It is a tensor field");
             }
             return true;

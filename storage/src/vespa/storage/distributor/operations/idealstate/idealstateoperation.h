@@ -182,7 +182,7 @@ public:
      * Returns true if we are blocked to start this operation given
      * the pending messages.
      */
-    bool isBlocked(const PendingMessageTracker& pendingMessages) const override;
+    bool isBlocked(const PendingMessageTracker& pendingMessages, const OperationSequencer&) const override;
 
     /**
        Returns the priority we should send messages with.
@@ -235,8 +235,12 @@ protected:
      * operations to other nodes for this bucket, these will not be part of
      * the set of messages checked.
      */
-    bool checkBlock(const document::Bucket &bucket, const PendingMessageTracker& tracker) const;
-    bool checkBlockForAllNodes(const document::Bucket &bucket, const PendingMessageTracker& tracker) const;
+    bool checkBlock(const document::Bucket& bucket,
+                    const PendingMessageTracker& tracker,
+                    const OperationSequencer&) const;
+    bool checkBlockForAllNodes(const document::Bucket& bucket,
+                               const PendingMessageTracker& tracker,
+                               const OperationSequencer&) const;
 
 };
 

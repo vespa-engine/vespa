@@ -4,14 +4,14 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <ostream>
 #include <cassert>
 
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using namespace vespalib::xml;
@@ -51,7 +51,7 @@ TensorFieldValue::TensorFieldValue(const TensorFieldValue &rhs)
       _altered(true)
 {
     if (rhs._tensor) {
-        _tensor = EngineOrFactory::get().copy(*rhs._tensor);
+        _tensor = FastValueBuilderFactory::get().copy(*rhs._tensor);
     }
 }
 
@@ -78,7 +78,7 @@ TensorFieldValue::operator=(const TensorFieldValue &rhs)
         if (&_dataType == &rhs._dataType || !rhs._tensor ||
             _dataType.isAssignableType(rhs._tensor->type())) {
             if (rhs._tensor) {
-                _tensor = EngineOrFactory::get().copy(*rhs._tensor);
+                _tensor = FastValueBuilderFactory::get().copy(*rhs._tensor);
             } else {
                 _tensor.reset();
             }
@@ -109,7 +109,7 @@ TensorFieldValue::make_empty_if_not_existing()
 {
     if (!_tensor) {
         TensorSpec empty_spec(_dataType.getTensorType().to_spec());
-        _tensor = EngineOrFactory::get().from_spec(empty_spec);
+        _tensor = value_from_spec(empty_spec, FastValueBuilderFactory::get());
     }
 }
 
@@ -157,7 +157,7 @@ TensorFieldValue::print(std::ostream& out, bool verbose,
     (void) indent;
     out << "{TensorFieldValue: ";
     if (_tensor) {
-        out << EngineOrFactory::get().to_spec(*_tensor).to_string();
+        out << spec_from_value(*_tensor).to_string();
     } else {
         out << "null";
     }
@@ -228,9 +228,8 @@ TensorFieldValue::compare(const FieldValue &other) const
     // Compare the actual tensors by converting to TensorSpec strings.
     // TODO: this can be very slow, check if it might be used for anything
     // performance-critical.
-    auto engine = EngineOrFactory::get();
-    auto lhs_spec = engine.to_spec(*_tensor).to_string();
-    auto rhs_spec = engine.to_spec(*rhs._tensor).to_string();
+    auto lhs_spec = spec_from_value(*_tensor).to_string();
+    auto rhs_spec = spec_from_value(*rhs._tensor).to_string();
     return lhs_spec.compare(rhs_spec);
 }
 

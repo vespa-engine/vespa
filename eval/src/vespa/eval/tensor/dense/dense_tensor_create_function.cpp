@@ -7,12 +7,12 @@
 
 namespace vespalib::tensor {
 
+using eval::DenseValueView;
 using eval::Value;
 using eval::DoubleValue;
 using eval::ValueType;
 using eval::TensorSpec;
 using eval::TensorFunction;
-using eval::TensorEngine;
 using Child = eval::TensorFunction::Child;
 using eval::as;
 using namespace eval::tensor_function;
@@ -28,7 +28,7 @@ void my_tensor_create_op(eval::InterpretedFunction::State &state, uint64_t param
         cells[pending_cells] = (CT) state.peek(0).as_double();
         state.stack.pop_back();
     }
-    const Value &result = state.stash.create<DenseTensorView>(self.result_type, TypedCells(cells)); 
+    const Value &result = state.stash.create<DenseValueView>(self.result_type, TypedCells(cells)); 
     state.stack.emplace_back(result);
 }
 
@@ -69,7 +69,7 @@ DenseTensorCreateFunction::push_children(std::vector<Child::CREF> &target) const
 }
 
 eval::InterpretedFunction::Instruction
-DenseTensorCreateFunction::compile_self(eval::EngineOrFactory, Stash &) const
+DenseTensorCreateFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     using MyTypify = eval::TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorCreateOp>(result_type().cell_type());

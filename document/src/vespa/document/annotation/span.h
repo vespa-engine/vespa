@@ -24,11 +24,11 @@ public:
     void accept(SpanTreeVisitor &visitor) const override;
 };
 
-inline bool operator==(const Span &span1, const Span &span2) {
+inline bool operator==(const Span &span1, const Span &span2) noexcept {
     return span1.from() == span2.from() && span1.length() == span2.length();
 }
 
-inline bool operator<(const Span &span1, const Span &span2) {
+inline bool operator<(const Span &span1, const Span &span2) noexcept {
     if (span1.from() != span2.from()) {
         return span1.from() < span2.from();
     } else {

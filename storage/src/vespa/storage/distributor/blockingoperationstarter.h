@@ -7,13 +7,16 @@
 namespace storage::distributor {
 
 class PendingMessageTracker;
+class OperationSequencer;
 
 class BlockingOperationStarter : public OperationStarter
 {
 public:
     BlockingOperationStarter(PendingMessageTracker& messageTracker,
+                             OperationSequencer& operation_sequencer,
                              OperationStarter& starterImpl)
         : _messageTracker(messageTracker),
+          _operation_sequencer(operation_sequencer),
           _starterImpl(starterImpl)
     {}
     BlockingOperationStarter(const BlockingOperationStarter&) = delete;
@@ -22,7 +25,8 @@ public:
     bool start(const std::shared_ptr<Operation>& operation, Priority priority) override;
 private:
     PendingMessageTracker& _messageTracker;
-    OperationStarter& _starterImpl;
+    OperationSequencer&    _operation_sequencer;
+    OperationStarter&      _starterImpl;
 };
 
 }

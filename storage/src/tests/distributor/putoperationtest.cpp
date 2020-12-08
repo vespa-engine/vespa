@@ -3,6 +3,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
@@ -72,8 +73,8 @@ public:
     }
 
     void sendPut(std::shared_ptr<api::PutCommand> msg) {
-        op = std::make_unique<PutOperation>(getExternalOperationHandler(),
-                                            getExternalOperationHandler(),
+        op = std::make_unique<PutOperation>(distributor_component(),
+                                            distributor_component(),
                                             getDistributorBucketSpace(),
                                             msg,
                                             getDistributor().getMetrics().
@@ -102,7 +103,7 @@ document::BucketId
 PutOperationTest::createAndSendSampleDocument(vespalib::duration timeout) {
     auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1::"));
 
-    document::BucketId id = getExternalOperationHandler().getBucketId(doc->getId());
+    document::BucketId id = distributor_component().getBucketId(doc->getId());
     addIdealNodes(id);
 
     auto msg = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), doc, 0);
@@ -148,7 +149,7 @@ TEST_F(PutOperationTest, bucket_database_gets_special_entry_when_CreateBucket_se
     // Database updated before CreateBucket is sent
     ASSERT_EQ("BucketId(0x4000000000008f09) : "
               "node(idx=0,crc=0x1,docs=0/0,bytes=0/0,trusted=true,active=true,ready=false)",
-              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+              dumpBucket(distributor_component().getBucketId(doc->getId())));
 
     ASSERT_EQ("Create bucket => 0,Put => 0", _sender.getCommands(true));
 }
@@ -195,7 +196,7 @@ TEST_F(PutOperationTest, return_success_if_op_acked_on_all_replicas_even_if_buck
               "id:test:testdoctype1::, timestamp 100, size 45) => 1",
               _sender.getCommands(true, true));
 
-    getExternalOperationHandler().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x1dd4)), 0);
+    distributor_component().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x1dd4)), 0);
 
     // If we get an ACK from the backend nodes, the operation has been persisted OK.
     // Even if the bucket has been removed from the DB in the meantime (usually would
@@ -247,7 +248,7 @@ TEST_F(PutOperationTest, multiple_copies) {
               "node(idx=3,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
               "node(idx=2,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
               "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
-              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+              dumpBucket(distributor_component().getBucketId(doc->getId())));
 }
 
 TEST_F(PutOperationTest, multiple_copies_early_return_primary_required) {
@@ -400,7 +401,7 @@ TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
     // Manually shove sent messages into pending message tracker, since
     // this isn't done automatically.
     for (size_t i = 0; i < _sender.commands().size(); ++i) {
-        getExternalOperationHandler().getDistributor().getPendingMessageTracker()
+        distributor_component().getDistributor().getPendingMessageTracker()
             .insert(_sender.command(i));
     }
 
@@ -475,7 +476,7 @@ parseBucketInfoString(const std::string& nodeList) {
 std::string
 PutOperationTest::getNodes(const std::string& infoString) {
     Document::SP doc(createDummyDocument("test", "uri"));
-    document::BucketId bid(getExternalOperationHandler().getBucketId(doc->getId()));
+    document::BucketId bid(distributor_component().getBucketId(doc->getId()));
 
     BucketInfo entry = parseBucketInfoString(infoString);
 
@@ -483,7 +484,7 @@ PutOperationTest::getNodes(const std::string& infoString) {
 
     std::vector<uint16_t> targetNodes;
     std::vector<uint16_t> createNodes;
-    PutOperation::getTargetNodes(getExternalOperationHandler().getIdealNodes(makeDocumentBucket(bid)),
+    PutOperation::getTargetNodes(getDistributorBucketSpace().get_ideal_nodes(bid),
                                  targetNodes, createNodes, entry, 2);
 
     ost << "target( ";
@@ -517,7 +518,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_
     setupDistributor(Redundancy(3), NodeCount(3), "distributor:1 storage:3");
 
     Document::SP doc(createDummyDocument("test", "uri"));
-    document::BucketId bId = getExternalOperationHandler().getBucketId(doc->getId());
+    document::BucketId bId = distributor_component().getBucketId(doc->getId());
 
     addNodesToBucketDB(bId, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
 
@@ -534,14 +535,14 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_
 
     ASSERT_EQ("BucketId(0x4000000000000593) : "
               "node(idx=0,crc=0x7,docs=8/8,bytes=9/9,trusted=true,active=false,ready=false)",
-              dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
+              dumpBucket(distributor_component().getBucketId(doc->getId())));
 }
 
 TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending_state) {
     setupDistributor(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
 
     auto doc = createDummyDocument("test", "uri");
-    auto bucket = getExternalOperationHandler().getBucketId(doc->getId());
+    auto bucket = distributor_component().getBucketId(doc->getId());
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
     sendPut(createPut(doc));
 
@@ -575,7 +576,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending
 TEST_F(PutOperationTest, put_is_failed_with_busy_if_target_down_in_pending_state) {
     setupDistributor(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
     auto doc = createDummyDocument("test", "test");
-    auto bucket = getExternalOperationHandler().getBucketId(doc->getId());
+    auto bucket = distributor_component().getBucketId(doc->getId());
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
     getBucketDBUpdater().onSetSystemState(
             std::make_shared<api::SetSystemStateCommand>(
@@ -595,7 +596,7 @@ TEST_F(PutOperationTest, send_to_retired_nodes_if_no_up_nodes_available) {
                      "distributor:1 storage:2 .0.s:r .1.s:r");
     Document::SP doc(createDummyDocument("test", "uri"));
     document::BucketId bucket(
-            getExternalOperationHandler().getBucketId(doc->getId()));
+            distributor_component().getBucketId(doc->getId()));
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t");
 
     sendPut(createPut(doc));

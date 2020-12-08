@@ -10,7 +10,6 @@ vespa_add_library(vespaeval
     $<TARGET_OBJECTS:eval_streamed>
     $<TARGET_OBJECTS:eval_tensor>
     $<TARGET_OBJECTS:eval_tensor_dense>
-    $<TARGET_OBJECTS:eval_tensor_serialization>
     $<TARGET_OBJECTS:eval_tensor_sparse>
     INSTALL lib64
     DEPENDS
