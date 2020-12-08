@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -74,11 +73,12 @@ public class JRTConfigRequestV3Test {
     @Test
     public void emptypayload() {
         ConfigPayload payload = ConfigPayload.empty();
-        SlimeConfigResponse response = SlimeConfigResponse.fromConfigPayload(payload, 0, false, ConfigUtils.getMd5(payload));
-        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(),  false, response.getConfigMd5());
+        SlimeConfigResponse response = SlimeConfigResponse.fromConfigPayload(payload, 0, false, false, ConfigUtils.getMd5(payload));
+        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(), false,  false, response.getConfigMd5());
         assertTrue(clientReq.validateResponse());
         assertTrue(clientReq.hasUpdatedGeneration());
-        assertEquals("{}", clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString());
+        assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is("{}"));
+        assertFalse(clientReq.responseIsInternalRedeploy());
     }
 
     @Test
@@ -92,9 +92,11 @@ public class JRTConfigRequestV3Test {
 
     @Test
     public void next_request_when_error_is_correct() {
-        serverReq.addOkResponse(createPayload(), 999999, false, "newmd5");
+        serverReq.addOkResponse(createPayload(), 999999, false, false, "newmd5");
         serverReq.addErrorResponse(ErrorCode.OUTDATED_CONFIG, "error message");
+        System.out.println(serverReq);
         JRTClientConfigRequest next = clientReq.nextRequest(6);
+        System.out.println(next);
         // Should use config md5 and generation from the request, not the response
         // when there are errors
         assertThat(next.getRequestConfigMd5(), is(clientReq.getRequestConfigMd5()));
@@ -106,7 +108,7 @@ public class JRTConfigRequestV3Test {
         Payload payload = createPayload("vale");
         String md5 = ConfigUtils.getMd5(payload.getData());
         long generation = 4L;
-        serverReq.addOkResponse(payload, generation, false, md5);
+        serverReq.addOkResponse(payload, generation, false, false, md5);
         assertTrue(clientReq.validateResponse());
         assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is(payload.getData().toString()));
         assertThat(clientReq.getNewGeneration(), is(4L));
@@ -132,7 +134,7 @@ public class JRTConfigRequestV3Test {
     @Test
     public void generation_only_is_updated() {
         Payload payload = createPayload();
-        serverReq.addOkResponse(payload, 4L, false, ConfigUtils.getMd5(payload.getData()));
+        serverReq.addOkResponse(payload, 4L, false, false, ConfigUtils.getMd5(payload.getData()));
         boolean value = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), value);
         assertFalse(clientReq.hasUpdatedConfig());
@@ -142,7 +144,7 @@ public class JRTConfigRequestV3Test {
     @Test
     public void nothing_is_updated() {
         Payload payload = createPayload();
-        serverReq.addOkResponse(payload, currentGeneration, false, configMd5);
+        serverReq.addOkResponse(payload, currentGeneration, false, false, configMd5);
         assertTrue(clientReq.validateResponse());
         assertFalse(clientReq.hasUpdatedConfig());
         assertFalse(clientReq.hasUpdatedGeneration());
@@ -153,7 +155,7 @@ public class JRTConfigRequestV3Test {
         Payload payload = Payload.from(ConfigPayload.empty());
         clientReq = createReq(payload);
         serverReq = createReq(clientReq.getRequest());
-        serverReq.addOkResponse(payload, currentGeneration, false, ConfigUtils.getMd5(payload.getData()));
+        serverReq.addOkResponse(payload, currentGeneration, false, false, ConfigUtils.getMd5(payload.getData()));
         boolean val = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), val);
         assertFalse(clientReq.hasUpdatedConfig());
@@ -190,7 +192,7 @@ public class JRTConfigRequestV3Test {
             @Override
             public void createResponse() {
                 JRTServerConfigRequest serverRequest = createReq(request);
-                serverRequest.addOkResponse(createPayload(), currentGeneration, false, configMd5);
+                serverRequest.addOkResponse(createPayload(), currentGeneration, false, false, configMd5);
             }
         });
 

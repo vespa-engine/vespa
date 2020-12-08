@@ -29,8 +29,8 @@ public class ProtonMetricsRetrieverTest {
     public void getMetrics()  {
         ProtonMetricsRetrieverTest.MockModel mockModel = new MockModel(mockHosts());
         ProtonMetricsRetrieverTest.MockProtonMetricsRetriever mockMetricsRetriever = new MockProtonMetricsRetriever();
-        Application application = new Application(mockModel, null, 0,
-                                                  null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
+        Application application = new Application(mockModel, null, 0, false,
+                null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
         ProtonMetricsRetriever clusterMetricsRetriever = new ProtonMetricsRetriever(mockMetricsRetriever);
         clusterMetricsRetriever.getMetrics(application);

@@ -46,10 +46,11 @@ public final class ConfigRetriever {
     }
 
     public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
-                                     long leastGeneration) {
+                                     long leastGeneration,
+                                     boolean restartOnRedeploy) {
         // Loop until we get config.
         while (true) {
-            Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration);
+            Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration, restartOnRedeploy);
             if (maybeSnapshot.isPresent()) {
                 var configSnapshot = maybeSnapshot.get();
                 resetComponentSubscriberIfBootstrap(configSnapshot);
@@ -58,8 +59,13 @@ public final class ConfigRetriever {
         }
     }
 
+    ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys, long leastGeneration) {
+        return getConfigs(componentConfigKeys, leastGeneration, false);
+    }
+
     Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
-                                            long leastGeneration) {
+                                            long leastGeneration,
+                                            boolean restartOnRedeploy) {
         if (!Sets.intersection(componentConfigKeys, bootstrapKeys).isEmpty()) {
             throw new IllegalArgumentException(
                     "Component config keys [" + componentConfigKeys + "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
@@ -70,15 +76,17 @@ public final class ConfigRetriever {
         allKeys.addAll(bootstrapKeys);
         setupComponentSubscriber(allKeys);
 
-        return getConfigsOptional(leastGeneration);
+        return getConfigsOptional(leastGeneration, restartOnRedeploy);
     }
 
-    private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration) {
+    private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean restartOnRedeploy) {
         long newestComponentGeneration = componentSubscriber.waitNextGeneration();
         log.log(FINE, "getConfigsOptional: new component generation: " + newestComponentGeneration);
 
         // leastGeneration is only used to ensure newer generation when the previous generation was invalidated due to an exception
         if (newestComponentGeneration < leastGeneration) {
+            return Optional.empty();
+        } else if (restartOnRedeploy && !componentSubscriber.internalRedeploy()) { // Don't reconfig - wait for restart
             return Optional.empty();
         } else if (bootstrapSubscriber.generation() < newestComponentGeneration) {
             long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration();
