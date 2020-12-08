@@ -11,9 +11,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.tensor.partial_update");
 
+using namespace vespalib;
 using namespace vespalib::eval;
 
-namespace vespalib::tensor {
+namespace document {
 
 namespace {
 

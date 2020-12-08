@@ -23,7 +23,6 @@ using vespalib::IllegalStateException;
 using vespalib::make_string;
 using vespalib::eval::ValueType;
 using vespalib::eval::FastValueBuilderFactory;
-using vespalib::tensor::TensorPartialUpdate;
 
 using join_fun_t = double (*)(double, double);
 

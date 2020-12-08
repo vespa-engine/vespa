@@ -21,7 +21,6 @@ using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 using vespalib::eval::FastValueBuilderFactory;
-using vespalib::tensor::TensorPartialUpdate;
 
 namespace document {
 

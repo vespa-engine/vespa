@@ -20,7 +20,6 @@ using vespalib::make_string;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::FastValueBuilderFactory;
-using vespalib::tensor::TensorPartialUpdate;
 
 namespace document {
 

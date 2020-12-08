@@ -8,6 +8,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <optional>
 
+using namespace document;
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
@@ -58,7 +59,7 @@ Value::UP try_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_
     const auto &factory = SimpleValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    return tensor::TensorPartialUpdate::modify(*lhs, fun, *rhs, factory);
+    return TensorPartialUpdate::modify(*lhs, fun, *rhs, factory);
 }
 
 TensorSpec perform_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
