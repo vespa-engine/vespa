@@ -279,13 +279,6 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DYNAMIC_RECONFIGURATION_OF_ZOOKEEPER_CLUSTER = defineFeatureFlag(
-            "dynamic-reconfiguration-of-zookeeper-cluster", false,
-            List.of("hmusum"), "2020-12-02", "2021-02-01",
-            "Whether to allow dynamic reconfiguration of zookeeper cluster",
-            "Takes effect on next deployment",
-            APPLICATION_ID);
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
