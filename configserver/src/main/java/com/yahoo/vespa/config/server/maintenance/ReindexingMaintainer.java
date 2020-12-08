@@ -35,8 +35,6 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     /** Timeout per service when getting config generations. */
     private static final Duration timeout = Duration.ofSeconds(10);
 
-    static final Duration reindexingInterval = Duration.ofDays(28);
-
     private final ConfigConvergenceChecker convergence;
     private final Clock clock;
 
