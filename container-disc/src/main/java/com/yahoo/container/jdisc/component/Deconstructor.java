@@ -2,13 +2,10 @@
 package com.yahoo.container.jdisc.component;
 
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.Deconstructable;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
-
-import java.util.List;
 import java.util.logging.Level;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
@@ -35,7 +32,7 @@ public class Deconstructor implements ComponentDeconstructor {
 
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
-    final ScheduledExecutorService executor =
+    private final ScheduledExecutorService executor =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
 
     private final Duration delay;
@@ -45,8 +42,8 @@ public class Deconstructor implements ComponentDeconstructor {
     }
 
     @Override
-    public void deconstruct(List<Object> components, Collection<Bundle> bundles) {
-        Collection<Deconstructable> destructibleComponents = new ArrayList<>();
+    public void deconstruct(Collection<Object> components, Collection<Bundle> bundles) {
+        Collection<AbstractComponent> destructibleComponents = new ArrayList<>();
         for (var component : components) {
             if (component instanceof AbstractComponent) {
                 AbstractComponent abstractComponent = (AbstractComponent) component;
@@ -54,7 +51,10 @@ public class Deconstructor implements ComponentDeconstructor {
                     destructibleComponents.add(abstractComponent);
                 }
             } else if (component instanceof Provider) {
-                destructibleComponents.add((Deconstructable) component);
+                // TODO Providers should most likely be deconstructed similarly to AbstractComponent
+                log.log(FINE, () -> "Starting deconstruction of provider " + component);
+                ((Provider<?>) component).deconstruct();
+                log.log(FINE, () -> "Finished deconstruction of provider " + component);
             } else if (component instanceof SharedResource) {
                 log.log(FINE, () -> "Releasing container reference to resource " + component);
                 // No need to delay release, as jdisc does ref-counting
@@ -69,10 +69,10 @@ public class Deconstructor implements ComponentDeconstructor {
     private static class DestructComponentTask implements Runnable {
 
         private final Random random = new Random(System.nanoTime());
-        private final Collection<Deconstructable> components;
+        private final Collection<AbstractComponent> components;
         private final Collection<Bundle> bundles;
 
-        DestructComponentTask(Collection<Deconstructable> components, Collection<Bundle> bundles) {
+        DestructComponentTask(Collection<AbstractComponent> components, Collection<Bundle> bundles) {
             this.components = components;
             this.bundles = bundles;
         }
@@ -89,10 +89,10 @@ public class Deconstructor implements ComponentDeconstructor {
         @Override
         public void run() {
             for (var component : components) {
-                log.log(FINE, () -> "Starting deconstruction of " + component);
+                log.log(FINE, () -> "Starting deconstruction of component " + component);
                 try {
                     component.deconstruct();
-                    log.log(FINE, () -> "Finished deconstructing of " + component);
+                    log.log(FINE, () -> "Finished deconstructing of component " + component);
                 } catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
                     log.log(WARNING, "Exception thrown when deconstructing component " + component, e);
                 } catch (Error e) {

@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph;
 
-import com.yahoo.component.Deconstructable;
-
 /**
  * <p>Provides a component of the parameter type T.
  * If (and only if) dependency injection does not have a component of type T,
@@ -19,8 +17,9 @@ import com.yahoo.component.Deconstructable;
  * @author Tony Vaagenes
  * @author gjoranv
  */
-public interface Provider<T> extends Deconstructable {
+public interface Provider<T> {
 
     T get();
+    void deconstruct();
 
 }
