@@ -38,6 +38,9 @@ vespa_define_module(
     src/tests/serialization
     src/tests/struct_anno
     src/tests/tensor_fieldvalue
+    src/tests/tensor_fieldvalue/partial_add
+    src/tests/tensor_fieldvalue/partial_modify
+    src/tests/tensor_fieldvalue/partial_remove
 )
 
 install_java_artifact(document)

@@ -66,9 +66,6 @@ vespa_define_module(
     src/tests/tensor/dense_tensor_create_function
     src/tests/tensor/instruction_benchmark
     src/tests/tensor/onnx_wrapper
-    src/tests/tensor/partial_add
-    src/tests/tensor/partial_modify
-    src/tests/tensor/partial_remove
     src/tests/tensor/tensor_conformance
     src/tests/tensor/typed_cells
     src/tests/tensor/vector_from_doubles_function
@@ -82,6 +79,5 @@ vespa_define_module(
     src/vespa/eval/gp
     src/vespa/eval/instruction
     src/vespa/eval/streamed
-    src/vespa/eval/tensor
     src/vespa/eval/tensor/dense
 )

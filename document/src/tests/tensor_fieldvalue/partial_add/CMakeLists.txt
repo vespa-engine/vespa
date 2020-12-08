@@ -3,7 +3,7 @@ vespa_add_executable(eval_partial_add_test_app TEST
     SOURCES
     partial_add_test.cpp
     DEPENDS
-    vespaeval
+    document
     GTest::GTest
 )
 vespa_add_test(NAME eval_partial_add_test_app COMMAND eval_partial_add_test_app)

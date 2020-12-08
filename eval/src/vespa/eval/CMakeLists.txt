@@ -8,7 +8,6 @@ vespa_add_library(vespaeval
     $<TARGET_OBJECTS:eval_eval_value_cache>
     $<TARGET_OBJECTS:eval_gp>
     $<TARGET_OBJECTS:eval_streamed>
-    $<TARGET_OBJECTS:eval_tensor>
     $<TARGET_OBJECTS:eval_tensor_dense>
     INSTALL lib64
     DEPENDS

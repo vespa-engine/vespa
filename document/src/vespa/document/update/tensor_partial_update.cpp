@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "partial_update.h"
+#include "tensor_partial_update.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/typify.h>
