@@ -89,11 +89,6 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                     reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now)
                                            .withoutPending(cluster.getKey(), pending.getKey());
 
-        // Additionally, reindex the whole application with a fixed interval.
-        Instant nextPeriodicReindexing = reindexing.common().ready();
-        while ((nextPeriodicReindexing = nextPeriodicReindexing.plus(reindexingInterval)).isBefore(now))
-            reindexing = reindexing.withReady(nextPeriodicReindexing); // Deterministic timestamp.
-
         return reindexing;
     }
 
