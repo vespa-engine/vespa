@@ -35,8 +35,6 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     /** Timeout per service when getting config generations. */
     private static final Duration timeout = Duration.ofSeconds(10);
 
-    static final Duration reindexingInterval = Duration.ofDays(28);
-
     private final ConfigConvergenceChecker convergence;
     private final Clock clock;
 
@@ -88,11 +86,6 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                 if (pending.getValue() <= oldestGeneration.get())
                     reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now)
                                            .withoutPending(cluster.getKey(), pending.getKey());
-
-        // Additionally, reindex the whole application with a fixed interval.
-        Instant nextPeriodicReindexing = reindexing.common().ready();
-        while ((nextPeriodicReindexing = nextPeriodicReindexing.plus(reindexingInterval)).isBefore(now))
-            reindexing = reindexing.withReady(nextPeriodicReindexing); // Deterministic timestamp.
 
         return reindexing;
     }
