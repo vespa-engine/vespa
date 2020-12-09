@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  * @author mpolden
  * @author jonmv
  */
-public abstract class Maintainer implements Runnable, AutoCloseable {
+public abstract class Maintainer implements Runnable {
 
     protected final Logger log = Logger.getLogger(this.getClass().getName());
 
@@ -30,6 +31,7 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
     private final JobMetrics jobMetrics;
     private final Duration interval;
     private final ScheduledExecutorService service;
+    private AtomicBoolean shutDown = new AtomicBoolean();
 
     public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl, JobMetrics jobMetrics, List<String> clusterHostnames) {
         this(name, interval, staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames), jobControl, jobMetrics);
@@ -60,10 +62,16 @@ public abstract class Maintainer implements Runnable, AutoCloseable {
         log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }
 
-    @Override
+    /** Starts shutdown of this, typically by shutting down executors. {@link #close()} waits for shutdown to complete. */
+    public void shutdown() {
+        if ( ! shutDown.getAndSet(true))
+            service.shutdown();
+    }
+
+    /** Waits for shutdown to complete, calling {@link #shutdown} if this hasn't been done already. */
     public void close() {
+        shutdown();
         var timeout = Duration.ofSeconds(30);
-        service.shutdown();
         try {
             if (!service.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
                 log.log(Level.WARNING, "Maintainer " + name() + " failed to shutdown " +

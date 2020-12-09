@@ -56,9 +56,14 @@ public class JobRunner extends ControllerMaintainer {
     }
 
     @Override
+    public void shutdown() {
+        super.shutdown();
+        executors.shutdown();
+    }
+
+    @Override
     public void close() {
         super.close();
-        executors.shutdown();
         try {
             if ( ! executors.awaitTermination(10, TimeUnit.SECONDS)) {
                 executors.shutdownNow();

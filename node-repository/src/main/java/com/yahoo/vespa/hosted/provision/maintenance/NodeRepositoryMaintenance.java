@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
@@ -18,7 +19,8 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
-import java.util.Optional;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A component which sets up all the node repo maintenance jobs.
@@ -27,28 +29,7 @@ import java.util.Optional;
  */
 public class NodeRepositoryMaintenance extends AbstractComponent {
 
-    private final NodeFailer nodeFailer;
-    private final NodeHealthTracker nodeHealthTracker;
-    private final PeriodicApplicationMaintainer periodicApplicationMaintainer;
-    private final OperatorChangeApplicationMaintainer operatorChangeApplicationMaintainer;
-    private final ReservationExpirer reservationExpirer;
-    private final InactiveExpirer inactiveExpirer;
-    private final RetiredExpirer retiredExpirer;
-    private final FailedExpirer failedExpirer;
-    private final DirtyExpirer dirtyExpirer;
-    private final ProvisionedExpirer provisionedExpirer;
-    private final NodeRebooter nodeRebooter;
-    private final MetricsReporter metricsReporter;
-    private final InfrastructureProvisioner infrastructureProvisioner;
-    private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
-    private final Optional<DynamicProvisioningMaintainer> dynamicProvisioningMaintainer;
-    private final SpareCapacityMaintainer spareCapacityMaintainer;
-    private final OsUpgradeActivator osUpgradeActivator;
-    private final Rebalancer rebalancer;
-    private final NodeMetricsDbMaintainer nodeMetricsDbMaintainer;
-    private final AutoscalingMaintainer autoscalingMaintainer;
-    private final ScalingSuggestionsMaintainer scalingSuggestionsMaintainer;
-    private final SwitchRebalancer switchRebalancer;
+    private final List<Maintainer> maintainers = new CopyOnWriteArrayList<>();
 
     @SuppressWarnings("unused")
     @Inject
@@ -59,60 +40,45 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      MetricsFetcher metricsFetcher, MetricsDb metricsDb) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
-        nodeFailer = new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, orchestrator, defaults.throttlePolicy, metric);
-        nodeHealthTracker = new NodeHealthTracker(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric);
-        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository,
-                                                                          defaults.redeployMaintainerInterval, defaults.periodicRedeployInterval, flagSource);
-        operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval);
-        reservationExpirer = new ReservationExpirer(nodeRepository, defaults.reservationExpiry, metric);
-        retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry);
-        inactiveExpirer = new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, metric);
-        failedExpirer = new FailedExpirer(nodeRepository, zone, defaults.failedExpirerInterval, metric);
-        dirtyExpirer = new DirtyExpirer(nodeRepository, defaults.dirtyExpiry, metric);
-        provisionedExpirer = new ProvisionedExpirer(nodeRepository, defaults.provisionedExpiry, metric);
-        nodeRebooter = new NodeRebooter(nodeRepository, flagSource, metric);
-        metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval);
-        infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, defaults.infrastructureProvisionInterval, metric);
-        loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService(nodeRepository).map(lbService ->
-                new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric));
-        dynamicProvisioningMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric));
-        spareCapacityMaintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval);
-        osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval, metric);
-        rebalancer = new Rebalancer(deployer, nodeRepository, metric, defaults.rebalancerInterval);
-        nodeMetricsDbMaintainer = new NodeMetricsDbMaintainer(nodeRepository, metricsFetcher, metricsDb, defaults.nodeMetricsCollectionInterval, metric);
-        autoscalingMaintainer = new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval);
-        scalingSuggestionsMaintainer = new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric);
-        switchRebalancer = new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer);
+        PeriodicApplicationMaintainer periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval,
+                                                                                                        defaults.periodicRedeployInterval, flagSource);
+        InfrastructureProvisioner infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, defaults.infrastructureProvisionInterval, metric);
+        maintainers.add(periodicApplicationMaintainer);
+        maintainers.add(infrastructureProvisioner);
 
+        maintainers.add(new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, orchestrator, defaults.throttlePolicy, metric));
+        maintainers.add(new NodeHealthTracker(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric));
+        maintainers.add(new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval));
+        maintainers.add(new ReservationExpirer(nodeRepository, defaults.reservationExpiry, metric));
+        maintainers.add(new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry));
+        maintainers.add(new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, metric));
+        maintainers.add(new FailedExpirer(nodeRepository, zone, defaults.failedExpirerInterval, metric));
+        maintainers.add(new DirtyExpirer(nodeRepository, defaults.dirtyExpiry, metric));
+        maintainers.add(new ProvisionedExpirer(nodeRepository, defaults.provisionedExpiry, metric));
+        maintainers.add(new NodeRebooter(nodeRepository, flagSource, metric));
+        maintainers.add(new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval));
+        maintainers.add(new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval));
+        maintainers.add(new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval, metric));
+        maintainers.add(new Rebalancer(deployer, nodeRepository, metric, defaults.rebalancerInterval));
+        maintainers.add(new NodeMetricsDbMaintainer(nodeRepository, metricsFetcher, metricsDb, defaults.nodeMetricsCollectionInterval, metric));
+        maintainers.add(new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval));
+        maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric));
+        maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
+
+        provisionServiceProvider.getLoadBalancerService(nodeRepository)
+                                .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
+                                .ifPresent(maintainers::add);
+        provisionServiceProvider.getHostProvisioner()
+                                .map(hostProvisioner -> new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric))
+                                .ifPresent(maintainers::add);
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();
     }
 
     @Override
     public void deconstruct() {
-        nodeFailer.close();
-        nodeHealthTracker.close();
-        periodicApplicationMaintainer.close();
-        operatorChangeApplicationMaintainer.close();
-        reservationExpirer.close();
-        inactiveExpirer.close();
-        retiredExpirer.close();
-        failedExpirer.close();
-        dirtyExpirer.close();
-        nodeRebooter.close();
-        spareCapacityMaintainer.close();
-        provisionedExpirer.close();
-        metricsReporter.close();
-        infrastructureProvisioner.close();
-        loadBalancerExpirer.ifPresent(NodeRepositoryMaintainer::close);
-        dynamicProvisioningMaintainer.ifPresent(NodeRepositoryMaintainer::close);
-        osUpgradeActivator.close();
-        rebalancer.close();
-        nodeMetricsDbMaintainer.close();
-        autoscalingMaintainer.close();
-        scalingSuggestionsMaintainer.close();
-        switchRebalancer.close();
+        maintainers.forEach(Maintainer::shutdown);
+        maintainers.forEach(Maintainer::close);
     }
 
     private static class DefaultTimes {

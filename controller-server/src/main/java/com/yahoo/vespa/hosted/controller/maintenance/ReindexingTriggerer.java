@@ -65,7 +65,7 @@ public class ReindexingTriggerer extends ControllerMaintainer {
 
     static Duration offset(ApplicationId id, ZoneId zone) {
         double relativeOffset = ((id.serializedForm() + zone.value()).hashCode() & (-1 >>> 1)) / (double) (-1 >>> 1);
-        return Duration.ofMillis((long) (reindexingPeriod.toMillis() * (relativeOffset)));
+        return Duration.ofMillis((long) (reindexingPeriod.toMillis() * relativeOffset));
     }
 
     static boolean reindexingIsReady(ApplicationReindexing reindexing, Instant now) {

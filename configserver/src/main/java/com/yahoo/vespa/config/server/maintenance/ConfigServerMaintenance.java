@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.maintenance;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ConfigServerBootstrap;
@@ -13,6 +14,8 @@ import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Maintenance jobs of the config server.
@@ -24,11 +27,7 @@ import java.time.Duration;
  */
 public class ConfigServerMaintenance extends AbstractComponent {
 
-    private final TenantsMaintainer tenantsMaintainer;
-    private final FileDistributionMaintainer fileDistributionMaintainer;
-    private final SessionsMaintainer sessionsMaintainer;
-    private final ApplicationPackageMaintainer applicationPackageMaintainer;
-    private final ReindexingMaintainer reindexingMaintainer;
+    private final List<Maintainer> maintainers = new CopyOnWriteArrayList<>();
 
     @Inject
     public ConfigServerMaintenance(ConfigServerBootstrap configServerBootstrap,
@@ -38,20 +37,17 @@ public class ConfigServerMaintenance extends AbstractComponent {
                                    FlagSource flagSource,
                                    ConfigConvergenceChecker convergence) {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
-        tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, flagSource, defaults.defaultInterval, Clock.systemUTC());
-        fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource);
-        sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
-        applicationPackageMaintainer = new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource);
-        reindexingMaintainer = new ReindexingMaintainer(applicationRepository, curator, flagSource, Duration.ofMinutes(3), convergence, Clock.systemUTC());
+        maintainers.add(new TenantsMaintainer(applicationRepository, curator, flagSource, defaults.defaultInterval, Clock.systemUTC()));
+        maintainers.add(new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource));
+        maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
+        maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
+        maintainers.add(new ReindexingMaintainer(applicationRepository, curator, flagSource, Duration.ofMinutes(3), convergence, Clock.systemUTC()));
     }
 
     @Override
     public void deconstruct() {
-        fileDistributionMaintainer.close();
-        sessionsMaintainer.close();
-        applicationPackageMaintainer.close();
-        tenantsMaintainer.close();
-        reindexingMaintainer.close();
+        maintainers.forEach(Maintainer::shutdown);
+        maintainers.forEach(Maintainer::close);
     }
 
     /*

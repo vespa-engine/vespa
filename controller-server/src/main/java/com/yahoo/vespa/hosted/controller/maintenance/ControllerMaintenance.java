@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.HOURS;
@@ -30,7 +32,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 public class ControllerMaintenance extends AbstractComponent {
 
     private final Upgrader upgrader;
-    private final List<ControllerMaintainer> maintainers = new ArrayList<>();
+    private final List<Maintainer> maintainers = new CopyOnWriteArrayList<>();
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
@@ -68,7 +70,8 @@ public class ControllerMaintenance extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        maintainers.forEach(ControllerMaintainer::close);
+        maintainers.forEach(Maintainer::shutdown);
+        maintainers.forEach(Maintainer::close);
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
