@@ -36,6 +36,7 @@ vespa_define_module(
     src/tests/eval/value_cache
     src/tests/eval/value_codec
     src/tests/eval/value_type
+    src/tests/eval/typed_cells
     src/tests/gp/ponder_nov2017
     src/tests/instruction/dense_xw_product_function
     src/tests/instruction/generic_concat
@@ -53,22 +54,21 @@ vespa_define_module(
     src/tests/instruction/dense_tensor_peek_function
     src/tests/instruction/index_lookup_table
     src/tests/instruction/join_with_number
+    src/tests/instruction/dense_add_dimension_optimizer
+    src/tests/instruction/dense_fast_rename_optimizer
+    src/tests/instruction/dense_inplace_join_function
+    src/tests/instruction/dense_pow_as_map_optimizer
+    src/tests/instruction/dense_remove_dimension_optimizer
+    src/tests/instruction/dense_replace_type_function
+    src/tests/instruction/dense_simple_join_function
+    src/tests/instruction/dense_simple_map_function
+    src/tests/instruction/dense_single_reduce_function
+    src/tests/instruction/dense_tensor_create_function
+    src/tests/instruction/vector_from_doubles_function
     src/tests/streamed/value
-    src/tests/tensor/dense_add_dimension_optimizer
-    src/tests/tensor/dense_fast_rename_optimizer
-    src/tests/tensor/dense_inplace_join_function
-    src/tests/tensor/dense_pow_as_map_optimizer
-    src/tests/tensor/dense_remove_dimension_optimizer
-    src/tests/tensor/dense_replace_type_function
-    src/tests/tensor/dense_simple_join_function
-    src/tests/tensor/dense_simple_map_function
-    src/tests/tensor/dense_single_reduce_function
-    src/tests/tensor/dense_tensor_create_function
     src/tests/tensor/instruction_benchmark
     src/tests/tensor/onnx_wrapper
     src/tests/tensor/tensor_conformance
-    src/tests/tensor/typed_cells
-    src/tests/tensor/vector_from_doubles_function
 
     LIBS
     src/vespa/eval

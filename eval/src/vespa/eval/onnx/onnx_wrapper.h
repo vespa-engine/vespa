@@ -16,7 +16,7 @@
 
 namespace vespalib::eval { struct Value; }
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Wrapper around an ONNX model handeled by onnxruntime.
@@ -72,24 +72,24 @@ public:
 
     // how the model should be wired with inputs/outputs
     struct WireInfo {
-        std::vector<eval::ValueType>  vespa_inputs;
+        std::vector<ValueType>  vespa_inputs;
         std::vector<Onnx::TensorType> onnx_inputs;
         std::vector<Onnx::TensorType> onnx_outputs;
-        std::vector<eval::ValueType>  vespa_outputs;
+        std::vector<ValueType>  vespa_outputs;
         ~WireInfo();
     };
 
     // planning how we should wire the model based on input types
     class WirePlanner {
     private:
-        std::map<vespalib::string,eval::ValueType> _input_types;
+        std::map<vespalib::string,ValueType> _input_types;
         std::map<vespalib::string,size_t> _symbolic_sizes;
         std::set<size_t> _bound_unknown_sizes;
     public:
         WirePlanner() : _input_types(), _symbolic_sizes(), _bound_unknown_sizes() {}
         ~WirePlanner();
-        bool bind_input_type(const eval::ValueType &vespa_in, const TensorInfo &onnx_in);
-        eval::ValueType make_output_type(const TensorInfo &onnx_out) const;
+        bool bind_input_type(const ValueType &vespa_in, const TensorInfo &onnx_in);
+        ValueType make_output_type(const TensorInfo &onnx_out) const;
         WireInfo get_wire_info(const Onnx &model) const;
     };
 
@@ -98,7 +98,7 @@ public:
     // output values are pre-allocated and will not change
     class EvalContext {
     private:
-        using param_fun_t = void (*)(EvalContext &, size_t i, const eval::Value &);
+        using param_fun_t = void (*)(EvalContext &, size_t i, const Value &);
         using result_fun_t = void (*)(EvalContext &, size_t i);
 
         static Ort::AllocatorWithDefaultOptions _alloc;
@@ -108,15 +108,15 @@ public:
         Ort::MemoryInfo              _cpu_memory;
         std::vector<Ort::Value>      _param_values;
         std::vector<Ort::Value>      _result_values;
-        std::vector<eval::Value::UP> _results;
+        std::vector<Value::UP>       _results;
         std::vector<param_fun_t>     _param_binders;
         std::vector<std::pair<size_t,result_fun_t>> _result_converters;
 
         template <typename T>
-        static void adapt_param(EvalContext &self, size_t idx, const eval::Value &param);
+        static void adapt_param(EvalContext &self, size_t idx, const Value &param);
 
         template <typename SRC, typename DST>
-        static void convert_param(EvalContext &self, size_t idx, const eval::Value &param);
+        static void convert_param(EvalContext &self, size_t idx, const Value &param);
 
         template <typename SRC, typename DST>
         static void convert_result(EvalContext &self, size_t idx);
@@ -130,9 +130,9 @@ public:
         ~EvalContext();
         size_t num_params() const { return _param_values.size(); }
         size_t num_results() const { return _result_values.size(); }
-        void bind_param(size_t i, const eval::Value &param);
+        void bind_param(size_t i, const Value &param);
         void eval();
-        const eval::Value &get_result(size_t i) const;
+        const Value &get_result(size_t i) const;
     };
 
 private:

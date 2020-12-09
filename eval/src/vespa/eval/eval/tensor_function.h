@@ -21,9 +21,6 @@ namespace vespalib {
 class Stash;
 class ObjectVisitor;
 
-// TODO: remove this type injection when the 'tensor' namespace is removed
-namespace tensor { using ValueBuilderFactory = vespalib::eval::ValueBuilderFactory; }
-
 namespace eval {
 
 class Tensor;

@@ -6,7 +6,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
-using namespace vespalib::tensor;
 
 using vespalib::make_string_short::fmt;
 using TensorInfo = Onnx::TensorInfo;

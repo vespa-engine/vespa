@@ -12,7 +12,7 @@ namespace search::features {
  **/
 class OnnxBlueprint : public fef::Blueprint {
 private:
-    using Onnx = vespalib::tensor::Onnx;
+    using Onnx = vespalib::eval::Onnx;
     std::unique_ptr<Onnx> _model;
     Onnx::WireInfo _wire_info;
 public:

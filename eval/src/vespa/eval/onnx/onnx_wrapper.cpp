@@ -18,16 +18,10 @@ LOG_SETUP(".eval.onnx_wrapper");
 
 using vespalib::ArrayRef;
 using vespalib::ConstArrayRef;
-using vespalib::eval::CellType;
-using vespalib::eval::DenseValueView;
-using vespalib::eval::DenseCellsValue;
-using vespalib::eval::TypedCells;
-using vespalib::eval::TypifyCellType;
-using vespalib::eval::ValueType;
 
 using vespalib::make_string_short::fmt;
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 namespace {
 
@@ -72,23 +66,23 @@ struct CreateOnnxTensor {
 };
 
 struct CreateVespaTensorRef {
-    template <typename T> static eval::Value::UP invoke(const eval::ValueType &type_ref, Ort::Value &value) {
+    template <typename T> static Value::UP invoke(const ValueType &type_ref, Ort::Value &value) {
         size_t num_cells = type_ref.dense_subspace_size();
         ConstArrayRef<T> cells(value.GetTensorMutableData<T>(), num_cells);
         return std::make_unique<DenseValueView>(type_ref, TypedCells(cells));
     }
-    eval::Value::UP operator()(const eval::ValueType &type_ref, Ort::Value &value) {
+    Value::UP operator()(const ValueType &type_ref, Ort::Value &value) {
         return typify_invoke<1,MyTypify,CreateVespaTensorRef>(type_ref.cell_type(), type_ref, value);
     }
 };
 
 struct CreateVespaTensor {
-    template <typename T> static eval::Value::UP invoke(const eval::ValueType &type) {
+    template <typename T> static Value::UP invoke(const ValueType &type) {
         size_t num_cells = type.dense_subspace_size();
         std::vector<T> cells(num_cells, T{});
         return std::make_unique<DenseCellsValue<T>>(type, std::move(cells));
     }
-    eval::Value::UP operator()(const eval::ValueType &type) {
+    Value::UP operator()(const ValueType &type) {
         return typify_invoke<1,MyTypify,CreateVespaTensor>(type.cell_type(), type);
     }
 };
@@ -205,7 +199,7 @@ Onnx::TensorInfo make_tensor_info(const OnnxString &name, const Ort::TypeInfo &t
     return Onnx::TensorInfo{vespalib::string(name.get()), make_dimensions(tensor_info), make_element_type(element_type)};
 }
 
-std::vector<int64_t> extract_sizes(const eval::ValueType &type) {
+std::vector<int64_t> extract_sizes(const ValueType &type) {
     std::vector<int64_t> sizes;
     for (const auto &dim: type.dimensions()) {
         sizes.push_back(dim.size);
@@ -246,7 +240,7 @@ Onnx::WireInfo::~WireInfo() = default;
 Onnx::WirePlanner::~WirePlanner() = default;
 
 bool
-Onnx::WirePlanner::bind_input_type(const eval::ValueType &vespa_in, const TensorInfo &onnx_in)
+Onnx::WirePlanner::bind_input_type(const ValueType &vespa_in, const TensorInfo &onnx_in)
 {
     const auto &type = vespa_in;
     const auto &name = onnx_in.name;
@@ -275,7 +269,7 @@ Onnx::WirePlanner::bind_input_type(const eval::ValueType &vespa_in, const Tensor
     return true;
 }
 
-eval::ValueType
+ValueType
 Onnx::WirePlanner::make_output_type(const TensorInfo &onnx_out) const
 {
     const auto &dimensions = onnx_out.dimensions;
@@ -347,7 +341,7 @@ Ort::AllocatorWithDefaultOptions Onnx::EvalContext::_alloc;
 
 template <typename T>
 void
-Onnx::EvalContext::adapt_param(EvalContext &self, size_t idx, const eval::Value &param)
+Onnx::EvalContext::adapt_param(EvalContext &self, size_t idx, const Value &param)
 {
     const auto &cells_ref = param.cells();
     auto cells = unconstify(cells_ref.typify<T>());
@@ -357,7 +351,7 @@ Onnx::EvalContext::adapt_param(EvalContext &self, size_t idx, const eval::Value 
 
 template <typename SRC, typename DST>
 void
-Onnx::EvalContext::convert_param(EvalContext &self, size_t idx, const eval::Value &param)
+Onnx::EvalContext::convert_param(EvalContext &self, size_t idx, const Value &param)
 {
     auto cells = param.cells().typify<SRC>();
     size_t n = cells.size();
@@ -384,21 +378,21 @@ Onnx::EvalContext::convert_result(EvalContext &self, size_t idx)
 
 struct Onnx::EvalContext::SelectAdaptParam {
     template <typename ...Ts> static auto invoke() { return adapt_param<Ts...>; }
-    auto operator()(eval::CellType ct) {
+    auto operator()(CellType ct) {
         return typify_invoke<1,MyTypify,SelectAdaptParam>(ct);
     }
 };
 
 struct Onnx::EvalContext::SelectConvertParam {
     template <typename ...Ts> static auto invoke() { return convert_param<Ts...>; }
-    auto operator()(eval::CellType ct, Onnx::ElementType et) {
+    auto operator()(CellType ct, Onnx::ElementType et) {
         return typify_invoke<2,MyTypify,SelectConvertParam>(ct, et);
     }
 };
 
 struct Onnx::EvalContext::SelectConvertResult {
     template <typename ...Ts> static auto invoke() { return convert_result<Ts...>; }
-    auto operator()(Onnx::ElementType et, eval::CellType ct) {
+    auto operator()(Onnx::ElementType et, CellType ct) {
         return typify_invoke<2,MyTypify,SelectConvertResult>(et, ct);
     }
 };
@@ -452,7 +446,7 @@ Onnx::EvalContext::EvalContext(const Onnx &model, const WireInfo &wire_info)
 Onnx::EvalContext::~EvalContext() = default;
 
 void
-Onnx::EvalContext::bind_param(size_t i, const eval::Value &param)
+Onnx::EvalContext::bind_param(size_t i, const Value &param)
 {
     _param_binders[i](*this, i, param);
 }
@@ -470,7 +464,7 @@ Onnx::EvalContext::eval()
     }
 }
 
-const eval::Value &
+const Value &
 Onnx::EvalContext::get_result(size_t i) const
 {
     return *_results[i];

@@ -138,7 +138,7 @@ struct Renamer {
     bool matched_all() const { return (match_cnt == from.size()); }
 };
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 constexpr ValueType::Dimension::size_type ValueType::Dimension::npos;
 

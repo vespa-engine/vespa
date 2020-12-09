@@ -3,8 +3,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/tensor/tensor_address.h>
 
-using namespace vespalib::tensor;
-
 void
 assertSortOrder(const TensorAddress::Elements &exp,
                 const TensorAddress::Elements &input)
