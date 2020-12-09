@@ -91,6 +91,9 @@ public class Reindexer {
         if (phaser.isTerminated())
             throw new IllegalStateException("Already shut down");
 
+        // Keep metrics in sync across cluster controller containers.
+        metrics.dump(database.readReindexing(cluster.name));
+
         try (Lock lock = database.lockReindexing(cluster.name())) {
             AtomicReference<Reindexing> reindexing = new AtomicReference<>(database.readReindexing(cluster.name()));
             reindexing.set(updateWithReady(ready, reindexing.get(), clock.instant()));
