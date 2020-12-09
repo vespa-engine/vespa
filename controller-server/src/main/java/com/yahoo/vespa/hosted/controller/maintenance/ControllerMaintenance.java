@@ -113,6 +113,7 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationMetaDataGarbageCollector.close();
         containerImageExpirer.close();
         hostSwitchUpdater.close();
+        reindexingTriggerer.close();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
