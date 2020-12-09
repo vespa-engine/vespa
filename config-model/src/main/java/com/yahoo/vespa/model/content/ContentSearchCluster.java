@@ -267,7 +267,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         TransactionLogServer tls;
         Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
-            searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
+            searchNode = SearchNode.create(deployState.getProperties(), parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(), combined);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState.getDeployLogger());
