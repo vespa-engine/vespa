@@ -56,7 +56,11 @@ public class ZooKeeperRunner implements Runnable {
         Path path = Paths.get(getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile()));
         log.log(Level.INFO, "Starting ZooKeeper server with config file " + path.toFile().getAbsolutePath() +
                             ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
-        server.start(path);
+        try {
+            server.start(path);
+        } catch (Throwable e) {
+            log.log(Level.SEVERE, "Starting ZooKeeper server failed:", e);
+        }
     }
 
 }
