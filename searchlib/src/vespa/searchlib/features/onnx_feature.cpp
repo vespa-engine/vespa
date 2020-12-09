@@ -20,7 +20,7 @@ using search::fef::ParameterList;
 using vespalib::Stash;
 using vespalib::eval::ValueType;
 using vespalib::make_string_short::fmt;
-using vespalib::tensor::Onnx;
+using vespalib::eval::Onnx;
 
 namespace search::features {
 
