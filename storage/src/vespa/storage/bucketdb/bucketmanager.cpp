@@ -236,8 +236,6 @@ BucketManager::updateMetrics(bool updateDocCount)
             if (updateDocCount) {
                 auto bm = _metrics->bucket_spaces.find(space.first);
                 assert(bm != _metrics->bucket_spaces.end());
-                // No system with multiple bucket spaces has more than 1 "disk"
-                // TODO remove disk concept entirely as it's a VDS relic
                 bm->second->buckets_total.set(m.count.buckets);
                 bm->second->docs.set(m.count.docs);
                 bm->second->bytes.set(m.count.bytes);
