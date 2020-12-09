@@ -155,6 +155,7 @@ public class ClusterControllerContainer extends Container implements
         }
 
         builder.enabled(ctx.reindexing().enabled());
+        builder.windowSizeIncrement(ctx.windowSizeIncrement());
         for (String clusterId : ctx.clusterIds()) {
             ReindexingConfig.Clusters.Builder clusterBuilder = new ReindexingConfig.Clusters.Builder();
             for (NewDocumentType type : ctx.documentTypesForCluster(clusterId)) {
