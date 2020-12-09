@@ -4,7 +4,6 @@
 #include "distributor_bucket_space.h"
 #include "pendingmessagetracker.h"
 #include <vespa/document/select/parser.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 
 

@@ -8,7 +8,6 @@
 #include "distributormetricsset.h"
 #include "simpleclusterinformation.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/util/xmlstream.h>

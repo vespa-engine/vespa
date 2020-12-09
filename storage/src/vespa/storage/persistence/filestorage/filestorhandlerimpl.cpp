@@ -9,7 +9,6 @@
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/statusmessages.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/persistence/asynchandler.h>
 #include <vespa/storage/persistence/messages.h>
@@ -480,16 +479,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                 if (idx > -1) {
                     cmd.remapBucketId(targets[idx]->bucket.getBucketId());
                     targets[idx]->foundInQueue = true;
-#if defined(ENABLE_BUCKET_OPERATION_LOGGING)
-                    {
-                        vespalib::string desc = vespalib::make_string(
-                                "Remapping %s from %s to %s, targetDisk = %u",
-                                cmd.toString().c_str(), source.toString().c_str(),
-                                targets[idx]->bid.toString().c_str(), targetDisk);
-                        LOG_BUCKET_OPERATION_NO_LOCK(source, desc);
-                        LOG_BUCKET_OPERATION_NO_LOCK(targets[idx]->bid, desc);
-                    }
-#endif
                     newBucket = targets[idx]->bucket;
                 } else {
                     document::DocumentId did(getDocId(msg));
@@ -522,16 +511,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                     cmd.toString().c_str(), targets[0]->bucket.getBucketId().toString().c_str());
                 cmd.remapBucketId(targets[0]->bucket.getBucketId());
                 newBucket = targets[0]->bucket;
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-                {
-                    vespalib::string desc = vespalib::make_string(
-                            "Remapping %s from %s to %s, targetDisk = %u",
-                            cmd.toString().c_str(), source.toString().c_str(),
-                            targets[0]->bid.toString().c_str(), targetDisk);
-                    LOG_BUCKET_OPERATION_NO_LOCK(source, desc);
-                    LOG_BUCKET_OPERATION_NO_LOCK(targets[0]->bid, desc);
-                }
-#endif
             }
         } else {
             LOG(debug, "Did not remap %s with bucket %s from bucket %s",
