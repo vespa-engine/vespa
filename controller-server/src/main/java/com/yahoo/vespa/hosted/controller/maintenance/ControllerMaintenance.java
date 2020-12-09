@@ -52,6 +52,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ApplicationMetaDataGarbageCollector applicationMetaDataGarbageCollector;
     private final ContainerImageExpirer containerImageExpirer;
     private final HostSwitchUpdater hostSwitchUpdater;
+    private final ReindexingTriggerer reindexingTriggerer;
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
@@ -81,6 +82,7 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationMetaDataGarbageCollector = new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector);
         containerImageExpirer = new ContainerImageExpirer(controller, intervals.containerImageExpirer);
         hostSwitchUpdater = new HostSwitchUpdater(controller, intervals.hostSwitchUpdater);
+        reindexingTriggerer = new ReindexingTriggerer(controller, intervals.reindexingTriggerer);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -148,6 +150,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration applicationMetaDataGarbageCollector;
         private final Duration containerImageExpirer;
         private final Duration hostSwitchUpdater;
+        private final Duration reindexingTriggerer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -170,6 +173,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
             this.containerImageExpirer = duration(2, HOURS);
             this.hostSwitchUpdater = duration(12, HOURS);
+            this.reindexingTriggerer = duration(1, HOURS);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {
