@@ -90,7 +90,7 @@ public class Configurator {
         sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
         sb.append("quorumListenOnAllIPs=true").append("\n");
         sb.append("standaloneEnabled=false").append("\n");
-        sb.append("reconfigEnabled=" + config.dynamicReconfiguration()).append("\n");
+        sb.append("reconfigEnabled=true").append("\n");
         sb.append("skipACL=yes").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server, config.clientPort()));
