@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.google.inject.Inject;
@@ -10,7 +10,6 @@ import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskScheduler;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
-import com.yahoo.vespa.curator.Curator;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -34,6 +33,7 @@ public class ClusterController extends AbstractComponent
      * to ensure that zookeeper has started before we start polling it.
      */
     @Inject
+    @SuppressWarnings("unused")
     public ClusterController(ZooKeeperProvider zooKeeperProvider) {
         this();
     }
@@ -45,17 +45,8 @@ public class ClusterController extends AbstractComponent
 
     public void setOptions(String clusterName, FleetControllerOptions options, Metric metricImpl) throws Exception {
         metricWrapper.updateMetricImplementation(metricImpl);
-        if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
-            // Wipe this path ... it's unclear why
-            String path = "/" + options.clusterName + options.fleetControllerIndex;
-            Curator curator = Curator.create(options.zooKeeperServerAddress);
-            if (curator.framework().checkExists().forPath(path) != null)
-                curator.framework().delete().deletingChildrenIfNeeded().forPath(path);
-            curator.framework().create().creatingParentsIfNeeded().forPath(path);
-        }
         synchronized (controllers) {
             FleetController controller = controllers.get(clusterName);
-
             if (controller == null) {
                 StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
                 controller = FleetController.create(options, statusPageServer, metricWrapper);
