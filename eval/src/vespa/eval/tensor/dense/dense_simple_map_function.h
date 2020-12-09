@@ -8,6 +8,7 @@ namespace vespalib::tensor {
 
 /**
  * Tensor function for simple map operations on dense tensors.
+ * TODO: Fix generic map to handle inplace, and remove this.
  **/
 class DenseSimpleMapFunction : public eval::tensor_function::Map
 {

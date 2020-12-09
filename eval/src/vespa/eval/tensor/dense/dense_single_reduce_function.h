@@ -30,6 +30,8 @@ make_dense_single_reduce_list(const eval::ValueType &type, eval::Aggr aggr,
  * operation. Adjacent reduced dimensions will be handled is if they
  * were a single dimension. Trivial dimensions will be trivially
  * reduced along with any other dimension.
+ * TODO: consider if we should extend this to handling mixed tensors
+ * (handling the spare part as a batch dimension).
  **/
 class DenseSingleReduceFunction : public eval::tensor_function::Op1
 {

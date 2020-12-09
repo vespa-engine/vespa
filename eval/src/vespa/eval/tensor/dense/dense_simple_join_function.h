@@ -9,6 +9,8 @@ namespace vespalib::tensor {
 
 /**
  * Tensor function for simple join operations on dense tensors.
+ * TODO: consider if this is useful anymore, maybe we just need
+ * to handle inplace.
  **/
 class DenseSimpleJoinFunction : public eval::tensor_function::Join
 {

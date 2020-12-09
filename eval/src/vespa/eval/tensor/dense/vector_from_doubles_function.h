@@ -8,6 +8,8 @@ namespace vespalib::tensor {
 
 /**
  * Tensor function for a concat forming a vector from double values
+ * TODO: consider removing this, since the user can write a tensor
+ * create expression instead.
  */
 class VectorFromDoublesFunction : public eval::TensorFunction
 {

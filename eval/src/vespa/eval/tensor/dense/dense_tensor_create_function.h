@@ -8,6 +8,7 @@ namespace vespalib::tensor {
 
 /**
  * Tensor function for creating a dense tensor from double values.
+ * TODO: benchmark how useful this is, maybe we can just drop it.
  */
 class DenseTensorCreateFunction : public eval::TensorFunction
 {

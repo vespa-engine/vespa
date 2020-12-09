@@ -9,6 +9,7 @@ namespace vespalib::tensor {
 /**
  * Tensor function for efficient type-only modification of dense
  * tensor.
+ * TODO: extend to handling any tensor, dense/mixed/sparse.
  **/
 class DenseReplaceTypeFunction : public eval::tensor_function::Op1
 {
