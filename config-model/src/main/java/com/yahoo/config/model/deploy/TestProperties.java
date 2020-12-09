@@ -38,7 +38,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useThreePhaseUpdates = false;
     private boolean useDirectStorageApiRpc = false;
-    private boolean useFastValueTensorImplementation = false;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
@@ -74,7 +73,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
-    @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
     @Override public String responseSequencerType() { return responseSequencerType; }
@@ -137,11 +135,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseDirectStorageApiRpc(boolean useDirectStorageApiRpc) {
         this.useDirectStorageApiRpc = useDirectStorageApiRpc;
-        return this;
-    }
-
-    public TestProperties setUseFastValueTensorImplementation(boolean useFastValueTensorImplementation) {
-        this.useFastValueTensorImplementation = useFastValueTensorImplementation;
         return this;
     }
 

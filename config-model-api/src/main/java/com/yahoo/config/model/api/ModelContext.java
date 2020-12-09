@@ -68,7 +68,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2020") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"geirst"}, comment = "Remove on 7.XXX when this is default on") default boolean useDirectStorageApiRpc() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"geirst"}, comment = "Remove on 7.XXX when this is default on") default boolean useFastValueTensorImplementation() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int defaultNumResponseThreads() { return 2; }
@@ -126,7 +125,6 @@ public interface ModelContext {
         @Deprecated double feedConcurrency();
         @Deprecated boolean useThreePhaseUpdates();
         @Deprecated boolean useDirectStorageApiRpc();
-        @Deprecated boolean useFastValueTensorImplementation();
         @Deprecated default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
     }
 
