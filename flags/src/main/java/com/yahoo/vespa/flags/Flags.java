@@ -265,6 +265,13 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundDoubleFlag REINDEXER_WINDOW_SIZE_INCREMENT = defineDoubleFlag(
+            "reindexer-window-size-increment", 0.2,
+            List.of("jonmv"), "2020-12-09", "2021-02-07",
+            "Window size increment for dynamic throttle policy used by reindexer visitor session — more means more aggressive reindexing",
+            "Takes effect on (re)deployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING = defineFeatureFlag(
             "use-power-of-two-choices-load-balancing", false,
             List.of("tokle"), "2020-12-02", "2021-02-01",

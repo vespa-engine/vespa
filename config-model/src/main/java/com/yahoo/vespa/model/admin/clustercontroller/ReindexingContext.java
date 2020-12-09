@@ -21,9 +21,11 @@ public class ReindexingContext {
     private final Object monitor = new Object();
     private final Map<String, Set<NewDocumentType>> documentTypesPerCluster = new HashMap<>();
     private final Reindexing reindexing;
+    private final double windowSizeIncrement;
 
-    public ReindexingContext(Reindexing reindexing) {
+    public ReindexingContext(Reindexing reindexing, double windowSizeIncrement) {
         this.reindexing = Objects.requireNonNull(reindexing);
+        this.windowSizeIncrement = windowSizeIncrement;
     }
 
     public void addDocumentType(String clusterId, NewDocumentType type) {
@@ -46,4 +48,7 @@ public class ReindexingContext {
     }
 
     public Reindexing reindexing() { return reindexing; }
+
+    public double windowSizeIncrement() { return windowSizeIncrement; }
+
 }
