@@ -43,6 +43,8 @@ public:
     void onStart(DistributorMessageSender& sender) override;
     void onReceive(DistributorMessageSender& sender,
                    const std::shared_ptr<api::StorageReply> & msg) override;
+private:
+    bool bucket_has_pending_merge(const document::Bucket&, const PendingMessageTracker& tracker) const;
 };
 
 }
