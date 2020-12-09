@@ -69,7 +69,6 @@ public class ConfiguratorTest {
         builder.server(newServer(2, "baz", 345, 543));
         builder.myidFile(idFile.getAbsolutePath());
         builder.myid(1);
-        builder.dynamicReconfiguration(true);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
         validateConfigFileMultipleHosts(cfgFile);
         validateIdFile(idFile, "1\n");
@@ -115,7 +114,6 @@ public class ConfiguratorTest {
         builder.server(newServer(0, "foo", 123, 321));
         builder.myid(0);
         builder.jksKeyStoreFile(jksKeyStoreFile.getAbsolutePath());
-        builder.dynamicReconfiguration(true);
         return builder;
     }
 
