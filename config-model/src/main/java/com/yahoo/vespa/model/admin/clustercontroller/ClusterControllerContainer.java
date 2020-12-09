@@ -124,17 +124,15 @@ public class ClusterControllerContainer extends Container implements
     }
 
     private void configureReindexing() {
-        if (reindexingContext().reindexing().enabled()) {
-            addFileBundle(REINDEXING_CONTROLLER_BUNDLE.getName());
-            addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
-            addComponent("reindexing-maintainer",
-                         "ai.vespa.reindexing.ReindexingMaintainer",
-                         REINDEXING_CONTROLLER_BUNDLE);
-            addHandler("reindexing-status",
-                       "ai.vespa.reindexing.http.ReindexingV1ApiHandler",
-                       "/reindexing/v1/*",
-                       REINDEXING_CONTROLLER_BUNDLE);
-        }
+        addFileBundle(REINDEXING_CONTROLLER_BUNDLE.getName());
+        addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
+        addComponent("reindexing-maintainer",
+                     "ai.vespa.reindexing.ReindexingMaintainer",
+                     REINDEXING_CONTROLLER_BUNDLE);
+        addHandler("reindexing-status",
+                   "ai.vespa.reindexing.http.ReindexingV1ApiHandler",
+                   "/reindexing/v1/*",
+                   REINDEXING_CONTROLLER_BUNDLE);
     }
 
 
@@ -151,7 +149,10 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public void getConfig(ReindexingConfig.Builder builder) {
         ReindexingContext ctx = reindexingContext();
-        if (!ctx.reindexing().enabled()) return;
+        if (!ctx.reindexing().enabled()) {
+            builder.enabled(false);
+            return;
+        }
 
         builder.enabled(ctx.reindexing().enabled());
         for (String clusterId : ctx.clusterIds()) {
