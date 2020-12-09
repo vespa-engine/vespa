@@ -4,7 +4,7 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Tensor function optimizer for efficient non-transposing rename of a
@@ -12,7 +12,7 @@ namespace vespalib::tensor {
  * TODO: extend to mixed tensors.
  **/
 struct DenseFastRenameOptimizer {
-    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
+    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

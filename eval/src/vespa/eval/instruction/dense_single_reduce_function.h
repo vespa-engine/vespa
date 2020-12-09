@@ -4,14 +4,14 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 struct DenseSingleReduceSpec {
-    eval::ValueType result_type;
+    ValueType result_type;
     size_t outer_size;
     size_t reduce_size;
     size_t inner_size;
-    eval::Aggr aggr;
+    Aggr aggr;
 };
 
 /**
@@ -20,7 +20,7 @@ struct DenseSingleReduceSpec {
  * fails.
  **/
 std::vector<DenseSingleReduceSpec>
-make_dense_single_reduce_list(const eval::ValueType &type, eval::Aggr aggr,
+make_dense_single_reduce_list(const ValueType &type, Aggr aggr,
                               const std::vector<vespalib::string> &reduce_dims);
 
 /**
@@ -33,25 +33,25 @@ make_dense_single_reduce_list(const eval::ValueType &type, eval::Aggr aggr,
  * TODO: consider if we should extend this to handling mixed tensors
  * (handling the spare part as a batch dimension).
  **/
-class DenseSingleReduceFunction : public eval::tensor_function::Op1
+class DenseSingleReduceFunction : public tensor_function::Op1
 {
 private:
     size_t _outer_size;
     size_t _reduce_size;
     size_t _inner_size;
-    eval::Aggr _aggr;
+    Aggr _aggr;
 
 public:
     DenseSingleReduceFunction(const DenseSingleReduceSpec &spec,
-                              const eval::TensorFunction &child);
+                              const TensorFunction &child);
     ~DenseSingleReduceFunction() override;
     size_t outer_size() const { return _outer_size; }
     size_t reduce_size() const { return _reduce_size; }
     size_t inner_size() const { return _inner_size; }
-    eval::Aggr aggr() const { return _aggr; }
+    Aggr aggr() const { return _aggr; }
     bool result_is_mutable() const override { return true; }
-    eval::InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
-    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

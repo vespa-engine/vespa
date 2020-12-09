@@ -12,7 +12,7 @@ namespace vespalib::eval { struct ValueBuilderFactory; }
 
 namespace vespalib::eval::instruction {
 
-using join_fun_t = vespalib::eval::operation::op2_t;
+using join_fun_t = operation::op2_t;
 
 //-----------------------------------------------------------------------------
 

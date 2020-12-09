@@ -4,24 +4,24 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Tensor function for efficient type-only modification of dense
  * tensor.
  * TODO: extend to handling any tensor, dense/mixed/sparse.
  **/
-class DenseReplaceTypeFunction : public eval::tensor_function::Op1
+class DenseReplaceTypeFunction : public tensor_function::Op1
 {
 public:
-    DenseReplaceTypeFunction(const eval::ValueType &result_type,
-                             const eval::TensorFunction &child);
+    DenseReplaceTypeFunction(const ValueType &result_type,
+                             const TensorFunction &child);
     ~DenseReplaceTypeFunction();
-    eval::InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return child().result_is_mutable(); }
-    static const DenseReplaceTypeFunction &create_compact(const eval::ValueType &result_type,
-            const eval::TensorFunction &child,
+    static const DenseReplaceTypeFunction &create_compact(const ValueType &result_type,
+            const TensorFunction &child,
             Stash &stash);
 };
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

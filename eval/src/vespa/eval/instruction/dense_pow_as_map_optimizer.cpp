@@ -4,13 +4,10 @@
 #include "dense_simple_map_function.h"
 #include <vespa/eval/eval/operation.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::TensorFunction;
-using eval::as;
-
-using namespace eval::tensor_function;
-using namespace eval::operation;
+using namespace tensor_function;
+using namespace operation;
 
 const TensorFunction &
 DensePowAsMapOptimizer::optimize(const TensorFunction &expr, Stash &stash)
@@ -35,4 +32,4 @@ DensePowAsMapOptimizer::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

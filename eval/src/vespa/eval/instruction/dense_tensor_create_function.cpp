@@ -3,23 +3,15 @@
 #include "dense_tensor_create_function.h"
 #include <vespa/eval/eval/value.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::DenseValueView;
-using eval::DoubleValue;
-using eval::TensorFunction;
-using eval::TensorSpec;
-using eval::TypedCells;
-using eval::Value;
-using eval::ValueType;
-using Child = eval::TensorFunction::Child;
-using eval::as;
-using namespace eval::tensor_function;
+using Child = TensorFunction::Child;
+using namespace tensor_function;
 
 namespace {
 
 template <typename CT>
-void my_tensor_create_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_tensor_create_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &self = unwrap_param<DenseTensorCreateFunction::Self>(param);
     size_t pending_cells = self.result_size;
     ArrayRef<CT> cells = state.stash.create_uninitialized_array<CT>(pending_cells);
@@ -48,7 +40,7 @@ size_t get_index(const TensorSpec::Address &addr, const ValueType &type) {
     return cell_idx;
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 DenseTensorCreateFunction::DenseTensorCreateFunction(const ValueType &res_type, std::vector<Child> children)
     : TensorFunction(),
@@ -67,16 +59,16 @@ DenseTensorCreateFunction::push_children(std::vector<Child::CREF> &target) const
     }
 }
 
-eval::InterpretedFunction::Instruction
+InterpretedFunction::Instruction
 DenseTensorCreateFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
-    using MyTypify = eval::TypifyCellType;
+    using MyTypify = TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorCreateOp>(result_type().cell_type());
-    return eval::InterpretedFunction::Instruction(op, wrap_param<DenseTensorCreateFunction::Self>(_self));
+    return InterpretedFunction::Instruction(op, wrap_param<DenseTensorCreateFunction::Self>(_self));
 }
 
 const TensorFunction &
-DenseTensorCreateFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
+DenseTensorCreateFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto create = as<Create>(expr)) {
         if (expr.result_type().is_dense()) {
@@ -94,4 +86,4 @@ DenseTensorCreateFunction::optimize(const eval::TensorFunction &expr, Stash &sta
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

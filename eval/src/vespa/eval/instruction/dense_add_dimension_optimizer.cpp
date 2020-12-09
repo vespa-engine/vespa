@@ -8,13 +8,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.tensor.dense.add_dimension_optimizer");
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::as;
-using namespace eval::tensor_function;
-using namespace eval::operation;
+using namespace tensor_function;
+using namespace operation;
 
 namespace {
 
@@ -34,10 +31,10 @@ bool is_unit_constant(const TensorFunction &node) {
     return false;
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 const TensorFunction &
-DenseAddDimensionOptimizer::optimize(const eval::TensorFunction &expr, Stash &stash)
+DenseAddDimensionOptimizer::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto join = as<Join>(expr)) {
         const TensorFunction &lhs = join->lhs();
@@ -57,4 +54,4 @@ DenseAddDimensionOptimizer::optimize(const eval::TensorFunction &expr, Stash &st
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

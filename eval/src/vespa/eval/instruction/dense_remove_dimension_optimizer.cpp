@@ -4,13 +4,9 @@
 #include "dense_replace_type_function.h"
 #include <vespa/eval/eval/value_type.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::Aggr;
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::as;
-using namespace eval::tensor_function;
+using namespace tensor_function;
 
 namespace {
 
@@ -25,16 +21,16 @@ bool is_trivial_dim_list(const ValueType &type, const std::vector<vespalib::stri
     return true;
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 const TensorFunction &
-DenseRemoveDimensionOptimizer::optimize(const eval::TensorFunction &expr, Stash &stash)
+DenseRemoveDimensionOptimizer::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto reduce = as<Reduce>(expr)) {
         const TensorFunction &child = reduce->child();
         if (expr.result_type().is_dense() &&
             child.result_type().is_dense() &&
-            eval::aggr::is_ident(reduce->aggr()) &&
+            aggr::is_ident(reduce->aggr()) &&
             is_trivial_dim_list(child.result_type(), reduce->dimensions()))
         {
             assert(expr.result_type().cell_type() == child.result_type().cell_type());
@@ -44,4 +40,4 @@ DenseRemoveDimensionOptimizer::optimize(const eval::TensorFunction &expr, Stash 
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

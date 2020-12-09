@@ -44,7 +44,6 @@
 
 using namespace vespalib;
 using namespace vespalib::eval;
-using namespace vespalib::tensor;
 using namespace vespalib::eval::instruction;
 using vespalib::make_string_short::fmt;
 

@@ -3,24 +3,17 @@
 #include "vector_from_doubles_function.h"
 #include <vespa/eval/eval/value.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::CellType;
-using eval::DenseValueView;
-using eval::TensorFunction;
-using eval::TypedCells;
-using eval::Value;
-using eval::ValueType;
-using Child = eval::TensorFunction::Child;
-using eval::as;
-using namespace eval::tensor_function;
+using Child = TensorFunction::Child;
+using namespace tensor_function;
 
 namespace {
 
 struct CallVectorFromDoubles {
     template <typename CT>
     static TypedCells
-    invoke(eval::InterpretedFunction::State &state, size_t numCells) {
+    invoke(InterpretedFunction::State &state, size_t numCells) {
         ArrayRef<CT> outputCells = state.stash.create_uninitialized_array<CT>(numCells);
         for (size_t i = numCells; i-- > 0; ) {
             outputCells[i] = (CT) state.peek(0).as_double();
@@ -30,11 +23,11 @@ struct CallVectorFromDoubles {
     }
 };
 
-void my_vector_from_doubles_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_vector_from_doubles_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &self = unwrap_param<VectorFromDoublesFunction::Self>(param);
     CellType ct = self.resultType.cell_type();
     size_t numCells = self.resultSize;
-    using MyTypify = eval::TypifyCellType;
+    using MyTypify = TypifyCellType;
     TypedCells cells = typify_invoke<1,MyTypify,CallVectorFromDoubles>(ct, state, numCells);
     const Value &result = state.stash.create<DenseValueView>(self.resultType, cells);
     state.stack.emplace_back(result);
@@ -72,7 +65,7 @@ std::vector<Child> flatten(const TensorFunction &lhs, const TensorFunction &rhs)
     return vec;
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 
 VectorFromDoublesFunction::VectorFromDoublesFunction(std::vector<Child> children, const ValueType &res_type)
@@ -92,14 +85,14 @@ VectorFromDoublesFunction::push_children(std::vector<Child::CREF> &target) const
     }
 }
 
-eval::InterpretedFunction::Instruction
+InterpretedFunction::Instruction
 VectorFromDoublesFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
-    return eval::InterpretedFunction::Instruction(my_vector_from_doubles_op, wrap_param<VectorFromDoublesFunction::Self>(_self));
+    return InterpretedFunction::Instruction(my_vector_from_doubles_op, wrap_param<VectorFromDoublesFunction::Self>(_self));
 }
 
 const TensorFunction &
-VectorFromDoublesFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
+VectorFromDoublesFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto concat = as<Concat>(expr)) {
         const vespalib::string &dimension = concat->dimension();
@@ -114,4 +107,4 @@ VectorFromDoublesFunction::optimize(const eval::TensorFunction &expr, Stash &sta
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

@@ -62,7 +62,7 @@ void verify_generic(const vespalib::string &expr, const vespalib::string &expect
 }
 
 void verify_reshape(const vespalib::string &expr, const vespalib::string &expect) {
-    verify_impl<tensor::DenseReplaceTypeFunction>(expr, expect);
+    verify_impl<DenseReplaceTypeFunction>(expr, expect);
 }
 
 void verify_range(const vespalib::string &expr, const vespalib::string &expect) {

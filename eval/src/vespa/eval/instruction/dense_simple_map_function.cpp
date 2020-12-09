@@ -6,24 +6,16 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/inline_operation.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 using vespalib::ArrayRef;
 
-using eval::DenseValueView;
-using eval::TensorFunction;
-using eval::TypedCells;
-using eval::TypifyCellType;
-using eval::Value;
-using eval::ValueType;
-using eval::as;
+using namespace operation;
+using namespace tensor_function;
 
-using namespace eval::operation;
-using namespace eval::tensor_function;
-
-using op_function = eval::InterpretedFunction::op_function;
-using Instruction = eval::InterpretedFunction::Instruction;
-using State = eval::InterpretedFunction::State;
+using op_function = InterpretedFunction::op_function;
+using Instruction = InterpretedFunction::Instruction;
+using State = InterpretedFunction::State;
 
 namespace {
 
@@ -58,7 +50,7 @@ struct MyGetFun {
 
 using MyTypify = TypifyValue<TypifyCellType,TypifyOp1,TypifyBool>;
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 //-----------------------------------------------------------------------------
 
@@ -90,4 +82,4 @@ DenseSimpleMapFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

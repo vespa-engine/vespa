@@ -11,7 +11,6 @@
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
-using namespace vespalib::tensor;
 using namespace vespalib::eval::tensor_function;
 
 using vespalib::make_string_short::fmt;
@@ -19,7 +18,7 @@ using vespalib::make_string_short::fmt;
 using Primary = DenseSimpleJoinFunction::Primary;
 using Overlap = DenseSimpleJoinFunction::Overlap;
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 std::ostream &operator<<(std::ostream &os, Primary primary)
 {

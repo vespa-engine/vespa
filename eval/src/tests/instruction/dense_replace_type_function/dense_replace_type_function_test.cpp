@@ -10,12 +10,11 @@
 using namespace vespalib::eval::tensor_function;
 using namespace vespalib::eval::test;
 using namespace vespalib::eval;
-using namespace vespalib::tensor;
 using namespace vespalib;
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
-TypedCells getCellsRef(const eval::Value &value) {
+TypedCells getCellsRef(const Value &value) {
     return value.cells();
 }
 

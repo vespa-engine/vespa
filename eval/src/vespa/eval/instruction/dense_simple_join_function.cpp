@@ -9,28 +9,19 @@
 #include <optional>
 #include <algorithm>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 using vespalib::ArrayRef;
 
-using eval::CellType;
-using eval::DenseValueView;
-using eval::TensorFunction;
-using eval::TypedCells;
-using eval::TypifyCellType;
-using eval::Value;
-using eval::ValueType;
-using eval::as;
-
-using namespace eval::operation;
-using namespace eval::tensor_function;
+using namespace operation;
+using namespace tensor_function;
 
 using Primary = DenseSimpleJoinFunction::Primary;
 using Overlap = DenseSimpleJoinFunction::Overlap;
 
-using op_function = eval::InterpretedFunction::op_function;
-using Instruction = eval::InterpretedFunction::Instruction;
-using State = eval::InterpretedFunction::State;
+using op_function = InterpretedFunction::op_function;
+using Instruction = InterpretedFunction::Instruction;
+using State = InterpretedFunction::State;
 
 namespace {
 
@@ -67,7 +58,7 @@ template <typename LCT, typename RCT, typename Fun, bool swap, Overlap overlap, 
 void my_simple_join_op(State &state, uint64_t param) {
     using PCT = typename std::conditional<swap,RCT,LCT>::type;
     using SCT = typename std::conditional<swap,LCT,RCT>::type;
-    using OCT = typename eval::UnifyCellTypes<PCT,SCT>::type;
+    using OCT = typename UnifyCellTypes<PCT,SCT>::type;
     using OP = typename std::conditional<swap,SwapArgs2<Fun>,Fun>::type;
     const JoinParams &params = unwrap_param<JoinParams>(param);
     OP my_op(params.function);
@@ -151,7 +142,7 @@ std::optional<Overlap> detect_overlap(const TensorFunction &lhs, const TensorFun
     return (primary == Primary::LHS) ? detect_overlap(lhs, rhs) : detect_overlap(rhs, lhs);
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 //-----------------------------------------------------------------------------
 
@@ -221,4 +212,4 @@ DenseSimpleJoinFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

@@ -11,7 +11,6 @@
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
-using namespace vespalib::tensor;
 using namespace vespalib::eval::tensor_function;
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();

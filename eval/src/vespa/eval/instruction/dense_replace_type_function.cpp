@@ -3,29 +3,23 @@
 #include "dense_replace_type_function.h"
 #include <vespa/eval/eval/value.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::DenseValueView;
-using eval::TypedCells;
-using eval::Value;
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::as;
-using namespace eval::tensor_function;
+using namespace tensor_function;
 
 namespace {
 
-void my_replace_type_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_replace_type_op(InterpretedFunction::State &state, uint64_t param) {
     const ValueType &type = unwrap_param<ValueType>(param);
     TypedCells cells = state.peek(0).cells();
     state.pop_push(state.stash.create<DenseValueView>(type, cells));
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
-DenseReplaceTypeFunction::DenseReplaceTypeFunction(const eval::ValueType &result_type,
-                                                   const eval::TensorFunction &child)
-    : eval::tensor_function::Op1(result_type, child)
+DenseReplaceTypeFunction::DenseReplaceTypeFunction(const ValueType &result_type,
+                                                   const TensorFunction &child)
+    : tensor_function::Op1(result_type, child)
 {
 }
 
@@ -33,15 +27,15 @@ DenseReplaceTypeFunction::~DenseReplaceTypeFunction()
 {
 }
 
-eval::InterpretedFunction::Instruction
+InterpretedFunction::Instruction
 DenseReplaceTypeFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
-    return eval::InterpretedFunction::Instruction(my_replace_type_op, wrap_param<ValueType>(result_type()));
+    return InterpretedFunction::Instruction(my_replace_type_op, wrap_param<ValueType>(result_type()));
 }
 
 const DenseReplaceTypeFunction &
-DenseReplaceTypeFunction::create_compact(const eval::ValueType &result_type,
-                                         const eval::TensorFunction &child,
+DenseReplaceTypeFunction::create_compact(const ValueType &result_type,
+                                         const TensorFunction &child,
                                          Stash &stash)
 {
     if (auto replace = as<DenseReplaceTypeFunction>(child)) {
@@ -51,4 +45,4 @@ DenseReplaceTypeFunction::create_compact(const eval::ValueType &result_type,
     }
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

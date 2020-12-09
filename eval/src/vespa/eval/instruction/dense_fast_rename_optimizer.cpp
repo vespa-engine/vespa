@@ -4,13 +4,9 @@
 #include "dense_replace_type_function.h"
 #include <vespa/eval/eval/value.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::Value;
-using eval::ValueType;
-using eval::TensorFunction;
-using eval::as;
-using namespace eval::tensor_function;
+using namespace tensor_function;
 
 namespace {
 
@@ -35,10 +31,10 @@ bool is_dense_stable_rename(const ValueType &from_type, const ValueType &to_type
     return true;
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 const TensorFunction &
-DenseFastRenameOptimizer::optimize(const eval::TensorFunction &expr, Stash &stash)
+DenseFastRenameOptimizer::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto rename = as<Rename>(expr)) {
         const ValueType &from_type = rename->child().result_type();
@@ -51,4 +47,4 @@ DenseFastRenameOptimizer::optimize(const eval::TensorFunction &expr, Stash &stas
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

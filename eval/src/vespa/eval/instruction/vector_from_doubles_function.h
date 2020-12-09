@@ -4,37 +4,37 @@
 
 #include <vespa/eval/eval/tensor_function.h>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
 /**
  * Tensor function for a concat forming a vector from double values
  * TODO: consider removing this, since the user can write a tensor
  * create expression instead.
  */
-class VectorFromDoublesFunction : public eval::TensorFunction
+class VectorFromDoublesFunction : public TensorFunction
 {
 public:
     struct Self {
-        const eval::ValueType resultType;
+        const ValueType resultType;
         size_t resultSize;
-        Self(const eval::ValueType &r, size_t n) : resultType(r), resultSize(n) {}
+        Self(const ValueType &r, size_t n) : resultType(r), resultSize(n) {}
     };
 private:
     Self _self;
     std::vector<Child> _children;
-    void add(const eval::TensorFunction &child);
+    void add(const TensorFunction &child);
 public:
-    VectorFromDoublesFunction(std::vector<Child> children, const eval::ValueType &res_type);
+    VectorFromDoublesFunction(std::vector<Child> children, const ValueType &res_type);
     ~VectorFromDoublesFunction();
-    const eval::ValueType &result_type() const override { return _self.resultType; }
+    const ValueType &result_type() const override { return _self.resultType; }
     void push_children(std::vector<Child::CREF> &children) const override;
     const vespalib::string &dimension() const {
         return _self.resultType.dimensions()[0].name;
     }
     size_t size() const { return _self.resultSize; }
-    eval::InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
-    static const eval::TensorFunction &optimize(const eval::TensorFunction &expr, Stash &stash);
+    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval

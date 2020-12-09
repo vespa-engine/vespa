@@ -29,8 +29,6 @@ namespace vespalib::eval {
 
 namespace {
 
-using namespace vespalib::tensor;
-
 const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, const TensorFunction &expr, Stash &stash) {
     if (&factory == &SimpleValueBuilderFactory::get()) {
         // never optimize simple value evaluation

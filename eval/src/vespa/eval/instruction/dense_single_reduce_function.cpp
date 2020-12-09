@@ -5,21 +5,10 @@
 #include <vespa/eval/eval/value.h>
 #include <cassert>
 
-namespace vespalib::tensor {
+namespace vespalib::eval {
 
-using eval::Aggr;
-using eval::DenseValueView;
-using eval::InterpretedFunction;
-using eval::TensorFunction;
-using eval::Value;
-using eval::ValueType;
-using eval::TypedCells;
-using eval::TypifyCellType;
-using eval::TypifyAggr;
-using eval::as;
-
-using namespace eval::tensor_function;
-using namespace eval::aggr;
+using namespace tensor_function;
+using namespace aggr;
 
 namespace {
 
@@ -166,7 +155,7 @@ template <typename T> struct VectorLookupLoop {
     const T &get() const { return list[index]; }
 };
 
-DenseSingleReduceSpec extract_next(const eval::ValueType &type, eval::Aggr aggr,
+DenseSingleReduceSpec extract_next(const ValueType &type, Aggr aggr,
                                    std::vector<vespalib::string> &todo)
 {
     size_t outer_size = 1;
@@ -200,10 +189,10 @@ DenseSingleReduceSpec extract_next(const eval::ValueType &type, eval::Aggr aggr,
     return {type.reduce(do_now), outer_size, reduce_size, inner_size, aggr};
 }
 
-} // namespace vespalib::tensor::<unnamed>
+} // namespace vespalib::eval::<unnamed>
 
 std::vector<DenseSingleReduceSpec>
-make_dense_single_reduce_list(const eval::ValueType &type, eval::Aggr aggr,
+make_dense_single_reduce_list(const ValueType &type, Aggr aggr,
                               const std::vector<vespalib::string> &reduce_dims)
 {
     auto res_type = type.reduce(reduce_dims);
@@ -217,7 +206,7 @@ make_dense_single_reduce_list(const eval::ValueType &type, eval::Aggr aggr,
         curr_type = list.back().result_type;
     }
     assert(curr_type == res_type);
-    if ((list.size() > 1) && !eval::aggr::is_simple(aggr)) {
+    if ((list.size() > 1) && !aggr::is_simple(aggr)) {
         return {};
     }
     return list;
@@ -261,4 +250,4 @@ DenseSingleReduceFunction::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval
