@@ -31,6 +31,9 @@
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.7.5</version>
     </dependency>
+    <!-- snappy-java and metrics-core are included here
+         to be able to work with ZooKeeper 3.6.2 due to
+         class loading issues -->
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-core</artifactId>
