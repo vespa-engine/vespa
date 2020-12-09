@@ -51,6 +51,7 @@ public:
 
     // Only valid to call if is_read_for_write() == true
     void fail_with_bucket_already_locked(DistributorMessageSender& sender);
+    void fail_with_merge_pending(DistributorMessageSender& sender);
 
     [[nodiscard]] bool verify_command_and_expand_buckets(DistributorMessageSender& sender);
 

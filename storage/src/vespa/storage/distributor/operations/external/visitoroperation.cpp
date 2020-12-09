@@ -887,6 +887,13 @@ VisitorOperation::fail_with_bucket_already_locked(DistributorMessageSender& send
     sendReply(api::ReturnCode(api::ReturnCode::BUSY, "This bucket is already locked by another operation"), sender);
 }
 
+void
+VisitorOperation::fail_with_merge_pending(DistributorMessageSender& sender)
+{
+    assert(is_read_for_write());
+    sendReply(api::ReturnCode(api::ReturnCode::BUSY, "A merge operation is pending for this bucket"), sender);
+}
+
 std::optional<document::Bucket>
 VisitorOperation::first_bucket_to_visit() const
 {

@@ -8,6 +8,8 @@
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <tests/distributor/distributortestutil.h>
@@ -23,6 +25,11 @@ namespace {
 
 Bucket default_bucket(BucketId id) {
     return Bucket(document::FixedBucketSpaces::default_space(), id);
+}
+
+api::StorageMessageAddress make_storage_address(uint16_t node) {
+    static vespalib::string _storage("storage");
+    return {&_storage, lib::NodeType::STORAGE, node};
 }
 
 }
@@ -46,6 +53,7 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
         createLinks();
         setupDistributor(1, 1, "version:1 distributor:1 storage:1");
         _op_owner = std::make_unique<OperationOwner>(_sender, getClock());
+        _sender.setPendingMessageTracker(getDistributor().getPendingMessageTracker());
 
         addNodesToBucketDB(_sub_bucket, "0=1/2/3/t");
     }
@@ -81,6 +89,7 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
 TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_that_fails_precondition_checks_is_immediately_failed) {
     auto op = create_rfw_op(create_nested_visitor_op(false));
     _op_owner->start(op, OperationStarter::Priority(120));
+    ASSERT_EQ("", _sender.getCommands(true));
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
               "ReturnCode(ILLEGAL_PARAMETERS, No buckets in CreateVisitorCommand for visitor 'foo')",
               _sender.getLastReply());
@@ -90,6 +99,21 @@ TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_immediately_started_if_n
     auto op = create_rfw_op(create_nested_visitor_op(true));
     _op_owner->start(op, OperationStarter::Priority(120));
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
+}
+
+TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_is_bounced_if_merge_pending_for_bucket) {
+    auto op = create_rfw_op(create_nested_visitor_op(true));
+    std::vector<api::MergeBucketCommand::Node> nodes({{0, false}, {1, false}});
+    auto merge = std::make_shared<api::MergeBucketCommand>(default_bucket(_sub_bucket),
+                                                           std::move(nodes),
+                                                           api::Timestamp(123456));
+    merge->setAddress(make_storage_address(0));
+    getDistributor().getPendingMessageTracker().insert(merge);
+    _op_owner->start(op, OperationStarter::Priority(120));
+    ASSERT_EQ("", _sender.getCommands(true));
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(BUSY, A merge operation is pending for this bucket)",
+              _sender.getLastReply());
 }
 
 namespace {

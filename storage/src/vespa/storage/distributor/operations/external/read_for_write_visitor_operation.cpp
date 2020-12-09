@@ -2,6 +2,7 @@
 
 #include "read_for_write_visitor_operation.h"
 #include "visitoroperation.h"
+#include <vespa/storage/distributor/distributormessagesender.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/operationowner.h>
 #include <cassert>
@@ -40,6 +41,11 @@ void ReadForWriteVisitorOperationStarter::onStart(DistributorMessageSender& send
             assert(_visitor_op->has_sent_reply());
             return;
         }
+        if (bucket_has_pending_merge(*maybe_bucket, sender.getPendingMessageTracker())) {
+            LOG(debug, "A merge is pending for bucket %s, failing visitor", maybe_bucket->toString().c_str());
+            _visitor_op->fail_with_merge_pending(sender);
+            return;
+        }
         auto bucket_handle = _operation_sequencer.try_acquire(*maybe_bucket);
         if (!bucket_handle.valid()) {
             LOG(debug, "An operation is already pending for bucket %s, failing visitor",
@@ -70,5 +76,27 @@ void ReadForWriteVisitorOperationStarter::onReceive(DistributorMessageSender& se
                                                     const std::shared_ptr<api::StorageReply> & msg) {
     _visitor_op->onReceive(sender, msg);
 }
+
+namespace {
+
+struct MergePendingChecker : PendingMessageTracker::Checker {
+    bool has_pending_merge = false;
+    bool check(uint32_t message_type, [[maybe_unused]] uint16_t node, [[maybe_unused]] uint8_t priority) override {
+        if (message_type == api::MessageType::MERGEBUCKET_ID) {
+            has_pending_merge = true;
+        }
+        return true;
+    }
+};
+
+}
+
+bool ReadForWriteVisitorOperationStarter::bucket_has_pending_merge(const document::Bucket& bucket,
+                                                                   const PendingMessageTracker& tracker) const {
+    MergePendingChecker merge_checker;
+    tracker.checkPendingMessages(bucket, merge_checker);
+    return merge_checker.has_pending_merge;
+}
+
 
 }
