@@ -2,7 +2,7 @@
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/tensor/dense/dense_simple_map_function.h>
+#include <vespa/eval/instruction/dense_simple_map_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/gtest/gtest.h>

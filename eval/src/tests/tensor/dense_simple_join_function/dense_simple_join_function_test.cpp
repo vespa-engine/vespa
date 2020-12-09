@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/tensor/dense/dense_simple_join_function.h>
+#include <vespa/eval/instruction/dense_simple_join_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 

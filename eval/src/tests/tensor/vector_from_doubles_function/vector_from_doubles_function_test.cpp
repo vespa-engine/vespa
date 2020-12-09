@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/tensor/dense/vector_from_doubles_function.h>
+#include <vespa/eval/instruction/vector_from_doubles_function.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
 

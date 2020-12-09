@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/tensor/dense/dense_replace_type_function.h>
+#include <vespa/eval/instruction/dense_replace_type_function.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 
 using namespace vespalib::eval::tensor_function;

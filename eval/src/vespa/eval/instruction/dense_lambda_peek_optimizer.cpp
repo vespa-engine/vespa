@@ -3,7 +3,7 @@
 #include "dense_lambda_peek_optimizer.h"
 #include "dense_lambda_peek_function.h"
 #include "dense_cell_range_function.h"
-#include <vespa/eval/tensor/dense/dense_replace_type_function.h>
+#include <vespa/eval/instruction/dense_replace_type_function.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/node_tools.h>
 #include <vespa/eval/eval/basic_nodes.h>
