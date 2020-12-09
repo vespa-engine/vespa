@@ -644,7 +644,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                 source.getBucketId().toString().c_str(), op);
             break;
         }
-        case InternalBucketJoinCommand::ID:
         default:
             // Fail and log error
         {

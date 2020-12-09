@@ -697,15 +697,6 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
         }
         return true;
     }
-    case InternalBucketJoinCommand::ID:
-    {
-        shared_ptr<InternalBucketJoinCommand> cmd(std::static_pointer_cast<InternalBucketJoinCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
-        if (entry.exist()) {
-            handlePersistenceMessage(cmd);
-        }
-        return true;
-    }
     case RecheckBucketInfoCommand::ID:
     {
         shared_ptr<RecheckBucketInfoCommand> cmd(std::static_pointer_cast<RecheckBucketInfoCommand>(msg));

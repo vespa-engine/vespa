@@ -268,32 +268,6 @@ SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker
     return tracker;
 }
 
-MessageTracker::UP
-SplitJoinHandler::handleInternalBucketJoin(InternalBucketJoinCommand& cmd, MessageTracker::UP tracker) const
-{
-    tracker->setMetric(_env._metrics.internalJoin);
-    document::Bucket destBucket = cmd.getBucket();
-    {
-        // Create empty bucket for target.
-        StorBucketDatabase::WrappedEntry entry =
-                _env.getBucketDatabase(destBucket.getBucketSpace()).get(
-                        destBucket.getBucketId(), "join", StorBucketDatabase::CREATE_IF_NONEXISTING);
-
-        entry.write();
-    }
-    assert(cmd.getDiskOfInstanceToJoin() == 0u);
-    assert(cmd.getDiskOfInstanceToKeep() == 0u);
-    spi::Result result =
-            _spi.join(spi::Bucket(destBucket),
-                      spi::Bucket(destBucket),
-                      spi::Bucket(destBucket),
-                      tracker->context());
-    if (tracker->checkForError(result)) {
-        tracker->setReply(std::make_shared<InternalBucketJoinReply>(cmd, _env.getBucketInfo(cmd.getBucket())));
-    }
-    return tracker;
-}
-
 bool
 SplitJoinHandler::validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker)
 {
