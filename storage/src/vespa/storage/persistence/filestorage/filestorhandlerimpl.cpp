@@ -196,20 +196,6 @@ FileStorHandlerImpl::flush(bool killPendingMerges)
 }
 
 void
-FileStorHandlerImpl::reply(api::StorageMessage& msg, DiskState state) const
-{
-    if (!msg.getType().isReply()) {
-        std::shared_ptr<api::StorageReply> rep = static_cast<api::StorageCommand&>(msg).makeReply();
-        if (state == FileStorHandler::DISABLED) {
-            rep->setResult(api::ReturnCode(api::ReturnCode::DISK_FAILURE, "Disk disabled"));
-        } else {
-            rep->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
-        }
-        _messageSender.sendReply(rep);
-    }
-}
-
-void
 FileStorHandlerImpl::setDiskState(DiskState state)
 {
     // Mark disk closed
@@ -1260,7 +1246,6 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
     out << "Disk state: ";
     switch (getState()) {
         case FileStorHandler::AVAILABLE: out << "AVAILABLE"; break;
-        case FileStorHandler::DISABLED: out << "DISABLED"; break;
         case FileStorHandler::CLOSED: out << "CLOSED"; break;
     }
     out << "<h4>Active operations</h4>\n";

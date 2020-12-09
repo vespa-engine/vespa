@@ -169,12 +169,11 @@ namespace {
             Count() : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
         };
 
-        uint16_t diskCount;
-        std::vector<Count> disk;
+        Count    count;
         uint32_t lowestUsedBit;
 
-        explicit MetricsUpdater(uint16_t diskCnt)
-            : diskCount(diskCnt), disk(diskCnt), lowestUsedBit(58) {}
+        MetricsUpdater()
+            : count(), lowestUsedBit(58) {}
 
         void operator()(document::BucketId::Type bucketId,
                         const StorBucketDatabase::Entry& data)
@@ -183,15 +182,15 @@ namespace {
                     document::BucketId::keyToBucketId(bucketId));
 
             if (data.valid()) {
-                ++disk[0].buckets;
+                ++count.buckets;
                 if (data.getBucketInfo().isActive()) {
-                    ++disk[0].active;
+                    ++count.active;
                 }
                 if (data.getBucketInfo().isReady()) {
-                    ++disk[0].ready;
+                    ++count.ready;
                 }
-                disk[0].docs += data.getBucketInfo().getDocumentCount();
-                disk[0].bytes += data.getBucketInfo().getTotalDocumentSize();
+                count.docs += data.getBucketInfo().getDocumentCount();
+                count.bytes += data.getBucketInfo().getTotalDocumentSize();
 
                 if (bucket.getUsedBits() < lowestUsedBit) {
                     lowestUsedBit = bucket.getUsedBits();
@@ -200,16 +199,13 @@ namespace {
         };
 
         void add(const MetricsUpdater& rhs) {
-            assert(diskCount == rhs.diskCount);
-            for (uint16_t i = 0; i < diskCount; i++) {
-                auto& d = disk[i];
-                auto& s = rhs.disk[i];
-                d.buckets += s.buckets;
-                d.docs    += s.docs;
-                d.bytes   += s.bytes;
-                d.ready   += s.ready;
-                d.active  += s.active;
-            }
+            auto& d = count;
+            auto& s = rhs.count;
+            d.buckets += s.buckets;
+            d.docs    += s.docs;
+            d.bytes   += s.bytes;
+            d.ready   += s.ready;
+            d.active  += s.active;
         }
     };
 
@@ -230,29 +226,26 @@ BucketManager::updateMetrics(bool updateDocCount)
         updateDocCount ? "" : ", minusedbits only",
         _doneInitialized ? "" : ", server is not done initializing");
 
-    const uint16_t diskCount = 1;
     if (!updateDocCount || _doneInitialized) {
-        MetricsUpdater total(diskCount);
+        MetricsUpdater total;
         for (auto& space : _component.getBucketSpaceRepo()) {
-            MetricsUpdater m(diskCount);
+            MetricsUpdater m;
             auto guard = space.second->bucketDatabase().acquire_read_guard();
             guard->for_each(std::ref(m));
             total.add(m);
             if (updateDocCount) {
                 auto bm = _metrics->bucket_spaces.find(space.first);
                 assert(bm != _metrics->bucket_spaces.end());
-                // No system with multiple bucket spaces has more than 1 "disk"
-                // TODO remove disk concept entirely as it's a VDS relic
-                bm->second->buckets_total.set(m.disk[0].buckets);
-                bm->second->docs.set(m.disk[0].docs);
-                bm->second->bytes.set(m.disk[0].bytes);
-                bm->second->active_buckets.set(m.disk[0].active);
-                bm->second->ready_buckets.set(m.disk[0].ready);
+                bm->second->buckets_total.set(m.count.buckets);
+                bm->second->docs.set(m.count.docs);
+                bm->second->bytes.set(m.count.bytes);
+                bm->second->active_buckets.set(m.count.active);
+                bm->second->ready_buckets.set(m.count.ready);
             }
         }
         if (updateDocCount) {
             auto & dest = *_metrics->disk;
-            const auto & src = total.disk[0];
+            const auto & src = total.count;
             dest.buckets.addValue(src.buckets);
             dest.docs.addValue(src.docs);
             dest.bytes.addValue(src.bytes);
@@ -273,7 +266,7 @@ void BucketManager::update_bucket_db_memory_usage_metrics() {
 
 void BucketManager::updateMinUsedBits()
 {
-    MetricsUpdater m(1);
+    MetricsUpdater m;
     _component.getBucketSpaceRepo().for_each_bucket(std::ref(m));
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
