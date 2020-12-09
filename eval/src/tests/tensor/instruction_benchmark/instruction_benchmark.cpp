@@ -39,6 +39,10 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/smart_buffer.h>
 #include <optional>
 #include <algorithm>
 
@@ -47,6 +51,8 @@ using namespace vespalib::eval;
 using namespace vespalib::tensor;
 using namespace vespalib::eval::instruction;
 using vespalib::make_string_short::fmt;
+
+using vespalib::slime::JsonFormat;
 
 using Instruction = InterpretedFunction::Instruction;
 using EvalSingle = InterpretedFunction::EvalSingle;
@@ -256,6 +262,8 @@ Impl             optimized_fast_value_impl(0, "          Optimized FastValue", "
 Impl                       fast_value_impl(1, "                    FastValue", "   FastV", FastValueBuilderFactory::get(), false);
 Impl                     simple_value_impl(2, "                  SimpleValue", " SimpleV", SimpleValueBuilderFactory::get(), false);
 vespalib::string                                                  short_header("--------");
+vespalib::string                   ghost_name("       loaded from ghost.json");
+vespalib::string                                              ghost_short_name("   ghost");
 
 constexpr double budget = 5.0;
 constexpr double best_limit = 0.95; // everything within 95% of best performance gets a star
@@ -266,6 +274,10 @@ std::vector<CREF<Impl>> impl_list = {simple_value_impl,
                                      optimized_fast_value_impl,
                                      fast_value_impl};
 
+Slime ghost; // loaded from 'ghost.json'
+bool has_ghost = false;
+Slime prod_result; // saved to 'result.json'
+
 //-----------------------------------------------------------------------------
 
 struct BenchmarkHeader {
@@ -274,6 +286,9 @@ struct BenchmarkHeader {
         short_names.resize(impl_list.size());
         for (const Impl &impl: impl_list) {
             short_names[impl.order] = impl.short_name;
+        }
+        if (has_ghost) {
+            short_names.push_back(ghost_short_name);
         }
     }
     void print_header(const vespalib::string &desc) const {
@@ -300,12 +315,17 @@ struct BenchmarkResult {
     ~BenchmarkResult();
     void sample(size_t order, double time) {
         relative_perf[order] = time;
-        if (order == 1) {
-            if (ref_time.has_value()) {
-                ref_time = std::min(ref_time.value(), time);
-            } else {
-                ref_time = time;
+        if (order == 0) {
+            prod_result.get().setDouble(desc, time);
+            if (has_ghost && (relative_perf.size() == impl_list.size())) {
+                double ghost_time = ghost.get()[desc].asDouble();
+                size_t ghost_order = relative_perf.size();
+                fprintf(stderr, "    %s(%s): %10.3f us\n", ghost_name.c_str(), ghost_short_name.c_str(), ghost_time);
+                relative_perf.resize(ghost_order + 1);
+                return sample(ghost_order, ghost_time);
             }
+        } else if (order == 1) {
+            ref_time = time;
         }
     }
     void normalize() {
@@ -330,6 +350,23 @@ struct BenchmarkResult {
 BenchmarkResult::~BenchmarkResult() = default;
 
 std::vector<BenchmarkResult> benchmark_results;
+
+//-----------------------------------------------------------------------------
+
+void load_ghost(const vespalib::string &file_name) {
+    MappedFileInput input(file_name);
+    has_ghost = JsonFormat::decode(input, ghost);
+}
+
+void save_result(const vespalib::string &file_name) {
+    SmartBuffer output(4096);
+    JsonFormat::encode(prod_result, output, false);
+    Memory memory = output.obtain();
+    File file(file_name);
+    file.open(File::CREATE | File::TRUNC);
+    file.write(memory.data, memory.size, 0);
+    file.close();
+}
 
 //-----------------------------------------------------------------------------
 
@@ -433,8 +470,8 @@ void benchmark(const vespalib::string &desc, const std::vector<EvalOp::UP> &list
     }
     for (const auto &eval: list) {
         double time = eval->estimate_cost_us(loop_cnt[eval->impl.order], loop_cnt[1]);
-        result.sample(eval->impl.order, time);
         fprintf(stderr, "    %s(%s): %10.3f us\n", eval->impl.name.c_str(), eval->impl.short_name.c_str(), time);
+        result.sample(eval->impl.order, time);
     }
     result.normalize();
     benchmark_results.push_back(result);
@@ -674,9 +711,9 @@ void benchmark_encode_decode(const vespalib::string &desc, const TensorSpec &pro
         }
         double encode_us = encode_timer.min_time() * 1000.0 * 1000.0 / double(loop_cnt);
         double decode_us = decode_timer.min_time() * 1000.0 * 1000.0 / double(loop_cnt);
-        fprintf(stderr, "    %s (%s) <encode>: %10.3f us\n", impl.name.c_str(), impl.short_name.c_str(), encode_us);
-        fprintf(stderr, "    %s (%s) <decode>: %10.3f us\n", impl.name.c_str(), impl.short_name.c_str(), decode_us);
+        fprintf(stderr, "    %s(%s): %10.3f us <encode>\n", impl.name.c_str(), impl.short_name.c_str(), encode_us);
         encode_result.sample(impl.order, encode_us);
+        fprintf(stderr, "    %s(%s): %10.3f us <decode>\n", impl.name.c_str(), impl.short_name.c_str(), decode_us);
         decode_result.sample(impl.order, decode_us);
     }
     encode_result.normalize();
@@ -1077,16 +1114,26 @@ void print_summary() {
 }
 
 int main(int argc, char **argv) {
+    prod_result.setObject();
+    load_ghost("ghost.json");
     const std::string run_only_prod_option = "--limit-implementations";
+    const std::string ghost_mode_option = "--ghost-mode";
     if ((argc > 1) && (argv[1] == run_only_prod_option )) {
         impl_list.clear();
         impl_list.push_back(optimized_fast_value_impl);
         impl_list.push_back(fast_value_impl);
         ++argv;
         --argc;
+    } else if ((argc > 1) && (argv[1] == ghost_mode_option )) {
+        impl_list.clear();
+        impl_list.push_back(optimized_fast_value_impl);
+        has_ghost = true;
+        ++argv;
+        --argc;
     }
     ::testing::InitGoogleTest(&argc, argv);
     int result = RUN_ALL_TESTS();
+    save_result("result.json");
     print_summary();
     return result;
 }
