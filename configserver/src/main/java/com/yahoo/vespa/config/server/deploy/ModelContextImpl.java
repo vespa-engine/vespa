@@ -153,6 +153,7 @@ public class ModelContextImpl implements ModelContext {
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final boolean useDirectStorageApiRpc;
+        private final boolean useFastValueTensorImplementation;
         private final String feedSequencer;
         private final String responseSequencer;
         private final int numResponseThreads;
@@ -171,6 +172,7 @@ public class ModelContextImpl implements ModelContext {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
             this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
             this.useDirectStorageApiRpc = flagValue(source, appId, Flags.USE_DIRECT_STORAGE_API_RPC);
+            this.useFastValueTensorImplementation = flagValue(source, appId, Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION);
             this.feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
             this.responseSequencer = flagValue(source, appId, Flags.RESPONSE_SEQUENCER_TYPE);
             this.numResponseThreads = flagValue(source, appId, Flags.RESPONSE_NUM_THREADS);
@@ -189,6 +191,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
+        @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
@@ -235,6 +238,7 @@ public class ModelContextImpl implements ModelContext {
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final boolean useDirectStorageApiRpc;
+        private final boolean useFastValueTensorImplementation;
         private final String feedSequencer;
         private final String responseSequencer;
         private final int numResponseThreads;
@@ -281,6 +285,7 @@ public class ModelContextImpl implements ModelContext {
             defaultTermwiseLimit = flagValue(flagSource, applicationId, Flags.DEFAULT_TERM_WISE_LIMIT);
             useThreePhaseUpdates = flagValue(flagSource, applicationId, Flags.USE_THREE_PHASE_UPDATES);
             useDirectStorageApiRpc = flagValue(flagSource, applicationId, Flags.USE_DIRECT_STORAGE_API_RPC);
+            useFastValueTensorImplementation = flagValue(flagSource, applicationId, Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION);
             feedSequencer = flagValue(flagSource, applicationId, Flags.FEED_SEQUENCER_TYPE);
             responseSequencer = flagValue(flagSource, applicationId, Flags.RESPONSE_SEQUENCER_TYPE);
             numResponseThreads = flagValue(flagSource, applicationId, Flags.RESPONSE_NUM_THREADS);
@@ -352,6 +357,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
+        @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
