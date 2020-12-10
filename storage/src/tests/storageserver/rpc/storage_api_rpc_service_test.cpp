@@ -119,7 +119,7 @@ public:
         cfg.set("is_distributor", is_distributor ? "true" : "false");
         addSlobrokConfig(_config, slobrok);
 
-        _shared_rpc_resources = std::make_unique<SharedRpcResources>(_config.getConfigId(), 0, 1);
+        _shared_rpc_resources = std::make_unique<SharedRpcResources>(_config.getConfigId(), 0, 1, 1);
         // TODO make codec provider into interface so we can test decode-failures more easily?
         _codec_provider = std::make_unique<MessageCodecProvider>(_doc_type_repo);
     }
