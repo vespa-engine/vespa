@@ -177,7 +177,8 @@ public class ConfiguratorTest {
                "quorumListenOnAllIPs=true\n" +
                "standaloneEnabled=false\n" +
                "reconfigEnabled=true\n" +
-               "skipACL=yes\n";
+               "skipACL=yes\n" +
+               "metricsProvider.className=org.apache.zookeeper.metrics.impl.NullMetricsProvider\n";
     }
 
     private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
