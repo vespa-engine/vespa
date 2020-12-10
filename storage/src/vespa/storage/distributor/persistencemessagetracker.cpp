@@ -223,8 +223,8 @@ PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
     }
 
     updateMetrics();
-    _trace.setStrict(false);
     if ( ! _trace.isEmpty()) {
+        _trace.setStrict(false);
         _reply->getTrace().addChild(std::move(_trace));
     }
     
