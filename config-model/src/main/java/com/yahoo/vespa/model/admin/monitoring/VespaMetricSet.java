@@ -220,6 +220,8 @@ public class VespaMetricSet {
         addMetric(metrics, "jdisc.http.filtering.response.handled", List.of("rate"));
         addMetric(metrics, "jdisc.http.filtering.response.unhandled", List.of("rate"));
 
+        addMetric(metrics, "jdisc.application.failed_component_graphs", List.of("rate"));
+
         return metrics;
     }
 
