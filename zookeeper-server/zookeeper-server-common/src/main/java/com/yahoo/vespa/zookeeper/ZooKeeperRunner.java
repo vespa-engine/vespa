@@ -7,6 +7,8 @@ import com.yahoo.security.tls.TransportSecurityUtils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +40,7 @@ public class ZooKeeperRunner implements Runnable {
     }
 
     void shutdown() {
-        executorService.shutdown();
+        executorService.shutdownNow();
         try {
             if (!executorService.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
                 log.log(Level.WARNING, "Failed to shut down within timeout");
@@ -46,16 +48,32 @@ public class ZooKeeperRunner implements Runnable {
         } catch (InterruptedException e) {
             log.log(Level.INFO, "Interrupted waiting for executor to complete", e);
         }
-        if ( ! executorService.isTerminated()) {
-            executorService.shutdownNow();
-        }
     }
 
     @Override
     public void run() {
         Path path = Paths.get(getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile()));
-        log.log(Level.INFO, "Starting ZooKeeper server with config file " + path.toFile().getAbsolutePath() +
-                            ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
+
+        // Retry start of server. An already running server might take some time to shut down, starting a new
+        // one will fail in that case, so retry
+        Instant end = Instant.now().plus(Duration.ofMinutes(10));
+        do {
+            try {
+                log.log(Level.INFO, "Starting ZooKeeper server with config file " + path.toFile().getAbsolutePath() +
+                                    ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
+                startServer(path);
+            } catch (RuntimeException e) {
+                log.log(Level.INFO, "Starting ZooKeeper server failed, will retry");
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException interruptedException) {
+                    log.log(Level.INFO, "Failed interrupting task", e);
+                }
+            }
+        } while (Instant.now().isBefore(end));
+    }
+
+    private void startServer(Path path) {
         // Note: Hack to make this work in ZooKeeper 3.6, where metrics provider class is
         // loaded by using Thread.currentThread().getContextClassLoader() which does not work
         // well in the container
