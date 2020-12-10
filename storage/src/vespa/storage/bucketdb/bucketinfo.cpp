@@ -15,7 +15,6 @@ BucketInfo::BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> n
     : BucketInfoBase(lastGarbageCollection, std::move(nodes))
 {}
 
-BucketInfo::~BucketInfo() = default;
 
 BucketInfo::BucketInfo(const BucketInfo&) = default;
 BucketInfo& BucketInfo::operator=(const BucketInfo&) = default;

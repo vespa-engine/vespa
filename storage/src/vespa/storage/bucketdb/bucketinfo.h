@@ -133,7 +133,6 @@ class BucketInfo : public BucketInfoBase<std::vector<BucketCopy>> {
 public:
     BucketInfo();
     BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes);
-    ~BucketInfo();
 
     BucketInfo(const BucketInfo&);
     BucketInfo& operator=(const BucketInfo&);
