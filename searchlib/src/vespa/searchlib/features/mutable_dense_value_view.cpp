@@ -2,9 +2,9 @@
 
 #include "mutable_dense_value_view.h"
 
-namespace search::features {
+namespace search::features::mutable_value {
 
-MutableDenseValueView::MutableDenseValueView(const vespalib::eval::ValueType &type_in)
+MutableDenseValueView::MutableDenseValueView(const ValueType &type_in)
   : _type(type_in),
     _cells()
 {

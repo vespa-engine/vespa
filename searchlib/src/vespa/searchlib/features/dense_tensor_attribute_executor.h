@@ -17,7 +17,7 @@ class DenseTensorAttributeExecutor : public fef::FeatureExecutor
 {
 private:
     const search::tensor::ITensorAttribute& _attribute;
-    MutableDenseValueView _tensorView;
+    mutable_value::MutableDenseValueView _tensorView;
 
 public:
     DenseTensorAttributeExecutor(const search::tensor::ITensorAttribute& attribute);

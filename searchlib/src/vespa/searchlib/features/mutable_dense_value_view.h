@@ -5,26 +5,28 @@
 #include <vespa/eval/eval/value.h>
 #include <cassert>
 
-namespace search::features {
+namespace search::features::mutable_value {
+
+using namespace vespalib::eval;
 
 /**
  * A dense tensor with a cells reference that can be modified.
  */
-class MutableDenseValueView : public vespalib::eval::Value {
+class MutableDenseValueView : public Value {
 private:
-    const vespalib::eval::ValueType _type;
-    vespalib::eval::TypedCells _cells;
+    const ValueType _type;
+    TypedCells _cells;
 public:
-    MutableDenseValueView(const vespalib::eval::ValueType &type_in);
-    void setCells(vespalib::eval::TypedCells cells_in) {
+    MutableDenseValueView(const ValueType &type_in);
+    void setCells(TypedCells cells_in) {
         assert(cells_in.type == _type.cell_type());
         _cells = cells_in;
     }
-    const vespalib::eval::ValueType &type() const final override { return _type; }
-    vespalib::eval::TypedCells cells() const final override { return _cells; }
-    const Index &index() const final override { return vespalib::eval::TrivialIndex::get(); }
+    const ValueType &type() const final override { return _type; }
+    TypedCells cells() const final override { return _cells; }
+    const Index &index() const final override { return TrivialIndex::get(); }
     vespalib::MemoryUsage get_memory_usage() const final override {
-        return vespalib::eval::self_memory_usage<MutableDenseValueView>();
+        return self_memory_usage<MutableDenseValueView>();
     }
 };
 
