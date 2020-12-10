@@ -30,7 +30,8 @@ class SharedRpcResources {
     int                                        _rpc_server_port;
     bool                                       _shutdown;
 public:
-    SharedRpcResources(const config::ConfigUri& config_uri, int rpc_server_port, size_t rpc_thread_pool_size);
+    SharedRpcResources(const config::ConfigUri& config_uri, int rpc_server_port,
+                       size_t rpc_thread_pool_size, size_t rpc_events_before_wakeup);
     ~SharedRpcResources();
 
     FRT_Supervisor& supervisor() noexcept { return *_orb; }

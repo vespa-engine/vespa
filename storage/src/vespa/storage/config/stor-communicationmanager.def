@@ -63,6 +63,9 @@ use_direct_storageapi_rpc bool default=false
 ## The number of network (FNET) threads used by the shared rpc resource.
 rpc.num_network_threads int default=2 restart
 
+## The number of events in the queue of a network (FNET) thread before it is woken up.
+rpc.events_before_wakeup int default=1 restart
+
 ## The number of (FNET) RPC targets to use per node in the cluster.
 ##
 ## The bucket id associated with a message is used to select the RPC target.
