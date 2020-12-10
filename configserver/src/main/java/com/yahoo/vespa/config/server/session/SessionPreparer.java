@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -349,11 +348,11 @@ public class SessionPreparer {
     static class PrepareResult {
 
         private final AllocatedHosts allocatedHosts;
-        private final ImmutableList<PreparedModelsBuilder.PreparedModelResult> results;
+        private final List<PreparedModelsBuilder.PreparedModelResult> results;
         
         public PrepareResult(AllocatedHosts allocatedHosts, List<PreparedModelsBuilder.PreparedModelResult> results) {
             this.allocatedHosts = allocatedHosts;
-            this.results = ImmutableList.copyOf(results);
+            this.results = List.copyOf(results);
         }
 
         /** Returns the results for each model as an immutable list */
