@@ -12,4 +12,6 @@ public interface VespaZooKeeperServer {
 
     void start(Path configFilePath);
 
+    default boolean reconfigurable() { return false; }
+
 }

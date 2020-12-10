@@ -23,4 +23,6 @@ public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implem
         new ZooKeeperServer().start(configFilePath);
     }
 
+    public boolean reconfigurable() { return true; }
+
 }

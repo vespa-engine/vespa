@@ -15,6 +15,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,12 +41,18 @@ public class Configurator {
     private final ZookeeperServerConfig zookeeperServerConfig;
     private final Path configFilePath;
     private final Path jksKeyStoreFilePath;
+    private final boolean serverIsReconfigurable;
 
-    public Configurator(ZookeeperServerConfig zookeeperServerConfig) {
+    Configurator(ZookeeperServerConfig zookeeperServerConfig) {
+        this(zookeeperServerConfig, false);
+    }
+
+    public Configurator(ZookeeperServerConfig zookeeperServerConfig, boolean serverIsReconfigurable) {
         log.log(Level.FINE, zookeeperServerConfig.toString());
         this.zookeeperServerConfig = zookeeperServerConfig;
         this.configFilePath = makeAbsolutePath(zookeeperServerConfig.zooKeeperConfigFile());
         this.jksKeyStoreFilePath = makeAbsolutePath(zookeeperServerConfig.jksKeyStoreFile());
+        this.serverIsReconfigurable = serverIsReconfigurable;
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         System.setProperty("zookeeper.snapshot.trust.empty", Boolean.valueOf(zookeeperServerConfig.trustEmptySnapshot()).toString());
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
@@ -55,11 +62,24 @@ public class Configurator {
         configFilePath.toFile().getParentFile().mkdirs();
 
         try {
+            if ( ! serverIsReconfigurable)
+                removeDynamicConfigFiles();
             writeZooKeeperConfigFile(zookeeperServerConfig, transportSecurityOptions);
             writeMyIdFile(zookeeperServerConfig);
             transportSecurityOptions.ifPresent(this::writeJksKeystore);
         } catch (IOException e) {
             throw new RuntimeException("Error writing zookeeper config", e);
+        }
+    }
+
+    private void removeDynamicConfigFiles() throws IOException {
+        String configFileName = configFilePath.getFileName().toString();
+        File [] files = configFilePath.getParent().toFile().listFiles((dir, name) -> name.contains(configFileName + ".dynamic."));
+        if (files == null) return;
+
+        for (File file : files) {
+            log.log(Level.INFO, "Deleting ZooKeeper dynamic config file " + file.getAbsolutePath());
+            Files.delete(file.toPath());
         }
     }
 
