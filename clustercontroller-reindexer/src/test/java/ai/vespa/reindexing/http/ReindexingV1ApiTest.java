@@ -62,7 +62,7 @@ class ReindexingV1ApiTest {
                            "\"music\":{" +
                              "\"startedMillis\":0," +
                              "\"endedMillis\":123," +
-                             "\"progress\":\"" + new ProgressToken().serializeToString() + "\"," +
+                             "\"progress\":1.0," +
                              "\"state\":\"failed\"," +
                              "\"message\":\"ヽ(。_°)ノ\"}" +
                            "}" +
