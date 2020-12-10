@@ -35,7 +35,10 @@ public enum NodeType {
     controllerhost("Controller host", controller),
 
     /** A host of multiple nodes, only used in {@link SystemName#dev} */
-    devhost("Dev host", config, controller, tenant);
+    devhost("Dev host", config, controller, tenant),
+
+    /** A host for rpm proxy */
+    rpmproxy("Rpm Proxy");
 
     private final List<NodeType> childNodeTypes;
     private final String description;
