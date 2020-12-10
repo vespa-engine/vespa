@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -71,7 +70,7 @@ public class ControllerMaintenance extends AbstractComponent {
     @Override
     public void deconstruct() {
         maintainers.forEach(Maintainer::shutdown);
-        maintainers.forEach(Maintainer::close);
+        maintainers.forEach(Maintainer::awaitShutdown);
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */

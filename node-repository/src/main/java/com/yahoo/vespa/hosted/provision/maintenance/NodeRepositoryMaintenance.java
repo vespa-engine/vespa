@@ -78,7 +78,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     @Override
     public void deconstruct() {
         maintainers.forEach(Maintainer::shutdown);
-        maintainers.forEach(Maintainer::close);
+        maintainers.forEach(Maintainer::awaitShutdown);
     }
 
     private static class DefaultTimes {

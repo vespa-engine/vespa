@@ -101,8 +101,8 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    public void close() {
-        super.close();
+    public void awaitShutdown() {
+        super.awaitShutdown();
         try {
             // Give deployments in progress some time to complete
             this.deploymentExecutor.awaitTermination(1, TimeUnit.MINUTES);

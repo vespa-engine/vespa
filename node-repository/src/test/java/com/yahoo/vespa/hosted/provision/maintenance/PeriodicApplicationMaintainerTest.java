@@ -51,7 +51,7 @@ public class PeriodicApplicationMaintainerTest {
 
     @After
     public void after() {
-        this.fixture.maintainer.close();
+        this.fixture.maintainer.awaitShutdown();
     }
 
     @Test(timeout = 60_000)

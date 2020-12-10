@@ -62,14 +62,14 @@ public abstract class Maintainer implements Runnable {
         log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }
 
-    /** Starts shutdown of this, typically by shutting down executors. {@link #close()} waits for shutdown to complete. */
+    /** Starts shutdown of this, typically by shutting down executors. {@link #awaitShutdown()} waits for shutdown to complete. */
     public void shutdown() {
         if ( ! shutDown.getAndSet(true))
             service.shutdown();
     }
 
     /** Waits for shutdown to complete, calling {@link #shutdown} if this hasn't been done already. */
-    public void close() {
+    public void awaitShutdown() {
         shutdown();
         var timeout = Duration.ofSeconds(30);
         try {

@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.maintenance.Maintainer;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ConfigServerBootstrap;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -47,7 +46,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
     @Override
     public void deconstruct() {
         maintainers.forEach(Maintainer::shutdown);
-        maintainers.forEach(Maintainer::close);
+        maintainers.forEach(Maintainer::awaitShutdown);
     }
 
     /*
