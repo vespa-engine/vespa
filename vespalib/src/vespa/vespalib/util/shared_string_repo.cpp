@@ -7,6 +7,18 @@ namespace vespalib {
 SharedStringRepo::Partition::~Partition() = default;
 
 void
+SharedStringRepo::Partition::find_leaked_entries(size_t my_idx) const
+{
+    for (size_t i = 0; i < _entries.size(); ++i) {
+        if (!_entries[i].is_free()) {
+            size_t id = (((i << PART_BITS) | my_idx) + 1);
+            fprintf(stderr, "WARNING: shared_string_repo: leaked string id: %zu ('%s')\n",
+                    id, _entries[i].str().c_str());
+        }
+    }
+}
+
+void
 SharedStringRepo::Partition::make_entries(size_t hint)
 {
     hint = std::max(hint, _entries.size() + 1);
@@ -20,7 +32,12 @@ SharedStringRepo::Partition::make_entries(size_t hint)
 }
 
 SharedStringRepo::SharedStringRepo() = default;
-SharedStringRepo::~SharedStringRepo() = default;
+SharedStringRepo::~SharedStringRepo()
+{
+    for (size_t p = 0; p < _partitions.size(); ++p) {
+        _partitions[p].find_leaked_entries(p);
+    }
+}
 
 SharedStringRepo &
 SharedStringRepo::get()
@@ -42,6 +59,13 @@ SharedStringRepo::StrongHandles::StrongHandles(size_t expect_size)
       _handles()
 {
     _handles.reserve(expect_size);
+}
+
+SharedStringRepo::StrongHandles::StrongHandles(StrongHandles &&rhs)
+    : _repo(rhs._repo),
+      _handles(std::move(rhs._handles))
+{
+    assert(rhs._handles.empty());
 }
 
 SharedStringRepo::StrongHandles::~StrongHandles()

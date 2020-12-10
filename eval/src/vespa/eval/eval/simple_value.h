@@ -3,7 +3,7 @@
 #pragma once
 
 #include "value.h"
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 #include <vector>
 #include <map>
 
@@ -26,7 +26,8 @@ class TensorSpec;
 class SimpleValue : public Value, public Value::Index
 {
 private:
-    using Labels = std::vector<vespalib::string>;
+    using Handle = SharedStringRepo::Handle;
+    using Labels = std::vector<Handle>;
 
     ValueType _type;
     size_t _num_mapped_dims;
@@ -36,6 +37,7 @@ protected:
     size_t num_mapped_dims() const { return _num_mapped_dims; }
     size_t subspace_size() const { return _subspace_size; }
     void add_mapping(ConstArrayRef<vespalib::stringref> addr);
+    void add_mapping(ConstArrayRef<label_t> addr);
     MemoryUsage estimate_extra_memory_usage() const;
 public:
     SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
@@ -62,6 +64,7 @@ public:
     ~SimpleValueT() override;
     TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(_cells)); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override;
+    ArrayRef<T> add_subspace(ConstArrayRef<label_t> addr) override;
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         if (num_mapped_dims() == 0) {
             assert(size() == 1);
@@ -87,7 +90,7 @@ class SimpleValueBuilderFactory : public ValueBuilderFactory {
 private:
     SimpleValueBuilderFactory();
     static SimpleValueBuilderFactory _factory;
-    std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,
+    std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type, bool transient,
             size_t num_mapped_dims, size_t subspace_size, size_t expected_subspaces) const override;
 public:
     static const SimpleValueBuilderFactory &get() { return _factory; }

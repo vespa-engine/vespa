@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 
 using vespalib::make_string_short::fmt;
 
@@ -128,9 +129,10 @@ size_t maybe_decode_num_blocks(nbostream &input, bool has_mapped_dims, const For
     return 1;
 }
 
-void encode_mapped_labels(nbostream &output, size_t num_mapped_dims, const std::vector<vespalib::stringref> &addr) {
+void encode_mapped_labels(nbostream &output, size_t num_mapped_dims, const std::vector<label_t> &addr) {
     for (size_t i = 0; i < num_mapped_dims; ++i) {
-        output.writeSmallString(addr[i]);
+        vespalib::string str = SharedStringRepo::Handle::string_from_id(addr[i]);
+        output.writeSmallString(str);
     }
 }
 
@@ -175,7 +177,7 @@ struct ContentDecoder {
         }
         // add implicit empty subspace
         if ((state.num_mapped_dims == 0) && (state.num_blocks == 0)) {
-            for (T &cell: builder->add_subspace({})) {
+            for (T &cell: builder->add_subspace()) {
                 cell = T{};
             }
         }
@@ -229,8 +231,8 @@ struct CreateTensorSpecFromValue {
         TensorSpec spec(value.type().to_spec());
         size_t subspace_id = 0;
         size_t subspace_size = value.type().dense_subspace_size();
-        std::vector<vespalib::stringref> labels(value.type().count_mapped_dimensions());
-        std::vector<vespalib::stringref*> label_refs;
+        std::vector<label_t> labels(value.type().count_mapped_dimensions());
+        std::vector<label_t*> label_refs;
         for (auto &label: labels) {
             label_refs.push_back(&label);
         }
@@ -241,7 +243,7 @@ struct CreateTensorSpecFromValue {
             TensorSpec::Address addr;
             for (const auto &dim: value.type().dimensions()) {
                 if (dim.is_mapped()) {
-                    addr.emplace(dim.name, labels[label_idx++]);
+                    addr.emplace(dim.name, SharedStringRepo::Handle::string_from_id(labels[label_idx++]));
                 }
             }
             for (size_t i = 0; i < subspace_size; ++i) {
@@ -270,8 +272,8 @@ struct EncodeState {
 struct ContentEncoder {
     template<typename T>
     static void invoke(const Value &value, const EncodeState &state, nbostream &output) {
-        std::vector<vespalib::stringref> address(state.num_mapped_dims);
-        std::vector<vespalib::stringref*> a_refs(state.num_mapped_dims);;
+        std::vector<label_t> address(state.num_mapped_dims);
+        std::vector<label_t*> a_refs(state.num_mapped_dims);;
         for (size_t i = 0; i < state.num_mapped_dims; ++i) {
             a_refs[i] = &address[i];
         }

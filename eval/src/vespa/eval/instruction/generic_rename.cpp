@@ -69,15 +69,15 @@ generic_rename(const Value &a,
                const ValueType &res_type, const ValueBuilderFactory &factory)
 {
     auto cells = a.cells().typify<CT>();
-    std::vector<vespalib::stringref> output_address(sparse_plan.mapped_dims);
-    std::vector<vespalib::stringref*> input_address;
+    std::vector<label_t> output_address(sparse_plan.mapped_dims);
+    std::vector<label_t*> input_address;
     for (size_t maps_to : sparse_plan.output_dimensions) {
         input_address.push_back(&output_address[maps_to]);
     }
-    auto builder = factory.create_value_builder<CT>(res_type,
-                                                    sparse_plan.mapped_dims,
-                                                    dense_plan.subspace_size,
-                                                    a.index().size());
+    auto builder = factory.create_transient_value_builder<CT>(res_type,
+                                                              sparse_plan.mapped_dims,
+                                                              dense_plan.subspace_size,
+                                                              a.index().size());
     auto view = a.index().create_view({});
     view->lookup({});
     size_t subspace;

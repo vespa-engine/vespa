@@ -45,10 +45,10 @@ ReduceParam::~ReduceParam() = default;
 //-----------------------------------------------------------------------------
 
 struct SparseReduceState {
-    std::vector<vespalib::stringref>  full_address;
-    std::vector<vespalib::stringref*> fetch_address;
-    std::vector<vespalib::stringref*> keep_address;
-    size_t                            subspace;
+    std::vector<label_t>  full_address;
+    std::vector<label_t*> fetch_address;
+    std::vector<label_t*> keep_address;
+    size_t                subspace;
 
     SparseReduceState(const SparseReducePlan &plan)
         : full_address(plan.keep_dims.size() + plan.num_reduce_dims),
@@ -71,20 +71,20 @@ template <typename ICT, typename OCT, typename AGGR>
 Value::UP
 generic_reduce(const Value &value, const ReduceParam &param) {
     auto cells = value.cells().typify<ICT>();
-    ArrayArrayMap<vespalib::stringref,AGGR> map(param.sparse_plan.keep_dims.size(),
-                                                param.dense_plan.out_size,
-                                                value.index().size());
+    ArrayArrayMap<label_t,AGGR> map(param.sparse_plan.keep_dims.size(),
+                                    param.dense_plan.out_size,
+                                    value.index().size());
     SparseReduceState sparse(param.sparse_plan);
     auto full_view = value.index().create_view({});
     full_view->lookup({});
-    ConstArrayRef<vespalib::stringref*> keep_addr(sparse.keep_address);
+    ConstArrayRef<label_t*> keep_addr(sparse.keep_address);
     while (full_view->next_result(sparse.fetch_address, sparse.subspace)) {
         auto [tag, ignore] = map.lookup_or_add_entry(keep_addr);
         AGGR *dst = map.get_values(tag).begin();
         auto sample = [&](size_t src_idx, size_t dst_idx) { dst[dst_idx].sample(cells[src_idx]); };
         param.dense_plan.execute(sparse.subspace * param.dense_plan.in_size, sample);
     }
-    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.keep_dims.size(), param.dense_plan.out_size, map.size());
+    auto builder = param.factory.create_transient_value_builder<OCT>(param.res_type, param.sparse_plan.keep_dims.size(), param.dense_plan.out_size, map.size());
     map.each_entry([&](const auto &keys, const auto &values)
                    {
                        OCT *dst = builder->add_subspace(keys).begin();
@@ -93,7 +93,7 @@ generic_reduce(const Value &value, const ReduceParam &param) {
                        }
                    });
     if ((map.size() == 0) && param.sparse_plan.keep_dims.empty()) {
-        auto zero = builder->add_subspace({});
+        auto zero = builder->add_subspace();
         for (size_t i = 0; i < zero.size(); ++i) {
             zero[i] = OCT{};
         }

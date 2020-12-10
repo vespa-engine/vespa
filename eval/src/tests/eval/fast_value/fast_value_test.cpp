@@ -8,6 +8,8 @@
 using namespace vespalib;
 using namespace vespalib::eval;
 
+using Handle = SharedStringRepo::Handle;
+
 TEST(FastCellsTest, push_back_fast_works) {
     FastCells<float> cells(3);
     EXPECT_EQ(cells.capacity, 4);
@@ -60,38 +62,37 @@ TEST(FastCellsTest, add_cells_works) {
 
 using SA = std::vector<vespalib::stringref>;
 
+TEST(FastValueBuilderTest, scalar_add_subspace_robustness) {
+    auto factory = FastValueBuilderFactory::get();
+    ValueType type = ValueType::from_spec("double");
+    auto builder = factory.create_value_builder<double>(type);
+    auto subspace = builder->add_subspace();
+    subspace[0] = 17.0;
+    auto other = builder->add_subspace();
+    other[0] = 42.0;
+    auto value = builder->build(std::move(builder));
+    EXPECT_EQ(value->index().size(), 1);
+    auto actual = spec_from_value(*value);
+    auto expected = TensorSpec("double").
+                    add({}, 42.0);
+    EXPECT_EQ(actual, expected);
+}
+
 TEST(FastValueBuilderTest, dense_add_subspace_robustness) {
     auto factory = FastValueBuilderFactory::get();
     ValueType type = ValueType::from_spec("tensor(x[2])");
     auto builder = factory.create_value_builder<double>(type);
-    auto subspace = builder->add_subspace({});
+    auto subspace = builder->add_subspace();
     subspace[0] = 17.0;
     subspace[1] = 666;
-    auto other = builder->add_subspace({});
+    auto other = builder->add_subspace();
     other[1] = 42.0;
     auto value = builder->build(std::move(builder));
+    EXPECT_EQ(value->index().size(), 1);
     auto actual = spec_from_value(*value);
     auto expected = TensorSpec("tensor(x[2])").
                     add({{"x", 0}}, 17.0).
                     add({{"x", 1}}, 42.0);
-    EXPECT_EQ(actual, expected);    
-}
-
-TEST(FastValueBuilderTest, sparse_add_subspace_robustness) {
-    auto factory = FastValueBuilderFactory::get();
-    ValueType type = ValueType::from_spec("tensor(x{})");
-    auto builder = factory.create_value_builder<double>(type);
-    auto subspace = builder->add_subspace(SA{"foo"});
-    subspace[0] = 17.0;
-    subspace = builder->add_subspace(SA{"bar"});
-    subspace[0] = 18.0;
-    auto other = builder->add_subspace(SA{"foo"});
-    other[0] = 42.0;
-    auto value = builder->build(std::move(builder));
-    auto actual = spec_from_value(*value);
-    auto expected = TensorSpec("tensor(x{})").
-                    add({{"x", "bar"}}, 18.0).
-                    add({{"x", "foo"}}, 42.0);
     EXPECT_EQ(actual, expected);    
 }
 
@@ -100,21 +101,43 @@ TEST(FastValueBuilderTest, mixed_add_subspace_robustness) {
     ValueType type = ValueType::from_spec("tensor(x{},y[2])");
     auto builder = factory.create_value_builder<double>(type);
     auto subspace = builder->add_subspace(SA{"foo"});
-    subspace[0] = 17.0;
-    subspace[1] = 666;
+    subspace[0] = 1.0;
+    subspace[1] = 5.0;
     subspace = builder->add_subspace(SA{"bar"});
-    subspace[0] = 18.0;
-    subspace[1] = 19.0;
+    subspace[0] = 2.0;
+    subspace[1] = 10.0;
     auto other = builder->add_subspace(SA{"foo"});
-    other[1] = 42.0;
+    other[0] = 3.0;
+    other[1] = 15.0;
     auto value = builder->build(std::move(builder));
-    auto actual = spec_from_value(*value);
-    auto expected = TensorSpec("tensor(x{},y[2])").
-                    add({{"x", "foo"}, {"y", 0}}, 17.0).
-                    add({{"x", "bar"}, {"y", 0}}, 18.0).
-                    add({{"x", "bar"}, {"y", 1}}, 19.0).
-                    add({{"x", "foo"}, {"y", 1}}, 42.0);
-    EXPECT_EQ(actual, expected);    
+    EXPECT_EQ(value->index().size(), 3);
+    Handle foo("foo");
+    Handle bar("bar");
+    label_t label;
+    label_t *label_ptr = &label;
+    size_t subspace_idx;
+    auto get_subspace = [&]() {
+        auto cells = value->cells().typify<double>();
+        return ConstArrayRef<double>(cells.begin() + subspace_idx * 2, 2);
+    };
+    auto view = value->index().create_view({});
+    view->lookup({});
+    while (view->next_result({&label_ptr, 1}, subspace_idx)) {
+        if (label == bar.id()) {
+            auto values = get_subspace();
+            EXPECT_EQ(values[0], 2.0);
+            EXPECT_EQ(values[1], 10.0);
+        } else {
+            EXPECT_EQ(label, foo.id());
+            auto values = get_subspace();
+            if (values[0] == 1) {
+                EXPECT_EQ(values[1], 5.0);
+            } else {
+                EXPECT_EQ(values[0], 3.0);
+                EXPECT_EQ(values[1], 15.0);
+            }
+        }
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

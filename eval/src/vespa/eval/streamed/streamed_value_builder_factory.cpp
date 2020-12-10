@@ -19,10 +19,12 @@ struct SelectStreamedValueBuilder {
 
 std::unique_ptr<ValueBuilderBase>
 StreamedValueBuilderFactory::create_value_builder_base(const ValueType &type,
+                                                       bool transient,
                                                        size_t num_mapped,
                                                        size_t subspace_size,
                                                        size_t expected_subspaces) const
 {
+    (void) transient;
     return typify_invoke<1,TypifyCellType,SelectStreamedValueBuilder>(
         type.cell_type(),
         type, num_mapped, subspace_size, expected_subspaces);

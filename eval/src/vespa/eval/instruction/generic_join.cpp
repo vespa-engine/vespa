@@ -41,7 +41,7 @@ generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam &param)
     if (param.sparse_plan.lhs_overlap.empty() && param.sparse_plan.rhs_overlap.empty()) {
         expected_subspaces = sparse.first_index.size() * sparse.second_index.size();
     }
-    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), param.dense_plan.out_size, expected_subspaces);
+    auto builder = param.factory.create_transient_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), param.dense_plan.out_size, expected_subspaces);
     auto outer = sparse.first_index.create_view({});
     auto inner = sparse.second_index.create_view(sparse.second_view_dims);
     outer->lookup({});
@@ -92,7 +92,7 @@ void my_sparse_no_overlap_join_op(State &state, uint64_t param_in) {
     SparseJoinState sparse(param.sparse_plan, lhs.index(), rhs.index());
     auto guess = lhs.index().size() * rhs.index().size();
     assert(param.dense_plan.out_size == 1);
-    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), 1, guess);
+    auto builder = param.factory.create_transient_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), 1, guess);
     auto outer = sparse.first_index.create_view({});
     assert(sparse.second_view_dims.empty());
     auto inner = sparse.second_index.create_view({});
@@ -131,7 +131,7 @@ void my_sparse_full_overlap_join_op(State &state, uint64_t param_in) {
     }
     Fun fun(param.function);
     SparseJoinState sparse(param.sparse_plan, lhs_index, rhs_index);
-    auto builder = param.factory.create_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), param.dense_plan.out_size, sparse.first_index.size());
+    auto builder = param.factory.create_transient_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), param.dense_plan.out_size, sparse.first_index.size());
     auto outer = sparse.first_index.create_view({});
     auto inner = sparse.second_index.create_view(sparse.second_view_dims);
     outer->lookup({});
