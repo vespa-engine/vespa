@@ -64,7 +64,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
-    private double defaultFeedConcurrency;
+    private final double defaultFeedConcurrency;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
