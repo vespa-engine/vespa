@@ -82,7 +82,7 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
                 Cursor statusObject = documentTypesObject.setObject(type.getName());
                 statusObject.setLong("startedMillis", status.startedAt().toEpochMilli());
                 status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedMillis", endedAt.toEpochMilli()));
-                status.progress().ifPresent(progress -> statusObject.setString("progress", progress.serializeToString()));
+                status.progress().ifPresent(progress -> statusObject.setString("progress", String.format("%.2f%%", progress.percentFinished())));
                 statusObject.setString("state", toString(status.state()));
                 status.message().ifPresent(message -> statusObject.setString("message", message));
             });
