@@ -455,7 +455,7 @@ public class ApplicationHandlerTest {
                                                                                              now.plusSeconds(2),
                                                                                              ClusterReindexing.State.FAILED,
                                                                                              "message",
-                                                                                             "some")));
+                                                                                             0.1)));
         assertJsonEquals(getRenderedString(new ReindexingResponse(applicationReindexing,
                                                                   Map.of("boo", clusterReindexing,
                                                                          "moo", clusterReindexing))),
@@ -476,7 +476,7 @@ public class ApplicationHandlerTest {
                          "          \"endedMillis\": 125456,\n" +
                          "          \"state\": \"failed\",\n" +
                          "          \"message\": \"message\",\n" +
-                         "          \"progress\": \"some\"\n" +
+                         "          \"progress\": 0.1\n" +
                          "        }\n" +
                          "      }\n" +
                          "    },\n" +
@@ -498,7 +498,7 @@ public class ApplicationHandlerTest {
                          "          \"endedMillis\": 125456,\n" +
                          "          \"state\": \"failed\",\n" +
                          "          \"message\": \"message\",\n" +
-                         "          \"progress\": \"some\"\n" +
+                         "          \"progress\": 0.1\n" +
                          "        },\n" +
                          "        \"bax\": {\n" +
                          "          \"startedMillis\": 123456\n" +

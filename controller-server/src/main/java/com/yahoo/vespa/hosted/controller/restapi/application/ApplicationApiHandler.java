@@ -1604,7 +1604,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedAtMillis", endedAt.toEpochMilli()));
         status.state().map(ApplicationApiHandler::toString).ifPresent(state -> statusObject.setString("state", state));
         status.message().ifPresent(message -> statusObject.setString("message", message));
-        status.progress().ifPresent(progress -> statusObject.setString("progress", progress));
+        status.progress().ifPresent(progress -> statusObject.setDouble("progress", progress));
     }
 
     private static String toString(ApplicationReindexing.State state) {

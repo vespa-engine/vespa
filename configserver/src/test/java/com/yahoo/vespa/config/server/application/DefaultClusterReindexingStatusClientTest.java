@@ -5,9 +5,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -63,7 +61,7 @@ public class DefaultClusterReindexingStatusClientTest {
                 "        \"artist\": {" +
                 "          \"startedMillis\":50," +
                 "          \"endedMillis\":150," +
-                "          \"progress\":\"half-done\"," +
+                "          \"progress\": 0.5," +
                 "          \"state\": \"" + ClusterReindexing.State.SUCCESSFUL.asString() + "\"," +
                 "          \"message\":\"success\"" +
                 "        }" +
@@ -84,7 +82,7 @@ public class DefaultClusterReindexingStatusClientTest {
                                                                                                                    Instant.ofEpochMilli(150),
                                                                                                                    ClusterReindexing.State.SUCCESSFUL,
                                                                                                                    "success",
-                                                                                                                   "half-done"))));
+                                                                                                                   0.5))));
         Map<String, ClusterReindexing> result = client.getReindexingStatus(app);
         assertEquals(expected, result);
     }

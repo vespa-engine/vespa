@@ -483,7 +483,7 @@ public class ApplicationHandler extends HttpHandler {
             status.endedAt().ifPresent(endedAt -> object.setLong("endedMillis", endedAt.toEpochMilli()));
             status.state().map(ClusterReindexing.State::asString).ifPresent(state -> object.setString("state", state));
             status.message().ifPresent(message -> object.setString("message", message));
-            status.progress().ifPresent(progress -> object.setString("progress", progress));
+            status.progress().ifPresent(progress -> object.setDouble("progress", progress));
         }
 
     }
