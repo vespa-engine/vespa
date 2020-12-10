@@ -2,9 +2,9 @@
 
 #include "mutable_dense_tensor_view.h"
 
-namespace vespalib::eval {
+namespace search::features {
 
-MutableDenseTensorView::MutableDenseTensorView(const ValueType &type_in)
+MutableDenseTensorView::MutableDenseTensorView(const vespalib::eval::ValueType &type_in)
   : _type(type_in),
     _cells()
 {
