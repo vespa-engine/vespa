@@ -52,6 +52,9 @@
       "name": "ReadyJobsTrigger"
     },
     {
+      "name": "ReindexingTriggerer"
+    },
+    {
       "name": "ResourceMeterMaintainer"
     },
     {

@@ -78,9 +78,9 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    public void close() {
+    public void awaitShutdown() {
         connectionPool.close();
-        super.close();
+        super.awaitShutdown();
     }
 
     private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {
