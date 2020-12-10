@@ -101,7 +101,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     llvm::PointerType *make_eval_forest_funptr_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(builder.getDoubleTy()->getPointerTo());
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         return llvm::PointerType::get(function_type, 0);
@@ -109,7 +109,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     llvm::PointerType *make_resolve_param_funptr_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(builder.getInt64Ty());
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         return llvm::PointerType::get(function_type, 0);
@@ -118,9 +118,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     llvm::PointerType *make_eval_forest_proxy_funptr_t() {
         std::vector<llvm::Type*> param_types;
         param_types.push_back(make_eval_forest_funptr_t());
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(make_resolve_param_funptr_t());
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(builder.getInt64Ty());
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         return llvm::PointerType::get(function_type, 0);
@@ -128,7 +128,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     llvm::PointerType *make_check_membership_funptr_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getVoidTy()->getPointerTo());
+        param_types.push_back(builder.getInt8Ty()->getPointerTo());
         param_types.push_back(builder.getDoubleTy());
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getInt1Ty(), param_types, false);
         return llvm::PointerType::get(function_type, 0);
@@ -164,7 +164,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         } else {
             assert(pass_params == PassParams::LAZY);
             param_types.push_back(make_resolve_param_funptr_t());
-            param_types.push_back(builder.getVoidTy()->getPointerTo());
+            param_types.push_back(builder.getInt8Ty()->getPointerTo());
         }
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         function = llvm::Function::Create(function_type, llvm::Function::ExternalLinkage, name_in.c_str(), &module);
@@ -243,7 +243,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         gbdt::Forest *forest = forests.back().get();
         llvm::PointerType *eval_funptr_t = make_eval_forest_funptr_t();
         llvm::Value *eval_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)eval_ptr), eval_funptr_t, "inject_eval");
-        llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getVoidTy()->getPointerTo(), "inject_ctx");
+        llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getInt8Ty()->getPointerTo(), "inject_ctx");
         if (pass_params == PassParams::ARRAY) {
             push(builder.CreateCall(llvm::cast<llvm::FunctionType>(eval_fun->getType()->getPointerElementType()),
                                     eval_fun, {ctx, params[0]}, "call_eval"));
@@ -405,7 +405,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             PluginState *state = plugin_state.back().get();
             llvm::PointerType *funptr_t = make_check_membership_funptr_t();
             llvm::Value *call_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)call_ptr), funptr_t, "inject_call_addr");
-            llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)state), builder.getVoidTy()->getPointerTo(), "inject_ctx");
+            llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)state), builder.getInt8Ty()->getPointerTo(), "inject_ctx");
             push(builder.CreateCall(llvm::cast<llvm::FunctionType>(call_fun->getType()->getPointerElementType()),
                                     call_fun, {ctx, lhs}, "call_check_membership"));
         } else {
