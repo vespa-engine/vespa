@@ -106,7 +106,7 @@ class Activator {
         for (var clusterEntry : currentNodesByCluster.entrySet()) {
             var previousResources = oldNodes.cluster(clusterEntry.getKey()).toResources();
             var currentResources = NodeList.copyOf(clusterEntry.getValue()).toResources();
-            if ( ! previousResources.equals(currentResources)) {
+            if ( ! previousResources.justNumbers().equals(currentResources.justNumbers())) {
                 modified = modified.with(application.get().cluster(clusterEntry.getKey()).get()
                                                           .with(ScalingEvent.create(previousResources,
                                                                                     currentResources,
