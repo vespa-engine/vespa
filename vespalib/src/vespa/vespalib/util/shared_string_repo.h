@@ -10,6 +10,7 @@
 #include <mutex>
 #include <vector>
 #include <array>
+#include <cassert>
 
 namespace vespalib {
 
@@ -34,21 +35,43 @@ private:
 
     class alignas(64) Partition {
     public:
-        struct Entry {
+        class Entry {
+        public:
             static constexpr uint32_t npos = -1;
-            uint32_t hash;
-            uint32_t ref_cnt;
-            vespalib::string str;
-            explicit Entry(uint32_t next) noexcept : hash(), ref_cnt(next), str() {}
+        private:
+            uint32_t _hash;
+            uint32_t _ref_cnt;
+            vespalib::string _str;
+        public:
+            explicit Entry(uint32_t next) noexcept
+                : _hash(next), _ref_cnt(npos), _str() {}
+            constexpr uint32_t hash() const noexcept { return _hash; }
+            constexpr const vespalib::string &str() const noexcept { return _str; }
+            constexpr bool is_free() const noexcept { return (_ref_cnt == npos); }
             uint32_t init(const AltKey &key) {
-                uint32_t next = ref_cnt;
-                hash = key.hash;
-                ref_cnt = 1;
-                str = key.str;
+                uint32_t next = _hash;
+                _hash = key.hash;
+                _ref_cnt = 1;
+                _str = key.str;
                 return next;
             }
             void fini(uint32_t next) {
-                ref_cnt = next;
+                _hash = next;
+                _ref_cnt = npos;
+                // to reset or not to reset...
+                // _str.reset();
+            }
+            vespalib::string as_string() const {
+                assert(!is_free());
+                return _str;
+            }
+            void add_ref() {
+                assert(!is_free());
+                ++_ref_cnt;
+            }
+            bool sub_ref() {
+                assert(!is_free());
+                return (--_ref_cnt == 0);
             }
         };
         struct Key {
@@ -64,7 +87,7 @@ private:
             Equal(const std::vector<Entry> &entries_in) : entries(entries_in) {}
             Equal(const Equal &rhs) = default;
             bool operator()(const Key &a, const Key &b) const { return (a.idx == b.idx); }
-            bool operator()(const Key &a, const AltKey &b) const { return ((a.hash == b.hash) && (entries[a.idx].str == b.str)); }
+            bool operator()(const Key &a, const AltKey &b) const { return ((a.hash == b.hash) && (entries[a.idx].str() == b.str)); }
         };
         using HashType = hashtable<Key,Key,Hash,Equal,Identity,hashtable_base::and_modulator>;
 
@@ -92,12 +115,13 @@ private:
             make_entries(64);
         }
         ~Partition();
+        void find_leaked_entries(size_t my_idx) const;
 
         uint32_t resolve(const AltKey &alt_key) {
             std::lock_guard guard(_lock);
             auto pos = _hash.find(alt_key);
             if (pos != _hash.end()) {
-                ++_entries[pos->idx].ref_cnt;
+                _entries[pos->idx].add_ref();
                 return pos->idx;
             } else {
                 uint32_t idx = make_entry(alt_key);
@@ -108,19 +132,19 @@ private:
 
         vespalib::string as_string(uint32_t idx) {
             std::lock_guard guard(_lock);
-            return _entries[idx].str;
+            return _entries[idx].as_string();
         }
 
         void copy(uint32_t idx) {
             std::lock_guard guard(_lock);
-            ++_entries[idx].ref_cnt;
+            _entries[idx].add_ref();
         }
 
         void reclaim(uint32_t idx) {
             std::lock_guard guard(_lock);
             Entry &entry = _entries[idx];
-            if (--entry.ref_cnt == 0) {
-                _hash.erase(Key{idx, entry.hash});
+            if (entry.sub_ref()) {
+                _hash.erase(Key{idx, entry.hash()});
                 entry.fini(_free);
                 _free = idx;
             }
@@ -178,8 +202,9 @@ public:
     class Handle {
     private:
         uint32_t _id;
+        Handle(uint32_t weak_id) : _id(get().copy(weak_id)) {}
     public:
-        Handle() : _id(0) {}
+        Handle() noexcept : _id(0) {}
         Handle(vespalib::stringref str) : _id(get().resolve(str)) {}
         Handle(const Handle &rhs) : _id(get().copy(rhs._id)) {}
         Handle &operator=(const Handle &rhs) {
@@ -196,9 +221,15 @@ public:
             rhs._id = 0;
             return *this;
         }
-        bool operator==(const Handle &rhs) const { return (_id == rhs._id); }
-        uint32_t id() const { return _id; }
+        // NB: not lexical sorting order, but can be used in maps
+        bool operator<(const Handle &rhs) const noexcept { return (_id < rhs._id); }
+        bool operator==(const Handle &rhs) const noexcept { return (_id == rhs._id); }
+        bool operator!=(const Handle &rhs) const noexcept { return (_id != rhs._id); }
+        uint32_t id() const noexcept { return _id; }
+        uint32_t hash() const noexcept { return _id; }
         vespalib::string as_string() const { return get().as_string(_id); }
+        static Handle handle_from_id(uint32_t weak_id) { return Handle(weak_id); }
+        static vespalib::string string_from_id(uint32_t weak_id) { return get().as_string(weak_id); }
         ~Handle() { get().reclaim(_id); }
     };
 
@@ -229,8 +260,20 @@ public:
         std::vector<uint32_t> _handles;        
     public:
         StrongHandles(size_t expect_size);
+        StrongHandles(StrongHandles &&rhs);
+        StrongHandles(const StrongHandles &) = delete;
+        StrongHandles &operator=(const StrongHandles &) = delete;
+        StrongHandles &operator=(StrongHandles &&) = delete;
         ~StrongHandles();
-        void add(vespalib::stringref str) { _handles.push_back(_repo.resolve(str)); }
+        uint32_t add(vespalib::stringref str) {
+            uint32_t id = _repo.resolve(str);
+            _handles.push_back(id);
+            return id;
+        }
+        void add(uint32_t handle) {
+            uint32_t id = _repo.copy(handle);
+            _handles.push_back(id);
+        }
         HandleView view() const { return HandleView(_handles); }
     };
 };

@@ -47,10 +47,10 @@ generic_concat(const Value &a, const Value &b,
     auto a_cells = a.cells().typify<LCT>();
     auto b_cells = b.cells().typify<RCT>();
     SparseJoinState sparse(sparse_plan, a.index(), b.index());
-    auto builder = factory.create_value_builder<OCT>(res_type,
-                                                     sparse_plan.sources.size(),
-                                                     dense_plan.output_size,
-                                                     sparse.first_index.size());
+    auto builder = factory.create_transient_value_builder<OCT>(res_type,
+                                                               sparse_plan.sources.size(),
+                                                               dense_plan.output_size,
+                                                               sparse.first_index.size());
     auto outer = sparse.first_index.create_view({});
     auto inner = sparse.second_index.create_view(sparse.second_view_dims);
     outer->lookup({});

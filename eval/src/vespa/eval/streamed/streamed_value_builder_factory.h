@@ -14,7 +14,7 @@ private:
     StreamedValueBuilderFactory() {}
     static StreamedValueBuilderFactory _factory;
     std::unique_ptr<ValueBuilderBase> create_value_builder_base(
-        const ValueType &type, size_t num_mapped_in,
+        const ValueType &type, bool transient, size_t num_mapped_in,
         size_t subspace_size_in, size_t expected_subspaces) const override;
 public:
     static const StreamedValueBuilderFactory &get() { return _factory; }

@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/array_array_map.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 #include <cassert>
 
 using namespace vespalib::eval::tensor_function;
@@ -13,6 +14,7 @@ namespace vespalib::eval::instruction {
 
 using State = InterpretedFunction::State;
 using Instruction = InterpretedFunction::Instruction;
+using Handle = SharedStringRepo::Handle;
 
 namespace {
 
@@ -21,12 +23,12 @@ struct CreateParam {
     size_t num_mapped_dims;
     size_t dense_subspace_size;
     size_t num_children;
-    ArrayArrayMap<vespalib::string,size_t> my_spec;
+    ArrayArrayMap<Handle,size_t> my_spec;
     const ValueBuilderFactory &factory;
 
     static constexpr size_t npos = -1;
 
-    ArrayRef<size_t> indexes(ConstArrayRef<vespalib::string> key) {
+    ArrayRef<size_t> indexes(ConstArrayRef<Handle> key) {
         auto [tag, first_time] = my_spec.lookup_or_add_entry(key);
         auto rv = my_spec.get_values(tag);
         if (first_time) {
@@ -49,7 +51,7 @@ struct CreateParam {
     {
         size_t last_child = num_children - 1;
         for (const auto & entry : spec_in) {
-            std::vector<vespalib::string> sparse_key;
+            std::vector<Handle> sparse_key;
             size_t dense_key = 0;
             auto dim = res_type.dimensions().begin();
             auto binding = entry.first.begin();
@@ -58,7 +60,7 @@ struct CreateParam {
                 assert(dim->name == binding->first);
                 assert(dim->is_mapped() == binding->second.is_mapped());
                 if (dim->is_mapped()) {
-                    sparse_key.push_back(binding->second.name);
+                    sparse_key.push_back(Handle(binding->second.name));
                 } else {
                     assert(binding->second.index < dim->size);
                     dense_key = (dense_key * dim->size) + binding->second.index;
@@ -76,16 +78,16 @@ struct CreateParam {
 template <typename T>
 void my_generic_create_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<CreateParam>(param_in);
-    auto builder = param.factory.create_value_builder<T>(param.res_type,
-                                                         param.num_mapped_dims,
-                                                         param.dense_subspace_size,
-                                                         param.my_spec.size());
-    std::vector<vespalib::stringref> sparse_addr;
+    auto builder = param.factory.create_transient_value_builder<T>(param.res_type,
+                                                                   param.num_mapped_dims,
+                                                                   param.dense_subspace_size,
+                                                                   param.my_spec.size());
+    std::vector<label_t> sparse_addr;
     param.my_spec.each_entry([&](const auto &key, const auto &values)
         {
             sparse_addr.clear();
             for (const auto & label : key) {
-                sparse_addr.push_back(label);
+                sparse_addr.push_back(label.id());
             }
             T *dst = builder->add_subspace(sparse_addr).begin();
             for (size_t stack_idx : values) {

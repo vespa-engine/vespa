@@ -30,7 +30,8 @@ struct CreateSimpleValueBuilderBase {
 // look up a full address in the map directly
 struct SimpleLookupView : public Value::Index::View {
 
-    using Labels = std::vector<vespalib::string>;
+    using Handle = SharedStringRepo::Handle;
+    using Labels = std::vector<Handle>;
     using Map = std::map<Labels, size_t>;
 
     const Map &map;
@@ -38,17 +39,17 @@ struct SimpleLookupView : public Value::Index::View {
     Map::const_iterator pos;
 
     SimpleLookupView(const Map &map_in, size_t num_dims)
-        : map(map_in), my_addr(num_dims, ""), pos(map.end()) {}
+        : map(map_in), my_addr(num_dims), pos(map.end()) {}
 
-    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
+    void lookup(ConstArrayRef<const label_t*> addr) override {
         assert(addr.size() == my_addr.size());
         for (size_t i = 0; i < my_addr.size(); ++i) {
-            my_addr[i] = *addr[i];
+            my_addr[i] = Handle::handle_from_id(*addr[i]);
         }
         pos = map.find(my_addr);
     }
 
-    bool next_result(ConstArrayRef<vespalib::stringref*>, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<label_t*>, size_t &idx_out) override {
         if (pos == map.end()) {
             return false;
         }
@@ -63,13 +64,14 @@ struct SimpleLookupView : public Value::Index::View {
 // find matching mappings for a partial address with brute force filtering
 struct SimpleFilterView : public Value::Index::View {
 
-    using Labels = std::vector<vespalib::string>;
+    using Handle = SharedStringRepo::Handle;
+    using Labels = std::vector<Handle>;
     using Map = std::map<Labels, size_t>;
 
     const Map &map;
     std::vector<size_t> match_dims;
     std::vector<size_t> extract_dims;
-    std::vector<vespalib::string> query;
+    std::vector<Handle> query;
     Map::const_iterator pos;
 
     bool is_match() const {
@@ -82,7 +84,7 @@ struct SimpleFilterView : public Value::Index::View {
     }
 
     SimpleFilterView(const Map &map_in, const std::vector<size_t> &match_dims_in, size_t num_dims)
-        : map(map_in), match_dims(match_dims_in), extract_dims(), query(match_dims.size(), ""), pos(map.end())
+        : map(map_in), match_dims(match_dims_in), extract_dims(), query(match_dims.size()), pos(map.end())
     {
         auto my_pos = match_dims.begin();
         for (size_t i = 0; i < num_dims; ++i) {
@@ -96,20 +98,20 @@ struct SimpleFilterView : public Value::Index::View {
         assert((match_dims.size() + extract_dims.size()) == num_dims);
     }
 
-    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
+    void lookup(ConstArrayRef<const label_t*> addr) override {
         assert(addr.size() == query.size());
         for (size_t i = 0; i < addr.size(); ++i) {
-            query[i] = *addr[i];
+            query[i] = Handle::handle_from_id(*addr[i]);
         }
         pos = map.begin();
     }
 
-    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
         while (pos != map.end()) {
             if (is_match()) {
                 assert(addr_out.size() == extract_dims.size());
                 for (size_t i = 0; i < extract_dims.size(); ++i) {
-                    *addr_out[i] = pos->first[extract_dims[i]];
+                    *addr_out[i] = pos->first[extract_dims[i]].id();
                 }
                 idx_out = pos->second;
                 ++pos;
@@ -126,7 +128,8 @@ struct SimpleFilterView : public Value::Index::View {
 // iterate all mappings
 struct SimpleIterateView : public Value::Index::View {
 
-    using Labels = std::vector<vespalib::string>;
+    using Handle = SharedStringRepo::Handle;
+    using Labels = std::vector<Handle>;
     using Map = std::map<Labels, size_t>;
 
     const Map &map;
@@ -135,17 +138,17 @@ struct SimpleIterateView : public Value::Index::View {
     SimpleIterateView(const Map &map_in)
         : map(map_in), pos(map.end()) {}
 
-    void lookup(ConstArrayRef<const vespalib::stringref*>) override {
+    void lookup(ConstArrayRef<const label_t*>) override {
         pos = map.begin();
     }
 
-    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
         if (pos == map.end()) {
             return false;
         }
         assert(addr_out.size() == pos->first.size());
         for (size_t i = 0; i < addr_out.size(); ++i) {
-            *addr_out[i] = pos->first[i];
+            *addr_out[i] = pos->first[i].id();
         }
         idx_out = pos->second;
         ++pos;
@@ -177,6 +180,17 @@ SimpleValue::add_mapping(ConstArrayRef<vespalib::stringref> addr)
     Labels my_addr;
     for(const auto &label: addr) {
         my_addr.emplace_back(label);
+    }
+    auto [ignore, was_inserted] = _index.emplace(my_addr, _index.size());
+    assert(was_inserted);
+}
+
+void
+SimpleValue::add_mapping(ConstArrayRef<label_t> addr)
+{
+    Labels my_addr;
+    for(label_t label: addr) {
+        my_addr.emplace_back(Handle::handle_from_id(label));
     }
     auto [ignore, was_inserted] = _index.emplace(my_addr, _index.size());
     assert(was_inserted);
@@ -246,15 +260,26 @@ SimpleValueT<T>::add_subspace(ConstArrayRef<vespalib::stringref> addr)
     return ArrayRef<T>(&_cells[old_size], subspace_size());
 }
 
+template <typename T>
+ArrayRef<T>
+SimpleValueT<T>::add_subspace(ConstArrayRef<label_t> addr)
+{
+    size_t old_size = _cells.size();
+    add_mapping(addr);
+    _cells.resize(old_size + subspace_size(), std::numeric_limits<T>::quiet_NaN());
+    return ArrayRef<T>(&_cells[old_size], subspace_size());
+}
+
 //-----------------------------------------------------------------------------
 
 SimpleValueBuilderFactory::SimpleValueBuilderFactory() = default;
 SimpleValueBuilderFactory SimpleValueBuilderFactory::_factory;
 
 std::unique_ptr<ValueBuilderBase>
-SimpleValueBuilderFactory::create_value_builder_base(const ValueType &type, size_t num_mapped_dims, size_t subspace_size,
+SimpleValueBuilderFactory::create_value_builder_base(const ValueType &type, bool transient, size_t num_mapped_dims, size_t subspace_size,
                                                      size_t expected_subspaces) const
 {
+    (void) transient;
     return typify_invoke<1,TypifyCellType,CreateSimpleValueBuilderBase>(type.cell_type(), type, num_mapped_dims, subspace_size, expected_subspaces);
 }
 

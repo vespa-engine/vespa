@@ -19,7 +19,7 @@ class FastValueBuilderFactory : public ValueBuilderFactory {
 private:
     FastValueBuilderFactory();
     static FastValueBuilderFactory _factory;
-    std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,
+    std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type, bool transient,
             size_t num_mapped_dims, size_t subspace_size, size_t expected_subspaces) const override;
 public:
     static const FastValueBuilderFactory &get() { return _factory; }
