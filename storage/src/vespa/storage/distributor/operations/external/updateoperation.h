@@ -25,8 +25,9 @@ class UpdateOperation : public Operation
 public:
     UpdateOperation(DistributorNodeContext& node_ctx,
                     DistributorOperationContext& op_ctx,
-                    DistributorBucketSpace &bucketSpace,
-                    const std::shared_ptr<api::UpdateCommand> & msg,
+                    DistributorBucketSpace& bucketSpace,
+                    const std::shared_ptr<api::UpdateCommand>& msg,
+                    std::vector<BucketDatabase::Entry> entries,
                     UpdateMetricSet& metric);
 
     void onStart(DistributorMessageSender& sender) override;
@@ -43,6 +44,7 @@ private:
     PersistenceMessageTrackerImpl _trackerInstance;
     PersistenceMessageTracker& _tracker;
     std::shared_ptr<api::UpdateCommand> _msg;
+    std::vector<BucketDatabase::Entry> _entries;
     const api::Timestamp _new_timestamp;
     const bool _is_auto_create_update;
 

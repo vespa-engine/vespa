@@ -67,7 +67,7 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_m
 
     auto& comp = distributor_component();
     return std::make_shared<UpdateOperation>(
-            comp, comp, getDistributorBucketSpace(), msg,
+            comp, comp, getDistributorBucketSpace(), msg, std::vector<BucketDatabase::Entry>(),
             getDistributor().getMetrics().updates);
 }
 
