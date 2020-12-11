@@ -9,7 +9,6 @@ vespa_add_library(vespaeval
     $<TARGET_OBJECTS:eval_instruction>
     $<TARGET_OBJECTS:eval_onnx>
     $<TARGET_OBJECTS:eval_streamed>
-    $<TARGET_OBJECTS:eval_tensor_dense>
     INSTALL lib64
     DEPENDS
     onnxruntime

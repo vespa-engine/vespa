@@ -5,7 +5,6 @@
 #include "searchiterator.h"
 #include "nearest_neighbor_distance_heap.h"
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function.h>
