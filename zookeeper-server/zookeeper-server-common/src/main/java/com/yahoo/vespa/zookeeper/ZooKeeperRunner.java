@@ -82,7 +82,6 @@ public class ZooKeeperRunner implements Runnable {
         try {
             server.start(path);
         } catch (Throwable e) {
-            log.log(Level.SEVERE, "Starting ZooKeeper server failed", e);
             throw new RuntimeException("Starting ZooKeeper server failed", e);
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);
