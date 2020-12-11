@@ -38,7 +38,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                  Curator curator,
                                  Duration interval,
                                  FlagSource flagSource) {
-        super(applicationRepository, curator, flagSource, interval, interval);
+        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval);
         this.applicationRepository = applicationRepository;
         ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
         connectionPool = createConnectionPool(configserverConfig);

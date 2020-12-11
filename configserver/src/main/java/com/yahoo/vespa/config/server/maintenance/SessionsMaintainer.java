@@ -20,7 +20,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
     private int iteration = 0;
 
     SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, FlagSource flagSource) {
-        super(applicationRepository, curator, flagSource, Duration.ofMinutes(1), interval);
+        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval);
         this.hostedVespa = applicationRepository.configserverConfig().hostedVespa();
     }
 
