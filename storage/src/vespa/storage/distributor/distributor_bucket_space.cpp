@@ -118,55 +118,6 @@ DistributorBucketSpace::owns_bucket_in_state(
     return owns_bucket_in_state(*_distribution, clusterState, bucket);
 }
 
-bool
-DistributorBucketSpace::owns_bucket_in_current_state(document::BucketId bucket) const
-{
-    return owns_bucket_in_state(*_distribution, *_clusterState, bucket);
-}
-
-BucketOwnership
-DistributorBucketSpace::check_ownership_in_pending_state(document::BucketId bucket) const
-{
-    if (_pending_cluster_state) {
-        if (!owns_bucket_in_state(*_pending_cluster_state, bucket)) {
-            return BucketOwnership::createNotOwnedInState(*_pending_cluster_state);
-        }
-    }
-    return BucketOwnership::createOwned();
-}
-BucketOwnership
-DistributorBucketSpace::check_ownership_in_pending_and_given_state(
-        const lib::Distribution& distribution,
-        const lib::ClusterState& clusterState,
-        document::BucketId bucket) const
-{
-    try {
-        BucketOwnership pendingRes(
-                check_ownership_in_pending_state(bucket));
-        if (!pendingRes.isOwned()) {
-            return pendingRes;
-        }
-        uint16_t distributor = distribution.getIdealDistributorNode(
-                clusterState, bucket);
-
-        if (_node_index == distributor) {
-            return BucketOwnership::createOwned();
-        } else {
-            return BucketOwnership::createNotOwnedInState(clusterState);
-        }
-    } catch (lib::TooFewBucketBitsInUseException& e) {
-        return BucketOwnership::createNotOwnedInState(clusterState);
-    } catch (lib::NoDistributorsAvailableException& e) {
-        return BucketOwnership::createNotOwnedInState(clusterState);
-    }
-}
-
-BucketOwnership
-DistributorBucketSpace::check_ownership_in_pending_and_current_state_fallback(document::BucketId bucket) const
-{
-    return check_ownership_in_pending_and_given_state(*_distribution, *_clusterState, bucket);
-}
-
 std::vector<uint16_t>
 DistributorBucketSpace::get_ideal_nodes(document::BucketId bucket) const
 {
@@ -185,21 +136,46 @@ DistributorBucketSpace::get_ideal_nodes(document::BucketId bucket) const
     return insres.first->second;
 }
 
-BucketOwnership
-DistributorBucketSpace::check_ownership_in_pending_and_current_state(document::BucketId bucket) const
+BucketOwnershipFlags
+DistributorBucketSpace::get_bucket_ownership_flags(document::BucketId bucket) const
 {
     if (bucket.getUsedBits() < _distribution_bits) {
-        // Cannot map to super bucket ==> cannot cache result
-        return check_ownership_in_pending_and_current_state_fallback(bucket);
+        BucketOwnershipFlags flags;
+        if (!_pending_cluster_state) {
+            flags.set_owned_in_pending_state();
+        }
+        return flags;
     }
     document::BucketId super_bucket(_distribution_bits, bucket.getId());
     auto itr = _ownerships.find(super_bucket);
     if (itr != _ownerships.end()) {
         return itr->second;
     }
-    auto insres = _ownerships.insert(std::make_pair(super_bucket, check_ownership_in_pending_and_current_state_fallback(super_bucket)));
+    BucketOwnershipFlags flags;
+    if (!_pending_cluster_state || owns_bucket_in_state(*_distribution, *_pending_cluster_state, super_bucket)) {
+        flags.set_owned_in_pending_state();
+    }
+    if (owns_bucket_in_state(*_distribution, *_clusterState, super_bucket)) {
+        flags.set_owned_in_current_state();
+    }
+    auto insres = _ownerships.insert(std::make_pair(super_bucket, flags));
     assert(insres.second);
     return insres.first->second;
+}
+
+BucketOwnership
+DistributorBucketSpace::check_ownership_in_pending_and_current_state(document::BucketId bucket) const
+{
+    auto flags = get_bucket_ownership_flags(bucket);
+    if (!flags.owned_in_pending_state()) {
+        assert(_pending_cluster_state);
+        return BucketOwnership::createNotOwnedInState(*_pending_cluster_state);
+    }
+    if (flags.owned_in_current_state()) {
+        return BucketOwnership::createOwned();
+    } else {
+        return BucketOwnership::createNotOwnedInState(*_clusterState);
+    }
 }
 
 }

@@ -557,7 +557,7 @@ TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state
     getBucketDBUpdater().onSetSystemState(stateCmd);
 
     document::BucketId nonOwnedBucket(16, 3);
-    EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_state(nonOwnedBucket).isOwned());
+    EXPECT_FALSE(getDistributorBucketSpace().get_bucket_ownership_flags(nonOwnedBucket).owned_in_pending_state());
     EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_and_current_state(nonOwnedBucket).isOwned());
 
     std::vector<BucketCopy> copies;

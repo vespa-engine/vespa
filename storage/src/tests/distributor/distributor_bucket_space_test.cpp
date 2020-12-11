@@ -55,8 +55,6 @@ DistributorBucketSpaceTest::count_distributor_buckets()
     for (uint32_t i = 0; i < (1u << distribution_bits); ++i) {
         BucketId bucket(distribution_bits, i);
         bool owned = bucket_space.check_ownership_in_pending_and_current_state(bucket).isOwned();
-        bool check_owned = bucket_space.check_ownership_in_pending_and_current_state_fallback(bucket).isOwned();
-        EXPECT_EQ(check_owned, owned);
         if (owned) {
             ++owned_buckets;
         }
@@ -100,8 +98,6 @@ DistributorBucketSpaceTest::count_deep_split_distributor_buckets()
     for (uint32_t i = 0; i < 100; ++i) {
         BucketId bucket(42u, i * (1ul << 32) + bias);
         bool owned = bucket_space.check_ownership_in_pending_and_current_state(bucket).isOwned();
-        bool check_owned = bucket_space.check_ownership_in_pending_and_current_state_fallback(bucket).isOwned();
-        EXPECT_EQ(check_owned, owned);
         if (owned) {
             ++owned_buckets;
         }

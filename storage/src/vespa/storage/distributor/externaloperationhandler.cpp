@@ -181,7 +181,8 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
                                                               PersistenceOperationMetricSet& persistenceMetrics)
 {
     auto &bucket_space(_op_ctx.bucket_space_repo().get(cmd.getBucket().getBucketSpace()));
-    if (!bucket_space.owns_bucket_in_current_state(bucketId)) {
+    auto bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucketId);
+    if (!bucket_ownership_flags.owned_in_current_state()) {
         document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
@@ -190,12 +191,11 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
         return false;
     }
 
-    auto pending = bucket_space.check_ownership_in_pending_state(bucketId);
-    if (!pending.isOwned()) {
+    if (!bucket_ownership_flags.owned_in_pending_state()) {
         // We return BUSY here instead of WrongDistributionReply to avoid clients potentially
         // ping-ponging between cluster state versions during a state transition.
-        auto& current_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
-        auto& pending_state = pending.getNonOwnedState();
+        auto& current_state = bucket_space.getClusterState();
+        auto& pending_state = bucket_space.get_pending_cluster_state();
         bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
         return false;
     }
@@ -238,7 +238,8 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         Func func)
 {
     auto &bucket_space(_op_ctx.bucket_space_repo().get(bucket.getBucketSpace()));
-    if (!bucket_space.owns_bucket_in_current_state(bucket.getBucketId())) {
+    auto bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucket.getBucketId());
+    if (!bucket_ownership_flags.owned_in_current_state()) {
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
         bounce_with_wrong_distribution(cmd);
@@ -246,15 +247,14 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         return;
     }
 
-    auto pending = bucket_space.check_ownership_in_pending_state(bucket.getBucketId());
-    if (pending.isOwned()) {
+    if (bucket_ownership_flags.owned_in_pending_state()) {
         func(_op_ctx.bucket_space_repo());
     } else {
         if (_op_ctx.distributor_config().allowStaleReadsDuringClusterStateTransitions()) {
             func(_op_ctx.read_only_bucket_space_repo());
         } else {
-            auto& current_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
-            auto& pending_state = pending.getNonOwnedState();
+            auto& current_state = bucket_space.getClusterState();
+            auto& pending_state = bucket_space.get_pending_cluster_state();
             bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
         }
     }
