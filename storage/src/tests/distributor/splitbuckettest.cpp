@@ -313,7 +313,7 @@ TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
                       maxSplitBits, splitCount, splitByteSize);
 
     EXPECT_FALSE(op.isBlocked(tracker, op_seq));
-    auto token = op_seq.try_acquire(makeDocumentBucket(source_bucket));
+    auto token = op_seq.try_acquire(makeDocumentBucket(source_bucket), "foo");
     EXPECT_TRUE(token.valid());
     EXPECT_TRUE(op.isBlocked(tracker, op_seq));
 }

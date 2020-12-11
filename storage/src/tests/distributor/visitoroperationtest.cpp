@@ -4,6 +4,7 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
@@ -1086,6 +1087,23 @@ TEST_F(VisitorOperationTest, statistical_metrics_not_updated_on_wrong_distributi
     EXPECT_EQ(0, defaultVisitorMetrics().bytes_per_visitor.getCount());
     // Fascinating that count is also a double...
     EXPECT_DOUBLE_EQ(0.0, defaultVisitorMetrics().latency.getCount());
+}
+
+TEST_F(VisitorOperationTest, assigning_put_lock_access_token_sets_special_visitor_parameter) {
+    document::BucketId id(0x400000000000007bULL);
+    enableDistributorClusterState("distributor:1 storage:1");
+    addNodesToBucketDB(id, "0=1/1/1/t");
+
+    auto op = createOpWithDefaultConfig(createVisitorCommand("metricstats", id, nullId));
+    op->assign_put_lock_access_token("its-a me, mario");
+
+    op->start(_sender, framework::MilliSecTime(0));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
+    auto cmd = std::dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
+    ASSERT_TRUE(cmd);
+    EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(),
+                                       vespalib::stringref("")),
+              "its-a me, mario");
 }
 
 }

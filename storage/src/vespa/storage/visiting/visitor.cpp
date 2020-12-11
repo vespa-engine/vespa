@@ -552,7 +552,7 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
 }
 
 void
-Visitor::attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
+Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
                 const mbus::Route& controlAddress,
                 const mbus::Route& dataAddress,
                 framework::MilliSecTime timeout)
@@ -599,6 +599,12 @@ Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
     mbus::Trace tempTrace;
     tempTrace.trace(level, message);
     return _trace.add(std::move(tempTrace));
+}
+
+const vdslib::Parameters&
+Visitor::visitor_parameters() const noexcept {
+    assert(_initiatingCmd);
+    return _initiatingCmd->getParameters();
 }
 
 void

@@ -21,6 +21,7 @@ public:
 
 private:
     void handleDocuments(const document::BucketId&, std::vector<spi::DocEntry::UP>&, HitCounter&) override;
+    vespalib::string make_lock_access_token() const;
 };
 
 struct ReindexingVisitorFactory : public VisitorFactory {

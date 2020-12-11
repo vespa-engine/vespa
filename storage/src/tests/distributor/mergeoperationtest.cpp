@@ -422,7 +422,7 @@ TEST_F(MergeOperationTest, merge_operation_is_blocked_by_locked_bucket) {
     op.setIdealStateManager(&getIdealStateManager());
 
     EXPECT_FALSE(op.isBlocked(*_pendingTracker, _operation_sequencer));
-    auto token = _operation_sequencer.try_acquire(makeDocumentBucket(document::BucketId(16, 1)));
+    auto token = _operation_sequencer.try_acquire(makeDocumentBucket(document::BucketId(16, 1)), "foo");
     EXPECT_TRUE(token.valid());
     EXPECT_TRUE(op.isBlocked(*_pendingTracker, _operation_sequencer));
 }

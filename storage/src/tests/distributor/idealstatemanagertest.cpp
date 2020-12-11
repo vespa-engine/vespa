@@ -255,7 +255,7 @@ TEST_F(IdealStateManagerTest, block_operations_with_locked_buckets) {
         msg->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
         tracker.insert(msg);
     }
-    auto token = op_seq.try_acquire(bucket);
+    auto token = op_seq.try_acquire(bucket, "foo");
     EXPECT_TRUE(token.valid());
     {
         RemoveBucketOperation op("storage", BucketAndNodes(bucket, toVector<uint16_t>(0)));

@@ -9,6 +9,7 @@ vespa_add_library(storage_distributor
     bucketlistmerger.cpp
     bucket_space_distribution_context.cpp
     clusterinformation.cpp
+    crypto_uuid_generator.cpp
     distributor_bucket_space.cpp
     distributor_bucket_space_repo.cpp
     distributor.cpp

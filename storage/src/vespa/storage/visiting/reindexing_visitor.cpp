@@ -18,6 +18,7 @@ void ReindexingVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
                                         std::vector<spi::DocEntry::UP>& entries,
                                         HitCounter& hitCounter)
 {
+    auto lock_token = make_lock_access_token();
     LOG(debug, "Visitor %s handling block of %zu documents.", _id.c_str(), entries.size());
     for (auto& entry : entries) {
         if (entry->isRemove()) {
@@ -28,9 +29,20 @@ void ReindexingVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
         hitCounter.addHit(*entry->getDocumentId(), doc_size);
         auto msg = std::make_unique<documentapi::PutDocumentMessage>(entry->releaseDocument());
         msg->setApproxSize(doc_size);
-        msg->setCondition(documentapi::TestAndSetCondition(reindexing_bucket_lock_bypass_value()));
+        msg->setCondition(documentapi::TestAndSetCondition(lock_token));
         sendMessage(std::move(msg));
     }
+}
+
+vespalib::string ReindexingVisitor::make_lock_access_token() const {
+    vespalib::string prefix = reindexing_bucket_lock_bypass_prefix();
+    vespalib::stringref passed_token = visitor_parameters().get(
+            reindexing_bucket_lock_visitor_parameter_key(),
+            vespalib::stringref(""));
+    if (passed_token.empty()) {
+        return prefix;
+    }
+    return (prefix + "=" + passed_token);
 }
 
 }

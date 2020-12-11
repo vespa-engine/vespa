@@ -25,6 +25,7 @@ class DirectDispatchSender;
 class SequencingHandle;
 class OperationSequencer;
 class OperationOwner;
+class UuidGenerator;
 
 class ExternalOperationHandler : public api::MessageHandler
 {
@@ -100,6 +101,7 @@ private:
     OperationOwner& _distributor_operation_owner;
     mutable std::mutex _non_main_thread_ops_mutex;
     OperationOwner _non_main_thread_ops_owner;
+    std::unique_ptr<UuidGenerator> _uuid_generator;
     std::atomic<bool> _concurrent_gets_enabled;
     std::atomic<bool> _use_weak_internal_read_consistency_for_gets;
 

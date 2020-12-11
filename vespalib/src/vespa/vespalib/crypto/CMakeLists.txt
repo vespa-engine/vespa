@@ -4,6 +4,7 @@ vespa_add_library(vespalib_vespalib_crypto OBJECT
     crypto_exception.cpp
     openssl_crypto_impl.cpp
     private_key.cpp
+    random.cpp
     x509_certificate.cpp
     DEPENDS
 )
