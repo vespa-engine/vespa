@@ -38,7 +38,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useThreePhaseUpdates = false;
     private boolean useDirectStorageApiRpc = false;
-    private boolean useFastValueTensorImplementation = false;
+    private boolean useFastValueTensorImplementation = true;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
@@ -137,11 +137,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseDirectStorageApiRpc(boolean useDirectStorageApiRpc) {
         this.useDirectStorageApiRpc = useDirectStorageApiRpc;
-        return this;
-    }
-
-    public TestProperties setUseFastValueTensorImplementation(boolean useFastValueTensorImplementation) {
-        this.useFastValueTensorImplementation = useFastValueTensorImplementation;
         return this;
     }
 
