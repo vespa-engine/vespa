@@ -65,9 +65,9 @@ public class ConfiguratorTest {
     public void config_is_written_correctly_when_multiple_servers() {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
-        builder.server(newServer(0, "foo", 123, 321));
-        builder.server(newServer(1, "bar", 234, 432));
-        builder.server(newServer(2, "baz", 345, 543));
+        builder.server(newServer(0, "foo", 123, 321, false));
+        builder.server(newServer(1, "bar", 234, 432, false));
+        builder.server(newServer(2, "baz", 345, 543, true));
         builder.myidFile(idFile.getAbsolutePath());
         builder.myid(1);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
@@ -112,8 +112,8 @@ public class ConfiguratorTest {
     public void require_that_this_id_must_be_present_amongst_servers() {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
-        builder.server(newServer(1, "bar", 234, 432));
-        builder.server(newServer(2, "baz", 345, 543));
+        builder.server(newServer(1, "bar", 234, 432, false));
+        builder.server(newServer(2, "baz", 345, 543, false));
         builder.myid(0);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
     }
@@ -142,18 +142,19 @@ public class ConfiguratorTest {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
-        builder.server(newServer(0, "foo", 123, 321));
+        builder.server(newServer(0, "foo", 123, 321, false));
         builder.myid(0);
         builder.jksKeyStoreFile(jksKeyStoreFile.getAbsolutePath());
         return builder;
     }
 
-    private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, int electionPort, int quorumPort) {
+    private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, int electionPort, int quorumPort, boolean joining) {
         ZookeeperServerConfig.Server.Builder builder = new ZookeeperServerConfig.Server.Builder();
         builder.id(id);
         builder.hostname(hostName);
         builder.electionPort(electionPort);
         builder.quorumPort(quorumPort);
+        builder.joining(joining);
         return builder;
     }
 
@@ -235,7 +236,7 @@ public class ConfiguratorTest {
                 commonConfig() +
                 "server.0=foo:321:123;2181\n" +
                 "server.1=bar:432:234;2181\n" +
-                "server.2=baz:543:345;2181\n" +
+                "server.2=baz:543:345:observer;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
