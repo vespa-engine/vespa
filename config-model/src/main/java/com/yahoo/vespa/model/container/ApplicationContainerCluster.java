@@ -7,8 +7,11 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
@@ -74,6 +77,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private final ConfigProducerGroup<Servlet> servletGroup;
     private final ConfigProducerGroup<RestApi> restApiGroup;
+    private final Set<String> previousHosts;
 
     private ContainerModelEvaluation modelEvaluation;
 
@@ -89,6 +93,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
+        previousHosts = deployState.getPreviousModel().stream()
+                                   .map(Model::allocatedHosts)
+                                   .map(AllocatedHosts::getHosts)
+                                   .flatMap(Collection::stream)
+                                   .map(HostSpec::hostname)
+                                   .collect(Collectors.toUnmodifiableSet());
 
         addSimpleComponent(DEFAULT_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
@@ -261,10 +271,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         // Note: Default client and server ports are used, so not set here
         for (Container container : getContainers()) {
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
-            serverBuilder.hostname(container.getHostName());
-            serverBuilder.id(container.index());
-            builder.server(serverBuilder);
-            builder.dynamicReconfiguration(true);
+            serverBuilder.hostname(container.getHostName())
+                         .id(container.index())
+                         .joining(!previousHosts.isEmpty() &&
+                                  !previousHosts.contains(container.getHostName()));
+            builder.server(serverBuilder)
+                   .dynamicReconfiguration(true);
         }
     }
 
