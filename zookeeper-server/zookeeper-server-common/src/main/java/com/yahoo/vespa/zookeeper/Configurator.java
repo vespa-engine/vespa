@@ -147,8 +147,17 @@ public class Configurator {
           .append(":")
           .append(server.quorumPort())
           .append(":")
-          .append(server.electionPort())
-          .append(";")
+          .append(server.electionPort());
+        if (server.joining()) {
+            // Servers that are joining an existing cluster must be marked as observers. Note that this will NOT
+            // actually make the server an observer, but prevent it from forming an ensemble independently of the
+            // existing cluster.
+            //
+            // See https://zookeeper.apache.org/doc/r3.6.2/zookeeperReconfig.html#sc_reconfig_modifying
+            sb.append(":")
+              .append("observer");
+        }
+        sb.append(";")
           .append(clientPort)
           .append("\n");
     }
