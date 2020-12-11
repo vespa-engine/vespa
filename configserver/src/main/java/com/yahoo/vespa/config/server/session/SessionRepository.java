@@ -419,6 +419,7 @@ public class SessionRepository {
         ActivatedModelsBuilder builder = new ActivatedModelsBuilder(session.getTenantName(),
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
+                                                                    getActiveApplicationSet(session.getApplicationId()),
                                                                     componentRegistry);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
