@@ -370,8 +370,10 @@ public class SessionRepository {
         if (session.applicationSet().isPresent()) {
             return session.applicationSet().get();
         }
-
-        ApplicationSet applicationSet = loadApplication(session);
+        Optional<Long> activeSessionId = getActiveSessionId(session.getApplicationId());
+        Optional<ApplicationSet> previousApplicationSet = activeSessionId.filter(session::isNewerThan)
+                                                                         .flatMap(this::getApplicationSet);
+        ApplicationSet applicationSet = loadApplication(session, previousApplicationSet);
         RemoteSession activated = session.activated(applicationSet);
         long sessionId = activated.getSessionId();
         remoteSessionCache.put(sessionId, activated);
@@ -412,14 +414,14 @@ public class SessionRepository {
         }
     }
 
-    private ApplicationSet loadApplication(Session session) {
+    private ApplicationSet loadApplication(Session session, Optional<ApplicationSet> previousApplicationSet) {
         log.log(Level.FINE, () -> "Loading application for " + session);
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
         ApplicationPackage applicationPackage = sessionZooKeeperClient.loadApplicationPackage();
         ActivatedModelsBuilder builder = new ActivatedModelsBuilder(session.getTenantName(),
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
-                                                                    getActiveApplicationSet(session.getApplicationId()),
+                                                                    previousApplicationSet,
                                                                     componentRegistry);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
@@ -560,15 +562,18 @@ public class SessionRepository {
     }
 
     public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
-        Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
+        return applicationRepo.activeSessionOf(appId).flatMap(this::getApplicationSet);
+    }
+
+    private Optional<ApplicationSet> getApplicationSet(long sessionId) {
+        Optional<ApplicationSet> applicationSet = Optional.empty();
         try {
-            long currentActiveSessionId = applicationRepo.requireActiveSessionOf(appId);
-            RemoteSession currentActiveSession = getRemoteSession(currentActiveSessionId);
-            currentActiveApplicationSet = Optional.ofNullable(ensureApplicationLoaded(currentActiveSession));
+            RemoteSession session = getRemoteSession(sessionId);
+            applicationSet = Optional.ofNullable(ensureApplicationLoaded(session));
         } catch (IllegalArgumentException e) {
             // Do nothing if we have no currently active session
         }
-        return currentActiveApplicationSet;
+        return applicationSet;
     }
 
     private void copyApp(File sourceDir, File destinationDir) throws IOException {
