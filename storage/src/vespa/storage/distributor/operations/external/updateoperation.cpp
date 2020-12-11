@@ -19,14 +19,16 @@ namespace storage::distributor {
 
 UpdateOperation::UpdateOperation(DistributorNodeContext& node_ctx,
                                  DistributorOperationContext& op_ctx,
-                                 DistributorBucketSpace &bucketSpace,
-                                 const std::shared_ptr<api::UpdateCommand> & msg,
+                                 DistributorBucketSpace& bucketSpace,
+                                 const std::shared_ptr<api::UpdateCommand>& msg,
+                                 std::vector<BucketDatabase::Entry> entries,
                                  UpdateMetricSet& metric)
     : Operation(),
       _trackerInstance(metric, std::make_shared<api::UpdateReply>(*msg),
                        node_ctx, op_ctx, msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(msg),
+      _entries(std::move(entries)),
       _new_timestamp(_msg->getTimestamp()),
       _is_auto_create_update(_msg->getUpdate()->getCreateIfNonExistent()),
       _node_ctx(node_ctx),
@@ -73,14 +75,12 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
         return;
     }
 
-    document::BucketId bucketId(
-            _node_ctx.bucket_id_factory().getBucketId(
-                    _msg->getDocumentId()));
+    if (_entries.empty()) {
+        document::BucketId bucketId(_node_ctx.bucket_id_factory().getBucketId(_msg->getDocumentId()));
+        _bucketSpace.getBucketDatabase().getParents(bucketId, _entries);
+    }
 
-    std::vector<BucketDatabase::Entry> entries;
-    _bucketSpace.getBucketDatabase().getParents(bucketId, entries);
-
-    if (entries.empty()) {
+    if (_entries.empty()) {
         _tracker.fail(sender,
                       api::ReturnCode(api::ReturnCode::OK,
                                       "No buckets found for given document update"));
@@ -89,14 +89,14 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
 
     // An UpdateOperation should only be started iff all replicas are consistent
     // with each other, so sampling a single replica should be equal to sampling them all.
-    assert(entries[0].getBucketInfo().getNodeCount() > 0); // Empty buckets are not allowed
-    _infoAtSendTime = entries[0].getBucketInfo().getNodeRef(0).getBucketInfo();
+    assert(_entries[0].getBucketInfo().getNodeCount() > 0); // Empty buckets are not allowed
+    _infoAtSendTime = _entries[0].getBucketInfo().getNodeRef(0).getBucketInfo();
 
     // FIXME(vekterli): this loop will happily update all replicas in the
     // bucket sub-tree, but there is nothing here at all which will fail the
     // update if we cannot satisfy a desired replication level (not even for
     // n-of-m operations).
-    for (const auto& entry : entries) {
+    for (const auto& entry : _entries) {
         LOG(spam, "Found bucket %s", entry.toString().c_str());
 
         const std::vector<uint16_t>& nodes = entry->getNodes();
