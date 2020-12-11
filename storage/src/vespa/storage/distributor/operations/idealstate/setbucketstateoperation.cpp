@@ -10,7 +10,7 @@ LOG_SETUP(".distributor.operation.idealstate.setactive");
 
 namespace storage::distributor {
 
-SetBucketStateOperation::SetBucketStateOperation(const std::string& clusterName,
+SetBucketStateOperation::SetBucketStateOperation(const vespalib::string * clusterName,
                                                  const BucketAndNodes& nodes,
                                                  const std::vector<uint16_t>& wantedActiveNodes)
     : IdealStateOperation(nodes),
@@ -18,20 +18,17 @@ SetBucketStateOperation::SetBucketStateOperation(const std::string& clusterName,
       _wantedActiveNodes(wantedActiveNodes)
 { }
 
-SetBucketStateOperation::~SetBucketStateOperation() {}
+SetBucketStateOperation::~SetBucketStateOperation() = default;
 
 void
 SetBucketStateOperation::enqueueSetBucketStateCommand(uint16_t node, bool active) {
-    std::shared_ptr<api::SetBucketStateCommand> msg(
-            new api::SetBucketStateCommand(
-                    getBucket(),
-                    active
-                    ? api::SetBucketStateCommand::ACTIVE
-                    : api::SetBucketStateCommand::INACTIVE));
+    auto msg = std::make_shared<api::SetBucketStateCommand>(getBucket(),
+                                                            active
+                                                                ? api::SetBucketStateCommand::ACTIVE
+                                                                : api::SetBucketStateCommand::INACTIVE);
     LOG(debug, "Enqueuing %s for %s to node %u",
         active ? "Activate" : "Deactivate",
-        getBucketId().toString().c_str(),
-        node);
+        getBucketId().toString().c_str(), node);
     setCommandMeta(*msg);
     _tracker.queueCommand(msg, node);
 }

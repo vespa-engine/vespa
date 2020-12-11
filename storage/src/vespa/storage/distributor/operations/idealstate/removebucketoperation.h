@@ -11,7 +11,7 @@ class PendingMessageTracker;
 class RemoveBucketOperation : public IdealStateOperation
 {
 public:
-    RemoveBucketOperation(const std::string& clusterName, const BucketAndNodes& nodes)
+    RemoveBucketOperation(const vespalib::string * clusterName, const BucketAndNodes& nodes)
         : IdealStateOperation(nodes), _tracker(clusterName)
     {}
 

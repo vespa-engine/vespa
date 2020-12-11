@@ -11,7 +11,7 @@ LOG_SETUP(".distributor.operation.idealstate.split");
 
 using namespace storage::distributor;
 
-SplitOperation::SplitOperation(const std::string& clusterName, const BucketAndNodes& nodes,
+SplitOperation::SplitOperation(const vespalib::string * clusterName, const BucketAndNodes& nodes,
                                uint32_t maxBits, uint32_t splitCount, uint32_t splitSize)
     : IdealStateOperation(nodes),
       _tracker(clusterName),

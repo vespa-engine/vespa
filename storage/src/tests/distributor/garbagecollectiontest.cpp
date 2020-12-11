@@ -14,6 +14,10 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
+namespace {
+    vespalib::string _Storage("storage");
+}
+
 struct GarbageCollectionOperationTest : Test, DistributorTestUtil {
     void SetUp() override {
         createLinks();
@@ -29,7 +33,7 @@ struct GarbageCollectionOperationTest : Test, DistributorTestUtil {
 
     std::shared_ptr<GarbageCollectionOperation> create_op() {
         auto op = std::make_shared<GarbageCollectionOperation>(
-                "storage",BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
+                &_Storage,BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                                             toVector<uint16_t>(0, 1)));
         op->setIdealStateManager(&getIdealStateManager());
         return op;

@@ -82,15 +82,14 @@ StateChecker::Result
 SplitBucketStateChecker::generateMinimumBucketSplitOperation(
         StateChecker::Context& c)
 {
-    IdealStateOperation::UP so(new SplitOperation(
-                c.component.getClusterName(),
+    auto so = std::make_unique<SplitOperation>(
+                &c.component.getClusterName(),
                 BucketAndNodes(c.getBucket(), c.entry->getNodes()),
                 c.distributorConfig.getMinimalBucketSplit(),
                 0,
-                0));
+                0);
 
-    so->setPriority(c.distributorConfig.getMaintenancePriorities()
-                    .splitDistributionBits);
+    so->setPriority(c.distributorConfig.getMaintenancePriorities().splitDistributionBits);
     so->setDetailedReason(
             "[Splitting bucket because the current system size requires "
             "a higher minimum split bit]");
@@ -101,15 +100,14 @@ StateChecker::Result
 SplitBucketStateChecker::generateMaxSizeExceededSplitOperation(
         StateChecker::Context& c)
 {
-    IdealStateOperation::UP so(new SplitOperation(                
-                c.component.getClusterName(),
+    auto so = std::make_unique<SplitOperation>(
+                &c.component.getClusterName(),
                 BucketAndNodes(c.getBucket(), c.entry->getNodes()),
                 58,
                 c.distributorConfig.getSplitCount(),
-                c.distributorConfig.getSplitSize()));
+                c.distributorConfig.getSplitSize());
 
-    so->setPriority(c.distributorConfig.getMaintenancePriorities()
-                    .splitLargeBucket);
+    so->setPriority(c.distributorConfig.getMaintenancePriorities().splitLargeBucket);
 
     const BucketInfo& info(c.entry.getBucketInfo());
     vespalib::asciistream ost;
@@ -465,12 +463,11 @@ JoinBucketsStateChecker::check(StateChecker::Context& c)
         sourceBuckets.push_back(c.getBucketId());
     }
     sourceBuckets.push_back(c.getBucketId());
-    IdealStateOperation::UP op(new JoinOperation(
-            c.component.getClusterName(),
+    auto op = std::make_unique<JoinOperation>(
+            &c.component.getClusterName(),
             BucketAndNodes(joinedBucket, c.entry->getNodes()),
-            sourceBuckets));
-    op->setPriority(c.distributorConfig.getMaintenancePriorities()
-                    .joinBuckets);
+            sourceBuckets);
+    op->setPriority(c.distributorConfig.getMaintenancePriorities().joinBuckets);
     vespalib::asciistream ost;
     ost << "[Joining buckets "
         << sourceBuckets[1].toString()
@@ -570,15 +567,14 @@ SplitInconsistentStateChecker::check(StateChecker::Context& c)
         return Result::noMaintenanceNeeded();
     }
     
-    IdealStateOperation::UP op(new SplitOperation(
-            c.component.getClusterName(),
+    auto op = std::make_unique<SplitOperation>(
+            &c.component.getClusterName(),
             BucketAndNodes(c.getBucket(), c.entry->getNodes()),
             getHighestUsedBits(c.entries),
             0,
-            0));
+            0);
 
-    op->setPriority(c.distributorConfig.getMaintenancePriorities()
-                    .splitInconsistentBucket);
+    op->setPriority(c.distributorConfig.getMaintenancePriorities().splitInconsistentBucket);
     op->setDetailedReason(getReason(c.getBucketId(), c.entries));
     return Result::createStoredResult(std::move(op), MaintenancePriority::HIGH);
 }
@@ -970,8 +966,7 @@ DeleteExtraCopiesStateChecker::removeRedundantEmptyOrConsistentCopies(
                    && enoughCopiesKept(keptIdealCopies, keptNonIdealCopies, c)
                    && !cp.active())
         {
-            addToRemoveSet(cp, "redundant in-sync copy",
-                           removedCopies, reasons);
+            addToRemoveSet(cp, "redundant in-sync copy", removedCopies, reasons);
         } else {
             ++keptNonIdealCopies;
         }
@@ -1010,12 +1005,11 @@ DeleteExtraCopiesStateChecker::check(StateChecker::Context& c)
     }
 
     if (!removedCopies.empty()) {
-        IdealStateOperation::UP ro(new RemoveBucketOperation(
-                c.component.getClusterName(),
-                BucketAndNodes(c.getBucket(), removedCopies)));
+        auto ro = std::make_unique<RemoveBucketOperation>(
+                &c.component.getClusterName(),
+                BucketAndNodes(c.getBucket(), removedCopies));
 
-        ro->setPriority(c.distributorConfig.getMaintenancePriorities()
-                        .deleteBucketCopy);
+        ro->setPriority(c.distributorConfig.getMaintenancePriorities().deleteBucketCopy);
         ro->setDetailedReason(reasons.str());
         return Result::createStoredResult(std::move(ro), MaintenancePriority::HIGH);
     }
@@ -1112,7 +1106,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
         activeNodeIndexes.push_back(activeNodes[i]._nodeIndex);
     }
     auto op = std::make_unique<SetBucketStateOperation>(
-            c.component.getClusterName(),
+            &c.component.getClusterName(),
             BucketAndNodes(c.getBucket(), operationNodes),
             activeNodeIndexes);
 
@@ -1148,10 +1142,9 @@ StateChecker::Result
 GarbageCollectionStateChecker::check(Context& c)
 {
     if (needsGarbageCollection(c)) {
-        IdealStateOperation::UP op(
-                new GarbageCollectionOperation(
-                        c.component.getClusterName(),
-                        BucketAndNodes(c.getBucket(), c.entry->getNodes())));
+        auto op = std::make_unique<GarbageCollectionOperation>(
+                        &c.component.getClusterName(),
+                        BucketAndNodes(c.getBucket(), c.entry->getNodes()));
 
         vespalib::asciistream reason;
         reason << "[Needs garbage collection: Last check at "

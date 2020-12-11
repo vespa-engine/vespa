@@ -195,14 +195,14 @@ TEST_F(IdealStateManagerTest, block_ideal_state_ops_on_full_request_bucket_info)
     }
 
     {
-        RemoveBucketOperation op("storage",
+        RemoveBucketOperation op(&_Storage,
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(3, 4)));
         EXPECT_TRUE(op.isBlocked(tracker, op_seq));
     }
 
     {
         // Don't trigger on requests to other nodes.
-        RemoveBucketOperation op("storage",
+        RemoveBucketOperation op(&_Storage,
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(3, 5)));
         EXPECT_FALSE(op.isBlocked(tracker, op_seq));
     }
@@ -215,7 +215,7 @@ TEST_F(IdealStateManagerTest, block_ideal_state_ops_on_full_request_bucket_info)
     }
 
     {
-        RemoveBucketOperation op("storage",
+        RemoveBucketOperation op(&_Storage,
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(7)));
         EXPECT_FALSE(op.isBlocked(tracker, op_seq));
     }
@@ -234,7 +234,7 @@ TEST_F(IdealStateManagerTest, block_check_for_all_operations_to_specific_bucket)
         tracker.insert(msg);
     }
     {
-        RemoveBucketOperation op("storage",
+        RemoveBucketOperation op(&_Storage,
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(7)));
         // Not blocked for exact node match.
         EXPECT_FALSE(checkBlock(op, makeDocumentBucket(bid), tracker, op_seq));
@@ -258,7 +258,7 @@ TEST_F(IdealStateManagerTest, block_operations_with_locked_buckets) {
     auto token = op_seq.try_acquire(bucket);
     EXPECT_TRUE(token.valid());
     {
-        RemoveBucketOperation op("storage", BucketAndNodes(bucket, toVector<uint16_t>(0)));
+        RemoveBucketOperation op(&_Storage, BucketAndNodes(bucket, toVector<uint16_t>(0)));
         EXPECT_TRUE(checkBlock(op, bucket, tracker, op_seq));
         EXPECT_TRUE(checkBlockForAllNodes(op, bucket, tracker, op_seq));
     }
