@@ -43,7 +43,7 @@ TEST_F(BucketStateOperationTest, activate_single_node) {
     BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0));
     std::vector<uint16_t> active;
     active.push_back(0);
-    SetBucketStateOperation op("storage", bucketAndNodes, active);
+    SetBucketStateOperation op(&_Storage, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -79,7 +79,7 @@ TEST_F(BucketStateOperationTest, activate_and_deactivate_nodes) {
     BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0, 1));
     std::vector<uint16_t> active;
     active.push_back(1);
-    SetBucketStateOperation op("storage", bucketAndNodes, active);
+    SetBucketStateOperation op(&_Storage, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -134,7 +134,7 @@ TEST_F(BucketStateOperationTest, do_not_deactivate_if_activate_fails) {
     BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0, 1));
     std::vector<uint16_t> active;
     active.push_back(1);
-    SetBucketStateOperation op("storage", bucketAndNodes, active);
+    SetBucketStateOperation op(&_Storage, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -176,7 +176,7 @@ TEST_F(BucketStateOperationTest, bucket_db_not_updated_on_failure) {
     BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0));
     std::vector<uint16_t> active;
     active.push_back(0);
-    SetBucketStateOperation op("storage", bucketAndNodes, active);
+    SetBucketStateOperation op(&_Storage, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));

@@ -18,7 +18,7 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
         DistributorNodeContext& node_ctx,
         DistributorOperationContext& op_ctx,
         api::Timestamp revertTimestamp)
-    : MessageTracker(node_ctx.cluster_name()),
+    : MessageTracker(&node_ctx.cluster_name()),
       _metric(metric),
       _reply(std::move(reply)),
       _op_ctx(op_ctx),

@@ -9,7 +9,7 @@ LOG_SETUP(".messagetracker");
 
 namespace storage::distributor {
 
-MessageTracker::MessageTracker(const std::string& clusterName)
+MessageTracker::MessageTracker(const vespalib::string * clusterName)
     : _clusterName(clusterName)
 {}
 
@@ -19,7 +19,7 @@ void
 MessageTracker::flushQueue(MessageSender& sender)
 {
     for (uint32_t i = 0; i < _commandQueue.size(); i++) {
-        _commandQueue[i]._msg->setAddress(api::StorageMessageAddress::create(&_clusterName, lib::NodeType::STORAGE, _commandQueue[i]._target));
+        _commandQueue[i]._msg->setAddress(api::StorageMessageAddress::create(_clusterName, lib::NodeType::STORAGE, _commandQueue[i]._target));
         _sentMessages[_commandQueue[i]._msg->getMsgId()] = _commandQueue[i]._target;
         sender.sendCommand(_commandQueue[i]._msg);
     }

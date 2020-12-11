@@ -56,7 +56,7 @@ TEST_F(SplitOperationTest, simple) {
     insertBucketInfo(document::BucketId(16, 1), 0, 0xabc, 1000,
                      tooLargeBucketSize, 250);
 
-    SplitOperation op("storage",
+    SplitOperation op(&_Storage,
                       BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0)),
                       maxSplitBits,
@@ -125,7 +125,7 @@ TEST_F(SplitOperationTest, multi_node_failure) {
 
     enableDistributorClusterState("distributor:1 storage:2");
 
-    SplitOperation op("storage",
+    SplitOperation op(&_Storage,
                       BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0,1)),
                       maxSplitBits,
@@ -210,7 +210,7 @@ TEST_F(SplitOperationTest, copy_trusted_status_not_carried_over_after_split) {
     addNodesToBucketDB(sourceBucket, "0=150/20/30000000/t,1=450/50/60000/u,"
                                      "2=550/60/70000");
 
-    SplitOperation op("storage",
+    SplitOperation op(&_Storage,
                       BucketAndNodes(makeDocumentBucket(sourceBucket), toVector<uint16_t>(0, 1)),
                       maxSplitBits,
                       splitCount,
@@ -277,7 +277,7 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
 
     insertBucketInfo(joinTarget, 0, 0xabc, 1000, 1234, true);
 
-    SplitOperation op("storage",
+    SplitOperation op(&_Storage,
                       BucketAndNodes(makeDocumentBucket(joinTarget), toVector<uint16_t>(0)),
                       maxSplitBits,
                       splitCount,
@@ -309,7 +309,7 @@ TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
     document::BucketId source_bucket(16, 1);
     insertBucketInfo(source_bucket, 0, 0xabc, 1000, tooLargeBucketSize, 250);
 
-    SplitOperation op("storage", BucketAndNodes(makeDocumentBucket(source_bucket), toVector<uint16_t>(0)),
+    SplitOperation op(&_Storage, BucketAndNodes(makeDocumentBucket(source_bucket), toVector<uint16_t>(0)),
                       maxSplitBits, splitCount, splitByteSize);
 
     EXPECT_FALSE(op.isBlocked(tracker, op_seq));

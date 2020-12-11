@@ -24,9 +24,11 @@ public:
         uint16_t _target;
     };
 
-    MessageTracker(const std::string& clusterName);
+    MessageTracker(const vespalib::string * clusterName);
     MessageTracker(MessageTracker &&) = default;
     MessageTracker & operator = (MessageTracker &&) = default;
+    MessageTracker(const MessageTracker &) = delete;
+    MessageTracker & operator = (const MessageTracker &) = delete;
     ~MessageTracker();
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) {
@@ -50,7 +52,7 @@ protected:
 
     // Keeps track of which node a message was sent to.
     std::map<uint64_t, uint16_t> _sentMessages;
-    vespalib::string _clusterName;
+    const vespalib::string * _clusterName;
 };
 
 }

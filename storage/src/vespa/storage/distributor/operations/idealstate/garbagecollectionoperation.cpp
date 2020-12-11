@@ -12,7 +12,7 @@ LOG_SETUP(".distributor.operation.idealstate.remove");
 
 namespace storage::distributor {
 
-GarbageCollectionOperation::GarbageCollectionOperation(const std::string& clusterName, const BucketAndNodes& nodes)
+GarbageCollectionOperation::GarbageCollectionOperation(const vespalib::string * clusterName, const BucketAndNodes& nodes)
     : IdealStateOperation(nodes),
       _tracker(clusterName),
       _replica_info(),

@@ -27,6 +27,10 @@ struct JoinOperationTest : Test, DistributorTestUtil {
     }
 };
 
+namespace {
+    vespalib::string _Storage("storage");
+}
+
 TEST_F(JoinOperationTest, simple) {
     getConfig().setJoinCount(100);
     getConfig().setJoinSize(1000);
@@ -36,7 +40,7 @@ TEST_F(JoinOperationTest, simple) {
 
     enableDistributorClusterState("distributor:1 storage:1");
 
-    JoinOperation op("storage",
+    JoinOperation op(&_Storage,
                      BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
                                     toVector<uint16_t>(0)),
                      toVector(document::BucketId(33, 1),
@@ -91,7 +95,7 @@ TEST_F(JoinOperationTest, send_sparse_joins_to_nodes_without_both_source_buckets
 
     enableDistributorClusterState("distributor:1 storage:2");
 
-    JoinOperation op("storage",
+    JoinOperation op(&_Storage,
                      BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
                                     toVector<uint16_t>(0, 1)),
                      toVector(document::BucketId(33, 1),
