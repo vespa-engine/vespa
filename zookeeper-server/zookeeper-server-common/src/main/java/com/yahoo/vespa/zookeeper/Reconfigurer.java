@@ -27,7 +27,8 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
 
-    private static final Duration RECONFIG_TIMEOUT = Duration.ofMinutes(3);
+    private static final Duration MIN_TIMEOUT = Duration.ofMinutes(3);
+    private static final Duration NODE_TIMEOUT = Duration.ofMinutes(1);
 
     private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(10));
     private final VespaZooKeeperAdmin vespaZooKeeperAdmin;
@@ -79,14 +80,15 @@ public class Reconfigurer extends AbstractComponent {
 
     private void reconfigure(ZookeeperServerConfig newConfig) {
         Instant reconfigTriggered = Instant.now();
+        List<String> newServers = difference(servers(newConfig), servers(activeConfig));
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
-        String joiningServers = String.join(",", difference(servers(newConfig), servers(activeConfig)));
+        String joiningServers = String.join(",", newServers);
         leavingServers = leavingServers.isEmpty() ? null : leavingServers;
         joiningServers = joiningServers.isEmpty() ? null : joiningServers;
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers);
         String connectionSpec = localConnectionSpec(activeConfig);
-        Instant end = Instant.now().plus(RECONFIG_TIMEOUT);
+        Instant end = Instant.now().plus(reconfigTimeout(newServers.size()));
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         for (int attempt = 1; Instant.now().isBefore(end); attempt++) {
             try {
@@ -106,6 +108,13 @@ public class Reconfigurer extends AbstractComponent {
                 sleeper.accept(delay);
             }
         }
+    }
+
+    /** Returns the timeout to use for the given joining server count */
+    private static Duration reconfigTimeout(int joiningServers) {
+        // For reconfig to succeed, the current ensemble must have a majority. When an ensemble grows and the joining
+        // servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
+        return Duration.ofMillis(Math.max(joiningServers * NODE_TIMEOUT.toMillis(), MIN_TIMEOUT.toMillis()));
     }
 
     private static String localConnectionSpec(ZookeeperServerConfig config) {
