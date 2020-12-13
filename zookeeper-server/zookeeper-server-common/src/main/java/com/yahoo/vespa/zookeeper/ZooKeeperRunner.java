@@ -61,7 +61,8 @@ public class ZooKeeperRunner implements Runnable {
             try {
                 log.log(Level.INFO, "Starting ZooKeeper server with config file " + path.toFile().getAbsolutePath() +
                                     ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
-                startServer(path);
+                startServer(path); // Will block in a real implementation of VespaZooKeeperServer
+                return;
             } catch (RuntimeException e) {
                 log.log(Level.INFO, "Starting ZooKeeper server failed, will retry");
                 try {
