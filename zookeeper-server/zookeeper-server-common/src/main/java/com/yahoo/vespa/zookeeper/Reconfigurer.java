@@ -88,9 +88,10 @@ public class Reconfigurer extends AbstractComponent {
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
                             ", leaving servers: " + leavingServers);
         String connectionSpec = localConnectionSpec(activeConfig);
-        Instant end = Instant.now().plus(reconfigTimeout(newServers.size()));
+        Instant now = Instant.now();
+        Instant end = now.plus(reconfigTimeout(newServers.size()));
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
-        for (int attempt = 1; Instant.now().isBefore(end); attempt++) {
+        for (int attempt = 1; now.isBefore(end); attempt++) {
             try {
                 Instant reconfigStarted = Instant.now();
                 vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
@@ -103,9 +104,12 @@ public class Reconfigurer extends AbstractComponent {
                 return;
             } catch (ReconfigException e) {
                 Duration delay = backoff.delay(attempt);
-                log.log(Level.WARNING, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay + ": " +
+                log.log(Level.WARNING, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay +
+                                       ", time left " + Duration.between(now, end) + ": " +
                                        Exceptions.toMessageString(e));
                 sleeper.accept(delay);
+            } finally {
+                now = Instant.now();
             }
         }
     }
