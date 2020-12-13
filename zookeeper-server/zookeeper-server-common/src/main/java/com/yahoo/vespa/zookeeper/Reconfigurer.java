@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,28 +29,30 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Duration RECONFIG_TIMEOUT = Duration.ofMinutes(3);
 
+    private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(10));
+    private final VespaZooKeeperAdmin vespaZooKeeperAdmin;
+    private final Consumer<Duration> sleeper;
+
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
 
-    private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(10));
-    protected final VespaZooKeeperAdmin vespaZooKeeperAdmin;
-
     @Inject
     public Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin) {
-        this.vespaZooKeeperAdmin = vespaZooKeeperAdmin;
+        this(vespaZooKeeperAdmin, Reconfigurer::defaultSleeper);
+    }
+
+    Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Consumer<Duration> sleeper) {
+        this.vespaZooKeeperAdmin = Objects.requireNonNull(vespaZooKeeperAdmin);
+        this.sleeper = Objects.requireNonNull(sleeper);
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
     void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
-        startOrReconfigure(newConfig, Reconfigurer::defaultSleeper, server);
-    }
-
-    void startOrReconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper, VespaZooKeeperServer server) {
         if (zooKeeperRunner == null)
             zooKeeperRunner = startServer(newConfig, server);
 
         if (shouldReconfigure(newConfig))
-            reconfigure(newConfig, sleeper);
+            reconfigure(newConfig);
     }
 
     ZookeeperServerConfig activeConfig() {
@@ -74,7 +77,7 @@ public class Reconfigurer extends AbstractComponent {
         return runner;
     }
 
-    private void reconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper) {
+    private void reconfigure(ZookeeperServerConfig newConfig) {
         Instant reconfigTriggered = Instant.now();
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
         String joiningServers = String.join(",", difference(servers(newConfig), servers(activeConfig)));
@@ -98,8 +101,8 @@ public class Reconfigurer extends AbstractComponent {
                 return;
             } catch (ReconfigException e) {
                 Duration delay = backoff.delay(attempt);
-                log.log(Level.INFO, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay + ": " +
-                                    Exceptions.toMessageString(e));
+                log.log(Level.WARNING, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay + ": " +
+                                       Exceptions.toMessageString(e));
                 sleeper.accept(delay);
             }
         }
