@@ -88,7 +88,7 @@ public class ApplicationHandler extends HttpHandler {
 
         if (isReindexingRequest(request)) {
             applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.enabled(false));
-            return new JSONResponse(Response.Status.OK) { { object.setString("message", "Reindexing disabled"); } };
+            return createMessageResponse("Reindexing disabled");
         }
 
         if (applicationRepository.delete(applicationId))
@@ -218,7 +218,7 @@ public class ApplicationHandler extends HttpHandler {
 
         if (isReindexingRequest(request)) {
             applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.enabled(true));
-            return new JSONResponse(Response.Status.OK) { { object.setString("message", "Reindexing enabled"); } };
+            return createMessageResponse("Reindexing enabled");
         }
 
         throw new NotFoundException("Illegal POST request '" + request.getUri() + "'");
@@ -247,7 +247,7 @@ public class ApplicationHandler extends HttpHandler {
                                                                 : "document types " + String.join(", ", types) + " in ") +
                                                "clusters " + String.join(", ", clusters) + " of ") +
                          "application " + applicationId;
-        return new JSONResponse(Response.Status.OK) { { object.setString("message", message); } };
+        return createMessageResponse(message);
     }
 
     private HttpResponse getReindexingStatus(ApplicationId applicationId) {
@@ -489,6 +489,10 @@ public class ApplicationHandler extends HttpHandler {
             status.progress().ifPresent(progress -> object.setDouble("progress", progress));
         }
 
+    }
+
+    private static JSONResponse createMessageResponse(String message) {
+        return new JSONResponse(Response.Status.OK) { { object.setString("message", message); } };
     }
 
 }
