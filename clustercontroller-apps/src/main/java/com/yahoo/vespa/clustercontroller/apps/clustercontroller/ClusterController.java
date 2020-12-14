@@ -96,16 +96,12 @@ public class ClusterController extends AbstractComponent
     }
 
     /**
-     * Creates a path in zookeeper for this fleetcontroller. Seems like this is meant as a check
-     * that zookeeper server is up and that we are able to do operations against it.
+     * Block until we are connected to zookeeper server
      */
     private void verifyThatZooKeeperWorks(FleetControllerOptions options) throws Exception {
         if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
-            String path = "/" + options.clusterName + options.fleetControllerIndex;
             Curator curator = Curator.create(options.zooKeeperServerAddress);
-            if (curator.framework().checkExists().forPath(path) != null)
-                curator.framework().delete().deletingChildrenIfNeeded().forPath(path);
-            curator.framework().create().creatingParentsIfNeeded().forPath(path);
+            curator.framework().blockUntilConnected();
         }
     }
 
