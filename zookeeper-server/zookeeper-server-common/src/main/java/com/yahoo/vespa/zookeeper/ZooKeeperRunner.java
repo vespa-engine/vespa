@@ -26,6 +26,7 @@ import static com.yahoo.vespa.zookeeper.Configurator.zookeeperServerHostnames;
 public class ZooKeeperRunner implements Runnable {
 
     private static final Logger log = java.util.logging.Logger.getLogger(ZooKeeperRunner.class.getName());
+    private static final Duration shutdownTimeout = Duration.ofSeconds(10);
 
     private final ExecutorService executorService;
     private final ZookeeperServerConfig zookeeperServerConfig;
@@ -40,10 +41,12 @@ public class ZooKeeperRunner implements Runnable {
     }
 
     void shutdown() {
+        log.log(Level.INFO, "Triggering shutdown");
         executorService.shutdownNow();
+        log.log(Level.INFO, "Shutdown triggered");
         try {
-            if (!executorService.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
-                log.log(Level.WARNING, "Failed to shut down within timeout");
+            if (!executorService.awaitTermination(shutdownTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.log(Level.WARNING, "Failed to shut down within " + shutdownTimeout);
             }
         } catch (InterruptedException e) {
             log.log(Level.INFO, "Interrupted waiting for executor to complete", e);
