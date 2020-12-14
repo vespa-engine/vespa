@@ -31,7 +31,6 @@ public class ClusterControllerClusterConfigurer {
         configure(fleetcontrollerConfig);
         configure(slobroksConfig);
         configure(zookeepersConfig);
-        checkIfZooKeeperNeeded();
         if (controller != null) {
             controller.setOptions(options.clusterName, options, metricImpl);
         }
@@ -79,7 +78,7 @@ public class ClusterControllerClusterConfigurer {
     }
 
     private void configure(SlobroksConfig config) {
-        String specs[] = new String[config.slobrok().size()];
+        String[] specs = new String[config.slobrok().size()];
         for (int i = 0; i < config.slobrok().size(); i++) {
             specs[i] = config.slobrok().get(i).connectionspec();
         }
@@ -87,22 +86,14 @@ public class ClusterControllerClusterConfigurer {
     }
 
     private void configure(ZookeepersConfig config) {
-        options.zooKeeperServerAddress = config.zookeeperserverlist();
+        options.zooKeeperServerAddress = verifyZooKeeperAddress(config.zookeeperserverlist());
     }
 
-    private void checkIfZooKeeperNeeded() {
-        // For legacy (testing, presumably) reasons, support running 1 instance
-        // without a ZK cluster. This is really a Horrible Thing(tm) since we
-        // violate cluster state versioning invariants when the controller is
-        // restarted.
-        if (options.zooKeeperServerAddress == null || "".equals(options.zooKeeperServerAddress)) {
-            if (options.fleetControllerCount > 1) {
-                throw new IllegalArgumentException(
-                    "Must set zookeeper server with multiple fleetcontrollers");
-            } else {
-                options.zooKeeperServerAddress = null; // Force null
-            }
+    private String verifyZooKeeperAddress(String zooKeeperServerAddress) {
+        if (zooKeeperServerAddress == null || "".equals(zooKeeperServerAddress)) {
+            throw new IllegalArgumentException("zookeeper server address must be set, was '" + zooKeeperServerAddress + "'");
         }
+        return zooKeeperServerAddress;
     }
 
 }
