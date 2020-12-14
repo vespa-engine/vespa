@@ -64,7 +64,7 @@ public class ZooKeeperRunner implements Runnable {
                 startServer(path); // Will block in a real implementation of VespaZooKeeperServer
                 return;
             } catch (RuntimeException e) {
-                log.log(Level.INFO, "Starting ZooKeeper server failed, will retry");
+                log.log(Level.INFO, "Starting ZooKeeper server failed, will retry", e);
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException interruptedException) {
