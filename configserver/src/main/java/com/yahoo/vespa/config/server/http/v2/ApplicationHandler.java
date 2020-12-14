@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.stream.Stream;
 
 import static java.util.Map.Entry.comparingByKey;
@@ -214,8 +213,7 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isReindexRequest(request)) {
-            String message = triggerReindexing(request, applicationId);
-            return new JSONResponse(Response.Status.OK) { { object.setString("message", message); } };
+            return triggerReindexing(request, applicationId);
         }
 
         if (isReindexingRequest(request)) {
@@ -226,7 +224,7 @@ public class ApplicationHandler extends HttpHandler {
         throw new NotFoundException("Illegal POST request '" + request.getUri() + "'");
     }
 
-    private String triggerReindexing(HttpRequest request, ApplicationId applicationId) {
+    private HttpResponse triggerReindexing(HttpRequest request, ApplicationId applicationId) {
         Set<String> clusters = StringUtilities.split(request.getProperty("clusterId"));
         Set<String> types = StringUtilities.split(request.getProperty("documentType"));
         Instant now = applicationRepository.clock().instant();
@@ -242,12 +240,14 @@ public class ApplicationHandler extends HttpHandler {
                             reindexing = reindexing.withReady(cluster, type, now);
             return reindexing;
         });
-        return "Reindexing " +
-               (clusters.isEmpty() ? ""
-                                   : (types.isEmpty() ? ""
-                                                      : "document types " + String.join(", ", types) + " in ") +
-                                     "clusters " + String.join(", ", clusters) + " of ") +
-               "application " + applicationId;
+
+        String message = "Reindexing " +
+                         (clusters.isEmpty() ? ""
+                                             : (types.isEmpty() ? ""
+                                                                : "document types " + String.join(", ", types) + " in ") +
+                                               "clusters " + String.join(", ", clusters) + " of ") +
+                         "application " + applicationId;
+        return new JSONResponse(Response.Status.OK) { { object.setString("message", message); } };
     }
 
     private HttpResponse getReindexingStatus(ApplicationId applicationId) {
