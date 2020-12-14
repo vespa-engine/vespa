@@ -301,12 +301,12 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
                 cmd->setCondition(documentapi::TestAndSetCondition()); // Must clear TaS or the backend will reject the op
                 allow = true;
             } else {
-                bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::REJECTED,
+                bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
                                                          "Expected bucket lock token did not match actual lock token"));
                 return true;
             }
         } else {
-            bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::REJECTED,
+            bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
                                                      "Operation expects a read-for-write bucket lock to be present, "
                                                      "but none currently exists"));
             return true;

@@ -350,6 +350,12 @@ protected:
     bool addBoundedTrace(uint32_t level, const vespalib::string& message);
 
     const vdslib::Parameters& visitor_parameters() const noexcept;
+
+    // Possibly modifies the ReturnCode parameter in-place if its return code should
+    // be changed based on visitor subclass-specific behavior.
+    // Returns true if the visitor itself should be failed (aborted) with the
+    // error code, false if the DocumentAPI message should be retried later.
+    [[nodiscard]] virtual bool remap_docapi_message_error_code(api::ReturnCode& in_out_code);
 public:
     Visitor(StorageComponent& component);
     virtual ~Visitor();
