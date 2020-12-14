@@ -64,7 +64,11 @@ BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
+%if 0%{?centos}
+BuildRequires: llvm-devel >= 10.0.1
+%else
 BuildRequires: llvm-devel >= 9.0.1
+%endif
 BuildRequires: boost-devel >= 1.66
 BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
@@ -173,8 +177,13 @@ Requires: vespa-zstd >= 1.4.5-2
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?el8}
+%if 0%{?centos}
+Requires: llvm-libs >= 10.0.1
+%define _vespa_llvm_version 10
+%else
 Requires: llvm-libs >= 9.0.1
 %define _vespa_llvm_version 9
+%endif
 Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.4.0
