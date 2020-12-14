@@ -58,7 +58,7 @@ BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.4.0
-BuildRequires: vespa-openssl-devel >= 1.1.1i-1
+BuildRequires: vespa-openssl-devel >= 1.1.1g-1
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
@@ -163,7 +163,7 @@ Requires: llvm7.0
 Requires: vespa-icu >= 65.1.0-1
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.4.0
-Requires: vespa-openssl >= 1.1.1i-1
+Requires: vespa-openssl >= 1.1.1g-1
 Requires: vespa-protobuf >= 3.7.0-4
 Requires: vespa-telegraf >= 1.1.1-1
 Requires: vespa-valgrind >= 3.16.0-1
@@ -242,7 +242,7 @@ Summary: Vespa - The open big data serving engine - base C++ libs
 
 Requires: xxhash-libs >= 0.8.0
 %if 0%{?el7}
-Requires: vespa-openssl >= 1.1.1i-1
+Requires: vespa-openssl >= 1.1.1g-1
 %else
 Requires: openssl-libs
 %endif
