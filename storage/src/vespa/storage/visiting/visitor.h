@@ -307,7 +307,7 @@ private:
     // Used by visitor client to identify what visitor messages belong to
     api::StorageMessage::Id _visitorCmdId;
     api::VisitorId _visitorId;
-    std::shared_ptr<api::StorageCommand> _initiatingCmd;
+    std::shared_ptr<api::CreateVisitorCommand> _initiatingCmd;
     api::StorageMessage::Priority _priority;
 
     api::ReturnCode _result;
@@ -348,6 +348,8 @@ protected:
      * Returns true iff message was added to internal trace tree.
      */
     bool addBoundedTrace(uint32_t level, const vespalib::string& message);
+
+    const vdslib::Parameters& visitor_parameters() const noexcept;
 public:
     Visitor(StorageComponent& component);
     virtual ~Visitor();
@@ -468,7 +470,7 @@ public:
                VisitorMessageSession::UP,
                documentapi::Priority::Value);
 
-    void attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
+    void attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
                 const mbus::Route& controlAddress,
                 const mbus::Route& dataAddress,
                 framework::MilliSecTime timeout);

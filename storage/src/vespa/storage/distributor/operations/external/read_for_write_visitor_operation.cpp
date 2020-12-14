@@ -5,6 +5,7 @@
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/operationowner.h>
+#include <vespa/storage/distributor/uuid_generator.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -16,11 +17,13 @@ ReadForWriteVisitorOperationStarter::ReadForWriteVisitorOperationStarter(
         std::shared_ptr<VisitorOperation> visitor_op,
         OperationSequencer& operation_sequencer,
         OperationOwner& stable_operation_owner,
-        PendingMessageTracker& message_tracker)
+        PendingMessageTracker& message_tracker,
+        UuidGenerator& uuid_generator)
     : _visitor_op(std::move(visitor_op)),
       _operation_sequencer(operation_sequencer),
       _stable_operation_owner(stable_operation_owner),
-      _message_tracker(message_tracker)
+      _message_tracker(message_tracker),
+      _uuid_generator(uuid_generator)
 {
 }
 
@@ -46,14 +49,17 @@ void ReadForWriteVisitorOperationStarter::onStart(DistributorMessageSender& send
             _visitor_op->fail_with_merge_pending(sender);
             return;
         }
-        auto bucket_handle = _operation_sequencer.try_acquire(*maybe_bucket);
+        auto token = _uuid_generator.generate_uuid();
+        auto bucket_handle = _operation_sequencer.try_acquire(*maybe_bucket, token);
         if (!bucket_handle.valid()) {
             LOG(debug, "An operation is already pending for bucket %s, failing visitor",
                 maybe_bucket->toString().c_str());
             _visitor_op->fail_with_bucket_already_locked(sender);
             return;
         }
-        LOG(debug, "Possibly deferring start of visitor for bucket %s", maybe_bucket->toString().c_str());
+        _visitor_op->assign_put_lock_access_token(token);
+        LOG(debug, "Possibly deferring start of visitor for bucket %s, using lock token %s",
+            maybe_bucket->toString().c_str(), token.c_str());
         _message_tracker.run_once_no_pending_for_bucket(
                 *maybe_bucket,
                 make_deferred_task([self = shared_from_this(), handle = std::move(bucket_handle)](TaskRunState state) mutable {

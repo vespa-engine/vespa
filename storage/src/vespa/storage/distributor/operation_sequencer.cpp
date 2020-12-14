@@ -2,6 +2,7 @@
 
 #include "operation_sequencer.h"
 #include <vespa/document/base/documentid.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
 
 namespace storage::distributor {
@@ -23,10 +24,10 @@ SequencingHandle OperationSequencer::try_acquire(document::BucketSpace bucket_sp
         // TODO avoid O(n), but sub bucket resolving is tricky and we expect the number
         // of locked buckets to be in the range of 0 to <very small number>.
         for (const auto& entry : _active_buckets) {
-            if ((entry.getBucketSpace() == bucket_space)
-                && entry.getBucketId().contains(doc_bucket_id))
+            if ((entry.first.getBucketSpace() == bucket_space)
+                && entry.first.getBucketId().contains(doc_bucket_id))
             {
-                return SequencingHandle(SequencingHandle::BlockedBy::LockedBucket);
+                return SequencingHandle(SequencingHandle::BlockedByLockedBucket(entry.second));
             }
         }
     }
@@ -34,16 +35,17 @@ SequencingHandle OperationSequencer::try_acquire(document::BucketSpace bucket_sp
     if (inserted.second) {
         return SequencingHandle(*this, gid);
     } else {
-        return SequencingHandle(SequencingHandle::BlockedBy::PendingOperation);
+        return SequencingHandle(SequencingHandle::BlockedByPendingOperation());
     }
 }
 
-SequencingHandle OperationSequencer::try_acquire(const document::Bucket& bucket) {
-    const auto inserted = _active_buckets.insert(bucket);
+SequencingHandle OperationSequencer::try_acquire(const document::Bucket& bucket,
+                                                 const vespalib::string& token) {
+    const auto inserted = _active_buckets.insert(std::make_pair(bucket, token));
     if (inserted.second) {
         return SequencingHandle(*this, bucket);
     } else {
-        return SequencingHandle(SequencingHandle::BlockedBy::LockedBucket);
+        return SequencingHandle(SequencingHandle::BlockedByLockedBucket(inserted.first->second));
     }
 }
 
@@ -57,8 +59,7 @@ void OperationSequencer::release(const SequencingHandle& handle) {
         _active_gids.erase(handle.gid());
     } else {
         assert(handle.has_bucket());
-        [[maybe_unused]] auto erased = _active_buckets.erase(handle.bucket());
-        assert(erased == 1u);
+        _active_buckets.erase(handle.bucket());
     }
 }
 

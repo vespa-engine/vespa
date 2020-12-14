@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitoroperation.h"
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -823,6 +824,10 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
 
     cmd->setTimeout(timeLeft());
 
+    if (!_put_lock_token.empty()) {
+        cmd->getParameters().set(reindexing_bucket_lock_visitor_parameter_key(), _put_lock_token);
+    }
+
     LOG(spam, "Priority is %d", cmd->getPriority());
     LOG(debug, "Sending CreateVisitor command %" PRIu64 " for storage visitor '%s' to %s",
         cmd->getMsgId(),
@@ -907,6 +912,12 @@ void
 VisitorOperation::assign_bucket_lock_handle(SequencingHandle handle)
 {
     _bucket_lock = std::move(handle);
+}
+
+void
+VisitorOperation::assign_put_lock_access_token(const vespalib::string& token)
+{
+    _put_lock_token = token;
 }
 
 }
