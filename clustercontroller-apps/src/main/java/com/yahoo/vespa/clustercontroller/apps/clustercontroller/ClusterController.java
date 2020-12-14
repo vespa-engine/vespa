@@ -33,6 +33,7 @@ public class ClusterController extends AbstractComponent
      * Dependency injection constructor for controller. {@link ZooKeeperProvider} argument given
      * to ensure that zookeeper has started before we start polling it.
      */
+    @SuppressWarnings("unused")
     @Inject
     public ClusterController(ZooKeeperProvider zooKeeperProvider) {
         this();
@@ -45,17 +46,9 @@ public class ClusterController extends AbstractComponent
 
     public void setOptions(String clusterName, FleetControllerOptions options, Metric metricImpl) throws Exception {
         metricWrapper.updateMetricImplementation(metricImpl);
-        if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
-            // Wipe this path ... it's unclear why
-            String path = "/" + options.clusterName + options.fleetControllerIndex;
-            Curator curator = Curator.create(options.zooKeeperServerAddress);
-            if (curator.framework().checkExists().forPath(path) != null)
-                curator.framework().delete().deletingChildrenIfNeeded().forPath(path);
-            curator.framework().create().creatingParentsIfNeeded().forPath(path);
-        }
+        verifyThatZooKeeperWorks(options);
         synchronized (controllers) {
             FleetController controller = controllers.get(clusterName);
-
             if (controller == null) {
                 StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
                 controller = FleetController.create(options, statusPageServer, metricWrapper);
@@ -83,11 +76,9 @@ public class ClusterController extends AbstractComponent
 
     @Override
     public Map<String, RemoteClusterControllerTaskScheduler> getFleetControllers() {
-        Map<String, RemoteClusterControllerTaskScheduler> m = new LinkedHashMap<>();
         synchronized (controllers) {
-            m.putAll(controllers);
+            return new LinkedHashMap<>(controllers);
         }
-        return m;
     }
 
     @Override
@@ -102,6 +93,16 @@ public class ClusterController extends AbstractComponent
 
     void shutdownController(FleetController controller) throws Exception {
         controller.shutdown();
+    }
+
+    /**
+     * Block until we are connected to zookeeper server
+     */
+    private void verifyThatZooKeeperWorks(FleetControllerOptions options) throws Exception {
+        if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
+            Curator curator = Curator.create(options.zooKeeperServerAddress);
+            curator.framework().blockUntilConnected();
+        }
     }
 
 }
