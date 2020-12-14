@@ -291,7 +291,7 @@ FBench::Usage()
     printf("              [-s seconds] [-q queryFilePattern] [-o outputFilePattern]\n");
     printf("              [-r restartLimit] [-m maxLineSize] [-k] <hostname> <port>\n\n");
     printf(" -H <str> : append extra header to each get request.\n");
-    printf(" -A <str> : assign autority.  <str> should be hostname:port format. Overrides Host: header sent.\n");
+    printf(" -A <str> : assign authority.  <str> should be hostname:port format. Overrides Host: header sent.\n");
     printf(" -P       : use POST for requests instead of GET.\n");
     printf(" -a <str> : append string to each query\n");
     printf(" -n <num> : run with <num> parallel clients [10]\n");
