@@ -43,7 +43,7 @@ public class ClusterController extends AbstractComponent
     }
 
 
-    public void setOptions(String clusterName, FleetControllerOptions options, Metric metricImpl) throws Exception {
+    public void setOptions(FleetControllerOptions options, Metric metricImpl) throws Exception {
         metricWrapper.updateMetricImplementation(metricImpl);
         if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
             // Wipe this path ... it's unclear why
@@ -54,13 +54,13 @@ public class ClusterController extends AbstractComponent
             curator.framework().create().creatingParentsIfNeeded().forPath(path);
         }
         synchronized (controllers) {
-            FleetController controller = controllers.get(clusterName);
+            FleetController controller = controllers.get(options.clusterName);
 
             if (controller == null) {
                 StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
                 controller = FleetController.create(options, statusPageServer, metricWrapper);
-                controllers.put(clusterName, controller);
-                status.put(clusterName, statusPageServer);
+                controllers.put(options.clusterName, controller);
+                status.put(options.clusterName, statusPageServer);
             } else {
                 controller.updateOptions(options, 0);
             }

@@ -32,7 +32,7 @@ public class ClusterControllerClusterConfigurer {
         configure(slobroksConfig);
         configure(zookeepersConfig);
         if (controller != null) {
-            controller.setOptions(options.clusterName, options, metricImpl);
+            controller.setOptions(options, metricImpl);
         }
     }
 
