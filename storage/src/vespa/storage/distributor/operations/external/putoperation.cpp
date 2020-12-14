@@ -108,7 +108,7 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetLi
         (void) multipleBuckets;
         BucketDatabase::Entry entry(_bucketSpace.getBucketDatabase().get(lastBucket));
         std::vector<uint16_t> idealState(
-                _bucketSpace.getDistribution().getIdealStorageNodes(_bucketSpace.getClusterState(), lastBucket, "ui"));
+                _bucketSpace.get_ideal_service_layer_nodes_bundle(lastBucket).get_available_nodes());
         active = ActiveCopy::calculate(idealState, _bucketSpace.getDistribution(), entry);
         LOG(debug, "Active copies for bucket %s: %s", entry.getBucketId().toString().c_str(), active.toString().c_str());
         for (uint32_t i=0; i<active.size(); ++i) {
@@ -182,10 +182,7 @@ PutOperation::onStart(DistributorMessageSender& sender)
     if (up) {
         std::vector<document::BucketId> bucketsToCheckForSplit;
 
-        lib::IdealNodeCalculatorImpl idealNodeCalculator;
-        idealNodeCalculator.setDistribution(_bucketSpace.getDistribution());
-        idealNodeCalculator.setClusterState(_bucketSpace.getClusterState());
-        OperationTargetResolverImpl targetResolver(_bucketSpace.getBucketDatabase(), idealNodeCalculator,
+        OperationTargetResolverImpl targetResolver(_bucketSpace, _bucketSpace.getBucketDatabase(),
                 _op_ctx.distributor_config().getMinimalBucketSplit(),
                 _bucketSpace.getDistribution().getRedundancy(),
                 _msg->getBucket().getBucketSpace());
