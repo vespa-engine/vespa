@@ -74,7 +74,7 @@ public class ZooKeeperRunner implements Runnable {
                     log.log(Level.INFO, "Failed interrupting task", e);
                 }
             }
-        } while (Instant.now().isBefore(end));
+        } while (Instant.now().isBefore(end) && !executorService.isShutdown());
     }
 
     private void startServer(Path path) {
