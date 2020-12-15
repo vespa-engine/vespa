@@ -10,6 +10,7 @@
 #include "proton.h"
 #include "proton_config_snapshot.h"
 #include "proton_disk_layout.h"
+#include "proton_thread_pools_explorer.h"
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
@@ -836,6 +837,7 @@ const vespalib::string DOCUMENT_DB = "documentdb";
 const vespalib::string FLUSH_ENGINE = "flushengine";
 const vespalib::string TLS_NAME = "tls";
 const vespalib::string RESOURCE_USAGE = "resourceusage";
+const vespalib::string THREAD_POOLS = "threadpools";
 
 struct StateExplorerProxy : vespalib::StateExplorer {
     const StateExplorer &explorer;
@@ -881,8 +883,7 @@ Proton::get_state(const vespalib::slime::Inserter &, bool) const
 std::vector<vespalib::string>
 Proton::get_children_names() const
 {
-    std::vector<vespalib::string> names({DOCUMENT_DB, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, RESOURCE_USAGE});
-    return names;
+    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, RESOURCE_USAGE};
 }
 
 std::unique_ptr<vespalib::StateExplorer>
@@ -899,6 +900,13 @@ Proton::get_child(vespalib::stringref name) const
         return std::make_unique<search::transactionlog::TransLogServerExplorer>(_tls->getTransLogServer());
     } else if (name == RESOURCE_USAGE && _diskMemUsageSampler) {
         return std::make_unique<ResourceUsageExplorer>(_diskMemUsageSampler->writeFilter());
+    } else if (name == THREAD_POOLS) {
+        return std::make_unique<ProtonThreadPoolsExplorer>(_sharedExecutor.get(),
+                                                           (_matchEngine) ? &_matchEngine->get_executor() : nullptr,
+                                                           (_summaryEngine) ? &_summaryEngine->get_executor() : nullptr,
+                                                           (_flushEngine) ? &_flushEngine->get_executor() : nullptr,
+                                                           &_executor,
+                                                           _warmupExecutor.get());
     }
     return Explorer_UP(nullptr);
 }

@@ -60,6 +60,11 @@ public:
     vespalib::ThreadStackExecutor::Stats getExecutorStats() { return _executor.getStats(); }
 
     /**
+     * Returns the underlying executor. Only used for state explorers.
+     */
+    const vespalib::SyncableThreadExecutor& get_executor() const { return _executor; }
+
+    /**
      * Closes the request handler interface. This will prevent any more data
      * from entering this object, allowing you to flush all pending operations
      * without having to safe-guard against input.

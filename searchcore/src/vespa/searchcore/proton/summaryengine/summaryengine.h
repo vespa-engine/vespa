@@ -65,6 +65,11 @@ public:
     vespalib::ThreadStackExecutor::Stats getExecutorStats() { return _executor.getStats(); }
 
     /**
+     * Returns the underlying executor. Only used for state explorers.
+     */
+    const vespalib::SyncableThreadExecutor& get_executor() const { return _executor; }
+
+    /**
      * Starts the underlying threads. This will throw a vespalib::Exception if
      * it failed to start for any reason.
      */
