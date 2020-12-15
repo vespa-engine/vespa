@@ -9,10 +9,9 @@ import com.yahoo.jdisc.SharedResource;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.time.Duration;
-import java.time.Instant;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
