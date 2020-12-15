@@ -266,7 +266,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
-            "enable-automatic-reindexing", false,
+            "enable-automatic-reindexing", true,
             List.of("bjorncs", "jonmv"), "2020-12-02", "2021-02-01",
             "Whether to automatically trigger reindexing from config change",
             "Takes effect on next internal redeployment",
