@@ -9,6 +9,8 @@
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 
+namespace metrics { class MetricLockGuard; }
+
 namespace proton {
 
 /**
@@ -154,7 +156,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
                                size_t numDocIdPartitions,
                                metrics::MetricSet *parent);
             ~RankProfileMetrics() override;
-            void update(const matching::MatchingStats &stats);
+            void update(const metrics::MetricLockGuard & guard, const matching::MatchingStats &stats);
 
         };
         using  RankProfileMap = std::map<vespalib::string, RankProfileMetrics::UP>;

@@ -60,8 +60,6 @@ template class vespalib::hash_set<metrics::Metric::String>;
 
 namespace metrics {
 
-using MetricLockGuard = UpdateHook::MetricLockGuard;
-
 class MetricManager : private document::Runnable
 {
 public:

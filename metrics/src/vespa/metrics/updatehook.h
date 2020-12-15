@@ -5,6 +5,21 @@
 
 namespace metrics {
 
+class MetricLockGuard {
+public:
+    MetricLockGuard(std::mutex & mutex);
+    MetricLockGuard(const MetricLockGuard &) = delete;
+    MetricLockGuard & operator =(const MetricLockGuard &) = delete;
+    MetricLockGuard(MetricLockGuard &&) = default;
+    MetricLockGuard & operator =(MetricLockGuard &&) = default;
+    ~MetricLockGuard();
+
+    bool owns(const std::mutex &) const;
+    operator std::unique_lock<std::mutex> & () { return _guard; }
+private:
+    std::unique_lock<std::mutex> _guard;
+};
+
 class MetricManager;
 
 class UpdateHook {
@@ -14,9 +29,7 @@ class UpdateHook {
     friend class MetricManager;
 
 public:
-    using UP = std::unique_ptr<UpdateHook>;
-    using MetricLockGuard = std::unique_lock<std::mutex>;
-
+    using MetricLockGuard = metrics::MetricLockGuard;
     UpdateHook(const char* name) : _name(name), _nextCall(0), _period(0) {}
     virtual ~UpdateHook() = default;
     virtual void updateMetrics(const MetricLockGuard & guard) = 0;

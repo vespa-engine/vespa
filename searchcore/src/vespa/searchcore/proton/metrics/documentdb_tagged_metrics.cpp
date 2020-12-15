@@ -194,7 +194,8 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::up
 }
 
 void
-DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const MatchingStats &stats)
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const metrics::MetricLockGuard &,
+                                                                     const MatchingStats &stats)
 {
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());

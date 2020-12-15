@@ -49,7 +49,7 @@ public:
                              const DDBState &state);
     ~DocumentDBMetricsUpdater();
 
-    void updateMetrics(DocumentDBTaggedMetrics &metrics);
+    void updateMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMetrics &metrics);
 
 };
 

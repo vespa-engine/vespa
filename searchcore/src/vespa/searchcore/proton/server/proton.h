@@ -31,6 +31,7 @@
 
 namespace vespalib { class StateServer; }
 namespace search::transactionlog { class TransLogServerApp; }
+namespace metrics { class MetricLockGuard; }
 namespace proton {
 
 class DiskMemUsageSampler;
@@ -60,16 +61,6 @@ private:
     using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
     using BucketSpace = document::BucketSpace;
 
-    struct MetricsUpdateHook : metrics::UpdateHook
-    {
-        Proton &self;
-        MetricsUpdateHook(Proton &s)
-            : metrics::UpdateHook("proton-hook"),
-              self(s) {}
-        void updateMetrics(const MetricLockGuard &guard) override { self.updateMetrics(guard); }
-    };
-    friend struct MetricsUpdateHook;
-
     class ProtonFileHeaderContext : public search::common::FileHeaderContext
     {
         vespalib::string _hostName;
@@ -85,16 +76,16 @@ private:
         void setClusterName(const vespalib::string &clusterName, const vespalib::string &baseDir);
     };
 
-    const config::ConfigUri         _configUri;
-    mutable std::shared_mutex _mutex;
-    MetricsUpdateHook               _metricsHook;
-    std::unique_ptr<MetricsEngine>  _metricsEngine;
-    ProtonFileHeaderContext         _fileHeaderContext;
-    std::unique_ptr<TLS>            _tls;
+    const config::ConfigUri              _configUri;
+    mutable std::shared_mutex            _mutex;
+    std::unique_ptr<metrics::UpdateHook> _metricsHook;
+    std::unique_ptr<MetricsEngine>       _metricsEngine;
+    ProtonFileHeaderContext              _fileHeaderContext;
+    std::unique_ptr<TLS>                 _tls;
     std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
     PersistenceEngine::UP           _persistenceEngine;
     DocumentDBMap                   _documentDBMap;
-    std::unique_ptr<MatchEngine>   _matchEngine;
+    std::unique_ptr<MatchEngine>    _matchEngine;
     std::unique_ptr<SummaryEngine>  _summaryEngine;
     std::unique_ptr<DocsumBySlime>  _docsumBySlime;
     MemoryFlushConfigUpdater::UP    _memoryFlushConfigUpdater;
@@ -138,12 +129,6 @@ private:
     void applyConfig(const BootstrapConfig::SP & configSnapshot) override;
     MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client) override;
 
-    /**
-     * Called by the metrics update hook (typically in the context of
-     * the metric manager). Do not call this function in multiple
-     * threads at once.
-     **/
-    void updateMetrics(const metrics::UpdateHook::MetricLockGuard &guard);
     void waitForInitDone();
     void waitForOnlineState();
     uint32_t getDistributionKey() const override { return _distributionKey; }
@@ -159,6 +144,13 @@ public:
            const vespalib::string &progName,
            std::chrono::milliseconds subscribeTimeout);
     ~Proton() override;
+
+    /**
+     * Called by the metrics update hook (typically in the context of
+     * the metric manager). Do not call this function in multiple
+     * threads at once.
+     **/
+    void updateMetrics(const metrics::MetricLockGuard &guard);
 
     /**
      * This method must be called after the constructor and before the destructor.
