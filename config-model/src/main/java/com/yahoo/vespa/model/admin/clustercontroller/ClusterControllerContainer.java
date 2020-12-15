@@ -54,23 +54,11 @@ public class ClusterControllerContainer extends Container implements
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler",
                    "/cluster/v2/*",
                    CLUSTERCONTROLLER_BUNDLE);
-        if (runStandaloneZooKeeper) {
-            addComponent("clustercontroller-zkrunner",
-                         "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl",
-                         ZOOKEEPER_SERVER_BUNDLE);
-            addComponent("clustercontroller-zkprovider",
-                         "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StandaloneZooKeeperProvider",
-                         CLUSTERCONTROLLER_BUNDLE);
-        } else {
-            // TODO bjorncs/jonmv: remove extraneous ZooKeeperProvider layer
-            addComponent(
-                    "clustercontroller-zkrunner",
-                    "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
-                    ZOOKEEPER_SERVER_BUNDLE);
-            addComponent("clustercontroller-zkprovider",
-                         "com.yahoo.vespa.clustercontroller.apps.clustercontroller.DummyZooKeeperProvider",
-                         CLUSTERCONTROLLER_BUNDLE);
-        }
+        addComponent("clustercontroller-zookeeper-server",
+                     runStandaloneZooKeeper
+                             ? "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl"
+                             : "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
+                     ZOOKEEPER_SERVER_BUNDLE);
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, "controller", isHosted));
 
         // TODO: Why are bundles added here instead of in the cluster?
@@ -96,7 +84,7 @@ public class ClusterControllerContainer extends Container implements
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
     }
 
-    private void addHandler(Handler h, String path) {
+    private void addHandler(Handler<?> h, String path) {
         h.addServerBindings(SystemBindingPattern.fromHttpPath(path));
         super.addHandler(h);
     }
@@ -116,7 +104,7 @@ public class ClusterControllerContainer extends Container implements
     }
 
     private void addHandler(String id, String className, String path, ComponentSpecification bundle) {
-        addHandler(new Handler(createComponentModel(id, className, bundle)), path);
+        addHandler(new Handler<>(createComponentModel(id, className, bundle)), path);
     }
 
     private ReindexingContext reindexingContext() {
