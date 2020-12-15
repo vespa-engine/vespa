@@ -366,7 +366,6 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
-        builder.feeding.concurrency(defaultFeedConcurrency); // As if specified 1.0 in services.xml
         boolean hasAnyNonIndexedCluster = false;
         for (NewDocumentType type : TopologicalDocumentTypeSorter.sort(documentDefinitions.values())) {
             ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();
@@ -386,9 +385,9 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             } else if (hasIndexingModeIndexed(type)) {
                 getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
                 if (tuning != null && tuning.searchNode != null && tuning.searchNode.feeding != null) {
-                    ddbB.feeding.concurrency(tuning.searchNode.feeding.concurrency / 2);
+                    ddbB.feeding.concurrency(tuning.searchNode.feeding.concurrency);
                 } else {
-                    ddbB.feeding.concurrency(builder.feeding.build().concurrency());
+                    ddbB.feeding.concurrency(defaultFeedConcurrency);
                 }
             } else {
                 hasAnyNonIndexedCluster = true;
@@ -399,6 +398,12 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 ddbB.visibilitydelay(0.0);
             }
             builder.documentdb(ddbB);
+        }
+
+        if (hasAnyNonIndexedCluster) {
+            builder.feeding.concurrency(Math.min(1.0, defaultFeedConcurrency*2));
+        } else {
+            builder.feeding.concurrency(defaultFeedConcurrency);
         }
 
         int numDocumentDbs = builder.documentdb.size();
@@ -412,9 +417,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         if (redundancy != null) {
             redundancy.getConfig(builder);
         }
-        if (hasAnyNonIndexedCluster) {
-            builder.feeding.concurrency(builder.feeding.build().concurrency() * 2);
-        }
+
         if ((feedSequencerType == ProtonConfig.Indexing.Optimize.Enum.THROUGHPUT) && (visibilityDelay == 0.0)) {
             // THROUGHPUT and zero visibilityDelay is inconsistent and currently a suboptimal combination, defaulting to LATENCY.
             // TODO: Once we have figured out optimal combination this limitation will be cleaned up.

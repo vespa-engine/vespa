@@ -142,14 +142,14 @@ public class DocumentDatabaseTestCase {
         String feedTuning = "<feeding>" +
                 "  <concurrency>0.7</concurrency>" +
                 "</feeding>\n";
-        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.35, 0.0));
+        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.7, 0.0));
     }
     @Test
     public void requireThatConcurrencyIsReflected() {
         String feedTuning = "<feeding>" +
                             "  <concurrency>0.7</concurrency>" +
                             "</feeding>\n";
-        verifyConcurrency("index", feedTuning, 0.35, 0.35);
+        verifyConcurrency("index", feedTuning, 0.7, 0.7);
         verifyConcurrency("streaming", feedTuning, 0.7, 0.0);
         verifyConcurrency("store-only", feedTuning, 0.7, 0.0);
     }
