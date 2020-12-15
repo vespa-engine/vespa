@@ -9,10 +9,12 @@
 
 #include <mutex>
 
+namespace metrics { class MetricLockGuard; }
+
 namespace storage::framework {
 
 struct MetricUpdateHook {
-    using MetricLockGuard = std::unique_lock<std::mutex>;
+    using MetricLockGuard = metrics::MetricLockGuard;
     virtual ~MetricUpdateHook() = default;
 
     virtual void updateMetrics(const MetricLockGuard &) = 0;

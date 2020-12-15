@@ -48,7 +48,7 @@ public:
                              const AttributeUsageFilter &writeFilter);
     ~DocumentDBMetricsUpdater();
 
-    void updateMetrics(DocumentDBTaggedMetrics &metrics);
+    void updateMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMetrics &metrics);
 
 };
 
