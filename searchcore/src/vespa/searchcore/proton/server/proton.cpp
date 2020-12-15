@@ -122,7 +122,7 @@ VESPA_THREAD_STACK_TAG(close_executor)
 
 }
 
-Proton::ProtonFileHeaderContext::ProtonFileHeaderContext([[maybe_unused]] const Proton &proton_, const vespalib::string &creator)
+Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const vespalib::string &creator)
     : _hostName(),
       _creator(creator),
       _cluster(),
@@ -189,7 +189,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _mutex(),
       _metricsHook(*this),
       _metricsEngine(std::make_unique<MetricsEngine>()),
-      _fileHeaderContext(*this, progName),
+      _fileHeaderContext(progName),
       _tls(),
       _diskMemUsageSampler(),
       _persistenceEngine(),

@@ -176,7 +176,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _lidSpaceCompactionHandlers(),
       _jobTrackers(),
       _calc(),
-      _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter, _state)
+      _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter)
 {
     assert(configSnapshot);
 
