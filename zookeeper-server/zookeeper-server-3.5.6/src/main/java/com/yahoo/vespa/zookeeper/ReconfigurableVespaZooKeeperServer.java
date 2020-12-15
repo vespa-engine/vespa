@@ -18,8 +18,8 @@ public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implem
 
     @Inject
     public ReconfigurableVespaZooKeeperServer(Reconfigurer reconfigurer, ZookeeperServerConfig zookeeperServerConfig) {
+        this.peer = new VespaQuorumPeer();
         reconfigurer.startOrReconfigure(zookeeperServerConfig, this);
-        peer = new VespaQuorumPeer();
     }
 
     @Override
