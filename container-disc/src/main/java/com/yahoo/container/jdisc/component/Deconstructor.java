@@ -39,6 +39,7 @@ public class Deconstructor implements ComponentDeconstructor {
 
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
+    private static final Duration RECONFIG_DECONSTRUCT_DELAY = Duration.ofSeconds(60);
     private static final Duration SHUTDOWN_DECONSTRUCT_TIMEOUT = Duration.ofMinutes(10);
 
     public enum Mode {
@@ -55,7 +56,7 @@ public class Deconstructor implements ComponentDeconstructor {
     private final Duration delay;
 
     public Deconstructor(Mode mode) {
-        this(mode, (mode == Mode.RECONFIG) ? Duration.ofSeconds(60) : Duration.ZERO);
+        this(mode, (mode == Mode.RECONFIG) ? RECONFIG_DECONSTRUCT_DELAY : Duration.ZERO);
     }
 
     // For testing only
