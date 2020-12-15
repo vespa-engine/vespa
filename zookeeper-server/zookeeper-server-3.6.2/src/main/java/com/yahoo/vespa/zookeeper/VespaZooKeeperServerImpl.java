@@ -29,7 +29,18 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Vespa
     }
 
     public void start(Path configFilePath) {
-        new ZooKeeperServer().start(configFilePath);
+        // Note: Hack to make this work in ZooKeeper 3.6, where metrics provider class is
+        // loaded by using Thread.currentThread().getContextClassLoader() which does not work
+        // well in the container
+        ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+        try {
+            new ZooKeeperServer().start(configFilePath);
+        } catch (Throwable e) {
+            throw new RuntimeException("Starting ZooKeeper server failed", e);
+        } finally {
+            Thread.currentThread().setContextClassLoader(tccl);
+        }
     }
 
 }

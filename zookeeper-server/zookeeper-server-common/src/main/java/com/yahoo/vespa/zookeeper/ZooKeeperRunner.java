@@ -64,7 +64,7 @@ public class ZooKeeperRunner implements Runnable {
             try {
                 log.log(Level.INFO, "Starting ZooKeeper server with config file " + path.toFile().getAbsolutePath() +
                                     ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
-                startServer(path); // Will block in a real implementation of VespaZooKeeperServer
+                server.start(path); // Will block in a real implementation of VespaZooKeeperServer
                 return;
             } catch (RuntimeException e) {
                 log.log(Level.INFO, "Starting ZooKeeper server failed, will retry", e);
@@ -75,21 +75,6 @@ public class ZooKeeperRunner implements Runnable {
                 }
             }
         } while (Instant.now().isBefore(end) && !executorService.isShutdown());
-    }
-
-    private void startServer(Path path) {
-        // Note: Hack to make this work in ZooKeeper 3.6, where metrics provider class is
-        // loaded by using Thread.currentThread().getContextClassLoader() which does not work
-        // well in the container
-        ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
-        try {
-            server.start(path);
-        } catch (Throwable e) {
-            throw new RuntimeException("Starting ZooKeeper server failed", e);
-        } finally {
-            Thread.currentThread().setContextClassLoader(tccl);
-        }
     }
 
 }
