@@ -26,11 +26,14 @@ import static com.yahoo.vespa.zookeeper.Configurator.zookeeperServerHostnames;
 public class ZooKeeperRunner implements Runnable {
 
     private static final Logger log = java.util.logging.Logger.getLogger(ZooKeeperRunner.class.getName());
-    private static final Duration shutdownTimeout = Duration.ofSeconds(10);
+    private static final Duration STOP_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration START_TIMEOUT = Duration.ofMinutes(10);
 
     private final ExecutorService executorService;
     private final ZookeeperServerConfig zookeeperServerConfig;
     private final VespaZooKeeperServer server;
+    private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofSeconds(5), Duration.ofSeconds(15));
+    private final Sleeper sleeper = new Sleeper();
 
     public ZooKeeperRunner(ZookeeperServerConfig zookeeperServerConfig, VespaZooKeeperServer server) {
         this.zookeeperServerConfig = zookeeperServerConfig;
@@ -42,14 +45,14 @@ public class ZooKeeperRunner implements Runnable {
 
     void shutdown() {
         log.log(Level.INFO, "Triggering shutdown");
+        server.shutdown();
         executorService.shutdownNow();
-        log.log(Level.INFO, "Shutdown triggered");
         try {
-            if (!executorService.awaitTermination(shutdownTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
-                log.log(Level.WARNING, "Failed to shut down within " + shutdownTimeout);
+            if (!executorService.awaitTermination(STOP_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.log(Level.WARNING, "Failed to shut down within " + STOP_TIMEOUT);
             }
         } catch (InterruptedException e) {
-            log.log(Level.INFO, "Interrupted waiting for executor to complete", e);
+            log.log(Level.WARNING, "Interrupted waiting for executor to complete", e);
         }
     }
 
@@ -59,22 +62,24 @@ public class ZooKeeperRunner implements Runnable {
 
         // Retry start of server. An already running server might take some time to shut down, starting a new
         // one will fail in that case, so retry
-        Instant end = Instant.now().plus(Duration.ofMinutes(10));
-        do {
+        Instant now = Instant.now();
+        Instant end = now.plus(START_TIMEOUT);
+        for (int attempt = 1; now.isBefore(end) && !executorService.isShutdown(); attempt++) {
             try {
                 log.log(Level.INFO, "Starting ZooKeeper server with config file " + path.toFile().getAbsolutePath() +
-                                    ". Trying to establish ZooKeeper quorum (members: " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
+                                    ". Trying to establish ZooKeeper quorum (members: " +
+                                    zookeeperServerHostnames(zookeeperServerConfig) + ", attempt: "  + attempt + ")");
                 startServer(path); // Will block in a real implementation of VespaZooKeeperServer
                 return;
             } catch (RuntimeException e) {
-                log.log(Level.INFO, "Starting ZooKeeper server failed, will retry", e);
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException interruptedException) {
-                    log.log(Level.INFO, "Failed interrupting task", e);
-                }
+                Duration delay = backoff.delay(attempt);
+                log.log(Level.WARNING, "Starting ZooKeeper server failed on attempt " + attempt +
+                                       ". Retrying in " + delay + ", time left " + Duration.between(now, end), e);
+                sleeper.sleep(delay);
+            } finally {
+                now = Instant.now();
             }
-        } while (Instant.now().isBefore(end) && !executorService.isShutdown());
+        }
     }
 
     private void startServer(Path path) {

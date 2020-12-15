@@ -4,11 +4,13 @@ package com.yahoo.vespa.zookeeper;
 import java.nio.file.Path;
 
 /**
- * Interface for a component that writes zookeeper config and starts a zookeeper server.
+ * Interface for a component that starts/stops a ZooKeeper server.
  *
  * @author Harald Musum
  */
 public interface VespaZooKeeperServer {
+
+    void shutdown();
 
     void start(Path configFilePath);
 
