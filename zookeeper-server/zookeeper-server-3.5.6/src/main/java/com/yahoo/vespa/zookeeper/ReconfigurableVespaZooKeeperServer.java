@@ -14,13 +14,21 @@ import java.nio.file.Path;
  */
 public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implements VespaZooKeeperServer {
 
+    private final VespaQuorumPeer peer;
+
     @Inject
     public ReconfigurableVespaZooKeeperServer(Reconfigurer reconfigurer, ZookeeperServerConfig zookeeperServerConfig) {
         reconfigurer.startOrReconfigure(zookeeperServerConfig, this);
+        peer = new VespaQuorumPeer();
+    }
+
+    @Override
+    public void shutdown() {
+        peer.shutdown();
     }
 
     public void start(Path configFilePath) {
-        new ZooKeeperServer().start(configFilePath);
+        peer.start(configFilePath);
     }
 
 }

@@ -154,6 +154,9 @@ public class ReconfigurerTest {
         }
 
         @Override
+        public void shutdown() {}
+
+        @Override
         public void start(Path configFilePath) { }
 
     }

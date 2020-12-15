@@ -42,8 +42,8 @@ public class ZooKeeperRunner implements Runnable {
 
     void shutdown() {
         log.log(Level.INFO, "Triggering shutdown");
+        server.shutdown();
         executorService.shutdownNow();
-        log.log(Level.INFO, "Shutdown triggered");
         try {
             if (!executorService.awaitTermination(shutdownTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
                 log.log(Level.WARNING, "Failed to shut down within " + shutdownTimeout);
