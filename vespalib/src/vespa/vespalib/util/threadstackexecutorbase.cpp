@@ -174,6 +174,13 @@ ThreadStackExecutorBase::setTaskLimit(uint32_t taskLimit)
     internalSetTaskLimit(taskLimit);
 }
 
+uint32_t
+ThreadStackExecutorBase::getTaskLimit() const
+{
+    unique_lock guard(_lock);
+    return _taskLimit;
+}
+
 void
 ThreadStackExecutorBase::wakeup() {
     // Nothing to do here as workers are always attentive.

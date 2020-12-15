@@ -32,6 +32,11 @@ public:
      * Sets a new upper limit for accepted number of tasks.
      */
     virtual void setTaskLimit(uint32_t taskLimit) = 0;
+
+    /**
+     * Gets the limit for accepted number of tasks.
+     */
+    virtual uint32_t getTaskLimit() const = 0;
 };
 
 /**

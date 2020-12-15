@@ -41,6 +41,8 @@ public:
      */
     uint32_t getComponentHashSize() const { return _component2Id.size(); }
     uint32_t getComponentEffectiveHashSize() const { return _nextId; }
+    const vespalib::SyncableThreadExecutor* first_executor() const;
+
 private:
     explicit SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
 

@@ -36,6 +36,7 @@ vespa_add_library(searchcore_server STATIC
     documentsubdbcollection.cpp
     emptysearchview.cpp
     executor_thread_service.cpp
+    executor_threading_service_explorer.cpp
     executorthreadingservice.cpp
     fast_access_document_retriever.cpp
     fast_access_doc_subdb.cpp

@@ -26,6 +26,7 @@ public:
         return ExecutorStats(ExecutorStats::QueueSizeT(), _accepted.load(std::memory_order_relaxed), 0);
     }
     void setTaskLimit(uint32_t taskLimit) override { (void) taskLimit; }
+    uint32_t getTaskLimit() const override { return std::numeric_limits<uint32_t>::max(); }
     void wakeup() override { }
 };
 
