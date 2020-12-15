@@ -12,6 +12,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -71,8 +72,8 @@ public class ReconfigurerTest {
 
     @Test
     public void testReconfigureFailsWithReconfigInProgressThenSucceeds() {
+        TestableReconfigurer reconfigurer = new TestableReconfigurer(new TestableVespaZooKeeperAdmin().failures(3));
         try {
-            TestableReconfigurer reconfigurer = new TestableReconfigurer(new TestableVespaZooKeeperAdmin().failures(3));
             ZookeeperServerConfig initialConfig = createConfig(3, true);
             reconfigurer.startOrReconfigure(initialConfig);
             assertSame(initialConfig, reconfigurer.activeConfig());
@@ -128,7 +129,12 @@ public class ReconfigurerTest {
         private final TestableVespaZooKeeperAdmin zooKeeperAdmin;
 
         TestableReconfigurer(TestableVespaZooKeeperAdmin zooKeeperAdmin) {
-            super(zooKeeperAdmin, (ignored) -> {});
+            super(zooKeeperAdmin, new Sleeper() {
+                @Override
+                public void sleep(Duration duration) {
+                    // Do nothing
+                }
+            });
             this.zooKeeperAdmin = zooKeeperAdmin;
             HostName.setHostNameForTestingOnly("node1");
         }

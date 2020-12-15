@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -32,17 +31,17 @@ public class Reconfigurer extends AbstractComponent {
 
     private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(10));
     private final VespaZooKeeperAdmin vespaZooKeeperAdmin;
-    private final Consumer<Duration> sleeper;
+    private final Sleeper sleeper;
 
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
 
     @Inject
     public Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin) {
-        this(vespaZooKeeperAdmin, Reconfigurer::defaultSleeper);
+        this(vespaZooKeeperAdmin, new Sleeper());
     }
 
-    Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Consumer<Duration> sleeper) {
+    Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Sleeper sleeper) {
         this.vespaZooKeeperAdmin = Objects.requireNonNull(vespaZooKeeperAdmin);
         this.sleeper = Objects.requireNonNull(sleeper);
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
@@ -107,7 +106,7 @@ public class Reconfigurer extends AbstractComponent {
                 log.log(Level.WARNING, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay +
                                        ", time left " + Duration.between(now, end) + ": " +
                                        Exceptions.toMessageString(e));
-                sleeper.accept(delay);
+                sleeper.sleep(delay);
             } finally {
                 now = Instant.now();
             }
@@ -144,14 +143,6 @@ public class Reconfigurer extends AbstractComponent {
         List<T> copy = new ArrayList<>(list1);
         copy.removeAll(list2);
         return copy;
-    }
-
-    private static void defaultSleeper(Duration duration) {
-        try {
-            Thread.sleep(duration.toMillis());
-        } catch (InterruptedException interruptedException) {
-            interruptedException.printStackTrace();
-        }
     }
 
 }
