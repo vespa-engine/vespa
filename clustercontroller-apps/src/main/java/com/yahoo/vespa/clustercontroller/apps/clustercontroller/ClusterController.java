@@ -30,7 +30,7 @@ public class ClusterController extends AbstractComponent
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
 
     @Inject
-    ClusterController() {
+    public ClusterController() {
         metricWrapper = new JDiscMetricWrapper(null);
     }
 
