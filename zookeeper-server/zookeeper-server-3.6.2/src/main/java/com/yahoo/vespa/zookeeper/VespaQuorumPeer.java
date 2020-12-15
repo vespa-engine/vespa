@@ -1,14 +1,13 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
+import com.yahoo.protect.Process;
 import org.apache.zookeeper.server.admin.AdminServer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerMain;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Starts/stops a ZooKeeper server. Extends QuorumPeerMain to be able to call initializeAndRun() and wraps
@@ -17,8 +16,6 @@ import java.util.logging.Logger;
  * @author hmusum
  */
 class VespaQuorumPeer extends QuorumPeerMain {
-
-    private static final Logger LOG = Logger.getLogger(VespaQuorumPeer.class.getName());
 
     public void start(Path path) {
         initializeAndRun(new String[]{ path.toFile().getAbsolutePath()});
@@ -35,8 +32,7 @@ class VespaQuorumPeer extends QuorumPeerMain {
                 // server with the new config, this will fail until the old server is deconstructed. If the old server
                 // fails to deconstruct/shut down, the new one will never start and if that happens forcing a restart is
                 // the better option.
-                LOG.log(Level.SEVERE, "Failed to shut down properly, forcing restart", e);
-                System.exit(1);
+                Process.logAndDie("Failed to shut down ZooKeeper properly, forcing shutdown", e);
             }
         }
     }
