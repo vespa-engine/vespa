@@ -12,6 +12,7 @@ import java.util.List;
 
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import org.osgi.framework.Bundle;
@@ -86,19 +87,22 @@ public class Deconstructor implements ComponentDeconstructor {
             var task = executor.schedule(new DestructComponentTask(destructibleComponents, bundles),
                               delay.getSeconds(), TimeUnit.SECONDS);
             if (mode.equals(Mode.SHUTDOWN)) {
-                // Wait for deconstruction to finish
-                try {
-                    log.info("Waiting up to " + SHUTDOWN_DECONSTRUCT_TIMEOUT.toSeconds() + " seconds for all components to deconstruct.");
-                    task.get(SHUTDOWN_DECONSTRUCT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    log.info("Interrupted while waiting for component deconstruction to finish.");
-                    Thread.currentThread().interrupt();
-                } catch (ExecutionException e) {
-                    log.warning("Component deconstruction threw an exception: " + e.getMessage());
-                } catch (TimeoutException e) {
-                    log.warning("Component deconstruction timed out.");
-                }
+                waitFor(task, SHUTDOWN_DECONSTRUCT_TIMEOUT);
             }
+        }
+    }
+
+    private void waitFor(ScheduledFuture<?> task, Duration timeout) {
+        try {
+            log.info("Waiting up to " + timeout.toSeconds() + " seconds for all components to deconstruct.");
+            task.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.info("Interrupted while waiting for component deconstruction to finish.");
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            log.warning("Component deconstruction threw an exception: " + e.getMessage());
+        } catch (TimeoutException e) {
+            log.warning("Component deconstruction timed out.");
         }
     }
 
