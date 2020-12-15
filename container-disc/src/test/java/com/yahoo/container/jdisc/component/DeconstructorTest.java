@@ -11,6 +11,8 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.time.Instant;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -24,7 +26,7 @@ public class DeconstructorTest {
 
     @Before
     public void init() {
-        deconstructor = new Deconstructor(Deconstructor.Mode.SHUTDOWN);
+        deconstructor = new Deconstructor(Deconstructor.Mode.RECONFIG, Duration.ZERO);
     }
 
     @Test
@@ -49,6 +51,7 @@ public class DeconstructorTest {
 
     @Test
     public void deconstruct_is_synchronous_in_shutdown_mode() {
+        deconstructor = new Deconstructor(Deconstructor.Mode.SHUTDOWN);
         var slowDeconstructComponent = new SlowDeconstructComponent();
         deconstructor.deconstruct(List.of(slowDeconstructComponent), emptyList());
         assertTrue(slowDeconstructComponent.destructed);
