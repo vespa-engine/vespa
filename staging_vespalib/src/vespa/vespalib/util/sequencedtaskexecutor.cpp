@@ -123,4 +123,13 @@ SequencedTaskExecutor::getExecutorId(uint64_t componentId) const {
     return ExecutorId(executorId);
 }
 
+const vespalib::SyncableThreadExecutor*
+SequencedTaskExecutor::first_executor() const
+{
+    if (_executors->empty()) {
+        return nullptr;
+    }
+    return _executors->front().get();
+}
+
 } // namespace search
