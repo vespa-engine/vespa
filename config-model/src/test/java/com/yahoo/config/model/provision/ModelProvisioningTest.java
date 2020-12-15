@@ -4,6 +4,7 @@ package com.yahoo.config.model.provision;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -37,6 +38,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -950,6 +952,56 @@ public class ModelProvisioningTest {
         assertEquals("node-1-3-9-03", clusterControllers.getContainers().get(1).getHostName());
         assertEquals("node-1-3-9-02", clusterControllers.getContainers().get(2).getHostName());
         assertEquals("node-1-3-9-01", clusterControllers.getContainers().get(3).getHostName());
+    }
+
+    @Test
+    @Ignore
+    public void testImplicitClusterControllersWithNodeChange() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='3'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 3;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        // Check content clusters
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
+        assertEquals(3, clusterControllers.getContainers().size());
+        assertEquals("node-1-3-9-03", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("node-1-3-9-02", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("node-1-3-9-01", clusterControllers.getContainers().get(2).getHostName());
+
+        int indexForHost03 = clusterControllers.getContainers().get(1).index();
+        String hostnameForHost03 = clusterControllers.getContainers().get(1).getHostName();
+
+        // Adding 1 node to see if this changes index of already existing cluster controllers
+        tester.addHosts(4);
+        model = tester.createModel(services, true);
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+        cluster = model.getContentClusters().get("bar");
+        ClusterControllerContainerCluster reconfiguredCluster = cluster.getClusterControllers();
+        assertEquals(3, reconfiguredCluster.getContainers().size());
+        assertEquals("bar-controllers", reconfiguredCluster.getName());
+        assertEquals("node-1-3-9-04", reconfiguredCluster.getContainers().get(0).getHostName());
+        assertEquals("node-1-3-9-03", reconfiguredCluster.getContainers().get(1).getHostName());
+        assertEquals("node-1-3-9-02", reconfiguredCluster.getContainers().get(2).getHostName());
+
+        assertEquals(hostnameForHost03, reconfiguredCluster.getContainers().get(2).getHostName());
+        // TODO: Fails here because index has changed. Since we use index as id in zookeeper cluster
+        // this is bad
+        assertEquals(indexForHost03, reconfiguredCluster.getContainers().get(2).index());
     }
 
     @Test
