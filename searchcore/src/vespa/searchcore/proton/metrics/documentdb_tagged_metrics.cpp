@@ -4,6 +4,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.metrics.documentdb_tagged_metrics");
+
 namespace proton {
 
 using matching::MatchingStats;
@@ -213,10 +216,10 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
     queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
                                stats.queryLatencyMin(), stats.queryLatencyMax());
     if (stats.getNumPartitions() > 0) {
-        for (size_t i = partition.size(); i < stats.getNumPartitions(); ++i) {
+        for (size_t i = partitions.size(); i < stats.getNumPartitions(); ++i) {
             // This loop is to handle live reconfigs that changes how many partitions(number of threads) might be used per query.
-            vespalib::string partitionId(vespalib::make_string("docid_part%02ld", i));
-            partitions.push_back(std::make_unique<DocIdPartition>(partitionId, this));
+            vespalib::string partition(vespalib::make_string("docid_part%02ld", i));
+            partitions.push_back(std::make_unique<DocIdPartition>(partition, this));
             LOG(info, "Number of partitions has been increased to '%ld' from '%ld' previously configured. Adding part %ld",
                 stats.getNumPartitions(), partitions.size(), i);
         }
