@@ -114,19 +114,40 @@ DistributorBucketSpace::owns_bucket_in_state(
     return owns_bucket_in_state(*_distribution, clusterState, bucket);
 }
 
+namespace {
+
+void
+setup_ideal_nodes_bundle(IdealServiceLayerNodesBundle& ideal_nodes_bundle,
+                         const lib::Distribution& distribution,
+                         const lib::ClusterState& cluster_state,
+                         document::BucketId bucket)
+{
+    ideal_nodes_bundle.set_available_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, up_states));
+    ideal_nodes_bundle.set_available_nonretired_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_up_states));
+    ideal_nodes_bundle.set_available_nonretired_or_maintenance_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_or_maintenance_up_states));
+}
+
+// Ideal service layer nodes bundle used when bucket id used bits > 33.
+thread_local IdealServiceLayerNodesBundle fallback_ideal_nodes_bundle;
+
+}
+
 const IdealServiceLayerNodesBundle&
 DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const
 {
     assert(bucket.getUsedBits() >= _distribution_bits);
+    if (bucket.getUsedBits() > 33) {
+        IdealServiceLayerNodesBundle &ideal_nodes_bundle = fallback_ideal_nodes_bundle;
+        setup_ideal_nodes_bundle(ideal_nodes_bundle, *_distribution, *_clusterState, bucket);
+        return ideal_nodes_bundle;
+    }
     document::BucketId lookup_bucket((bucket.getUsedBits() > 33) ? bucket.getUsedBits() : _distribution_bits, bucket.getId());
     auto itr = _ideal_nodes.find(lookup_bucket);
     if (itr != _ideal_nodes.end()) {
         return itr->second;
     }
     IdealServiceLayerNodesBundle ideal_nodes_bundle;
-    ideal_nodes_bundle.set_available_nodes(_distribution->getIdealStorageNodes(*_clusterState, bucket, up_states));
-    ideal_nodes_bundle.set_available_nonretired_nodes(_distribution->getIdealStorageNodes(*_clusterState, bucket, nonretired_up_states));
-    ideal_nodes_bundle.set_available_nonretired_or_maintenance_nodes(_distribution->getIdealStorageNodes(*_clusterState, bucket, nonretired_or_maintenance_up_states));
+    setup_ideal_nodes_bundle(ideal_nodes_bundle, *_distribution, *_clusterState, lookup_bucket);
     auto insres = _ideal_nodes.insert(std::make_pair(lookup_bucket, std::move(ideal_nodes_bundle)));
     assert(insres.second);
     return insres.first->second;
