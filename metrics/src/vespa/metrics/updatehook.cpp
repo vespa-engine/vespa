@@ -10,7 +10,7 @@ MetricLockGuard::MetricLockGuard(std::mutex & mutex)
 
 bool
 MetricLockGuard::owns(const std::mutex & mutex) const {
-    return (_guard.mutex() == &mutex) && !_guard.owns_lock();
+    return (_guard.mutex() == &mutex) && _guard.owns_lock();
 }
 
 MetricLockGuard::~MetricLockGuard() = default;

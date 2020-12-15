@@ -32,7 +32,7 @@ MetricManager::Timer::getTime() const {
 
 void
 MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {
-    if (g.owns(_waiter)) {
+    if ( ! g.owns(_waiter)) {
         throw vespalib::IllegalArgumentException("Given lock does not lock the metric lock.", VESPA_STRLOC);
     }
 }
