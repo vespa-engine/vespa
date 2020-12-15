@@ -9,6 +9,10 @@ import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
 
 import java.util.List;
+
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
@@ -35,13 +39,29 @@ public class Deconstructor implements ComponentDeconstructor {
 
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
-    final ScheduledExecutorService executor =
-            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
+    private static final Duration SHUTDOWN_DECONSTRUCT_TIMEOUT = Duration.ofMinutes(10);
 
+    public enum Mode {
+        RECONFIG,  // Delay deconstruction to allow old components to finish processing in-flight requests.
+        SHUTDOWN   // The container is shutting down. Start deconstructing immediately, and wait until all components
+                   // are deconstructed, to prevent shutting down while deconstruct is in progress.
+    }
+
+    // TODO: make private again
+    final ScheduledExecutorService executor =
+            Executors.newScheduledThreadPool(2, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
+
+    private final Mode mode;
     private final Duration delay;
 
-    public Deconstructor(boolean delayDeconstruction) {
-        this.delay = delayDeconstruction ? Duration.ofSeconds(60) : Duration.ZERO;
+    public Deconstructor(Mode mode) {
+        this(mode, (mode == Mode.RECONFIG) ? Duration.ofSeconds(60) : Duration.ZERO);
+    }
+
+    // For testing only
+    Deconstructor(Mode mode, Duration reconfigDeconstructDelay) {
+        this.mode = mode;
+        this.delay = reconfigDeconstructDelay;
     }
 
     @Override
@@ -61,9 +81,24 @@ public class Deconstructor implements ComponentDeconstructor {
                 ((SharedResource) component).release();
             }
         }
-        if (! destructibleComponents.isEmpty() || ! bundles.isEmpty())
-            executor.schedule(new DestructComponentTask(destructibleComponents, bundles),
+        if (!destructibleComponents.isEmpty() || !bundles.isEmpty()) {
+            var task = executor.schedule(new DestructComponentTask(destructibleComponents, bundles),
                               delay.getSeconds(), TimeUnit.SECONDS);
+            if (mode.equals(Mode.SHUTDOWN)) {
+                // Wait for deconstruction to finish
+                try {
+                    log.info("Waiting up to " + SHUTDOWN_DECONSTRUCT_TIMEOUT.toSeconds() + " seconds for all components to deconstruct.");
+                    task.get(SHUTDOWN_DECONSTRUCT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    log.info("Interrupted while waiting for component deconstruction to finish.");
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException e) {
+                    log.warning("Component deconstruction threw an exception: " + e.getMessage());
+                } catch (TimeoutException e) {
+                    log.warning("Component deconstruction timed out.");
+                }
+            }
+        }
     }
 
     private static class DestructComponentTask implements Runnable {

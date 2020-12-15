@@ -335,7 +335,7 @@ public final class ConfiguredApplication implements Application {
         return new HandlersConfigurerDi(subscriberFactory,
                                         Container.get(),
                                         configId,
-                                        new Deconstructor(true),
+                                        new Deconstructor(Deconstructor.Mode.RECONFIG),
                                         discInjector,
                                         osgiFramework);
     }
@@ -367,7 +367,7 @@ public final class ConfiguredApplication implements Application {
         }
 
         log.info("Stop: Shutting container down");
-        configurer.shutdown(new Deconstructor(false));
+        configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
         slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
         Container.get().shutdown();
 

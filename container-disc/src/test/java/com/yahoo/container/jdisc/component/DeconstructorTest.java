@@ -24,12 +24,13 @@ public class DeconstructorTest {
 
     @Before
     public void init() {
-        deconstructor = new Deconstructor(false);
+        deconstructor = new Deconstructor(Deconstructor.Mode.SHUTDOWN);
     }
 
     @Test
     public void require_abstract_component_destructed() throws InterruptedException {
         TestAbstractComponent abstractComponent = new TestAbstractComponent();
+
         // Done by executor, so it takes some time even with a 0 delay.
         deconstructor.deconstruct(List.of(abstractComponent), emptyList());
         deconstructor.executor.shutdown();
@@ -44,6 +45,13 @@ public class DeconstructorTest {
         deconstructor.executor.shutdown();
         deconstructor.executor.awaitTermination(1, TimeUnit.MINUTES);
         assertTrue(provider.destructed);
+    }
+
+    @Test
+    public void deconstruct_is_synchronous_in_shutdown_mode() {
+        var slowDeconstructComponent = new SlowDeconstructComponent();
+        deconstructor.deconstruct(List.of(slowDeconstructComponent), emptyList());
+        assertTrue(slowDeconstructComponent.destructed);
     }
 
     @Test
@@ -66,6 +74,20 @@ public class DeconstructorTest {
     private static class TestAbstractComponent extends AbstractComponent {
         boolean destructed = false;
         @Override public void deconstruct() { destructed = true; }
+    }
+
+    private static class SlowDeconstructComponent extends AbstractComponent {
+        boolean destructed = false;
+        @Override
+        public void deconstruct() {
+            // Add delay to verify that the Deconstructor waits until this is complete before returning.
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("The delayed deconstruct was interrupted.");
+            }
+            destructed = true;
+        }
     }
 
     private static class TestProvider implements Provider<Void> {
