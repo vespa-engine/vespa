@@ -610,10 +610,8 @@ TEST_F(OperationHandlerSequencingTest, put_with_bucket_lock_tas_token_is_rejecte
     auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
     put->setCondition(bucket_lock_bypass_tas_condition("foo"));
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(put));
-    // TODO determine most appropriate error code here. Want to fail the bucket but
-    // not the entire visitor operation. Will likely need to be revisited (heh!) soon.
-    EXPECT_EQ("ReturnCode(REJECTED, Operation expects a read-for-write bucket lock to be present, "
-              "but none currently exists)",
+    EXPECT_EQ("ReturnCode(TEST_AND_SET_CONDITION_FAILED, Operation expects a read-for-write bucket "
+              "lock to be present, but none currently exists)",
               _sender.reply(0)->getResult().toString());
 }
 
@@ -625,8 +623,8 @@ TEST_F(OperationHandlerSequencingTest, put_with_bucket_lock_tas_token_is_rejecte
     Operation::SP op;
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeUpdateCommand("testdoctype1", _dummy_id), op));
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(put)));
-    EXPECT_EQ("ReturnCode(REJECTED, Operation expects a read-for-write bucket lock to be present, "
-              "but none currently exists)",
+    EXPECT_EQ("ReturnCode(TEST_AND_SET_CONDITION_FAILED, Operation expects a read-for-write bucket "
+              "lock to be present, but none currently exists)",
               _sender.reply(0)->getResult().toString());
 }
 

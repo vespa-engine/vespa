@@ -19,7 +19,8 @@ void ReindexingVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
                                         HitCounter& hitCounter)
 {
     auto lock_token = make_lock_access_token();
-    LOG(debug, "Visitor %s handling block of %zu documents.", _id.c_str(), entries.size());
+    LOG(debug, "ReindexingVisitor %s handling block of %zu documents. Using access token '%s'",
+        _id.c_str(), entries.size(), lock_token.c_str());
     for (auto& entry : entries) {
         if (entry->isRemove()) {
             // We don't reindex removed documents, as that would be very silly.
@@ -32,6 +33,15 @@ void ReindexingVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
         msg->setCondition(documentapi::TestAndSetCondition(lock_token));
         sendMessage(std::move(msg));
     }
+}
+
+bool ReindexingVisitor::remap_docapi_message_error_code(api::ReturnCode& in_out_code) {
+    if (in_out_code.getResult() == api::ReturnCode::TEST_AND_SET_CONDITION_FAILED) {
+        in_out_code = api::ReturnCode(api::ReturnCode::ABORTED, "Got TaS failure from upstream, indicating visitor is "
+                                                                "outdated. Aborting session to allow client to retry");
+        return true;
+    }
+    return Visitor::remap_docapi_message_error_code(in_out_code);
 }
 
 vespalib::string ReindexingVisitor::make_lock_access_token() const {
