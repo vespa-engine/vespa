@@ -25,7 +25,8 @@ class VespaQuorumPeer extends QuorumPeerMain {
         if (quorumPeer != null) {
             try {
                 quorumPeer.shutdown();
-            } catch (RuntimeException e) {
+                quorumPeer.join(); // Wait for shutdown to complete
+            } catch (RuntimeException|InterruptedException e) {
                 // If shutdown fails, we have no other option than forcing the JVM to stop and letting it be restarted.
                 //
                 // When a VespaZooKeeperServer component receives a new config, the container will try to start a new
