@@ -46,8 +46,7 @@ public class Deconstructor implements ComponentDeconstructor {
                    // are deconstructed, to prevent shutting down while deconstruct is in progress.
     }
 
-    // TODO: make private again
-    final ScheduledExecutorService executor =
+    private final ScheduledExecutorService executor =
             Executors.newScheduledThreadPool(2, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
 
     private final Mode mode;
