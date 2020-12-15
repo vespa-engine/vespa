@@ -93,14 +93,10 @@ void BucketId::throwFailedSetUsedBits(uint32_t used, uint32_t availBits) {
 BucketId::Type
 BucketId::reverse(Type id)
 {
-    Type retVal;
-    int bytes = sizeof(Type);
-
-    for (int i = 0; i < bytes; i++) {
-        ((unsigned char*)&retVal)[bytes - i - 1] = reverseBitTable[((const unsigned char*)&id)[i]];
-    }
-
-    return retVal;
+    id = ((id & 0x5555555555555555l) << 1) | ((id & 0xaaaaaaaaaaaaaaaal) >> 1);
+    id = ((id & 0x3333333333333333l) << 2) | ((id & 0xccccccccccccccccl) >> 2);
+    id = ((id & 0x0f0f0f0f0f0f0f0fl) << 4) | ((id & 0xf0f0f0f0f0f0f0f0l) >> 4);
+    return __builtin_bswap64(id);
 }
 
 BucketId::Type
