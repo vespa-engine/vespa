@@ -4,9 +4,9 @@
 
 namespace config {
 
-FRTSourceFactory::FRTSourceFactory(ConnectionFactory::UP connectionFactory, const TimingValues & timingValues, int protocolVersion, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType)
+FRTSourceFactory::FRTSourceFactory(ConnectionFactory::UP connectionFactory, const TimingValues & timingValues, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType)
     : _connectionFactory(std::move(connectionFactory)),
-      _requestFactory(protocolVersion, traceLevel, vespaVersion, compressionType),
+      _requestFactory(traceLevel, vespaVersion, compressionType),
       _timingValues(timingValues)
 {
 }

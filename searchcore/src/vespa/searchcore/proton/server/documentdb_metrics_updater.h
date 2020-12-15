@@ -45,8 +45,7 @@ public:
                              ExecutorThreadingService &writeService,
                              DocumentDBJobTrackers &jobTrackers,
                              matching::SessionManager &sessionManager,
-                             const AttributeUsageFilter &writeFilter,
-                             const DDBState &state);
+                             const AttributeUsageFilter &writeFilter);
     ~DocumentDBMetricsUpdater();
 
     void updateMetrics(DocumentDBTaggedMetrics &metrics);

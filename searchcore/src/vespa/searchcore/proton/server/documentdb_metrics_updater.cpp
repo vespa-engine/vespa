@@ -34,8 +34,7 @@ DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection
                                                    ExecutorThreadingService &writeService,
                                                    DocumentDBJobTrackers &jobTrackers,
                                                    matching::SessionManager &sessionManager,
-                                                   const AttributeUsageFilter &writeFilter,
-                                                   [[maybe_unused]] const DDBState &state)
+                                                   const AttributeUsageFilter &writeFilter)
     : _subDBs(subDBs),
       _writeService(writeService),
       _jobTrackers(jobTrackers),
