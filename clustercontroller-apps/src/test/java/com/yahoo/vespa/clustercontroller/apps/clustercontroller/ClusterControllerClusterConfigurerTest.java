@@ -58,19 +58,8 @@ public class ClusterControllerClusterConfigurerTest {
         assertTrue(configurer.getOptions() != null);
         assertEquals(0.123, configurer.getOptions().minNodeRatioPerGroup, 0.01);
 
-            // Oki with no zookeeper if one node
-        zookeepersConfig.zookeeperserverlist("");
-        new ClusterControllerClusterConfigurer(
-                controller,
-                new StorDistributionConfig(distributionConfig),
-                new FleetcontrollerConfig(fleetcontrollerConfig),
-                new SlobroksConfig(slobroksConfig),
-                new ZookeepersConfig(zookeepersConfig),
-                metric
-        );
-
         try{
-            fleetcontrollerConfig.fleet_controller_count(5);
+            zookeepersConfig.zookeeperserverlist("");
             new ClusterControllerClusterConfigurer(
                     controller,
                     new StorDistributionConfig(distributionConfig),
@@ -81,7 +70,7 @@ public class ClusterControllerClusterConfigurerTest {
             );
             fail("Should not get here");
         } catch (Exception e) {
-            assertEquals("Must set zookeeper server with multiple fleetcontrollers", e.getMessage());
+            assertEquals("zookeeper server address must be set, was ''", e.getMessage());
         }
     }
 
