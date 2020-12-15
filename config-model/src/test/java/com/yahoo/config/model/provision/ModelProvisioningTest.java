@@ -21,6 +21,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
@@ -950,6 +951,48 @@ public class ModelProvisioningTest {
         assertEquals("node-1-3-9-03", clusterControllers.getContainers().get(1).getHostName());
         assertEquals("node-1-3-9-02", clusterControllers.getContainers().get(2).getHostName());
         assertEquals("node-1-3-9-01", clusterControllers.getContainers().get(3).getHostName());
+    }
+
+    @Test
+    @Ignore // WIP, fails now
+    public void testClusterControllersWithNodeChange() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='3'/>" +
+                "  </content>" +
+                "</services>";
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(3);
+        VespaModel model = tester.createModel(services);
+
+        List<ClusterControllerContainer> containers = model.getContentClusters().get("bar").getClusterControllers().getContainers();
+        assertEquals(3, containers.size());
+        assertEquals("node-1-3-9-03", containers.get(0).getHostName());
+        assertEquals("node-1-3-9-02", containers.get(1).getHostName());
+        assertEquals("node-1-3-9-01", containers.get(2).getHostName());
+
+        int indexForHost03 = containers.get(1).index();
+        String hostnameForHost03 = containers.get(1).getHostName();
+
+        // Add 1 node to see if this changes index of already existing cluster controllers
+        tester.addHosts(4);
+        model = tester.createModel(services);
+        containers = model.getContentClusters().get("bar").getClusterControllers().getContainers();
+        assertEquals(3, containers.size());
+        assertEquals("node-1-3-9-04", containers.get(0).getHostName());
+        assertEquals("node-1-3-9-03", containers.get(1).getHostName());
+        assertEquals("node-1-3-9-02", containers.get(2).getHostName());
+
+        assertEquals(hostnameForHost03, containers.get(2).getHostName());
+        // TODO: Fails here because index has changed
+        assertEquals(indexForHost03, containers.get(2).index());
     }
 
     @Test
