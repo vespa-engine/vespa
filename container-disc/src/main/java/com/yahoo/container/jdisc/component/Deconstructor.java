@@ -38,7 +38,9 @@ public class Deconstructor implements ComponentDeconstructor {
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
     private static final Duration RECONFIG_DECONSTRUCT_DELAY = Duration.ofSeconds(60);
-    private static final Duration SHUTDOWN_DECONSTRUCT_TIMEOUT = Duration.ofMinutes(10);
+
+    // This must be smaller than the shutdownDeadlineExecutor delay in ConfiguredApplication
+    private static final Duration SHUTDOWN_DECONSTRUCT_TIMEOUT = Duration.ofSeconds(45);
 
     public enum Mode {
         RECONFIG,  // Delay deconstruction to allow old components to finish processing in-flight requests.
