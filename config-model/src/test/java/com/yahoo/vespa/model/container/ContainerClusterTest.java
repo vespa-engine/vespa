@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
@@ -72,7 +72,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requreThatWeCanGetTheZoneConfig() {
+    public void requireThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true))
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
                                                      .build();
@@ -166,7 +166,7 @@ public class ContainerClusterTest {
     public void testClusterControllerResourceUsage() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
-        addClusterController(root.deployLogger(), cluster, "host-c1");
+        addClusterController(root.deployLogger(), cluster, "host-c1", root.getDeployState());
         assertEquals(1, cluster.getContainers().size());
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
         cluster.getConfig(qrBuilder);
@@ -186,7 +186,7 @@ public class ContainerClusterTest {
     public void testThatLinguisticsIsExcludedForClusterControllerCluster() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
-        addClusterController(root.deployLogger(), cluster, "host-c1");
+        addClusterController(root.deployLogger(), cluster, "host-c1", root.getDeployState());
         assertFalse(contains("com.yahoo.language.provider.DefaultLinguisticsProvider", cluster.getAllComponents()));
     }
 
@@ -391,8 +391,11 @@ public class ContainerClusterTest {
         cluster.addContainer(container);
     }
 
-    private static void addClusterController(DeployLogger deployLogger, ClusterControllerContainerCluster cluster, String hostName) {
-        ClusterControllerContainer container = new ClusterControllerContainer(cluster, 1, false, cluster.isHostedVespa());
+    private static void addClusterController(DeployLogger deployLogger,
+                                             ClusterControllerContainerCluster cluster,
+                                             String hostName,
+                                             DeployState deployState) {
+        ClusterControllerContainer container = new ClusterControllerContainer(cluster, 1, false, deployState);
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService(deployLogger);
         cluster.addContainer(container);
