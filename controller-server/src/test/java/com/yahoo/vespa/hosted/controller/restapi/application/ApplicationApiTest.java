@@ -494,6 +494,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .userIdentity(USER_ID),
                 "INFO - All good");
 
+        // GET controller logs
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/prod/region/controller/instance/default/logs?from=1233&to=3214", GET)
+                                      .userIdentity(USER_ID),
+                              "INFO - All good");
+
         // Get content - root
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/", GET).userIdentity(USER_ID),
                 "{\"path\":\"/\"}");

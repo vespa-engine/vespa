@@ -2206,6 +2206,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private ZoneId requireZone(String environment, String region) {
         ZoneId zone = ZoneId.from(environment, region);
+        // TODO(mpolden): Find a way to not hardcode this. Some APIs allow this "virtual" zone, e.g. /logs
+        if (zone.environment() == Environment.prod && zone.region().value().equals("controller")) {
+            return zone;
+        }
         if (!controller.zoneRegistry().hasZone(zone)) {
             throw new IllegalArgumentException("Zone " + zone + " does not exist in this system");
         }
