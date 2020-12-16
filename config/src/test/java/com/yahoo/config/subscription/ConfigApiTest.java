@@ -23,7 +23,7 @@ public class ConfigApiTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         ConfigHandle<AppConfig> h = subscriber.subscribe(AppConfig.class, CONFIG_ID);
         assertNotNull(h);
-        subscriber.nextConfig();
+        subscriber.nextConfig(false);
         assertNotNull(h.getConfig());
         assertEquals(AppConfig.CONFIG_DEF_NAME, ConfigInstance.getDefName(h.getConfig().getClass()));
         assertTrue(h.isChanged());
@@ -40,7 +40,7 @@ public class ConfigApiTest {
     public void testSubscribeAfterClose() {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         subscriber.subscribe(AppConfig.class, CONFIG_ID);
-        subscriber.nextConfig();
+        subscriber.nextConfig(false);
         subscriber.close();
         subscriber.subscribe(AppConfig.class, CONFIG_ID);
     }
@@ -52,7 +52,7 @@ public class ConfigApiTest {
     public void testSubscribeAfterNextConfig() {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         subscriber.subscribe(AppConfig.class, CONFIG_ID);
-        subscriber.nextConfig();
+        subscriber.nextConfig(false);
         subscriber.subscribe(AppConfig.class, CONFIG_ID);
         subscriber.close();
     }

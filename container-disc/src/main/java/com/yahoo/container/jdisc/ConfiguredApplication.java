@@ -133,7 +133,7 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void start() {
-        qrConfig = getConfig(QrConfig.class);
+        qrConfig = getConfig(QrConfig.class, true);
 
         hackToInitializeServer(qrConfig);
 
@@ -182,7 +182,7 @@ public final class ConfiguredApplication implements Application {
             slobrokList = slobrokConfigSubscriber.get().getSlobroks();
         } else {
             slobrokList = new SlobrokList();
-            SlobroksConfig slobrokConfig = getConfig(SlobroksConfig.class);
+            SlobroksConfig slobrokConfig = getConfig(SlobroksConfig.class, true);
             slobrokList.setup(slobrokConfig.slobrok().stream().map(SlobroksConfig.Slobrok::connectionspec).toArray(String[]::new));
         }
         return slobrokList;
@@ -207,10 +207,10 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    private <T extends ConfigInstance> T getConfig(Class<T> configClass) {
+    private <T extends ConfigInstance> T getConfig(Class<T> configClass, boolean isInitializing) {
         Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(configClass, configId)));
         try {
-            subscriber.waitNextGeneration();
+            subscriber.waitNextGeneration(isInitializing);
             return configClass.cast(first(subscriber.config().values()));
         } finally {
             subscriber.close();
@@ -221,7 +221,7 @@ public final class ConfiguredApplication implements Application {
         Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(QrConfig.class, configId)));
         try {
             while (true) {
-                subscriber.waitNextGeneration();
+                subscriber.waitNextGeneration(false);
                 QrConfig newConfig = QrConfig.class.cast(first(subscriber.config().values()));
                 if (qrConfig.rpc().port() != newConfig.rpc().port()) {
                     com.yahoo.protect.Process.logAndDie(
@@ -264,7 +264,7 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                     // Block until new config arrives, and it should be applied
-                    configurer.getNewComponentGraph(builder.guiceModules().activate());
+                    configurer.getNewComponentGraph(builder.guiceModules().activate(), false);
                     initializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException e) {
                     break;

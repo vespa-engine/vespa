@@ -20,6 +20,7 @@ import java.util.Set;
  * @author ollivir
  */
 public class StandaloneSubscriberFactory implements SubscriberFactory {
+
     private final VespaModel root;
 
     public StandaloneSubscriberFactory(VespaModel root) {
@@ -57,7 +58,7 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
         }
 
         @Override
-        public long waitNextGeneration() {
+        public long waitNextGeneration(boolean isInitializing) {
             generation++;
 
             if (generation != 0) {

@@ -65,7 +65,7 @@ public class ConfigSetSubscriptionTest {
         ConfigHandle<AppConfig> hA1 = subscriber.subscribe(AppConfig.class, "app/1");
         ConfigHandle<StringConfig> hS = subscriber.subscribe(StringConfig.class, "bar");
 
-        assertTrue(subscriber.nextConfig(0));
+        assertTrue(subscriber.nextConfig(0, false));
         assertTrue(hA0.isChanged());
         assertTrue(hA1.isChanged());
         assertTrue(hS.isChanged());
@@ -75,7 +75,7 @@ public class ConfigSetSubscriptionTest {
         assertEquals(hA0.getConfig().times(), 88);
         assertEquals(hA1.getConfig().times(), 89);
 
-        assertFalse(subscriber.nextConfig(10));
+        assertFalse(subscriber.nextConfig(10, false));
         assertFalse(hA0.isChanged());
         assertFalse(hA1.isChanged());
         assertFalse(hS.isChanged());
@@ -90,7 +90,7 @@ public class ConfigSetSubscriptionTest {
         a1builder.message("A new message, 1").times(890);
         barBuilder.stringVal("new StringVal");
         subscriber.reload(1);
-        assertTrue(subscriber.nextConfig(0));
+        assertTrue(subscriber.nextConfig(0, false));
         assertTrue(hA0.isChanged());
         assertTrue(hA1.isChanged());
         assertTrue(hS.isChanged());
@@ -104,7 +104,7 @@ public class ConfigSetSubscriptionTest {
         // Reconfigure only one
         a0builder.message("Another new message, 0").times(8800);
         subscriber.reload(2);
-        assertTrue(subscriber.nextConfig(0));
+        assertTrue(subscriber.nextConfig(0, false));
         assertTrue(hA0.isChanged());
         assertFalse(hA1.isChanged());
         assertFalse(hS.isChanged());
@@ -118,7 +118,7 @@ public class ConfigSetSubscriptionTest {
         //Reconfigure only one, and only one field on the builder
         a1builder.message("Yet another message, 1");
         subscriber.reload(3);
-        assertTrue(subscriber.nextConfig(0));
+        assertTrue(subscriber.nextConfig(0, false));
         assertFalse(hA0.isChanged());
         assertTrue(hA1.isChanged());
         assertFalse(hS.isChanged());
@@ -139,11 +139,11 @@ public class ConfigSetSubscriptionTest {
         ConfigSubscriber subscriber = new ConfigSubscriber(myConfigs);
         ConfigHandle<AppConfig> hA0 = subscriber.subscribe(AppConfig.class, "app/0");
 
-        assertTrue(subscriber.nextConfig(0));
+        assertTrue(subscriber.nextConfig(0, false));
         assertTrue(hA0.isChanged());
         assertEquals(hA0.getConfig().message(), "A message, 1");
 
-        assertFalse(subscriber.nextConfig(10));
+        assertFalse(subscriber.nextConfig(10, false));
         assertFalse(hA0.isChanged());
         assertEquals(hA0.getConfig().message(), "A message, 1");
 
@@ -154,7 +154,7 @@ public class ConfigSetSubscriptionTest {
         subscriber.reload(2);
 
         // Should pick up the last one
-        assertTrue(subscriber.nextConfig(0));
+        assertTrue(subscriber.nextConfig(0, false));
         assertTrue(hA0.isChanged());
         assertEquals(hA0.getConfig().message(), "An even newer message, 3");
     }

@@ -114,8 +114,9 @@ public class ConfigInstanceTest {
         public TestNonstring(String configId) {
             ConfigSubscriber subscriber = new ConfigSubscriber();
             ConfigHandle<TestNonstringConfig> handle = subscriber.subscribe(TestNonstringConfig.class, configId);
-            subscriber.nextConfig();
+            subscriber.nextConfig(false);
             handle.getConfig();
         }
     }
+
 }

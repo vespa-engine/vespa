@@ -95,7 +95,7 @@ public class CloudSubscriberFactory implements SubscriberFactory {
         }
 
         @Override
-        public long waitNextGeneration() {
+        public long waitNextGeneration(boolean isInitializing) {
             if (handles.isEmpty())
                 throw new IllegalStateException("No config keys registered");
 
@@ -108,7 +108,7 @@ public class CloudSubscriberFactory implements SubscriberFactory {
             int numExceptions = 0;
             while ( ! gotNextGen) {
                 try {
-                    if (subscriber.nextGeneration())
+                    if (subscriber.nextGeneration(isInitializing))
                         gotNextGen = true;
                 }
                 catch (IllegalArgumentException e) {
