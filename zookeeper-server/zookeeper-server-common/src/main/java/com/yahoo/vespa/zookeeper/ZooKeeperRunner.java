@@ -3,6 +3,7 @@ package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.protect.Process;
 import com.yahoo.security.tls.TransportSecurityUtils;
 
 import java.nio.file.Path;
@@ -72,14 +73,24 @@ public class ZooKeeperRunner implements Runnable {
                 startServer(path); // Will block in a real implementation of VespaZooKeeperServer
                 return;
             } catch (RuntimeException e) {
-                Duration delay = backoff.delay(attempt);
-                log.log(Level.WARNING, "Starting ZooKeeper server failed on attempt " + attempt +
-                                       ". Retrying in " + delay + ", time left " + Duration.between(now, end), e);
-                sleeper.sleep(delay);
+                String messagePart = "Starting " + serverDescription() + " failed on attempt " +
+                                     attempt;
+                if (server.reconfigurable()) {
+                    Duration delay = backoff.delay(attempt);
+                    log.log(Level.WARNING, messagePart + ". Retrying in " + delay + ", time left " +
+                                           Duration.between(now, end), e);
+                    sleeper.sleep(delay);
+                } else {
+                    Process.logAndDie(messagePart + ". Forcing shutdown", e);
+                }
             } finally {
                 now = Instant.now();
             }
         }
+    }
+
+    private String serverDescription() {
+        return (server.reconfigurable() ? "" : "non-") + "reconfigurable ZooKeeper server";
     }
 
     private void startServer(Path path) {
@@ -91,7 +102,7 @@ public class ZooKeeperRunner implements Runnable {
         try {
             server.start(path);
         } catch (Throwable e) {
-            throw new RuntimeException("Starting ZooKeeper server failed", e);
+            throw new RuntimeException("Starting " + serverDescription() + " failed", e);
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);
         }
