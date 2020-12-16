@@ -10,11 +10,11 @@ LOG_SETUP(".distributor.operation.idealstate.setactive");
 
 namespace storage::distributor {
 
-SetBucketStateOperation::SetBucketStateOperation(const vespalib::string * clusterName,
+SetBucketStateOperation::SetBucketStateOperation(const ClusterContext &cluster_ctx,
                                                  const BucketAndNodes& nodes,
                                                  const std::vector<uint16_t>& wantedActiveNodes)
     : IdealStateOperation(nodes),
-      _tracker(clusterName),
+      _tracker(cluster_ctx),
       _wantedActiveNodes(wantedActiveNodes)
 { }
 

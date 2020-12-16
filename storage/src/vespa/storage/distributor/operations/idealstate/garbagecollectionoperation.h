@@ -13,7 +13,8 @@ class PendingMessageTracker;
 class GarbageCollectionOperation : public IdealStateOperation
 {
 public:
-    GarbageCollectionOperation(const vespalib::string * clusterName, const BucketAndNodes& nodes);
+    GarbageCollectionOperation(const ClusterContext& cluster_ctx,
+                               const BucketAndNodes& nodes);
     ~GarbageCollectionOperation() override;
 
     void onStart(DistributorMessageSender& sender) override;

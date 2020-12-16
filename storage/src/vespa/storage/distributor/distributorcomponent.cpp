@@ -50,7 +50,7 @@ DistributorComponent::getClusterStateBundle() const
 api::StorageMessageAddress
 DistributorComponent::nodeAddress(uint16_t nodeIndex) const
 {
-    return api::StorageMessageAddress::create(&getClusterName(), lib::NodeType::STORAGE, nodeIndex);
+    return api::StorageMessageAddress::create(cluster_name_ptr(), lib::NodeType::STORAGE, nodeIndex);
 }
 
 bool

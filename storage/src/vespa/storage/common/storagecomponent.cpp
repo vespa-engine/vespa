@@ -24,7 +24,7 @@ StorageComponent::setNodeInfo(vespalib::stringref clusterName,
                               uint16_t index)
 {
     // Assumed to not be set dynamically.
-    _clusterName = clusterName;
+    _cluster_ctx.my_cluster_name = clusterName;
     _nodeType = &nodeType;
     _index = index;
 }
@@ -67,7 +67,7 @@ StorageComponent::setNodeStateUpdater(NodeStateUpdater& updater)
 StorageComponent::StorageComponent(StorageComponentRegister& compReg,
                                    vespalib::stringref name)
     : Component(compReg, name),
-      _clusterName(),
+      _cluster_ctx(),
       _nodeType(nullptr),
       _index(0),
       _repos(),
@@ -96,7 +96,7 @@ vespalib::string
 StorageComponent::getIdentity() const
 {
     vespalib::asciistream name;
-    name << "storage/cluster." << _clusterName << "/"
+    name << "storage/cluster." << _cluster_ctx.cluster_name() << "/"
          << _nodeType->serialize() << "/" << _index;
     return name.str();
 }

@@ -56,7 +56,7 @@ CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageRepl
 namespace {
     vespalib::string getNodeId(StorageComponent& sc) {
         vespalib::asciistream ost;
-        ost << sc.getClusterName() << "/" << sc.getNodeType() << "/" << sc.getIndex();
+        ost << sc.cluster_context().cluster_name() << "/" << sc.getNodeType() << "/" << sc.getIndex();
         return ost.str();
     }
 

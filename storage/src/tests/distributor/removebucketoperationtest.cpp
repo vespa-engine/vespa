@@ -9,15 +9,12 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
-
-namespace {
-    vespalib::string _Storage("storage");
-}
 
 struct RemoveBucketOperationTest : Test, DistributorTestUtil {
     void SetUp() override {
@@ -37,7 +34,7 @@ TEST_F(RemoveBucketOperationTest, simple) {
     setRedundancy(1);
     enableDistributorClusterState("distributor:1 storage:3");
 
-    RemoveBucketOperation op(&_Storage,
+    RemoveBucketOperation op(dummy_cluster_context,
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(1,2)));
     op.setIdealStateManager(&getIdealStateManager());
@@ -69,7 +66,7 @@ TEST_F(RemoveBucketOperationTest, bucket_info_mismatch_failure) {
 
     enableDistributorClusterState("distributor:1 storage:2");
 
-    RemoveBucketOperation op(&_Storage,
+    RemoveBucketOperation op(dummy_cluster_context,
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(1)));
     op.setIdealStateManager(&getIdealStateManager());
@@ -104,7 +101,7 @@ TEST_F(RemoveBucketOperationTest, fail_with_invalid_bucket_info) {
 
     enableDistributorClusterState("distributor:1 storage:2");
 
-    RemoveBucketOperation op(&_Storage,
+    RemoveBucketOperation op(dummy_cluster_context,
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(1)));
     op.setIdealStateManager(&getIdealStateManager());

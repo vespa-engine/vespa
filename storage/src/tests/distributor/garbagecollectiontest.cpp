@@ -8,15 +8,12 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
-
-namespace {
-    vespalib::string _Storage("storage");
-}
 
 struct GarbageCollectionOperationTest : Test, DistributorTestUtil {
     void SetUp() override {
@@ -33,7 +30,7 @@ struct GarbageCollectionOperationTest : Test, DistributorTestUtil {
 
     std::shared_ptr<GarbageCollectionOperation> create_op() {
         auto op = std::make_shared<GarbageCollectionOperation>(
-                &_Storage,BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
+                dummy_cluster_context, BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                                             toVector<uint16_t>(0, 1)));
         op->setIdealStateManager(&getIdealStateManager());
         return op;

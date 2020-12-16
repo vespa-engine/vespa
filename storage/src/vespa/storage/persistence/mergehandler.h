@@ -17,6 +17,7 @@
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageapi/message/bucket.h>
+#include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
 
 namespace storage {
@@ -39,7 +40,7 @@ public:
     };
 
     MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
-                 const vespalib::string & clusterName, const framework::Clock & clock,
+                 const ClusterContext& cluster_context, const framework::Clock & clock,
                  uint32_t maxChunkSize = 4190208,
                  uint32_t commonMergeChainOptimalizationMinimumSize = 64);
 
@@ -67,7 +68,7 @@ public:
 
 private:
     const framework::Clock   &_clock;
-    const vespalib::string   &_clusterName;
+    const ClusterContext &_cluster_context;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
     const uint32_t            _maxChunkSize;

@@ -816,7 +816,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
 
     vespalib::string storageInstanceId(os.str());
     cmd->setInstanceId(storageInstanceId);
-    cmd->setAddress(api::StorageMessageAddress::create(&_node_ctx.cluster_name(), lib::NodeType::STORAGE, node));
+    cmd->setAddress(api::StorageMessageAddress::create(_node_ctx.cluster_name_ptr(), lib::NodeType::STORAGE, node));
     cmd->setMaximumPendingReplyCount(pending);
     cmd->setQueueTimeout(computeVisitorQueueTimeoutMs());
 

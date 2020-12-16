@@ -38,7 +38,6 @@ public:
     StorageComponentRegisterImpl();
     ~StorageComponentRegisterImpl() override;
 
-    const vespalib::string& getClusterName() const { return _clusterName; }
     const lib::NodeType& getNodeType() const { return *_nodeType; }
     uint16_t getIndex() const { return _index; }
     std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() { return _docTypeRepo; }

@@ -158,11 +158,11 @@ struct MergeHandlerTest : SingleDiskPersistenceTestUtils {
 
     MergeHandler createHandler(size_t maxChunkSize = 0x400000) {
         return MergeHandler(getEnv(), getPersistenceProvider(),
-                            getEnv()._component.getClusterName(), getEnv()._component.getClock(), maxChunkSize);
+                            getEnv()._component.cluster_context(), getEnv()._component.getClock(), maxChunkSize);
     }
     MergeHandler createHandler(spi::PersistenceProvider & spi) {
         return MergeHandler(getEnv(), spi,
-                            getEnv()._component.getClusterName(), getEnv()._component.getClock());
+                            getEnv()._component.cluster_context(), getEnv()._component.getClock());
     }
 };
 

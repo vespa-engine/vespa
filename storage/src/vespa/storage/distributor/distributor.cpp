@@ -103,7 +103,6 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _schedulingMode(MaintenanceScheduler::NORMAL_SCHEDULING_MODE),
       _recoveryTimeStarted(_component.getClock()),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
-      _clusterName(_component.getClusterName()),
       _bucketIdHasher(std::make_unique<BucketGcTimeCalculator::BucketIdIdentityHasher>()),
       _metricUpdateHook(*this),
       _metricLock(),
@@ -136,12 +135,6 @@ int
 Distributor::getDistributorIndex() const
 {
     return _component.getIndex();
-}
-
-const vespalib::string&
-Distributor::getClusterName() const
-{
-    return _clusterName;
 }
 
 const PendingMessageTracker&

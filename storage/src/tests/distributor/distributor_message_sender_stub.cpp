@@ -11,7 +11,6 @@ namespace storage {
 
 DistributorMessageSenderStub::DistributorMessageSenderStub()
     : _stub_impl(),
-      _cluster_name("storage"),
       _pending_message_tracker(nullptr),
       _operation_sequencer(nullptr)
 {}

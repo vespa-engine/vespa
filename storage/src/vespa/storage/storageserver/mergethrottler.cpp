@@ -373,7 +373,8 @@ MergeThrottler::forwardCommandToNode(
                     mergeCmd.getMaxTimestamp(),
                     mergeCmd.getClusterStateVersion(),
                     newChain));
-    fwdMerge->setAddress(api::StorageMessageAddress::create(&_component.getClusterName(), lib::NodeType::STORAGE, nodeIndex));
+    auto cluster_np = _component.cluster_context().cluster_name_ptr();
+    fwdMerge->setAddress(api::StorageMessageAddress::create(cluster_np, lib::NodeType::STORAGE, nodeIndex));
     fwdMerge->setSourceIndex(mergeCmd.getSourceIndex());
     fwdMerge->setPriority(mergeCmd.getPriority());
     fwdMerge->setTimeout(mergeCmd.getTimeout());

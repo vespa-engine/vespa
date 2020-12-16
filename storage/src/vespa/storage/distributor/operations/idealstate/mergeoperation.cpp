@@ -228,7 +228,7 @@ MergeOperation::deleteSourceOnlyNodes(
 
     if (!sourceOnlyNodes.empty()) {
         _removeOperation = std::make_unique<RemoveBucketOperation>(
-                        &_manager->getDistributorComponent().getClusterName(),
+                        _manager->getDistributorComponent().cluster_context(),
                         BucketAndNodes(getBucket(), sourceOnlyNodes));
         // Must not send removes to source only copies if something has caused
         // pending load to the copy after the merge was sent!

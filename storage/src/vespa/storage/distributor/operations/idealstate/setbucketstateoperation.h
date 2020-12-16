@@ -9,7 +9,7 @@ namespace storage::distributor {
 class SetBucketStateOperation : public IdealStateOperation
 {
 public:
-    SetBucketStateOperation(const vespalib::string * clusterName,
+    SetBucketStateOperation(const ClusterContext& cluster_ctx,
                             const BucketAndNodes& nodes,
                             const std::vector<uint16_t>& wantedActiveNodes);
     ~SetBucketStateOperation() override;
