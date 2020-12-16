@@ -147,7 +147,7 @@ public:
 
     // Implements DistributorNodeContext
     const framework::Clock& clock() const noexcept override { return getClock(); }
-    const vespalib::string * cluster_name_ptr() const override { return cluster_context().cluster_name_ptr(); }
+    const vespalib::string * cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
     const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
     uint16_t node_index() const noexcept override { return getIndex(); }
 

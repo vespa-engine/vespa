@@ -10,7 +10,7 @@ DistributorMessageSender::sendToNode(const lib::NodeType& nodeType, uint16_t nod
                                      const std::shared_ptr<api::StorageCommand> & cmd, bool useDocumentAPI)
 {
     cmd->setSourceIndex(getDistributorIndex());
-    auto cluster_np = cluster_context().cluster_name_ptr();
+    const auto *cluster_np = cluster_context().cluster_name_ptr();
     cmd->setAddress(useDocumentAPI
                     ? api::StorageMessageAddress::createDocApi(cluster_np, nodeType, node)
                     : api::StorageMessageAddress::create(cluster_np, nodeType, node));

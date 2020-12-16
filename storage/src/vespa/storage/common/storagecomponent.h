@@ -82,7 +82,7 @@ public:
     StorageComponent(StorageComponentRegister&, vespalib::stringref name);
     ~StorageComponent() override;
 
-    const ClusterContext & cluster_context() const { return _cluster_ctx; }
+    const ClusterContext & cluster_context() const noexcept { return _cluster_ctx; }
     const lib::NodeType& getNodeType() const { return *_nodeType; }
     uint16_t getIndex() const { return _index; }
     lib::Node getNode() const { return lib::Node(*_nodeType, _index); }
