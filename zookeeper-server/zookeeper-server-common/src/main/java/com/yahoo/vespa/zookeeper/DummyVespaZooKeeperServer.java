@@ -21,4 +21,9 @@ public class DummyVespaZooKeeperServer extends AbstractComponent implements Vesp
     @Override
     public void start(Path configFilePath) {}
 
+    @Override
+    public boolean reconfigurable() {
+        return false;
+    }
+
 }

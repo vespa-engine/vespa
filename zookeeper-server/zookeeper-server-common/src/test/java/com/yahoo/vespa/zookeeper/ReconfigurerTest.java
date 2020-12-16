@@ -165,6 +165,11 @@ public class ReconfigurerTest {
         @Override
         public void start(Path configFilePath) { }
 
+        @Override
+        public boolean reconfigurable() {
+            return true;
+        }
+
     }
 
     private static class TestableVespaZooKeeperAdmin implements VespaZooKeeperAdmin {

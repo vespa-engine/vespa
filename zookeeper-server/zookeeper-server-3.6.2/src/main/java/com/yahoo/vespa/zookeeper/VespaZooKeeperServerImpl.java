@@ -38,4 +38,9 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Vespa
         peer.start(configFilePath);
     }
 
+    @Override
+    public boolean reconfigurable() {
+        return false;
+    }
+
 }
