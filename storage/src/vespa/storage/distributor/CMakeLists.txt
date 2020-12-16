@@ -20,6 +20,7 @@ vespa_add_library(storage_distributor
     externaloperationhandler.cpp
     idealstatemanager.cpp
     idealstatemetricsset.cpp
+    ideal_service_layer_nodes_bundle.cpp
     messagetracker.cpp
     nodeinfo.cpp
     operation_routing_snapshot.cpp

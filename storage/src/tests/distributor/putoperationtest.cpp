@@ -484,7 +484,7 @@ PutOperationTest::getNodes(const std::string& infoString) {
 
     std::vector<uint16_t> targetNodes;
     std::vector<uint16_t> createNodes;
-    PutOperation::getTargetNodes(getDistributorBucketSpace().get_ideal_nodes(bid),
+    PutOperation::getTargetNodes(getDistributorBucketSpace().get_ideal_service_layer_nodes_bundle(bid).get_available_nodes(),
                                  targetNodes, createNodes, entry, 2);
 
     ost << "target( ";

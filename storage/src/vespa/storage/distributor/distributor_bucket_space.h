@@ -3,6 +3,7 @@
 
 #include "bucketownership.h"
 #include "bucket_ownership_flags.h"
+#include "ideal_service_layer_nodes_bundle.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <memory>
@@ -39,7 +40,7 @@ class DistributorBucketSpace {
     std::shared_ptr<const lib::ClusterState> _pending_cluster_state;
     std::vector<bool>                        _available_nodes;
     mutable vespalib::hash_map<document::BucketId, BucketOwnershipFlags, document::BucketId::hash>  _ownerships;
-    mutable vespalib::hash_map<document::BucketId, std::vector<uint16_t>, document::BucketId::hash> _ideal_nodes;
+    mutable vespalib::hash_map<document::BucketId, IdealServiceLayerNodesBundle, document::BucketId::hash> _ideal_nodes;
 
     void clear();
     void enumerate_available_nodes();
@@ -81,8 +82,6 @@ public:
     void set_pending_cluster_state(std::shared_ptr<const lib::ClusterState> pending_cluster_state);
     const lib::ClusterState& get_pending_cluster_state() const noexcept { return *_pending_cluster_state; }
 
-    std::vector<uint16_t> get_ideal_nodes_fallback(document::BucketId bucket) const;
-
     /**
      * Returns true if this distributor owns the given bucket in the
      * given cluster and current distribution config.
@@ -91,10 +90,11 @@ public:
     bool owns_bucket_in_state(const lib::ClusterState& clusterState, document::BucketId bucket) const;
 
     const std::vector<bool>& get_available_nodes() const { return _available_nodes; }
+
     /**
-     * Returns the ideal nodes for the given bucket.
+     * Returns the ideal nodes bundle for the given bucket.
      */
-    std::vector<uint16_t> get_ideal_nodes(document::BucketId bucket) const;
+    const IdealServiceLayerNodesBundle &get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const;
 
     /*
      * Return bucket ownership flags for the given bucket. Bucket is always

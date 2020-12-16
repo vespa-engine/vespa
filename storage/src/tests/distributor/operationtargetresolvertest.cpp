@@ -120,7 +120,7 @@ OperationTargetResolverTest::getInstances(const BucketId& id,
     idealNodeCalc.setDistribution(distributorBucketSpace.getDistribution());
     idealNodeCalc.setClusterState(distributorBucketSpace.getClusterState());
     OperationTargetResolverImpl resolver(
-            distributorBucketSpace.getBucketDatabase(), idealNodeCalc, 16,
+            distributorBucketSpace, distributorBucketSpace.getBucketDatabase(), 16,
             distributorBucketSpace.getDistribution().getRedundancy(),
             makeBucketSpace());
     if (stripToRedundancy) {
