@@ -30,6 +30,10 @@ public class ClusterController extends AbstractComponent
     private final Map<String, FleetController> controllers = new TreeMap<>();
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
 
+    /**
+     * Dependency injection constructor for controller. {@link VespaZooKeeperServer} argument given
+     * to ensure that zookeeper has started before we start polling it.
+     */
     @SuppressWarnings("unused")
     @Inject
     public ClusterController(VespaZooKeeperServer ignored) {
