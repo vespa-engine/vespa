@@ -10,6 +10,7 @@ import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.ComponentsConfig;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
@@ -1001,7 +1002,12 @@ public class ContentClusterTest extends ContentBaseTest {
 
         ContentCluster cc = model.getContentClusters().get("storage");
         for (ClusterControllerContainer c : cc.getClusterControllers().getContainers()) {
-            assertEquals(expectedClassName, c.zooKeeperServerImplementation(true, reconfigurable));
+            var builder = new ComponentsConfig.Builder();
+            c.getConfig(builder);
+            assertEquals(1, new ComponentsConfig(builder).components().stream()
+                    .filter(component -> component.id().equals("clustercontroller-zookeeper-server"))
+                    .map(component -> component.classId().equals(expectedClassName))
+                    .count());
         }
     }
 

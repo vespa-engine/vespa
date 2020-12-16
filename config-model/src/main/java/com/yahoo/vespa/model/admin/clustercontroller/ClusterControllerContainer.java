@@ -84,7 +84,7 @@ public class ClusterControllerContainer extends Container implements
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
     }
 
-    public String zooKeeperServerImplementation(boolean runStandaloneZooKeeper, boolean reconfigurable) {
+    private String zooKeeperServerImplementation(boolean runStandaloneZooKeeper, boolean reconfigurable) {
         if (reconfigurable)
             return "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer";
         else
