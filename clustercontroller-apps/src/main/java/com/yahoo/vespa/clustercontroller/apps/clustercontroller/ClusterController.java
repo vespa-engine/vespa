@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.google.inject.Inject;
@@ -29,10 +29,20 @@ public class ClusterController extends AbstractComponent
     private final Map<String, FleetController> controllers = new TreeMap<>();
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
 
+    /**
+     * Dependency injection constructor for controller. {@link ZooKeeperProvider} argument given
+     * to ensure that zookeeper has started before we start polling it.
+     */
+    @SuppressWarnings("unused")
     @Inject
-    public ClusterController() {
+    public ClusterController(ZooKeeperProvider zooKeeperProvider) {
+        this();
+    }
+
+    ClusterController() {
         metricWrapper = new JDiscMetricWrapper(null);
     }
+
 
     public void setOptions(FleetControllerOptions options, Metric metricImpl) throws Exception {
         metricWrapper.updateMetricImplementation(metricImpl);
