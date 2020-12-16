@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.api.container.ContainerServiceType;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.documentapi.DocumentAccessProvider;
@@ -43,9 +44,8 @@ public class ClusterControllerContainer extends Container implements
             AbstractConfigProducer<?> parent,
             int index,
             boolean runStandaloneZooKeeper,
-            boolean isHosted) {
-        super(parent, "" + index, index, isHosted);
-
+            DeployState deployState) {
+        super(parent, "" + index, index, deployState.isHosted());
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
                    "/clustercontroller-status/*",
@@ -55,11 +55,11 @@ public class ClusterControllerContainer extends Container implements
                    "/cluster/v2/*",
                    CLUSTERCONTROLLER_BUNDLE);
         addComponent("clustercontroller-zookeeper-server",
-                     runStandaloneZooKeeper
-                             ? "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl"
-                             : "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
+                     zooKeeperServerImplementation(runStandaloneZooKeeper, deployState.featureFlags().reconfigurableZookeeperServer()),
                      ZOOKEEPER_SERVER_BUNDLE);
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, "controller", isHosted));
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog,
+                                            "controller",
+                                            deployState.isHosted()));
 
         // TODO: Why are bundles added here instead of in the cluster?
         addFileBundle("clustercontroller-apps");
@@ -82,6 +82,15 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public ContainerServiceType myServiceType() {
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+    }
+
+    public String zooKeeperServerImplementation(boolean runStandaloneZooKeeper, boolean reconfigurable) {
+        if (reconfigurable)
+            return "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer";
+        else
+            return runStandaloneZooKeeper
+                    ? "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl"
+                    : "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer";
     }
 
     private void addHandler(Handler<?> h, String path) {

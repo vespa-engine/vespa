@@ -22,6 +22,7 @@ import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
@@ -30,7 +31,6 @@ import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
-import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Rule;
@@ -991,6 +991,24 @@ public class ContentClusterTest extends ContentBaseTest {
     public void use_direct_storage_api_rpc_config_is_controlled_by_properties() {
         assertDirectStorageApiRpcFlagIsPropagatedToConfig(false);
         assertDirectStorageApiRpcFlagIsPropagatedToConfig(true);
+    }
+
+    void assertZookeeperServerImplementation(boolean reconfigurable, String expectedClassName) {
+        VespaModel model = createEnd2EndOneNode(
+                new TestProperties()
+                        .reconfigurableZookeeperServer(reconfigurable)
+                        .setMultitenant(true));
+
+        ContentCluster cc = model.getContentClusters().get("storage");
+        for (ClusterControllerContainer c : cc.getClusterControllers().getContainers()) {
+            assertEquals(expectedClassName, c.zooKeeperServerImplementation(true, reconfigurable));
+        }
+    }
+
+    @Test
+    public void reconfigurableZookeeperServerForClusterController() {
+        assertZookeeperServerImplementation(false, "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl");
+        assertZookeeperServerImplementation(true, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
     }
 
 }

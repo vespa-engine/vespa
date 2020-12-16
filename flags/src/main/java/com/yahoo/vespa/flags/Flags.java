@@ -1,4 +1,4 @@
-// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
@@ -284,6 +284,13 @@ public class Flags {
             List.of("tokle"), "2020-12-02", "2021-02-01",
             "Whether to use Power of two load balancing algorithm for application",
             "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER = defineFeatureFlag(
+            "reconfigurable-zookeeper-server-for-cluster-controller", false,
+            List.of("musum", "mpolden"), "2020-12-16", "2021-02-16",
+            "Whether to use reconfigurable zookeeper server for cluster controller",
+            "Takes effect on (re)redeployment",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

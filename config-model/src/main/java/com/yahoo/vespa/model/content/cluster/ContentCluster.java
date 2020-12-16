@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.cluster;
 
 import com.google.common.base.Preconditions;
@@ -465,11 +465,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 int index = 0;
                 for (HostResource host : hosts) {
                     var clusterControllerContainer =
-                            new ClusterControllerContainer(
-                                    clusterControllers,
-                                    index,
-                                    multitenant,
-                                    deployState.isHosted());
+                            new ClusterControllerContainer(clusterControllers, index, multitenant, deployState);
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin")
