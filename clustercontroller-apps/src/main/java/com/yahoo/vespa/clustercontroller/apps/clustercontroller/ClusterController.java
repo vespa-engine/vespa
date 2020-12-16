@@ -11,6 +11,7 @@ import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskSchedul
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,8 +30,13 @@ public class ClusterController extends AbstractComponent
     private final Map<String, FleetController> controllers = new TreeMap<>();
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
 
+    @SuppressWarnings("unused")
     @Inject
-    public ClusterController() {
+    public ClusterController(VespaZooKeeperServer ignored) {
+        this();
+    }
+
+    ClusterController() {
         metricWrapper = new JDiscMetricWrapper(null);
     }
 
