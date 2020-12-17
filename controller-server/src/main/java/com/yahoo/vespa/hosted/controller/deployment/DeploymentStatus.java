@@ -194,8 +194,14 @@ public class DeploymentStatus {
         return instances.build();
     }
 
-    /** The step status for all steps in the deployment spec of this, in the same order as in the deployment spec. */
-    public List<StepStatus> allSteps() { return allSteps; }
+    /** The step status for all relevant steps in the deployment spec of this, in the same order as in the deployment spec. */
+    public List<StepStatus> allSteps() {
+        List<JobId> firstTestJobs = List.of(firstDeclaredOrElseImplicitTest(systemTest),
+                                            firstDeclaredOrElseImplicitTest(stagingTest));
+        return allSteps.stream()
+                       .filter(step -> step.isDeclared() || firstTestJobs.contains(step.job().orElseThrow()))
+                       .collect(toUnmodifiableList());
+    }
 
     public Optional<Deployment> deploymentFor(JobId job) {
         return Optional.ofNullable(application.require(job.application().instance())
@@ -273,7 +279,6 @@ public class DeploymentStatus {
                                                   && testJobs.get(test).contains(versions)))
                     testJobs.merge(firstDeclaredOrElseImplicitTest(testType), List.of(versions), DeploymentStatus::union);
             });
-            // Add runs for declared tests in instances without production jobs, if no successes exist for given change.
         }
         return ImmutableMap.copyOf(testJobs);
     }
@@ -281,7 +286,7 @@ public class DeploymentStatus {
     private JobId firstDeclaredOrElseImplicitTest(JobType testJob) {
         return application.deploymentSpec().instanceNames().stream()
                           .map(name -> new JobId(application.id().instance(name), testJob))
-                          .min(comparing(id -> !jobSteps.get(id).isDeclared())).orElseThrow();
+                          .min(comparing(id -> ! jobSteps.get(id).isDeclared())).orElseThrow();
     }
 
     /** JobId of any declared test of the given type, for the given instance. */
@@ -381,7 +386,7 @@ public class DeploymentStatus {
 
     public enum StepType {
 
-        /** An instance — completion marks a change as ready for the jobs contained in it. */
+        /** An instance — completion marks a change as ready for the jobs contained in it. */
         instance,
 
         /** A timed delay. */
