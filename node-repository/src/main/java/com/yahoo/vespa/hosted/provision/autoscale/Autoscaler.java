@@ -215,7 +215,7 @@ public class Autoscaler {
         private static Advice none(String reason) { return new Advice(Optional.empty(), false, reason); }
         private static Advice dontScale(String reason) { return new Advice(Optional.empty(), true, reason); }
         private static Advice scaleTo(ClusterResources target) {
-            return new Advice(Optional.of(target), true, "Scaling to " + target);
+            return new Advice(Optional.of(target), true, "Scaling due to load changes");
         }
 
         @Override
