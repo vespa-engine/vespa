@@ -32,10 +32,11 @@ void ThreadListT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level)
             peakThreads = i;
         }
     }
-    fprintf(os, "#%ld active threads. Peak threads #%ld\n", activeThreads, peakThreads);
+    fprintf(os, "#%ld active threads. Peak threads #%ld. %u threads created in total.\n",
+            activeThreads, peakThreads, _threadCountAccum.load());
     if ((level > 1) && ! ThreadStatT::isDummy()) {
         for (SizeClassT sc(0); sc < NUM_SIZE_CLASSES; sc++) {
-            _allocPool.dataSegment().infoThread(os, level, 0, sc);
+            _allocPool.dataSegment().infoThread(os, level, 0, sc, _threadCountAccum.load() + 1);
         }
     }
     for (size_t i(0); i < getMaxNumThreads(); i++) {

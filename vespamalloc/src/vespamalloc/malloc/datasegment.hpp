@@ -6,9 +6,7 @@
 namespace vespamalloc {
 
 template<typename MemBlockPtrT>
-DataSegment<MemBlockPtrT>::~DataSegment()
-{
-}
+DataSegment<MemBlockPtrT>::~DataSegment() = default;
 
 #define INIT_LOG_LIMIT 0x400000000ul // 16G
 
@@ -161,8 +159,19 @@ void DataSegment<MemBlockPtrT>::returnBlock(void *ptr)
     }
 }
 
+namespace {
+
+std::vector<uint32_t>
+createHistogram(bool allThreads, uint32_t maxThreads) {
+    if (allThreads) {
+        return std::vector<uint32_t>(maxThreads, 0);
+    }
+    return std::vector<uint32_t>();
+}
+
+}
 template<typename MemBlockPtrT>
-size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thread, SizeClassT sct) const
+size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thread, SizeClassT sct, uint32_t maxThreadId) const
 {
     using CallGraphLT = CallGraph<typename MemBlockPtrT::Stack, 0x10000, Index>;
     bool allThreads(thread == 0);
@@ -172,6 +181,7 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thre
     size_t notAccounted(0);
     size_t invalidCallStacks(0);
     std::unique_ptr<CallGraphLT> callGraph = std::make_unique<CallGraphLT>();
+    std::vector<uint32_t> threadHistogram = createHistogram(allThreads, maxThreadId);
     for (size_t i=0; i <  NELEMS(_blockList); ) {
         const BlockT & b = _blockList[i];
         SizeClassT sc = b.sizeClass();
@@ -185,6 +195,9 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thre
                     allocatedCount++;
                     if (allThreads || (mem.threadId() == thread)) {
                         usedCount++;
+                        if (mem.threadId() < threadHistogram.size()) {
+                            threadHistogram[mem.threadId()]++;
+                        }
                         if (usedCount < _allocs2Show) {
                             mem.info(os, level);
                         }
@@ -223,7 +236,14 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thre
         ost << agg;
         fprintf(os, "%s\n", ost.c_str());
     }
-    fprintf(os, " count(%ld)", usedCount);
+    if ( !threadHistogram.empty()) {
+        fprintf(os, "Histogram");
+        for (uint32_t i(0); i < threadHistogram.size(); i++) {
+            if (threadHistogram[i] > 0) {
+                fprintf(os, "\nThread %u: %u", i, threadHistogram[i]);
+            }
+        }
+    }
     return usedCount;
 }
 
