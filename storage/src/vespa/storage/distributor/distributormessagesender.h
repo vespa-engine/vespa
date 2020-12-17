@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/stllike/string.h>
 
@@ -20,7 +21,7 @@ public:
                                 const std::shared_ptr<api::StorageCommand>& cmd, bool useDocumentAPI = false);
 
     virtual int getDistributorIndex() const = 0;
-    virtual const vespalib::string& getClusterName() const = 0;
+    virtual const ClusterContext & cluster_context() const = 0;
     virtual const PendingMessageTracker& getPendingMessageTracker() const = 0;
     virtual const OperationSequencer& operation_sequencer() const noexcept = 0;
 };

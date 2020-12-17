@@ -83,7 +83,7 @@ SplitBucketStateChecker::generateMinimumBucketSplitOperation(
         StateChecker::Context& c)
 {
     auto so = std::make_unique<SplitOperation>(
-                &c.component.getClusterName(),
+                c.component.cluster_context(),
                 BucketAndNodes(c.getBucket(), c.entry->getNodes()),
                 c.distributorConfig.getMinimalBucketSplit(),
                 0,
@@ -101,7 +101,7 @@ SplitBucketStateChecker::generateMaxSizeExceededSplitOperation(
         StateChecker::Context& c)
 {
     auto so = std::make_unique<SplitOperation>(
-                &c.component.getClusterName(),
+                c.component.cluster_context(),
                 BucketAndNodes(c.getBucket(), c.entry->getNodes()),
                 58,
                 c.distributorConfig.getSplitCount(),
@@ -464,7 +464,7 @@ JoinBucketsStateChecker::check(StateChecker::Context& c)
     }
     sourceBuckets.push_back(c.getBucketId());
     auto op = std::make_unique<JoinOperation>(
-            &c.component.getClusterName(),
+            c.component.cluster_context(),
             BucketAndNodes(joinedBucket, c.entry->getNodes()),
             sourceBuckets);
     op->setPriority(c.distributorConfig.getMaintenancePriorities().joinBuckets);
@@ -568,7 +568,7 @@ SplitInconsistentStateChecker::check(StateChecker::Context& c)
     }
     
     auto op = std::make_unique<SplitOperation>(
-            &c.component.getClusterName(),
+            c.component.cluster_context(),
             BucketAndNodes(c.getBucket(), c.entry->getNodes()),
             getHighestUsedBits(c.entries),
             0,
@@ -1006,7 +1006,7 @@ DeleteExtraCopiesStateChecker::check(StateChecker::Context& c)
 
     if (!removedCopies.empty()) {
         auto ro = std::make_unique<RemoveBucketOperation>(
-                &c.component.getClusterName(),
+                c.component.cluster_context(),
                 BucketAndNodes(c.getBucket(), removedCopies));
 
         ro->setPriority(c.distributorConfig.getMaintenancePriorities().deleteBucketCopy);
@@ -1106,7 +1106,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
         activeNodeIndexes.push_back(activeNodes[i]._nodeIndex);
     }
     auto op = std::make_unique<SetBucketStateOperation>(
-            &c.component.getClusterName(),
+            c.component.cluster_context(),
             BucketAndNodes(c.getBucket(), operationNodes),
             activeNodeIndexes);
 
@@ -1143,7 +1143,7 @@ GarbageCollectionStateChecker::check(Context& c)
 {
     if (needsGarbageCollection(c)) {
         auto op = std::make_unique<GarbageCollectionOperation>(
-                        &c.component.getClusterName(),
+                        c.component.cluster_context(),
                         BucketAndNodes(c.getBucket(), c.entry->getNodes()));
 
         vespalib::asciistream reason;

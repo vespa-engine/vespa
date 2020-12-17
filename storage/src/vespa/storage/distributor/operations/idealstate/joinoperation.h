@@ -16,7 +16,7 @@ public:
      * @param bucketAndNodes The bucket to join into, along with the nodes this operation uses.
      * @param bucketsToJoin The buckets to join together. The size of this array should always be either one or two.
      */
-    JoinOperation(const vespalib::string * clusterName,
+    JoinOperation(const  ClusterContext& cluster_ctx,
                   const BucketAndNodes& nodes,
                   const std::vector<document::BucketId>& bucketsToJoin);
 

@@ -10,7 +10,7 @@ LOG_SETUP(".distributor.operation.idealstate.join");
 
 using namespace storage::distributor;
 
-JoinOperation::JoinOperation(const vespalib::string * clusterName,
+JoinOperation::JoinOperation(const ClusterContext &clusterName,
                              const BucketAndNodes& nodes,
                              const std::vector<document::BucketId>& bucketsToJoin)
     : IdealStateOperation(nodes),

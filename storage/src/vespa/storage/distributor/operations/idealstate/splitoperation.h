@@ -9,7 +9,8 @@ namespace storage::distributor {
 class SplitOperation : public IdealStateOperation
 {
 public:
-    SplitOperation(const vespalib::string * clusterName, const BucketAndNodes& nodes,
+    SplitOperation(const ClusterContext& cluster_ctx,
+                   const BucketAndNodes& nodes,
                    uint32_t maxBits, uint32_t splitCount, uint32_t splitSize);
     SplitOperation(const SplitOperation &) = delete;
     SplitOperation & operator = (const SplitOperation &) = delete;

@@ -50,8 +50,8 @@ public:
     int getDistributorIndex() const override {
         return _node_ctx.node_index();
     }
-    const vespalib::string& getClusterName() const override {
-        return _node_ctx.cluster_name();
+    const ClusterContext & cluster_context() const override {
+        return _node_ctx;
     }
     const PendingMessageTracker& getPendingMessageTracker() const override {
         abort(); // Never called by the messages using this component.
