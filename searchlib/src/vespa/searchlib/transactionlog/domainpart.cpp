@@ -236,11 +236,8 @@ DomainPart::buildPacketMapping(bool allowTruncate)
                 _range.from(firstSerial);
             }
             _range.to(packet.range().to());
-            _packets.insert(std::make_pair(firstSerial, std::move(packet)));
-            {
-                std::lock_guard guard(_lock);
-                _skipList.push_back(SkipInfo(firstSerial, firstPos));
-            }
+            // Called only from constructor so no need to hold lock
+            _skipList.emplace_back(firstSerial, firstPos);
         } else {
             fSize = transLog.GetSize();
         }
@@ -259,7 +256,6 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
       _range(s),
       _sz(0),
       _byteSize(0),
-      _packets(),
       _fileName(fmt("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
       _transLog(std::make_unique<FastOS_File>(_fileName.c_str())),
       _skipList(),
@@ -345,10 +341,6 @@ DomainPart::close()
         throw runtime_error(fmt("Failed closing file '%s' of size %" PRId64 ".",
                                 _transLog->GetFileName(), _transLog->GetSize()));
     }
-    {
-        std::lock_guard guard(_lock);
-        _packets.clear();
-    }
     return retval;
 }
 
@@ -364,11 +356,9 @@ DomainPart::openAndFind(FastOS_FileInterface &file, const SerialNum &from)
     if (retval) {
         int64_t pos(_headerLen);
         std::lock_guard guard(_lock);
-        for(SkipList::const_iterator it(_skipList.begin()), mt(_skipList.end());
-            (it < mt) && (it->id() <= from);
-            it++)
-        {
-            pos = it->filePos();
+        for (const auto & skipInfo : _skipList) {
+            if (skipInfo.id() > from) break;
+            pos = skipInfo.filePos();
         }
         retval = file.SetPosition(pos);
     }
@@ -419,20 +409,8 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
     if ( ! chunk->getEntries().empty()) {
         write(*_transLog, *chunk);
     }
-
-    bool merged(false);
     std::lock_guard guard(_lock);
-    if ( ! _packets.empty() ) {
-        Packet & lastPacket = _packets.rbegin()->second;
-        if (lastPacket.sizeBytes() < 0xf000) {
-            lastPacket.merge(packet);
-            merged = true;
-        }
-    }
-    if (! merged ) {
-        _packets.insert(std::make_pair(firstSerial, std::move(packet)));
-        _skipList.push_back(SkipInfo(firstSerial, firstPos));
-    }
+    _skipList.emplace_back(firstSerial, firstPos);
 }
 
 void
