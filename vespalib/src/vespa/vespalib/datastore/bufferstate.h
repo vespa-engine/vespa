@@ -30,11 +30,11 @@ public:
     public:
         BufferState *_head;
 
-        FreeListList() : _head(NULL) { }
+        FreeListList() : _head(nullptr) { }
         ~FreeListList();
     };
 
-    typedef vespalib::Array<EntryRef> FreeList;
+    using FreeList = vespalib::Array<EntryRef>;
 
     enum State {
         FREE,
@@ -46,8 +46,6 @@ private:
     size_t        _usedElems;
     size_t        _allocElems;
     size_t        _deadElems;
-    State         _state;
-    bool          _disableElemHoldList;
     size_t        _holdElems;
     // Number of bytes that are heap allocated by elements that are stored in this buffer.
     // For simple types this is 0.
@@ -55,18 +53,20 @@ private:
     // Number of bytes that are heap allocated by elements that are stored in this buffer and is now on hold.
     // For simple types this is 0.
     size_t        _extraHoldBytes;
-    FreeList      _freeList;
-    FreeListList *_freeListList;    // non-NULL if free lists are enabled
+    std::unique_ptr<FreeList> _freeList;
+    FreeListList *_freeListList;    // non-nullptr if free lists are enabled
 
-    // NULL pointers if not on circular list of buffer states with free elems
+    // nullptr if not on circular list of buffer states with free elems
     BufferState    *_nextHasFree;
     BufferState    *_prevHasFree;
 
     BufferTypeBase *_typeHandler;
+    Alloc           _buffer;
     uint32_t        _typeId;
     uint32_t        _arraySize;
+    State           _state;
+    bool            _disableElemHoldList;
     bool            _compacting;
-    Alloc           _buffer;
 
 public:
     /*
@@ -75,6 +75,8 @@ public:
      */
 
     BufferState();
+    BufferState(const BufferState &) = delete;
+    BufferState & operator=(const BufferState &) = delete;
     ~BufferState();
 
     /**
@@ -102,7 +104,7 @@ public:
     /**
      * Set list of buffer states with nonempty free lists.
      *
-     * @param freeListList  List of buffer states.  If NULL then free lists
+     * @param freeListList  List of buffer states.  If nullptr then free lists
      *              are disabled.
      */
     void setFreeListList(FreeListList *freeListList);
@@ -130,9 +132,9 @@ public:
      * Pop element from free list.
      */
     EntryRef popFreeList() {
-        EntryRef ret = _freeList.back();
-        _freeList.pop_back();
-        if (_freeList.empty()) {
+        EntryRef ret = _freeList->back();
+        _freeList->pop_back();
+        if (_freeList->empty()) {
             removeFromFreeListList();
         }
         _deadElems -= _arraySize;
@@ -182,8 +184,8 @@ public:
     }
 
     bool hasDisabledElemHoldList() const { return _disableElemHoldList; }
-    const FreeList &freeList() const { return _freeList; }
-    FreeList &freeList() { return _freeList; }
+    bool isFreeListEmpty() const { return !_freeList || _freeList->empty();}
+    FreeList &freeList() { return *_freeList; }
     const FreeListList *freeListList() const { return _freeListList; }
     FreeListList *freeListList() { return _freeListList; }
 
