@@ -27,7 +27,6 @@ public:
     const vespalib::string &fileName() const { return _fileName; }
     void commit(SerialNum firstSerial, const Packet &packet);
     bool erase(SerialNum to);
-    bool visit(SerialNumRange &r, Packet &packet);
     bool visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet);
     bool close();
     void sync();
