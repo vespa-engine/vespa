@@ -43,7 +43,7 @@ public class Subscriber {
     }
 
     public Optional<RawConfig> nextGeneration() {
-        if (subscriber.nextGeneration(0)) {
+        if (subscriber.nextGeneration(0, true)) { // Proxy should never skip config due to not initializing
             try {
                 return Optional.of(handle.getRawConfig());
             } catch (Exception e) {  // To avoid thread throwing exception and loop never running this again

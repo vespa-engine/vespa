@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
-
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
 
@@ -23,7 +22,6 @@ public class ConfigHandle<T extends ConfigInstance> {
 
     /**
      * Returns true if:
-     *
      * The config generation for the {@link ConfigSubscriber} that produced this is the first one in its life cycle. (Typically first time config.)
      * or
      * All configs for the subscriber have a new generation since the last time nextConfig() was called

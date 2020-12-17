@@ -61,11 +61,7 @@ public class Application implements ModelResult {
         this.app = app;
     }
 
-    /**
-     * Returns the generation for the config we are currently serving
-     *
-     * @return the config generation
-     */
+    /** Returns the generation for the config we are currently serving. */
     public Long getApplicationGeneration() { return applicationGeneration; }
 
     /** Returns the application model, never null */

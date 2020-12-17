@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.TimingValues;
  * generated code in AppConfig.java.
  */
 class AppService {
+
     private int timesConfigured = 0;
 
     private AppConfig config = null;
@@ -33,17 +34,17 @@ class AppService {
         } else {
             temp = subscriber.subscribe(AppConfig.class, configId, csource, timingValues);
         }
-        final ConfigHandle<AppConfig> handle = temp;
+        ConfigHandle<AppConfig> handle = temp;
         Thread configThread = new Thread(() -> {
             while (!stopThread) {
-                boolean changed = subscriber.nextConfig(500);
+                boolean changed = subscriber.nextConfig(500, false);
                 if (changed) {
                     configure(handle.getConfig());
                     timesConfigured++;
                 }
             }
         });
-        subscriber.nextConfig(5000);
+        subscriber.nextConfig(5000, false);
         timesConfigured++;
         configure(handle.getConfig());
         configThread.setDaemon(true);

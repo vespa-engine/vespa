@@ -68,7 +68,7 @@ public class ConfigSubscriptionTest {
         ConfigSubscriber sub = new ConfigSubscriber();
         ConfigHandle<SimpletypesConfig> handle = sub.subscribe(SimpletypesConfig.class, "raw:boolval true", 10000);
         assertNotNull(handle);
-        sub.nextConfig();
+        sub.nextConfig(false);
         assertTrue(handle.getConfig().boolval());
         //assertTrue(sub.getSource() instanceof RawSource);
         sub.close();

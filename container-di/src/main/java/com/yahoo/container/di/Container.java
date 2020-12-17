@@ -44,9 +44,9 @@ public class Container {
     private static final Logger log = Logger.getLogger(Container.class.getName());
 
     private final SubscriberFactory subscriberFactory;
-    private ConfigKey<ApplicationBundlesConfig> applicationBundlesConfigKey;
-    private ConfigKey<PlatformBundlesConfig> platformBundlesConfigKey;
-    private ConfigKey<ComponentsConfig> componentsConfigKey;
+    private final ConfigKey<ApplicationBundlesConfig> applicationBundlesConfigKey;
+    private final ConfigKey<PlatformBundlesConfig> platformBundlesConfigKey;
+    private final ConfigKey<ComponentsConfig> componentsConfigKey;
     private final ComponentDeconstructor componentDeconstructor;
     private final Osgi osgi;
 
@@ -72,10 +72,10 @@ public class Container {
         });
     }
 
-    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector) {
+    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
-            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, obsoleteBundles);
+            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
             newGraph.reuseNodes(oldGraph);
             constructComponents(newGraph);
             deconstructObsoleteComponents(oldGraph, newGraph, obsoleteBundles);
@@ -88,11 +88,12 @@ public class Container {
 
     private ComponentGraph getConfigAndCreateGraph(ComponentGraph graph,
                                                    Injector fallbackInjector,
+                                                   boolean isInitializing,
                                                    Collection<Bundle> obsoleteBundles) // NOTE: Return value
     {
         ConfigSnapshot snapshot;
         while (true) {
-            snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration);
+            snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
 
             log.log(FINE, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
                                         graph.configKeys(), graph.generation(), snapshot));

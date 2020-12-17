@@ -21,11 +21,12 @@ import java.util.Optional;
  * @author Haakon Dybdahl
  */
 public class NodeStateChangeChecker {
+
     public static final String BUCKETS_METRIC_NAME = "vds.datastored.bucket_space.buckets_total";
     public static final Map<String, String> BUCKETS_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
 
     private final int minStorageNodesUp;
-    private double minRatioOfStorageNodesUp;
+    private final double minRatioOfStorageNodesUp;
     private final int requiredRedundancy;
     private final ClusterInfo clusterInfo;
 
@@ -296,4 +297,5 @@ public class NodeStateChangeChecker {
 
         return Result.allowSettingOfWantedState();
     }
+
 }
