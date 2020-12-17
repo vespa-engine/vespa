@@ -224,8 +224,12 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thre
             i++;
         }
     }
-    fprintf(os, "\nCallTree(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "By%sAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld InvalidCallStacks=%ld:\n",
-            checkedCount, allocatedCount, checkedCount ? allocatedCount*100/checkedCount : 0,
+    if (checkedCount == 0) {
+        return 0;
+    }
+
+    fprintf(os, "\nCallTree SC %d(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "By%sAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld InvalidCallStacks=%ld:\n",
+            sct, checkedCount, allocatedCount, checkedCount ? allocatedCount*100/checkedCount : 0,
             allThreads ? "Us" : "Me",
             usedCount, checkedCount ? static_cast<double>(usedCount*100)/checkedCount : 0.0, notAccounted, invalidCallStacks);
     if ( ! callGraph->empty()) {
@@ -237,12 +241,32 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thre
         fprintf(os, "%s\n", ost.c_str());
     }
     if ( !threadHistogram.empty()) {
-        fprintf(os, "Histogram");
+        uint32_t nonZeroCount(0);
         for (uint32_t i(0); i < threadHistogram.size(); i++) {
             if (threadHistogram[i] > 0) {
-                fprintf(os, "\nThread %u: %u", i, threadHistogram[i]);
+                nonZeroCount++;
             }
         }
+        using Pair = std::pair<uint32_t, uint32_t>;
+        std::vector<Pair> orderedHisto;
+        orderedHisto.reserve(nonZeroCount);
+        for (uint32_t i(0); i < threadHistogram.size(); i++) {
+            if (threadHistogram[i] > 0) {
+                orderedHisto.emplace_back(i, threadHistogram[i]);
+            }
+        }
+        std::sort(orderedHisto.begin(), orderedHisto.end(), [](const Pair & a, const Pair & b) { return a.second > b.second;});
+        fprintf(os, "ThreadHistogram SC %d: [", sct);
+
+        bool first(true);
+        for (const Pair & entry : orderedHisto) {
+            if ( !first) {
+                fprintf(os, ", ");
+            }
+            fprintf(os, "{%u, %u}", entry.first, entry.second);
+            first = false;
+        }
+        fprintf(os, " ]");
     }
     return usedCount;
 }

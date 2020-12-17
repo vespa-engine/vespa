@@ -34,6 +34,7 @@ public:
      */
     bool isUsed() const;
     int osThreadId()       const { return _osThreadId; }
+    uint32_t threadId()    const { return _threadId; }
     void quit() { _osThreadId = 0; } // Implicit memory barrier
     void init(int thrId);
     static void setParams(size_t alwayReuseLimit, size_t threadCacheLimit);
@@ -42,7 +43,6 @@ private:
     bool hasActuallyBeenUsed() const;
     ThreadPoolT(const ThreadPoolT & rhs);
     ThreadPoolT & operator =(const ThreadPoolT & rhs);
-    uint32_t threadId()    const { return _threadId; }
     void setThreadId(uint32_t th)   { _threadId = th; }
     class AllocFree {
     public:

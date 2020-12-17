@@ -43,8 +43,8 @@ void ThreadListT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level)
         const ThreadPool & thread = _threadVector[i];
         if (thread.isActive()) {
             if ( ! ThreadStatT::isDummy()) {
-                fprintf(os, "Thread #%ld = pid # %d\n", i, thread.osThreadId());
                 if (thread.isUsed()) {
+                    fprintf(os, "Thread #%u = pid # %d\n", thread.threadId(), thread.osThreadId());
                     thread.info(os, level, _allocPool.dataSegment());
                 }
             }
