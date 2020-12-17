@@ -29,16 +29,26 @@ void ThreadListT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level)
         const ThreadPool & thread = _threadVector[i];
         if (thread.isActive()) {
             activeThreads++;
+            peakThreads = i;
+        }
+    }
+    fprintf(os, "#%ld active threads. Peak threads #%ld\n", activeThreads, peakThreads);
+    if ((level > 1) && ! ThreadStatT::isDummy()) {
+        for (SizeClassT sc(0); sc < NUM_SIZE_CLASSES; sc++) {
+            _allocPool.dataSegment().infoThread(os, level, 0, sc);
+        }
+    }
+    for (size_t i(0); i < getMaxNumThreads(); i++) {
+        const ThreadPool & thread = _threadVector[i];
+        if (thread.isActive()) {
             if ( ! ThreadStatT::isDummy()) {
                 fprintf(os, "Thread #%ld = pid # %d\n", i, thread.osThreadId());
                 if (thread.isUsed()) {
                     thread.info(os, level, _allocPool.dataSegment());
                 }
             }
-            peakThreads = i;
         }
     }
-    fprintf(os, "#%ld active threads. Peak threads #%ld\n", activeThreads, peakThreads);
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT>

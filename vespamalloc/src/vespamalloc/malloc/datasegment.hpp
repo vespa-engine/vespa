@@ -164,14 +164,15 @@ void DataSegment<MemBlockPtrT>::returnBlock(void *ptr)
 template<typename MemBlockPtrT>
 size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thread, SizeClassT sct) const
 {
-    typedef CallGraph<typename MemBlockPtrT::Stack, 0x10000, Index> CallGraphLT;
+    using CallGraphLT = CallGraph<typename MemBlockPtrT::Stack, 0x10000, Index>;
+    bool allThreads(thread == 0);
     size_t usedCount(0);
     size_t checkedCount(0);
     size_t allocatedCount(0);
     size_t notAccounted(0);
     size_t invalidCallStacks(0);
-    std::unique_ptr<CallGraphLT> callGraph(new CallGraphLT);
-    for(size_t i=0; i <  NELEMS(_blockList); ) {
+    std::unique_ptr<CallGraphLT> callGraph = std::make_unique<CallGraphLT>();
+    for (size_t i=0; i <  NELEMS(_blockList); ) {
         const BlockT & b = _blockList[i];
         SizeClassT sc = b.sizeClass();
         if (sc == sct) {
@@ -182,7 +183,7 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thre
                 checkedCount++;
                 if (mem.allocated()) {
                     allocatedCount++;
-                    if (mem.threadId() == thread) {
+                    if (allThreads || (mem.threadId() == thread)) {
                         usedCount++;
                         if (usedCount < _allocs2Show) {
                             mem.info(os, level);
@@ -210,8 +211,9 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thre
             i++;
         }
     }
-    fprintf(os, "\nCallTree(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "ByMeAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld InvalidCallStacks=%ld:\n",
+    fprintf(os, "\nCallTree(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "By%sAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld InvalidCallStacks=%ld:\n",
             checkedCount, allocatedCount, checkedCount ? allocatedCount*100/checkedCount : 0,
+            allThreads ? "Us" : "Me",
             usedCount, checkedCount ? static_cast<double>(usedCount*100)/checkedCount : 0.0, notAccounted, invalidCallStacks);
     if ( ! callGraph->empty()) {
         Aggregator agg;

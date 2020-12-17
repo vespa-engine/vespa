@@ -69,6 +69,7 @@ private:
     ThreadStatT   _stat[NUM_SIZE_CLASSES];
     uint32_t      _threadId;
     std::atomic<ssize_t> _osThreadId;
+
     static SizeClassT _alwaysReuseSCLimit __attribute__((visibility("hidden")));
     static size_t     _threadCacheLimit __attribute__((visibility("hidden")));
 };
