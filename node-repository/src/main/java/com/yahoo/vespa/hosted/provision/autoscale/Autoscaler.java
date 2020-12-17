@@ -64,6 +64,8 @@ public class Autoscaler {
             return Advice.none("Cluster change in progress");
 
         Duration scalingWindow = scalingWindow(clusterNodes.clusterSpec(), cluster);
+        if (scaledIn(scalingWindow, cluster))
+            return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last rescaling");
 
         ClusterTimeseries clusterTimeseries =
                 new ClusterTimeseries(nodeRepository.clock().instant().minus(scalingWindow), cluster, clusterNodes, metricsDb);
@@ -72,14 +74,14 @@ public class Autoscaler {
 
         int measurementsPerNode = clusterTimeseries.measurementsPerNode();
         if  (measurementsPerNode < minimumMeasurementsPerNode(scalingWindow))
-            return Advice.none("Collecting more data before making new scaling decisions" +
-                               " (has " + measurementsPerNode + " measurements per node but need " +
-                               minimumMeasurementsPerNode(scalingWindow) + ")");
+            return Advice.none("Collecting more data before making new scaling decisions: " +
+                               "Have " + measurementsPerNode + " measurements per node but require " +
+                               minimumMeasurementsPerNode(scalingWindow));
 
         int nodesMeasured = clusterTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
-            return Advice.none("Collecting more data before making new scaling decisions" +
-                               "(has measurements from " + nodesMeasured + " but need from " + clusterNodes.size() + ")");
+            return Advice.none("Collecting more data before making new scaling decisions: " +
+                               "Have measurements from " + nodesMeasured + " but require from " + clusterNodes.size());
 
         double cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
         double memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
@@ -93,10 +95,8 @@ public class Autoscaler {
             return Advice.dontScale("No allocation changes are possible within configured limits");
 
         if (similar(bestAllocation.get(), currentAllocation))
-            return Advice.dontScale("Cluster is ideally scaled (within configured limits)");
+            return Advice.dontScale("Cluster is ideally scaled within configured limits");
 
-        if (scaledIn(scalingWindow, cluster))
-            return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last rescaling");
         if (isDownscaling(bestAllocation.get(), currentAllocation) && scaledIn(scalingWindow.multipliedBy(3), cluster))
             return Advice.dontScale("Waiting " + scalingWindow.multipliedBy(3) + " since last rescaling before reducing resources");
 
@@ -163,8 +163,8 @@ public class Autoscaler {
     /** Returns the minimum measurements per node (average) we require to give autoscaling advice.*/
     private int minimumMeasurementsPerNode(Duration scalingWindow) {
         // Measurements are ideally taken every minute, but no guarantees
-        // (network, nodes may be down, collecting is single threaded and may take longer than 1 minute to complete.
-        // Since the metric window is 5 minutes, we won't really improve from measuring more often:
+        // (network, nodes may be down, collecting is single threaded and may take longer than 1 minute to complete).
+        // Since the metric window is 5 minutes, we won't really improve from measuring more often.
         long minimumMeasurements = scalingWindow.toMinutes() / 5;
         minimumMeasurements = Math.round(0.8 * minimumMeasurements); // Allow 20% metrics collection blackout
         if (minimumMeasurements < 1) minimumMeasurements = 1;

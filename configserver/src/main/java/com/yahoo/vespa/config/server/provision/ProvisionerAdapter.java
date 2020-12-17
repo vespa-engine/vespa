@@ -44,6 +44,4 @@ public class ProvisionerAdapter implements HostProvisioner {
         return provisioner.prepare(applicationId, cluster, capacity, logger);
     }
 
-
-
 }
