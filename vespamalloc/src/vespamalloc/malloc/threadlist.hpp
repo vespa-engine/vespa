@@ -18,9 +18,7 @@ ThreadListT<MemBlockPtrT, ThreadStatT>::ThreadListT(AllocPool & pool) :
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-ThreadListT<MemBlockPtrT, ThreadStatT>::~ThreadListT()
-{
-}
+ThreadListT<MemBlockPtrT, ThreadStatT>::~ThreadListT() = default;
 
 template <typename MemBlockPtrT, typename ThreadStatT>
 void ThreadListT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level)
@@ -57,7 +55,7 @@ bool ThreadListT<MemBlockPtrT, ThreadStatT>::initThisThread()
 {
     bool retval(true);
     _threadCount.fetch_add(1);
-    size_t lidAccum = _threadCountAccum.fetch_add(1);
+    uint32_t lidAccum = _threadCountAccum.fetch_add(1);
     long localId(-1);
     for(size_t i = 0; (localId < 0) && (i < getMaxNumThreads()); i++) {
         ThreadPool & tp = _threadVector[i];
@@ -66,10 +64,11 @@ bool ThreadListT<MemBlockPtrT, ThreadStatT>::initThisThread()
         }
     }
     assert(localId >= 0);
+    assert(size_t(localId) < getMaxNumThreads());
     _myPool = &_threadVector[localId];
     assert(getThreadId() == size_t(localId));
-
-    getCurrent().init(lidAccum);
+    assert(lidAccum < 0xffffffffu);
+    getCurrent().init(lidAccum+1);
 
     return retval;
 }

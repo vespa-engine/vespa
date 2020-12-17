@@ -48,19 +48,19 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
     oldBlockSize = ((oldBlockSize + (minBlockSize-1))/minBlockSize)*minBlockSize;
     size_t numBlocks((oldBlockSize + (BlockSize-1))/BlockSize);
     size_t blockSize = BlockSize * numBlocks;
-    void * newBlock(NULL);
+    void * newBlock(nullptr);
     {
         Guard sync(_mutex);
         newBlock = _freeList.sub(numBlocks);
-        if ( newBlock == NULL ) {
+        if ( newBlock == nullptr ) {
             newBlock = _unMappedList.sub(numBlocks);
-            if ( newBlock == NULL ) {
+            if ( newBlock == nullptr ) {
                 size_t nextBlock(blockId(end()));
                 size_t startBlock = _freeList.lastBlock(nextBlock);
                 if (startBlock) {
                     size_t adjustedBlockSize = blockSize - BlockSize*(nextBlock-startBlock);
                     newBlock = _osMemory.get(adjustedBlockSize);
-                    if (newBlock != NULL) {
+                    if (newBlock != nullptr) {
                         assert (newBlock == fromBlockId(nextBlock));
                         _freeList.removeLastBlock();
                         newBlock = fromBlockId(startBlock);
@@ -79,9 +79,9 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
         }
     }
     if (newBlock == (void *) -1) {
-        newBlock = NULL;
+        newBlock = nullptr;
         blockSize = 0;
-    } else if (newBlock == NULL) {
+    } else if (newBlock == nullptr) {
         blockSize = 0;
     } else {
         assert(blockId(newBlock)+numBlocks < BlockCount);
@@ -95,7 +95,7 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
         }
     }
     oldBlockSize = blockSize;
-    if (newBlock == NULL) {
+    if (newBlock == nullptr) {
         static int recurse = 0;
         if (recurse++ == 0) {
             perror("Failed extending datasegment: ");
@@ -103,7 +103,7 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
             MemBlockPtrT::dumpInfo(_noMemLogLevel);
             sleep(2);
         }
-        return NULL;
+        return nullptr;
     }
     checkAndLogBigSegment();
     return newBlock;
@@ -162,7 +162,7 @@ void DataSegment<MemBlockPtrT>::returnBlock(void *ptr)
 }
 
 template<typename MemBlockPtrT>
-size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, SizeClassT sct) const
+size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thread, SizeClassT sct) const
 {
     typedef CallGraph<typename MemBlockPtrT::Stack, 0x10000, Index> CallGraphLT;
     size_t usedCount(0);
@@ -308,7 +308,7 @@ void DataSegment<MemBlockPtrT>::FreeListT<MaxCount>::add(size_t startIndex)
     size_t numBlocks(_blockList[startIndex].freeChainLength());
     for (i=0; (i < _count) && (_freeStartIndex[i] < startIndex); i++) { }
     size_t prevIndex(0), nextIndex(0);
-    BlockT * prev(NULL), * next(NULL);
+    BlockT * prev(nullptr), * next(nullptr);
     if (i > 0) {
         prevIndex = _freeStartIndex[i-1];
         prev = & _blockList[prevIndex];
@@ -352,7 +352,7 @@ template<typename MemBlockPtrT>
 template <int MaxCount>
 void * DataSegment<MemBlockPtrT>::FreeListT<MaxCount>::sub(size_t numBlocks)
 {
-    void * block(NULL);
+    void * block(nullptr);
     size_t bestFitIndex(_count);
     int bestLeft(INT_MAX);
     for(size_t i=0; i < _count; i++) {

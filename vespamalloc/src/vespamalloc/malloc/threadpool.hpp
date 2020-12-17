@@ -86,7 +86,7 @@ mallocHelper(size_t exactSize,
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
-    _allocPool(NULL),
+    _allocPool(nullptr),
     _threadId(0),
     _osThreadId(0)
 {
@@ -170,7 +170,7 @@ bool ThreadPoolT<MemBlockPtrT, ThreadStatT>::hasActuallyBeenUsed() const
 {
     bool used(false);
     for (size_t i=0; !used && (i < NELEMS(_memList)); i++) {
-        used = (_memList[i]._allocFrom != NULL
+        used = (_memList[i]._allocFrom != nullptr
                 && !_memList[i]._allocFrom->empty()
                 && !_memList[i]._freeTo->full());
     }

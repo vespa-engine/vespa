@@ -31,11 +31,11 @@ public:
     void setExact(size_t)     { }
     void setExact(size_t, std::align_val_t )    { }
     void alloc(bool )         { }
-    void setThreadId(int )    { }
+    void setThreadId(uint32_t ) { }
     void free()               { }
     size_t size()       const { return 0; }
     bool allocated()    const { return false; }
-    int threadId()      const { return 0; }
+    uint32_t threadId()      const { return 0; }
     void info(FILE *, unsigned level=0) const  { (void) level; }
     Stack * callStack()                   { return nullptr; }
     size_t callStackLen()           const { return 0; }
