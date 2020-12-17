@@ -29,7 +29,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, size_t numElems)
     BufferState &state = getBufferState(intRef.bufferId());
     if (state.isActive()) {
         if (state.freeListList() != nullptr && numElems == state.getArraySize()) {
-            if (state.freeList().empty()) {
+            if (state.isFreeListEmpty()) {
                 state.addToFreeListList();
             }
             state.freeList().push_back(ref);
