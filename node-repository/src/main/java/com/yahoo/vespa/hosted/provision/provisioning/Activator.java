@@ -104,15 +104,18 @@ class Activator {
                                             .collect(Collectors.groupingBy(node -> node.allocation().get().membership().cluster().id()));
         Application modified = application.get();
         for (var clusterEntry : currentNodesByCluster.entrySet()) {
+            var cluster = modified.cluster(clusterEntry.getKey()).get();
             var previousResources = oldNodes.cluster(clusterEntry.getKey()).toResources();
             var currentResources = NodeList.copyOf(clusterEntry.getValue()).toResources();
             if ( ! previousResources.justNumbers().equals(currentResources.justNumbers())) {
-                modified = modified.with(application.get().cluster(clusterEntry.getKey()).get()
-                                                          .with(ScalingEvent.create(previousResources,
-                                                                                    currentResources,
-                                                                                    generation,
-                                                                                    at)));
+                cluster = cluster.with(ScalingEvent.create(previousResources, currentResources, generation, at));
             }
+            if (cluster.targetResources().isPresent()
+                && cluster.targetResources().get().justNumbers().equals(currentResources.justNumbers())) {
+                cluster = cluster.withAutoscalingStatus("Cluster is ideally scaled within configured limits");
+            }
+            if (cluster != modified.cluster(clusterEntry.getKey()).get())
+                modified = modified.with(cluster);
         }
 
         if (modified != application.get())
