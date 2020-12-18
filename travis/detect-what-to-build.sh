@@ -16,9 +16,9 @@ FILES=$(for C in $COMMITS; do JSON=$(curl -sLf https://api.github.com/repos/$TRA
 
 if [[ -z $FILES ]]; then
   SHOULD_BUILD=all
-elif ! grep -v -E "(.h|.hh|.hxx|.c|.cpp|.cxx)$" <<< "$FILES"; then
+elif ! grep -v -E "(.h|.hh|.hxx|.c|.cpp|.cxx)$" <<< "$FILES" &> /dev/null; then
   SHOULD_BUILD=cpp
-elif ! grep -v -E "(.java)$" <<< "$FILES"; then
+elif ! grep -v -E "(.java)$" <<< "$FILES" &> /dev/null; then
   SHOULD_BUILD=java
 else
   SHOULD_BUILD=all
