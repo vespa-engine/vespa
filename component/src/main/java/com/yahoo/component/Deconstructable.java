@@ -11,3 +11,4 @@ public interface Deconstructable {
     void deconstruct();
 
 }
+
