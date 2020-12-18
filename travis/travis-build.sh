@@ -15,10 +15,11 @@ ccache --set-config=compression=true
 ccache -p
 
 if ! source /source/travis/detect-what-to-build.sh; then
-  SHOULD_BUILD=all
+    echo "Could not detect what to build."
+    SHOULD_BUILD=all
 fi
 
-echo "Building $SHOULD_BUILD"
+echo "Building: $SHOULD_BUILD"
 
 cd ${SOURCE_DIR}
 
