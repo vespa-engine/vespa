@@ -6,12 +6,12 @@
 #include "multi_value_mapping.hpp"
 #include "multivalue.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 using search::multivalue::Value;
 using search::multivalue::WeightedValue;
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 template class MultiValueMapping<Value<IEnumStore::Index>>;
 template class MultiValueMapping<WeightedValue<IEnumStore::Index>>;
@@ -28,5 +28,4 @@ template class MultiValueMapping<WeightedValue<float>>;
 template class MultiValueMapping<Value<double>>;
 template class MultiValueMapping<WeightedValue<double>>;
 
-} // namespace search::attribute
-} // namespace search
+}

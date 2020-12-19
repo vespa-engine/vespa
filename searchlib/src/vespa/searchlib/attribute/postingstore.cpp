@@ -6,6 +6,7 @@
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 namespace search::attribute {
 
@@ -255,7 +256,7 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     uint32_t expDocFreq = it.size();
     (void) expDocFreq;
     for (; it.valid(); ++it) {
-        uint32_t docId = it.getKey(); 
+        uint32_t docId = it.getKey();
         assert(docId < docIdLimit);
         bv.setBit(docId);
     }
@@ -278,7 +279,7 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     ref = bPair.ref;
 }
 
-    
+
 template <typename DataT>
 void
 PostingStore<DataT>::applyNewBitVector(EntryRef &ref,
@@ -314,7 +315,7 @@ PostingStore<DataT>::applyNewBitVector(EntryRef &ref,
     ref = bPair.ref;
 }
 
-    
+
 template <typename DataT>
 void
 PostingStore<DataT>::apply(BitVector &bv,
@@ -626,5 +627,12 @@ PostingStore<DataT>::getMemoryUsage() const
 
 template class PostingStore<BTreeNoLeafData>;
 template class PostingStore<int32_t>;
+
+}
+
+namespace vespalib::datastore {
+    using namespace btree;
+
+
 
 }

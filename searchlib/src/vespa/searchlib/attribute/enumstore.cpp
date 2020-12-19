@@ -89,4 +89,3 @@ template class EnumStoreT<double>;
 namespace vespalib {
     template class RcuVectorBase<search::IEnumStore::Index>;
 }
-

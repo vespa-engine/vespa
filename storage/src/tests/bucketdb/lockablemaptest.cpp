@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/bucketdb/btree_lockable_map.hpp>
 #include <vespa/storage/bucketdb/striped_btree_lockable_map.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 

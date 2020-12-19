@@ -7,6 +7,7 @@
 #include "bufferstate.h"
 #include "datastore.h"
 #include "entryref.h"
+#include "atomic_entry_ref.h"
 #include "i_compaction_context.h"
 #include <vespa/vespalib/util/array.h>
 
@@ -40,14 +41,14 @@ private:
         using CleanContext = typename ParentType::CleanContext;
     public:
         LargeArrayType(const AllocSpec &spec);
-        virtual void cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx) override;
+        void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
     };
 
 
     uint32_t _largeArrayTypeId;
     uint32_t _maxSmallArraySize;
     DataStoreType _store;
-    std::vector<std::unique_ptr<SmallArrayType>> _smallArrayTypes;
+    std::vector<SmallArrayType> _smallArrayTypes;
     LargeArrayType _largeArrayType;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
@@ -121,5 +122,11 @@ public:
                                                        size_t minNumArraysForNewBuffer,
                                                        float allocGrowFactor);
 };
+
+extern template class BufferType<vespalib::Array<uint8_t>>;
+extern template class BufferType<vespalib::Array<uint32_t>>;
+extern template class BufferType<vespalib::Array<int32_t>>;
+extern template class BufferType<vespalib::Array<std::string>>;
+extern template class BufferType<vespalib::Array<AtomicEntryRef>>;
 
 }

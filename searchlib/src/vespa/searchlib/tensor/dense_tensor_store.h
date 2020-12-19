@@ -37,7 +37,7 @@ public:
     public:
         BufferType(const TensorSizeCalc &tensorSizeCalc);
         ~BufferType() override;
-        void cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx) override;
+        void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
     };
 private:
     DataStoreType _concreteStore;

@@ -54,7 +54,7 @@ DenseTensorStore::BufferType::~BufferType() = default;
 
 void
 DenseTensorStore::BufferType::cleanHold(void *buffer, size_t offset,
-                                        size_t numElems, CleanContext)
+                                        ElemCount numElems, CleanContext)
 {
     memset(static_cast<char *>(buffer) + offset, 0, numElems);
 }

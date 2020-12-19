@@ -11,12 +11,12 @@ constexpr uint32_t MAX_ARRAYS(128);
 constexpr uint32_t NUM_ARRAYS_FOR_NEW_BUFFER(0);
 
 struct Setup {
-    uint32_t _minArrays;
-    size_t _usedElems;
-    size_t _neededElems;
-    uint32_t _bufferId;
-    float _allocGrowFactor;
-    bool _resizing;
+    uint32_t  _minArrays;
+    ElemCount _usedElems;
+    ElemCount _neededElems;
+    uint32_t  _bufferId;
+    float     _allocGrowFactor;
+    bool      _resizing;
     Setup()
         : _minArrays(0),
           _usedElems(0),
@@ -33,9 +33,9 @@ struct Setup {
 };
 
 struct Fixture {
-    Setup setup;
+    Setup         setup;
     IntBufferType bufferType;
-    size_t deadElems;
+    ElemCount     deadElems;
     int buffer[ARRAYS_SIZE];
     Fixture(const Setup &setup_)
         : setup(setup_),
