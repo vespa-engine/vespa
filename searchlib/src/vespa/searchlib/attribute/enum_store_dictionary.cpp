@@ -310,3 +310,11 @@ class BTree<IEnumStore::Index, uint32_t, NoAggregated,
             const vespalib::datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 }
+
+namespace vespalib::datastore {
+
+using namespace btree;
+
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(EntryRef, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS);
+
+}

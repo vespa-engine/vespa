@@ -3,6 +3,7 @@
 #include "direct_tensor_store.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 using vespalib::datastore::EntryRef;
 
@@ -16,7 +17,7 @@ DirectTensorStore::TensorBufferType::TensorBufferType()
 }
 
 void
-DirectTensorStore::TensorBufferType::cleanHold(void* buffer, size_t offset, size_t num_elems, CleanContext clean_ctx)
+DirectTensorStore::TensorBufferType::cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx)
 {
     TensorSP* elem = static_cast<TensorSP*>(buffer) + offset;
     for (size_t i = 0; i < num_elems; ++i) {

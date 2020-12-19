@@ -145,6 +145,15 @@ TEST("require that we test with trivial and non-trivial types")
     EXPECT_FALSE(vespalib::can_skip_destruction<StringFixture::value_type>::value);
 }
 
+TEST_F("control static sizes", NumberFixture(3)) {
+    EXPECT_EQUAL(424u, sizeof(f.store));
+    EXPECT_EQUAL(328u, sizeof(NumberFixture::ArrayStoreType::DataStoreType));
+    EXPECT_EQUAL(64u, sizeof(NumberFixture::ArrayStoreType::SmallArrayType));
+    MemoryUsage usage = f.store.getMemoryUsage();
+    EXPECT_EQUAL(960u, usage.allocatedBytes());
+    EXPECT_EQUAL(32u, usage.usedBytes());
+}
+
 TEST_F("require that we can add and get small arrays of trivial type", NumberFixture(3))
 {
     TEST_DO(f.assertAdd({}));

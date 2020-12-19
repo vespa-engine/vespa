@@ -591,8 +591,9 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
 }
 
 TEST(DataStoreTest, control_static_sizes) {
+    EXPECT_EQ(64, sizeof(BufferTypeBase));
     EXPECT_EQ(32, sizeof(BufferState::FreeList));
-    EXPECT_EQ(4, sizeof(BufferState::State));
+    EXPECT_EQ(1, sizeof(BufferState::State));
     EXPECT_EQ(128, sizeof(BufferState));
     BufferState bs;
     EXPECT_EQ(0, bs.size());

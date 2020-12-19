@@ -59,9 +59,9 @@ class UniqueStoreSmallStringBufferType : public BufferType<char> {
 public:
     UniqueStoreSmallStringBufferType(uint32_t array_size, uint32_t max_arrays);
     ~UniqueStoreSmallStringBufferType() override;
-    void destroyElements(void *, size_t) override;
-    void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElems) override;
-    void cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext) override;
+    void destroyElements(void *, ElemCount) override;
+    void fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems) override;
+    void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext) override;
 };
 
 /*
@@ -71,7 +71,7 @@ class UniqueStoreExternalStringBufferType : public BufferType<UniqueStoreEntry<s
 public:
     UniqueStoreExternalStringBufferType(uint32_t array_size, uint32_t max_arrays);
     ~UniqueStoreExternalStringBufferType() override;
-    void cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx) override;
+    void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
 };
 
 /**
@@ -129,5 +129,7 @@ public:
     DataStoreType& get_data_store() { return _store; }
     const DataStoreType& get_data_store() const { return _store; }
 };
+
+extern template class BufferType<UniqueStoreEntry<std::string> >;
 
 }

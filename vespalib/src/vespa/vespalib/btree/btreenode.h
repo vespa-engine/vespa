@@ -14,7 +14,7 @@
 namespace vespalib::datastore {
 
 template <typename, typename> class Allocator;
-template <typename> class BufferType;
+template <typename, typename> class BufferType;
 
 namespace allocator {
 template <typename, typename ...> struct Assigner;
@@ -63,7 +63,7 @@ protected:
     ~BTreeNode() { assert(_isFrozen); }
 
 public:
-    typedef datastore::EntryRef Ref;
+    using Ref = datastore::EntryRef;
 
     bool isLeaf() const { return _level == 0u; }
     bool getFrozen() const { return _isFrozen; }
@@ -172,7 +172,7 @@ protected:
           _keys()
     {}
 
-    ~BTreeNodeT() {}
+    ~BTreeNodeT() = default;
 
     BTreeNodeT(const BTreeNodeT &rhs)
         : BTreeNode(rhs)
@@ -276,8 +276,7 @@ public:
 };
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots = 16>
-class BTreeInternalNode : public BTreeNodeTT<KeyT, BTreeNode::Ref, AggrT,
-                                             NumSlots>
+class BTreeInternalNode : public BTreeNodeTT<KeyT, BTreeNode::Ref, AggrT, NumSlots>
 {
 public:
     typedef BTreeNodeTT<KeyT, BTreeNode::Ref, AggrT, NumSlots> ParentType;
@@ -308,7 +307,7 @@ public:
     typedef Ref DataType;
 private:
     uint32_t _validLeaves;
-
+protected:
     BTreeInternalNode()
         : ParentType(EMPTY_LEVEL),
           _validLeaves(0u)
@@ -326,7 +325,7 @@ private:
         _validLeaves = rhs._validLeaves;
         return *this;
     }
-
+private:
     template <typename NodeAllocatorType>
     uint32_t countValidLeaves(uint32_t start, uint32_t end, NodeAllocatorType &allocator);
 
@@ -435,17 +434,16 @@ public:
     typedef BTreeKeyData<KeyT, DataT> KeyDataType;
     typedef KeyT KeyType;
     typedef DataT DataType;
-private:
+protected:
     BTreeLeafNode() : ParentType(LEAF_LEVEL) {}
 
-protected:
     BTreeLeafNode(const BTreeLeafNode &rhs)
         : ParentType(rhs)
     {}
 
     BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize);
 
-    ~BTreeLeafNode() {}
+    ~BTreeLeafNode() = default;
 
     BTreeLeafNode &operator=(const BTreeLeafNode &rhs) {
         ParentType::operator=(rhs);
@@ -530,13 +528,10 @@ extern template class BTreeNodeTT<uint32_t, int32_t, MinMaxAggregated, 16>;
 extern template class BTreeInternalNode<uint32_t, NoAggregated, 16>;
 extern template class BTreeInternalNode<uint32_t, MinMaxAggregated, 16>;
 extern template class BTreeLeafNode<uint32_t, uint32_t, NoAggregated, 16>;
-extern template class BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated,
-                                    16>;
+extern template class BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
 extern template class BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, 16>;
 extern template class BTreeLeafNodeTemp<uint32_t, uint32_t, NoAggregated, 16>;
-extern template class BTreeLeafNodeTemp<uint32_t, int32_t, MinMaxAggregated,
-                                        16>;
-extern template class BTreeLeafNodeTemp<uint32_t, BTreeNoLeafData,
-                                        NoAggregated, 16>;
+extern template class BTreeLeafNodeTemp<uint32_t, int32_t, MinMaxAggregated, 16>;
+extern template class BTreeLeafNodeTemp<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
 
 }

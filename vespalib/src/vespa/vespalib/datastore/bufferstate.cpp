@@ -27,8 +27,8 @@ BufferState::BufferState()
       _prevHasFree(nullptr),
       _typeHandler(nullptr),
       _buffer(Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE)),
-      _typeId(0),
       _arraySize(0),
+      _typeId(0),
       _state(FREE),
       _disableElemHoldList(false),
       _compacting(false)
@@ -122,6 +122,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     _allocElems = alloc.elements;
     _state = ACTIVE;
     _typeHandler = typeHandler;
+    assert(typeId <= std::numeric_limits<uint16_t>::max());
     _typeId = typeId;
     _arraySize = _typeHandler->getArraySize();
     typeHandler->onActive(bufferId, &_usedElems, _deadElems, buffer);
@@ -142,7 +143,7 @@ BufferState::onHold()
     _typeHandler->onHold(&_usedElems);
     if ( ! isFreeListEmpty()) {
         removeFromFreeListList();
-        _freeList.reset();
+        FreeList().swap(_freeList);
     }
     assert(_nextHasFree == nullptr);
     assert(_prevHasFree == nullptr);
@@ -217,7 +218,7 @@ BufferState::setFreeListList(FreeListList *freeListList)
         if (freeListList != nullptr) {
             addToFreeListList(); // Changed free list list
         } else {
-            _freeList.reset(); // Free lists have been disabled
+            FreeList().swap(_freeList);; // Free lists have been disabled
         }
     }
 }
@@ -239,9 +240,6 @@ BufferState::addToFreeListList()
         _prevHasFree = this;
     }
     _freeListList->_head = this;
-    if ( ! _freeList) {
-        _freeList = std::make_unique<FreeList>();
-    }
 }
 
 

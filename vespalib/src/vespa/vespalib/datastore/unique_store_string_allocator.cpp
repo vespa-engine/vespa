@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "unique_store_string_allocator.hpp"
+#include "buffer_type.hpp"
 
 namespace vespalib::datastore {
 
@@ -39,14 +40,14 @@ UniqueStoreSmallStringBufferType::UniqueStoreSmallStringBufferType(uint32_t arra
 UniqueStoreSmallStringBufferType::~UniqueStoreSmallStringBufferType() = default;
 
 void
-UniqueStoreSmallStringBufferType::destroyElements(void *, size_t)
+UniqueStoreSmallStringBufferType::destroyElements(void *, ElemCount)
 {
     static_assert(std::is_trivially_destructible<UniqueStoreSmallStringEntry>::value,
                   "UniqueStoreSmallStringEntry must be trivially destructable");
 }
 
 void
-UniqueStoreSmallStringBufferType::fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElems)
+UniqueStoreSmallStringBufferType::fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems)
 {
     static_assert(std::is_trivially_copyable<UniqueStoreSmallStringEntry>::value,
                   "UniqueStoreSmallStringEntry must be trivially copyable");
@@ -54,7 +55,7 @@ UniqueStoreSmallStringBufferType::fallbackCopy(void *newBuffer, const void *oldB
 }
 
 void
-UniqueStoreSmallStringBufferType::cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext)
+UniqueStoreSmallStringBufferType::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext)
 {
     void *e = static_cast<char *>(buffer) + offset;
     void *e_end = static_cast<char *>(e) + numElems;
@@ -74,7 +75,7 @@ UniqueStoreExternalStringBufferType::UniqueStoreExternalStringBufferType(uint32_
 UniqueStoreExternalStringBufferType::~UniqueStoreExternalStringBufferType() = default;
 
 void
-UniqueStoreExternalStringBufferType::cleanHold(void *buffer, size_t offset, size_t numElems, CleanContext cleanCtx)
+UniqueStoreExternalStringBufferType::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx)
 {
     UniqueStoreEntry<std::string> *elem = static_cast<UniqueStoreEntry<std::string> *>(buffer) + offset;
     for (size_t i = 0; i < numElems; ++i) {
@@ -85,5 +86,6 @@ UniqueStoreExternalStringBufferType::cleanHold(void *buffer, size_t offset, size
 }
 
 template class UniqueStoreStringAllocator<EntryRefT<22>>;
+template class BufferType<UniqueStoreEntry<std::string>>;
 
 }

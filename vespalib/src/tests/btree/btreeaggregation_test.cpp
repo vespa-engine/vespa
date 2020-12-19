@@ -14,6 +14,7 @@
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreeaggregator.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/test/btree/btree_printer.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/rand48.h>

@@ -7,6 +7,7 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/rand48.h>
 #include <map>
 
