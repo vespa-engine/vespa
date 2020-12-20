@@ -88,6 +88,7 @@ public class SessionRepository {
     private final Path sessionsPath;
     private final TenantName tenantName;
     private final GlobalComponentRegistry componentRegistry;
+    private final SessionCounter sessionCounter;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -95,6 +96,7 @@ public class SessionRepository {
                              SessionPreparer sessionPreparer) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
+        sessionCounter = new SessionCounter(componentRegistry.getConfigCurator(), tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = componentRegistry.getClock();
         this.curator = componentRegistry.getCurator();
@@ -655,7 +657,7 @@ public class SessionRepository {
     }
 
     private long getNextSessionId() {
-        return new SessionCounter(componentRegistry.getConfigCurator(), tenantName).nextSessionId();
+        return sessionCounter.nextSessionId();
     }
 
     public Path getSessionPath(long sessionId) {
