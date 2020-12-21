@@ -90,7 +90,7 @@ public class DocumentProtocol implements Protocol {
      * longer be guaranteed.
      */
 
-    /** Used by policies to  indicate an inappropriate message. */
+    /** Used by policies to indicate an inappropriate message. */
     public static final int ERROR_MESSAGE_IGNORED = ErrorCode.APP_FATAL_ERROR + 1;
 
     /** Used for error policy when policy creation failed. */

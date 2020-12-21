@@ -10,6 +10,7 @@
 #include "proton.h"
 #include "proton_config_snapshot.h"
 #include "proton_disk_layout.h"
+#include "proton_thread_pools_explorer.h"
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
@@ -34,6 +35,7 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/metrics/updatehook.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -112,6 +114,18 @@ derive_shared_threads(const ProtonConfig &proton,
     return std::max(scaledCores, proton.documentdb.size() + proton.flush.maxconcurrent + 1);
 }
 
+struct MetricsUpdateHook : metrics::UpdateHook
+{
+    Proton &self;
+    MetricsUpdateHook(Proton &s)
+        : metrics::UpdateHook("proton-hook"),
+          self(s)
+    {}
+    void updateMetrics(const MetricLockGuard &guard) override {
+        self.updateMetrics(guard);
+    }
+};
+
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
 VESPA_THREAD_STACK_TAG(proton_shared_executor)
@@ -121,7 +135,7 @@ VESPA_THREAD_STACK_TAG(close_executor)
 
 }
 
-Proton::ProtonFileHeaderContext::ProtonFileHeaderContext([[maybe_unused]] const Proton &proton_, const vespalib::string &creator)
+Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const vespalib::string &creator)
     : _hostName(),
       _creator(creator),
       _cluster(),
@@ -186,9 +200,9 @@ Proton::Proton(const config::ConfigUri & configUri,
       ComponentConfigProducer(),
       _configUri(configUri),
       _mutex(),
-      _metricsHook(*this),
+      _metricsHook(std::make_unique<MetricsUpdateHook>(*this)),
       _metricsEngine(std::make_unique<MetricsEngine>()),
-      _fileHeaderContext(*this, progName),
+      _fileHeaderContext(progName),
       _tls(),
       _diskMemUsageSampler(),
       _persistenceEngine(),
@@ -219,7 +233,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _threadPool(128 * 1024),
       _distributionKey(-1),
       _isInitializing(true),
-      _isReplayDone(false),
       _abortInit(false),
       _initStarted(false),
       _initComplete(false),
@@ -260,7 +273,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                                  diskMemUsageSamplerConfig(protonConfig, hwInfo));
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
-    _metricsEngine->addMetricsHook(_metricsHook);
+    _metricsEngine->addMetricsHook(*_metricsHook);
     _fileHeaderContext.setClusterName(protonConfig.clustername, protonConfig.basedir);
     _matchEngine = std::make_unique<MatchEngine>(protonConfig.numsearcherthreads,
                                                  protonConfig.numthreadspersearch,
@@ -331,7 +344,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     _executor.sync();
     waitForOnlineState();
-    _isReplayDone = true;
     _rpcHooks->set_online();
 
     _flushEngine->start();
@@ -470,7 +482,7 @@ Proton::shutdown_config_fetching_and_state_exposing_components_once() noexcept
     _customComponentBindToken.reset();
     _stateServer.reset();
     if (_metricsEngine) {
-        _metricsEngine->removeMetricsHook(_metricsHook);
+        _metricsEngine->removeMetricsHook(*_metricsHook);
         _metricsEngine->stop();
     }
     _has_shut_down_config_and_state_components = true;
@@ -714,7 +726,7 @@ updateExecutorMetrics(ExecutorMetrics &metrics,
 }
 
 void
-Proton::updateMetrics(const metrics::UpdateHook::MetricLockGuard &)
+Proton::updateMetrics(const metrics::MetricLockGuard &)
 {
     {
         ContentProtonMetrics &metrics = _metricsEngine->root();
@@ -836,6 +848,7 @@ const vespalib::string DOCUMENT_DB = "documentdb";
 const vespalib::string FLUSH_ENGINE = "flushengine";
 const vespalib::string TLS_NAME = "tls";
 const vespalib::string RESOURCE_USAGE = "resourceusage";
+const vespalib::string THREAD_POOLS = "threadpools";
 
 struct StateExplorerProxy : vespalib::StateExplorer {
     const StateExplorer &explorer;
@@ -881,8 +894,7 @@ Proton::get_state(const vespalib::slime::Inserter &, bool) const
 std::vector<vespalib::string>
 Proton::get_children_names() const
 {
-    std::vector<vespalib::string> names({DOCUMENT_DB, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, RESOURCE_USAGE});
-    return names;
+    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, RESOURCE_USAGE};
 }
 
 std::unique_ptr<vespalib::StateExplorer>
@@ -899,6 +911,13 @@ Proton::get_child(vespalib::stringref name) const
         return std::make_unique<search::transactionlog::TransLogServerExplorer>(_tls->getTransLogServer());
     } else if (name == RESOURCE_USAGE && _diskMemUsageSampler) {
         return std::make_unique<ResourceUsageExplorer>(_diskMemUsageSampler->writeFilter());
+    } else if (name == THREAD_POOLS) {
+        return std::make_unique<ProtonThreadPoolsExplorer>(_sharedExecutor.get(),
+                                                           (_matchEngine) ? &_matchEngine->get_executor() : nullptr,
+                                                           (_summaryEngine) ? &_summaryEngine->get_executor() : nullptr,
+                                                           (_flushEngine) ? &_flushEngine->get_executor() : nullptr,
+                                                           &_executor,
+                                                           _warmupExecutor.get());
     }
     return Explorer_UP(nullptr);
 }

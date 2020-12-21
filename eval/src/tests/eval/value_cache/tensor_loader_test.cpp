@@ -4,7 +4,6 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/tensor.h>
 
 using namespace vespalib::eval;
 

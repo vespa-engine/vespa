@@ -4,7 +4,6 @@
 #include "generic_join.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>

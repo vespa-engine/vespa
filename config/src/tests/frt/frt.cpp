@@ -218,7 +218,7 @@ namespace {
 
         FRTFixture(SourceFixture & f1)
             : result(2000, 10000),
-              requestFactory(1, 3, VespaVersion::fromString("1.2.3"), CompressionType::UNCOMPRESSED),
+              requestFactory(3, VespaVersion::fromString("1.2.3"), CompressionType::UNCOMPRESSED),
               src(ConnectionFactory::SP(new FactoryMock(&f1.conn)),
                   requestFactory,
                   ConfigAgent::UP(new AgentFixture(&result)),

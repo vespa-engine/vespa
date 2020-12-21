@@ -26,7 +26,9 @@ public:
     SingleExecutor & sync() override;
     void wakeup() override;
     size_t getNumThreads() const override;
-    uint32_t getTaskLimit() const { return _taskLimit.load(std::memory_order_relaxed); }
+    uint32_t getTaskLimit() const override { return _taskLimit.load(std::memory_order_relaxed); }
+    uint32_t get_watermark() const { return _watermark; }
+    duration get_reaction_time() const { return _reactionTime; }
     Stats getStats() override;
     SingleExecutor & shutdown() override;
 private:

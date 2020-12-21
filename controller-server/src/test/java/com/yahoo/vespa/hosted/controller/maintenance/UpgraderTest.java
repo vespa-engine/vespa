@@ -448,10 +448,11 @@ public class UpgraderTest {
 
         // Multiple application changes are triggered and fail, but does not affect version confidence as upgrade has
         // completed successfully
-        default0.submit(applicationPackage("default")).failDeployment(systemTest);
-        default1.submit(applicationPackage("default")).failDeployment(stagingTest);
-        default2.submit(applicationPackage("default")).failDeployment(systemTest);
-        default3.submit(applicationPackage("default")).failDeployment(stagingTest);
+        ApplicationPackage applicationPackage = applicationPackage("default");
+        default0.submit(applicationPackage).failDeployment(systemTest);
+        default1.submit(applicationPackage).failDeployment(stagingTest);
+        default2.submit(applicationPackage).failDeployment(systemTest);
+        default3.submit(applicationPackage).failDeployment(stagingTest);
         tester.controllerTester().computeVersionStatus();
         assertEquals(VespaVersion.Confidence.high, tester.controller().readVersionStatus().systemVersion().get().confidence());
     }
@@ -629,7 +630,7 @@ public class UpgraderTest {
 
         // Dev deployment which should be ignored
         var dev0 = tester.newDeploymentContext("tenant1", "dev0", "default")
-                         .runJob(devUsEast1, DeploymentContext.applicationPackage);
+                         .runJob(devUsEast1, DeploymentContext.applicationPackage());
 
         // New version is released and canaries upgrade
         version = Version.fromString("6.3");
@@ -739,7 +740,7 @@ public class UpgraderTest {
         // Setup applications
         var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default").submit(version7CanaryApplicationPackage).deploy();
         var default0 = tester.newDeploymentContext("tenant1", "default0", "default").submit(version7DefaultApplicationPackage).deploy();
-        var default1 = tester.newDeploymentContext("tenant1", "default1", "default").submit(DeploymentContext.applicationPackage).deploy();
+        var default1 = tester.newDeploymentContext("tenant1", "default1", "default").submit(DeploymentContext.applicationPackage()).deploy();
 
         // New major version is released, but we don't want to upgrade to it yet
         tester.upgrader().setTargetMajorVersion(Optional.of(6));

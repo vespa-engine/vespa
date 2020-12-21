@@ -19,11 +19,11 @@ LOG_SETUP(".persistence.mergehandler");
 namespace storage {
 
 MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
-                           const vespalib::string & clusterName, const framework::Clock & clock,
+                           const ClusterContext& cluster_context, const framework::Clock & clock,
                            uint32_t maxChunkSize,
                            uint32_t commonMergeChainOptimalizationMinimumSize)
     : _clock(clock),
-      _clusterName(clusterName),
+      _cluster_context(cluster_context),
       _env(env),
       _spi(spi),
       _maxChunkSize(maxChunkSize),
@@ -706,7 +706,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
             assert(nodes.size() > 1);
 
             cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes);
-            cmd->setAddress(createAddress(&_clusterName, nodes[1].index));
+            cmd->setAddress(createAddress(_cluster_context.cluster_name_ptr(), nodes[1].index));
             findCandidates(status,
                            active_nodes_mask,
                            true,
@@ -782,7 +782,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
                 }
                 assert(nodes.size() > 1);
                 cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), nodes);
-                cmd->setAddress(createAddress(&_clusterName, nodes[1].index));
+                cmd->setAddress(createAddress(_cluster_context.cluster_name_ptr(), nodes[1].index));
                 // Add all the metadata, and thus use big limit. Max
                 // data to fetch parameter will control amount added.
                 findCandidates(status, active_nodes_mask, true, e.first, newMask, *cmd);
@@ -795,7 +795,7 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     // merge to merge the remaining data.
     if ( ! cmd ) {
         cmd = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), status.nodeList);
-        cmd->setAddress(createAddress(&_clusterName, status.nodeList[1].index));
+        cmd->setAddress(createAddress(_cluster_context.cluster_name_ptr(), status.nodeList[1].index));
         findCandidates(status, active_nodes_mask, false, 0, 0, *cmd);
     }
     cmd->setPriority(status.context.getPriority());
@@ -901,7 +901,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
         bucket.toString().c_str(),
         s->nodeList[1].index,
         uint32_t(cmd2->getDiff().size()));
-    cmd2->setAddress(createAddress(&_clusterName, s->nodeList[1].index));
+    cmd2->setAddress(createAddress(_cluster_context.cluster_name_ptr(), s->nodeList[1].index));
     cmd2->setPriority(s->context.getPriority());
     cmd2->setTimeout(s->timeout);
     cmd2->setSourceIndex(cmd.getSourceIndex());
@@ -1111,7 +1111,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index,
             local.size() - remote.size());
         auto cmd2 = std::make_shared<api::GetBucketDiffCommand>(bucket.getBucket(), cmd.getNodes(), cmd.getMaxTimestamp());
-        cmd2->setAddress(createAddress(&_clusterName, cmd.getNodes()[index + 1].index));
+        cmd2->setAddress(createAddress(_cluster_context.cluster_name_ptr(), cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(local);
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());
@@ -1293,7 +1293,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
         LOG(spam, "Sending ApplyBucketDiff for %s on to node %d",
             bucket.toString().c_str(), cmd.getNodes()[index + 1].index);
         auto cmd2 = std::make_shared<api::ApplyBucketDiffCommand>(bucket.getBucket(), cmd.getNodes());
-        cmd2->setAddress(createAddress(&_clusterName, cmd.getNodes()[index + 1].index));
+        cmd2->setAddress(createAddress(_cluster_context.cluster_name_ptr(), cmd.getNodes()[index + 1].index));
         cmd2->getDiff().swap(cmd.getDiff());
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());

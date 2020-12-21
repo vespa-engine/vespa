@@ -39,13 +39,6 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         this.applicationRepository = applicationRepository;
     }
 
-    ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
-                           Duration initialDelay, Duration interval) {
-        super(null, interval, initialDelay, new JobControl(new JobControlFlags(curator, flagSource)),
-              jobMetrics(applicationRepository.metric()));
-        this.applicationRepository = applicationRepository;
-    }
-
     private static JobMetrics jobMetrics(Metric metric) {
         return new JobMetrics((job, consecutiveFailures) -> {
             metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));

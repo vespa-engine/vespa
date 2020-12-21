@@ -79,7 +79,7 @@ public class ApplicationHandlerTest {
 
     private final static TenantName mytenantName = TenantName.from("mytenant");
     private final static ApplicationId myTenantApplicationId = ApplicationId.from(mytenantName, ApplicationName.defaultName(), InstanceName.defaultName());
-    private final static ApplicationId applicationId = ApplicationId.from(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.defaultName());
+    private final static ApplicationId applicationId = ApplicationId.defaultId();
     private final static MockTesterClient testerClient = new MockTesterClient();
     private static final MockLogRetriever logRetriever = new MockLogRetriever();
     private static final Version vespaVersion = Version.fromString("7.8.9");
@@ -219,32 +219,32 @@ public class ApplicationHandlerTest {
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "");
+        reindex(applicationId, "", "{\"message\":\"Reindexing application default.default\"}");
         expected = expected.withReady(clock.instant());
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         expected = expected.withReady(clock.instant());
-        reindex(applicationId, "?clusterId=");
+        reindex(applicationId, "?clusterId=", "{\"message\":\"Reindexing application default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         expected = expected.withReady(clock.instant());
-        reindex(applicationId, "?documentType=moo");
+        reindex(applicationId, "?documentType=moo", "{\"message\":\"Reindexing application default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo");
+        reindex(applicationId, "?clusterId=foo,boo", "{\"message\":\"Reindexing clusters foo, boo of application default.default\"}");
         expected = expected.withReady("foo", clock.instant())
                            .withReady("boo", clock.instant());
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo&documentType=bar,baz");
+        reindex(applicationId, "?clusterId=foo,boo&documentType=bar,baz", "{\"message\":\"Reindexing document types bar, baz in clusters foo, boo of application default.default\"}");
         expected = expected.withReady("foo", "bar", clock.instant())
                            .withReady("foo", "baz", clock.instant())
                            .withReady("boo", "bar", clock.instant())
@@ -252,12 +252,12 @@ public class ApplicationHandlerTest {
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
-        reindexing(applicationId, DELETE);
+        reindexing(applicationId, DELETE, "{\"message\":\"Reindexing disabled\"}");
         expected = expected.enabled(false);
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
-        reindexing(applicationId, POST);
+        reindexing(applicationId, POST, "{\"message\":\"Reindexing enabled\"}");
         expected = expected.enabled(true);
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
@@ -455,7 +455,7 @@ public class ApplicationHandlerTest {
                                                                                              now.plusSeconds(2),
                                                                                              ClusterReindexing.State.FAILED,
                                                                                              "message",
-                                                                                             "some")));
+                                                                                             0.1)));
         assertJsonEquals(getRenderedString(new ReindexingResponse(applicationReindexing,
                                                                   Map.of("boo", clusterReindexing,
                                                                          "moo", clusterReindexing))),
@@ -476,7 +476,7 @@ public class ApplicationHandlerTest {
                          "          \"endedMillis\": 125456,\n" +
                          "          \"state\": \"failed\",\n" +
                          "          \"message\": \"message\",\n" +
-                         "          \"progress\": \"some\"\n" +
+                         "          \"progress\": 0.1\n" +
                          "        }\n" +
                          "      }\n" +
                          "    },\n" +
@@ -498,7 +498,7 @@ public class ApplicationHandlerTest {
                          "          \"endedMillis\": 125456,\n" +
                          "          \"state\": \"failed\",\n" +
                          "          \"message\": \"message\",\n" +
-                         "          \"progress\": \"some\"\n" +
+                         "          \"progress\": 0.1\n" +
                          "        },\n" +
                          "        \"bax\": {\n" +
                          "          \"startedMillis\": 123456\n" +
@@ -607,13 +607,9 @@ public class ApplicationHandlerTest {
         reindexing(application, method, expectedBody, 200);
     }
 
-    private void reindexing(ApplicationId application, Method method) throws IOException {
-        reindexing(application, method, null);
-    }
-
-    private void reindex(ApplicationId application, String query) throws IOException {
+    private void reindex(ApplicationId application, String query, String message) throws IOException {
         String reindexUrl = toUrlPath(application, Zone.defaultZone(), true) + "/reindex" + query;
-        assertHttpStatusCodeAndMessage(createApplicationHandler().handle(createTestRequest(reindexUrl, POST)), 200, "");
+        assertHttpStatusCodeAndMessage(createApplicationHandler().handle(createTestRequest(reindexUrl, POST)), 200, message);
     }
 
     private void restart(ApplicationId application, Zone zone) throws IOException {

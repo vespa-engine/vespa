@@ -2,7 +2,6 @@
 
 #include "dense_lambda_peek_function.h"
 #include "index_lookup_table.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {

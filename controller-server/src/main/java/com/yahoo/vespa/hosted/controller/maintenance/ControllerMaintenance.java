@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
@@ -13,6 +14,7 @@ import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.HOURS;
@@ -28,89 +30,47 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  */
 public class ControllerMaintenance extends AbstractComponent {
 
-    private final DeploymentExpirer deploymentExpirer;
-    private final DeploymentIssueReporter deploymentIssueReporter;
-    private final MetricsReporter metricsReporter;
-    private final OutstandingChangeDeployer outstandingChangeDeployer;
-    private final VersionStatusUpdater versionStatusUpdater;
     private final Upgrader upgrader;
-    private final ReadyJobsTrigger readyJobsTrigger;
-    private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
-    private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
-    private final SystemUpgrader systemUpgrader;
-    private final List<OsUpgrader> osUpgraders;
-    private final OsVersionStatusUpdater osVersionStatusUpdater;
-    private final JobRunner jobRunner;
-    private final ContactInformationMaintainer contactInformationMaintainer;
-    private final CostReportMaintainer costReportMaintainer;
-    private final ResourceMeterMaintainer resourceMeterMaintainer;
-    private final NameServiceDispatcher nameServiceDispatcher;
-    private final CloudEventReporter cloudEventReporter;
-    private final RotationStatusUpdater rotationStatusUpdater;
-    private final ResourceTagMaintainer resourceTagMaintainer;
-    private final SystemRoutingPolicyMaintainer systemRoutingPolicyMaintainer;
-    private final ApplicationMetaDataGarbageCollector applicationMetaDataGarbageCollector;
-    private final ContainerImageExpirer containerImageExpirer;
-    private final HostSwitchUpdater hostSwitchUpdater;
+    private final List<Maintainer> maintainers = new CopyOnWriteArrayList<>();
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(Controller controller, Metric metric) {
         Intervals intervals = new Intervals(controller.system());
-        deploymentExpirer = new DeploymentExpirer(controller, intervals.defaultInterval);
-        deploymentIssueReporter = new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), intervals.defaultInterval);
-        metricsReporter = new MetricsReporter(controller, metric);
-        outstandingChangeDeployer = new OutstandingChangeDeployer(controller, intervals.outstandingChangeDeployer);
-        versionStatusUpdater = new VersionStatusUpdater(controller, intervals.versionStatusUpdater);
         upgrader = new Upgrader(controller, intervals.defaultInterval);
-        readyJobsTrigger = new ReadyJobsTrigger(controller, intervals.readyJobsTrigger);
-        deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, intervals.deploymentMetricsMaintainer);
-        applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, intervals.applicationOwnershipConfirmer, controller.serviceRegistry().ownershipIssues());
-        systemUpgrader = new SystemUpgrader(controller, intervals.systemUpgrader);
-        jobRunner = new JobRunner(controller, intervals.jobRunner);
-        osUpgraders = osUpgraders(controller, intervals.osUpgrader);
-        osVersionStatusUpdater = new OsVersionStatusUpdater(controller, intervals.defaultInterval);
-        contactInformationMaintainer = new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer);
-        nameServiceDispatcher = new NameServiceDispatcher(controller, intervals.nameServiceDispatcher);
-        costReportMaintainer = new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer());
-        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().meteringService());
-        cloudEventReporter = new CloudEventReporter(controller, intervals.cloudEventReporter, metric);
-        rotationStatusUpdater = new RotationStatusUpdater(controller, intervals.defaultInterval);
-        resourceTagMaintainer = new ResourceTagMaintainer(controller, intervals.resourceTagMaintainer, controller.serviceRegistry().resourceTagger());
-        systemRoutingPolicyMaintainer = new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer);
-        applicationMetaDataGarbageCollector = new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector);
-        containerImageExpirer = new ContainerImageExpirer(controller, intervals.containerImageExpirer);
-        hostSwitchUpdater = new HostSwitchUpdater(controller, intervals.hostSwitchUpdater);
+        maintainers.add(upgrader);
+        maintainers.addAll(osUpgraders(controller, intervals.osUpgrader));
+        maintainers.add(new DeploymentExpirer(controller, intervals.defaultInterval));
+        maintainers.add(new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), intervals.defaultInterval));
+        maintainers.add(new MetricsReporter(controller, metric));
+        maintainers.add(new OutstandingChangeDeployer(controller, intervals.outstandingChangeDeployer));
+        maintainers.add(new VersionStatusUpdater(controller, intervals.versionStatusUpdater));
+        maintainers.add(new ReadyJobsTrigger(controller, intervals.readyJobsTrigger));
+        maintainers.add(new DeploymentMetricsMaintainer(controller, intervals.deploymentMetricsMaintainer));
+        maintainers.add(new ApplicationOwnershipConfirmer(controller, intervals.applicationOwnershipConfirmer, controller.serviceRegistry().ownershipIssues()));
+        maintainers.add(new SystemUpgrader(controller, intervals.systemUpgrader));
+        maintainers.add(new JobRunner(controller, intervals.jobRunner));
+        maintainers.add(new OsVersionStatusUpdater(controller, intervals.defaultInterval));
+        maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer));
+        maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
+        maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
+        maintainers.add(new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().meteringService()));
+        maintainers.add(new CloudEventReporter(controller, intervals.cloudEventReporter, metric));
+        maintainers.add(new RotationStatusUpdater(controller, intervals.defaultInterval));
+        maintainers.add(new ResourceTagMaintainer(controller, intervals.resourceTagMaintainer, controller.serviceRegistry().resourceTagger()));
+        maintainers.add(new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer));
+        maintainers.add(new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector));
+        maintainers.add(new ContainerImageExpirer(controller, intervals.containerImageExpirer));
+        maintainers.add(new HostSwitchUpdater(controller, intervals.hostSwitchUpdater));
+        maintainers.add(new ReindexingTriggerer(controller, intervals.reindexingTriggerer));
     }
 
     public Upgrader upgrader() { return upgrader; }
 
     @Override
     public void deconstruct() {
-        deploymentExpirer.close();
-        deploymentIssueReporter.close();
-        metricsReporter.close();
-        outstandingChangeDeployer.close();
-        versionStatusUpdater.close();
-        upgrader.close();
-        readyJobsTrigger.close();
-        deploymentMetricsMaintainer.close();
-        applicationOwnershipConfirmer.close();
-        systemUpgrader.close();
-        osUpgraders.forEach(ControllerMaintainer::close);
-        osVersionStatusUpdater.close();
-        jobRunner.close();
-        contactInformationMaintainer.close();
-        costReportMaintainer.close();
-        resourceMeterMaintainer.close();
-        nameServiceDispatcher.close();
-        cloudEventReporter.close();
-        rotationStatusUpdater.close();
-        resourceTagMaintainer.close();
-        systemRoutingPolicyMaintainer.close();
-        applicationMetaDataGarbageCollector.close();
-        containerImageExpirer.close();
-        hostSwitchUpdater.close();
+        maintainers.forEach(Maintainer::shutdown);
+        maintainers.forEach(Maintainer::awaitShutdown);
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
@@ -148,6 +108,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration applicationMetaDataGarbageCollector;
         private final Duration containerImageExpirer;
         private final Duration hostSwitchUpdater;
+        private final Duration reindexingTriggerer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -170,6 +131,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
             this.containerImageExpirer = duration(2, HOURS);
             this.hostSwitchUpdater = duration(12, HOURS);
+            this.reindexingTriggerer = duration(1, HOURS);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

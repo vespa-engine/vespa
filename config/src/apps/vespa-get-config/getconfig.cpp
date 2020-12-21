@@ -216,8 +216,7 @@ GetConfig::Main()
         vespaVersion = VespaVersion::fromString(vespaVersionString);
     }
 
-    int protocolVersion = config::protocol::readProtocolVersion();
-    FRTConfigRequestFactory requestFactory(protocolVersion, traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
+    FRTConfigRequestFactory requestFactory(traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
     FRTConnection connection(spec, _server->supervisor(), TimingValues());
     ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
     ConfigState state(configMD5, generation, false);

@@ -569,15 +569,16 @@ struct OperationHandlerSequencingTest : ExternalOperationHandlerTest {
         set_up_distributor_for_sequencing_test();
     }
 
-    static documentapi::TestAndSetCondition bucket_lock_bypass_tas_condition() {
-        return documentapi::TestAndSetCondition(reindexing_bucket_lock_bypass_value());
+    static documentapi::TestAndSetCondition bucket_lock_bypass_tas_condition(const vespalib::string& token) {
+        return documentapi::TestAndSetCondition(
+                vespalib::make_string("%s=%s", reindexing_bucket_lock_bypass_prefix(), token.c_str()));
     }
 };
 
 TEST_F(OperationHandlerSequencingTest, put_not_allowed_through_locked_bucket_if_special_tas_token_not_present) {
     auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
     auto bucket = makeDocumentBucket(document::BucketId(16, 1));
-    auto bucket_handle = getExternalOperationHandler().operation_sequencer().try_acquire(bucket);
+    auto bucket_handle = getExternalOperationHandler().operation_sequencer().try_acquire(bucket, "foo");
     ASSERT_TRUE(bucket_handle.valid());
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(put));
 }
@@ -586,24 +587,31 @@ TEST_F(OperationHandlerSequencingTest, put_allowed_through_locked_bucket_if_spec
     set_up_distributor_for_sequencing_test();
 
     auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
-    put->setCondition(bucket_lock_bypass_tas_condition());
+    put->setCondition(bucket_lock_bypass_tas_condition("foo"));
 
     auto bucket = makeDocumentBucket(document::BucketId(16, 1));
-    auto bucket_handle = getExternalOperationHandler().operation_sequencer().try_acquire(bucket);
+    auto bucket_handle = getExternalOperationHandler().operation_sequencer().try_acquire(bucket, "foo");
     ASSERT_TRUE(bucket_handle.valid());
 
     Operation::SP op;
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(put, op));
 }
 
+TEST_F(OperationHandlerSequencingTest, put_not_allowed_through_locked_bucket_if_tas_token_mismatches_current_lock_tkoen) {
+    auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
+    put->setCondition(bucket_lock_bypass_tas_condition("bar"));
+    auto bucket = makeDocumentBucket(document::BucketId(16, 1));
+    auto bucket_handle = getExternalOperationHandler().operation_sequencer().try_acquire(bucket, "foo");
+    ASSERT_TRUE(bucket_handle.valid());
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(put));
+}
+
 TEST_F(OperationHandlerSequencingTest, put_with_bucket_lock_tas_token_is_rejected_if_no_bucket_lock_present) {
     auto put = makePutCommand("testdoctype1", "id:foo:testdoctype1:n=1:bar");
-    put->setCondition(bucket_lock_bypass_tas_condition());
+    put->setCondition(bucket_lock_bypass_tas_condition("foo"));
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(put));
-    // TODO determine most appropriate error code here. Want to fail the bucket but
-    // not the entire visitor operation. Will likely need to be revisited (heh!) soon.
-    EXPECT_EQ("ReturnCode(REJECTED, Operation expects a read-for-write bucket lock to be present, "
-              "but none currently exists)",
+    EXPECT_EQ("ReturnCode(TEST_AND_SET_CONDITION_FAILED, Operation expects a read-for-write bucket "
+              "lock to be present, but none currently exists)",
               _sender.reply(0)->getResult().toString());
 }
 
@@ -611,12 +619,12 @@ TEST_F(OperationHandlerSequencingTest, put_with_bucket_lock_tas_token_is_rejecte
 // present, this tests the case where a lock is present but it's not a bucket-level lock.
 TEST_F(OperationHandlerSequencingTest, put_with_bucket_lock_tas_token_is_rejected_if_document_lock_present) {
     auto put = makePutCommand("testdoctype1", _dummy_id);
-    put->setCondition(bucket_lock_bypass_tas_condition());
+    put->setCondition(bucket_lock_bypass_tas_condition("foo"));
     Operation::SP op;
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeUpdateCommand("testdoctype1", _dummy_id), op));
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(put)));
-    EXPECT_EQ("ReturnCode(REJECTED, Operation expects a read-for-write bucket lock to be present, "
-              "but none currently exists)",
+    EXPECT_EQ("ReturnCode(TEST_AND_SET_CONDITION_FAILED, Operation expects a read-for-write bucket "
+              "lock to be present, but none currently exists)",
               _sender.reply(0)->getResult().toString());
 }
 

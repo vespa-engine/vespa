@@ -149,6 +149,7 @@ public class ModelContextImpl implements ModelContext {
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
         private final boolean enableAutomaticReindexing;
+        private final double reindexerWindowSizeIncrement;
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final boolean useDirectStorageApiRpc;
@@ -164,27 +165,31 @@ public class ModelContextImpl implements ModelContext {
         private final int contentNodeBucketDBStripeBits;
         private final int mergeChunkSize;
         private final double feedConcurrency;
+        private final boolean reconfigurableZookeeperServer;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.enableAutomaticReindexing = flagValue(source, appId, Flags.ENABLE_AUTOMATIC_REINDEXING);
-            defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
-            useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
-            useDirectStorageApiRpc = flagValue(source, appId, Flags.USE_DIRECT_STORAGE_API_RPC);
-            useFastValueTensorImplementation = flagValue(source, appId, Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION);
-            feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
-            responseSequencer = flagValue(source, appId, Flags.RESPONSE_SEQUENCER_TYPE);
-            numResponseThreads = flagValue(source, appId, Flags.RESPONSE_NUM_THREADS);
-            skipCommunicationManagerThread = flagValue(source, appId, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
-            skipMbusRequestThread = flagValue(source, appId, Flags.SKIP_MBUS_REQUEST_THREAD);
-            skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
+            this.reindexerWindowSizeIncrement = flagValue(source, appId, Flags.REINDEXER_WINDOW_SIZE_INCREMENT);
+            this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
+            this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
+            this.useDirectStorageApiRpc = flagValue(source, appId, Flags.USE_DIRECT_STORAGE_API_RPC);
+            this.useFastValueTensorImplementation = flagValue(source, appId, Flags.USE_FAST_VALUE_TENSOR_IMPLEMENTATION);
+            this.feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
+            this.responseSequencer = flagValue(source, appId, Flags.RESPONSE_SEQUENCER_TYPE);
+            this.numResponseThreads = flagValue(source, appId, Flags.RESPONSE_NUM_THREADS);
+            this.skipCommunicationManagerThread = flagValue(source, appId, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
+            this.skipMbusRequestThread = flagValue(source, appId, Flags.SKIP_MBUS_REQUEST_THREAD);
+            this.skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
             this.useAccessControlTlsHandshakeClientAuth = flagValue(source, appId, Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION);
-            useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
-            contentNodeBucketDBStripeBits = flagValue(source, appId, Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS);
-            mergeChunkSize = flagValue(source, appId, Flags.MERGE_CHUNK_SIZE);
-            feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
+            this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
+            this.contentNodeBucketDBStripeBits = flagValue(source, appId, Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS);
+            this.mergeChunkSize = flagValue(source, appId, Flags.MERGE_CHUNK_SIZE);
+            this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
+            this.reconfigurableZookeeperServer = flagValue(source, appId, Flags.RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER);
         }
 
         @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
+        @Override public double reindexerWindowSizeIncrement() { return reindexerWindowSizeIncrement; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
@@ -200,6 +205,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
         @Override public int mergeChunkSize() { return mergeChunkSize; }
         @Override public double feedConcurrency() { return feedConcurrency; }
+        @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

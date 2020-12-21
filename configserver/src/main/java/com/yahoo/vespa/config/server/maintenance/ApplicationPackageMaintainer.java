@@ -38,7 +38,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                  Curator curator,
                                  Duration interval,
                                  FlagSource flagSource) {
-        super(applicationRepository, curator, flagSource, interval, interval);
+        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval);
         this.applicationRepository = applicationRepository;
         ConfigserverConfig configserverConfig = applicationRepository.configserverConfig();
         connectionPool = createConnectionPool(configserverConfig);
@@ -78,9 +78,9 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    public void close() {
+    public void awaitShutdown() {
         connectionPool.close();
-        super.close();
+        super.awaitShutdown();
     }
 
     private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {

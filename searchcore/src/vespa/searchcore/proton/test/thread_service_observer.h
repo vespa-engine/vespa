@@ -48,6 +48,10 @@ public:
         _service.setTaskLimit(taskLimit);
     }
 
+    uint32_t getTaskLimit() const override {
+        return _service.getTaskLimit();
+    }
+
     void wakeup() override {
         _service.wakeup();
     }

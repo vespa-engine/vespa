@@ -15,6 +15,7 @@ vespa_add_library(metrics
     state_api_adapter.cpp
     summetric.cpp
     textwriter.cpp
+    updatehook.cpp
     valuemetric.cpp
     valuemetricvalues.cpp
     xmlwriter.cpp

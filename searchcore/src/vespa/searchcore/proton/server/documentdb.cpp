@@ -35,6 +35,7 @@
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/metrics/updatehook.h>
 
 #include <vespa/log/log.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
@@ -102,6 +103,18 @@ findDocumentDB(const ProtonConfig::DocumentdbVector & documentDBs, const vespali
     return &_G_defaultProtonDocumentDBConfig;
 }
 
+class MetricsUpdateHook : public metrics::UpdateHook {
+    DocumentDB &_db;
+public:
+    MetricsUpdateHook(DocumentDB &s)
+        : metrics::UpdateHook("documentdb-hook"),
+          _db(s)
+    {}
+    void updateMetrics(const MetricLockGuard & guard) override {
+        _db.updateMetrics(guard);
+    }
+};
+
 }
 
 template <typename FunctionType>
@@ -147,7 +160,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _configCV(),
       _activeConfigSnapshot(),
       _activeConfigSnapshotGeneration(0),
-      _activeConfigSnapshotSerialNum(0u),
       _validateAndSanitizeDocStore(protonCfg.validateAndSanitizeDocstore == vespa::config::search::core::ProtonConfig::ValidateAndSanitizeDocstore::YES),
       _initGate(),
       _clusterStateHandler(_writeService.master()),
@@ -156,7 +168,8 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _config_store(std::move(config_store)),
       _sessionManager(std::make_shared<matching::SessionManager>(protonCfg.grouping.sessionmanager.maxentries)),
       _metricsWireService(metricsWireService),
-      _metricsHook(*this, _docTypeName.getName(), protonCfg.numthreadspersearch),
+      _metrics(_docTypeName.getName(), protonCfg.numthreadspersearch),
+      _metricsHook(std::make_unique<MetricsUpdateHook>(*this)),
       _feedView(),
       _refCount(),
       _syncFeedViewEnabled(false),
@@ -176,7 +189,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _lidSpaceCompactionHandlers(),
       _jobTrackers(),
       _calc(),
-      _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter, _state)
+      _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter)
 {
     assert(configSnapshot);
 
@@ -222,8 +235,7 @@ void DocumentDB::registerReference()
     }
 }
 
-void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
-                                 SerialNum serialNum, int64_t generation) {
+void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config, int64_t generation) {
     lock_guard guard(_configMutex);
     registerReference();
     _activeConfigSnapshot = config;
@@ -231,7 +243,6 @@ void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config,
     if (_activeConfigSnapshotGeneration < generation) {
         _activeConfigSnapshotGeneration = generation;
     }
-    _activeConfigSnapshotSerialNum = serialNum;
     _configCV.notify_all();
 }
 
@@ -297,7 +308,7 @@ DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
     syncFeedView();
     // Check that feed view has been activated.
     assert(_feedView.get());
-    setActiveConfig(configSnapshot, _initConfigSerialNum, configSnapshot->getGeneration());
+    setActiveConfig(configSnapshot, configSnapshot->getGeneration());
     startTransactionLogReplay();
 }
 
@@ -469,7 +480,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         }
         _state.clearDelayedConfig();
     }
-    setActiveConfig(configSnapshot, serialNum, generation);
+    setActiveConfig(configSnapshot, generation);
     if (params.shouldMaintenanceControllerChange()) {
         forwardMaintenanceConfig();
     }
@@ -1042,12 +1053,12 @@ DocumentDB::notifyAllBucketsChanged()
 }
 
 void
-DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics)
+DocumentDB::updateMetrics(const metrics::MetricLockGuard & guard)
 {
     if (_state.getState() < DDBState::State::REPLAY_TRANSACTION_LOG) {
         return;
     }
-    _metricsUpdater.updateMetrics(metrics);
+    _metricsUpdater.updateMetrics(guard, _metrics);
 }
 
 void

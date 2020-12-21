@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.api.container.ContainerServiceType;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.documentapi.DocumentAccessProvider;
@@ -43,9 +44,8 @@ public class ClusterControllerContainer extends Container implements
             AbstractConfigProducer<?> parent,
             int index,
             boolean runStandaloneZooKeeper,
-            boolean isHosted) {
-        super(parent, "" + index, index, isHosted);
-
+            DeployState deployState) {
+        super(parent, "" + index, index, deployState.isHosted());
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
                    "/clustercontroller-status/*",
@@ -54,24 +54,12 @@ public class ClusterControllerContainer extends Container implements
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler",
                    "/cluster/v2/*",
                    CLUSTERCONTROLLER_BUNDLE);
-        if (runStandaloneZooKeeper) {
-            addComponent("clustercontroller-zkrunner",
-                         "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl",
-                         ZOOKEEPER_SERVER_BUNDLE);
-            addComponent("clustercontroller-zkprovider",
-                         "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StandaloneZooKeeperProvider",
-                         CLUSTERCONTROLLER_BUNDLE);
-        } else {
-            // TODO bjorncs/jonmv: remove extraneous ZooKeeperProvider layer
-            addComponent(
-                    "clustercontroller-zkrunner",
-                    "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
-                    ZOOKEEPER_SERVER_BUNDLE);
-            addComponent("clustercontroller-zkprovider",
-                         "com.yahoo.vespa.clustercontroller.apps.clustercontroller.DummyZooKeeperProvider",
-                         CLUSTERCONTROLLER_BUNDLE);
-        }
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, "controller", isHosted));
+        addComponent("clustercontroller-zookeeper-server",
+                     zooKeeperServerImplementation(runStandaloneZooKeeper, deployState.featureFlags().reconfigurableZookeeperServer()),
+                     ZOOKEEPER_SERVER_BUNDLE);
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog,
+                                            "controller",
+                                            deployState.isHosted()));
 
         // TODO: Why are bundles added here instead of in the cluster?
         addFileBundle("clustercontroller-apps");
@@ -96,7 +84,16 @@ public class ClusterControllerContainer extends Container implements
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
     }
 
-    private void addHandler(Handler h, String path) {
+    private String zooKeeperServerImplementation(boolean runStandaloneZooKeeper, boolean reconfigurable) {
+        if (reconfigurable)
+            return "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer";
+        else
+            return runStandaloneZooKeeper
+                    ? "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl"
+                    : "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer";
+    }
+
+    private void addHandler(Handler<?> h, String path) {
         h.addServerBindings(SystemBindingPattern.fromHttpPath(path));
         super.addHandler(h);
     }
@@ -116,7 +113,7 @@ public class ClusterControllerContainer extends Container implements
     }
 
     private void addHandler(String id, String className, String path, ComponentSpecification bundle) {
-        addHandler(new Handler(createComponentModel(id, className, bundle)), path);
+        addHandler(new Handler<>(createComponentModel(id, className, bundle)), path);
     }
 
     private ReindexingContext reindexingContext() {
@@ -124,17 +121,15 @@ public class ClusterControllerContainer extends Container implements
     }
 
     private void configureReindexing() {
-        if (reindexingContext().reindexing().enabled()) {
-            addFileBundle(REINDEXING_CONTROLLER_BUNDLE.getName());
-            addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
-            addComponent("reindexing-maintainer",
-                         "ai.vespa.reindexing.ReindexingMaintainer",
-                         REINDEXING_CONTROLLER_BUNDLE);
-            addHandler("reindexing-status",
-                       "ai.vespa.reindexing.http.ReindexingV1ApiHandler",
-                       "/reindexing/v1/*",
-                       REINDEXING_CONTROLLER_BUNDLE);
-        }
+        addFileBundle(REINDEXING_CONTROLLER_BUNDLE.getName());
+        addComponent(new SimpleComponent(DocumentAccessProvider.class.getName()));
+        addComponent("reindexing-maintainer",
+                     "ai.vespa.reindexing.ReindexingMaintainer",
+                     REINDEXING_CONTROLLER_BUNDLE);
+        addHandler("reindexing-status",
+                   "ai.vespa.reindexing.http.ReindexingV1ApiHandler",
+                   "/reindexing/v1/*",
+                   REINDEXING_CONTROLLER_BUNDLE);
     }
 
 
@@ -151,9 +146,13 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public void getConfig(ReindexingConfig.Builder builder) {
         ReindexingContext ctx = reindexingContext();
-        if (!ctx.reindexing().enabled()) return;
+        if (!ctx.reindexing().enabled()) {
+            builder.enabled(false);
+            return;
+        }
 
         builder.enabled(ctx.reindexing().enabled());
+        builder.windowSizeIncrement(ctx.windowSizeIncrement());
         for (String clusterId : ctx.clusterIds()) {
             ReindexingConfig.Clusters.Builder clusterBuilder = new ReindexingConfig.Clusters.Builder();
             for (NewDocumentType type : ctx.documentTypesForCluster(clusterId)) {

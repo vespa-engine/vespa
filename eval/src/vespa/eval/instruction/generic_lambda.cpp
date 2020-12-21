@@ -59,7 +59,7 @@ struct CompiledParams {
 };
 
 template <typename CT>
-void my_compiled_lambda_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_compiled_lambda_op(InterpretedFunction::State &state, uint64_t param) {
     const CompiledParams &params = unwrap_param<CompiledParams>(param);
     std::vector<double> args(params.result_type.dimensions().size() + params.bindings.size(), 0.0);
     double *bind_next = &args[params.result_type.dimensions().size()];
@@ -98,7 +98,7 @@ struct InterpretedParams {
 };
 
 template <typename CT>
-void my_interpreted_lambda_op(eval::InterpretedFunction::State &state, uint64_t param) {
+void my_interpreted_lambda_op(InterpretedFunction::State &state, uint64_t param) {
     const InterpretedParams &params = unwrap_param<InterpretedParams>(param);
     std::vector<double> labels(params.result_type.dimensions().size(), 0.0);
     ParamProxy param_proxy(labels, *state.params, params.bindings);
@@ -121,7 +121,7 @@ struct MyInterpretedLambdaOp {
 } // namespace <unnamed>
 
 Instruction
-GenericLambda::make_instruction(const eval::tensor_function::Lambda &lambda_in,
+GenericLambda::make_instruction(const tensor_function::Lambda &lambda_in,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
     const ValueType & result_type = lambda_in.result_type();

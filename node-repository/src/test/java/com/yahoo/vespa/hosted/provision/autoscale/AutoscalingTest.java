@@ -52,7 +52,7 @@ public class AutoscalingTest {
         assertTrue("Too few measurements -> No change", tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
 
         tester.clock().advance(Duration.ofDays(1));
-        tester.addCpuMeasurements(0.25f, 1f, 60, application1);
+        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
                                                                   15, 1, 1.3,  28.6, 28.6,
                                                                   tester.autoscale(application1, cluster1.id(), min, max).target());
@@ -76,7 +76,6 @@ public class AutoscalingTest {
                                tester.autoscale(application1, cluster1.id(), min, max).target());
 
         var events = tester.nodeRepository().applications().get(application1).get().cluster(cluster1.id()).get().scalingEvents();
-        events.forEach(e -> System.out.println(e));
     }
 
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */

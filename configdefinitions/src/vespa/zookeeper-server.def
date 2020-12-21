@@ -33,6 +33,8 @@ server[].id int
 server[].hostname string
 server[].quorumPort int default=2182
 server[].electionPort int default=2183
+# Whether this server is joining an existing cluster
+server[].joining bool default=false
 
 # Needed when upgrading from ZooKeeper 3.4 to 3.5, see https://issues.apache.org/jira/browse/ZOOKEEPER-3056,
 # and in general where there is a zookeeper ensemble running that has had few transactions.

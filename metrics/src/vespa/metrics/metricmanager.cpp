@@ -20,7 +20,7 @@ LOG_SETUP(".metrics.manager");
 
 namespace metrics {
 
-typedef MetricsmanagerConfig Config;
+using Config = MetricsmanagerConfig;
 
 MetricManager::ConsumerSpec::ConsumerSpec() = default;
 MetricManager::ConsumerSpec::~ConsumerSpec() = default;
@@ -32,7 +32,7 @@ MetricManager::Timer::getTime() const {
 
 void
 MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {
-    if ((g.mutex() != &_waiter) || !g.owns_lock()) {
+    if ( ! g.owns(_waiter)) {
         throw vespalib::IllegalArgumentException("Given lock does not lock the metric lock.", VESPA_STRLOC);
     }
 }

@@ -1778,7 +1778,7 @@ TEST_F(BucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_current_s
         uint32_t expectedMsgs = messageCount(2), dummyBucketsToReturn = 1;
         ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(stateAfter, expectedMsgs, dummyBucketsToReturn));
     }
-    EXPECT_FALSE(getDistributorBucketSpace().owns_bucket_in_current_state(bucket));
+    EXPECT_FALSE(getDistributorBucketSpace().get_bucket_ownership_flags(bucket).owned_in_current_state());
 
     ASSERT_NO_FATAL_FAILURE(sendFakeReplyForSingleBucketRequest(*rbi));
 
@@ -1804,8 +1804,8 @@ TEST_F(BucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_pending_s
     lib::ClusterState stateAfter("distributor:3 storage:3");
     // Set, but _don't_ enable cluster state. We want it to be pending.
     setSystemState(stateAfter);
-    EXPECT_TRUE(getDistributorBucketSpace().owns_bucket_in_current_state(bucket));
-    EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_state(bucket).isOwned());
+    EXPECT_TRUE(getDistributorBucketSpace().get_bucket_ownership_flags(bucket).owned_in_current_state());
+    EXPECT_FALSE(getDistributorBucketSpace().get_bucket_ownership_flags(bucket).owned_in_pending_state());
 
     ASSERT_NO_FATAL_FAILURE(sendFakeReplyForSingleBucketRequest(*rbi));
 
@@ -1925,7 +1925,7 @@ TEST_F(BucketDBUpdaterTest, changed_distribution_config_does_not_elide_bucket_db
     setDistribution(getDistConfig6Nodes2Groups());
 
     getBucketDatabase().forEach(*func_processor([&](const auto& e) {
-        EXPECT_TRUE(getDistributorBucketSpace().check_ownership_in_pending_state(e.getBucketId()).isOwned());
+        EXPECT_TRUE(getDistributorBucketSpace().get_bucket_ownership_flags(e.getBucketId()).owned_in_pending_state());
     }));
 }
 

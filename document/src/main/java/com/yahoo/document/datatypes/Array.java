@@ -131,19 +131,26 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         return hashCode;
     }
 
+    private boolean equalsWithListWrapper(List<? extends FieldValue> a, ListWrapper<? extends FieldValue> b) {
+        for (int i = 0; i < a.size(); i++) {
+            if ( ! b.myvalues.get(i).equals(a.get(i).getWrappedValue()) ) return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Array)) return false;
         if (!super.equals(o)) return false;
         Array a = (Array) o;
-        // Compare independent of container used.
-        Iterator it1 = values.iterator();
-        Iterator it2 = a.values.iterator();
-        while (it1.hasNext() && it2.hasNext()) {
-            if (!it1.next().equals(it2.next())) return false;
+        if (values.size() != a.values.size()) return false;
+        if (values instanceof ListWrapper && !(a.values instanceof ListWrapper)) {
+            return equalsWithListWrapper(a.values, (ListWrapper<? extends FieldValue>) values);
+        } else if (a.values instanceof ListWrapper && !(values instanceof ListWrapper)) {
+            return equalsWithListWrapper(values, (ListWrapper<? extends FieldValue>) a.values);
         }
-        return !(it1.hasNext() || it2.hasNext());
+        return values.equals(a.values);
     }
 
     // List implementation

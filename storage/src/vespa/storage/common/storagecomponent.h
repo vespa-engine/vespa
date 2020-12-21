@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "cluster_context.h"
 #include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/document/bucket/bucketidfactory.h>
@@ -43,13 +44,15 @@ namespace document {
 }
 
 namespace storage {
+
 namespace lib {
     class Distribution;
 }
 struct NodeStateUpdater;
 struct StorageComponentRegister;
 
-class StorageComponent : public framework::Component {
+class StorageComponent : public framework::Component
+{
 public:
     struct Repos {
         explicit Repos(std::shared_ptr<const document::DocumentTypeRepo> repo);
@@ -79,7 +82,7 @@ public:
     StorageComponent(StorageComponentRegister&, vespalib::stringref name);
     ~StorageComponent() override;
 
-    const vespalib::string & getClusterName() const { return _clusterName; }
+    const ClusterContext & cluster_context() const noexcept { return _cluster_ctx; }
     const lib::NodeType& getNodeType() const { return *_nodeType; }
     uint16_t getIndex() const { return _index; }
     lib::Node getNode() const { return lib::Node(*_nodeType, _index); }
@@ -92,7 +95,7 @@ public:
     NodeStateUpdater& getStateUpdater() const;
     uint64_t getGeneration() const { return _generation.load(std::memory_order_relaxed); }
 private:
-    vespalib::string _clusterName;
+    SimpleClusterContext _cluster_ctx;
     const lib::NodeType* _nodeType;
     uint16_t _index;
     std::shared_ptr<Repos> _repos;

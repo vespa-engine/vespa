@@ -552,7 +552,7 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
 }
 
 void
-Visitor::attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
+Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
                 const mbus::Route& controlAddress,
                 const mbus::Route& dataAddress,
                 framework::MilliSecTime timeout)
@@ -601,6 +601,17 @@ Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
     return _trace.add(std::move(tempTrace));
 }
 
+const vdslib::Parameters&
+Visitor::visitor_parameters() const noexcept {
+    assert(_initiatingCmd);
+    return _initiatingCmd->getParameters();
+}
+
+bool
+Visitor::remap_docapi_message_error_code(api::ReturnCode& in_out_code) {
+    return in_out_code.isCriticalForVisitor();
+}
+
 void
 Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics)
 {
@@ -634,8 +645,7 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
     metrics.visitorDestinationFailureReplies.inc();
 
     if (message->getType() == documentapi::DocumentProtocol::MESSAGE_VISITORINFO) {
-        LOG(debug, "Aborting visitor as we failed to talk to "
-                           "controller: %s",
+        LOG(debug, "Aborting visitor as we failed to talk to controller: %s",
                     reply->getError(0).toString().c_str());
         api::ReturnCode returnCode(
                 static_cast<api::ReturnCode::Result>(
@@ -649,7 +659,8 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
     api::ReturnCode returnCode(
             static_cast<api::ReturnCode::Result>(reply->getError(0).getCode()),
             reply->getError(0).getMessage());
-    if (returnCode.isCriticalForVisitor()) {
+    const bool should_fail = remap_docapi_message_error_code(returnCode);
+    if (should_fail) {
         // Abort - something is wrong with target.
         fail(returnCode, true);
         close();

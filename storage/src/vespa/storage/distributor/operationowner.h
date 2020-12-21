@@ -40,8 +40,8 @@ public:
             return _sender.getDistributorIndex();
         }
         
-        const vespalib::string& getClusterName() const override {
-            return _sender.getClusterName();
+        const ClusterContext & cluster_context() const override {
+            return _sender.cluster_context();
         }
 
         const PendingMessageTracker& getPendingMessageTracker() const override {

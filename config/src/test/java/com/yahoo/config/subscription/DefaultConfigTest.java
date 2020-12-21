@@ -34,9 +34,8 @@ public class DefaultConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void testFailUponUnitializedValue() {
         ConfigSubscriber subscriber = new ConfigSubscriber();
-        subscriber.subscribe(DefaulttestConfig.class, "raw:" +
-                "defaultstring \"new value\"");
-        subscriber.nextConfig();
+        subscriber.subscribe(DefaulttestConfig.class, "raw:defaultstring \"new value\"");
+        subscriber.nextConfig(false);
         subscriber.close();
     }
 
@@ -51,7 +50,7 @@ public class DefaultConfigTest {
     public void testDefaultConfig() {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         ConfigHandle<DefaulttestConfig> h = subscriber.subscribe(DefaulttestConfig.class, CONFIG_ID);
-        assertTrue(subscriber.nextConfig());
+        assertTrue(subscriber.nextConfig(false));
         DefaulttestConfig config = h.getConfig();
         verifyConfigValues(config);
         subscriber.close();

@@ -12,6 +12,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.DimensionHelper;
 import com.yahoo.vespa.flags.json.FlagData;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -71,7 +72,7 @@ public class SystemFlagsDataArchive {
                 if (!entry.isDirectory() && name.startsWith("flags/")) {
                     Path filePath = Paths.get(name);
                     String rawData = new String(zipIn.readAllBytes(), StandardCharsets.UTF_8);
-                    addFile(builder, rawData, filePath);
+                    addFile(builder, rawData, filePath, Set.of());
                 }
             }
             return builder.build();
@@ -80,7 +81,14 @@ public class SystemFlagsDataArchive {
         }
     }
 
-    public static SystemFlagsDataArchive fromDirectory(Path directory) {
+    public static SystemFlagsDataArchive fromDirectoryAndSystem(Path directory, ZoneRegistry systemDefinition) {
+        return fromDirectory(directory, systemDefinition);
+    }
+
+    public static SystemFlagsDataArchive fromDirectory(Path directory) { return fromDirectory(directory, null); }
+
+    private static SystemFlagsDataArchive fromDirectory(Path directory, ZoneRegistry systemDefinition) {
+        Set<String> filenamesForSystem = getFilenamesForSystem(systemDefinition);
         Path root = directory.toAbsolutePath();
         Path flagsDirectory = directory.resolve("flags");
         if (!Files.isDirectory(flagsDirectory)) {
@@ -93,7 +101,7 @@ public class SystemFlagsDataArchive {
                 if (!Files.isDirectory(absolutePath) &&
                         relativePath.startsWith("flags")) {
                     String rawData = uncheck(() -> Files.readString(absolutePath, StandardCharsets.UTF_8));
-                    addFile(builder, rawData, relativePath);
+                    addFile(builder, rawData, relativePath, filenamesForSystem);
                 }
             });
             return builder.build();
@@ -101,6 +109,7 @@ public class SystemFlagsDataArchive {
             throw new UncheckedIOException(e);
         }
     }
+
 
     public void toZip(OutputStream out) {
         ZipOutputStream zipOut = new ZipOutputStream(out);
@@ -152,10 +161,20 @@ public class SystemFlagsDataArchive {
         });
     }
 
-    private static void addFile(Builder builder, String rawData, Path filePath) {
+    private static Set<String> getFilenamesForSystem(ZoneRegistry systemDefinition) {
+        if (systemDefinition == null) return Set.of();
+        return FlagsTarget.getAllTargetsInSystem(systemDefinition).stream()
+                .flatMap(target -> target.flagDataFilesPrioritized().stream())
+                .collect(Collectors.toSet());
+    }
+
+    private static void addFile(Builder builder, String rawData, Path filePath, Set<String> filenamesForSystem) {
         String filename = filePath.getFileName().toString();
         if (filename.startsWith(".")) {
             return; // Ignore files starting with '.'
+        }
+        if (!filenamesForSystem.isEmpty() && !filenamesForSystem.contains(filename)) {
+            return; // Ignore files irrelevant for system
         }
         if (!filename.endsWith(".json")) {
             throw new IllegalArgumentException(String.format("Only JSON files are allowed in 'flags/' directory (found '%s')", filePath.toString()));

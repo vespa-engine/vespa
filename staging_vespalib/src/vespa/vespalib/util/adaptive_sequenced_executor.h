@@ -123,7 +123,7 @@ private:
     };
 
     std::unique_ptr<ThreadTools>       _thread_tools;
-    std::mutex                         _mutex;
+    mutable std::mutex                 _mutex;
     std::vector<Strand>                _strands;
     vespalib::ArrayQueue<Strand*>      _wait_queue;
     vespalib::ArrayQueue<Worker*>      _worker_stack;
@@ -149,6 +149,7 @@ public:
     void sync() override;
     void setTaskLimit(uint32_t task_limit) override;
     vespalib::ExecutorStats getStats() override;
+    Config get_config() const;
 };
 
 }

@@ -2,8 +2,10 @@
 
 #include "read_for_write_visitor_operation.h"
 #include "visitoroperation.h"
+#include <vespa/storage/distributor/distributormessagesender.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/operationowner.h>
+#include <vespa/storage/distributor/uuid_generator.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -15,11 +17,13 @@ ReadForWriteVisitorOperationStarter::ReadForWriteVisitorOperationStarter(
         std::shared_ptr<VisitorOperation> visitor_op,
         OperationSequencer& operation_sequencer,
         OperationOwner& stable_operation_owner,
-        PendingMessageTracker& message_tracker)
+        PendingMessageTracker& message_tracker,
+        UuidGenerator& uuid_generator)
     : _visitor_op(std::move(visitor_op)),
       _operation_sequencer(operation_sequencer),
       _stable_operation_owner(stable_operation_owner),
-      _message_tracker(message_tracker)
+      _message_tracker(message_tracker),
+      _uuid_generator(uuid_generator)
 {
 }
 
@@ -40,14 +44,22 @@ void ReadForWriteVisitorOperationStarter::onStart(DistributorMessageSender& send
             assert(_visitor_op->has_sent_reply());
             return;
         }
-        auto bucket_handle = _operation_sequencer.try_acquire(*maybe_bucket);
+        if (bucket_has_pending_merge(*maybe_bucket, sender.getPendingMessageTracker())) {
+            LOG(debug, "A merge is pending for bucket %s, failing visitor", maybe_bucket->toString().c_str());
+            _visitor_op->fail_with_merge_pending(sender);
+            return;
+        }
+        auto token = _uuid_generator.generate_uuid();
+        auto bucket_handle = _operation_sequencer.try_acquire(*maybe_bucket, token);
         if (!bucket_handle.valid()) {
             LOG(debug, "An operation is already pending for bucket %s, failing visitor",
                 maybe_bucket->toString().c_str());
             _visitor_op->fail_with_bucket_already_locked(sender);
             return;
         }
-        LOG(debug, "Possibly deferring start of visitor for bucket %s", maybe_bucket->toString().c_str());
+        _visitor_op->assign_put_lock_access_token(token);
+        LOG(debug, "Possibly deferring start of visitor for bucket %s, using lock token %s",
+            maybe_bucket->toString().c_str(), token.c_str());
         _message_tracker.run_once_no_pending_for_bucket(
                 *maybe_bucket,
                 make_deferred_task([self = shared_from_this(), handle = std::move(bucket_handle)](TaskRunState state) mutable {
@@ -70,5 +82,27 @@ void ReadForWriteVisitorOperationStarter::onReceive(DistributorMessageSender& se
                                                     const std::shared_ptr<api::StorageReply> & msg) {
     _visitor_op->onReceive(sender, msg);
 }
+
+namespace {
+
+struct MergePendingChecker : PendingMessageTracker::Checker {
+    bool has_pending_merge = false;
+    bool check(uint32_t message_type, [[maybe_unused]] uint16_t node, [[maybe_unused]] uint8_t priority) override {
+        if (message_type == api::MessageType::MERGEBUCKET_ID) {
+            has_pending_merge = true;
+        }
+        return true;
+    }
+};
+
+}
+
+bool ReadForWriteVisitorOperationStarter::bucket_has_pending_merge(const document::Bucket& bucket,
+                                                                   const PendingMessageTracker& tracker) const {
+    MergePendingChecker merge_checker;
+    tracker.checkPendingMessages(bucket, merge_checker);
+    return merge_checker.has_pending_merge;
+}
+
 
 }

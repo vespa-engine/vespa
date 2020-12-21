@@ -81,8 +81,8 @@ struct IntermediateMessageSender : DistributorMessageSender {
         return forward.getDistributorIndex();
     }
 
-    const vespalib::string& getClusterName() const override {
-        return forward.getClusterName();
+    const ClusterContext & cluster_context() const override {
+        return forward.cluster_context();
     }
 
     const PendingMessageTracker& getPendingMessageTracker() const override {
@@ -159,13 +159,18 @@ TwoPhaseUpdateOperation::sendReplyWithResult(
     sendReply(sender, _updateReply);
 }
 
-bool
-TwoPhaseUpdateOperation::isFastPathPossible() const
+std::vector<BucketDatabase::Entry>
+TwoPhaseUpdateOperation::get_bucket_database_entries() const
 {
-    // Fast path iff bucket exists AND is consistent (split and copies).
     std::vector<BucketDatabase::Entry> entries;
     _bucketSpace.getBucketDatabase().getParents(_updateDocBucketId, entries);
+    return entries;
+}
 
+bool
+TwoPhaseUpdateOperation::isFastPathPossible(const std::vector<BucketDatabase::Entry>& entries) const
+{
+    // Fast path iff bucket exists AND is consistent (split and copies).
     if (entries.size() != 1) {
         return false;
     }
@@ -173,11 +178,12 @@ TwoPhaseUpdateOperation::isFastPathPossible() const
 }
 
 void
-TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
+TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender, std::vector<BucketDatabase::Entry> entries)
 {
     _mode = Mode::FAST_PATH;
     LOG(debug, "Update(%s) fast path: sending Update commands", update_doc_id().c_str());
-    auto updateOperation = std::make_shared<UpdateOperation>(_node_ctx, _op_ctx, _bucketSpace, _updateCmd, _updateMetric);
+    auto updateOperation = std::make_shared<UpdateOperation>
+            (_node_ctx, _op_ctx, _bucketSpace, _updateCmd, std::move(entries), _updateMetric);
     UpdateOperation & op = *updateOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(updateOperation), sender);
     op.start(intermediate, _node_ctx.clock().getTimeInMillis());
@@ -238,8 +244,9 @@ TwoPhaseUpdateOperation::create_initial_safe_path_get_operation() {
 
 void
 TwoPhaseUpdateOperation::onStart(DistributorMessageSender& sender) {
-    if (isFastPathPossible()) {
-        startFastPathUpdate(sender);
+    auto entries = get_bucket_database_entries();
+    if (isFastPathPossible(entries)) {
+        startFastPathUpdate(sender, std::move(entries));
     } else {
         startSafePathUpdate(sender);
     }
@@ -575,7 +582,7 @@ void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_times
     // Must not be any other messages in flight, or we might mis-interpret them when we
     // have switched back to fast-path mode.
     assert(_sentMessageMap.empty());
-    startFastPathUpdate(sender);
+    startFastPathUpdate(sender, {});
 }
 
 bool

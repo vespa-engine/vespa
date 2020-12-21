@@ -1,0 +1,8 @@
+{
+  "id" : "my-test-flag",
+  "rules" : [
+    {
+      "value" : "main.prod.us-west-1"
+    }
+  ]
+}

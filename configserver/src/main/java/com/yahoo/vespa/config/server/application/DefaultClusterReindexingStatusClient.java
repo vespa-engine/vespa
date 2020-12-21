@@ -114,16 +114,16 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
                 Instant endedMillis = Optional.ofNullable(statusJson.get("endedMillis"))
                                               .map(json -> Instant.ofEpochMilli(json.longValue()))
                                               .orElse(null);
-                String progressToken = Optional.ofNullable(statusJson.get("progress"))
-                                               .map(JsonNode::textValue)
-                                               .orElse(null);
+                Double progress = Optional.ofNullable(statusJson.get("progress"))
+                                          .map(JsonNode::doubleValue)
+                                          .orElse(null);
                 ClusterReindexing.State state = Optional.ofNullable(statusJson.get("state"))
                                                         .map(json -> ClusterReindexing.State.fromString(json.textValue()))
                                                         .orElse(null);
                 String message = Optional.ofNullable(statusJson.get("message"))
                                          .map(JsonNode::textValue)
                                          .orElse(null);
-                documentStatuses.put(type, new ClusterReindexing.Status(startedMillis, endedMillis, state, message, progressToken));
+                documentStatuses.put(type, new ClusterReindexing.Status(startedMillis, endedMillis, state, message, progress));
             }
             clusters.put(clusterName, new ClusterReindexing(documentStatuses));
         }

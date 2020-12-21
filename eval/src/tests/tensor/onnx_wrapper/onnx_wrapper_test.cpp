@@ -1,12 +1,11 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/tensor/dense/onnx_wrapper.h>
+#include <vespa/eval/onnx/onnx_wrapper.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
-using namespace vespalib::tensor;
 
 using vespalib::make_string_short::fmt;
 using TensorInfo = Onnx::TensorInfo;

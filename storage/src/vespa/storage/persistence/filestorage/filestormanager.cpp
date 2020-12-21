@@ -289,9 +289,6 @@ FileStorManager::handlePersistenceMessage(const shared_ptr<api::StorageMessage>&
         }
     }
     switch (_filestorHandler->getDiskState()) {
-        case FileStorHandler::DISABLED:
-            errorCode = api::ReturnCode(api::ReturnCode::DISK_FAILURE, "Disk disabled");
-            break;
         case FileStorHandler::CLOSED:
             errorCode = api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node.");
             break;
@@ -694,15 +691,6 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     case ReadBucketInfo::ID:
     {
         shared_ptr<ReadBucketInfo> cmd(std::static_pointer_cast<ReadBucketInfo>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
-        if (entry.exist()) {
-            handlePersistenceMessage(cmd);
-        }
-        return true;
-    }
-    case InternalBucketJoinCommand::ID:
-    {
-        shared_ptr<InternalBucketJoinCommand> cmd(std::static_pointer_cast<InternalBucketJoinCommand>(msg));
         StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exist()) {
             handlePersistenceMessage(cmd);

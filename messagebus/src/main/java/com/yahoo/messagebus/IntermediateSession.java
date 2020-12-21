@@ -4,7 +4,7 @@ package com.yahoo.messagebus;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A session which supports receiving, forwarding and acknowledgement of messages. An intermediate session is expacted
+ * A session which supports receiving, forwarding and acknowledging messages. An intermediate session is expected
  * to either forward or acknowledge every message received.
  *
  * @author Simon Thoresen Hult
@@ -49,7 +49,7 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler {
     /**
      * This method unregisters this session from message bus, effectively disabling any more messages from being
      * delivered to the message handler. After unregistering, this method calls {@link com.yahoo.messagebus.MessageBus#sync()}
-     * as to ensure that there are no threads currently entangled in the handler.
+     * to ensure that there are no threads currently entangled in the handler.
      *
      * This method will deadlock if you call it from the message or reply handler.
      */

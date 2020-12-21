@@ -1,0 +1,60 @@
+This file explains how the typed binary formats of serialized tensors
+for different archetypes (sparse[1], dense[2] and mixed[3]) can be
+interpreted as a single unified binary format. The description below
+uses data types defined by document serialization (nbostream) combined
+with some comments and python-inspired flow-control. The mixed[3]
+binary format is defined in such a way that it overlays as
+effortlessly as possible with the sparse[1] and dense[2] formats.
+
+All format archetypes can also be encoded with values other than
+double. Using a separate bit to specify that the format includes cells
+with a specific type gives rise to 3 new formats:
+sparse_with_cell_type[5], dense_with_cell_type[6] and
+mixed_with_cell_type[7].
+
+(the C++ binary format implementation is located in 'value_codec.cpp')
+
+//-----------------------------------------------------------------------------
+
+1_4_int: type (1/5:sparse, 2/6:dense, 3/7:mixed)
+  bit 0 -> 'sparse'
+  bit 1 -> 'dense'
+  bit 2 -> 'with_cell_type'
+  (mixed tensors are tagged as both 'sparse' and 'dense')
+
+if ('with_cell_type')
+  1_4_int -> cell_type (0:double, 1:float)
+
+if ('sparse'):
+  1_4_int: number of mapped dimensions -> 'n_mapped'
+  'n_mapped' times: (sorted by dimension name)
+    small_string: dimension name
+
+if ('dense'):
+  1_4_int: number of indexed dimensions -> 'n_indexed'
+  'n_indexed' times: (sorted by dimension name)
+    small_string: dimensions name
+    1_4_int: dimensions size (must be at least 1) -> 'size_i'
+
+if ('n_mapped' > 0 || !'dense'):
+  1_4_int: number of named dense sub-spaces -> 'n_blocks'
+else:
+  'n_blocks' = 1 (a single dense space)
+
+'n_blocks' times:
+  'n_mapped' times:
+    small_string: dimension label (same order as dimension names)
+  prod('size_i') times: (product of all indexed dimension sizes)
+    cell_type: cell value (last indexed dimension is nested innermost)
+
+//-----------------------------------------------------------------------------
+
+Note: The mixed_with_cell_type format can be used to encode any
+tensor.
+
+Note: cell_type defaults to double, but can be overridden by using any
+of the '_with_cell_type' formats.
+
+Note: A tensor with no dimensions should not be serialized as
+sparse[1], but when it is, it will contain an integer indicating the
+number of cells.

@@ -277,7 +277,7 @@ var EditArea_autocompletion= {
 		nbMatch	= 0;
 		for( i =0; i<limit ; i++ )
 		{
-			if( line_string.substring( limit - i - 1, limit ) == content.substring( 0, i + 1 ) )
+			if( line_string.substring( limit - i - 1, limit ).toUpperCase() === content.substring( 0, i + 1 ).toUpperCase() )
 				nbMatch = i + 1;
 		}
 		// if characters match, we should include them in the selection that will be replaced

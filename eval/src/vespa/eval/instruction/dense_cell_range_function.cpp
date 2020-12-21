@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_cell_range_function.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {
@@ -15,7 +14,7 @@ void my_cell_range_op(InterpretedFunction::State &state, uint64_t param) {
     const auto &self = unwrap_param<DenseCellRangeFunction>(param);
     auto old_cells = state.peek(0).cells().typify<CT>();
     ConstArrayRef<CT> new_cells(&old_cells[self.offset()], self.length());
-    state.pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type(), TypedCells(new_cells)));
+    state.pop_push(state.stash.create<DenseValueView>(self.result_type(), TypedCells(new_cells)));
 }
 
 struct MyCellRangeOp {

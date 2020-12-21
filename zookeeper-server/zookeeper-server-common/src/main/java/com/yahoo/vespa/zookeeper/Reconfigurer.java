@@ -11,7 +11,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -26,36 +26,33 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
 
-    // How long to wait before triggering reconfig. This is multiplied by the node ID
-    private static final Duration reconfigInterval = Duration.ofSeconds(5);
+    private static final Duration MIN_TIMEOUT = Duration.ofMinutes(3);
+    private static final Duration NODE_TIMEOUT = Duration.ofMinutes(1);
 
-    // Total timeout for a reconfiguration
-    private static final Duration reconfigTimeout = Duration.ofSeconds(30);
-
-    // How long to wait between each retry
-    private static final Duration retryWait = Duration.ofSeconds(1);
+    private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(10));
+    private final VespaZooKeeperAdmin vespaZooKeeperAdmin;
+    private final Sleeper sleeper;
 
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
 
-    protected final VespaZooKeeperAdmin vespaZooKeeperAdmin;
-
     @Inject
     public Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin) {
-        this.vespaZooKeeperAdmin = vespaZooKeeperAdmin;
+        this(vespaZooKeeperAdmin, new Sleeper());
+    }
+
+    Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Sleeper sleeper) {
+        this.vespaZooKeeperAdmin = Objects.requireNonNull(vespaZooKeeperAdmin);
+        this.sleeper = Objects.requireNonNull(sleeper);
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
     void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
-        startOrReconfigure(newConfig, Reconfigurer::defaultSleeper, server);
-    }
-
-    void startOrReconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper, VespaZooKeeperServer server) {
         if (zooKeeperRunner == null)
             zooKeeperRunner = startServer(newConfig, server);
 
         if (shouldReconfigure(newConfig))
-            reconfigure(newConfig, sleeper);
+            reconfigure(newConfig);
     }
 
     ZookeeperServerConfig activeConfig() {
@@ -80,41 +77,47 @@ public class Reconfigurer extends AbstractComponent {
         return runner;
     }
 
-    private void reconfigure(ZookeeperServerConfig newConfig, Consumer<Duration> sleeper) {
+    private void reconfigure(ZookeeperServerConfig newConfig) {
         Instant reconfigTriggered = Instant.now();
+        List<String> newServers = difference(servers(newConfig), servers(activeConfig));
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
-        String joiningServers = String.join(",", difference(servers(newConfig), servers(activeConfig)));
+        String joiningServers = String.join(",", newServers);
         leavingServers = leavingServers.isEmpty() ? null : leavingServers;
         joiningServers = joiningServers.isEmpty() ? null : joiningServers;
-        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster in " + reconfigWaitPeriod() +
-                            ". Joining servers: " + joiningServers + ", leaving servers: " + leavingServers);
-        sleeper.accept(reconfigWaitPeriod());
+        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
+                            ", leaving servers: " + leavingServers);
         String connectionSpec = localConnectionSpec(activeConfig);
-        Instant end = Instant.now().plus(reconfigTimeout);
+        Instant now = Instant.now();
+        Instant end = now.plus(reconfigTimeout(newServers.size()));
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
-        for (int attempts = 1; Instant.now().isBefore(end); attempts++) {
+        for (int attempt = 1; now.isBefore(end); attempt++) {
             try {
                 Instant reconfigStarted = Instant.now();
                 vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
                 Instant reconfigEnded = Instant.now();
                 log.log(Level.INFO, "Reconfiguration completed in " +
                                     Duration.between(reconfigTriggered, reconfigEnded) +
-                                    ", after " + attempts + " attempt(s). ZooKeeper reconfig call took " +
+                                    ", after " + attempt + " attempt(s). ZooKeeper reconfig call took " +
                                     Duration.between(reconfigStarted, reconfigEnded));
                 activeConfig = newConfig;
                 return;
             } catch (ReconfigException e) {
-                log.log(Level.INFO, "Reconfiguration failed. Retrying in " + retryWait + ": " +
-                                    Exceptions.toMessageString(e));
-                sleeper.accept(retryWait);
+                Duration delay = backoff.delay(attempt);
+                log.log(Level.WARNING, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay +
+                                       ", time left " + Duration.between(now, end) + ": " +
+                                       Exceptions.toMessageString(e));
+                sleeper.sleep(delay);
+            } finally {
+                now = Instant.now();
             }
         }
     }
 
-    /** Returns how long this node should wait before reconfiguring the cluster */
-    private Duration reconfigWaitPeriod() {
-        if (activeConfig == null) return Duration.ZERO;
-        return reconfigInterval.multipliedBy(activeConfig.myid());
+    /** Returns the timeout to use for the given joining server count */
+    private static Duration reconfigTimeout(int joiningServers) {
+        // For reconfig to succeed, the current ensemble must have a majority. When an ensemble grows and the joining
+        // servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
+        return Duration.ofMillis(Math.max(joiningServers * NODE_TIMEOUT.toMillis(), MIN_TIMEOUT.toMillis()));
     }
 
     private static String localConnectionSpec(ZookeeperServerConfig config) {
@@ -140,14 +143,6 @@ public class Reconfigurer extends AbstractComponent {
         List<T> copy = new ArrayList<>(list1);
         copy.removeAll(list2);
         return copy;
-    }
-
-    private static void defaultSleeper(Duration duration) {
-        try {
-            Thread.sleep(duration.toMillis());
-        } catch (InterruptedException interruptedException) {
-            interruptedException.printStackTrace();
-        }
     }
 
 }

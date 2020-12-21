@@ -3,11 +3,22 @@
 #include "joinoperation.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
 #include <climits>
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.join");
 
 using namespace storage::distributor;
+
+JoinOperation::JoinOperation(const ClusterContext &clusterName,
+                             const BucketAndNodes& nodes,
+                             const std::vector<document::BucketId>& bucketsToJoin)
+    : IdealStateOperation(nodes),
+      _tracker(clusterName),
+      _bucketsToJoin(bucketsToJoin)
+{}
+
+JoinOperation::~JoinOperation() = default;
 
 void
 JoinOperation::onStart(DistributorMessageSender& sender)

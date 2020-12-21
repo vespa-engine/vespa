@@ -38,7 +38,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useThreePhaseUpdates = false;
     private boolean useDirectStorageApiRpc = false;
-    private boolean useFastValueTensorImplementation = false;
+    private boolean useFastValueTensorImplementation = true;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
@@ -54,6 +54,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int mergeChunkSize = 0x400000 - 0x1000; // 4M -4k
     private double feedConcurrency = 0.5;
     private boolean enableAutomaticReindexing = false;
+    private boolean reconfigurableZookeeperServer = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -89,6 +90,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int mergeChunkSize() { return mergeChunkSize; }
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
+    @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -137,11 +139,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseDirectStorageApiRpc(boolean useDirectStorageApiRpc) {
         this.useDirectStorageApiRpc = useDirectStorageApiRpc;
-        return this;
-    }
-
-    public TestProperties setUseFastValueTensorImplementation(boolean useFastValueTensorImplementation) {
-        this.useFastValueTensorImplementation = useFastValueTensorImplementation;
         return this;
     }
 
@@ -201,6 +198,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
 
     public TestProperties enableAutomaticReindexing(boolean enabled) { this.enableAutomaticReindexing = enabled; return this; }
+
+    public TestProperties reconfigurableZookeeperServer(boolean enabled) {
+        this.reconfigurableZookeeperServer = enabled;
+        return this;
+    }
+
 
     public static class Spec implements ConfigServerSpec {
 

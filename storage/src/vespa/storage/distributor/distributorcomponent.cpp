@@ -4,7 +4,6 @@
 #include "distributor_bucket_space.h"
 #include "pendingmessagetracker.h"
 #include <vespa/document/select/parser.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 
 
@@ -51,7 +50,7 @@ DistributorComponent::getClusterStateBundle() const
 api::StorageMessageAddress
 DistributorComponent::nodeAddress(uint16_t nodeIndex) const
 {
-    return api::StorageMessageAddress::create(&getClusterName(), lib::NodeType::STORAGE, nodeIndex);
+    return api::StorageMessageAddress::create(cluster_name_ptr(), lib::NodeType::STORAGE, nodeIndex);
 }
 
 bool
@@ -226,7 +225,7 @@ DistributorComponent::updateBucketDatabase(
         }
     }
 
-    UpdateBucketDatabaseProcessor processor(getClock(), found_down_node ? up_nodes : changedNodes, bucketSpace.get_ideal_nodes(bucket.getBucketId()), (updateFlags & DatabaseUpdate::RESET_TRUSTED) != 0);
+    UpdateBucketDatabaseProcessor processor(getClock(), found_down_node ? up_nodes : changedNodes, bucketSpace.get_ideal_service_layer_nodes_bundle(bucket.getBucketId()).get_available_nodes(), (updateFlags & DatabaseUpdate::RESET_TRUSTED) != 0);
 
     bucketSpace.getBucketDatabase().process_update(bucket.getBucketId(), processor, (updateFlags & DatabaseUpdate::CREATE_IF_NONEXISTING) != 0);
 }

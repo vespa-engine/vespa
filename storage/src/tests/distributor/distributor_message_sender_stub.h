@@ -6,12 +6,12 @@
 #include <tests/common/message_sender_stub.h>
 #include <cassert>
 #include <string>
+#include "dummy_cluster_context.h"
 
 namespace storage {
 
 class DistributorMessageSenderStub : public distributor::DistributorMessageSender {
     MessageSenderStub _stub_impl;
-    vespalib::string _cluster_name;
     distributor::PendingMessageTracker* _pending_message_tracker;
     distributor::OperationSequencer* _operation_sequencer;
 public:
@@ -83,8 +83,8 @@ public:
         return 0;
     }
 
-    const vespalib::string& getClusterName() const override {
-        return _cluster_name;
+    const ClusterContext& cluster_context() const override {
+        return dummy_cluster_context;
     }
 
     const distributor::PendingMessageTracker& getPendingMessageTracker() const override {

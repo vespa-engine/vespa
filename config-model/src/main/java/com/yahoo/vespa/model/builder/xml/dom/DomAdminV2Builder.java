@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.application.api.FileRegistry;
@@ -207,7 +207,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
         @Override
         protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
-            return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState.isHosted());
+            return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState);
         }
     }
 }

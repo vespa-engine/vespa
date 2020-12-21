@@ -56,7 +56,7 @@ CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageRepl
 namespace {
     vespalib::string getNodeId(StorageComponent& sc) {
         vespalib::asciistream ost;
-        ost << sc.getClusterName() << "/" << sc.getNodeType() << "/" << sc.getIndex();
+        ost << sc.cluster_context().cluster_name() << "/" << sc.getNodeType() << "/" << sc.getIndex();
         return ost.str();
     }
 
@@ -429,7 +429,8 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
     }
 
     _message_codec_provider = std::make_unique<rpc::MessageCodecProvider>(_component.getTypeRepo()->documentTypeRepo);
-    _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport, config->rpc.numNetworkThreads);
+    _shared_rpc_resources = std::make_unique<rpc::SharedRpcResources>(_configUri, config->rpcport,
+                                                                      config->rpc.numNetworkThreads, config->rpc.eventsBeforeWakeup);
     _cc_rpc_service = std::make_unique<rpc::ClusterControllerApiRpcService>(*this, *_shared_rpc_resources);
     rpc::StorageApiRpcService::Params rpc_params;
     rpc_params.compression_config = convert_to_rpc_compression_config(*config);

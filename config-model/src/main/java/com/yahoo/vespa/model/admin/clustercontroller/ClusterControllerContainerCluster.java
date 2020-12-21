@@ -35,7 +35,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         Reindexing reindexing = deployState.featureFlags().enableAutomaticReindexing()
                 ? deployState.reindexing().orElse(Reindexing.DISABLED_INSTANCE)
                 : Reindexing.DISABLED_INSTANCE;
-        return new ReindexingContext(reindexing);
+        return new ReindexingContext(reindexing, deployState.featureFlags().reindexerWindowSizeIncrement());
     }
 
 }

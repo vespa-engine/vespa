@@ -30,20 +30,15 @@ public class ReindexingMaintainerTest {
                      withNewReady(reindexing, () -> -1L, Instant.EPOCH));
 
         // Status for (one, a) changes, but not (two, b).
-
-        assertEquals(reindexing.withReady("one", "a", Instant.EPOCH)
-                               .withoutPending("one", "a"),
-                     withNewReady(reindexing, () -> 19L, Instant.EPOCH));
-
-        Instant later = Instant.EPOCH.plus(ReindexingMaintainer.reindexingInterval.multipliedBy(3));
+        Instant later = Instant.ofEpochMilli(3 << 10);
         assertEquals(reindexing.withoutPending("one", "a")      // Converged, no longer pending.
-                               .withReady(later),               // Had EPOCH as previous, so is updated, overwriting all more specific status.
-                     withNewReady(reindexing, () -> 19L, later.plusMillis(1)));
+                               .withReady("one", "a", later),   // Converged, now ready.
+                     withNewReady(reindexing, () -> 19L, later));
 
         assertEquals(reindexing.withoutPending("one", "a")      // Converged, no longer pending.
-                               .withoutPending("two", "b")      // Converged, no LOnger pending.
-                               .withReady(later),               // Had EPOCH as previous, so is updated, overwriting all more specific status.
-                     withNewReady(reindexing, () -> 20L, later.plusMillis(1)));
+                               .withoutPending("two", "b")      // Converged, no Longer pending.
+                               .withReady(later),               // Outsider calls withReady(later), overriding more specific status.
+                     withNewReady(reindexing, () -> 20L, later).withReady(later));
 
         // Verify generation supplier isn't called when no pending document types.
         withNewReady(reindexing.withoutPending("one", "a").withoutPending("two", "b"),

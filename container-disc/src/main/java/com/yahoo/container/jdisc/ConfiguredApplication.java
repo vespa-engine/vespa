@@ -9,7 +9,6 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
@@ -38,7 +37,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import java.util.logging.Level;
 import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
@@ -135,7 +133,7 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void start() {
-        qrConfig = getConfig(QrConfig.class);
+        qrConfig = getConfig(QrConfig.class, true);
 
         hackToInitializeServer(qrConfig);
 
@@ -184,7 +182,7 @@ public final class ConfiguredApplication implements Application {
             slobrokList = slobrokConfigSubscriber.get().getSlobroks();
         } else {
             slobrokList = new SlobrokList();
-            SlobroksConfig slobrokConfig = getConfig(SlobroksConfig.class);
+            SlobroksConfig slobrokConfig = getConfig(SlobroksConfig.class, true);
             slobrokList.setup(slobrokConfig.slobrok().stream().map(SlobroksConfig.Slobrok::connectionspec).toArray(String[]::new));
         }
         return slobrokList;
@@ -209,10 +207,10 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    private <T extends ConfigInstance> T getConfig(Class<T> configClass) {
+    private <T extends ConfigInstance> T getConfig(Class<T> configClass, boolean isInitializing) {
         Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(configClass, configId)));
         try {
-            subscriber.waitNextGeneration();
+            subscriber.waitNextGeneration(isInitializing);
             return configClass.cast(first(subscriber.config().values()));
         } finally {
             subscriber.close();
@@ -223,7 +221,7 @@ public final class ConfiguredApplication implements Application {
         Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(QrConfig.class, configId)));
         try {
             while (true) {
-                subscriber.waitNextGeneration();
+                subscriber.waitNextGeneration(false);
                 QrConfig newConfig = QrConfig.class.cast(first(subscriber.config().values()));
                 if (qrConfig.rpc().port() != newConfig.rpc().port()) {
                     com.yahoo.protect.Process.logAndDie(
@@ -266,22 +264,35 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                     // Block until new config arrives, and it should be applied
-                    configurer.getNewComponentGraph(builder.guiceModules().activate());
+                    configurer.getNewComponentGraph(builder.guiceModules().activate(), false);
                     initializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
+                    tryReportFailedComponentGraphConstructionMetric(configurer, e);
                     log.log(Level.SEVERE,
                             "Reconfiguration failed, your application package must be fixed, unless this is a " +
                             "JNI reload issue: " + Exceptions.toMessageString(e), e);
                 } catch (Error e) {
-                    com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " + 
+                    com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " +
                                                         "a bad state and will terminate", e);
                 }
             }
             log.fine("Shutting down HandlersConfigurerDi");
         });
         reconfigurerThread.start();
+    }
+
+    private static void tryReportFailedComponentGraphConstructionMetric(HandlersConfigurerDi configurer, Throwable error) {
+        try {
+            // We need the Metric instance from previous component graph to report metric values
+            // Metric may not be available if this is the initial component graph (since metric wiring is done through the config model)
+            Metric metric = configurer.getComponent(Metric.class);
+            Metric.Context metricContext = metric.createContext(Map.of("exception", error.getClass().getSimpleName()));
+            metric.add("jdisc.application.failed_component_graphs", 1L, metricContext);
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to report metric for failed component graph: " + e.getMessage(), e);
+        }
     }
 
     private static void installServerProviders(ContainerBuilder builder) {
@@ -324,7 +335,7 @@ public final class ConfiguredApplication implements Application {
         return new HandlersConfigurerDi(subscriberFactory,
                                         Container.get(),
                                         configId,
-                                        new Deconstructor(true),
+                                        new Deconstructor(Deconstructor.Mode.RECONFIG),
                                         discInjector,
                                         osgiFramework);
     }
@@ -356,7 +367,7 @@ public final class ConfiguredApplication implements Application {
         }
 
         log.info("Stop: Shutting container down");
-        configurer.shutdown(new Deconstructor(false));
+        configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
         slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
         Container.get().shutdown();
 

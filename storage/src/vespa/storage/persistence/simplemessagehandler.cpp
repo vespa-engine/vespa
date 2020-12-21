@@ -3,7 +3,6 @@
 #include "simplemessagehandler.h"
 #include "persistenceutil.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
@@ -105,7 +104,6 @@ SimpleMessageHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageT
     LOG(debug, "CreateBucket(%s)", cmd.getBucketId().toString().c_str());
     if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
         LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
-        DUMP_LOGGED_BUCKET_OPERATIONS(cmd.getBucketId());
     }
     spi::Bucket spiBucket(cmd.getBucket());
     _spi.createBucket(spiBucket, tracker->context());
@@ -147,7 +145,6 @@ SimpleMessageHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageT
 {
     tracker->setMetric(_env._metrics.deleteBuckets);
     LOG(debug, "DeletingBucket(%s)", cmd.getBucketId().toString().c_str());
-    LOG_BUCKET_OPERATION(cmd.getBucketId(), "deleteBucket()");
     if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
         _env._fileStorHandler.clearMergeStatus(cmd.getBucket(),
                                                api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));

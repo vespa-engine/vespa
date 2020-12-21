@@ -11,8 +11,8 @@ class PendingMessageTracker;
 class RemoveBucketOperation : public IdealStateOperation
 {
 public:
-    RemoveBucketOperation(const std::string& clusterName, const BucketAndNodes& nodes)
-        : IdealStateOperation(nodes), _tracker(clusterName)
+    RemoveBucketOperation(const ClusterContext &cluster_context, const BucketAndNodes& nodes)
+        : IdealStateOperation(nodes), _tracker(cluster_context)
     {}
 
     /**

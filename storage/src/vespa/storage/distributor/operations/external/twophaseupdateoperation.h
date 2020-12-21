@@ -98,8 +98,9 @@ private:
     void sendReplyWithResult(DistributorMessageSender&, const api::ReturnCode&);
     void ensureUpdateReplyCreated();
 
-    bool isFastPathPossible() const;
-    void startFastPathUpdate(DistributorMessageSender&);
+    std::vector<BucketDatabase::Entry> get_bucket_database_entries() const;
+    bool isFastPathPossible(const std::vector<BucketDatabase::Entry>& entries) const;
+    void startFastPathUpdate(DistributorMessageSender& sender, std::vector<BucketDatabase::Entry> entries);
     void startSafePathUpdate(DistributorMessageSender&);
     bool lostBucketOwnershipBetweenPhases() const;
     void sendLostOwnershipTransientErrorReply(DistributorMessageSender&);

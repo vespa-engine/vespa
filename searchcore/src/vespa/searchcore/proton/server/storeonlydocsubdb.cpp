@@ -120,7 +120,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _subDbId(cfg._subDbId),
       _subDbType(cfg._subDbType),
-      _fileHeaderContext(*this, ctx._fileHeaderContext, _docTypeName, _baseDir),
+      _fileHeaderContext(ctx._fileHeaderContext, _docTypeName, _baseDir),
       _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
 {
     vespalib::mkdir(_baseDir, false); // Assume parent is created.
@@ -497,8 +497,7 @@ StoreOnlyDocSubDB::getDocumentDBReference()
 }
 
 StoreOnlySubDBFileHeaderContext::
-StoreOnlySubDBFileHeaderContext([[maybe_unused]] StoreOnlyDocSubDB &owner,
-                                const FileHeaderContext & parentFileHeaderContext,
+StoreOnlySubDBFileHeaderContext(const FileHeaderContext & parentFileHeaderContext,
                                 const DocTypeName &docTypeName,
                                 const vespalib::string &baseDir)
     : FileHeaderContext(),

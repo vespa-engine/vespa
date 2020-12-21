@@ -13,8 +13,9 @@ class PendingMessageTracker;
 class GarbageCollectionOperation : public IdealStateOperation
 {
 public:
-    GarbageCollectionOperation(const std::string& clusterName, const BucketAndNodes& nodes);
-    ~GarbageCollectionOperation();
+    GarbageCollectionOperation(const ClusterContext& cluster_ctx,
+                               const BucketAndNodes& nodes);
+    ~GarbageCollectionOperation() override;
 
     void onStart(DistributorMessageSender& sender) override;
     void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;

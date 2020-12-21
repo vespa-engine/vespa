@@ -10,6 +10,7 @@ namespace storage::distributor {
 class PendingMessageTracker;
 class VisitorOperation;
 class OperationOwner;
+class UuidGenerator;
 
 /**
  * Operation starting indirection for a visitor operation that has the semantics
@@ -31,11 +32,13 @@ class ReadForWriteVisitorOperationStarter
     OperationSequencer&               _operation_sequencer;
     OperationOwner&                   _stable_operation_owner;
     PendingMessageTracker&            _message_tracker;
+    UuidGenerator&                    _uuid_generator;
 public:
     ReadForWriteVisitorOperationStarter(std::shared_ptr<VisitorOperation> visitor_op,
                                         OperationSequencer& operation_sequencer,
                                         OperationOwner& stable_operation_owner,
-                                        PendingMessageTracker& message_tracker);
+                                        PendingMessageTracker& message_tracker,
+                                        UuidGenerator& uuid_generator);
     ~ReadForWriteVisitorOperationStarter() override;
 
     const char* getName() const override { return "ReadForWriteVisitorOperationStarter"; }
@@ -43,6 +46,8 @@ public:
     void onStart(DistributorMessageSender& sender) override;
     void onReceive(DistributorMessageSender& sender,
                    const std::shared_ptr<api::StorageReply> & msg) override;
+private:
+    bool bucket_has_pending_merge(const document::Bucket&, const PendingMessageTracker& tracker) const;
 };
 
 }

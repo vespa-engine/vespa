@@ -2,7 +2,6 @@
 
 #include "bucketownershipnotifier.h"
 #include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -60,7 +59,8 @@ BucketOwnershipNotifier::sendNotifyBucketToDistributor(
     }
     auto notifyCmd = std::make_shared<api::NotifyBucketChangeCommand>(bucket, infoToSend);
 
-    notifyCmd->setAddress(api::StorageMessageAddress::create(&_component.getClusterName(), lib::NodeType::DISTRIBUTOR, distributorIndex));
+    const auto *cluster_np = _component.cluster_context().cluster_name_ptr();
+    notifyCmd->setAddress(api::StorageMessageAddress::create(cluster_np, lib::NodeType::DISTRIBUTOR, distributorIndex));
     notifyCmd->setSourceIndex(_component.getIndex());
     LOG(debug,
         "Sending notify to distributor %u: %s",
@@ -83,12 +83,6 @@ BucketOwnershipNotifier::logNotification(const document::Bucket &bucket,
         currentOwnerIndex,
         sourceIndex,
         newInfo.toString().c_str());
-    LOG_BUCKET_OPERATION_NO_LOCK(
-            bucket,
-            vespalib::make_string(
-                    "Sending notify to distributor %u "
-                    "(ownership changed away from %u)",
-                    currentOwnerIndex, sourceIndex));
 }
 
 void

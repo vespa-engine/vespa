@@ -4,6 +4,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.metrics.documentdb_tagged_metrics");
+
 namespace proton {
 
 using matching::MatchingStats;
@@ -167,13 +170,13 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
 
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::~RankProfileMetrics() = default;
 
-DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::DocIdPartition(const vespalib::string &name, MetricSet *parent) :
-    MetricSet("docid_partition", {{"docidPartition", name}}, "DocId Partition profile metrics", parent),
-    docsMatched("docs_matched", {}, "Number of documents matched", this),
-    docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
-    docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
-    activeTime("active_time", {}, "Time (sec) spent doing actual work", this),
-    waitTime("wait_time", {}, "Time (sec) spent waiting for other external threads and resources", this)
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::DocIdPartition(const vespalib::string &name, MetricSet *parent)
+    : MetricSet("docid_partition", {{"docidPartition", name}}, "DocId Partition profile metrics", parent),
+      docsMatched("docs_matched", {}, "Number of documents matched", this),
+      docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
+      docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
+      activeTime("active_time", {}, "Time (sec) spent doing actual work", this),
+      waitTime("wait_time", {}, "Time (sec) spent waiting for other external threads and resources", this)
 { }
 
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::~DocIdPartition() = default;
@@ -191,7 +194,8 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::up
 }
 
 void
-DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const MatchingStats &stats)
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const metrics::MetricLockGuard &,
+                                                                     const MatchingStats &stats)
 {
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());
@@ -213,14 +217,15 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
     queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
                                stats.queryLatencyMin(), stats.queryLatencyMax());
     if (stats.getNumPartitions() > 0) {
-        if (stats.getNumPartitions() <= partitions.size()) {
-            for (size_t i = 0; i < stats.getNumPartitions(); ++i) {
-                partitions[i]->update(stats.getPartition(i));
-            }
-        } else {
-            vespalib::string msg(vespalib::make_string("Num partitions used '%ld' is larger than number of partitions '%ld' configured.",
-                                             stats.getNumPartitions(), partitions.size()));
-            throw vespalib::IllegalStateException(msg, VESPA_STRLOC);
+        for (size_t i = partitions.size(); i < stats.getNumPartitions(); ++i) {
+            // This loop is to handle live reconfigs that changes how many partitions(number of threads) might be used per query.
+            vespalib::string partition(vespalib::make_string("docid_part%02ld", i));
+            partitions.push_back(std::make_unique<DocIdPartition>(partition, this));
+            LOG(info, "Number of partitions has been increased to '%ld' from '%ld' previously configured. Adding part %ld",
+                stats.getNumPartitions(), partitions.size(), i);
+        }
+        for (size_t i = 0; i < stats.getNumPartitions(); ++i) {
+            partitions[i]->update(stats.getPartition(i));
         }
     }
 }

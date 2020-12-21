@@ -21,6 +21,8 @@ public:
 
 private:
     void handleDocuments(const document::BucketId&, std::vector<spi::DocEntry::UP>&, HitCounter&) override;
+    bool remap_docapi_message_error_code(api::ReturnCode& in_out_code) override;
+    vespalib::string make_lock_access_token() const;
 };
 
 struct ReindexingVisitorFactory : public VisitorFactory {

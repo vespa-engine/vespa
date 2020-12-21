@@ -117,7 +117,7 @@ TEST(FastSparseMapTest, fast_sparse_map_works_with_no_labels) {
 }
 
 TEST(FastSparseMapTest, size_of_internal_types) {
-    fprintf(stderr, "fast sparse map hash node size: %zu\n", sizeof(hash_node<FastSparseMap::MapType::value_type>));
+    EXPECT_EQ(sizeof(hash_node<FastSparseMap::MapType::value_type>), 16);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -14,5 +14,6 @@ DOCKER_IMAGE=vespaengine/vespa-build-centos7:latest
 
 bell &
 docker run --rm -v ${HOME}/.m2:/root/.m2 -v ${HOME}/.ccache:/root/.ccache -v $(pwd):/source \
-           --entrypoint /source/travis/travis-build-full.sh ${DOCKER_IMAGE}
+       -e TRAVIS_REPO_SLUG=$TRAVIS_REPO_SLUG -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
+       --entrypoint /source/travis/travis-build.sh ${DOCKER_IMAGE}
 exit $?

@@ -81,6 +81,10 @@ void ExecutorThreadService::setTaskLimit(uint32_t taskLimit) {
     _executor.setTaskLimit(taskLimit);
 }
 
+uint32_t ExecutorThreadService::getTaskLimit() const {
+    return _executor.getTaskLimit();
+}
+
 void
 ExecutorThreadService::wakeup() {
     _executor.wakeup();

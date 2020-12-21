@@ -3,7 +3,6 @@
 #include "tensor_function.h"
 #include "value.h"
 #include "operation.h"
-#include "tensor.h"
 #include "visit_stuff.h"
 #include "string_stuff.h"
 #include <vespa/eval/instruction/generic_concat.h>

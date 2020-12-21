@@ -37,7 +37,8 @@ TEST_F(OperationSequencerTest, cannot_get_sequencing_handle_for_id_with_existing
     auto second_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test::abcd"));
     EXPECT_FALSE(second_handle.valid());
     ASSERT_TRUE(second_handle.is_blocked());
-    EXPECT_EQ(second_handle.blocked_by(), SequencingHandle::BlockedBy::PendingOperation);
+    EXPECT_TRUE(second_handle.is_blocked_by_pending_operation());
+    EXPECT_FALSE(second_handle.is_blocked_by_bucket());
 }
 
 TEST_F(OperationSequencerTest, can_get_sequencing_handle_for_different_ids) {
@@ -63,17 +64,19 @@ TEST_F(OperationSequencerTest, releasing_handle_allows_for_getting_new_handles_f
 TEST_F(OperationSequencerTest, cannot_get_handle_for_gid_contained_in_locked_bucket) {
     const auto bucket = document::Bucket(default_space(), document::BucketId(16, 1));
     EXPECT_FALSE(sequencer.is_blocked(bucket));
-    auto bucket_handle = sequencer.try_acquire(bucket);
+    auto bucket_handle = sequencer.try_acquire(bucket, "foo");
     EXPECT_TRUE(bucket_handle.valid());
     EXPECT_TRUE(sequencer.is_blocked(bucket));
     auto doc_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test:n=1:abcd"));
     EXPECT_FALSE(doc_handle.valid());
     ASSERT_TRUE(doc_handle.is_blocked());
-    EXPECT_EQ(doc_handle.blocked_by(), SequencingHandle::BlockedBy::LockedBucket);
+    ASSERT_TRUE(doc_handle.is_blocked_by_bucket());
+    EXPECT_TRUE(doc_handle.is_bucket_blocked_with_token("foo"));
+    EXPECT_FALSE(doc_handle.is_bucket_blocked_with_token("bar"));
 }
 
 TEST_F(OperationSequencerTest, can_get_handle_for_gid_not_contained_in_active_bucket) {
-    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)));
+    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)), "foo");
     EXPECT_TRUE(bucket_handle.valid());
     // Note: different sub-bucket than the lock
     auto doc_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test:n=2:abcd"));
@@ -82,7 +85,7 @@ TEST_F(OperationSequencerTest, can_get_handle_for_gid_not_contained_in_active_bu
 
 TEST_F(OperationSequencerTest, releasing_bucket_lock_allows_gid_handles_to_be_acquired) {
     const auto bucket = document::Bucket(default_space(), document::BucketId(16, 1));
-    auto bucket_handle = sequencer.try_acquire(bucket);
+    auto bucket_handle = sequencer.try_acquire(bucket, "foo");
     bucket_handle.release();
     auto doc_handle = sequencer.try_acquire(default_space(), DocumentId("id:foo:test:n=1:abcd"));
     EXPECT_TRUE(doc_handle.valid());
@@ -90,14 +93,14 @@ TEST_F(OperationSequencerTest, releasing_bucket_lock_allows_gid_handles_to_be_ac
 }
 
 TEST_F(OperationSequencerTest, can_get_handle_for_gid_when_locked_bucket_is_in_separate_bucket_space) {
-    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)));
+    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)), "foo");
     EXPECT_TRUE(bucket_handle.valid());
     auto doc_handle = sequencer.try_acquire(global_space(), DocumentId("id:foo:test:n=1:abcd"));
     EXPECT_TRUE(doc_handle.valid());
 }
 
 TEST_F(OperationSequencerTest, is_blocked_is_bucket_space_aware) {
-    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)));
+    auto bucket_handle = sequencer.try_acquire(document::Bucket(default_space(), document::BucketId(16, 1)), "foo");
     EXPECT_FALSE(sequencer.is_blocked(document::Bucket(global_space(), document::BucketId(16, 1))));
 }
 

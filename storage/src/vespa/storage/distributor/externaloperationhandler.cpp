@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_space_distribution_context.h"
+#include "crypto_uuid_generator.h"
 #include "externaloperationhandler.h"
 #include "distributor.h"
 #include "operation_sequencer.h"
@@ -49,8 +50,8 @@ public:
     int getDistributorIndex() const override {
         return _node_ctx.node_index();
     }
-    const vespalib::string& getClusterName() const override {
-        return _node_ctx.cluster_name();
+    const ClusterContext & cluster_context() const override {
+        return _node_ctx;
     }
     const PendingMessageTracker& getPendingMessageTracker() const override {
         abort(); // Never called by the messages using this component.
@@ -81,6 +82,7 @@ ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_
       _distributor_operation_owner(operation_owner),
       _non_main_thread_ops_mutex(),
       _non_main_thread_ops_owner(*_direct_dispatch_sender, _node_ctx.clock()),
+      _uuid_generator(std::make_unique<CryptoUuidGenerator>()),
       _concurrent_gets_enabled(false),
       _use_weak_internal_read_consistency_for_gets(false)
 {
@@ -181,7 +183,8 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
                                                               PersistenceOperationMetricSet& persistenceMetrics)
 {
     auto &bucket_space(_op_ctx.bucket_space_repo().get(cmd.getBucket().getBucketSpace()));
-    if (!bucket_space.owns_bucket_in_current_state(bucketId)) {
+    auto bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucketId);
+    if (!bucket_ownership_flags.owned_in_current_state()) {
         document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
@@ -190,12 +193,11 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
         return false;
     }
 
-    auto pending = bucket_space.check_ownership_in_pending_state(bucketId);
-    if (!pending.isOwned()) {
+    if (!bucket_ownership_flags.owned_in_pending_state()) {
         // We return BUSY here instead of WrongDistributionReply to avoid clients potentially
         // ping-ponging between cluster state versions during a state transition.
-        auto& current_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
-        auto& pending_state = pending.getNonOwnedState();
+        auto& current_state = bucket_space.getClusterState();
+        auto& pending_state = bucket_space.get_pending_cluster_state();
         bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
         return false;
     }
@@ -238,7 +240,8 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         Func func)
 {
     auto &bucket_space(_op_ctx.bucket_space_repo().get(bucket.getBucketSpace()));
-    if (!bucket_space.owns_bucket_in_current_state(bucket.getBucketId())) {
+    auto bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucket.getBucketId());
+    if (!bucket_ownership_flags.owned_in_current_state()) {
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
         bounce_with_wrong_distribution(cmd);
@@ -246,15 +249,14 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         return;
     }
 
-    auto pending = bucket_space.check_ownership_in_pending_state(bucket.getBucketId());
-    if (pending.isOwned()) {
+    if (bucket_ownership_flags.owned_in_pending_state()) {
         func(_op_ctx.bucket_space_repo());
     } else {
         if (_op_ctx.distributor_config().allowStaleReadsDuringClusterStateTransitions()) {
             func(_op_ctx.read_only_bucket_space_repo());
         } else {
-            auto& current_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
-            auto& pending_state = pending.getNonOwnedState();
+            auto& current_state = bucket_space.getClusterState();
+            auto& pending_state = bucket_space.get_pending_cluster_state();
             bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
         }
     }
@@ -262,9 +264,19 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
 
 namespace {
 
-bool put_is_allowed_through_bucket_lock(const api::PutCommand& cmd) {
+bool put_is_from_reindexing_visitor(const api::PutCommand& cmd) {
     const auto& tas_cond = cmd.getCondition();
-    return (tas_cond.isPresent() && (tas_cond.getSelection() == reindexing_bucket_lock_bypass_value()));
+    return (tas_cond.isPresent() && (tas_cond.getSelection().starts_with(reindexing_bucket_lock_bypass_prefix())));
+}
+
+// Precondition: put_is_from_reindexing_visitor(cmd) == true
+std::string extract_reindexing_token(const api::PutCommand& cmd) {
+    const std::string& tas_str = cmd.getCondition().getSelection();
+    auto eq_idx = tas_str.find_first_of('=');
+    if (eq_idx != std::string::npos) {
+        return tas_str.substr(eq_idx + 1);
+    }
+    return "";
 }
 
 }
@@ -282,12 +294,19 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
     const auto bucket_space = cmd->getBucket().getBucketSpace();
     auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     bool allow = allowMutation(handle);
-    if (put_is_allowed_through_bucket_lock(*cmd)) {
-        if (!allow && handle.is_blocked_by(SequencingHandle::BlockedBy::LockedBucket)) {
-            cmd->setCondition(documentapi::TestAndSetCondition()); // Must clear TaS or the backend will reject the op
-            allow = true;
+    if (put_is_from_reindexing_visitor(*cmd)) {
+        auto expect_token = extract_reindexing_token(*cmd);
+        if (!allow && handle.is_blocked_by_bucket()) {
+            if (handle.is_bucket_blocked_with_token(expect_token)) {
+                cmd->setCondition(documentapi::TestAndSetCondition()); // Must clear TaS or the backend will reject the op
+                allow = true;
+            } else {
+                bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                                                         "Expected bucket lock token did not match actual lock token"));
+                return true;
+            }
         } else {
-            bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::REJECTED,
+            bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
                                                      "Operation expects a read-for-write bucket lock to be present, "
                                                      "but none currently exists"));
             return true;
@@ -429,7 +448,8 @@ bool ExternalOperationHandler::onCreateVisitor(const std::shared_ptr<api::Create
     if (visit_op->is_read_for_write()) {
         _op = std::make_shared<ReadForWriteVisitorOperationStarter>(std::move(visit_op), _operation_sequencer,
                                                                     _distributor_operation_owner,
-                                                                    _op_ctx.pending_message_tracker());
+                                                                    _op_ctx.pending_message_tracker(),
+                                                                    *_uuid_generator);
     } else {
         _op = std::move(visit_op);
     }

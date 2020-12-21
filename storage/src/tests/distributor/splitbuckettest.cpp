@@ -10,6 +10,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using namespace document;
@@ -46,8 +47,7 @@ SplitOperationTest::SplitOperationTest()
 }
 
 namespace {
-    vespalib::string _Storage("storage");
-    api::StorageMessageAddress _Storage0Address(&_Storage, lib::NodeType::STORAGE, 0);
+    api::StorageMessageAddress _Storage0Address(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 0);
 }
 
 TEST_F(SplitOperationTest, simple) {
@@ -56,7 +56,7 @@ TEST_F(SplitOperationTest, simple) {
     insertBucketInfo(document::BucketId(16, 1), 0, 0xabc, 1000,
                      tooLargeBucketSize, 250);
 
-    SplitOperation op("storage",
+    SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0)),
                       maxSplitBits,
@@ -125,7 +125,7 @@ TEST_F(SplitOperationTest, multi_node_failure) {
 
     enableDistributorClusterState("distributor:1 storage:2");
 
-    SplitOperation op("storage",
+    SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0,1)),
                       maxSplitBits,
@@ -210,7 +210,7 @@ TEST_F(SplitOperationTest, copy_trusted_status_not_carried_over_after_split) {
     addNodesToBucketDB(sourceBucket, "0=150/20/30000000/t,1=450/50/60000/u,"
                                      "2=550/60/70000");
 
-    SplitOperation op("storage",
+    SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(sourceBucket), toVector<uint16_t>(0, 1)),
                       maxSplitBits,
                       splitCount,
@@ -277,7 +277,7 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
 
     insertBucketInfo(joinTarget, 0, 0xabc, 1000, 1234, true);
 
-    SplitOperation op("storage",
+    SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(joinTarget), toVector<uint16_t>(0)),
                       maxSplitBits,
                       splitCount,
@@ -290,7 +290,8 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     tracker.clearMessagesForNode(0);
     EXPECT_FALSE(op.isBlocked(tracker, op_seq));
 
-    joinCmd->setAddress(api::StorageMessageAddress::create(&_Storage, lib::NodeType::STORAGE, 1));
+    joinCmd->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(),
+                                                           lib::NodeType::STORAGE, 1));
     tracker.insert(joinCmd);
 
     EXPECT_TRUE(op.isBlocked(tracker, op_seq));
@@ -309,11 +310,11 @@ TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
     document::BucketId source_bucket(16, 1);
     insertBucketInfo(source_bucket, 0, 0xabc, 1000, tooLargeBucketSize, 250);
 
-    SplitOperation op("storage", BucketAndNodes(makeDocumentBucket(source_bucket), toVector<uint16_t>(0)),
+    SplitOperation op(dummy_cluster_context, BucketAndNodes(makeDocumentBucket(source_bucket), toVector<uint16_t>(0)),
                       maxSplitBits, splitCount, splitByteSize);
 
     EXPECT_FALSE(op.isBlocked(tracker, op_seq));
-    auto token = op_seq.try_acquire(makeDocumentBucket(source_bucket));
+    auto token = op_seq.try_acquire(makeDocumentBucket(source_bucket), "foo");
     EXPECT_TRUE(token.valid());
     EXPECT_TRUE(op.isBlocked(tracker, op_seq));
 }

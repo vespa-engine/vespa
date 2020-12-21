@@ -227,16 +227,13 @@ MergeOperation::deleteSourceOnlyNodes(
         getBucketId().toString().c_str());
 
     if (!sourceOnlyNodes.empty()) {
-        _removeOperation.reset(
-                new RemoveBucketOperation(
-                        _manager->getDistributorComponent().getClusterName(),
-                        BucketAndNodes(getBucket(), sourceOnlyNodes)));
+        _removeOperation = std::make_unique<RemoveBucketOperation>(
+                        _manager->getDistributorComponent().cluster_context(),
+                        BucketAndNodes(getBucket(), sourceOnlyNodes));
         // Must not send removes to source only copies if something has caused
         // pending load to the copy after the merge was sent!
         if (_removeOperation->isBlocked(sender.getPendingMessageTracker(), sender.operation_sequencer())) {
-            LOG(debug,
-                "Source only removal for %s was blocked by a pending "
-                "operation",
+            LOG(debug, "Source only removal for %s was blocked by a pending operation",
                 getBucketId().toString().c_str());
             _ok = false;
             done();

@@ -334,4 +334,11 @@ AdaptiveSequencedExecutor::getStats()
     return stats;
 }
 
+AdaptiveSequencedExecutor::Config
+AdaptiveSequencedExecutor::get_config() const
+{
+    auto guard = std::lock_guard(_mutex);
+    return _cfg;
+}
+
 }

@@ -16,6 +16,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.slime.Cursor;
+import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.Map.Entry.comparingByKey;
@@ -86,7 +88,7 @@ public class ApplicationHandler extends HttpHandler {
 
         if (isReindexingRequest(request)) {
             applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.enabled(false));
-            return new JSONResponse(Response.Status.OK);
+            return createMessageResponse("Reindexing disabled");
         }
 
         if (applicationRepository.delete(applicationId))
@@ -211,27 +213,20 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isReindexRequest(request)) {
-            triggerReindexing(request, applicationId);
-            return new JSONResponse(Response.Status.OK);
+            return triggerReindexing(request, applicationId);
         }
 
         if (isReindexingRequest(request)) {
             applicationRepository.modifyReindexing(applicationId, reindexing -> reindexing.enabled(true));
-            return new JSONResponse(Response.Status.OK);
+            return createMessageResponse("Reindexing enabled");
         }
 
         throw new NotFoundException("Illegal POST request '" + request.getUri() + "'");
     }
 
-    private void triggerReindexing(HttpRequest request, ApplicationId applicationId) {
-        List<String> clusters = Optional.ofNullable(request.getProperty("clusterId")).stream()
-                                        .flatMap(value -> Stream.of(value.split(",")))
-                                        .filter(cluster -> ! cluster.isBlank())
-                                        .collect(toList());
-        List<String> types = Optional.ofNullable(request.getProperty("documentType")).stream()
-                                     .flatMap(value -> Stream.of(value.split(",")))
-                                     .filter(type -> ! type.isBlank())
-                                     .collect(toList());
+    private HttpResponse triggerReindexing(HttpRequest request, ApplicationId applicationId) {
+        Set<String> clusters = StringUtilities.split(request.getProperty("clusterId"));
+        Set<String> types = StringUtilities.split(request.getProperty("documentType"));
         Instant now = applicationRepository.clock().instant();
         applicationRepository.modifyReindexing(applicationId, reindexing -> {
             if (clusters.isEmpty())
@@ -245,6 +240,14 @@ public class ApplicationHandler extends HttpHandler {
                             reindexing = reindexing.withReady(cluster, type, now);
             return reindexing;
         });
+
+        String message = "Reindexing " +
+                         (clusters.isEmpty() ? ""
+                                             : (types.isEmpty() ? ""
+                                                                : "document types " + String.join(", ", types) + " in ") +
+                                               "clusters " + String.join(", ", clusters) + " of ") +
+                         "application " + applicationId;
+        return createMessageResponse(message);
     }
 
     private HttpResponse getReindexingStatus(ApplicationId applicationId) {
@@ -483,9 +486,13 @@ public class ApplicationHandler extends HttpHandler {
             status.endedAt().ifPresent(endedAt -> object.setLong("endedMillis", endedAt.toEpochMilli()));
             status.state().map(ClusterReindexing.State::asString).ifPresent(state -> object.setString("state", state));
             status.message().ifPresent(message -> object.setString("message", message));
-            status.progress().ifPresent(progress -> object.setString("progress", progress));
+            status.progress().ifPresent(progress -> object.setDouble("progress", progress));
         }
 
+    }
+
+    private static JSONResponse createMessageResponse(String message) {
+        return new JSONResponse(Response.Status.OK) { { object.setString("message", message); } };
     }
 
 }

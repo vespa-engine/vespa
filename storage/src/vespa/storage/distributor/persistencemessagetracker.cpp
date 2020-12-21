@@ -18,7 +18,7 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
         DistributorNodeContext& node_ctx,
         DistributorOperationContext& op_ctx,
         api::Timestamp revertTimestamp)
-    : MessageTracker(node_ctx.cluster_name()),
+    : MessageTracker(node_ctx),
       _metric(metric),
       _reply(std::move(reply)),
       _op_ctx(op_ctx),
@@ -223,8 +223,8 @@ PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
     }
 
     updateMetrics();
-    _trace.setStrict(false);
     if ( ! _trace.isEmpty()) {
+        _trace.setStrict(false);
         _reply->getTrace().addChild(std::move(_trace));
     }
     

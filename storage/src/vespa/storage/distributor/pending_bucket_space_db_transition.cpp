@@ -4,7 +4,6 @@
 #include "clusterinformation.h"
 #include "pendingclusterstate.h"
 #include "distributor_bucket_space.h"
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>

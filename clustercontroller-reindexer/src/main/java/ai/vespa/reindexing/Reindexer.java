@@ -49,10 +49,10 @@ public class Reindexer {
     private final ReindexingMetrics metrics;
     private final Clock clock;
     private final Phaser phaser = new Phaser(2); // Reindexer and visitor.
+    private final double windowSizeIncrement;
 
-    @Inject
     public Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
-                     DocumentAccess access, Metric metric, Clock clock) {
+                     DocumentAccess access, Metric metric, Clock clock, double windowSizeIncrement) {
         this(cluster,
              ready,
              database,
@@ -65,11 +65,13 @@ public class Reindexer {
                  }
              },
              metric,
-             clock);
+             clock,
+             windowSizeIncrement);
     }
 
     Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
-              Function<VisitorParameters, Runnable> visitorSessions, Metric metric, Clock clock) {
+              Function<VisitorParameters, Runnable> visitorSessions, Metric metric, Clock clock,
+              double windowSizeIncrement) {
         for (DocumentType type : ready.keySet())
             cluster.bucketSpaceOf(type); // Verifies this is known.
 
@@ -79,6 +81,7 @@ public class Reindexer {
         this.visitorSessions = visitorSessions;
         this.metrics = new ReindexingMetrics(metric, cluster.name);
         this.clock = clock;
+        this.windowSizeIncrement = windowSizeIncrement;
     }
 
     /** Lets the reindexer abort any ongoing visit session, wait for it to complete normally, then exit. */
@@ -90,6 +93,9 @@ public class Reindexer {
     public void reindex() throws ReindexingLockException {
         if (phaser.isTerminated())
             throw new IllegalStateException("Already shut down");
+
+        // Keep metrics in sync across cluster controller containers.
+        metrics.dump(database.readReindexing(cluster.name));
 
         try (Lock lock = database.lockReindexing(cluster.name())) {
             AtomicReference<Reindexing> reindexing = new AtomicReference<>(database.readReindexing(cluster.name()));
@@ -191,7 +197,7 @@ public class Reindexer {
 
     VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
         VisitorParameters parameters = new VisitorParameters(type.getName());
-        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(0.2)
+        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(windowSizeIncrement)
                                                                 .setWindowSizeDecrementFactor(5)
                                                                 .setResizeRate(10)
                                                                 .setMinWindowSize(1));

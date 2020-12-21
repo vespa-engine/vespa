@@ -9,6 +9,8 @@
 
 namespace storage::distributor {
 
+class DistributorBucketSpace;
+
 struct BucketInstance : public vespalib::AsciiPrintable {
     document::BucketId _bucket;
     api::BucketInfo    _info;
@@ -57,13 +59,12 @@ public:
      *   _instances.size() >= configured redundancy level, unless insufficient
      *   number of nodes are available
      */
-    void extendToEnoughCopies(const BucketDatabase& db,
+    void extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space,
+                              const BucketDatabase& db,
                               const document::BucketId& targetIfNonPreExisting,
-                              const document::BucketId& mostSpecificId,
-                              const lib::IdealNodeCalculator& idealNodeCalc);
+                              const document::BucketId& mostSpecificId);
 
-    void populate(const document::BucketId&, BucketDatabase&,
-                  const lib::IdealNodeCalculator&);
+    void populate(const document::BucketId&, const DistributorBucketSpace&, BucketDatabase&);
     void add(BucketDatabase::Entry& e, const lib::IdealNodeList& idealState);
 
     template <typename Order>
@@ -77,20 +78,20 @@ public:
 };
 
 class OperationTargetResolverImpl : public OperationTargetResolver {
+    const DistributorBucketSpace& _distributor_bucket_space;
     BucketDatabase& _bucketDatabase;
-    const lib::IdealNodeCalculator& _idealNodeCalculator;
     uint32_t _minUsedBucketBits;
     uint16_t _redundancy;
     document::BucketSpace _bucketSpace;
 
 public:
-    OperationTargetResolverImpl(BucketDatabase& bucketDatabase,
-                                const lib::IdealNodeCalculator& idealNodeCalc,
+    OperationTargetResolverImpl(const DistributorBucketSpace& distributor_bucket_space,
+                                BucketDatabase& bucketDatabase,
                                 uint32_t minUsedBucketBits,
                                 uint16_t redundancy,
                                 document::BucketSpace bucketSpace)
-        : _bucketDatabase(bucketDatabase),
-          _idealNodeCalculator(idealNodeCalc),
+        : _distributor_bucket_space(distributor_bucket_space),
+          _bucketDatabase(bucketDatabase),
           _minUsedBucketBits(minUsedBucketBits),
           _redundancy(redundancy),
           _bucketSpace(bucketSpace)

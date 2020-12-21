@@ -1,4 +1,4 @@
-// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
@@ -266,10 +266,17 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
-            "enable-automatic-reindexing", false,
+            "enable-automatic-reindexing", true,
             List.of("bjorncs", "jonmv"), "2020-12-02", "2021-02-01",
             "Whether to automatically trigger reindexing from config change",
             "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundDoubleFlag REINDEXER_WINDOW_SIZE_INCREMENT = defineDoubleFlag(
+            "reindexer-window-size-increment", 0.2,
+            List.of("jonmv"), "2020-12-09", "2021-02-07",
+            "Window size increment for dynamic throttle policy used by reindexer visitor session — more means more aggressive reindexing",
+            "Takes effect on (re)deployment",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING = defineFeatureFlag(
@@ -279,11 +286,11 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DYNAMIC_RECONFIGURATION_OF_ZOOKEEPER_CLUSTER = defineFeatureFlag(
-            "dynamic-reconfiguration-of-zookeeper-cluster", false,
-            List.of("hmusum"), "2020-12-02", "2021-02-01",
-            "Whether to allow dynamic reconfiguration of zookeeper cluster",
-            "Takes effect on next deployment",
+    public static final UnboundBooleanFlag RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER = defineFeatureFlag(
+            "reconfigurable-zookeeper-server-for-cluster-controller", false,
+            List.of("musum", "mpolden"), "2020-12-16", "2021-02-16",
+            "Whether to use reconfigurable zookeeper server for cluster controller",
+            "Takes effect on (re)redeployment",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

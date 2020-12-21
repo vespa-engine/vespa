@@ -12,9 +12,9 @@ LOG_SETUP(".distributor.operation.idealstate.remove");
 
 namespace storage::distributor {
 
-GarbageCollectionOperation::GarbageCollectionOperation(const std::string& clusterName, const BucketAndNodes& nodes)
+GarbageCollectionOperation::GarbageCollectionOperation(const ClusterContext& cluster_ctx, const BucketAndNodes& nodes)
     : IdealStateOperation(nodes),
-      _tracker(clusterName),
+      _tracker(cluster_ctx),
       _replica_info(),
       _max_documents_removed(0)
 {}

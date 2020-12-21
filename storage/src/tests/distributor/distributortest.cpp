@@ -16,6 +16,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/metrics/updatehook.h>
 #include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -453,7 +454,7 @@ TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) 
 
     // Force trigger update hook
     std::mutex l;
-    distributor_metric_update_hook().updateMetrics(std::unique_lock(l));
+    distributor_metric_update_hook().updateMetrics(metrics::MetricLockGuard(l));
     // Metrics should now be updated to the last complete working state
     {
         const IdealStateMetricSet& metrics(getIdealStateManager().getMetrics());
@@ -482,7 +483,7 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
     tickDistributorNTimes(10);
 
     std::mutex l;
-    distributor_metric_update_hook().updateMetrics(std::unique_lock(l));
+    distributor_metric_update_hook().updateMetrics(metrics::MetricLockGuard(l));
     auto* m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
     ASSERT_TRUE(m != nullptr);
     auto last_used = m->getLongValue("last");
@@ -496,7 +497,7 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
     const auto sample_interval_sec = db_sample_interval_sec(getDistributor());
     getClock().setAbsoluteTimeInSeconds(1000 + sample_interval_sec - 1); // Not there yet.
     tickDistributorNTimes(50);
-    distributor_metric_update_hook().updateMetrics(std::unique_lock(l));
+    distributor_metric_update_hook().updateMetrics(metrics::MetricLockGuard(l));
 
     m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
     auto now_used = m->getLongValue("last");
@@ -504,7 +505,7 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
 
     getClock().setAbsoluteTimeInSeconds(1000 + sample_interval_sec + 1);
     tickDistributorNTimes(10);
-    distributor_metric_update_hook().updateMetrics(std::unique_lock(l));
+    distributor_metric_update_hook().updateMetrics(metrics::MetricLockGuard(l));
 
     m = getDistributor().getMetrics().mutable_dbs.memory_usage.getMetric("used_bytes");
     now_used = m->getLongValue("last");
@@ -557,7 +558,7 @@ TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state
     getBucketDBUpdater().onSetSystemState(stateCmd);
 
     document::BucketId nonOwnedBucket(16, 3);
-    EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_state(nonOwnedBucket).isOwned());
+    EXPECT_FALSE(getDistributorBucketSpace().get_bucket_ownership_flags(nonOwnedBucket).owned_in_pending_state());
     EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_and_current_state(nonOwnedBucket).isOwned());
 
     std::vector<BucketCopy> copies;

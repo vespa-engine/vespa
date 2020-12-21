@@ -14,6 +14,7 @@ import java.util.Map;
  * @author ollivir
  */
 public class Keys {
+
     static Key<?> createKey(Type instanceType, Annotation annotation) {
         if (annotation == null) {
             return Key.get(instanceType);
@@ -34,4 +35,5 @@ public class Keys {
         configs.forEach((k, v) -> ret.put(k, v));
         return ret;
     }
+
 }

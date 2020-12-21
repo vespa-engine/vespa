@@ -4,10 +4,14 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storage/distributor/uuid_generator.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <tests/distributor/distributortestutil.h>
@@ -25,6 +29,20 @@ Bucket default_bucket(BucketId id) {
     return Bucket(document::FixedBucketSpaces::default_space(), id);
 }
 
+api::StorageMessageAddress make_storage_address(uint16_t node) {
+    static vespalib::string _storage("storage");
+    return {&_storage, lib::NodeType::STORAGE, node};
+}
+
+struct MockUuidGenerator : UuidGenerator {
+    vespalib::string _uuid;
+    MockUuidGenerator() : _uuid("a-very-random-id") {}
+
+    vespalib::string generate_uuid() const override {
+        return _uuid;
+    }
+};
+
 }
 
 struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
@@ -33,19 +51,22 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
     std::unique_ptr<OperationOwner> _op_owner;
     BucketId                        _superbucket;
     BucketId                        _sub_bucket;
+    MockUuidGenerator               _mock_uuid_generator;
 
     ReadForWriteVisitorOperationStarterTest()
         : _test_doc_man(),
           _default_config(100, 100),
           _op_owner(),
           _superbucket(16, 4),
-          _sub_bucket(17, 4)
+          _sub_bucket(17, 4),
+          _mock_uuid_generator()
     {}
 
     void SetUp() override {
         createLinks();
         setupDistributor(1, 1, "version:1 distributor:1 storage:1");
         _op_owner = std::make_unique<OperationOwner>(_sender, getClock());
+        _sender.setPendingMessageTracker(getDistributor().getPendingMessageTracker());
 
         addNodesToBucketDB(_sub_bucket, "0=1/2/3/t");
     }
@@ -74,13 +95,15 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
     std::shared_ptr<ReadForWriteVisitorOperationStarter> create_rfw_op(std::shared_ptr<VisitorOperation> visitor_op) {
         return std::make_shared<ReadForWriteVisitorOperationStarter>(
                 std::move(visitor_op), operation_sequencer(),
-                *_op_owner, getDistributor().getPendingMessageTracker());
+                *_op_owner, getDistributor().getPendingMessageTracker(),
+                _mock_uuid_generator);
     }
 };
 
 TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_that_fails_precondition_checks_is_immediately_failed) {
     auto op = create_rfw_op(create_nested_visitor_op(false));
     _op_owner->start(op, OperationStarter::Priority(120));
+    ASSERT_EQ("", _sender.getCommands(true));
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
               "ReturnCode(ILLEGAL_PARAMETERS, No buckets in CreateVisitorCommand for visitor 'foo')",
               _sender.getLastReply());
@@ -90,6 +113,21 @@ TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_immediately_started_if_n
     auto op = create_rfw_op(create_nested_visitor_op(true));
     _op_owner->start(op, OperationStarter::Priority(120));
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
+}
+
+TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_is_bounced_if_merge_pending_for_bucket) {
+    auto op = create_rfw_op(create_nested_visitor_op(true));
+    std::vector<api::MergeBucketCommand::Node> nodes({{0, false}, {1, false}});
+    auto merge = std::make_shared<api::MergeBucketCommand>(default_bucket(_sub_bucket),
+                                                           std::move(nodes),
+                                                           api::Timestamp(123456));
+    merge->setAddress(make_storage_address(0));
+    getDistributor().getPendingMessageTracker().insert(merge);
+    _op_owner->start(op, OperationStarter::Priority(120));
+    ASSERT_EQ("", _sender.getCommands(true));
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(BUSY, A merge operation is pending for this bucket)",
+              _sender.getLastReply());
 }
 
 namespace {
@@ -166,6 +204,18 @@ TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_bounced_if_bucket_remove
               "UpdateReply(id::testdoctype1:n=4:foo, BucketId(0x0000000000000000), "
               "timestamp 1, timestamp of updated doc: 0) ReturnCode(NONE)",
               _sender.getReplies(false, true));
+}
+
+TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_locks_bucket_with_random_token_with_parameter_propagation) {
+    _mock_uuid_generator._uuid = "fritjof";
+    auto op = create_rfw_op(create_nested_visitor_op(true));
+    _op_owner->start(op, OperationStarter::Priority(120));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
+    auto cmd = dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
+    ASSERT_TRUE(cmd);
+    EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(),
+                                       vespalib::stringref("not found :I")),
+              "fritjof");
 }
 
 }
