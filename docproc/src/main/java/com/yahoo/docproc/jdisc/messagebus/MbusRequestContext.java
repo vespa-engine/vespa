@@ -77,7 +77,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     public void skip() {
         if (deserialized.get())
             throw new IllegalStateException("Can not skip processing after deserialization");
-        dispatchRequest(requestMsg, request.getUri().getPath(), responseHandler);
+        dispatchRequest(requestMsg, getUri().getPath(), responseHandler);
     }
 
     @Override
@@ -183,7 +183,9 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
 
                 @Override
                 protected Request newRequest() {
-                    return new MbusRequest(request, resolveUri(uriPath), msg);
+                    return new MbusRequest(request,
+                                           uriCache.computeIfAbsent(uriPath, __ -> URI.create("mbus://remotehost" + uriPath)),
+                                           msg);
                 }
 
                 @Override
@@ -203,12 +205,4 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         return new MessageFactory(message);
     }
 
-    private static URI resolveUri(String path) {
-        URI uri = uriCache.get(path);
-        if (uri == null) {
-            uri = URI.create("mbus://remotehost" + path);
-            uriCache.put(path, uri);
-        }
-        return uri;
-    }
 }
