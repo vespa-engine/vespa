@@ -94,25 +94,24 @@ public class UriPattern implements Comparable<UriPattern> {
      * @return A {@link Match} object describing the match found, or null if not found.
      */
     public Match match(URI uri) {
-        // Performance optimization: match path first since scheme and host are often the same in a given binding repository.
+        // Performance optimization: match in order of increasing cost and decreasing discriminating power.
+        if (port > 0 && port != uri.getPort())
+            return null;
+
         String uriPath = nonNullOrBlank(uri.getPath());
         GlobPattern.Match pathMatch = path.match(uriPath, uriPath.startsWith("/") ? 1 : 0);
-        if (pathMatch == null) {
+        if (pathMatch == null)
             return null;
-        }
-        if (port > 0 && port != uri.getPort()) {
-            return null;
-        }
-        // Match scheme before host because it has a higher chance of differing (e.g. http versus https)
-        GlobPattern.Match schemeMatch = scheme.match(normalizeScheme(nonNullOrBlank(uri.getScheme())));
-        if (schemeMatch == null) {
-            return null;
-        }
+
         GlobPattern.Match hostMatch = uri.getHost() == null ? null
                                                             : host.match(uri.getHost());
-        if (hostMatch == null) {
+        if (hostMatch == null)
             return null;
-        }
+
+        GlobPattern.Match schemeMatch = scheme.match(normalizeScheme(nonNullOrBlank(uri.getScheme())));
+        if (schemeMatch == null)
+            return null;
+
         return new Match(schemeMatch, hostMatch, port > 0 ? 0 : uri.getPort(), pathMatch);
     }
 
