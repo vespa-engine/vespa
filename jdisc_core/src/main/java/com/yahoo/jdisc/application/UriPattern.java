@@ -98,8 +98,8 @@ public class UriPattern implements Comparable<UriPattern> {
         if (port > 0 && port != uri.getPort())
             return null;
 
-        String uriPath = nonNullOrBlank(uri.getPath());
-        GlobPattern.Match pathMatch = path.match(uriPath, uriPath.startsWith("/") ? 1 : 0);
+        String uriPath = uri.getPath() == null ? "/" : uri.getPath();
+        GlobPattern.Match pathMatch = path.match(uriPath, 1); // Don't match the leading '/'.
         if (pathMatch == null)
             return null;
 
@@ -155,10 +155,6 @@ public class UriPattern implements Comparable<UriPattern> {
             return cmp;
         }
         return 0;
-    }
-
-    private static String nonNullOrBlank(String str) {
-        return str != null ? str : "";
     }
 
     private static String nonNullOrWildcard(String val) {
