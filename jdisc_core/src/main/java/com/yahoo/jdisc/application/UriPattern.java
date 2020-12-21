@@ -37,6 +37,8 @@ public class UriPattern implements Comparable<UriPattern> {
     private final GlobPattern host;
     private final int port;
     private final GlobPattern path;
+
+    // TODO Vespa 8 jonmv remove
     private final int priority;
 
     /**
@@ -48,7 +50,16 @@ public class UriPattern implements Comparable<UriPattern> {
      * @throws IllegalArgumentException If the pattern could not be parsed.
      */
     public UriPattern(String uri) {
-        this(uri, DEFAULT_PRIORITY);
+        Matcher matcher = PATTERN.matcher(uri);
+        if ( ! matcher.find())
+            throw new IllegalArgumentException(uri);
+
+        scheme = GlobPattern.compile(normalizeScheme(resolvePatternComponent(matcher.group(1))));
+        host = GlobPattern.compile(resolvePatternComponent(matcher.group(2)));
+        port = resolvePortPattern(matcher.group(4));
+        path = GlobPattern.compile(resolvePatternComponent(matcher.group(7)));
+        pattern = scheme + "://" + host + ":" + (port > 0 ? port : "*") + "/" + path;
+        this.priority = DEFAULT_PRIORITY;
     }
 
     /**
@@ -56,10 +67,12 @@ public class UriPattern implements Comparable<UriPattern> {
      * input string must be on the form <code>&lt;scheme&gt;://&lt;host&gt;[:&lt;port&gt;]&lt;path&gt;</code>, where
      * '*' can be used as a wildcard character at any position.</p>
      *
+     * @deprecated Use {@link #UriPattern(String)} and let's avoid another complication here.
      * @param uri      The pattern to parse.
      * @param priority The priority of this pattern.
      * @throws IllegalArgumentException If the pattern could not be parsed.
      */
+    @Deprecated(forRemoval = true, since = "7")
     public UriPattern(String uri, int priority) {
         Matcher matcher = PATTERN.matcher(uri);
         if (!matcher.find()) {

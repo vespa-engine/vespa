@@ -173,12 +173,14 @@ public class UriPatternTestCase {
     }
 
     @Test
+    @SuppressWarnings("removal")
     public void requireThatPrioritiesAreOrderedDescending() {
         assertCompareLt(new UriPattern("scheme://host:69/path", 1),
                         new UriPattern("scheme://host:69/path", 0));
     }
 
     @Test
+    @SuppressWarnings("removal")
     public void requireThatPriorityOrdersBeforeScheme() {
         assertCompareLt(new UriPattern("*://host:69/path", 1),
                         new UriPattern("scheme://host:69/path", 0));
@@ -314,7 +316,7 @@ public class UriPatternTestCase {
     }
 
     private static void assertCompareLt(String lhs, String rhs) {
-        assertCompareLt(new UriPattern(lhs, 0), new UriPattern(rhs, 0));
+        assertCompareLt(new UriPattern(lhs), new UriPattern(rhs));
     }
 
     private static void assertCompareLt(UriPattern lhs, UriPattern rhs) {
@@ -322,7 +324,7 @@ public class UriPatternTestCase {
     }
 
     private static void assertCompareEq(String lhs, String rhs) {
-        assertCompareEq(new UriPattern(lhs, 0), new UriPattern(rhs, 0));
+        assertCompareEq(new UriPattern(lhs), new UriPattern(rhs));
     }
 
     private static void assertCompareEq(UriPattern lhs, UriPattern rhs) {
