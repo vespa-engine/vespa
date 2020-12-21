@@ -249,16 +249,13 @@ public class ApplicationController {
 
     public ApplicationStore applicationStore() {  return applicationStore; }
 
-    /** Returns all content clusters in all current deployments of the given application. */
-    public Map<ZoneId, List<String>> contentClustersByZone(Collection<DeploymentId> ids) {
+    /** Returns all currently reachable content clusters among the given deployments. */
+    public Map<ZoneId, List<String>> reachableContentClustersByZone(Collection<DeploymentId> ids) {
         Map<ZoneId, List<String>> clusters = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (DeploymentId id : ids)
-            try {
+            if (isHealthy(id))
                 clusters.put(id.zoneId(), List.copyOf(configServer.getContentClusters(id)));
-            }
-            catch (RuntimeException e) {
-                log.log(Level.WARNING, "Failed getting content clusters for " + id + ": " + Exceptions.toMessageString(e));
-            }
+
         return Collections.unmodifiableMap(clusters);
     }
 
@@ -745,6 +742,20 @@ public class ApplicationController {
     }
 
     /**
+     * Asks the config server whether this deployment is currently healthy, i.e., serving traffic as usual.
+     * If this cannot be ascertained, we must assumed it is not.
+     */
+    public boolean isHealthy(DeploymentId deploymentId) {
+        try {
+            return ! isSuspended(deploymentId); // consider adding checks again global routing status, etc.?
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed getting suspension status of " + deploymentId + ": " + Exceptions.toMessageString(e));
+            return false;
+        }
+    }
+
+    /**
      * Asks the config server whether this deployment is currently <i>suspended</i>:
      * Not in a state where it should receive traffic.
      */
@@ -752,14 +763,11 @@ public class ApplicationController {
         try {
             return configServer.isSuspended(deploymentId);
         }
-        catch (RuntimeException e) {
-            if (   e instanceof ConfigServerException
-                && ((ConfigServerException) e).getErrorCode() == ConfigServerException.ErrorCode.NOT_FOUND)
+        catch (ConfigServerException e) {
+            if (e.getErrorCode() == ConfigServerException.ErrorCode.NOT_FOUND)
                 return false; // If the application wasn't found, it's not suspended.
 
-            // Otherwise, assume it is, as the deployment may not be in a working state.
-            log.log(Level.WARNING, "Failed getting suspension status of " + deploymentId + ": " + Exceptions.toMessageString(e));
-            return true;
+            throw e;
         }
     }
 

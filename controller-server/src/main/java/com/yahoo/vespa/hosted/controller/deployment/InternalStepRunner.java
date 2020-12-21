@@ -578,7 +578,7 @@ public class InternalStepRunner implements StepRunner {
                                                         id.type(),
                                                         true,
                                                         endpoints,
-                                                        controller.applications().contentClustersByZone(deployments));
+                                                        controller.applications().reachableContentClustersByZone(deployments));
         controller.jobController().cloud().startTests(getTesterDeploymentId(id), suite, config);
         return Optional.of(running);
     }
