@@ -70,6 +70,7 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.yolean.Exceptions;
 
 import java.security.Principal;
 import java.time.Clock;
@@ -252,7 +253,12 @@ public class ApplicationController {
     public Map<ZoneId, List<String>> contentClustersByZone(Collection<DeploymentId> ids) {
         Map<ZoneId, List<String>> clusters = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (DeploymentId id : ids)
-            clusters.put(id.zoneId(), List.copyOf(configServer.getContentClusters(id)));
+            try {
+                clusters.put(id.zoneId(), List.copyOf(configServer.getContentClusters(id)));
+            }
+            catch (RuntimeException e) {
+                log.log(Level.WARNING, "Failed getting content clusters for " + id + ": " + Exceptions.toMessageString(e));
+            }
         return Collections.unmodifiableMap(clusters);
     }
 
@@ -746,10 +752,14 @@ public class ApplicationController {
         try {
             return configServer.isSuspended(deploymentId);
         }
-        catch (ConfigServerException e) {
-            if (e.getErrorCode() == ConfigServerException.ErrorCode.NOT_FOUND)
-                return false;
-            throw e;
+        catch (RuntimeException e) {
+            if (   e instanceof ConfigServerException
+                && ((ConfigServerException) e).getErrorCode() == ConfigServerException.ErrorCode.NOT_FOUND)
+                return false; // If the application wasn't found, it's not suspended.
+
+            // Otherwise, assume it is, as the deployment may not be in a working state.
+            log.log(Level.WARNING, "Failed getting suspension status of " + deploymentId + ": " + Exceptions.toMessageString(e));
+            return true;
         }
     }
 

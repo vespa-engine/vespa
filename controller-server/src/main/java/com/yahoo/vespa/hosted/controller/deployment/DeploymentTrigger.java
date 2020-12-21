@@ -297,7 +297,7 @@ public class DeploymentTrigger {
         return Collections.unmodifiableList(jobs);
     }
 
-    /** Returns whether given job should be triggered */
+    /** Returns whether the application is suspended in any production zone. */
     private boolean isSuspendedInAnotherZone(Application application, JobId job) {
         for (Deployment deployment : application.require(job.application().instance()).productionDeployments().values()) {
             if (   ! deployment.zone().equals(job.type().zone(controller.system()))
