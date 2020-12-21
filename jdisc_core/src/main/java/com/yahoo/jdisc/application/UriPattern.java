@@ -54,10 +54,10 @@ public class UriPattern implements Comparable<UriPattern> {
         if ( ! matcher.find())
             throw new IllegalArgumentException(uri);
 
-        scheme = GlobPattern.compile(normalizeScheme(resolvePatternComponent(matcher.group(1))));
-        host = GlobPattern.compile(resolvePatternComponent(matcher.group(2)));
-        port = resolvePortPattern(matcher.group(4));
-        path = GlobPattern.compile(resolvePatternComponent(matcher.group(7)));
+        scheme = GlobPattern.compile(normalizeScheme(nonNullOrWildcard(matcher.group(1))));
+        host = GlobPattern.compile(nonNullOrWildcard(matcher.group(2)));
+        port = parseOrZero(matcher.group(4));
+        path = GlobPattern.compile(nonNullOrWildcard(matcher.group(7)));
         pattern = scheme + "://" + host + ":" + (port > 0 ? port : "*") + "/" + path;
         this.priority = DEFAULT_PRIORITY;
     }
@@ -78,10 +78,10 @@ public class UriPattern implements Comparable<UriPattern> {
         if (!matcher.find()) {
             throw new IllegalArgumentException(uri);
         }
-        scheme = GlobPattern.compile(normalizeScheme(resolvePatternComponent(matcher.group(1))));
-        host = GlobPattern.compile(resolvePatternComponent(matcher.group(2)));
-        port = resolvePortPattern(matcher.group(4));
-        path = GlobPattern.compile(resolvePatternComponent(matcher.group(7)));
+        scheme = GlobPattern.compile(normalizeScheme(nonNullOrWildcard(matcher.group(1))));
+        host = GlobPattern.compile(nonNullOrWildcard(matcher.group(2)));
+        port = parseOrZero(matcher.group(4));
+        path = GlobPattern.compile(nonNullOrWildcard(matcher.group(7)));
         pattern = scheme + "://" + host + ":" + (port > 0 ? port : "*") + "/" + path;
         this.priority = priority;
     }
@@ -94,21 +94,21 @@ public class UriPattern implements Comparable<UriPattern> {
      * @return A {@link Match} object describing the match found, or null if not found.
      */
     public Match match(URI uri) {
-        // Performance optimization: Match path first since scheme and host are often the same in a given binding repository.
-        String uriPath = resolveUriComponent(uri.getPath());
+        // Performance optimization: match path first since scheme and host are often the same in a given binding repository.
+        String uriPath = nonNullOrBlank(uri.getPath());
         GlobPattern.Match pathMatch = path.match(uriPath, uriPath.startsWith("/") ? 1 : 0);
         if (pathMatch == null) {
             return null;
         }
-        if (port > 0 && port != resolvePortComponent(uri)) {
+        if (port > 0 && port != portOrSchemeDefault(uri)) {
             return null;
         }
         // Match scheme before host because it has a higher chance of differing (e.g. http versus https)
-        GlobPattern.Match schemeMatch = scheme.match(normalizeScheme(resolveUriComponent(uri.getScheme())));
+        GlobPattern.Match schemeMatch = scheme.match(normalizeScheme(nonNullOrBlank(uri.getScheme())));
         if (schemeMatch == null) {
             return null;
         }
-        GlobPattern.Match hostMatch = host.match(resolveUriComponent(uri.getHost()));
+        GlobPattern.Match hostMatch = host.match(nonNullOrBlank(uri.getHost()));
         if (hostMatch == null) {
             return null;
         }
@@ -156,27 +156,27 @@ public class UriPattern implements Comparable<UriPattern> {
         return 0;
     }
 
-    private static String resolveUriComponent(String str) {
+    private static String nonNullOrBlank(String str) {
         return str != null ? str : "";
     }
 
-    private static String resolvePatternComponent(String val) {
+    private static String nonNullOrWildcard(String val) {
         return val != null ? val : "*";
     }
 
-    private static int resolvePortPattern(String str) {
+    private static int parseOrZero(String str) {
         if (str == null || str.equals("*")) {
             return 0;
         }
         return Integer.parseInt(str);
     }
 
-    private static int resolvePortComponent(URI uri) {
+    private static int portOrSchemeDefault(URI uri) {
         int rawPort = uri.getPort();
-        return rawPort != -1 ? rawPort : resolvePortFromScheme(uri.getScheme());
+        return rawPort != -1 ? rawPort : schemeDefaultPort(uri.getScheme());
     }
 
-    private static int resolvePortFromScheme(String scheme) {
+    private static int schemeDefaultPort(String scheme) {
         if (scheme == null) return -1;
         switch (scheme) {
             case "http": return 80;
