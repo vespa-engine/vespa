@@ -108,7 +108,8 @@ public class UriPattern implements Comparable<UriPattern> {
         if (schemeMatch == null) {
             return null;
         }
-        GlobPattern.Match hostMatch = host.match(nonNullOrBlank(uri.getHost()));
+        GlobPattern.Match hostMatch = uri.getHost() == null ? null
+                                                            : host.match(uri.getHost());
         if (hostMatch == null) {
             return null;
         }

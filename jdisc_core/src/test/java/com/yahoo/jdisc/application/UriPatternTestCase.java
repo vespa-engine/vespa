@@ -124,32 +124,6 @@ public class UriPatternTestCase {
     }
 
     @Test
-    public void requireThatUriWithoutHostDoesNotThrowException() {
-        String schemeOnly = "scheme:schemeSpecificPart";
-        String schemeAndPath = "scheme:/path";
-        String pathOnly = "path";
-        String pathOnlyWithSlash = "/path";
-
-        UriPattern pattern = new UriPattern("scheme://host/path");
-        assertNotMatch(pattern, schemeOnly);
-        assertNotMatch(pattern, schemeAndPath);
-        assertNotMatch(pattern, pathOnly);
-        assertNotMatch(pattern, pathOnlyWithSlash);
-
-        pattern = new UriPattern("scheme*://host*/path*");
-        assertNotMatch(pattern, schemeOnly);
-        assertNotMatch(pattern, schemeAndPath);
-        assertNotMatch(pattern, pathOnly);
-        assertNotMatch(pattern, pathOnlyWithSlash);
-
-        pattern = new UriPattern("*://*/*");
-        assertMatch(pattern, schemeOnly, Arrays.asList("scheme", "", ""));
-        assertMatch(pattern, schemeAndPath, Arrays.asList("scheme", "", "path"));
-        assertMatch(pattern, pathOnly, Arrays.asList("", "", "path"));
-        assertMatch(pattern, pathOnlyWithSlash, Arrays.asList("", "", "path"));
-    }
-
-    @Test
     public void requireThatUriWithoutPathDoesNotThrowException() {
         UriPattern pattern = new UriPattern("scheme://host/path");
         assertNotMatch(pattern, "scheme://host");
