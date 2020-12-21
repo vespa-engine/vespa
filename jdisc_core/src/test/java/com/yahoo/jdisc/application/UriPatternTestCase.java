@@ -271,6 +271,17 @@ public class UriPatternTestCase {
         assertMatch(httpsPattern, "http://host:443/path", NO_GROUPS);
     }
 
+    @Test
+    public void requireThatUrlEncodingIsNotDoneForPath() {
+        UriPattern encodedSlashPattern = new UriPattern("http://host:80/one%2Fpath");
+        assertMatch(encodedSlashPattern, "http://host:80/one%2Fpath", NO_GROUPS);
+        assertNotMatch(encodedSlashPattern, "http://host:80/one/path");
+
+        UriPattern actualSlashPattern = new UriPattern("http://host:80/two/paths");
+        assertNotMatch(actualSlashPattern, "http://host:80/two%2Fpaths");
+        assertMatch(actualSlashPattern, "http://host:80/two/paths", NO_GROUPS);
+    }
+
     private static void assertIllegalPattern(String uri) {
         try {
             new UriPattern(uri);

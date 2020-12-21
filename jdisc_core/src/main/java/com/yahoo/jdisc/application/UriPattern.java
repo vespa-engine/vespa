@@ -98,7 +98,7 @@ public class UriPattern implements Comparable<UriPattern> {
         if (port > 0 && port != uri.getPort())
             return null;
 
-        String uriPath = uri.getPath() == null ? "/" : uri.getPath();
+        String uriPath = uri.getRawPath() == null ? "/" : uri.getRawPath();
         GlobPattern.Match pathMatch = path.match(uriPath, 1); // Don't match the leading '/'.
         if (pathMatch == null)
             return null;
@@ -123,7 +123,7 @@ public class UriPattern implements Comparable<UriPattern> {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof UriPattern && pattern.equals(((UriPattern)obj).pattern);
+        return obj instanceof UriPattern && pattern.equals(((UriPattern) obj).pattern);
     }
 
     @Override
