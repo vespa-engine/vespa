@@ -15,5 +15,4 @@ public class DefaultBindingSelector implements BindingSetSelector {
     public String select(URI uri) {
         return BindingSet.DEFAULT;
     }
-
 }

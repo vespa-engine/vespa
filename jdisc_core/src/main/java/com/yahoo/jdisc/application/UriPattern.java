@@ -37,8 +37,6 @@ public class UriPattern implements Comparable<UriPattern> {
     private final GlobPattern host;
     private final int port;
     private final GlobPattern path;
-
-    // TODO Vespa 8 jonmv remove
     private final int priority;
 
     /**
@@ -50,16 +48,7 @@ public class UriPattern implements Comparable<UriPattern> {
      * @throws IllegalArgumentException If the pattern could not be parsed.
      */
     public UriPattern(String uri) {
-        Matcher matcher = PATTERN.matcher(uri);
-        if ( ! matcher.find())
-            throw new IllegalArgumentException(uri);
-
-        scheme = GlobPattern.compile(normalizeScheme(nonNullOrWildcard(matcher.group(1))));
-        host = GlobPattern.compile(nonNullOrWildcard(matcher.group(2)));
-        port = parseOrZero(matcher.group(4));
-        path = GlobPattern.compile(nonNullOrWildcard(matcher.group(7)));
-        pattern = scheme + "://" + host + ":" + (port > 0 ? port : "*") + "/" + path;
-        this.priority = DEFAULT_PRIORITY;
+        this(uri, DEFAULT_PRIORITY);
     }
 
     /**
@@ -67,21 +56,19 @@ public class UriPattern implements Comparable<UriPattern> {
      * input string must be on the form <code>&lt;scheme&gt;://&lt;host&gt;[:&lt;port&gt;]&lt;path&gt;</code>, where
      * '*' can be used as a wildcard character at any position.</p>
      *
-     * @deprecated Use {@link #UriPattern(String)} and let's avoid another complication here.
      * @param uri      The pattern to parse.
      * @param priority The priority of this pattern.
      * @throws IllegalArgumentException If the pattern could not be parsed.
      */
-    @Deprecated(forRemoval = true, since = "7")
     public UriPattern(String uri, int priority) {
         Matcher matcher = PATTERN.matcher(uri);
         if (!matcher.find()) {
             throw new IllegalArgumentException(uri);
         }
-        scheme = GlobPattern.compile(normalizeScheme(nonNullOrWildcard(matcher.group(1))));
-        host = GlobPattern.compile(nonNullOrWildcard(matcher.group(2)));
-        port = parseOrZero(matcher.group(4));
-        path = GlobPattern.compile(nonNullOrWildcard(matcher.group(7)));
+        scheme = GlobPattern.compile(normalizeScheme(resolvePatternComponent(matcher.group(1))));
+        host = GlobPattern.compile(resolvePatternComponent(matcher.group(2)));
+        port = resolvePortPattern(matcher.group(4));
+        path = GlobPattern.compile(resolvePatternComponent(matcher.group(7)));
         pattern = scheme + "://" + host + ":" + (port > 0 ? port : "*") + "/" + path;
         this.priority = priority;
     }
@@ -94,25 +81,24 @@ public class UriPattern implements Comparable<UriPattern> {
      * @return A {@link Match} object describing the match found, or null if not found.
      */
     public Match match(URI uri) {
-        // Performance optimization: match in order of increasing cost and decreasing discriminating power.
-        if (port > 0 && port != uri.getPort())
+        // Performance optimization: Match path first since scheme and host are often the same in a given binding repository.
+        String uriPath = resolveUriComponent(uri.getPath());
+        GlobPattern.Match pathMatch = path.match(uriPath, uriPath.startsWith("/") ? 1 : 0);
+        if (pathMatch == null) {
             return null;
-
-        String uriPath = uri.getRawPath() == null ? "/" : uri.getRawPath();
-        GlobPattern.Match pathMatch = path.match(uriPath, 1); // Don't match the leading '/'.
-        if (pathMatch == null)
+        }
+        if (port > 0 && port != resolvePortComponent(uri)) {
             return null;
-
-        GlobPattern.Match hostMatch = uri.getHost() == null ? null
-                                                            : host.match(uri.getHost());
-        if (hostMatch == null)
+        }
+        // Match scheme before host because it has a higher chance of differing (e.g. http versus https)
+        GlobPattern.Match schemeMatch = scheme.match(normalizeScheme(resolveUriComponent(uri.getScheme())));
+        if (schemeMatch == null) {
             return null;
-
-        GlobPattern.Match schemeMatch = uri.getScheme() == null ? null
-                                                                : scheme.match(normalizeScheme(uri.getScheme()));
-        if (schemeMatch == null)
+        }
+        GlobPattern.Match hostMatch = host.match(resolveUriComponent(uri.getHost()));
+        if (hostMatch == null) {
             return null;
-
+        }
         return new Match(schemeMatch, hostMatch, port > 0 ? 0 : uri.getPort(), pathMatch);
     }
 
@@ -123,7 +109,7 @@ public class UriPattern implements Comparable<UriPattern> {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof UriPattern && pattern.equals(((UriPattern) obj).pattern);
+        return obj instanceof UriPattern && pattern.equals(((UriPattern)obj).pattern);
     }
 
     @Override
@@ -157,15 +143,33 @@ public class UriPattern implements Comparable<UriPattern> {
         return 0;
     }
 
-    private static String nonNullOrWildcard(String val) {
+    private static String resolveUriComponent(String str) {
+        return str != null ? str : "";
+    }
+
+    private static String resolvePatternComponent(String val) {
         return val != null ? val : "*";
     }
 
-    private static int parseOrZero(String str) {
+    private static int resolvePortPattern(String str) {
         if (str == null || str.equals("*")) {
             return 0;
         }
         return Integer.parseInt(str);
+    }
+
+    private static int resolvePortComponent(URI uri) {
+        int rawPort = uri.getPort();
+        return rawPort != -1 ? rawPort : resolvePortFromScheme(uri.getScheme());
+    }
+
+    private static int resolvePortFromScheme(String scheme) {
+        if (scheme == null) return -1;
+        switch (scheme) {
+            case "http": return 80;
+            case "https": return 443;
+            default: return -1;
+        }
     }
 
     private static String normalizeScheme(String scheme) {
