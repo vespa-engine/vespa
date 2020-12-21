@@ -70,6 +70,7 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.yolean.Exceptions;
 
 import java.security.Principal;
 import java.time.Clock;
@@ -248,11 +249,13 @@ public class ApplicationController {
 
     public ApplicationStore applicationStore() {  return applicationStore; }
 
-    /** Returns all content clusters in all current deployments of the given application. */
-    public Map<ZoneId, List<String>> contentClustersByZone(Collection<DeploymentId> ids) {
+    /** Returns all currently reachable content clusters among the given deployments. */
+    public Map<ZoneId, List<String>> reachableContentClustersByZone(Collection<DeploymentId> ids) {
         Map<ZoneId, List<String>> clusters = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (DeploymentId id : ids)
-            clusters.put(id.zoneId(), List.copyOf(configServer.getContentClusters(id)));
+            if (isHealthy(id))
+                clusters.put(id.zoneId(), List.copyOf(configServer.getContentClusters(id)));
+
         return Collections.unmodifiableMap(clusters);
     }
 
@@ -739,6 +742,20 @@ public class ApplicationController {
     }
 
     /**
+     * Asks the config server whether this deployment is currently healthy, i.e., serving traffic as usual.
+     * If this cannot be ascertained, we must assumed it is not.
+     */
+    public boolean isHealthy(DeploymentId deploymentId) {
+        try {
+            return ! isSuspended(deploymentId); // consider adding checks again global routing status, etc.?
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed getting suspension status of " + deploymentId + ": " + Exceptions.toMessageString(e));
+            return false;
+        }
+    }
+
+    /**
      * Asks the config server whether this deployment is currently <i>suspended</i>:
      * Not in a state where it should receive traffic.
      */
@@ -748,7 +765,8 @@ public class ApplicationController {
         }
         catch (ConfigServerException e) {
             if (e.getErrorCode() == ConfigServerException.ErrorCode.NOT_FOUND)
-                return false;
+                return false; // If the application wasn't found, it's not suspended.
+
             throw e;
         }
     }
