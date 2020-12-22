@@ -73,5 +73,5 @@ jobs:
 
       - inspect-after: |
           du -sh /tmp/vespa/*
-          ls -la /main_job_cache
+          ls -la /main_job_cache || true
           df -h
