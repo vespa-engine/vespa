@@ -1,8 +1,13 @@
 #!/bin/bash
 
+if (( ${#BASH_SOURCE[@]} == 1 )); then
+    echo "This script must be sourced."
+    exit 1
+fi
+
 if [[ $TRAVIS_PULL_REQUEST == false ]]; then
     export SHOULD_BUILD=all
-    exit 0
+    return 0
 fi
 
 # Future use 

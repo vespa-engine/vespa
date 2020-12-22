@@ -1842,7 +1842,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                       type,
                                                                       false,
                                                                       controller.routing().zoneEndpointsOf(deployments),
-                                                                      controller.applications().contentClustersByZone(deployments)));
+                                                                      controller.applications().reachableContentClustersByZone(deployments)));
     }
 
     private static SourceRevision toSourceRevision(Inspector object) {

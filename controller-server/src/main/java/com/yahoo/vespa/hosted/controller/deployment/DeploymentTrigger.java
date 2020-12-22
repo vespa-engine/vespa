@@ -285,7 +285,7 @@ public class DeploymentTrigger {
                     status.jobSteps().get(job).readyAt(status.application().require(job.application().instance()).change())
                           .filter(readyAt -> ! clock.instant().isBefore(readyAt))
                           .filter(__ -> ! status.jobs().get(job).get().isRunning())
-                          .filter(__ -> ! (job.type().isProduction() && isSuspendedInAnotherZone(status.application(), job)))
+                          .filter(__ -> ! (job.type().isProduction() && isUnhealthyInAnotherZone(status.application(), job)))
                           .ifPresent(readyAt -> {
                               jobs.add(deploymentJob(status.application().require(job.application().instance()),
                                                      versions,
@@ -297,11 +297,11 @@ public class DeploymentTrigger {
         return Collections.unmodifiableList(jobs);
     }
 
-    /** Returns whether given job should be triggered */
-    private boolean isSuspendedInAnotherZone(Application application, JobId job) {
+    /** Returns whether the application is healthy in all other production zones. */
+    private boolean isUnhealthyInAnotherZone(Application application, JobId job) {
         for (Deployment deployment : application.require(job.application().instance()).productionDeployments().values()) {
             if (   ! deployment.zone().equals(job.type().zone(controller.system()))
-                &&   controller.applications().isSuspended(new DeploymentId(job.application(), deployment.zone())))
+                && ! controller.applications().isHealthy(new DeploymentId(job.application(), deployment.zone())))
                 return true;
         }
         return false;
