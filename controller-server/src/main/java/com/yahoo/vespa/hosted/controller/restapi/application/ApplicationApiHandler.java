@@ -1423,7 +1423,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
 
         if ("container-clustercontroller".equals((serviceName)) && restPath.contains("/status/")) {
-            String result = controller.serviceRegistry().configServer().getClusterControllerStatus(deploymentId, restPath);
+            String[] parts = restPath.split("/status/");
+            String result = controller.serviceRegistry().configServer().getClusterControllerStatus(deploymentId, parts[0], parts[1]);
             return new HtmlResponse(result);
         }
 
