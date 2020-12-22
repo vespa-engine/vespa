@@ -29,6 +29,7 @@ import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.toList;
 
@@ -111,7 +113,7 @@ public class ApplicationHandler extends HttpHandler {
 
         if (isClusterControllerStatusRequest(request)) {
             String hostName = getHostNameFromRequest(request);
-            String pathSuffix = getPathSuffix(request);
+            String pathSuffix = URLDecoder.decode(getPathSuffix(request), UTF_8);
             return applicationRepository.clusterControllerStatusPage(applicationId, hostName, pathSuffix);
         }
 
