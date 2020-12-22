@@ -32,10 +32,11 @@ jobs:
       - restore-cache: |
           (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
 
+          mkdir -p $CCACHE_DATA_DIR
+          mkdir -p $CCACHE_TMP_DIR
+
           export CCACHE_DIR=$CCACHE_DATA_DIR
 
-          mkdir -p $CCACHE_DIR
-          mkdir -p $CCACHE_TMP_DIR
           rm -f $CCACHE_DIR/ccache.conf
           ccache -M 20G
           ccache -o log_file=$SD_ARTIFACTS_DIR/ccache_log.txt
@@ -54,9 +55,6 @@ jobs:
           travis/travis-build.sh
 
       - save-cache: |
-          # Print ccache stats
-          ccache -s
-
           if [[ -z "$SD_PULL_REQUEST" ]]; then
             # Remove what we have produced
             rm -rf $LOCAL_MVN_REPO/com/yahoo
@@ -73,9 +71,7 @@ jobs:
             fi
           fi
 
+      - inspect-after: |
           du -sh /tmp/vespa/*
           ls -la /main_job_cache
-          rm -rf /tmp/vespa
-
-      - inspect-after: |
           df -h

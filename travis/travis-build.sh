@@ -36,11 +36,11 @@ case $SHOULD_BUILD in
     ;;
   java)
     ./bootstrap.sh java
-    mvn -V install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS}
+    mvn -V $VESPA_MAVEN_EXTRA_OPTS install
     ;;
   *)
     ./bootstrap.sh java
-    mvn -V install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS}
+    mvn -V $VESPA_MAVEN_EXTRA_OPTS install
     cmake3 -DVESPA_UNPRIVILEGED=no .
     make -j ${NUM_THREADS}
     ctest3 --output-on-failure -j ${NUM_THREADS}
