@@ -38,7 +38,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -85,7 +87,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     private final MutableX509KeyManager identityKeyManager = new MutableX509KeyManager();
     private final SSLContext identitySslContext;
-    private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
+    private final LoadingCache<AthenzRole, X509Certificate> roleSslCertCache;
+    private final Map<AthenzRole, MutableX509KeyManager> roleKeyManagerCache;
     private final LoadingCache<AthenzRole, ZToken> roleSpecificRoleTokenCache;
     private final LoadingCache<AthenzDomain, ZToken> domainSpecificRoleTokenCache;
     private final LoadingCache<AthenzDomain, AthenzAccessToken> domainSpecificAccessTokenCache;
@@ -119,7 +122,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.clock = clock;
         this.identity = new AthenzService(config.domain(), config.service());
         this.ztsEndpoint = URI.create(config.ztsUrl());
-        roleSslContextCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::createRoleSslContext);
+        roleSslCertCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::requestRoleCertificate);
+        roleKeyManagerCache = new HashMap<>();
         roleSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         domainSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         domainSpecificAccessTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createAccessToken);
@@ -194,9 +198,15 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override
     public SSLContext getRoleSslContext(String domain, String role) {
-        // This ssl context should ideally be cached as it is quite expensive to create.
         try {
-            return roleSslContextCache.get(new AthenzRole(new AthenzDomain(domain), role));
+            AthenzRole athenzRole = new AthenzRole(new AthenzDomain(domain), role);
+            // Make sure to request a certificate which triggers creating a new key manager for this role
+            X509Certificate x509Certificate = roleSslCertCache.get(athenzRole);
+            MutableX509KeyManager keyManager = roleKeyManagerCache.get(athenzRole);
+            return new SslContextBuilder()
+                    .withKeyManager(keyManager)
+                    .withTrustStore(trustStore)
+                    .build();
         } catch (Exception e) {
             throw new AthenzIdentityProviderException("Could not retrieve role certificate: " + e.getMessage(), e);
         }
@@ -265,15 +275,22 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 new char[0]);
     }
 
-    private SSLContext createRoleSslContext(AthenzRole role) {
+    private X509Certificate requestRoleCertificate(AthenzRole role) {
         Pkcs10Csr csr = csrGenerator.generateRoleCsr(identity, role, credentials.getIdentityDocument().providerUniqueId(), credentials.getKeyPair());
         try (ZtsClient client = createZtsClient()) {
             X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
-            return new SslContextBuilder()
-                    .withKeyStore(credentials.getKeyPair().getPrivate(), roleCertificate)
-                    .withTrustStore(trustStore)
-                    .build();
+            updateRoleKeyManager(role, roleCertificate);
+            return roleCertificate;
         }
+    }
+
+    private void updateRoleKeyManager(AthenzRole role, X509Certificate certificate) {
+        MutableX509KeyManager keyManager = roleKeyManagerCache.computeIfAbsent(role, r -> new MutableX509KeyManager());
+        keyManager.updateKeystore(
+                KeyStoreBuilder.withType(PKCS12)
+                        .withKeyEntry("default", credentials.getKeyPair().getPrivate(), certificate)
+                        .build(),
+                new char[0]);
     }
 
     private ZToken createRoleToken(AthenzRole athenzRole) {
