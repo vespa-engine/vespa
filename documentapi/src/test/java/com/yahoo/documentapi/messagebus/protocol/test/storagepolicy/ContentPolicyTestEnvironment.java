@@ -10,7 +10,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy;
 import com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RoutingPolicyFactory;
-import com.yahoo.documentapi.messagebus.protocol.StoragePolicy;
+import com.yahoo.documentapi.messagebus.protocol.ContentPolicy;
 import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
 import com.yahoo.documentapi.messagebus.protocol.test.PolicyTestFrame;
 import com.yahoo.messagebus.EmptyReply;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public abstract class StoragePolicyTestEnvironment {
+public abstract class ContentPolicyTestEnvironment {
 
     protected StoragePolicyTestFactory policyFactory;
     protected PolicyTestFrame frame;
@@ -102,7 +102,7 @@ public abstract class StoragePolicyTestEnvironment {
         assertTrue(nodes.remove(second));
     }
 
-    public static class TestHostFetcher extends StoragePolicy.HostFetcher {
+    public static class TestHostFetcher extends ContentPolicy.HostFetcher {
         private final String clusterName;
         private RandomGen randomizer = new RandomGen(1234);
         private final Set<Integer> nodes;
@@ -143,7 +143,7 @@ public abstract class StoragePolicyTestEnvironment {
         }
     }
 
-    public static class TestParameters extends StoragePolicy.Parameters {
+    public static class TestParameters extends ContentPolicy.Parameters {
         private final TestHostFetcher hostFetcher;
         private final Distribution distribution;
 
@@ -154,7 +154,7 @@ public abstract class StoragePolicyTestEnvironment {
         }
 
         @Override
-        public StoragePolicy.HostFetcher createHostFetcher(SlobrokPolicy policy, int percent) { return hostFetcher; }
+        public ContentPolicy.HostFetcher createHostFetcher(SlobrokPolicy policy, int percent) { return hostFetcher; }
 
         @Override
         public Distribution createDistribution(SlobrokPolicy policy) { return distribution; }
@@ -171,7 +171,7 @@ public abstract class StoragePolicyTestEnvironment {
         public DocumentProtocolRoutingPolicy createPolicy(String parameters) {
             parameterInstances.addLast(new TestParameters(parameters, nodes));
             ((TestHostFetcher) parameterInstances.getLast().createHostFetcher(null, 60)).setAvoidPickingAtRandom(avoidPickingAtRandom);
-            return new StoragePolicy(parameterInstances.getLast());
+            return new ContentPolicy(parameterInstances.getLast());
         }
         public void avoidPickingAtRandom(Integer distributor) {
             avoidPickingAtRandom = distributor;
