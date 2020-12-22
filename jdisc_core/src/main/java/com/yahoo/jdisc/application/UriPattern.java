@@ -95,7 +95,7 @@ public class UriPattern implements Comparable<UriPattern> {
      */
     public Match match(URI uri) {
         // Performance optimization: match in order of increasing cost and decreasing discriminating power.
-        if (port > 0 && port != uri.getPort())
+        if (port > 0 && port != portOrSchemeDefault(uri))
             return null;
 
         String uriPath = nonNullOrBlank(uri.getRawPath());
@@ -170,6 +170,20 @@ public class UriPattern implements Comparable<UriPattern> {
             return 0;
         }
         return Integer.parseInt(str);
+    }
+
+    private static int portOrSchemeDefault(URI uri) {
+        return uri.getPort() != -1 ? uri.getPort()
+                                   : schemeDefaultPort(uri.getScheme());
+    }
+
+    private static int schemeDefaultPort(String scheme) {
+        if (scheme == null) return -1;
+        switch (scheme) {
+            case "http": return 80;
+            case "https": return 443;
+            default: return -1;
+        }
     }
 
     private static String normalizeScheme(String scheme) {
