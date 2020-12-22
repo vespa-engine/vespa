@@ -4,7 +4,7 @@ package com.yahoo.documentapi.messagebus.protocol.test.storagepolicy;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class ContentPolicyTest extends Simulator {
+public class StoragePolicyTest extends Simulator {
     /**
      * Verify that a resent message with failures doesn't ruin overall performance. (By dumping the cached state too often
      * so other requests are sent to wrong target)
