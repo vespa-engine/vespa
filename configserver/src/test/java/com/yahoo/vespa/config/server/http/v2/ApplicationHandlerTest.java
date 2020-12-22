@@ -342,7 +342,7 @@ public class ApplicationHandlerTest {
                 .withHttpProxy(mockHttpProxy)
                 .build();
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
-        when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName),eq("clustercontroller-status/v1/clusterName1")))
+        when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName), eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
 
         HttpResponse response = mockHandler.handle(createTestRequest(url, GET));

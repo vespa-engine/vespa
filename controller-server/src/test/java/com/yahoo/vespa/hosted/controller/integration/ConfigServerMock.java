@@ -519,7 +519,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public String getClusterControllerStatus(DeploymentId deployment, String restPath) {
+    public String getClusterControllerStatus(DeploymentId deployment, String node, String subPath) {
         return "<h1>OK</h1>";
     }
 
