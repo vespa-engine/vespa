@@ -5,7 +5,7 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.DocumentId;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.documentapi.messagebus.protocol.StoragePolicy;
+import com.yahoo.documentapi.messagebus.protocol.ContentPolicy;
 import com.yahoo.messagebus.routing.RoutingNode;
 import com.yahoo.vdslib.distribution.RandomGen;
 import com.yahoo.vdslib.state.ClusterState;
@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class Simulator extends StoragePolicyTestEnvironment {
+public abstract class Simulator extends ContentPolicyTestEnvironment {
 
     enum FailureType {
         TRANSIENT_ERROR,
@@ -175,7 +175,7 @@ public abstract class Simulator extends StoragePolicyTestEnvironment {
             for (int i=0; i<params.getParallellRequests(); ++i) {
                 RoutingNode target = targets[i];
                 int index = getAddress(target).getSecond();
-                if (!params.getCurrentClusterState(null).getNodeState(new Node(NodeType.DISTRIBUTOR, index)).getState().oneOf(StoragePolicy.owningBucketStates)) {
+                if (!params.getCurrentClusterState(null).getNodeState(new Node(NodeType.DISTRIBUTOR, index)).getState().oneOf(ContentPolicy.owningBucketStates)) {
                     ++downnode[half];
                 }
                 BadNode badNode = params.getBadNodes().get(index);
