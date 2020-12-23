@@ -232,7 +232,7 @@ public class VdsVisitTestCase {
         ClusterList clusterList = new ClusterList(clusterDefs);
 
         String route = VdsVisit.resolveClusterRoute(clusterList, null);
-        assertEquals("[Content:cluster=storage]", route);
+        assertEquals("storage", route);
     }
 
     @Test
@@ -270,7 +270,7 @@ public class VdsVisitTestCase {
         ClusterList clusterList = new ClusterList(clusterDefs);
 
         String route = VdsVisit.resolveClusterRoute(clusterList, "storage2");
-        assertEquals("[Content:cluster=storage2]", route);
+        assertEquals("storage2", route);
     }
 
     @Test

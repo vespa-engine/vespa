@@ -229,7 +229,7 @@ public class Reindexer {
         }
 
         String route() {
-            return "[Content:cluster=" + name + "]";
+            return name;
         }
 
         String bucketSpaceOf(DocumentType documentType) {

@@ -84,7 +84,7 @@ class ReindexerTest {
         assertEquals("music:[document]", parameters.getFieldSet());
         assertSame(token, parameters.getResumeToken());
         assertEquals("default", parameters.getBucketSpace());
-        assertEquals("[Content:cluster=cluster]", parameters.getRoute().toString());
+        assertEquals("cluster", parameters.getRoute().toString());
         assertEquals("cluster", parameters.getRemoteDataHandler());
         assertEquals("music", parameters.getDocumentSelection());
         assertEquals(DocumentProtocol.Priority.NORMAL_3, parameters.getPriority());

@@ -377,10 +377,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                           .map(parameters::withRoute)
                                                           .orElse(parameters);
                 break;
-            case CONDITION:
-                parameters = getProperty(request, ROUTE).map(parameters::withRoute)
-                                                        .orElse(parameters);
-                break;
             case FIELD_SET:
                 parameters = getProperty(request, FIELD_SET).map(parameters::withFieldSet)
                                                             .orElse(parameters);
@@ -702,7 +698,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             this.reader = reader;
         }
 
-        /** Write is complete when we have stored the buffer — call completion handler. */
+        /** Write is complete when we have stored the buffer — call completion handler. */
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
             try {
@@ -956,7 +952,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         String name() { return name; }
-        String route() { return "[Content:cluster=" + name() + "]"; }
+        String route() { return name(); }
         Optional<String> bucketOf(String documentType) { return Optional.ofNullable(documentBuckets.get(documentType)); }
 
     }

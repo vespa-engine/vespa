@@ -235,7 +235,7 @@ public class DocumentRetrieverTest {
     @Test
     public void testClusterLookup() throws DocumentRetrieverException {
         final String cluster = "storage",
-                expectedRoute = "[Content:cluster=storage]";
+                expectedRoute = "storage";
 
         ClientParameters params = createParameters()
                 .setCluster(cluster)

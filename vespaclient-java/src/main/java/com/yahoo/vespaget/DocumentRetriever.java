@@ -116,7 +116,7 @@ public class DocumentRetriever {
                     "The Vespa cluster contains the content clusters %s, not %s. Please select a valid vespa cluster.",
                     names, clusterName));
         }
-        return String.format("[Content:cluster=%s]", clusterDef.getName());
+        return clusterDef.getName();
     }
 
     private LoadType resolveLoadType(String loadTypeName) throws DocumentRetrieverException {
