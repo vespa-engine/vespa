@@ -88,28 +88,29 @@ public class UriPattern implements Comparable<UriPattern> {
 
     /**
      * <p>Attempts to match the given {@link URI} to this pattern. Note that only the scheme, host, port, and path
-     * components of the URI are used. Any query or fragment part is simply ignored.</p>
+     * components of the URI are used, <em>and these must all be defined</em>. Only <em>absolute</em> URIs are supported.
+     * Any user info, query or fragment part is ignored.</p>
      *
      * @param uri The URI to match.
      * @return A {@link Match} object describing the match found, or null if not found.
      */
     public Match match(URI uri) {
+        if ( ! uri.isAbsolute() || uri.getHost() == null) // URI must have scheme, host and absolute (or empty) path.
+            return null;
+
         // Performance optimization: match in order of increasing cost and decreasing discriminating power.
         if (port > 0 && port != uri.getPort())
             return null;
 
-        String uriPath = nonNullOrBlank(uri.getRawPath());
-        GlobPattern.Match pathMatch = path.match(uriPath, uriPath.startsWith("/") ? 1 : 0);
+        GlobPattern.Match pathMatch = path.match(uri.getRawPath(), uri.getRawPath().isEmpty() ? 0 : 1); // Strip leading '/'.
         if (pathMatch == null)
             return null;
 
-        GlobPattern.Match hostMatch = uri.getHost() == null ? null
-                                                            : host.match(uri.getHost());
+        GlobPattern.Match hostMatch = host.match(uri.getHost());
         if (hostMatch == null)
             return null;
 
-        GlobPattern.Match schemeMatch = uri.getScheme() == null ? null
-                                                                : scheme.match(normalizeScheme(uri.getScheme()));
+        GlobPattern.Match schemeMatch = scheme.match(normalizeScheme(uri.getScheme()));
         if (schemeMatch == null)
             return null;
 
