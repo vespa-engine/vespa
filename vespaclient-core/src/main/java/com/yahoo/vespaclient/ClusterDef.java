@@ -2,14 +2,11 @@
 package com.yahoo.vespaclient;
 
 public class ClusterDef {
-    public ClusterDef(String name, String configId) {
+    public ClusterDef(String name) {
         this.name = name;
-        this.configId = configId;
     }
 
     String name;
-    String configId;
 
     public String getName() { return name; }
-    public String getConfigId() { return configId; }
 }

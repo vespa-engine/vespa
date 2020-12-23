@@ -234,14 +234,14 @@ public class DocumentRetrieverTest {
 
     @Test
     public void testClusterLookup() throws DocumentRetrieverException {
-        final String cluster = "storage", configId = "content/cluster.foo/storage",
-                expectedRoute = "[Storage:cluster=storage;clusterconfigid=content/cluster.foo/storage]";
+        final String cluster = "storage",
+                expectedRoute = "[Content:cluster=storage]";
 
         ClientParameters params = createParameters()
                 .setCluster(cluster)
                 .build();
 
-        ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef(cluster, configId)));
+        ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef(cluster)));
 
         DocumentRetriever documentRetriever = createDocumentRetriever(params, clusterList);
         documentRetriever.retrieveDocuments();
@@ -258,7 +258,7 @@ public class DocumentRetrieverTest {
                 .setCluster("invalidclustername")
                 .build();
 
-        ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef("storage", "content/cluster.foo/storage")));
+        ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef("storage")));
 
         DocumentRetriever documentRetriever = createDocumentRetriever(params, clusterList);
         documentRetriever.retrieveDocuments();

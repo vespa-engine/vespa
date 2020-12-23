@@ -948,18 +948,15 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     static class StorageCluster {
 
         private final String name;
-        private final String configId;
         private final Map<String, String> documentBuckets;
 
-        StorageCluster(String name, String configId, Map<String, String> documentBuckets) {
+        StorageCluster(String name, Map<String, String> documentBuckets) {
             this.name = requireNonNull(name);
-            this.configId = requireNonNull(configId);
             this.documentBuckets = Map.copyOf(documentBuckets);
         }
 
         String name() { return name; }
-        String configId() { return configId; }
-        String route() { return "[Storage:cluster=" + name() + ";clusterconfigid=" + configId() + "]"; }
+        String route() { return "[Content:cluster=" + name() + "]"; }
         Optional<String> bucketOf(String documentType) { return Optional.ofNullable(documentBuckets.get(documentType)); }
 
     }
@@ -968,7 +965,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         return clusters.storage().stream()
                        .collect(toUnmodifiableMap(storage -> storage.name(),
                                                   storage -> new StorageCluster(storage.name(),
-                                                                                storage.configid(),
                                                                                 buckets.cluster(storage.name())
                                                                                        .documentType().entrySet().stream()
                                                                                        .collect(toMap(entry -> entry.getKey(),
