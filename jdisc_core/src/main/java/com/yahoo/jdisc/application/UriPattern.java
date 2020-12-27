@@ -88,28 +88,29 @@ public class UriPattern implements Comparable<UriPattern> {
 
     /**
      * <p>Attempts to match the given {@link URI} to this pattern. Note that only the scheme, host, port, and path
-     * components of the URI are used. Any query or fragment part is simply ignored.</p>
+     * components of the URI are used, <em>and these must all be defined</em>. Only <em>absolute</em> URIs are supported.
+     * Any user info, query or fragment part is ignored.</p>
      *
      * @param uri The URI to match.
      * @return A {@link Match} object describing the match found, or null if not found.
      */
     public Match match(URI uri) {
-        // Performance optimization: match in order of increasing cost and decreasing discriminating power.
-        if (port > 0 && port != portOrSchemeDefault(uri))
+        if ( ! uri.isAbsolute() || uri.getHost() == null) // URI must have scheme, host and absolute (or empty) path.
             return null;
 
-        String uriPath = nonNullOrBlank(uri.getRawPath());
-        GlobPattern.Match pathMatch = path.match(uriPath, uriPath.startsWith("/") ? 1 : 0);
+        // Performance optimization: match in order of increasing cost and decreasing discriminating power.
+        if (port > 0 && port != uri.getPort())
+            return null;
+
+        GlobPattern.Match pathMatch = path.match(uri.getRawPath(), uri.getRawPath().isEmpty() ? 0 : 1); // Strip leading '/'.
         if (pathMatch == null)
             return null;
 
-        GlobPattern.Match hostMatch = uri.getHost() == null ? null
-                                                            : host.match(uri.getHost());
+        GlobPattern.Match hostMatch = host.match(uri.getHost());
         if (hostMatch == null)
             return null;
 
-        GlobPattern.Match schemeMatch = uri.getScheme() == null ? null
-                                                                : scheme.match(normalizeScheme(uri.getScheme()));
+        GlobPattern.Match schemeMatch = scheme.match(normalizeScheme(uri.getScheme()));
         if (schemeMatch == null)
             return null;
 
@@ -170,20 +171,6 @@ public class UriPattern implements Comparable<UriPattern> {
             return 0;
         }
         return Integer.parseInt(str);
-    }
-
-    private static int portOrSchemeDefault(URI uri) {
-        return uri.getPort() != -1 ? uri.getPort()
-                                   : schemeDefaultPort(uri.getScheme());
-    }
-
-    private static int schemeDefaultPort(String scheme) {
-        if (scheme == null) return -1;
-        switch (scheme) {
-            case "http": return 80;
-            case "https": return 443;
-            default: return -1;
-        }
     }
 
     private static String normalizeScheme(String scheme) {
