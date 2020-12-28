@@ -67,6 +67,10 @@ MatchBlueprint::setup(const IIndexEnvironment & env,
 {
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const FieldInfo * info = env.getField(i);
+        if (info->get_data_type() == FieldInfo::DataType::TENSOR) {
+            // not matchable
+            continue;
+        }
         if ((info->type() == FieldType::INDEX) || (info->type() == FieldType::ATTRIBUTE)) {
             _params.weights.push_back(indexproperties::FieldWeight::lookup(env.getProperties(), info->name()));
             if (info->type() == FieldType::INDEX) {
