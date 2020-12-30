@@ -57,7 +57,7 @@ public final class DestinationSession implements MessageHandler {
     }
 
     /**
-     * Conveniece method for acknowledging a message back to the sender.
+     * Convenience method for acknowledging a message for its sender.
      *
      * This is equivalent to:
      * <pre>
@@ -69,7 +69,7 @@ public final class DestinationSession implements MessageHandler {
      * Messages should be acknowledged when
      * <ul>
      *     <li>this destination has safely and permanently applied the message, or
-     *     <li>an intermediate determines that the purpose of the message is fullfilled without forwarding the message
+     *     <li>an intermediate determines that the purpose of the message is fulfilled without forwarding the message.
      * </ul>
      *
      * @param msg The message to acknowledge back to the sender.
@@ -82,8 +82,8 @@ public final class DestinationSession implements MessageHandler {
     }
 
     /**
-     * Sends a reply to a message. The reply will propagate back to the original sender, prefering the same route as it
-     * used to reach the detination.
+     * Sends a reply to a message. The reply will propagate back to the original sender, preferring the same route as it
+     * used to reach the destination.
      *
      * @param reply The reply, created from the message this is a reply to.
      */
