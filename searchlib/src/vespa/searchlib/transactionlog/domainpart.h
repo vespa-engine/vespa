@@ -27,7 +27,6 @@ public:
     const vespalib::string &fileName() const { return _fileName; }
     void commit(SerialNum firstSerial, const Packet &packet);
     bool erase(SerialNum to);
-    bool visit(SerialNumRange &r, Packet &packet);
     bool visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet);
     bool close();
     void sync();
@@ -56,22 +55,20 @@ private:
     class SkipInfo
     {
     public:
-        SkipInfo(SerialNum s, uint64_t p) : _id(s), _pos(p) {}
+        SkipInfo(SerialNum s, uint64_t p) noexcept : _id(s), _pos(p) {}
 
-        bool operator ==(const SkipInfo &b) const { return cmp(b) == 0; }
-        bool operator  <(const SkipInfo &b) const { return cmp(b) < 0; }
-        bool operator  >(const SkipInfo &b) const { return cmp(b) > 0; }
-        bool operator <=(const SkipInfo &b) const { return cmp(b) <= 0; }
-        bool operator >=(const SkipInfo &b) const { return cmp(b) >= 0; }
-        int64_t   filePos() const { return _pos; }
-        SerialNum      id() const { return _id; }
+        bool operator ==(const SkipInfo &b) const noexcept { return cmp(b) == 0; }
+        bool operator  <(const SkipInfo &b) const noexcept { return cmp(b) < 0; }
+        bool operator  >(const SkipInfo &b) const noexcept { return cmp(b) > 0; }
+        bool operator <=(const SkipInfo &b) const noexcept { return cmp(b) <= 0; }
+        bool operator >=(const SkipInfo &b) const noexcept { return cmp(b) >= 0; }
+        int64_t   filePos() const noexcept { return _pos; }
+        SerialNum      id() const noexcept { return _id; }
     private:
-        int64_t cmp(const SkipInfo & b) const { return _id - b._id; }
+        int64_t cmp(const SkipInfo & b) const noexcept { return _id - b._id; }
         SerialNum _id;
         uint64_t  _pos;
     };
-    typedef std::vector<SkipInfo> SkipList;
-    typedef std::map<SerialNum, Packet> PacketList;
     const Encoding        _encoding;
     const uint8_t         _compressionLevel;
     std::mutex            _lock;
@@ -79,10 +76,9 @@ private:
     SerialNumRange        _range;
     size_t                _sz;
     std::atomic<uint64_t> _byteSize;
-    PacketList            _packets;
     vespalib::string      _fileName;
     std::unique_ptr<FastOS_FileInterface> _transLog;
-    SkipList              _skipList;
+    std::vector<SkipInfo> _skipList;
     uint32_t              _headerLen;
     mutable std::mutex    _writeLock;
     // Protected by _writeLock
