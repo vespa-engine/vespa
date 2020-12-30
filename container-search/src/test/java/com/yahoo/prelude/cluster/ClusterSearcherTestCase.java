@@ -530,7 +530,7 @@ public class ClusterSearcherTestCase {
                                    documentDbConfig.build(),
                                    dispatchers,
                                    new QrConfig.Builder().build(),
-                                   vipStatus);
+                                   null);
     }
 
     private static ClusterInfoConfig createClusterInfoConfig() {
