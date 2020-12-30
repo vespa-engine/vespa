@@ -97,36 +97,25 @@ public class LocalNetwork implements Network {
                 msg.setRetryEnabled(envelope.msg.getRetryEnabled());
                 msg.setRetry(envelope.msg.getRetry());
                 msg.setTimeRemaining(envelope.msg.getTimeRemainingNow());
-                msg.pushHandler(new ReplyHandler() {
-
-                    @Override
-                    public void handleReply(Reply reply) {
-                        new ReplyEnvelope(LocalNetwork.this, envelope, reply).send();
-                    }
-                });
-                owner.deliverMessage(msg, LocalServiceAddress.class.cast(envelope.recipient.getServiceAddress())
-                                                                   .getSessionName());
+                msg.pushHandler(reply -> new ReplyEnvelope(LocalNetwork.this, envelope, reply).send());
+                owner.deliverMessage(msg, ((LocalServiceAddress) envelope.recipient.getServiceAddress()).getSessionName());
             }
         });
     }
 
     private void receiveLater(ReplyEnvelope envelope) {
         byte[] payload = envelope.sender.encode(envelope.reply.getProtocol(), envelope.reply);
-        executor.execute(new Runnable() {
-
-            @Override
-            public void run() {
-                Reply reply = decode(envelope.reply.getProtocol(), payload, Reply.class);
-                reply.setRetryDelay(envelope.reply.getRetryDelay());
-                reply.getTrace().getRoot().addChild(TraceNode.decode(envelope.reply.getTrace().getRoot().encode()));
-                for (int i = 0, len = envelope.reply.getNumErrors(); i < len; ++i) {
-                    Error error = envelope.reply.getError(i);
-                    reply.addError(new Error(error.getCode(),
-                                             error.getMessage(),
-                                             error.getService() != null ? error.getService() : envelope.sender.hostId));
-                }
-                owner.deliverReply(reply, envelope.parent.recipient);
+        executor.execute(() -> {
+            Reply reply = decode(envelope.reply.getProtocol(), payload, Reply.class);
+            reply.setRetryDelay(envelope.reply.getRetryDelay());
+            reply.getTrace().getRoot().addChild(TraceNode.decode(envelope.reply.getTrace().getRoot().encode()));
+            for (int i = 0, len = envelope.reply.getNumErrors(); i < len; ++i) {
+                Error error = envelope.reply.getError(i);
+                reply.addError(new Error(error.getCode(),
+                                         error.getMessage(),
+                                         error.getService() != null ? error.getService() : envelope.sender.hostId));
             }
+            owner.deliverReply(reply, envelope.parent.recipient);
         });
     }
 
@@ -137,23 +126,16 @@ public class LocalNetwork implements Network {
         return owner.getProtocol(protocolName).encode(Vtag.currentVersion, toEncode);
     }
 
-    @SuppressWarnings("unchecked")
     private <T extends Routable> T decode(Utf8String protocolName, byte[] toDecode, Class<T> clazz) {
-        if (toDecode.length == 0) {
-            return clazz.cast(new EmptyReply());
-        }
-        return clazz.cast(owner.getProtocol(protocolName).decode(Vtag.currentVersion, toDecode));
+        return clazz.cast(toDecode.length == 0 ? new EmptyReply()
+                                               : owner.getProtocol(protocolName).decode(Vtag.currentVersion, toDecode));
     }
 
     @Override
-    public void sync() {
-
-    }
+    public void sync() { }
 
     @Override
-    public void shutdown() {
-
-    }
+    public void shutdown() { }
 
     @Override
     public String getConnectionSpec() {
@@ -178,7 +160,7 @@ public class LocalNetwork implements Network {
         }
 
         void send() {
-            LocalServiceAddress.class.cast(recipient.getServiceAddress()).getNetwork().receiveLater(this);
+            ((LocalServiceAddress) recipient.getServiceAddress()).getNetwork().receiveLater(this);
         }
     }
 

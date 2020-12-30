@@ -78,9 +78,9 @@ public final class Error {
     @Override
     public String toString() {
         String name = ErrorCode.getName(code);
-        return  "[" +
-                (name != null ? name : code) + " @ " +
-                (service != null ? service : "localhost") +
-                "]: " + message;
+        return "[" +
+               name + " @ " +
+               (service != null ? service : "localhost") +
+               "]: " + message;
     }
 }
