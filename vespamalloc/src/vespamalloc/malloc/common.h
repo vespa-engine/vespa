@@ -15,7 +15,8 @@ namespace vespamalloc {
 
 #define NUM_SIZE_CLASSES 32   // Max 64G
 
-#define NUM_THREADS 16384
+static constexpr uint32_t NUM_THREADS = 16384;
+
 #define UNUSED(a)
 #ifdef ENABLE_DEBUG
 #define DEBUG(a) a

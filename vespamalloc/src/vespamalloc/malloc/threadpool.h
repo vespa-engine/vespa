@@ -34,6 +34,7 @@ public:
      */
     bool isUsed() const;
     int osThreadId()       const { return _osThreadId; }
+    uint32_t threadId()    const { return _threadId; }
     void quit() { _osThreadId = 0; } // Implicit memory barrier
     void init(int thrId);
     static void setParams(size_t alwayReuseLimit, size_t threadCacheLimit);
@@ -42,17 +43,16 @@ private:
     bool hasActuallyBeenUsed() const;
     ThreadPoolT(const ThreadPoolT & rhs);
     ThreadPoolT & operator =(const ThreadPoolT & rhs);
-    unsigned threadId()    const { return _threadId; }
-    void setThreadId(unsigned th)   { _threadId = th; }
+    void setThreadId(uint32_t th)   { _threadId = th; }
     class AllocFree {
     public:
-        AllocFree() : _allocFrom(NULL), _freeTo(NULL) { }
+        AllocFree() : _allocFrom(nullptr), _freeTo(nullptr) { }
         void init(AllocPool & allocPool, SizeClassT sc) {
-            if (_allocFrom == NULL) {
+            if (_allocFrom == nullptr) {
                 _allocFrom = allocPool.getFree(sc, 1);
-                assert(_allocFrom != NULL);
+                assert(_allocFrom != nullptr);
                 _freeTo = allocPool.getFree(sc, 1);
-                assert(_freeTo != NULL);
+                assert(_freeTo != nullptr);
             }
         }
         void swap() {
@@ -67,8 +67,9 @@ private:
     AllocPool   * _allocPool;
     AllocFree     _memList[NUM_SIZE_CLASSES];
     ThreadStatT   _stat[NUM_SIZE_CLASSES];
-    unsigned      _threadId;
+    uint32_t      _threadId;
     std::atomic<ssize_t> _osThreadId;
+
     static SizeClassT _alwaysReuseSCLimit __attribute__((visibility("hidden")));
     static size_t     _threadCacheLimit __attribute__((visibility("hidden")));
 };

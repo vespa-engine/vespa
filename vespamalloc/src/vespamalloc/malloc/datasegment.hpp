@@ -6,9 +6,7 @@
 namespace vespamalloc {
 
 template<typename MemBlockPtrT>
-DataSegment<MemBlockPtrT>::~DataSegment()
-{
-}
+DataSegment<MemBlockPtrT>::~DataSegment() = default;
 
 #define INIT_LOG_LIMIT 0x400000000ul // 16G
 
@@ -48,19 +46,19 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
     oldBlockSize = ((oldBlockSize + (minBlockSize-1))/minBlockSize)*minBlockSize;
     size_t numBlocks((oldBlockSize + (BlockSize-1))/BlockSize);
     size_t blockSize = BlockSize * numBlocks;
-    void * newBlock(NULL);
+    void * newBlock(nullptr);
     {
         Guard sync(_mutex);
         newBlock = _freeList.sub(numBlocks);
-        if ( newBlock == NULL ) {
+        if ( newBlock == nullptr ) {
             newBlock = _unMappedList.sub(numBlocks);
-            if ( newBlock == NULL ) {
+            if ( newBlock == nullptr ) {
                 size_t nextBlock(blockId(end()));
                 size_t startBlock = _freeList.lastBlock(nextBlock);
                 if (startBlock) {
                     size_t adjustedBlockSize = blockSize - BlockSize*(nextBlock-startBlock);
                     newBlock = _osMemory.get(adjustedBlockSize);
-                    if (newBlock != NULL) {
+                    if (newBlock != nullptr) {
                         assert (newBlock == fromBlockId(nextBlock));
                         _freeList.removeLastBlock();
                         newBlock = fromBlockId(startBlock);
@@ -79,9 +77,9 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
         }
     }
     if (newBlock == (void *) -1) {
-        newBlock = NULL;
+        newBlock = nullptr;
         blockSize = 0;
-    } else if (newBlock == NULL) {
+    } else if (newBlock == nullptr) {
         blockSize = 0;
     } else {
         assert(blockId(newBlock)+numBlocks < BlockCount);
@@ -95,7 +93,7 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
         }
     }
     oldBlockSize = blockSize;
-    if (newBlock == NULL) {
+    if (newBlock == nullptr) {
         static int recurse = 0;
         if (recurse++ == 0) {
             perror("Failed extending datasegment: ");
@@ -103,7 +101,7 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
             MemBlockPtrT::dumpInfo(_noMemLogLevel);
             sleep(2);
         }
-        return NULL;
+        return nullptr;
     }
     checkAndLogBigSegment();
     return newBlock;
@@ -161,17 +159,30 @@ void DataSegment<MemBlockPtrT>::returnBlock(void *ptr)
     }
 }
 
+namespace {
+
+std::vector<uint32_t>
+createHistogram(bool allThreads, uint32_t maxThreads) {
+    if (allThreads) {
+        return std::vector<uint32_t>(maxThreads, 0);
+    }
+    return std::vector<uint32_t>();
+}
+
+}
 template<typename MemBlockPtrT>
-size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, SizeClassT sct) const
+size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, uint32_t thread, SizeClassT sct, uint32_t maxThreadId) const
 {
-    typedef CallGraph<typename MemBlockPtrT::Stack, 0x10000, Index> CallGraphLT;
+    using CallGraphLT = CallGraph<typename MemBlockPtrT::Stack, 0x10000, Index>;
+    bool allThreads(thread == 0);
     size_t usedCount(0);
     size_t checkedCount(0);
     size_t allocatedCount(0);
     size_t notAccounted(0);
     size_t invalidCallStacks(0);
-    std::unique_ptr<CallGraphLT> callGraph(new CallGraphLT);
-    for(size_t i=0; i <  NELEMS(_blockList); ) {
+    std::unique_ptr<CallGraphLT> callGraph = std::make_unique<CallGraphLT>();
+    std::vector<uint32_t> threadHistogram = createHistogram(allThreads, maxThreadId);
+    for (size_t i=0; i <  NELEMS(_blockList); ) {
         const BlockT & b = _blockList[i];
         SizeClassT sc = b.sizeClass();
         if (sc == sct) {
@@ -182,8 +193,11 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, S
                 checkedCount++;
                 if (mem.allocated()) {
                     allocatedCount++;
-                    if (mem.threadId() == thread) {
+                    if (allThreads || (mem.threadId() == thread)) {
                         usedCount++;
+                        if (mem.threadId() < threadHistogram.size()) {
+                            threadHistogram[mem.threadId()]++;
+                        }
                         if (usedCount < _allocs2Show) {
                             mem.info(os, level);
                         }
@@ -210,8 +224,13 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, S
             i++;
         }
     }
-    fprintf(os, "\nCallTree(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "ByMeAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld InvalidCallStacks=%ld:\n",
-            checkedCount, allocatedCount, checkedCount ? allocatedCount*100/checkedCount : 0,
+    if (checkedCount == 0) {
+        return 0;
+    }
+
+    fprintf(os, "\nCallTree SC %d(Checked=%ld, GlobalAlloc=%ld(%ld%%)," "By%sAlloc=%ld(%2.2f%%) NotAccountedDue2FullGraph=%ld InvalidCallStacks=%ld:\n",
+            sct, checkedCount, allocatedCount, checkedCount ? allocatedCount*100/checkedCount : 0,
+            allThreads ? "Us" : "Me",
             usedCount, checkedCount ? static_cast<double>(usedCount*100)/checkedCount : 0.0, notAccounted, invalidCallStacks);
     if ( ! callGraph->empty()) {
         Aggregator agg;
@@ -221,7 +240,34 @@ size_t DataSegment<MemBlockPtrT>::infoThread(FILE * os, int level, int thread, S
         ost << agg;
         fprintf(os, "%s\n", ost.c_str());
     }
-    fprintf(os, " count(%ld)", usedCount);
+    if ( !threadHistogram.empty()) {
+        uint32_t nonZeroCount(0);
+        for (uint32_t i(0); i < threadHistogram.size(); i++) {
+            if (threadHistogram[i] > 0) {
+                nonZeroCount++;
+            }
+        }
+        using Pair = std::pair<uint32_t, uint32_t>;
+        std::vector<Pair> orderedHisto;
+        orderedHisto.reserve(nonZeroCount);
+        for (uint32_t i(0); i < threadHistogram.size(); i++) {
+            if (threadHistogram[i] > 0) {
+                orderedHisto.emplace_back(i, threadHistogram[i]);
+            }
+        }
+        std::sort(orderedHisto.begin(), orderedHisto.end(), [](const Pair & a, const Pair & b) { return a.second > b.second;});
+        fprintf(os, "ThreadHistogram SC %d: [", sct);
+
+        bool first(true);
+        for (const Pair & entry : orderedHisto) {
+            if ( !first) {
+                fprintf(os, ", ");
+            }
+            fprintf(os, "{%u, %u}", entry.first, entry.second);
+            first = false;
+        }
+        fprintf(os, " ]");
+    }
     return usedCount;
 }
 
@@ -308,7 +354,7 @@ void DataSegment<MemBlockPtrT>::FreeListT<MaxCount>::add(size_t startIndex)
     size_t numBlocks(_blockList[startIndex].freeChainLength());
     for (i=0; (i < _count) && (_freeStartIndex[i] < startIndex); i++) { }
     size_t prevIndex(0), nextIndex(0);
-    BlockT * prev(NULL), * next(NULL);
+    BlockT * prev(nullptr), * next(nullptr);
     if (i > 0) {
         prevIndex = _freeStartIndex[i-1];
         prev = & _blockList[prevIndex];
@@ -352,7 +398,7 @@ template<typename MemBlockPtrT>
 template <int MaxCount>
 void * DataSegment<MemBlockPtrT>::FreeListT<MaxCount>::sub(size_t numBlocks)
 {
-    void * block(NULL);
+    void * block(nullptr);
     size_t bestFitIndex(_count);
     int bestLeft(INT_MAX);
     for(size_t i=0; i < _count; i++) {
