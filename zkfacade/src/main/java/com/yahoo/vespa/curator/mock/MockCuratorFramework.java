@@ -222,7 +222,20 @@ public class MockCuratorFramework implements CuratorFramework  {
     public RemoveWatchesBuilder watches() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
     @Override
-    public WatcherRemoveCuratorFramework newWatcherRemoveCuratorFramework() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+    public WatcherRemoveCuratorFramework newWatcherRemoveCuratorFramework() {
+        class MockWatcherRemoveCuratorFramework extends MockCuratorFramework implements WatcherRemoveCuratorFramework {
+
+            public MockWatcherRemoveCuratorFramework(boolean stableOrdering, boolean shouldTimeoutOnEnter) {
+                super(stableOrdering, shouldTimeoutOnEnter);
+            }
+
+            @Override
+            public void removeWatchers() {
+
+            }
+        }
+        return new MockWatcherRemoveCuratorFramework(true, true);
+    }
 
     @Override
     public ConnectionStateErrorPolicy getConnectionStateErrorPolicy() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
@@ -1176,7 +1189,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     }
 
     /** Allows addition of directoryListeners which are never called */
-    private class MockListenable<T> implements Listenable<T> {
+    private static class MockListenable<T> implements Listenable<T> {
 
         @Override
         public void addListener(T t) {
