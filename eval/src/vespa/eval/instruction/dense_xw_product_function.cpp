@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_xw_product_function.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
@@ -40,7 +39,7 @@ void my_xw_product_op(InterpretedFunction::State &state, uint64_t param) {
         *dst++ = my_dot_product<LCT,RCT,common_inner>(vector_cells.cbegin(), matrix, self.vector_size, self.result_size);
         matrix += (common_inner ? self.vector_size : 1);
     }
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool common_inner>
@@ -54,7 +53,7 @@ void my_cblas_double_xw_product_op(InterpretedFunction::State &state, uint64_t p
                 common_inner ? self.vector_size : self.result_size,
                 1.0, matrix_cells.cbegin(), common_inner ? self.vector_size : self.result_size, vector_cells.cbegin(), 1,
                 0.0, dst_cells.begin(), 1);
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool common_inner>
@@ -68,7 +67,7 @@ void my_cblas_float_xw_product_op(InterpretedFunction::State &state, uint64_t pa
                 common_inner ? self.vector_size : self.result_size,
                 1.0, matrix_cells.cbegin(), common_inner ? self.vector_size : self.result_size, vector_cells.cbegin(), 1,
                 0.0, dst_cells.begin(), 1);
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 bool isDenseTensor(const ValueType &type, size_t d) {
@@ -137,7 +136,7 @@ DenseXWProductFunction::DenseXWProductFunction(const ValueType &result_type,
 }
 
 InterpretedFunction::Instruction
-DenseXWProductFunction::compile_self(EngineOrFactory, Stash &stash) const
+DenseXWProductFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
     using MyTypify = TypifyValue<TypifyCellType,vespalib::TypifyBool>;

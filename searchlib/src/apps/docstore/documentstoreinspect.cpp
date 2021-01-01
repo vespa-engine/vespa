@@ -71,7 +71,7 @@ DocumentStoreInspectApp::Main()
         if (cmd == "dumpidxfile") {
             vespalib::string idxfile;
             if (_argc >= 4) {
-                if (_argv[2] == vespalib::string("--idxfile")) {
+                if (vespalib::string(_argv[2]) == vespalib::string("--idxfile")) {
                     idxfile = _argv[3];
                     dumpIdxFile(idxfile);
                 } else {

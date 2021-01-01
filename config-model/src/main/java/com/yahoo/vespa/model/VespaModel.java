@@ -29,6 +29,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.container.QrConfig;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
@@ -190,12 +191,25 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             configModelRepo.prepareConfigModels(deployState);
             validateWrapExceptions();
             hostSystem.dumpPortAllocations();
+            propagateRestartOnDeploy();
             // must happen after stuff above
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
         }
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
             this.fileDistributor = fileDistributor;
+        }
+
+    }
+
+    private void propagateRestartOnDeploy() {
+        if (applicationPackage.getMetaData().isInternalRedeploy()) return;
+
+        // Propagate application config setting of restartOnDeploy to cluster deferChangesUntilRestart
+        for (ApplicationContainerCluster containerCluster : getContainerClusters().values()) {
+            QrConfig config = getConfig(QrConfig.class, containerCluster.getConfigId());
+            if (config.restartOnDeploy())
+                containerCluster.setDeferChangesUntilRestart(true);
         }
     }
 
@@ -313,6 +327,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @param configId the config id
      * @return a config instance of the given type
      */
+    @Override
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz, String configId) {
         try {
             ConfigInstance.Builder builder = newBuilder(clazz);
@@ -393,6 +408,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @param targetDef The config definition to use for the schema
      * @return The payload as a list of strings
      */
+    @Deprecated // TODO: Remove after December 2020
     @Override
     public ConfigPayload getConfig(ConfigKey<?> configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
         Objects.requireNonNull(targetDef, "config definition cannot be null");
@@ -402,6 +418,19 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         InnerCNode innerCNode = targetDef.getCNode();
         ConfigPayload payload = getConfigFromBuilder(builder, innerCNode);
         return (innerCNode != null) ? payload.applyDefaultsFromDef(innerCNode) : payload;
+    }
+
+    /**
+     * Resolve config for a given key and config definition
+     *
+     * @param configKey the key to resolve.
+     * @param targetDef the config definition to use for the schema
+     * @return the resolved config instance
+     */
+    @Override
+    public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
+        Objects.requireNonNull(targetDef, "config definition cannot be null");
+        return resolveToBuilder(configKey);
     }
 
     /**

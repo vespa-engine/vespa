@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributortestutil.h"
+#include <vespa/config-stor-distribution.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/config-stor-distribution.h>
+#include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/test/make_bucket_space.h>
 
 using document::test::makeBucketSpace;
 using document::test::makeDocumentBucket;
@@ -26,6 +27,7 @@ DistributorTestUtil::createLinks()
     _threadPool = framework::TickingThreadPool::createDefault("distributor");
     _distributor.reset(new Distributor(
             _node->getComponentRegister(),
+            _node->node_identity(),
             *_threadPool,
             *this,
             true,
@@ -133,7 +135,7 @@ DistributorTestUtil::getNodes(document::BucketId id)
 std::string
 DistributorTestUtil::getIdealStr(document::BucketId id, const lib::ClusterState& state)
 {
-    if (!getExternalOperationHandler().ownsBucketInState(state, makeDocumentBucket(id))) {
+    if (!getDistributorBucketSpace().owns_bucket_in_state(state, id)) {
         return id.toString();
     }
 
@@ -244,7 +246,7 @@ DistributorTestUtil::removeFromBucketDB(const document::BucketId& id)
 void
 DistributorTestUtil::addIdealNodes(const document::BucketId& id)
 {
-    addIdealNodes(*getExternalOperationHandler().getClusterStateBundle().getBaselineClusterState(), id);
+    addIdealNodes(*distributor_component().getClusterStateBundle().getBaselineClusterState(), id);
 }
 
 void
@@ -276,7 +278,7 @@ DistributorTestUtil::insertBucketInfo(document::BucketId id,
     if (active) {
         info2.setActive();
     }
-    BucketCopy copy(getExternalOperationHandler().getUniqueTimestamp(), node, info2);
+    BucketCopy copy(distributor_component().getUniqueTimestamp(), node, info2);
 
     entry->addNode(copy.setTrusted(trusted), toVector<uint16_t>(0));
 
@@ -334,6 +336,11 @@ DistributorTestUtil::getIdealStateManager() {
 ExternalOperationHandler&
 DistributorTestUtil::getExternalOperationHandler() {
     return _distributor->_externalOperationHandler;
+}
+
+storage::distributor::DistributorComponent&
+DistributorTestUtil::distributor_component() {
+    return _distributor->_component;
 }
 
 bool

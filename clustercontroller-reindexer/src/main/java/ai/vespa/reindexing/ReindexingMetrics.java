@@ -5,6 +5,7 @@ import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.jdisc.Metric;
 
 import java.time.Clock;
+import java.util.EnumSet;
 import java.util.Map;
 
 import static ai.vespa.reindexing.Reindexing.State.SUCCESSFUL;
@@ -26,12 +27,20 @@ class ReindexingMetrics {
 
     void dump(Reindexing reindexing) {
         reindexing.status().forEach((type, status) -> {
+            Reindexing.State state = status.state();
             metric.set("reindexing.progress",
                        status.progress().map(ProgressToken::percentFinished).map(percentage -> percentage * 1e-2)
                              .orElse(status.state() == SUCCESSFUL ? 1.0 : 0.0),
                        metric.createContext(Map.of("clusterid", cluster,
                                                    "documenttype", type.getName(),
-                                                   "state", toString(status.state()))));
+                                                   "state", toString(state))));
+            // Set metric value to -1 for all states not currently active, so we only have one value >= 0 at any given time.
+            for (Reindexing.State unset : EnumSet.complementOf(EnumSet.of(state)))
+                metric.set("reindexing.progress",
+                           -1,
+                           metric.createContext(Map.of("clusterid", cluster,
+                                                       "documenttype", type.getName(),
+                                                       "state", toString(unset))));
         });
     }
 

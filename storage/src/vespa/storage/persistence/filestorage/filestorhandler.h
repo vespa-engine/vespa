@@ -86,7 +86,6 @@ public:
 
     enum DiskState {
         AVAILABLE,
-        DISABLED,
         CLOSED
     };
 
@@ -108,11 +107,6 @@ public:
     /** Check whether it is enabled or not. */
     bool enabled() { return (getDiskState() == AVAILABLE); }
     bool closed() { return (getDiskState() == CLOSED); }
-    /**
-     * Disable the disk. Operations towards threads using this disk will
-     * start to fail. Typically called when disk errors are detected.
-     */
-    void disable() { setDiskState(DISABLED); }
     /** Closes all disk threads. */
     virtual void close() = 0;
 

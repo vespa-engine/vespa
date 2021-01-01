@@ -64,7 +64,11 @@ BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
+%if 0%{?centos}
+BuildRequires: llvm-devel >= 10.0.1
+%else
 BuildRequires: llvm-devel >= 9.0.1
+%endif
 BuildRequires: boost-devel >= 1.66
 BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
@@ -80,13 +84,6 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.4.0
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
-%if 0%{?fc31}
-BuildRequires: vespa-protobuf-devel >= 3.7.0-4
-BuildRequires: llvm-devel >= 9.0.0
-BuildRequires: boost-devel >= 1.69
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
 %if 0%{?fc32}
 BuildRequires: protobuf-devel
 BuildRequires: llvm-devel >= 10.0.0
@@ -180,8 +177,13 @@ Requires: vespa-zstd >= 1.4.5-2
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?el8}
+%if 0%{?centos}
+Requires: llvm-libs >= 10.0.1
+%define _vespa_llvm_version 10
+%else
 Requires: llvm-libs >= 9.0.1
 %define _vespa_llvm_version 9
+%endif
 Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.4.0
@@ -195,11 +197,6 @@ Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.4.0
 Requires: vespa-zstd >= 1.4.5-2
-%if 0%{?fc31}
-Requires: vespa-protobuf >= 3.7.0-4
-Requires: llvm-libs >= 9.0.0
-%define _vespa_llvm_version 9
-%endif
 %if 0%{?fc32}
 Requires: protobuf
 Requires: llvm-libs >= 10.0.0
@@ -469,7 +466,6 @@ fi
 %{_prefix}/lib/jars/athenz-identity-provider-service-jar-with-dependencies.jar
 %{_prefix}/lib/jars/cloud-tenant-cd-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-apps-jar-with-dependencies.jar
-%{_prefix}/lib/jars/clustercontroller-apputil-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-reindexer-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-utils-jar-with-dependencies.jar
@@ -609,6 +605,7 @@ fi
 %{_prefix}/lib/jars/component-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-bundle-jar-with-dependencies.jar
 %{_prefix}/lib/jars/configdefinitions-jar-with-dependencies.jar
+%{_prefix}/lib/jars/configgen.jar
 %{_prefix}/lib/jars/config-model-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-provisioning-jar-with-dependencies.jar

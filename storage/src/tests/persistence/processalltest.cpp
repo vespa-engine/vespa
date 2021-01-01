@@ -16,7 +16,7 @@ class ProcessAllHandlerTest : public SingleDiskPersistenceTestUtils {
 };
 
 TEST_F(ProcessAllHandlerTest, change_of_repos_is_reflected) {
-    EXPECT_EQ(3u, getComponent().getGeneration());
+    EXPECT_EQ(2u, getComponent().getGeneration());
     auto old = getComponent().getTypeRepo()->documentTypeRepo;
     auto old2 = &getEnv().getDocumentTypeRepo();
     EXPECT_EQ(old.get(), old2);
@@ -24,7 +24,7 @@ TEST_F(ProcessAllHandlerTest, change_of_repos_is_reflected) {
     auto newDocRepo = std::make_shared<document::DocumentTypeRepo>(*old->getDocumentType("testdoctype1"));
     getComponent().setDocumentTypeRepo(newDocRepo);
 
-    EXPECT_EQ(4u, getComponent().getGeneration());
+    EXPECT_EQ(3u, getComponent().getGeneration());
     EXPECT_EQ(newDocRepo.get(), getComponent().getTypeRepo()->documentTypeRepo.get());
     EXPECT_EQ(newDocRepo.get(), &getEnv().getDocumentTypeRepo());
 }

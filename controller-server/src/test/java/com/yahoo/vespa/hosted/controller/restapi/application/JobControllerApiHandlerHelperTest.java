@@ -152,7 +152,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.clock().setInstant(Instant.EPOCH);
 
         ZoneId zone = JobType.devUsEast1.zone(tester.controller().system());
-        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
         tester.configServer().setLogStream("1554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), devUsEast1).get().id(), null), "dev-us-east-1-log-first-part.json");
 

@@ -20,7 +20,7 @@ public interface ConfigResponse {
 
     long getGeneration();
 
-    boolean isInternalRedeploy();
+    boolean applyOnRestart();
 
     String getConfigMd5();
 

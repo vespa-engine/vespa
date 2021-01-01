@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.eclipse.jetty.util.URIUtil;
 import org.eclipse.jetty.util.Utf8Appendable;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +12,7 @@ import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
+import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
 
@@ -48,16 +47,15 @@ class HttpRequestFactory {
             String path = servletRequest.getRequestURI();
             String query = servletRequest.getQueryString();
 
-            StringBuffer builder = new StringBuffer(128);
-            URIUtil.appendSchemeHostPort(builder, scheme, host, port);
-            builder.append(path);
-            if (query != null) {
-                builder.append('?').append(query);
-            }
-            URI uri = URI.create(builder.toString());
+            URI uri = URI.create(scheme + "://" +
+                                 host + ":" + port +
+                                 (path != null ? path : "") +
+                                 (query != null ? "?" + query : ""));
+
             validateSchemeHostPort(scheme, host, port, uri);
             return uri;
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             throw createBadQueryException(e);
         }
     }
@@ -66,15 +64,12 @@ class HttpRequestFactory {
         if ( ! scheme.equals(uri.getScheme()))
             throw new IllegalArgumentException("Bad scheme: " + scheme);
 
-        if ( ! host.equals(uri.getHost()))
-            throw new IllegalArgumentException("Bad host: " + host);
-
-        if (port != uri.getPort() && ! (port == 80 && scheme.equals("http")) && ! (port == 443 && scheme.equals("https")))
-            throw new IllegalArgumentException("Bad port: " + port);
+        if ( ! host.equals(uri.getHost()) || port != uri.getPort())
+            throw new IllegalArgumentException("Bad authority: " + uri.getRawAuthority() + " != " + host + ":" + port);
     }
 
     private static RequestException createBadQueryException(IllegalArgumentException e) {
-        return new RequestException(Response.Status.BAD_REQUEST, "Query violates RFC 2396: " + e.getMessage(), e);
+        return new RequestException(BAD_REQUEST, "URL violates RFC 2396: " + e.getMessage(), e);
     }
 
     public static void copyHeaders(HttpServletRequest from, HttpRequest to) {

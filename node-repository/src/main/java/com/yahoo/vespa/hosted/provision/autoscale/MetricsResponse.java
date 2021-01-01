@@ -2,17 +2,24 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Consumes a response from the metrics/v2 API and populates the fields of this with the resulting values
@@ -23,33 +30,41 @@ public class MetricsResponse {
 
     private final Collection<Pair<String, MetricSnapshot>> nodeMetrics = new ArrayList<>();
 
-    public MetricsResponse(String response) {
-        this(SlimeUtils.jsonToSlime(response));
+    public MetricsResponse(String response, NodeList applicationNodes, NodeRepository nodeRepository) {
+        this(SlimeUtils.jsonToSlime(response), applicationNodes, nodeRepository);
     }
 
     public Collection<Pair<String, MetricSnapshot>> metrics() { return nodeMetrics; }
 
-    private MetricsResponse(Slime response) {
+    private MetricsResponse(Slime response, NodeList applicationNodes, NodeRepository nodeRepository) {
         Inspector root = response.get();
         Inspector nodes = root.field("nodes");
-        nodes.traverse((ArrayTraverser)(__, node) -> consumeNode(node));
+        nodes.traverse((ArrayTraverser)(__, node) -> consumeNode(node, applicationNodes, nodeRepository));
     }
 
-    private void consumeNode(Inspector node) {
+    private void consumeNode(Inspector node, NodeList applicationNodes, NodeRepository nodeRepository) {
         String hostname = node.field("hostname").asString();
-        consumeNodeMetrics(hostname, node.field("node"));
+        consumeNodeMetrics(hostname, node.field("node"), applicationNodes, nodeRepository);
         // consumeServiceMetrics(hostname, node.field("services"));
     }
 
-    private void consumeNodeMetrics(String hostname, Inspector node) {
-        long timestampSecond = node.field("timestamp").asLong();
-        Map<String, Double> values = consumeMetrics(node.field("metrics"));
+    private void consumeNodeMetrics(String hostname, Inspector nodeData, NodeList applicationNodes, NodeRepository nodeRepository) {
+        Optional<Node> node = applicationNodes.stream().filter(n -> n.hostname().equals(hostname)).findAny();
+        if (node.isEmpty()) return; // Node is not part of this cluster any more
+        long timestampSecond = nodeData.field("timestamp").asLong();
+        Map<String, Double> values = consumeMetrics(nodeData.field("metrics"));
         nodeMetrics.add(new Pair<>(hostname, new MetricSnapshot(Instant.ofEpochMilli(timestampSecond * 1000),
                                                                 Metric.cpu.from(values),
                                                                 Metric.memory.from(values),
                                                                 Metric.disk.from(values),
                                                                 (long)Metric.generation.from(values),
-                                                                Metric.inService.from(values) > 0)));
+                                                                Metric.inService.from(values) > 0,
+                                                                 clusterIsStable(node.get(), applicationNodes, nodeRepository))));
+    }
+
+    private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
+        ClusterSpec cluster = node.allocation().get().membership().cluster();
+        return Autoscaler.stable(applicationNodes.cluster(cluster.id()), nodeRepository);
     }
 
     private void consumeServiceMetrics(String hostname, Inspector node) {
@@ -86,6 +101,7 @@ public class MetricsResponse {
         generation { // application config generation active on the node
             public String metricResponseName() { return "application_generation"; }
             double convertValue(double metricValue) { return (float)metricValue; } // Really a long
+            double defaultValue() { return -1.0; }
         },
         inService {
             public String metricResponseName() { return "in_service"; }

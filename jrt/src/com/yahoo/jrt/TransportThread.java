@@ -5,7 +5,6 @@ package com.yahoo.jrt;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,30 +31,30 @@ public class TransportThread {
     }
 
     private class AddConnectionCmd implements Runnable {
-        private Connection conn;
+        private final Connection conn;
         AddConnectionCmd(Connection conn) { this.conn = conn; }
         public void run() { handleAddConnection(conn); }
     }
 
     private class CloseConnectionCmd implements Runnable {
-        private Connection conn;
+        private final Connection conn;
         CloseConnectionCmd(Connection conn) { this.conn = conn; }
         public void run() { handleCloseConnection(conn); }
     }
 
     private class EnableWriteCmd implements Runnable {
-        private Connection conn;
+        private final Connection conn;
         EnableWriteCmd(Connection conn) { this.conn = conn; }
         public void run() { handleEnableWrite(conn); }
     }
 
     private class HandshakeWorkDoneCmd implements Runnable {
-        private Connection conn;
+        private final Connection conn;
         HandshakeWorkDoneCmd(Connection conn) { this.conn = conn; }
         public void run() { handleHandshakeWorkDone(conn); }
     }
 
-    private class SyncCmd implements Runnable {
+    private static class SyncCmd implements Runnable {
         boolean done = false;
         public synchronized void waitDone() {
             while (!done) {
@@ -68,7 +67,7 @@ public class TransportThread {
         }
     }
 
-    private static Logger log = Logger.getLogger(TransportThread.class.getName());
+    private static final Logger log = Logger.getLogger(TransportThread.class.getName());
 
     private final Transport parent;
     private final Thread    thread;
@@ -120,15 +119,15 @@ public class TransportThread {
     }
 
     private boolean postCommand(Runnable cmd) {
-        boolean wakeup;
+        int qlen;
         synchronized (this) {
             if (state == CLOSED) {
                 return false;
             }
-            wakeup = queue.isEmpty();
             queue.enqueue(cmd);
+            qlen = queue.size();
         }
-        if (wakeup) {
+        if (qlen == parent.getEventsBeforeWakeup()) {
             selector.wakeup();
         }
         return true;

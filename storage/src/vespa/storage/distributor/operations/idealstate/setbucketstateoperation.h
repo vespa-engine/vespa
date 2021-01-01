@@ -9,10 +9,10 @@ namespace storage::distributor {
 class SetBucketStateOperation : public IdealStateOperation
 {
 public:
-    SetBucketStateOperation(const std::string& clusterName,
+    SetBucketStateOperation(const ClusterContext& cluster_ctx,
                             const BucketAndNodes& nodes,
                             const std::vector<uint16_t>& wantedActiveNodes);
-    ~SetBucketStateOperation();
+    ~SetBucketStateOperation() override;
 
     void onStart(DistributorMessageSender&) override;
     void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override;

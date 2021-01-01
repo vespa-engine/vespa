@@ -8,7 +8,6 @@
 #include "distributormetricsset.h"
 #include "simpleclusterinformation.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -101,18 +100,6 @@ bool
 BucketDBUpdater::hasPendingClusterState() const
 {
     return static_cast<bool>(_pendingClusterState);
-}
-
-BucketOwnership
-BucketDBUpdater::checkOwnershipInPendingState(const document::Bucket& b) const
-{
-    if (hasPendingClusterState()) {
-        const auto& state(*_pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(b.getBucketSpace()));
-        if (!_distributorComponent.ownsBucketInState(state, b)) {
-            return BucketOwnership::createNotOwnedInState(state);
-        }
-    }
-    return BucketOwnership::createOwned();
 }
 
 const lib::ClusterState*
@@ -317,6 +304,7 @@ BucketDBUpdater::storageDistributionChanged()
             _distributorComponent.getBucketSpaceRepo(),
             _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
+    _distributorComponent.getBucketSpaceRepo().set_pending_cluster_state_bundle(_pendingClusterState->getNewClusterStateBundle());
 }
 
 void
@@ -435,6 +423,7 @@ BucketDBUpdater::onSetSystemState(
     _distributorComponent.getDistributor().getMetrics().set_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 
+    _distributorComponent.getBucketSpaceRepo().set_pending_cluster_state_bundle(_pendingClusterState->getNewClusterStateBundle());
     if (isPendingClusterStateCompleted()) {
         processCompletedPendingClusterState();
     }
@@ -782,6 +771,7 @@ BucketDBUpdater::activatePendingClusterState()
     update_read_snapshot_after_activation(_pendingClusterState->getNewClusterStateBundle());
     _pendingClusterState.reset();
     _outdatedNodesMap.clear();
+    _distributorComponent.getBucketSpaceRepo().clear_pending_cluster_state_bundle();
     sendAllQueuedBucketRechecks();
     completeTransitionTimer();
     clearReadOnlyBucketRepoDatabases();

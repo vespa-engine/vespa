@@ -302,7 +302,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     }
     update->setCreateIfNonExistent(options._createIfNonExistent);
 
-    document::BucketId id = getExternalOperationHandler().getBucketId(update->getId());
+    document::BucketId id = distributor_component().getBucketId(update->getId());
     document::BucketId id2 = document::BucketId(id.getUsedBits() + 1, id.getRawId());
 
     if (bucketState.length()) {
@@ -325,9 +325,9 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     msg->setCondition(options._condition);
     msg->setTransportContext(std::make_unique<DummyTransportContext>());
 
-    ExternalOperationHandler& handler = getExternalOperationHandler();
+    auto& comp = distributor_component();
     return std::make_shared<TwoPhaseUpdateOperation>(
-            handler, getDistributorBucketSpace(), msg, getDistributor().getMetrics());
+            comp, comp, comp, getDistributorBucketSpace(), msg, getDistributor().getMetrics());
 }
 
 TEST_F(TwoPhaseUpdateOperationTest, simple) {
@@ -1002,7 +1002,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_re
               "ReturnCode(NONE)",
               _sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(1, metrics.fast_path_restarts.getValue());
 }
 
@@ -1021,7 +1021,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_do
     // Should _not_ be restarted with fast path, as it has been config disabled
     ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 2));
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(0, metrics.fast_path_restarts.getValue());
 }
 
@@ -1116,7 +1116,7 @@ TEST_F(ThreePhaseUpdateTest, full_document_get_sent_to_replica_with_highest_time
     reply_to_metadata_get(*cb, _sender, 0, 1000U);
     reply_to_metadata_get(*cb, _sender, 1, 2000U);
 
-    auto& metrics = getDistributor().getMetrics().update_metadata_gets[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().update_metadata_gets;
     EXPECT_EQ(1, metrics.ok.getValue()); // Technically tracks an entire operation covering multiple Gets.
 
     // Node 1 has newest document version at ts=2000
@@ -1137,7 +1137,7 @@ TEST_F(ThreePhaseUpdateTest, puts_are_sent_after_receiving_full_document_get) {
     replyToGet(*cb, _sender, 2, 2000U);
     ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true, false, 3));
 
-    auto& metrics = getDistributor().getMetrics().update_gets[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().update_gets;
     EXPECT_EQ(1, metrics.ok.getValue());
 }
 
@@ -1158,7 +1158,7 @@ TEST_F(ThreePhaseUpdateTest, consistent_meta_get_timestamps_can_restart_in_fast_
               "ReturnCode(NONE)",
               _sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(1, metrics.fast_path_restarts.getValue());
 }
 
@@ -1178,7 +1178,7 @@ TEST_F(ThreePhaseUpdateTest, no_document_found_on_any_replicas_is_considered_con
     reply_to_metadata_get(*cb, _sender, 1, no_document_timestamp);
 
     ASSERT_EQ("Update => 0,Update => 1", _sender.getCommands(true, false, 2));
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(1, metrics.fast_path_restarts.getValue());
 }
 

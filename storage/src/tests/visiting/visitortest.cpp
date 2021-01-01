@@ -1,21 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config/common/exceptions.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/storageapi/message/datagram.h>
-#include <vespa/storageapi/message/persistence.h>
+#include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/visiting/visitormanager.h>
+#include <vespa/storageapi/message/datagram.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/storageserver/testvisitormessagesession.h>
-#include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
-#include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
 #include <sys/stat.h>
@@ -127,8 +128,7 @@ protected:
         // come in and wipe our accumulated failure metrics.
         // Only 1 visitor thread running, so we know it has the metrics.
         const auto& metrics = _manager->getThread(0).getMetrics();
-        auto loadType = documentapi::LoadType::DEFAULT;
-        return metrics.visitorDestinationFailureReplies[loadType].getCount();
+        return metrics.visitorDestinationFailureReplies.getCount();
     }
 };
 
@@ -440,7 +440,8 @@ VisitorTest::fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_
 std::shared_ptr<api::CreateVisitorCommand>
 VisitorTest::makeCreateVisitor(const VisitorOptions& options)
 {
-    api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
+    static vespalib::string _storage("storage");
+    api::StorageMessageAddress address(&_storage, lib::NodeType::STORAGE, 0);
     auto cmd = std::make_shared<api::CreateVisitorCommand>(
             makeBucketSpace(), options.visitorType, "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
@@ -681,8 +682,7 @@ VisitorTest::sendInitialCreateVisitorAndGetIterRound()
     {
         GetIterCommand::SP getIterCmd;
         ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
-        sendGetIterReply(*getIterCmd, api::ReturnCode(api::ReturnCode::OK),
-                         1, true);
+        sendGetIterReply(*getIterCmd, api::ReturnCode(api::ReturnCode::OK), 1, true);
     }
 }
 
@@ -729,8 +729,7 @@ TEST_F(VisitorTest, no_visitor_notification_for_transient_failures) {
 }
 
 TEST_F(VisitorTest, notification_sent_if_transient_error_retried_many_times) {
-    constexpr size_t retries(
-        Visitor::TRANSIENT_ERROR_RETRIES_BEFORE_NOTIFY);
+    constexpr size_t retries = Visitor::TRANSIENT_ERROR_RETRIES_BEFORE_NOTIFY;
 
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     sendInitialCreateVisitorAndGetIterRound();
@@ -765,7 +764,6 @@ VisitorTest::doCompleteVisitingSession(
         const std::shared_ptr<api::CreateVisitorCommand>& cmd,
         std::shared_ptr<api::CreateVisitorReply>& reply_out)
 {
-    initializeTest();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
@@ -795,6 +793,7 @@ VisitorTest::doCompleteVisitingSession(
 }
 
 TEST_F(VisitorTest, no_mbus_tracing_if_trace_level_is_zero) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
     std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor());
     cmd->getTrace().setLevel(0);
     std::shared_ptr<api::CreateVisitorReply> reply;
@@ -803,6 +802,7 @@ TEST_F(VisitorTest, no_mbus_tracing_if_trace_level_is_zero) {
 }
 
 TEST_F(VisitorTest, reply_contains_trace_if_trace_level_above_zero) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
     std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor());
     cmd->getTrace().setLevel(1);
     cmd->getTrace().trace(1,"at least one trace.");
@@ -885,6 +885,67 @@ TEST_F(VisitorTest, dump_visitor_invokes_strong_read_consistency_iteration) {
 TEST_F(VisitorTest, test_visitor_invokes_weak_read_consistency_iteration) {
     doTestVisitorInstanceHasConsistencyLevel(
             "testvisitor", spi::ReadConsistency::WEAK);
+}
+
+struct ReindexingVisitorTest : VisitorTest {
+    void respond_with_docs_from_persistence() {
+        sendCreateIteratorReply();
+        GetIterCommand::SP get_iter_cmd;
+        // Reply to GetIter with a single doc and bucket completed
+        ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, get_iter_cmd));
+        sendGetIterReply(*get_iter_cmd, api::ReturnCode(api::ReturnCode::OK), 1, true);
+    }
+
+    void respond_to_client_put(api::ReturnCode::Result result) {
+        // Reply to the Put from "client" back to the visitor
+        std::vector<document::Document::SP> docs;
+        std::vector<document::DocumentId> doc_ids;
+        std::vector<std::string> info_messages;
+        getMessagesAndReply(1, getSession(0), docs, doc_ids, info_messages, result);
+    }
+
+    void complete_visitor() {
+        DestroyIteratorCommand::SP destroy_iter_cmd;
+        ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroy_iter_cmd));
+    }
+};
+
+TEST_F(ReindexingVisitorTest, puts_are_sent_with_tas_condition) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+    auto cmd = makeCreateVisitor(VisitorOptions().withVisitorType("reindexingvisitor"));
+    cmd->getParameters().set(reindexing_bucket_lock_visitor_parameter_key(), "foobar");
+    _top->sendDown(cmd);
+
+    ASSERT_NO_FATAL_FAILURE(respond_with_docs_from_persistence());
+    auto& session = getSession(0);
+    session.waitForMessages(1);
+
+    ASSERT_EQ(session.sentMessages.size(), 1u);
+    auto* put_cmd = dynamic_cast<documentapi::PutDocumentMessage*>(session.sentMessages.front().get());
+    ASSERT_TRUE(put_cmd);
+    auto token_str = vespalib::make_string("%s=foobar", reindexing_bucket_lock_bypass_prefix());
+    EXPECT_EQ(put_cmd->getCondition().getSelection(), token_str);
+
+    ASSERT_NO_FATAL_FAILURE(respond_to_client_put(api::ReturnCode::OK));
+    ASSERT_NO_FATAL_FAILURE(complete_visitor());
+
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
+}
+
+
+TEST_F(ReindexingVisitorTest, tas_responses_fail_the_visitor_and_are_rewritten_to_aborted) {
+    ASSERT_NO_FATAL_FAILURE(initializeTest());
+    auto cmd = makeCreateVisitor(VisitorOptions().withVisitorType("reindexingvisitor"));
+    cmd->getParameters().set(reindexing_bucket_lock_visitor_parameter_key(), "foobar");
+    _top->sendDown(cmd);
+
+    ASSERT_NO_FATAL_FAILURE(respond_with_docs_from_persistence());
+    ASSERT_NO_FATAL_FAILURE(respond_to_client_put(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED));
+    ASSERT_NO_FATAL_FAILURE(complete_visitor());
+
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::ABORTED, -1, -1));
+    ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
 } // namespace storage

@@ -8,10 +8,10 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Instant;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  *
  * @author smorgrav
  */
-abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
+public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
     private static final Logger log = Logger.getLogger(NodeCandidate.class.getName());
 
@@ -224,8 +224,8 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                                                Node parent,
                                                boolean violatesSpares,
                                                LockedNodeList allNodes,
-                                               NodeRepository nodeRepository) {
-        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, allNodes, nodeRepository);
+                                               NameResolver nameResolver) {
+        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, allNodes, nameResolver);
     }
 
     public static NodeCandidate createNewExclusiveChild(Node node, Node parent) {
@@ -316,7 +316,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         /** Needed to construct the node */
         private final LockedNodeList allNodes;
-        private final NodeRepository nodeRepository;
+        private final NameResolver nameResolver;
 
         private VirtualNodeCandidate(NodeResources resources,
                                      NodeResources freeParentCapacity,
@@ -324,11 +324,11 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
                                      boolean violatesSpares,
                                      boolean exclusiveSwitch,
                                      LockedNodeList allNodes,
-                                     NodeRepository nodeRepository) {
+                                     NameResolver nameResolver) {
             super(freeParentCapacity, Optional.of(parent), violatesSpares, exclusiveSwitch, false, true, false);
             this.resources = resources;
             this.allNodes = allNodes;
-            this.nodeRepository = nodeRepository;
+            this.nameResolver = nameResolver;
         }
 
         @Override
@@ -361,7 +361,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
         public NodeCandidate withNode() {
             Optional<IP.Allocation> allocation;
             try {
-                allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nodeRepository.nameResolver());
+                allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nameResolver);
                 if (allocation.isEmpty()) return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get(),
                                                                           "No addresses available on parent host");
             } catch (Exception e) {
@@ -382,7 +382,7 @@ abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 
         @Override
         public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
-            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, allNodes, nodeRepository);
+            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, allNodes, nameResolver);
         }
 
         @Override

@@ -1,11 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.cluster;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -165,7 +164,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             if (context.getParentProducer().getRoot() == null) return c;
 
-            addClusterControllers(containers, context, c.rootGroup, contentElement, c.clusterId, c, documentDefinitions);
+            addClusterControllers(containers, context, c.rootGroup, contentElement, c.clusterId, c);
             return c;
         }
 
@@ -278,10 +277,9 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
         }
 
-        private void addClusterControllers(Collection<ContainerModel> containers, ConfigModelContext context, 
-                                           StorageGroup rootGroup, ModelElement contentElement, 
-                                           String contentClusterName, ContentCluster contentCluster,
-                                           Map<String, NewDocumentType> documentDefinitions) {
+        private void addClusterControllers(Collection<ContainerModel> containers, ConfigModelContext context,
+                                           StorageGroup rootGroup, ModelElement contentElement,
+                                           String contentClusterName, ContentCluster contentCluster) {
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
 
@@ -303,13 +301,11 @@ public class ContentCluster extends AbstractConfigProducer implements
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
                                                  drawControllerHosts(nodesSpecification.minResources().nodes(), rootGroup, containers);
-                ReindexingContext reindexingContext = createReindexingContent(context, contentClusterName, documentDefinitions);
                 clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
                                                               hosts,
                                                               clusterName,
                                                               true,
-                                                              context.getDeployState(),
-                                                              reindexingContext);
+                                                              context.getDeployState());
                 contentCluster.clusterControllers = clusterControllers;
             }
             else {
@@ -320,22 +316,15 @@ public class ContentCluster extends AbstractConfigProducer implements
                         context.getDeployState().getDeployLogger().log(Level.INFO,
                                                                        "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
                     }
-                    ReindexingContext reindexingContext = createReindexingContent(context, contentClusterName, documentDefinitions);
-                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState(), reindexingContext);
+                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState());
                     admin.setClusterControllers(clusterControllers);
                 }
             }
 
             addClusterControllerComponentsForThisCluster(clusterControllers, contentCluster);
-        }
-
-        private static ReindexingContext createReindexingContent(
-                ConfigModelContext ctx, String contentClusterName, Map<String, NewDocumentType> documentDefinitions) {
-            class DisabledReindexing implements Reindexing {}
-            Reindexing reindexing = ctx.properties().featureFlags().enableAutomaticReindexing()
-                    ? ctx.getDeployState().reindexing().orElse(new DisabledReindexing())
-                    : new DisabledReindexing();
-            return new ReindexingContext(reindexing, contentClusterName, documentDefinitions.values());
+            ReindexingContext reindexingContext = clusterControllers.reindexingContext();
+            contentCluster.documentDefinitions.values()
+                    .forEach(type -> reindexingContext.addDocumentType(contentCluster.clusterId, type));
         }
 
         /** Returns any other content cluster which shares nodes with this, or null if none are built */
@@ -354,7 +343,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
 
         private Collection<HostResource> getControllerHosts(NodesSpecification nodesSpecification, Admin admin, String clusterName, ConfigModelContext context) {
-            return nodesSpecification.provision(admin.hostSystem(), ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterName), context.getDeployLogger()).keySet();
+            return nodesSpecification.provision(admin.hostSystem(), ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterName), context.getDeployLogger(), false).keySet();
         }
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
@@ -468,8 +457,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                            Collection<HostResource> hosts,
                                                                            String name,
                                                                            boolean multitenant,
-                                                                           DeployState deployState,
-                                                                           ReindexingContext reindexingContext) {
+                                                                           DeployState deployState) {
             var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
             List<ClusterControllerContainer> containers = new ArrayList<>();
             // Add a cluster controller on each config server (there is always at least one).
@@ -477,12 +465,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 int index = 0;
                 for (HostResource host : hosts) {
                     var clusterControllerContainer =
-                            new ClusterControllerContainer(
-                                    clusterControllers,
-                                    index,
-                                    multitenant,
-                                    deployState.isHosted(),
-                                    reindexingContext);
+                            new ClusterControllerContainer(clusterControllers, index, multitenant, deployState);
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin")
@@ -582,20 +565,19 @@ public class ContentCluster extends AbstractConfigProducer implements
 
     @Override
     public void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder) {
-    	if (!getSearch().hasIndexedCluster()) return;
-    	builder.
-    	defaultroute(com.yahoo.vespa.model.routing.DocumentProtocol.getDirectRouteName(getConfigId())).
-    	route(new MessagetyperouteselectorpolicyConfig.Route.Builder().
-    	        messagetype(DocumentProtocol.MESSAGE_PUTDOCUMENT).
-    	        name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId()))).
-    	route(new MessagetyperouteselectorpolicyConfig.Route.Builder().
-    	        messagetype(DocumentProtocol.MESSAGE_REMOVEDOCUMENT).
-    	        name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId()))).
-    	route(new MessagetyperouteselectorpolicyConfig.Route.Builder().
-    	        messagetype(DocumentProtocol.MESSAGE_UPDATEDOCUMENT).
-    	        name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())));
+        if ( ! getSearch().hasIndexedCluster()) return;
+        builder.defaultroute(com.yahoo.vespa.model.routing.DocumentProtocol.getDirectRouteName(getConfigId()))
+               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                              .messagetype(DocumentProtocol.MESSAGE_PUTDOCUMENT)
+                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())))
+               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                              .messagetype(DocumentProtocol.MESSAGE_REMOVEDOCUMENT)
+                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())))
+               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
+                              .messagetype(DocumentProtocol.MESSAGE_UPDATEDOCUMENT)
+                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())));
     }
-    
+
     public com.yahoo.vespa.model.content.StorageGroup getRootGroup() {
         return rootGroup;
     }

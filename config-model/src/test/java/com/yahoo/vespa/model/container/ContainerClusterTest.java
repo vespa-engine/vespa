@@ -1,9 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
@@ -42,6 +44,7 @@ import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInA
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -69,7 +72,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requreThatWeCanGetTheZoneConfig() {
+    public void requireThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true))
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
                                                      .build();
@@ -163,7 +166,7 @@ public class ContainerClusterTest {
     public void testClusterControllerResourceUsage() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
-        addClusterController(root.deployLogger(), cluster, "host-c1");
+        addClusterController(root.deployLogger(), cluster, "host-c1", root.getDeployState());
         assertEquals(1, cluster.getContainers().size());
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
         cluster.getConfig(qrBuilder);
@@ -183,7 +186,7 @@ public class ContainerClusterTest {
     public void testThatLinguisticsIsExcludedForClusterControllerCluster() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
-        addClusterController(root.deployLogger(), cluster, "host-c1");
+        addClusterController(root.deployLogger(), cluster, "host-c1", root.getDeployState());
         assertFalse(contains("com.yahoo.language.provider.DefaultLinguisticsProvider", cluster.getAllComponents()));
     }
 
@@ -320,6 +323,43 @@ public class ContainerClusterTest {
         
     }
 
+    @Test
+    public void requireCuratorConfig() {
+        DeployState state = new DeployState.Builder().build();
+        MockRoot root = new MockRoot("foo", state);
+        var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        addContainer(root.deployLogger(), cluster, "c2", "host-c2");
+        CuratorConfig.Builder configBuilder = new CuratorConfig.Builder();
+        cluster.getConfig(configBuilder);
+        CuratorConfig config = configBuilder.build();
+        assertEquals(List.of("host-c1", "host-c2"),
+                     config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
+        assertTrue(config.zookeeperLocalhostAffinity());
+    }
+
+    @Test
+    public void requireZooKeeperServerConfig() {
+        DeployState state = new DeployState.Builder().build();
+        MockRoot root = new MockRoot("foo", state);
+        var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        addContainer(root.deployLogger(), cluster, "c2", "host-c2");
+        addContainer(root.deployLogger(), cluster, "c3", "host-c3");
+
+        // Only myid is set for container
+        ZookeeperServerConfig.Builder configBuilder = new ZookeeperServerConfig.Builder();
+        cluster.getContainers().get(0).getConfig(configBuilder);
+        assertEquals(0, configBuilder.build().myid());
+
+        // the rest (e.g. servers) is set for cluster
+        cluster.getConfig(configBuilder);
+        assertEquals(0, configBuilder.build().myid());
+        assertEquals(List.of("host-c1", "host-c2", "host-c3"),
+                     configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
+
+    }
+
     private void verifyTesterApplicationInstalledBundles(Zone zone, List<String> expectedBundleNames) {
         ApplicationId appId = ApplicationId.from("tenant", "application", "instance-t");
         DeployState state = new DeployState.Builder().properties(
@@ -351,8 +391,11 @@ public class ContainerClusterTest {
         cluster.addContainer(container);
     }
 
-    private static void addClusterController(DeployLogger deployLogger, ClusterControllerContainerCluster cluster, String hostName) {
-        ClusterControllerContainer container = new ClusterControllerContainer(cluster, 1, false, cluster.isHostedVespa(), /*reindexingContext*/null);
+    private static void addClusterController(DeployLogger deployLogger,
+                                             ClusterControllerContainerCluster cluster,
+                                             String hostName,
+                                             DeployState deployState) {
+        ClusterControllerContainer container = new ClusterControllerContainer(cluster, 1, false, deployState);
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService(deployLogger);
         cluster.addContainer(container);

@@ -10,7 +10,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.component.Handler;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class MbusClient extends Handler<AbstractConfigProducer<?>> implements SessionConfig.Producer {
     private static final ComponentSpecification CLASSNAME =

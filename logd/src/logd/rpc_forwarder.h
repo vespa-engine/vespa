@@ -5,9 +5,11 @@
 #include "forwarder.h"
 #include "proto_converter.h"
 #include <vespa/log/log_message.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/target.h>
 #include <memory>
 #include <vector>
+
+class FRT_Supervisor;
 
 namespace logdemon {
 

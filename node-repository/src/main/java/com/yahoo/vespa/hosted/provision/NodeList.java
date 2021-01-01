@@ -183,13 +183,46 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                                                        .findFirst());
     }
 
+    /**
+     * Returns the cluster spec of the nodes in this, without any group designation
+     *
+     * @throws IllegalStateException if there are no nodes in thus list or they do not all belong
+     *                               to the same cluster
+     */
+    public ClusterSpec clusterSpec() {
+        ensureSingleCluster();
+        if (isEmpty()) throw new IllegalStateException("No nodes");
+        return first().get().allocation().get().membership().cluster().with(Optional.empty());
+    }
+
+    /**
+     * Returns the resources of the nodes of this.
+     *
+     * NOTE: If the nodes do not all have the same values of node resources, a random pick among those node resources
+     *       will be returned.
+     *
+     * @throws IllegalStateException if the nodes in this do not all belong to the same cluster
+     */
     public ClusterResources toResources() {
+        ensureSingleCluster();
         if (isEmpty()) return new ClusterResources(0, 0, NodeResources.unspecified());
         return new ClusterResources(size(),
                                     (int)stream().map(node -> node.allocation().get().membership().cluster().group().get())
                                                  .distinct()
                                                  .count(),
                                     first().get().resources());
+    }
+
+    private void ensureSingleCluster() {
+        if (isEmpty()) return;
+
+        if (stream().anyMatch(node -> node.allocation().isEmpty()))
+            throw new IllegalStateException("Some nodes are not allocated to a cluster");
+
+        ClusterSpec firstNodeSpec = first().get().allocation().get().membership().cluster().with(Optional.empty());
+        if (stream().map(node -> node.allocation().get().membership().cluster().with(Optional.empty()))
+                    .anyMatch(clusterSpec -> ! clusterSpec.equals(firstNodeSpec)))
+            throw new IllegalStateException("Nodes belong to multiple clusters");
     }
 
     /** Returns the nodes of this as a stream */

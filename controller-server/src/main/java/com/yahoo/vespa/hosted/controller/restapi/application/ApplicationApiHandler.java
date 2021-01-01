@@ -666,7 +666,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse nodes(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, id);
 
         Slime slime = new Slime();
@@ -689,7 +689,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse clusters(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         Application application = controller.serviceRegistry().configServer().nodeRepository().getApplication(zone, id);
 
         Slime slime = new Slime();
@@ -699,7 +699,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
-            cluster.target().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
+            if (cluster.target().isPresent()
+                && ! cluster.target().get().justNumbers().equals(cluster.current().justNumbers()))
+                toSlime(cluster.target().get(), clusterObject.setObject("target"));
             cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
             clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
@@ -760,7 +762,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, Map<String, String> queryParameters) {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
         InputStream logStream = controller.serviceRegistry().configServer().getLogs(deployment, queryParameters);
         return new HttpResponse(200) {
@@ -773,7 +775,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse metrics(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
         List<ProtonMetrics> protonMetrics = controller.serviceRegistry().configServer().getProtonMetrics(deployment);
         return buildResponseFromProtonMetrics(protonMetrics);
@@ -1081,13 +1083,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
-    private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+    private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment,
+                                    String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         Instance instance = controller.applications().getInstance(id)
                                       .orElseThrow(() -> new NotExistsException(id + " not found"));
 
         DeploymentId deploymentId = new DeploymentId(instance.id(),
-                                                     ZoneId.from(environment, region));
+                                                     requireZone(environment, region));
 
         Deployment deployment = instance.deployments().get(deploymentId.zoneId());
         if (deployment == null)
@@ -1137,6 +1140,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(endpoint, endpointArray.addObject());
         }
 
+        response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
         response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
@@ -1253,7 +1257,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {
         Instance instance = controller.applications().requireInstance(ApplicationId.from(tenantName, applicationName, instanceName));
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         Deployment deployment = instance.deployments().get(zone);
         if (deployment == null) {
             throw new NotExistsException(instance + " has no deployment in " + zone);
@@ -1289,7 +1293,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                     ZoneId.from(environment, region));
+                                                     requireZone(environment, region));
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("globalrotationoverride");
         controller.routing().globalRotationStatus(deploymentId)
@@ -1307,7 +1311,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse rotationStatus(String tenantName, String applicationName, String instanceName, String environment, String region, Optional<String> endpointId) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         Instance instance = controller.applications().requireInstance(applicationId);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         RotationId rotation = findRotationId(instance, endpointId);
         Deployment deployment = instance.deployments().get(zone);
         if (deployment == null) {
@@ -1396,7 +1400,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse suspended(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                     ZoneId.from(environment, region));
+                                                     requireZone(environment, region));
         boolean suspended = controller.applications().isSuspended(deploymentId);
         Slime slime = new Slime();
         Cursor response = slime.setObject();
@@ -1406,19 +1410,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse services(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationView applicationView = controller.getApplicationView(tenantName, applicationName, instanceName, environment, region);
-        ServiceApiResponse response = new ServiceApiResponse(ZoneId.from(environment, region),
+        ZoneId zone = requireZone(environment, region);
+        ServiceApiResponse response = new ServiceApiResponse(zone,
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.zoneRegistry().getConfigServerApiUris(ZoneId.from(environment, region)),
+                                                             controller.zoneRegistry().getConfigServerApiUris(zone),
                                                              request.getUri());
         response.setResponse(applicationView);
         return response;
     }
 
     private HttpResponse service(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath, HttpRequest request) {
-        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), ZoneId.from(environment, region));
+        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
 
         if ("container-clustercontroller".equals((serviceName)) && restPath.contains("/status/")) {
-            String result = controller.serviceRegistry().configServer().getClusterControllerStatus(deploymentId, restPath);
+            String[] parts = restPath.split("/status/");
+            String result = controller.serviceRegistry().configServer().getClusterControllerStatus(deploymentId, parts[0], parts[1]);
             return new HtmlResponse(result);
         }
 
@@ -1432,7 +1438,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse content(String tenantName, String applicationName, String instanceName, String environment, String region, String restPath, HttpRequest request) {
-        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), ZoneId.from(environment, region));
+        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         return controller.serviceRegistry().configServer().getApplicationPackageContent(deploymentId, "/" + restPath, request.getUri());
     }
 
@@ -1540,7 +1546,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Schedule reindexing of an application, or a subset of clusters, possibly on a subset of documents. */
     private HttpResponse reindex(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         List<String> clusterNames = Optional.ofNullable(request.getProperty("clusterId")).stream()
                                             .flatMap(clusters -> Stream.of(clusters.split(",")))
                                             .filter(cluster -> ! cluster.isBlank())
@@ -1559,7 +1565,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Gets reindexing status of an application in a zone. */
     private HttpResponse getReindexing(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         ApplicationReindexing reindexing = controller.applications().applicationReindexing(id, zone);
 
         Slime slime = new Slime();
@@ -1573,7 +1579,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                   .forEach(cluster -> {
                       Cursor clusterObject = clustersArray.addObject();
                       clusterObject.setString("name", cluster.getKey());
-                      setStatus(clusterObject.setObject("status"), cluster.getValue().common());
+                      cluster.getValue().common().ifPresent(common -> setStatus(clusterObject.setObject("status"), common));
 
                       Cursor pendingArray = clusterObject.setArray("pending");
                       cluster.getValue().pending().entrySet().stream().sorted(comparingByKey())
@@ -1600,7 +1606,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedAtMillis", endedAt.toEpochMilli()));
         status.state().map(ApplicationApiHandler::toString).ifPresent(state -> statusObject.setString("state", state));
         status.message().ifPresent(message -> statusObject.setString("message", message));
-        status.progress().ifPresent(progress -> statusObject.setString("progress", progress));
+        status.progress().ifPresent(progress -> statusObject.setDouble("progress", progress));
     }
 
     private static String toString(ApplicationReindexing.State state) {
@@ -1616,7 +1622,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Enables reindexing of an application in a zone. */
     private HttpResponse enableReindexing(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         controller.applications().enableReindexing(id, zone);
         return new MessageResponse("Enabled reindexing of " + id + " in " + zone);
     }
@@ -1624,7 +1630,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Disables reindexing of an application in a zone. */
     private HttpResponse disableReindexing(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
         controller.applications().disableReindexing(id, zone);
         return new MessageResponse("Disabled reindexing of " + id + " in " + zone);
     }
@@ -1632,7 +1638,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Schedule restart of deployment, or specific host in a deployment */
     private HttpResponse restart(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                                     ZoneId.from(environment, region));
+                                                     requireZone(environment, region));
         RestartFilter restartFilter = new RestartFilter()
                 .withHostName(Optional.ofNullable(request.getProperty("hostname")).map(HostName::from))
                 .withClusterType(Optional.ofNullable(request.getProperty("clusterType")).map(ClusterSpec.Type::from))
@@ -1674,7 +1680,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deploy(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
-        ZoneId zone = ZoneId.from(environment, region);
+        ZoneId zone = requireZone(environment, region);
 
         // Get deployOptions
         Map<String, byte[]> dataParts = parseDataParts(request);
@@ -1811,7 +1817,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId id = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
-                                           ZoneId.from(environment, region));
+                                           requireZone(environment, region));
         // Attempt to deactivate application even if the deployment is not known by the controller
         controller.applications().deactivate(id.applicationId(), id.zoneId());
         return new MessageResponse("Deactivated " + id);
@@ -1837,7 +1843,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                       type,
                                                                       false,
                                                                       controller.routing().zoneEndpointsOf(deployments),
-                                                                      controller.applications().contentClustersByZone(deployments)));
+                                                                      controller.applications().reachableContentClustersByZone(deployments)));
     }
 
     private static SourceRevision toSourceRevision(Inspector object) {
@@ -1979,6 +1985,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
     private URI withPath(String newPath, URI uri) {
         return withPathAndQuery(newPath, null, uri);
+    }
+
+    private String toPath(DeploymentId id) {
+        return path("/application", "v4",
+                    "tenant", id.applicationId().tenant(),
+                    "application", id.applicationId().application(),
+                    "instance", id.applicationId().instance(),
+                    "environment", id.zoneId().environment(),
+                    "region", id.zoneId().region());
     }
 
     private long asLong(String valueOrNull, long defaultWhenNull) {
@@ -2188,6 +2203,18 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 Optional.empty(), Optional.empty(), Optional.empty(), 1,
                 ApplicationPackage.deploymentRemoval(), new byte[0]);
         return new MessageResponse("All deployments removed");
+    }
+
+    private ZoneId requireZone(String environment, String region) {
+        ZoneId zone = ZoneId.from(environment, region);
+        // TODO(mpolden): Find a way to not hardcode this. Some APIs allow this "virtual" zone, e.g. /logs
+        if (zone.environment() == Environment.prod && zone.region().value().equals("controller")) {
+            return zone;
+        }
+        if (!controller.zoneRegistry().hasZone(zone)) {
+            throw new IllegalArgumentException("Zone " + zone + " does not exist in this system");
+        }
+        return zone;
     }
 
     private static Map<String, byte[]> parseDataParts(HttpRequest request) {

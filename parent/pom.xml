@@ -570,6 +570,11 @@
                 <version>${apache.httpclient.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>1.8</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${apache.httpcore.version}</version>
@@ -696,6 +701,11 @@
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit.version}</version>
             </dependency>
@@ -789,7 +799,6 @@
         <surefire.version>2.22.0</surefire.version>
         <tensorflow.version>1.12.0</tensorflow.version>
         <zookeeper.client.version>3.5.8</zookeeper.client.version>
-        <zookeeper.server.version>3.5.6</zookeeper.server.version>
 
         <doclint>all</doclint>
         <test.hide>true</test.hide>

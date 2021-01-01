@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/allocator.h>
 #include <cstddef>
 #include <algorithm>
+#include <atomic>
 
 using namespace vespalib;
 using std::make_pair;
@@ -172,7 +173,7 @@ TEST("test hash map iterator stability")
 class Clever {
 public:
     Clever() : _counter(&_global) { (*_counter)++; }
-    Clever(volatile size_t * counter) :
+    Clever(std::atomic<size_t> * counter) :
         _counter(counter)
     {
         (*_counter)++;
@@ -197,15 +198,15 @@ public:
     ~Clever() { (*_counter)--; }
     static size_t getGlobal() { return _global; }
 private:
-    volatile size_t * _counter;
-    static size_t _global;
+    std::atomic<size_t> * _counter;
+    static std::atomic<size_t> _global;
 };
 
-size_t Clever::_global = 0;
+std::atomic<size_t> Clever::_global = 0;
 
 TEST("test hash map resizing")
 {
-    volatile size_t counter(0);
+    std::atomic<size_t> counter(0);
     {
         EXPECT_EQUAL(0ul, Clever::getGlobal());
         Clever c(&counter);

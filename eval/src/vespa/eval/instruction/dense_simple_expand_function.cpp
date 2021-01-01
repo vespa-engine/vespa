@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_simple_expand_function.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
@@ -49,7 +48,7 @@ void my_simple_expand_op(State &state, uint64_t param) {
         apply_op2_vec_num(dst, inner_cells.begin(), outer_cell, inner_cells.size(), my_op);
         dst += inner_cells.size();
     }
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(params.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(params.result_type, TypedCells(dst_cells)));
 }
 
 //-----------------------------------------------------------------------------
@@ -95,7 +94,7 @@ DenseSimpleExpandFunction::DenseSimpleExpandFunction(const ValueType &result_typ
 DenseSimpleExpandFunction::~DenseSimpleExpandFunction() = default;
 
 Instruction
-DenseSimpleExpandFunction::compile_self(EngineOrFactory, Stash &stash) const
+DenseSimpleExpandFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     size_t result_size = result_type().dense_subspace_size();
     const ExpandParams &params = stash.create<ExpandParams>(result_type(), result_size, function());

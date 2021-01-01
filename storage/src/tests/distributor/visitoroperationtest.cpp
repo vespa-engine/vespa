@@ -4,6 +4,7 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
@@ -94,7 +95,7 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
     }
 
     VisitorMetricSet& defaultVisitorMetrics() {
-        return getDistributor().getMetrics().visits[documentapi::LoadType::DEFAULT];
+        return getDistributor().getMetrics().visits;
     }
 
     std::unique_ptr<VisitorOperation> createOpWithConfig(
@@ -102,15 +103,15 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
             const VisitorOperation::Config& config)
     {
         return std::make_unique<VisitorOperation>(
-                getExternalOperationHandler(),
+                distributor_component(),
+                distributor_component(),
                 getDistributorBucketSpace(),
                 msg,
                 config,
-                getDistributor().getMetrics().visits[msg->getLoadType()]);
+                getDistributor().getMetrics().visits);
     }
 
-    std::unique_ptr<VisitorOperation> createOpWithDefaultConfig(
-            api::CreateVisitorCommand::SP msg)
+    std::unique_ptr<VisitorOperation> createOpWithDefaultConfig(api::CreateVisitorCommand::SP msg)
     {
         return createOpWithConfig(std::move(msg), defaultConfig);
     }
@@ -126,21 +127,17 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
     }
 
     const std::vector<BucketId>& getBucketsFromLastCommand() {
-        const auto& cvc = dynamic_cast<const CreateVisitorCommand&>(
-                *_sender.commands().back());
+        const auto& cvc = dynamic_cast<const CreateVisitorCommand&>(*_sender.commands().back());
         return cvc.getBuckets();
     }
 
     std::pair<std::string, std::string>
-    runVisitor(document::BucketId id,
-                           document::BucketId lastId,
-                           uint32_t maxBuckets);
+    runVisitor(document::BucketId id, document::BucketId lastId, uint32_t maxBuckets);
 
 
     void doStandardVisitTest(const std::string& clusterState);
 
-    std::unique_ptr<VisitorOperation> startOperationWith2StorageNodeVisitors(
-            bool inconsistent);
+    std::unique_ptr<VisitorOperation> startOperationWith2StorageNodeVisitors(bool inconsistent);
 
     void do_visitor_roundtrip_with_statistics(const api::ReturnCode& result);
 };
@@ -1090,6 +1087,23 @@ TEST_F(VisitorOperationTest, statistical_metrics_not_updated_on_wrong_distributi
     EXPECT_EQ(0, defaultVisitorMetrics().bytes_per_visitor.getCount());
     // Fascinating that count is also a double...
     EXPECT_DOUBLE_EQ(0.0, defaultVisitorMetrics().latency.getCount());
+}
+
+TEST_F(VisitorOperationTest, assigning_put_lock_access_token_sets_special_visitor_parameter) {
+    document::BucketId id(0x400000000000007bULL);
+    enableDistributorClusterState("distributor:1 storage:1");
+    addNodesToBucketDB(id, "0=1/1/1/t");
+
+    auto op = createOpWithDefaultConfig(createVisitorCommand("metricstats", id, nullId));
+    op->assign_put_lock_access_token("its-a me, mario");
+
+    op->start(_sender, framework::MilliSecTime(0));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
+    auto cmd = std::dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
+    ASSERT_TRUE(cmd);
+    EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(),
+                                       vespalib::stringref("")),
+              "its-a me, mario");
 }
 
 }

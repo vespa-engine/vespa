@@ -2,12 +2,14 @@
 #pragma once
 
 #include <vespa/storage/distributor/operations/operation.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/visiting/memory_bounded_trace.h>
 #include <vespa/storageapi/defs.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageframework/generic/clock/timer.h>
+#include <optional>
 
 namespace document { class Document; }
 
@@ -16,8 +18,9 @@ namespace storage::lib { class ClusterState; }
 
 namespace storage::distributor {
 
-class DistributorComponent;
 class DistributorBucketSpace;
+class DistributorNodeContext;
+class DistributorOperationContext;
 
 class VisitorOperation  : public Operation
 {
@@ -32,9 +35,10 @@ public:
         uint32_t maxVisitorsPerNodePerVisitor;
     };
 
-    VisitorOperation(DistributorComponent& manager,
+    VisitorOperation(DistributorNodeContext& node_ctx,
+                     DistributorOperationContext& op_ctx,
                      DistributorBucketSpace &bucketSpace,
-                     const std::shared_ptr<api::CreateVisitorCommand> & msg,
+                     const std::shared_ptr<api::CreateVisitorCommand>& msg,
                      const Config& config,
                      VisitorMetricSet& metrics);
 
@@ -45,8 +49,20 @@ public:
     void onReceive(DistributorMessageSender& sender,
                    const std::shared_ptr<api::StorageReply> & msg) override;
 
+    // Only valid to call if is_read_for_write() == true
+    void fail_with_bucket_already_locked(DistributorMessageSender& sender);
+    void fail_with_merge_pending(DistributorMessageSender& sender);
+
+    [[nodiscard]] bool verify_command_and_expand_buckets(DistributorMessageSender& sender);
+
     const char* getName() const override { return "visit"; }
     std::string getStatus() const override { return ""; }
+
+    [[nodiscard]] bool has_sent_reply() const noexcept { return _sentReply; }
+    [[nodiscard]] bool is_read_for_write() const noexcept { return _is_read_for_write; }
+    [[nodiscard]] std::optional<document::Bucket> first_bucket_to_visit() const;
+    void assign_bucket_lock_handle(SequencingHandle handle);
+    void assign_put_lock_access_token(const vespalib::string& token);
 
 private:
     struct BucketInfo {
@@ -61,7 +77,7 @@ private:
         vespalib::string toString() const;
     };
 
-    typedef std::map<document::BucketId, BucketInfo> VisitBucketMap;
+    using VisitBucketMap = std::map<document::BucketId, BucketInfo>;
 
     struct SuperBucketInfo {
         document::BucketId bid;
@@ -69,7 +85,7 @@ private:
         VisitBucketMap subBuckets;
         std::vector<document::BucketId> subBucketsVisitOrder;
 
-        SuperBucketInfo(const document::BucketId& b = document::BucketId(0))
+        explicit SuperBucketInfo(const document::BucketId& b = document::BucketId(0))
             : bid(b),
               subBucketsCompletelyExpanded(false)
         {
@@ -78,8 +94,8 @@ private:
 
     };
 
-    typedef std::map<uint16_t, std::vector<document::BucketId> > NodeToBucketsMap;
-    typedef std::map<uint64_t, api::CreateVisitorCommand::SP> SentMessagesMap;
+    using NodeToBucketsMap = std::map<uint16_t, std::vector<document::BucketId>>;
+    using SentMessagesMap  = std::map<uint64_t, api::CreateVisitorCommand::SP>;
 
     void sendReply(const api::ReturnCode& code, DistributorMessageSender& sender);
     void updateReplyMetrics(const api::ReturnCode& result);
@@ -92,15 +108,12 @@ private:
     void verifyOperationSentToCorrectDistributor();
     bool verifyCreateVisitorCommand(DistributorMessageSender& sender);
     bool pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& buckets);
-    bool expandBucketAll();
     bool expandBucketContaining();
     bool expandBucketContained();
     void expandBucket();
     int pickTargetNode(
             const BucketDatabase::Entry& entry,
             const std::vector<uint16_t>& triedNodes);
-    void attemptToParseOrderingSelector();
-    bool documentSelectionMayHaveOrdering() const;
     bool maySendNewStorageVisitors() const noexcept;
     void startNewVisitors(DistributorMessageSender& sender);
     void initializeActiveNodes();
@@ -139,13 +152,13 @@ private:
      */
     vespalib::duration timeLeft() const noexcept;
 
-    DistributorComponent& _owner;
+    DistributorNodeContext& _node_ctx;
+    DistributorOperationContext& _op_ctx;
     DistributorBucketSpace &_bucketSpace;
     SentMessagesMap _sentMessages;
 
     api::CreateVisitorCommand::SP _msg;
     api::ReturnCode _storageError;
-    bool _sentReply;
 
     SuperBucketInfo _superBucket;
     document::BucketId _lastBucket;
@@ -154,7 +167,6 @@ private:
     api::Timestamp _toTime;
 
     std::vector<uint32_t> _activeNodes;
-    uint32_t _bucketCount;
 
     vdslib::VisitorStatistics _visitorStatistics;
 
@@ -164,11 +176,14 @@ private:
 
     static constexpr size_t TRACE_SOFT_MEMORY_LIMIT = 65536;
 
-    bool done();
-    bool hasNoPendingMessages();
     document::BucketId getLastBucketVisited();
     mbus::TraceNode trace;
     framework::MilliSecTimer _operationTimer;
+    SequencingHandle _bucket_lock;
+    vespalib::string _put_lock_token;
+    bool _sentReply;
+    bool _verified_and_expanded;
+    bool _is_read_for_write;
 };
 
 }

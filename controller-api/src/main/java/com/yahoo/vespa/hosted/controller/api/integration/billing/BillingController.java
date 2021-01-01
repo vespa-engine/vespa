@@ -16,6 +16,8 @@ public interface BillingController {
 
     PlanId getPlan(TenantName tenant);
 
+    List<TenantName> tenantsWithPlan(List<TenantName> existing, PlanId planId);
+
     String getPlanDisplayName(PlanId planId);
 
     Quota getQuota(TenantName tenant);
@@ -49,7 +51,9 @@ public interface BillingController {
 
     InstrumentList listInstruments(TenantName tenant, String userId);
 
-    List<Invoice> getInvoices(TenantName tenant);
+    List<Invoice> getInvoicesForTenant(TenantName tenant);
+
+    List<Invoice> getInvoices();
 
     void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged);
 

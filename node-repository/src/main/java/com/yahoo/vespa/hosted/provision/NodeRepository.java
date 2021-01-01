@@ -257,6 +257,10 @@ public class NodeRepository extends AbstractComponent {
         return NodeList.copyOf(getNodes(inState));
     }
 
+    public NodeList list(ApplicationId application, State ... inState) {
+        return NodeList.copyOf(getNodes(application, inState));
+    }
+
     /** Returns a filterable list of all nodes of an application */
     public NodeList list(ApplicationId application) {
         return NodeList.copyOf(getNodes(application));
@@ -884,11 +888,15 @@ public class NodeRepository extends AbstractComponent {
     }
 
     public boolean canAllocateTenantNodeTo(Node host) {
+        return canAllocateTenantNodeTo(host, zone.getCloud().dynamicProvisioning());
+    }
+
+    public static boolean canAllocateTenantNodeTo(Node host, boolean dynamicProvisioning) {
         if ( ! host.type().canRun(NodeType.tenant)) return false;
         if (host.status().wantToRetire()) return false;
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
 
-        if (zone.getCloud().dynamicProvisioning())
+        if (dynamicProvisioning)
             return EnumSet.of(State.active, State.ready, State.provisioned).contains(host.state());
         else
             return host.state() == State.active;

@@ -34,9 +34,9 @@ public class ProxyServerTest {
 
     // errorConfig based on fooConfig
     private static final ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
-    static final RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(),
-            fooConfig.getPayload(), fooConfig.getConfigMd5(),
-            fooConfig.getGeneration(), false, ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
+    static final RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(), fooConfig.getPayload(),
+                                                       fooConfig.getConfigMd5(), fooConfig.getGeneration(), false,
+                                                       ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -178,9 +178,9 @@ public class ProxyServerTest {
         assertEquals(1, cache.size());
 
         // Simulate an empty response
-        RawConfig emptyConfig = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(),
-                      Payload.from("{}"), fooConfig.getConfigMd5(),
-                      0, false, 0, fooConfig.getDefContent(), Optional.empty());
+        RawConfig emptyConfig = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(), Payload.from("{}"),
+                                              fooConfig.getConfigMd5(), 0, false,
+                                              0, fooConfig.getDefContent(), Optional.empty());
         source.put(fooConfig.getKey(), emptyConfig);
 
         res = proxy.resolveConfig(tester.createRequest(fooConfig));

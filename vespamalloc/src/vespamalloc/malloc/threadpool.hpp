@@ -28,7 +28,7 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::info(FILE * os, size_t level, const
             }
         }
     }
-    if (level > 1) {
+    if (level > 2) {
         fprintf(os, "BlockList:%ld,%ld,%ld\n", NELEMS(_stat), sizeof(_stat), sizeof(_stat[0]));
         size_t sum(0), sumLocal(0);
         for (size_t i=0; i < NELEMS(_stat); i++) {
@@ -86,7 +86,7 @@ mallocHelper(size_t exactSize,
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
-    _allocPool(NULL),
+    _allocPool(nullptr),
     _threadId(0),
     _osThreadId(0)
 {
@@ -170,7 +170,7 @@ bool ThreadPoolT<MemBlockPtrT, ThreadStatT>::hasActuallyBeenUsed() const
 {
     bool used(false);
     for (size_t i=0; !used && (i < NELEMS(_memList)); i++) {
-        used = (_memList[i]._allocFrom != NULL
+        used = (_memList[i]._allocFrom != nullptr
                 && !_memList[i]._allocFrom->empty()
                 && !_memList[i]._freeTo->full());
     }

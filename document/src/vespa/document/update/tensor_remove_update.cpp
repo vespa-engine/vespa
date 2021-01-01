@@ -1,16 +1,13 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_remove_update.h"
+#include "tensor_partial_update.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/partial_update.h>
-#include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/cell_values.h>
-#include <vespa/eval/tensor/sparse/sparse_tensor.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -22,8 +19,7 @@ using vespalib::IllegalStateException;
 using vespalib::make_string;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::eval::EngineOrFactory;
-using vespalib::tensor::TensorPartialUpdate;
+using vespalib::eval::FastValueBuilderFactory;
 
 namespace document {
 
@@ -113,8 +109,8 @@ TensorRemoveUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
     auto addressTensor = _tensor->getAsTensorPtr();
     if (addressTensor) {
-        auto engine = EngineOrFactory::get();
-        return TensorPartialUpdate::remove(tensor, *addressTensor, engine);
+        const auto &factory = FastValueBuilderFactory::get();
+        return TensorPartialUpdate::remove(tensor, *addressTensor, factory);
     }
     return {};
 }
@@ -163,8 +159,7 @@ verifyAddressTensorIsSparse(const Value *addressTensor)
     if (addressTensor == nullptr) {
         throw IllegalStateException("Address tensor is not set", VESPA_STRLOC);
     }
-    auto engine = EngineOrFactory::get();
-    if (TensorPartialUpdate::check_suitably_sparse(*addressTensor, engine)) {
+    if (addressTensor->type().is_sparse()) {
         return;
     }
     auto err = make_string("Expected address tensor to be sparse, but has type '%s'",

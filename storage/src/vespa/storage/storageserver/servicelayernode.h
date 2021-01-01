@@ -35,7 +35,6 @@ class ServiceLayerNode
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
     FileStorManager* _fileStorManager;
     bool _init_has_been_called;
-    bool _noUsablePartitionMode;
 
 public:
     typedef std::unique_ptr<ServiceLayerNode> UP;

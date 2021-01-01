@@ -4,8 +4,8 @@
 
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
@@ -35,7 +35,7 @@ public:
     }
     vespalib::eval::Value::UP get_query_tensor(const vespalib::string& tensor_name) const override {
         if (_query_tensor && (tensor_name == _query_tensor_name)) {
-            return vespalib::eval::EngineOrFactory::get().from_spec(*_query_tensor);
+            return vespalib::eval::value_from_spec(*_query_tensor, vespalib::eval::FastValueBuilderFactory::get());
         }
         return {};
     }

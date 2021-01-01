@@ -6,7 +6,6 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/document/select/node.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -553,7 +552,7 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
 }
 
 void
-Visitor::attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
+Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
                 const mbus::Route& controlAddress,
                 const mbus::Route& dataAddress,
                 framework::MilliSecTime timeout)
@@ -602,6 +601,17 @@ Visitor::addBoundedTrace(uint32_t level, const vespalib::string &message) {
     return _trace.add(std::move(tempTrace));
 }
 
+const vdslib::Parameters&
+Visitor::visitor_parameters() const noexcept {
+    assert(_initiatingCmd);
+    return _initiatingCmd->getParameters();
+}
+
+bool
+Visitor::remap_docapi_message_error_code(api::ReturnCode& in_out_code) {
+    return in_out_code.isCriticalForVisitor();
+}
+
 void
 Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics)
 {
@@ -623,7 +633,7 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
     auto meta = _visitorTarget.releaseMetaForMessageId(messageId);
 
     if (!reply->hasErrors()) {
-        metrics.averageMessageSendTime[getLoadType()].addValue(
+        metrics.averageMessageSendTime.addValue(
                 (message->getTimeRemaining() - message->getTimeRemainingNow()).count() / 1000.0);
         LOG(debug, "Visitor '%s' reply %s for message ID %" PRIu64 " was OK", _id.c_str(),
             reply->toString().c_str(), messageId);
@@ -632,11 +642,10 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
         return;
     }
 
-    metrics.visitorDestinationFailureReplies[getLoadType()].inc();
+    metrics.visitorDestinationFailureReplies.inc();
 
     if (message->getType() == documentapi::DocumentProtocol::MESSAGE_VISITORINFO) {
-        LOG(debug, "Aborting visitor as we failed to talk to "
-                           "controller: %s",
+        LOG(debug, "Aborting visitor as we failed to talk to controller: %s",
                     reply->getError(0).toString().c_str());
         api::ReturnCode returnCode(
                 static_cast<api::ReturnCode::Result>(
@@ -650,7 +659,8 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& met
     api::ReturnCode returnCode(
             static_cast<api::ReturnCode::Result>(reply->getError(0).getCode()),
             reply->getError(0).getMessage());
-    if (returnCode.isCriticalForVisitor()) {
+    const bool should_fail = remap_docapi_message_error_code(returnCode);
+    if (should_fail) {
         // Abort - something is wrong with target.
         fail(returnCode, true);
         close();
@@ -791,18 +801,14 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
         if (isRunning()) {
             MBUS_TRACE(reply->getTrace(), 5,
                        vespalib::make_string("Visitor %s handling block of %zu documents.",
-                                             _id.c_str(),
-                                             reply->getEntries().size()));
+                                             _id.c_str(), reply->getEntries().size()));
             LOG(debug, "Visitor %s handling block of %zu documents.",
                 _id.c_str(),
                 reply->getEntries().size());
             try {
                 framework::MilliSecTimer processingTimer(_component.getClock());
-                handleDocuments(reply->getBucketId(),
-                                reply->getEntries(),
-                                *_hitCounter);
-                metrics.averageProcessingTime[reply->getLoadType()]
-                    .addValue(processingTimer.getElapsedTimeAsDouble());
+                handleDocuments(reply->getBucketId(), reply->getEntries(), *_hitCounter);
+                metrics.averageProcessingTime.addValue(processingTimer.getElapsedTimeAsDouble());
 
                 MBUS_TRACE(reply->getTrace(), 5, "Done processing data block in visitor plugin");
 
@@ -1173,13 +1179,10 @@ Visitor::getIterators()
         selection.setToTimestamp(
                 spi::Timestamp(_visitorOptions._toTime.getTime()));
 
-        std::shared_ptr<CreateIteratorCommand> cmd(
-                new CreateIteratorCommand(bucket,
-                                          selection,
-                                          _visitorOptions._fieldSet,
-                                          _visitorOptions._visitRemoves ?
-                                          spi::NEWEST_DOCUMENT_OR_REMOVE :
-                                          spi::NEWEST_DOCUMENT_ONLY));
+        auto cmd = std::make_shared<CreateIteratorCommand>(bucket, selection,_visitorOptions._fieldSet,
+                                                           _visitorOptions._visitRemoves
+                                                               ? spi::NEWEST_DOCUMENT_OR_REMOVE
+                                                               : spi::NEWEST_DOCUMENT_ONLY);
 
         cmd->getTrace().setLevel(_traceLevel);
         cmd->setPriority(_initiatingCmd->getPriority());

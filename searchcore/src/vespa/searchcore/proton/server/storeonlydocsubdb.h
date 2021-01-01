@@ -50,8 +50,6 @@ public:
     void close() override { }
 };
 
-class StoreOnlyDocSubDB;
-
 /**
  * File header context used by the store-only sub database.
  *
@@ -65,8 +63,7 @@ class StoreOnlySubDBFileHeaderContext : public search::common::FileHeaderContext
     vespalib::string _subDB;
 
 public:
-    StoreOnlySubDBFileHeaderContext(StoreOnlyDocSubDB &owner,
-                                    const search::common::FileHeaderContext & parentFileHeaderContext,
+    StoreOnlySubDBFileHeaderContext(const search::common::FileHeaderContext & parentFileHeaderContext,
                                     const DocTypeName &docTypeName,
                                     const vespalib::string &baseDir);
     ~StoreOnlySubDBFileHeaderContext();

@@ -22,6 +22,7 @@ protected:
     void incNeedUnpack()           { ++_needUnpack; }
 public:
     RankedSearchIteratorBase(const fef::TermFieldMatchDataArray &matchData);
+    ~RankedSearchIteratorBase() override;
     bool getUnpacked()       const { return _needUnpack == 0; }
 };
 

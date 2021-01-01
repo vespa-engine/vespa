@@ -26,11 +26,10 @@ struct DumpVisitorSingleFactory : public VisitorFactory {
 
     VisitorEnvironment::UP
     makeVisitorEnvironment(StorageComponent&) override {
-        return VisitorEnvironment::UP(new VisitorEnvironment);
+        return std::make_unique<VisitorEnvironment>();
     };
 
     Visitor*
-
     makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters& params) override {
         return new DumpVisitorSingle(c, params);
     }

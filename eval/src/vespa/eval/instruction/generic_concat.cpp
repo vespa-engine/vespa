@@ -4,7 +4,6 @@
 #include "generic_join.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
@@ -103,7 +102,7 @@ void my_dense_simple_concat_op(State &state, uint64_t param_in) {
     for (size_t i = 0; i < b.size(); ++i) {
         *pos++ = b[i];
     }
-    Value &ref = state.stash.create<tensor::DenseTensorView>(param.res_type, TypedCells(result));
+    Value &ref = state.stash.create<DenseValueView>(param.res_type, TypedCells(result));
     state.pop_pop_push(ref);
 }
 
@@ -118,15 +117,6 @@ struct SelectGenericConcatOp {
             }
         }
         return my_generic_concat_op<LCT, RCT, OCT>;
-    }
-};
-
-struct PerformGenericConcat {
-    template <typename LCT, typename RCT, typename OCT>
-    static auto invoke(const Value &a, const Value &b, const ConcatParam &param) {
-        return generic_concat<LCT, RCT, OCT>(a, b,
-                                             param.sparse_plan, param.dense_plan,
-                                             param.res_type, param.factory);
     }
 };
 
@@ -217,17 +207,6 @@ GenericConcat::make_instruction(const ValueType &lhs_type, const ValueType &rhs_
             lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(),
             param);
     return Instruction(fun, wrap_param<ConcatParam>(param));
-}
-
-Value::UP
-GenericConcat::perform_concat(const Value &a, const Value &b,
-                              const vespalib::string &dimension,
-                              const ValueBuilderFactory &factory)
-{
-    ConcatParam param(a.type(), b.type(), dimension, factory);
-    return typify_invoke<3,TypifyCellType,PerformGenericConcat>(
-            a.type().cell_type(), b.type().cell_type(), param.res_type.cell_type(),
-            a, b, param);
 }
 
 } // namespace

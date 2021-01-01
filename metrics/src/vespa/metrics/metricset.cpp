@@ -40,7 +40,7 @@ MetricSet::MetricSet(const MetricSet& other,
     }
 }
 
-MetricSet::~MetricSet() { }
+MetricSet::~MetricSet() = default;
 
 MetricSet*
 MetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType type,

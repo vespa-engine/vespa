@@ -14,7 +14,6 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <algorithm>
 #include <set>

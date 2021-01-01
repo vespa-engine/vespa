@@ -11,28 +11,22 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent2;
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
-import com.yahoo.container.di.componentgraph.core.Node;
 import com.yahoo.container.di.config.RestApiContext;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleException;
 
 import java.util.Collection;
-import java.util.concurrent.ExecutionException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -51,7 +45,7 @@ public class ContainerTest extends ContainerTestBase {
         Container container = newContainer(dirConfigSource);
 
         ComponentTakingConfig component = createComponentTakingConfig(getNewComponentGraph(container));
-        assertThat(component.config.stringVal(), is("myString"));
+        assertEquals("myString", component.config.stringVal());
 
         container.shutdownConfigurer();
     }
@@ -62,11 +56,10 @@ public class ContainerTest extends ContainerTestBase {
         dirConfigSource.writeConfig("test", "stringVal \"original\"");
 
         Container container = newContainer(dirConfigSource);
-
         ComponentGraph componentGraph = getNewComponentGraph(container);
         ComponentTakingConfig component = createComponentTakingConfig(componentGraph);
 
-        assertThat(component.config.stringVal(), is("original"));
+        assertEquals("original", component.config.stringVal());
 
         // Reconfigure
         dirConfigSource.writeConfig("test", "stringVal \"reconfigured\"");
@@ -74,7 +67,7 @@ public class ContainerTest extends ContainerTestBase {
 
         ComponentGraph newComponentGraph = getNewComponentGraph(container, componentGraph);
         ComponentTakingConfig component2 = createComponentTakingConfig(newComponentGraph);
-        assertThat(component2.config.stringVal(), is("reconfigured"));
+        assertEquals("reconfigured", component2.config.stringVal());
 
         container.shutdownConfigurer();
     }
@@ -88,7 +81,7 @@ public class ContainerTest extends ContainerTestBase {
 
         ComponentGraph graph = getNewComponentGraph(container);
         ComponentTakingConfig component = createComponentTakingConfig(graph);
-        assertThat(component.getId().toString(), is("id1"));
+        assertEquals("id1", component.getId().toString());
 
         writeBootstrapConfigs(
                 new ComponentEntry("id1", ComponentTakingConfig.class),
@@ -97,8 +90,8 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(2);
         ComponentGraph newGraph = getNewComponentGraph(container, graph);
 
-        assertThat(ComponentGraph.getNode(newGraph, "id1"), notNullValue(Node.class));
-        assertThat(ComponentGraph.getNode(newGraph, "id2"), notNullValue(Node.class));
+        assertNotNull(ComponentGraph.getNode(newGraph, "id1"));
+        assertNotNull(ComponentGraph.getNode(newGraph, "id2"));
 
         container.shutdownConfigurer();
     }
@@ -240,9 +233,9 @@ public class ContainerTest extends ContainerTestBase {
         RestApiContext restApiContext = componentGraph.getInstance(clazz);
         assertNotNull(restApiContext);
 
-        assertThat(restApiContext.getBundles().size(), is(1));
-        assertThat(restApiContext.getBundles().get(0).symbolicName, is(MockBundle.SymbolicName));
-        assertThat(restApiContext.getBundles().get(0).version, is(MockBundle.BundleVersion));
+        assertEquals(1, restApiContext.getBundles().size());
+        assertEquals(MockBundle.SymbolicName, restApiContext.getBundles().get(0).symbolicName);
+        assertEquals(MockBundle.BundleVersion, restApiContext.getBundles().get(0).version);
 
         container.shutdownConfigurer();
     }
@@ -278,7 +271,7 @@ public class ContainerTest extends ContainerTestBase {
         RestApiContext restApiContext = componentGraph.getInstance(restApiClass);
 
         assertFalse(restApiContext.getInjectableComponents().isEmpty());
-        assertThat(restApiContext.getInjectableComponents().size(), is(2));
+        assertEquals(2, restApiContext.getInjectableComponents().size());
 
         container.shutdownConfigurer();
     }
@@ -380,7 +373,7 @@ public class ContainerTest extends ContainerTestBase {
 
     public static class TestDeconstructor implements ComponentDeconstructor {
         @Override
-        public void deconstruct(Collection<Object> components, Collection<Bundle> bundles) {
+        public void deconstruct(List<Object> components, Collection<Bundle> bundles) {
             components.forEach(component -> {
                 if (component instanceof DestructableComponent) {
                     DestructableComponent vespaComponent = (DestructableComponent) component;
@@ -401,14 +394,15 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     ComponentGraph getNewComponentGraph(Container container, ComponentGraph oldGraph) {
-        return container.getNewComponentGraph(oldGraph, Guice.createInjector(), false);
+        return container.getNewComponentGraph(oldGraph, Guice.createInjector(), true);
     }
 
     ComponentGraph getNewComponentGraph(Container container) {
-        return container.getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), false);
+        return container.getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), true);
     }
 
     private ComponentTakingConfig createComponentTakingConfig(ComponentGraph componentGraph) {
         return componentGraph.getInstance(ComponentTakingConfig.class);
     }
+
 }

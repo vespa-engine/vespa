@@ -20,13 +20,13 @@ class PersistenceOperationMetricSet;
 
 namespace distributor {
 
-class DistributorComponent;
+class DistributorNodeContext;
 class DistributorBucketSpace;
 
 class GetOperation  : public Operation
 {
 public:
-    GetOperation(DistributorComponent& manager,
+    GetOperation(DistributorNodeContext& node_ctx,
                  const DistributorBucketSpace &bucketSpace,
                  std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                  std::shared_ptr<api::GetCommand> msg,
@@ -79,7 +79,7 @@ private:
     };
 
     struct BucketChecksumGroup {
-        explicit BucketChecksumGroup(const BucketCopy& c)
+        explicit BucketChecksumGroup(const BucketCopy& c) noexcept
             : copy(c), sent(0), returnCode(api::ReturnCode::OK), to_node(UINT16_MAX), received(false)
         {}
 
@@ -97,7 +97,7 @@ private:
     // within that bucket.
     std::map<GroupId, GroupVector> _responses;
 
-    DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
     const DistributorBucketSpace &_bucketSpace;
 
     std::shared_ptr<api::GetCommand> _msg;

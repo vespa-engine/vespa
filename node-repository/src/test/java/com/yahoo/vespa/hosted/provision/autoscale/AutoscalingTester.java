@@ -138,6 +138,7 @@ class AutoscalingTester {
                                                                               memory,
                                                                               disk,
                                                                               0,
+                                                                              true,
                                                                               true))));
             }
         }
@@ -168,12 +169,18 @@ class AutoscalingTester {
                                                                               memory,
                                                                               disk,
                                                                               0,
+                                                                              true,
                                                                               true))));
             }
         }
     }
 
-    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId) {
+    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId)  {
+        addMeasurements(cpu, memory, disk, generation, true, true, count, applicationId);
+    }
+
+    public void addMeasurements(float cpu, float memory, float disk, int generation, boolean inService, boolean stable,
+                                int count, ApplicationId applicationId) {
         List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
@@ -183,7 +190,8 @@ class AutoscalingTester {
                                                                               memory,
                                                                               disk,
                                                                               generation,
-                                                                              true))));
+                                                                              inService,
+                                                                              stable))));
             }
         }
     }
@@ -196,7 +204,7 @@ class AutoscalingTester {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.autoscale(application.clusters().get(clusterId),
-                                    nodeRepository().getNodes(applicationId, Node.State.active));
+                                    nodeRepository().list(applicationId, Node.State.active));
     }
 
     public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
@@ -207,7 +215,7 @@ class AutoscalingTester {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.suggest(application.clusters().get(clusterId),
-                                  nodeRepository().getNodes(applicationId, Node.State.active));
+                                  nodeRepository().list(applicationId, Node.State.active));
     }
 
     public ClusterResources assertResources(String message,

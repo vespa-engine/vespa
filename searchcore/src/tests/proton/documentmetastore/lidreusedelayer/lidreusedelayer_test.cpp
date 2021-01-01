@@ -166,7 +166,7 @@ public:
     performCycleLids(const std::vector<uint32_t> &lids)
     {
         _writeService.master().execute(
-                makeLambdaTask([=]() { cycledLids(lids);}));
+                makeLambdaTask([this, lids]() { cycledLids(lids);}));
     }
 
     void
@@ -175,7 +175,7 @@ public:
         if (lids.empty())
             return;
         _writeService.index().execute(
-                makeLambdaTask([=]() { performCycleLids(lids);}));
+                makeLambdaTask([this, lids]() { performCycleLids(lids);}));
     }
 
     bool

@@ -27,11 +27,13 @@ struct RemoveLocationOperationTest : Test, DistributorTestUtil {
         auto msg = std::make_shared<api::RemoveLocationCommand>(selection, makeDocumentBucket(document::BucketId(0)));
 
         op = std::make_unique<RemoveLocationOperation>(
-                getExternalOperationHandler(),
+                distributor_component(),
+                distributor_component(),
+                distributor_component(),
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().
-                removelocations[msg->getLoadType()]);
+                removelocations);
 
         op->start(_sender, framework::MilliSecTime(0));
     }

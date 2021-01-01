@@ -26,30 +26,32 @@ public class ClusterMembershipTest {
         {
             ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired", Vtag.currentVersion, Optional.empty());
             ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            assertFalse(serialized.cluster().isStateful());
             assertEquals(instance, serialized);
             assertTrue(instance.retired());
             assertTrue(instance.cluster().isExclusive());
-            assertFalse(instance.cluster().combinedId().isPresent());
-            assertTrue(instance.cluster().dockerImageRepo().isEmpty());
         }
         {
             ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive", Vtag.currentVersion, Optional.empty());
             ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            assertFalse(serialized.cluster().isStateful());
             assertEquals(instance, serialized);
-            assertFalse(instance.retired());
             assertTrue(instance.cluster().isExclusive());
-            assertFalse(instance.cluster().combinedId().isPresent());
-            assertTrue(instance.cluster().dockerImageRepo().isEmpty());
         }
         {
             Optional<DockerImage> dockerImageRepo = Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"));
-            ClusterMembership instance = ClusterMembership.from("combined/id1/4/37/exclusive/containerId1", Vtag.currentVersion, dockerImageRepo);
+            ClusterMembership instance = ClusterMembership.from("combined/id1/4/37/exclusive/stateful/containerId1", Vtag.currentVersion, dockerImageRepo);
             ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, dockerImageRepo);
+            assertTrue(serialized.cluster().isStateful());
             assertEquals(instance, serialized);
-            assertFalse(instance.retired());
-            assertTrue(instance.cluster().isExclusive());
             assertEquals(ClusterSpec.Id.from("containerId1"), instance.cluster().combinedId().get());
             assertEquals(dockerImageRepo.get(), instance.cluster().dockerImageRepo().get());
+        }
+        {
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/stateful", Vtag.currentVersion, Optional.empty());
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            assertEquals(instance, serialized);
+            assertTrue(instance.cluster().isStateful());
         }
     }
 
@@ -70,7 +72,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstanceWithGroupFromString() {
-        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37", Vtag.currentVersion, Optional.empty()));
+        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37/stateful", Vtag.currentVersion, Optional.empty()));
     }
 
     @Test
@@ -90,7 +92,7 @@ public class ClusterMembershipTest {
 
     @Test
     public void testServiceInstanceWithGroupAndRetireFromString() {
-        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired", Vtag.currentVersion, Optional.empty()));
+        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired/stateful", Vtag.currentVersion, Optional.empty()));
     }
 
     private void assertContainerService(ClusterMembership instance) {
@@ -107,7 +109,7 @@ public class ClusterMembershipTest {
         assertFalse(instance.cluster().group().isPresent());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1/37", instance.stringValue());
+        assertEquals("content/id1/37/stateful", instance.stringValue());
     }
 
     private void assertContentServiceWithGroup(ClusterMembership instance) {
@@ -116,7 +118,7 @@ public class ClusterMembershipTest {
         assertEquals(4, instance.cluster().group().get().index());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1/4/37", instance.stringValue());
+        assertEquals("content/id1/4/37/stateful", instance.stringValue());
     }
 
     /** Serializing a spec without a group assigned works, but not deserialization */
@@ -125,7 +127,7 @@ public class ClusterMembershipTest {
         assertEquals("id1", instance.cluster().id().value());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1/37/retired", instance.stringValue());
+        assertEquals("content/id1/37/retired/stateful", instance.stringValue());
     }
 
     private void assertContentServiceWithGroupAndRetire(ClusterMembership instance) {
@@ -134,7 +136,7 @@ public class ClusterMembershipTest {
         assertEquals(4, instance.cluster().group().get().index());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1/4/37/retired", instance.stringValue());
+        assertEquals("content/id1/4/37/retired/stateful", instance.stringValue());
     }
 
 }

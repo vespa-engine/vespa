@@ -5,6 +5,10 @@
 #include <logd/rpc_forwarder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/metrics/dummy_metrics_manager.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+
+
 
 using namespace logdemon;
 using vespalib::metrics::DummyMetricsManager;

@@ -1,7 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/transport_thread.h>
+#include <vespa/fnet/simplepacketstreamer.h>
+#include <vespa/fnet/ipackethandler.h>
+#include <vespa/fnet/connection.h>
+#include <vespa/fnet/controlpacket.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -90,13 +95,13 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
         transport.Start(&pool);
     }
     TransportFixture(AsyncResolver::HostResolver::SP host_resolver)
-        : streamer(nullptr), pool(128 * 1024), transport(make_resolver(std::move(host_resolver)), 1),
+        : streamer(nullptr), pool(128 * 1024), transport(TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
     }
     TransportFixture(CryptoEngine::SP crypto)
-        : streamer(nullptr), pool(128 * 1024), transport(crypto, 1),
+        : streamer(nullptr), pool(128 * 1024), transport(TransportConfig().crypto(std::move(crypto))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
@@ -114,7 +119,7 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
         conn->SetCleanupHandler(this);
         return conn;
     }
-    ~TransportFixture() {
+    ~TransportFixture() override {
         transport.ShutDown(true);
         pool.Close();
     }

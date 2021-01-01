@@ -93,7 +93,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         }
         log.log(FINE, () -> "Polled queue and found config " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
-            setInternalRedeploy(jrtReq.responseIsInternalRedeploy());
+            setApplyOnRestart(jrtReq.responseIsApplyOnRestart());
             if (jrtReq.hasUpdatedConfig()) {
                 setNewConfig(jrtReq);
             } else {
@@ -111,7 +111,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         } catch (IllegalArgumentException e) {
             badConfigE = e;
         }
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsInternalRedeploy(), configInstance);
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance);
         if (badConfigE != null) {
             throw new IllegalArgumentException("Bad config from jrt", badConfigE);
         }

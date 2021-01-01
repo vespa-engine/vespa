@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
@@ -51,7 +51,6 @@ using search::queryeval::SearchIterator;
 using std::string;
 using std::vector;
 using vespalib::eval::TensorSpec;
-using vespalib::eval::EngineOrFactory;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using namespace search::attribute;
@@ -358,7 +357,7 @@ expect_nearest_neighbor_blueprint(const vespalib::string& attribute_tensor_type_
     auto result = f.create_blueprint();
     const auto& nearest = downcast<const NearestNeighborBlueprint>(*result);
     EXPECT_EQ(attribute_tensor_type_spec, nearest.get_attribute_tensor().getTensorType().to_spec());
-    EXPECT_EQ(converted_query_tensor, EngineOrFactory::get().to_spec(nearest.get_query_tensor()));
+    EXPECT_EQ(converted_query_tensor, spec_from_value(nearest.get_query_tensor()));
     EXPECT_EQ(7u, nearest.get_target_num_hits());
 }
 

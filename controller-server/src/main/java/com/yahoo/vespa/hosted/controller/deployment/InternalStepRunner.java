@@ -184,9 +184,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
-        return deploy(id.application(),
-                      id.type(),
-                      () -> controller.applications().deploy2(id.job(), setTheStage),
+        return deploy(() -> controller.applications().deploy2(id.job(), setTheStage),
                       controller.jobController().run(id).get()
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
@@ -196,9 +194,7 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
         Version platform = testerPlatformVersion(id);
         logger.log("Deploying the tester container on platform " + platform + " ...");
-        return deploy(id.tester().id(),
-                      id.type(),
-                      () -> controller.applications().deployTester(id.tester(),
+        return deploy(() -> controller.applications().deployTester(id.tester(),
                                                                    testerPackage(id),
                                                                    id.type().zone(controller.system()),
                                                                    platform),
@@ -208,8 +204,7 @@ public class InternalStepRunner implements StepRunner {
                       logger);
     }
 
-    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment,
-                                       Instant startTime, DualLogger logger) {
+    private Optional<RunStatus> deploy(Supplier<ActivateResult> deployment, Instant startTime, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
             if (prepareResponse.log != null)
@@ -232,9 +227,9 @@ public class InternalStepRunner implements StepRunner {
                                          ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.getErrorCode()) {
                 case CERTIFICATE_NOT_READY:
-                    logger.log("Waiting for provisioned web certificate — new application, or old one has expired");
+                    logger.log("Waiting for certificate to become ready on config server: New application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log("Deployment failed to find provisioned endpoint certificate after " + timeouts.endpointCertificate());
+                        logger.log("Certificate did not become available on config server within (" + timeouts.endpointCertificate() + ")");
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return result;
@@ -264,9 +259,10 @@ public class InternalStepRunner implements StepRunner {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
-                    logger.log("Waiting for provisioned web certificate — new application, or old one has expired");
+                    logger.log("Waiting for certificate to become valid: New application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log("Deployment failed to find provisioned endpoint certificate after " + timeouts.endpointCertificate());
+                        logger.log("Controller could not validate certificate within " +
+                                   timeouts.endpointCertificate() + ": " + Exceptions.toMessageString(e));
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return Optional.empty();
@@ -582,7 +578,7 @@ public class InternalStepRunner implements StepRunner {
                                                         id.type(),
                                                         true,
                                                         endpoints,
-                                                        controller.applications().contentClustersByZone(deployments));
+                                                        controller.applications().reachableContentClustersByZone(deployments));
         controller.jobController().cloud().startTests(getTesterDeploymentId(id), suite, config);
         return Optional.of(running);
     }

@@ -75,8 +75,8 @@ TaskRunner::internalRunTask(InitializerTask::SP task, Context::SP context)
     // run by context executor
     assert(task->getState() == State::BLOCKED);
     setTaskRunning(*task);
-    auto done(makeLambdaTask([=]() { setTaskDone(*task, context); }));
-    _executor.execute(makeLambdaTask([=, done(std::move(done))]() mutable
+    auto done(makeLambdaTask([this, task, context]() { setTaskDone(*task, context); }));
+    _executor.execute(makeLambdaTask([task, context, done(std::move(done))]() mutable
                                      {   task->run();
                                          context->execute(std::move(done)); }));
 }
@@ -124,7 +124,7 @@ TaskRunner::runTask(InitializerTask::SP rootTask,
                     vespalib::Executor::Task::UP doneTask)
 {
     auto context(std::make_shared<Context>(rootTask, contextExecutor, std::move(doneTask)));
-    context->execute(makeLambdaTask([=]() { pollTask(context); } ));
+    context->execute(makeLambdaTask([this, context=std::move(context)]() { pollTask(context); } ));
 }
 
 }

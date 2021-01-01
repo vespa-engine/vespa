@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
+#include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
@@ -12,6 +13,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
@@ -41,16 +43,18 @@ struct IdealStateManagerTest : Test, DistributorTestUtil {
 
     bool checkBlock(const IdealStateOperation& op,
                     const document::Bucket& bucket,
-                    const PendingMessageTracker& tracker) const
+                    const PendingMessageTracker& tracker,
+                    const OperationSequencer& op_seq) const
     {
-        return op.checkBlock(bucket, tracker);
+        return op.checkBlock(bucket, tracker, op_seq);
     }
 
     bool checkBlockForAllNodes(const IdealStateOperation& op,
                                const document::Bucket& bucket,
-                               const PendingMessageTracker& tracker) const
+                               const PendingMessageTracker& tracker,
+                               const OperationSequencer& op_seq) const
     {
-        return op.checkBlockForAllNodes(bucket, tracker);
+        return op.checkBlockForAllNodes(bucket, tracker, op_seq);
     }
 
     std::vector<document::BucketSpace> _bucketSpaces;
@@ -170,10 +174,12 @@ TEST_F(IdealStateManagerTest, recheck_when_active) {
 }
 
 TEST_F(IdealStateManagerTest, block_ideal_state_ops_on_full_request_bucket_info) {
+
     setupDistributor(2, 10, "distributor:1 storage:2");
 
     framework::defaultimplementation::FakeClock clock;
     PendingMessageTracker tracker(_node->getComponentRegister());
+    OperationSequencer op_seq;
 
     document::BucketId bid(16, 1234);
     std::vector<document::BucketId> buckets;
@@ -182,34 +188,34 @@ TEST_F(IdealStateManagerTest, block_ideal_state_ops_on_full_request_bucket_info)
     // sent to the entire node. It will then use a null bucketid.
     {
         auto msg = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), buckets);
-        msg->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 4));
+        msg->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 4));
         tracker.insert(msg);
     }
 
     {
-        RemoveBucketOperation op("storage",
+        RemoveBucketOperation op(dummy_cluster_context,
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(3, 4)));
-        EXPECT_TRUE(op.isBlocked(tracker));
+        EXPECT_TRUE(op.isBlocked(tracker, op_seq));
     }
 
     {
         // Don't trigger on requests to other nodes.
-        RemoveBucketOperation op("storage",
+        RemoveBucketOperation op(dummy_cluster_context,
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(3, 5)));
-        EXPECT_FALSE(op.isBlocked(tracker));
+        EXPECT_FALSE(op.isBlocked(tracker, op_seq));
     }
 
     // Don't block on null-bucket messages that aren't RequestBucketInfo.
     {
         auto msg = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "foo", "bar", "baz");
-        msg->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 7));
+        msg->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 7));
         tracker.insert(msg);
     }
 
     {
-        RemoveBucketOperation op("storage",
+        RemoveBucketOperation op(dummy_cluster_context,
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(7)));
-        EXPECT_FALSE(op.isBlocked(tracker));
+        EXPECT_FALSE(op.isBlocked(tracker, op_seq));
     }
 }
 
@@ -217,21 +223,42 @@ TEST_F(IdealStateManagerTest, block_check_for_all_operations_to_specific_bucket)
     setupDistributor(2, 10, "distributor:1 storage:2");
     framework::defaultimplementation::FakeClock clock;
     PendingMessageTracker tracker(_node->getComponentRegister());
+    OperationSequencer op_seq;
     document::BucketId bid(16, 1234);
 
     {
         auto msg = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(bid));
-        msg->setAddress(
-                api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 4));
+        msg->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 4));
         tracker.insert(msg);
     }
     {
-        RemoveBucketOperation op("storage",
+        RemoveBucketOperation op(dummy_cluster_context,
                                  BucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(7)));
         // Not blocked for exact node match.
-        EXPECT_FALSE(checkBlock(op, makeDocumentBucket(bid), tracker));
+        EXPECT_FALSE(checkBlock(op, makeDocumentBucket(bid), tracker, op_seq));
         // But blocked for bucket match!
-        EXPECT_TRUE(checkBlockForAllNodes(op, makeDocumentBucket(bid), tracker));
+        EXPECT_TRUE(checkBlockForAllNodes(op, makeDocumentBucket(bid), tracker, op_seq));
+    }
+}
+
+TEST_F(IdealStateManagerTest, block_operations_with_locked_buckets) {
+    setupDistributor(2, 10, "distributor:1 storage:2");
+    framework::defaultimplementation::FakeClock clock;
+    PendingMessageTracker tracker(_node->getComponentRegister());
+    OperationSequencer op_seq;
+    const auto bucket = makeDocumentBucket(document::BucketId(16, 1234));
+
+    {
+        auto msg = std::make_shared<api::JoinBucketsCommand>(bucket);
+        msg->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 1));
+        tracker.insert(msg);
+    }
+    auto token = op_seq.try_acquire(bucket, "foo");
+    EXPECT_TRUE(token.valid());
+    {
+        RemoveBucketOperation op(dummy_cluster_context, BucketAndNodes(bucket, toVector<uint16_t>(0)));
+        EXPECT_TRUE(checkBlock(op, bucket, tracker, op_seq));
+        EXPECT_TRUE(checkBlockForAllNodes(op, bucket, tracker, op_seq));
     }
 }
 

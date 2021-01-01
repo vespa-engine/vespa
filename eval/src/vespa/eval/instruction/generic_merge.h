@@ -11,10 +11,6 @@ struct GenericMerge {
     make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
                      join_fun_t function,
                      const ValueBuilderFactory &factory, Stash &stash);
-
-    static Value::UP
-    perform_merge(const Value &a, const Value &b, join_fun_t function,
-                  const ValueBuilderFactory &factory);
 };
 
 } // namespace

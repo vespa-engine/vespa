@@ -32,16 +32,16 @@ struct CellTypeUtils {
         switch (cell_type) {
         case CellType::DOUBLE: return sizeof(double);
         case CellType::FLOAT: return sizeof(float);
+        default: bad_argument((uint32_t)cell_type);
         }
-        bad_argument((uint32_t)cell_type);
     }
 
     static constexpr size_t mem_size(CellType cell_type, size_t sz) {
         switch (cell_type) {
         case CellType::DOUBLE: return sz * sizeof(double);
         case CellType::FLOAT:  return sz * sizeof(float);
+        default: bad_argument((uint32_t)cell_type);
         }
-        bad_argument((uint32_t)cell_type);
     }
 };
 

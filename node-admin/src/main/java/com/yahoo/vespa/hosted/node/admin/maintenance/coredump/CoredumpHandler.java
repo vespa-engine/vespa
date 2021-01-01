@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -155,7 +156,7 @@ public class CoredumpHandler {
         if (!Files.exists(metadataPath.toPath())) {
             Path coredumpFilePathOnHost = findCoredumpFileInProcessingDirectory(coredumpDirectory);
             Path coredumpFilePathInContainer = context.pathInNodeFromPathOnHost(coredumpFilePathOnHost);
-            Map<String, Object> metadata = coreCollector.collect(context, coredumpFilePathInContainer);
+            Map<String, Object> metadata = new HashMap<>(coreCollector.collect(context, coredumpFilePathInContainer));
             metadata.putAll(nodeAttributesSupplier.get());
             metadata.put("coredump_path", doneCoredumpsPath.resolve(context.containerName().asString()).resolve(coredumpDirectory.getFileName()).toString());
 

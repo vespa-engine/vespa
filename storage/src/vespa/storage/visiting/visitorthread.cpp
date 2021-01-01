@@ -2,7 +2,6 @@
 
 #include "visitorthread.h"
 #include "messages.h"
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/messagebus/rpcmessagebus.h>
@@ -23,7 +22,7 @@ using storage::api::ReturnCode;
 
 namespace storage {
 
-VisitorThread::Event::Event(Event&& other)
+VisitorThread::Event::Event(Event&& other) noexcept
     : _visitorId(other._visitorId),
       _message(other._message),
       _mbusReply(std::move(other._mbusReply)),
@@ -35,7 +34,7 @@ VisitorThread::Event::Event(Event&& other)
 VisitorThread::Event::~Event() = default;
 
 VisitorThread::Event&
-VisitorThread::Event::operator= (Event&& other)
+VisitorThread::Event::operator= (Event&& other) noexcept
 {
     _visitorId = other._visitorId;
     _message = other._message;
@@ -207,7 +206,7 @@ VisitorThread::run(framework::ThreadHandle& thread)
                 (entry._message->getType() != api::MessageType::INTERNAL
                  || static_cast<api::InternalCommand&>(*entry._message).getType() != PropagateVisitorConfig::ID))
             {
-                entry._timer.stop(_metrics.averageQueueWaitingTime[entry._message->getLoadType()]);
+                entry._timer.stop(_metrics.averageQueueWaitingTime);
             }
         }
 
@@ -231,8 +230,7 @@ VisitorThread::run(framework::ThreadHandle& thread)
                 if (_currentlyRunningVisitor == _visitors.end()) {
                     handleNonExistingVisitorCall(entry, result);
                 } else {
-                    _currentlyRunningVisitor->second->handleDocumentApiReply(
-                            std::move(entry._mbusReply), _metrics);
+                    _currentlyRunningVisitor->second->handleDocumentApiReply(std::move(entry._mbusReply), _metrics);
                     if (_currentlyRunningVisitor->second->isCompleted()) {
                         close();
                     }
@@ -250,7 +248,7 @@ VisitorThread::run(framework::ThreadHandle& thread)
             result = ReturnCode(ReturnCode::INTERNAL_FAILURE, ost.str());
             if (entry._message.get() && entry._message->getType() == api::MessageType::VISITOR_CREATE) {
                 _messageSender.closed(entry._visitorId);
-                _metrics.failedVisitors[entry._message->getLoadType()].inc(1);
+                _metrics.failedVisitors.inc(1);
             }
         }
         _currentlyRunningVisitor = _visitors.end();
@@ -291,16 +289,13 @@ VisitorThread::close()
 
     Visitor& v = *_currentlyRunningVisitor->second;
 
-    documentapi::LoadType loadType(v.getLoadType());
-
-    _metrics.averageVisitorLifeTime[loadType].addValue(
-            (closeTime - v.getStartTime()).getMillis().getTime());
+    _metrics.averageVisitorLifeTime.addValue((closeTime - v.getStartTime()).getMillis().getTime());
     v.finalize();
     _messageSender.closed(_currentlyRunningVisitor->first);
     if (v.failed()) {
-        _metrics.abortedVisitors[loadType].inc(1);
+        _metrics.abortedVisitors.inc(1);
     } else {
-        _metrics.completedVisitors[loadType].inc(1);
+        _metrics.completedVisitors.inc(1);
     }
     framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
     trimRecentlyCompletedList(currentTime);
@@ -322,8 +317,7 @@ VisitorThread::trimRecentlyCompletedList(framework::SecondTime currentTime)
 }
 
 void
-VisitorThread::handleNonExistingVisitorCall(const Event& entry,
-                                            ReturnCode& code)
+VisitorThread::handleNonExistingVisitorCall(const Event& entry, ReturnCode& code)
 {
     // Get current time. Set the time that is the oldest still recent.
     framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
@@ -368,8 +362,7 @@ VisitorThread::createVisitor(vespalib::stringref libName,
     }
 
     try{
-        std::shared_ptr<Visitor> visitor(it->second->makeVisitor(
-                    _component, *libIter->second, params));
+        std::shared_ptr<Visitor> visitor(it->second->makeVisitor(_component, *libIter->second, params));
         if (!visitor.get()) {
             error << "Factory function in '" << str << "' failed.";
         }
@@ -530,8 +523,8 @@ VisitorThread::onCreateVisitor(
             LOG(error, "Got exception we can't handle: %s", e.what());
             assert(false);
         }
-        _metrics.createdVisitors[visitor->getLoadType()].inc(1);
-        visitorTimer.stop(_metrics.averageVisitorCreationTime[visitor->getLoadType()]);
+        _metrics.createdVisitors.inc(1);
+        visitorTimer.stop(_metrics.averageVisitorCreationTime);
     } else {
         // Send reply
         auto reply = std::make_shared<api::CreateVisitorReply>(*cmd);

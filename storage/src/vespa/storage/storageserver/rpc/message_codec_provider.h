@@ -5,18 +5,15 @@
 #include <shared_mutex>
 
 namespace document { class DocumentTypeRepo; }
-namespace documentapi { class LoadTypeSet; }
 namespace storage::mbusprot { class ProtocolSerialization7; }
 
 namespace storage::rpc {
 
 class WrappedCodec {
     const std::shared_ptr<const document::DocumentTypeRepo> _doc_type_repo;
-    const std::shared_ptr<const documentapi::LoadTypeSet> _load_type_set;
     std::unique_ptr<mbusprot::ProtocolSerialization7> _codec;
 public:
-    WrappedCodec(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo,
-                 std::shared_ptr<const documentapi::LoadTypeSet> load_type_set);
+    explicit WrappedCodec(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo);
     ~WrappedCodec();
 
     [[nodiscard]] const mbusprot::ProtocolSerialization7& codec() const noexcept { return *_codec; }
@@ -34,14 +31,12 @@ class MessageCodecProvider {
     mutable std::shared_mutex _rw_mutex;
     std::shared_ptr<WrappedCodec> _active_codec;
 public:
-    MessageCodecProvider(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo,
-                         std::shared_ptr<const documentapi::LoadTypeSet> load_type_set);
+    explicit MessageCodecProvider(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo);
     ~MessageCodecProvider();
 
     [[nodiscard]] std::shared_ptr<const WrappedCodec> wrapped_codec() const noexcept;
 
-    void update_atomically(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo,
-                           std::shared_ptr<const documentapi::LoadTypeSet> load_type_set);
+    void update_atomically(std::shared_ptr<const document::DocumentTypeRepo> doc_type_repo);
 };
 
 }

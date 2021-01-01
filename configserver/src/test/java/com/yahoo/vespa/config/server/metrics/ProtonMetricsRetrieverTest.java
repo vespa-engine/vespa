@@ -1,5 +1,6 @@
 package com.yahoo.vespa.config.server.metrics;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
@@ -28,8 +29,8 @@ public class ProtonMetricsRetrieverTest {
     public void getMetrics()  {
         ProtonMetricsRetrieverTest.MockModel mockModel = new MockModel(mockHosts());
         ProtonMetricsRetrieverTest.MockProtonMetricsRetriever mockMetricsRetriever = new MockProtonMetricsRetriever();
-        Application application = new Application(mockModel, null, 0, false,
-                null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
+        Application application = new Application(mockModel, null, 0,
+                                                  null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
         ProtonMetricsRetriever clusterMetricsRetriever = new ProtonMetricsRetriever(mockMetricsRetriever);
         clusterMetricsRetriever.getMetrics(application);
@@ -76,7 +77,13 @@ public class ProtonMetricsRetrieverTest {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition targetDef) {
             throw new UnsupportedOperationException();
         }
 

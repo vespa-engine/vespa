@@ -23,6 +23,7 @@ import static java.util.Collections.emptySet;
  * @author ollivir
  */
 public class ContainerTestBase {
+
     private ComponentGraph componentGraph;
     protected DirConfigSource dirConfigSource = null;
 
@@ -70,7 +71,7 @@ public class ContainerTestBase {
                             throw new UnsupportedOperationException("getBundle not supported.");
                         }
                     });
-            componentGraph = container.getNewComponentGraph(componentGraph, Guice.createInjector(), false);
+            componentGraph = container.getNewComponentGraph(componentGraph, Guice.createInjector(), true);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -120,4 +121,5 @@ public class ContainerTestBase {
                     "</config>";
         }
     }
+
 }

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
@@ -26,10 +27,12 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -41,6 +44,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
  */
 public class MetricsReporter extends NodeRepositoryMaintainer {
 
+    private final Set<Pair<Metric.Context, String>> nonZeroMetrics = new HashSet<>();
     private final Metric metric;
     private final Orchestrator orchestrator;
     private final ServiceMonitor serviceMonitor;
@@ -261,28 +265,39 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                 .forEach((lockPath, lockMetrics) -> {
                     Metric.Context context = getContext(Map.of("lockPath", lockPath));
 
-                    metric.set("lockAttempt.acquire", lockMetrics.getAndResetAcquireCount(), context);
-                    metric.set("lockAttempt.acquireFailed", lockMetrics.getAndResetAcquireFailedCount(), context);
-                    metric.set("lockAttempt.acquireTimedOut", lockMetrics.getAndResetAcquireTimedOutCount(), context);
-                    metric.set("lockAttempt.locked", lockMetrics.getAndResetAcquireSucceededCount(), context);
-                    metric.set("lockAttempt.release", lockMetrics.getAndResetReleaseCount(), context);
-                    metric.set("lockAttempt.releaseFailed", lockMetrics.getAndResetReleaseFailedCount(), context);
-                    metric.set("lockAttempt.reentry", lockMetrics.getAndResetReentryCount(), context);
-                    metric.set("lockAttempt.deadlock", lockMetrics.getAndResetDeadlockCount(), context);
-                    metric.set("lockAttempt.nakedRelease", lockMetrics.getAndResetNakedReleaseCount(), context);
-                    metric.set("lockAttempt.acquireWithoutRelease", lockMetrics.getAndResetAcquireWithoutReleaseCount(), context);
-                    metric.set("lockAttempt.foreignRelease", lockMetrics.getAndResetForeignReleaseCount(), context);
+                    LatencyMetrics acquireLatencyMetrics = lockMetrics.getAndResetAcquireLatencyMetrics();
+                    setNonZero("lockAttempt.acquireMaxActiveLatency", acquireLatencyMetrics.maxActiveLatencySeconds(), context);
+                    setNonZero("lockAttempt.acquireHz", acquireLatencyMetrics.startHz(), context);
+                    setNonZero("lockAttempt.acquireLoad", acquireLatencyMetrics.load(), context);
 
-                    setLockLatencyMetrics("acquire", lockMetrics.getAndResetAcquireLatencyMetrics(), context);
-                    setLockLatencyMetrics("locked", lockMetrics.getAndResetLockedLatencyMetrics(), context);
+                    LatencyMetrics lockedLatencyMetrics = lockMetrics.getAndResetLockedLatencyMetrics();
+                    setNonZero("lockAttempt.lockedLatency", lockedLatencyMetrics.maxLatencySeconds(), context);
+                    setNonZero("lockAttempt.lockedLoad", lockedLatencyMetrics.load(), context);
+
+                    setNonZero("lockAttempt.acquireTimedOut", lockMetrics.getAndResetAcquireTimedOutCount(), context);
+                    setNonZero("lockAttempt.deadlock", lockMetrics.getAndResetDeadlockCount(), context);
+
+                    // bucket for various rare errors - to reduce #metrics
+                    setNonZero("lockAttempt.errors",
+                            lockMetrics.getAndResetAcquireFailedCount() +
+                                    lockMetrics.getAndResetReleaseFailedCount() +
+                                    lockMetrics.getAndResetNakedReleaseCount() +
+                                    lockMetrics.getAndResetAcquireWithoutReleaseCount() +
+                                    lockMetrics.getAndResetForeignReleaseCount(),
+                            context);
                 });
     }
 
-    private void setLockLatencyMetrics(String name, LatencyMetrics latencyMetrics, Metric.Context context) {
-        metric.set("lockAttempt." + name + "Latency", latencyMetrics.latencySeconds(), context);
-        metric.set("lockAttempt." + name + "MaxActiveLatency", latencyMetrics.maxActiveLatencySeconds(), context);
-        metric.set("lockAttempt." + name + "Hz", latencyMetrics.startHz(), context);
-        metric.set("lockAttempt." + name + "Load", latencyMetrics.load(), context);
+    private void setNonZero(String key, Number value, Metric.Context context) {
+        var metricKey = new Pair<>(context, key);
+        if (Double.compare(value.doubleValue(), 0.0) != 0) {
+            metric.set(key, value, context);
+            nonZeroMetrics.add(metricKey);
+        } else if (nonZeroMetrics.remove(metricKey)) {
+            // Need to set the metric to 0 after it has been set to non-zero, to avoid carrying
+            // a non-zero 'last' from earlier periods.
+            metric.set(key, value, context);
+        }
     }
 
     private void updateDockerMetrics(NodeList nodes) {

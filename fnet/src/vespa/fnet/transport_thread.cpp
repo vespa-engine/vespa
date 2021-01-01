@@ -9,6 +9,7 @@
 #include "transport.h"
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/util/gate.h>
 #include <csignal>
 
 #include <vespa/log/log.h>
@@ -17,6 +18,7 @@ LOG_SETUP(".fnet");
 using vespalib::ServerSocket;
 using vespalib::SocketHandle;
 using vespalib::SocketSpec;
+using vespalib::steady_clock;
 
 namespace {
 
@@ -112,7 +114,7 @@ bool
 FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
                                 FNET_Context context)
 {
-    bool wasEmpty;
+    size_t qLen;
     {
         std::unique_lock<std::mutex> guard(_lock);
         if (IsShutDown()) {
@@ -120,10 +122,10 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
             SafeDiscardEvent(cpacket, context);
             return false;
         }
-        wasEmpty = _queue.IsEmpty_NoLock();
         _queue.QueuePacket_NoLock(cpacket, context);
+        qLen = _queue.GetPacketCnt_NoLock();
     }
-    if (wasEmpty) {
+    if (qLen == getConfig()._events_before_wakeup) {
         _selector.wakeup();
     }
     return true;
@@ -205,9 +207,8 @@ extern "C" {
 
 FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
     : _owner(owner_in),
-      _now(clock::now()),
+      _now(steady_clock ::now()),
       _scheduler(&_now),
-      _config(),
       _componentsHead(nullptr),
       _timeOutHead(nullptr),
       _componentsTail(nullptr),
@@ -217,12 +218,12 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _queue(),
       _myQueue(),
       _lock(),
-      _cond(),
+      _shutdownLock(),
+      _shutdownCond(),
       _pseudo_thread(),
       _started(false),
       _shutdown(false),
-      _finished(false),
-      _waitFinished(false)
+      _finished(false)
 {
     trapsigpipe();
 }
@@ -231,22 +232,26 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
 FNET_TransportThread::~FNET_TransportThread()
 {
     {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_shutdownLock);
     }
-    if (_started && !_finished) {
+    if (_started.load() && !_finished) {
         LOG(error, "Transport: delete called on active object!");
     } else {
         std::lock_guard guard(_pseudo_thread);
     }
 }
 
+const FNET_Config &
+FNET_TransportThread::getConfig() const {
+    return _owner.getConfig();
+}
 
 bool
 FNET_TransportThread::tune(SocketHandle &handle) const
 {
     handle.set_keepalive(true);
     handle.set_linger(true, 0);
-    handle.set_nodelay(_config._tcpNoDelay);
+    handle.set_nodelay(getConfig()._tcpNoDelay);
     return handle.set_blocking(false);
 }
 
@@ -370,32 +375,22 @@ FNET_TransportThread::WaitFinished()
     if (_finished)
         return;
 
-    std::unique_lock<std::mutex> guard(_lock);
-    _waitFinished = true;
+    std::unique_lock<std::mutex> guard(_shutdownLock);
     while (!_finished)
-        _cond.wait(guard);
+        _shutdownCond.wait(guard);
 }
 
 
 bool
 FNET_TransportThread::InitEventLoop()
 {
-    bool wasStarted;
-    {
-        std::lock_guard<std::mutex> guard(_lock);
-        wasStarted = _started;
-        if (!_started) {
-            _started = true;
-        }
-    }
-    if (wasStarted) {
+    if (_started.exchange(true)) {
         LOG(error, "Transport: InitEventLoop: object already active!");
         return false;
     }
-    _now = clock::now();
+    _now = steady_clock::now();
     return true;
 }
-
 
 void
 FNET_TransportThread::handle_wakeup()
@@ -467,32 +462,26 @@ FNET_TransportThread::handle_event(FNET_IOComponent &ctx, bool read, bool write)
 
 
 bool
-FNET_TransportThread::EventLoopIteration()
-{
-    FNET_IOComponent   *component = nullptr;
-    int                 msTimeout = FNET_Scheduler::tick_ms.count();
+FNET_TransportThread::EventLoopIteration() {
 
     if (!IsShutDown()) {
+        int msTimeout = FNET_Scheduler::tick_ms.count();
         // obtain I/O events
         _selector.poll(msTimeout);
 
         // sample current time (performed once per event loop iteration)
-        _now = clock::now();
+        _now = steady_clock::now();
 
-        // handle wakeup and io-events
-        _selector.dispatch(*this);
+        // handle io-events
+        auto dispatchResult = _selector.dispatch(*this);
+
+        if ((dispatchResult == vespalib::SelectorDispatchResult::NO_WAKEUP) && (getConfig()._events_before_wakeup > 1)) {
+            handle_wakeup();
+        }
 
         // handle IOC time-outs
-        if (_config._iocTimeOut > 0) {
-            time_point oldest = (_now - std::chrono::milliseconds(_config._iocTimeOut));
-            while (_timeOutHead != nullptr &&
-                   oldest > _timeOutHead->_ioc_timestamp) {
-
-                component = _timeOutHead;
-                RemoveComponent(component);
-                component->Close();
-                AddDeleteComponent(component);
-            }
+        if (getConfig()._iocTimeOut > vespalib::duration::zero()) {
+            checkTimedoutComponents(getConfig()._iocTimeOut);
         }
 
         // perform pending tasks
@@ -507,6 +496,23 @@ FNET_TransportThread::EventLoopIteration()
     if (_finished)
         return false;
 
+    endEventLoop();
+    return false;
+}
+
+void
+FNET_TransportThread::checkTimedoutComponents(vespalib::duration timeout) {
+    vespalib::steady_time oldest = (_now - timeout);
+    while (_timeOutHead != nullptr && oldest > _timeOutHead->_ioc_timestamp) {
+        FNET_IOComponent *component = _timeOutHead;
+        RemoveComponent(component);
+        component->Close();
+        AddDeleteComponent(component);
+    }
+}
+
+void
+FNET_TransportThread::endEventLoop() {
     // flush event queue
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -525,7 +531,7 @@ FNET_TransportThread::EventLoopIteration()
     }
 
     // close and remove all I/O Components
-    component = _componentsHead;
+    FNET_IOComponent *component = _componentsHead;
     while (component != nullptr) {
         assert(component == _componentsHead);
         FNET_IOComponent *tmp = component;
@@ -542,16 +548,13 @@ FNET_TransportThread::EventLoopIteration()
            _myQueue.IsEmpty_NoLock());
 
     {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::lock_guard<std::mutex> guard(_shutdownLock);
         _finished = true;
-        if (_waitFinished) {
-            _cond.notify_all();
-        }
+        _shutdownCond.notify_all();
     }
 
     LOG(spam, "Transport: event loop finished.");
 
-    return false;
 }
 
 

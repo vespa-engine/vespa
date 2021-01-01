@@ -6,9 +6,10 @@
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/rankresult.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
 
 using namespace search;
 using namespace search::attribute;
@@ -16,6 +17,9 @@ using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::index;
+
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
 
 template <typename T>
 std::unique_ptr<fef::Anything> create_param(const vespalib::string& param) {
@@ -109,9 +113,15 @@ struct ArrayFixture : FixtureBase {
     template <typename ExpectedType>
     void check_prepare_state_output(const vespalib::eval::Value & tensor, const ExpectedType & expected) {
         vespalib::nbostream os;
-        vespalib::eval::EngineOrFactory::get().encode(tensor, os);
+        encode_value(tensor, os);
         vespalib::string input_vector(os.data(), os.size());
         check_prepare_state_output(".tensor", input_vector, expected);
+    }
+
+    template <typename ExpectedType>
+    void check_prepare_state_output(const TensorSpec & spec, const ExpectedType & expected) {
+        auto value = SimpleValue::from_spec(spec);
+        check_prepare_state_output(*value, expected);
     }
 
     template <typename ExpectedType>
@@ -196,25 +206,25 @@ TEST_F("prepareSharedState emits double vector for double imported attribute", A
 
 TEST_F("prepareSharedState handles tensor as float from tensor for double imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::DOUBLE);
-    vespalib::tensor::DenseTensor<float> tensor(vespalib::eval::ValueType::from_spec("tensor<float>(x[3])"), {10.1, 20.2, 30.3});
+    auto tensor = TensorSpec::from_expr("tensor<float>(x[3]):[10.1,20.2,30.3]");
     f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as double from tensor for double imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::DOUBLE);
-    vespalib::tensor::DenseTensor<double> tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
+    auto tensor = TensorSpec::from_expr("tensor(x[3]):[10.1,20.2,30.3]");
     f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as float from tensor for float imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::FLOAT);
-    vespalib::tensor::DenseTensor<float> tensor(vespalib::eval::ValueType::from_spec("tensor<float>(x[3])"), {10.1, 20.2, 30.3});
+    auto tensor = TensorSpec::from_expr("tensor<float>(x[3]):[10.1,20.2,30.3]");
     f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as double from tensor for float imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::FLOAT);
-    vespalib::tensor::DenseTensor<double> tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
+    auto tensor = TensorSpec::from_expr("tensor(x[3]):[10.1,20.2,30.3]");
     f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 

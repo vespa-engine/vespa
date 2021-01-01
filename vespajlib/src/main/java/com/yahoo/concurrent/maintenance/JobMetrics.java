@@ -22,7 +22,7 @@ public class JobMetrics {
 
     /** Record a run for given job */
     public void recordRunOf(String job) {
-        incompleteRuns.compute(job, (ignored, run) -> run == null ? 1 : ++run);
+        incompleteRuns.merge(job, 1L, Long::sum);
     }
 
     /** Record successful run of given job */

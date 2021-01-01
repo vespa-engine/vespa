@@ -3,7 +3,7 @@
 #include "documentstoreadapter.h"
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 
@@ -86,7 +86,7 @@ DocumentStoreAdapter::writeField(const FieldValue &value, ResType type)
                 const auto &tvalue = static_cast<const TensorFieldValue &>(value);
                 auto tensor = tvalue.getAsTensorPtr();
                 if (tensor) {
-                    vespalib::eval::EngineOrFactory::get().encode(*tensor, serialized);
+                    encode_value(*tensor, serialized);
                 }
             }
             return _resultPacker.AddSerializedTensor(serialized.peek(), serialized.size());

@@ -11,8 +11,8 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
-#include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
@@ -42,7 +42,7 @@ using vespa::config::search::core::OnnxModelsConfig;
 using vespa::config::search::core::VerifyRanksetupConfig;
 using vespalib::eval::BadConstantValue;
 using vespalib::eval::ConstantValue;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::SimpleConstantValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -97,7 +97,7 @@ struct DummyConstantValueRepo : IConstantValueRepo {
         for (const auto &entry: cfg.constant) {
             if (entry.name == name) {
                 try {
-                    auto tensor = EngineOrFactory::get().from_spec(TensorSpec(entry.type));
+                    auto tensor = vespalib::eval::value_from_spec(TensorSpec(entry.type), FastValueBuilderFactory::get());
                     return std::make_unique<SimpleConstantValue>(std::move(tensor));
                 } catch (std::exception &) {
                     return std::make_unique<BadConstantValue>();

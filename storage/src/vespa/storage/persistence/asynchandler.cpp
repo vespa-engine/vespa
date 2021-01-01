@@ -98,7 +98,7 @@ MessageTracker::UP
 AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) const
 {
     MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.put[cmd.getLoadType()];
+    auto& metrics = _env._metrics.put;
     tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
@@ -124,7 +124,7 @@ MessageTracker::UP
 AsyncHandler::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trackerUP) const
 {
     MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.update[cmd.getLoadType()];
+    auto& metrics = _env._metrics.update;
     tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
@@ -154,7 +154,7 @@ MessageTracker::UP
 AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP) const
 {
     MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.remove[cmd.getLoadType()];
+    auto& metrics = _env._metrics.remove;
     tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 

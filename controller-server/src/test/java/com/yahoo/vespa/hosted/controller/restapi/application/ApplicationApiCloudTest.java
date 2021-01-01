@@ -2,11 +2,12 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -19,13 +20,16 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.ws.rs.ForbiddenException;
 import java.util.Collections;
 import java.util.Set;
 
 import static com.yahoo.application.container.handler.Request.Method.GET;
-import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static com.yahoo.application.container.handler.Request.Method.POST;
+import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiTest.createApplicationSubmissionData;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
@@ -41,7 +45,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     public void before() {
         tester = new ContainerTester(container, responseFiles);
         ((InMemoryFlagSource) tester.controller().flagSource())
-                .withBooleanFlag(Flags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
+                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
         deploymentTester = new DeploymentTester(new ControllerTester(tester));
         deploymentTester.controllerTester().computeVersionStatus();
         setupTenantAndApplication();
@@ -94,6 +98,24 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(infoRequest, fullInfo, 200);
     }
 
+    @Test
+    public void trial_tenant_limit_reached() {
+        ((InMemoryFlagSource) tester.controller().flagSource()).withIntFlag(Flags.MAX_TRIAL_TENANTS.id(), 1);
+        tester.controller().serviceRegistry().billingController().setPlan(tenantName, PlanId.from("pay-as-you-go"), false);
+
+        // tests that we can create the one trial tenant the flag says we can have -- and that the tenant created
+        // in @Before does not count towards that limit.
+        tester.controller().tenants().create(tenantSpec("tenant1"), credentials("administrator"));
+
+        // tests that exceeding the limit throws a ForbiddenException
+        try {
+            tester.controller().tenants().create(tenantSpec("tenant2"), credentials("administrator"));
+            fail("Should not be allowed to create tenant that exceed trial limit");
+        } catch (ForbiddenException e) {
+            assertEquals("Too many tenants with trial plans, please contact the Vespa support team", e.getMessage());
+        }
+    }
+
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()
                 .instances("default")
@@ -106,6 +128,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         var appId = TenantAndApplicationId.from(tenantName, applicationName);
         tester.controller().applications().createApplication(appId, credentials("developer@scoober"));
+    }
+
+    private static CloudTenantSpec tenantSpec(String name) {
+        return new CloudTenantSpec(TenantName.from(name), "");
     }
 
     private static Credentials credentials(String name) {

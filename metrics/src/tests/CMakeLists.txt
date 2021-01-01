@@ -4,7 +4,6 @@
 vespa_add_executable(metrics_gtest_runner_app TEST
     SOURCES
     countmetrictest.cpp
-    loadmetrictest.cpp
     metric_timer_test.cpp
     metricmanagertest.cpp
     metricsettest.cpp

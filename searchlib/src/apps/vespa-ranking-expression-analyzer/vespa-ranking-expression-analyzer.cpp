@@ -4,13 +4,12 @@
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/call_nodes.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/operator_nodes.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/vm_forest.h>
 #include <vespa/eval/eval/fast_forest.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
-#include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/eval/eval/param_usage.h>
 #include <vespa/fastos/app.h>
@@ -154,7 +153,7 @@ struct FunctionInfo {
     size_t get_path_len(const TreeList &trees) const {
         size_t path = 0;
         for (const Node *tree: trees) {
-            InterpretedFunction ifun(EngineOrFactory::get(), *tree, NodeTypes());
+            InterpretedFunction ifun(FastValueBuilderFactory::get(), *tree, NodeTypes());
             InterpretedFunction::Context ctx(ifun);
             SimpleParams fun_params(params);
             ifun.eval(ctx, fun_params);

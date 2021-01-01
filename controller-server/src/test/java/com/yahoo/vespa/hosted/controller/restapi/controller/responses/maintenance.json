@@ -31,7 +31,7 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
-      "name": "HostRepairMaintainer"
+      "name": "HostSwitchUpdater"
     },
     {
       "name": "JobRunner"
@@ -50,6 +50,9 @@
     },
     {
       "name": "ReadyJobsTrigger"
+    },
+    {
+      "name": "ReindexingTriggerer"
     },
     {
       "name": "ResourceMeterMaintainer"

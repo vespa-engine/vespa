@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.application;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import java.util.Optional;
  * Reindexing status for each document type in a content cluster.
  *
  * @author jonmv
+ * @author bjorncs
  */
 public class ClusterReindexing {
 
@@ -25,6 +27,26 @@ public class ClusterReindexing {
 
     public Map<String, Status> documentTypeStatus() { return documentTypeStatus; }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClusterReindexing that = (ClusterReindexing) o;
+        return documentTypeStatus.equals(that.documentTypeStatus);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(documentTypeStatus);
+    }
+
+    @Override
+    public String toString() {
+        return "ClusterReindexing{" +
+               "documentTypeStatus=" + documentTypeStatus +
+               '}';
+    }
+
 
     public static class Status {
 
@@ -32,9 +54,9 @@ public class ClusterReindexing {
         private final Instant endedAt;
         private final State state;
         private final String message;
-        private final String progress;
+        private final Double progress;
 
-        public Status(Instant startedAt, Instant endedAt, State state, String message, String progress) {
+        public Status(Instant startedAt, Instant endedAt, State state, String message, Double progress) {
             this.startedAt = Objects.requireNonNull(startedAt);
             this.endedAt = endedAt;
             this.state = state;
@@ -46,13 +68,55 @@ public class ClusterReindexing {
         public Optional<Instant> endedAt() { return Optional.ofNullable(endedAt); }
         public Optional<State> state() { return Optional.ofNullable(state); }
         public Optional<String> message() { return Optional.ofNullable(message); }
-        public Optional<String> progress() { return Optional.ofNullable(progress); }
+        public Optional<Double> progress() { return Optional.ofNullable(progress); }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Status status = (Status) o;
+            return startedAt.equals(status.startedAt) &&
+                   Objects.equals(endedAt, status.endedAt) &&
+                   state == status.state &&
+                   Objects.equals(message, status.message) &&
+                   Objects.equals(progress, status.progress);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(startedAt, endedAt, state, message, progress);
+        }
+
+        @Override
+        public String toString() {
+            return "Status{" +
+                   "startedAt=" + startedAt +
+                   ", endedAt=" + endedAt +
+                   ", state=" + state +
+                   ", message='" + message + '\'' +
+                   ", progress='" + progress + '\'' +
+                   '}';
+        }
+
     }
 
 
     public enum State {
+        PENDING("pending"), RUNNING("running"), FAILED("failed"), SUCCESSFUL("successful");
 
-        PENDING, RUNNING, FAILED, SUCCESSFUL;
+        private final String stringValue;
+
+        State(String stringValue) { this.stringValue = stringValue; }
+
+        public static State fromString(String value) {
+            return Arrays.stream(values())
+                    .filter(v -> v.stringValue.equals(value))
+                    .findAny()
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown value: " + value));
+        }
+
+        public String asString() { return stringValue; }
 
     }
+
 }

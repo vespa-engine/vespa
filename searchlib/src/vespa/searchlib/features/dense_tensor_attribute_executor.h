@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
+#include "mutable_dense_value_view.h"
 
 namespace search::tensor { class ITensorAttribute; }
 namespace search::features {
@@ -17,7 +17,7 @@ class DenseTensorAttributeExecutor : public fef::FeatureExecutor
 {
 private:
     const search::tensor::ITensorAttribute& _attribute;
-    vespalib::tensor::MutableDenseTensorView _tensorView;
+    mutable_value::MutableDenseValueView _tensorView;
 
 public:
     DenseTensorAttributeExecutor(const search::tensor::ITensorAttribute& attribute);

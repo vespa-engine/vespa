@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/metricset.h>
 
 namespace vespalib { class MemoryUsage; }
 

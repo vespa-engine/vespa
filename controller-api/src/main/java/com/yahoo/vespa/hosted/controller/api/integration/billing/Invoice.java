@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.math.BigDecimal;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.function.Function;
 
 
 /**
@@ -31,13 +33,15 @@ public class Invoice {
     private static final BigDecimal SCALED_ZERO = new BigDecimal("0.00");
 
     private final Id id;
+    private final TenantName tenant;
     private final List<LineItem> lineItems;
     private final StatusHistory statusHistory;
     private final ZonedDateTime startTime;
     private final ZonedDateTime endTime;
 
-    public Invoice(Id id, StatusHistory statusHistory, List<LineItem> lineItems, ZonedDateTime startTime, ZonedDateTime endTime) {
+    public Invoice(Id id, TenantName tenant, StatusHistory statusHistory, List<LineItem> lineItems, ZonedDateTime startTime, ZonedDateTime endTime) {
         this.id = id;
+        this.tenant = tenant;
         this.lineItems = List.copyOf(lineItems);
         this.statusHistory = statusHistory;
         this.startTime = startTime;
@@ -46,6 +50,10 @@ public class Invoice {
 
     public Id id() {
         return id;
+    }
+
+    public TenantName tenant() {
+        return tenant;
     }
 
     public String status() {
@@ -70,6 +78,40 @@ public class Invoice {
 
     public BigDecimal sum() {
         return lineItems.stream().map(LineItem::amount).reduce(SCALED_ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal sumCpuHours() {
+        return sumResourceValues(LineItem::getCpuHours);
+    }
+
+    public BigDecimal sumMemoryHours() {
+        return sumResourceValues(LineItem::getMemoryHours);
+    }
+
+    public BigDecimal sumDiskHours() {
+        return sumResourceValues(LineItem::getDiskHours);
+    }
+
+    public BigDecimal sumCpuCost() {
+        return sumResourceValues(LineItem::getCpuCost);
+    }
+
+    public BigDecimal sumMemoryCost() {
+        return sumResourceValues(LineItem::getMemoryCost);
+    }
+
+    public BigDecimal sumDiskCost() {
+        return sumResourceValues(LineItem::getDiskCost);
+    }
+
+    public BigDecimal sumAdditionalCost() {
+        // anything that is not covered by the cost for resources is "additional" costs
+        var resourceCosts = sumCpuCost().add(sumMemoryCost()).add(sumDiskCost());
+        return sum().subtract(resourceCosts);
+    }
+
+    private BigDecimal sumResourceValues(Function<LineItem, Optional<BigDecimal>> f) {
+        return lineItems.stream().flatMap(li -> f.apply(li).stream()).reduce(SCALED_ZERO, BigDecimal::add);
     }
 
     public static final class Id {

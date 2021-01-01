@@ -15,7 +15,6 @@
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
-#include <vespa/config-load-type.h>
 #include <vespa/config-persistence.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-slobroks.h>
@@ -86,7 +85,6 @@ using namespace std::chrono_literals;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
-using vespa::config::content::LoadTypeConfigBuilder;
 using vespa::config::content::PersistenceConfigBuilder;
 using vespa::config::content::StorDistributionConfigBuilder;
 using vespa::config::content::StorFilestorConfigBuilder;
@@ -271,6 +269,7 @@ class BMParams {
     uint32_t _update_passes;
     uint32_t _remove_passes;
     uint32_t _rpc_network_threads;
+    uint32_t _rpc_events_before_wakeup;
     uint32_t _rpc_targets_per_node;
     uint32_t _response_threads;
     uint32_t _max_pending;
@@ -294,7 +293,8 @@ public:
           _put_passes(2),
           _update_passes(1),
           _remove_passes(2),
-          _rpc_network_threads(1), // Same default as in stor-communicationmanager.def
+          _rpc_network_threads(1), // Same default as previous in stor-communicationmanager.def
+          _rpc_events_before_wakeup(1), // Same default as in stor-communicationmanager.def
           _rpc_targets_per_node(1), // Same default as in stor-communicationmanager.def
           _response_threads(2), // Same default as in stor-filestor.def
           _max_pending(1000),
@@ -320,6 +320,7 @@ public:
     uint32_t get_update_passes() const { return _update_passes; }
     uint32_t get_remove_passes() const { return _remove_passes; }
     uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
+    uint32_t get_rpc_events_before_wakup() const { return _rpc_events_before_wakeup; }
     uint32_t get_rpc_targets_per_node() const { return _rpc_targets_per_node; }
     uint32_t get_response_threads() const { return _response_threads; }
     bool get_enable_distributor() const { return _enable_distributor; }
@@ -338,6 +339,7 @@ public:
     void set_update_passes(uint32_t update_passes_in) { _update_passes = update_passes_in; }
     void set_remove_passes(uint32_t remove_passes_in) { _remove_passes = remove_passes_in; }
     void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }
+    void set_rpc_events_before_wakeup(uint32_t value) { _rpc_events_before_wakeup = value; }
     void set_rpc_targets_per_node(uint32_t targets_in) { _rpc_targets_per_node = targets_in; }
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
     void set_enable_distributor(bool value) { _enable_distributor = value; }
@@ -444,7 +446,6 @@ struct MyStorageConfig
     StorServerConfigBuilder       stor_server;
     StorStatusConfigBuilder       stor_status;
     BucketspacesConfigBuilder     bucketspaces;
-    LoadTypeConfigBuilder         load_type;
     MetricsmanagerConfigBuilder   metricsmanager;
     SlobroksConfigBuilder         slobroks;
     MessagebusConfigBuilder       messagebus;
@@ -462,7 +463,6 @@ struct MyStorageConfig
           stor_server(),
           stor_status(),
           bucketspaces(),
-          load_type(),
           metricsmanager(),
           slobroks(),
           messagebus()
@@ -495,6 +495,7 @@ struct MyStorageConfig
         make_slobroks_config(slobroks, slobrok_port);
         stor_communicationmanager.useDirectStorageapiRpc = true;
         stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
+        stor_communicationmanager.rpc.eventsBeforeWakeup = params.get_rpc_events_before_wakup();
         stor_communicationmanager.rpc.numTargetsPerNode = params.get_rpc_targets_per_node();
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
@@ -516,7 +517,6 @@ struct MyStorageConfig
         set.addBuilder(config_id, &stor_server);
         set.addBuilder(config_id, &stor_status);
         set.addBuilder(config_id, &bucketspaces);
-        set.addBuilder(config_id, &load_type);
         set.addBuilder(config_id, &metricsmanager);
         set.addBuilder(config_id, &slobroks);
         set.addBuilder(config_id, &messagebus);
@@ -883,7 +883,8 @@ PersistenceProviderFixture::start_service_layer(const BMParams& params)
     _service_layer->getNode().waitUntilInitialized();
     LOG(info, "start rpc client shared resources");
     config::ConfigUri client_config_uri("bm-rpc-client", _config_context);
-    _rpc_client_shared_rpc_resources = std::make_unique<SharedRpcResources>(client_config_uri, _rpc_client_port, 100);
+    _rpc_client_shared_rpc_resources = std::make_unique<SharedRpcResources>
+            (client_config_uri, _rpc_client_port, 100, params.get_rpc_events_before_wakup());
     _rpc_client_shared_rpc_resources->start_server_and_register_slobrok("bm-rpc-client");
     wait_slobrok("storage/cluster.storage/storage/0/default");
     wait_slobrok("storage/cluster.storage/storage/0");
@@ -919,9 +920,7 @@ PersistenceProviderFixture::start_message_bus()
 {
     config::ConfigUri config_uri("bm-message-bus", _config_context);
     LOG(info, "Starting message bus");
-    _message_bus = std::make_unique<BmMessageBus>(config_uri,
-                                                  _repo,
-                                                  documentapi::LoadTypeSet());
+    _message_bus = std::make_unique<BmMessageBus>(config_uri, _repo);
     LOG(info, "Started message bus");
 }
 
@@ -1309,7 +1308,7 @@ void benchmark_async_spi(const BMParams &bm_params)
     LOG(info, "start initialize");
     provider.initialize();
     LOG(info, "create %u buckets", f.num_buckets());
-    if (!f._feed_handler->manages_buckets()) {
+    if (!bm_params.needs_distributor()) {
         f.create_buckets();
     }
     if (bm_params.needs_service_layer()) {
@@ -1376,6 +1375,7 @@ App::usage()
         "[--put-passes put-passes]\n"
         "[--update-passes update-passes]\n"
         "[--remove-passes remove-passes]\n"
+        "[--rpc-events-before-wakeup events]\n"
         "[--rpc-network-threads threads]\n"
         "[--rpc-targets-per-node targets]\n"
         "[--response-threads threads]\n"
@@ -1406,6 +1406,7 @@ App::get_options()
         { "put-passes", 1, nullptr, 0 },
         { "remove-passes", 1, nullptr, 0 },
         { "response-threads", 1, nullptr, 0 },
+        { "rpc-events-before-wakeup", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
         { "rpc-targets-per-node", 1, nullptr, 0 },
         { "skip-get-spi-bucket-info", 0, nullptr, 0 },
@@ -1427,6 +1428,7 @@ App::get_options()
         LONGOPT_PUT_PASSES,
         LONGOPT_REMOVE_PASSES,
         LONGOPT_RESPONSE_THREADS,
+        LONGOPT_RPC_EVENTS_BEFORE_WAKEUP,
         LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_RPC_TARGETS_PER_NODE,
         LONGOPT_SKIP_GET_SPI_BUCKET_INFO,
@@ -1477,6 +1479,9 @@ App::get_options()
                 break;
             case LONGOPT_RESPONSE_THREADS:
                 _bm_params.set_response_threads(atoi(opt_argument));
+                break;
+            case LONGOPT_RPC_EVENTS_BEFORE_WAKEUP:
+                _bm_params.set_rpc_events_before_wakeup(atoi(opt_argument));
                 break;
             case LONGOPT_RPC_NETWORK_THREADS:
                 _bm_params.set_rpc_network_threads(atoi(opt_argument));

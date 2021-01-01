@@ -213,14 +213,14 @@ public class NodeResources {
         return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
-    private static StringBuffer appendDouble(StringBuffer sb, double d) {
+    private static StringBuilder appendDouble(StringBuilder sb, double d) {
         long x10 = Math.round(d*10);
         sb.append(x10/10).append('.').append(x10%10);
         return sb;
     }
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("[vcpu: ");
+        StringBuilder sb = new StringBuilder("[vcpu: ");
         appendDouble(sb, vcpu);
         sb.append(", memory: ");
         appendDouble(sb, memoryGb);

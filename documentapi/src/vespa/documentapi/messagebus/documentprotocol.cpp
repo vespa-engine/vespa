@@ -21,11 +21,9 @@ namespace documentapi {
 
 const mbus::string DocumentProtocol::NAME = "document";
 
-DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
-                                   std::shared_ptr<const DocumentTypeRepo> repo,
-                                   const string &configId) :
+DocumentProtocol::DocumentProtocol(std::shared_ptr<const DocumentTypeRepo> repo, const string &configId) :
     _routingPolicyRepository(std::make_unique<RoutingPolicyRepository>()),
-    _routableRepository(std::make_unique<RoutableRepository>(loadTypes)),
+    _routableRepository(std::make_unique<RoutableRepository>()),
     _repo(std::move(repo))
 {
     // Prepare config string for routing policy factories.

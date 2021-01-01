@@ -9,6 +9,11 @@ import com.yahoo.jdisc.SharedResource;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.function.Supplier;
+
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertTrue;
@@ -21,32 +26,40 @@ public class DeconstructorTest {
 
     @Before
     public void init() {
-        deconstructor = new Deconstructor(false);
+        deconstructor = new Deconstructor(Deconstructor.Mode.RECONFIG, Duration.ZERO);
+    }
+
+    @Test
+    public void deconstruct_is_synchronous_in_shutdown_mode() {
+        deconstructor = new Deconstructor(Deconstructor.Mode.SHUTDOWN);
+
+        var slowDeconstructComponent = new SlowDeconstructComponent();
+        deconstructor.deconstruct(List.of(slowDeconstructComponent), emptyList());
+        assertTrue(slowDeconstructComponent.destructed);
     }
 
     @Test
     public void require_abstract_component_destructed() throws InterruptedException {
         TestAbstractComponent abstractComponent = new TestAbstractComponent();
-        // Done by executor, so it takes some time even with a 0 delay.
-        deconstructor.deconstruct(singleton(abstractComponent), emptyList());
-        int cnt = 0;
-        while (! abstractComponent.destructed && (cnt++ < 12000)) {
-            Thread.sleep(10);
-        }
+        deconstructor.deconstruct(List.of(abstractComponent), emptyList());
+
+        waitForDeconstructToComplete(() -> abstractComponent.destructed);
         assertTrue(abstractComponent.destructed);
     }
 
     @Test
-    public void require_provider_destructed() {
+    public void require_provider_destructed() throws InterruptedException {
         TestProvider provider = new TestProvider();
-        deconstructor.deconstruct(singleton(provider), emptyList());
+        deconstructor.deconstruct(List.of(provider), emptyList());
+
+        waitForDeconstructToComplete(() -> provider.destructed);
         assertTrue(provider.destructed);
     }
 
     @Test
     public void require_shared_resource_released() {
         TestSharedResource sharedResource = new TestSharedResource();
-        deconstructor.deconstruct(singleton(sharedResource), emptyList());
+        deconstructor.deconstruct(List.of(sharedResource), emptyList());
         assertTrue(sharedResource.released);
     }
 
@@ -55,16 +68,36 @@ public class DeconstructorTest {
         var bundle = new UninstallableMockBundle();
         // Done by executor, so it takes some time even with a 0 delay.
         deconstructor.deconstruct(emptyList(), singleton(bundle));
-        int cnt = 0;
-        while (! bundle.uninstalled && (cnt++ < 12000)) {
+
+        waitForDeconstructToComplete(() -> bundle.uninstalled);
+        assertTrue(bundle.uninstalled);
+    }
+
+    // Deconstruct is async in RECONFIG mode, so must wait even with a zero delay.
+    private void waitForDeconstructToComplete(Supplier<Boolean> destructed) throws InterruptedException {
+        var end = Instant.now().plusSeconds(30);
+        while (! destructed.get() && Instant.now().isBefore(end)) {
             Thread.sleep(10);
         }
-        assertTrue(bundle.uninstalled);
     }
 
     private static class TestAbstractComponent extends AbstractComponent {
         boolean destructed = false;
         @Override public void deconstruct() { destructed = true; }
+    }
+
+    private static class SlowDeconstructComponent extends AbstractComponent {
+        boolean destructed = false;
+        @Override
+        public void deconstruct() {
+            // Add delay to verify that the Deconstructor waits until this is complete before returning.
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("The delayed deconstruct was interrupted.");
+            }
+            destructed = true;
+        }
     }
 
     private static class TestProvider implements Provider<Void> {
@@ -87,4 +120,5 @@ public class DeconstructorTest {
             uninstalled = true;
         }
     }
+
 }

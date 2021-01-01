@@ -59,16 +59,16 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_m
             document::DocumentId("id:ns:" + _html_type->getName() + "::1"));
     update->setCreateIfNonExistent(create_if_missing);
 
-    _bId = getExternalOperationHandler().getBucketId(update->getId());
+    _bId = distributor_component().getBucketId(update->getId());
 
     addNodesToBucketDB(_bId, bucketState);
 
     auto msg = std::make_shared<api::UpdateCommand>(makeDocumentBucket(document::BucketId(0)), update, 100);
 
-    ExternalOperationHandler& handler = getExternalOperationHandler();
+    auto& comp = distributor_component();
     return std::make_shared<UpdateOperation>(
-            handler, getDistributorBucketSpace(), msg,
-            getDistributor().getMetrics().updates[msg->getLoadType()]);
+            comp, comp, getDistributorBucketSpace(), msg, std::vector<BucketDatabase::Entry>(),
+            getDistributor().getMetrics().updates);
 }
 
 void
@@ -101,7 +101,7 @@ TEST_F(UpdateOperationTest, simple) {
               "timestamp 100, timestamp of updated doc: 90) ReturnCode(NONE)",
               sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(0, metrics.diverging_timestamp_updates.getValue());
 }
 
@@ -141,7 +141,7 @@ TEST_F(UpdateOperationTest, multi_node) {
               "node(idx=0,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false)",
               dumpBucket(_bId));
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(0, metrics.diverging_timestamp_updates.getValue());
 }
 
@@ -161,7 +161,7 @@ TEST_F(UpdateOperationTest, multi_node_inconsistent_timestamp) {
               "(best node 1)) ReturnCode(NONE)",
               sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(1, metrics.diverging_timestamp_updates.getValue());
 }
 
@@ -179,7 +179,7 @@ TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
               "ReturnCode(TEST_AND_SET_CONDITION_FAILED, bork bork)",
               sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(1, metrics.failures.test_and_set_failed.getValue());
 }
 
@@ -212,7 +212,7 @@ TEST_F(UpdateOperationTest, create_if_missing_update_sentinel_timestamp_is_treat
               "timestamp 100, timestamp of updated doc: 0) ReturnCode(NONE)",
               sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     EXPECT_EQ(0, metrics.diverging_timestamp_updates.getValue());
 }
 
@@ -236,7 +236,7 @@ TEST_F(UpdateOperationTest, inconsistent_create_if_missing_updates_picks_largest
     EXPECT_NE(newest.first, BucketId());
     EXPECT_EQ(newest.second, 1);
 
-    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    auto& metrics = getDistributor().getMetrics().updates;
     // Implementation detail: since we get diverging results from nodes 2 and 1, these are
     // counted as separate diverging updates.
     EXPECT_EQ(2, metrics.diverging_timestamp_updates.getValue());

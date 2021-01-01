@@ -3,11 +3,11 @@
 #pragma once
 
 #include "context.h"
+#include "config.h"
 #include <memory>
 #include <vector>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_engine.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 
 class FNET_TransportThread;
 class FastOS_ThreadPool;
@@ -17,6 +17,48 @@ class FNET_IServerAdapter;
 class FNET_IPacketHandler;
 class FNET_Scheduler;
 
+class TransportConfig {
+public:
+    TransportConfig() : TransportConfig(1) {}
+    explicit TransportConfig(int num_threads);
+    ~TransportConfig();
+    vespalib::AsyncResolver::SP resolver() const;
+    vespalib::CryptoEngine::SP crypto() const;
+    TransportConfig & resolver(vespalib::AsyncResolver::SP resolver_in) {
+        _resolver = std::move(resolver_in);
+        return *this;
+    }
+    TransportConfig & crypto(vespalib::CryptoEngine::SP crypto_in) {
+        _crypto = std::move(crypto_in);
+        return *this;
+    }
+    const FNET_Config & config() const { return _config; }
+    uint32_t num_threads() const { return _num_threads; }
+
+    TransportConfig & events_before_wakeup(uint32_t v) {
+        if (v > 1) {
+            _config._events_before_wakeup = v;
+        }
+        return *this;
+    }
+    TransportConfig & maxInputBufferSize(uint32_t v) {
+        _config._maxInputBufferSize = v;
+        return *this;
+    }
+    TransportConfig & maxOutputBufferSize(uint32_t v) {
+        _config._maxOutputBufferSize = v;
+        return *this;
+    }
+    TransportConfig & tcpNoDelay(bool v) {
+        _config._tcpNoDelay = v;
+        return *this;
+    }
+private:
+    FNET_Config                 _config;
+    vespalib::AsyncResolver::SP _resolver;
+    vespalib::CryptoEngine::SP  _crypto;
+    uint32_t                    _num_threads;
+};
 /**
  * This class represents the transport layer and handles a collection
  * of transport threads. Note: remember to shut down your transport
@@ -29,11 +71,14 @@ private:
     using Threads = std::vector<Thread>;
 
     vespalib::AsyncResolver::SP _async_resolver;
-    vespalib::CryptoEngine::SP _crypto_engine;
-    vespalib::ThreadStackExecutor _work_pool;
-    Threads _threads;
+    vespalib::CryptoEngine::SP  _crypto_engine;
+    std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
+    Threads            _threads;
+    const FNET_Config  _config;
 
 public:
+    FNET_Transport(const FNET_Transport &) = delete;
+    FNET_Transport & operator = (const FNET_Transport &) = delete;
     /**
      * Construct a transport layer. To activate your newly created
      * transport object you need to call either the Start method to
@@ -41,17 +86,15 @@ public:
      * the current thread become the transport thread. Main may only
      * be called for single-threaded transports.
      **/
-    FNET_Transport(vespalib::AsyncResolver::SP resolver, vespalib::CryptoEngine::SP crypto, size_t num_threads);
+    explicit FNET_Transport(TransportConfig config);
 
-    FNET_Transport(vespalib::AsyncResolver::SP resolver, size_t num_threads)
-        : FNET_Transport(std::move(resolver), vespalib::CryptoEngine::get_default(), num_threads) {}
-    FNET_Transport(vespalib::CryptoEngine::SP crypto, size_t num_threads)
-        : FNET_Transport(vespalib::AsyncResolver::get_shared(), std::move(crypto), num_threads) {}
-    FNET_Transport(size_t num_threads)
-        : FNET_Transport(vespalib::AsyncResolver::get_shared(), vespalib::CryptoEngine::get_default(), num_threads) {}
+    explicit FNET_Transport(uint32_t num_threads)
+        : FNET_Transport(TransportConfig(num_threads)) {}
     FNET_Transport()
-        : FNET_Transport(vespalib::AsyncResolver::get_shared(), vespalib::CryptoEngine::get_default(), 1) {}
+        : FNET_Transport(TransportConfig()) {}
     ~FNET_Transport();
+
+    const FNET_Config & getConfig() const { return _config; }
 
     /**
      * Try to execute the given task on the internal work pool
@@ -166,54 +209,6 @@ public:
      * @return the current number of IOComponents.
      **/
     uint32_t GetNumIOComponents();
-
-    /**
-     * Set the I/O Component timeout. Idle I/O Components with timeout
-     * enabled (determined by calling the ShouldTimeOut method) will
-     * time out if idle for the given number of milliseconds. An I/O
-     * component reports its un-idle-ness by calling the UpdateTimeOut
-     * method in the owning transport object. Calling this method with 0
-     * as parameter will disable I/O Component timeouts. Note that newly
-     * created transport objects begin their lives with I/O Component
-     * timeouts disabled. An I/O Component timeout has the same effect
-     * as calling the Close method in the transport object with the
-     * target I/O Component as parameter.
-     *
-     * @param ms number of milliseconds before IOC idle timeout occurs.
-     **/
-    void SetIOCTimeOut(uint32_t ms);
-
-    /**
-     * Set maximum input buffer size. This value will only affect
-     * connections that use a common input buffer when decoding
-     * incoming packets. Note that this value is not an absolute
-     * max. The buffer will still grow larger than this value if
-     * needed to decode big packets. However, when the buffer becomes
-     * larger than this value, it will be shrunk back when possible.
-     *
-     * @param bytes buffer size in bytes. 0 means unlimited.
-     **/
-    void SetMaxInputBufferSize(uint32_t bytes);
-
-    /**
-     * Set maximum output buffer size. This value will only affect
-     * connections that use a common output buffer when encoding
-     * outgoing packets. Note that this value is not an absolute
-     * max. The buffer will still grow larger than this value if needed
-     * to encode big packets. However, when the buffer becomes larger
-     * than this value, it will be shrunk back when possible.
-     *
-     * @param bytes buffer size in bytes. 0 means unlimited.
-     **/
-    void SetMaxOutputBufferSize(uint32_t bytes);
-
-    /**
-     * Enable or disable use of the TCP_NODELAY flag with sockets
-     * created by this transport object.
-     *
-     * @param noDelay true if TCP_NODELAY flag should be used.
-     **/
-    void SetTCPNoDelay(bool noDelay);
 
     /**
      * Synchronize with all transport threads. This method will block

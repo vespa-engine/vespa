@@ -36,11 +36,11 @@ public:
         Label(const char *name_in) : index(npos), name(name_in) {}
         bool is_mapped() const { return (index == npos); }
         bool is_indexed() const { return (index != npos); }
-        bool operator==(const Label &rhs) const {
+        bool operator==(const Label &rhs) const noexcept {
             return ((index == rhs.index) &&
                     (name == rhs.name));
         }
-        bool operator<(const Label &rhs) const {
+        bool operator<(const Label &rhs) const noexcept {
             if (index != rhs.index) {
                 return (index < rhs.index);
             }
@@ -68,10 +68,12 @@ public:
     TensorSpec(const TensorSpec &);
     TensorSpec & operator = (const TensorSpec &);
     ~TensorSpec();
+    double as_double() const;
     TensorSpec &add(Address address, double value);
     const vespalib::string &type() const { return _type; }
     const Cells &cells() const { return _cells; }
     vespalib::string to_string() const;
+    TensorSpec normalize() const;
     void to_slime(slime::Cursor &tensor) const;
     static TensorSpec from_slime(const slime::Inspector &tensor);
     static TensorSpec from_value(const eval::Value &value);

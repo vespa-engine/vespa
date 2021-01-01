@@ -113,7 +113,7 @@ public class RawConfigTest {
         assertThat(config.getDefMd5(), is(defMd5));
         config = new RawConfig(key, null, payload, configMd5, generation, false, null, Optional.empty());
         assertNull(config.getDefMd5());
-        config = new RawConfig(key, null, payload, configMd5, generation, false,List.of(""), Optional.empty());
+        config = new RawConfig(key, null, payload, configMd5, generation, false, List.of(""), Optional.empty());
         assertThat(config.getDefMd5(), is(defMd5ForEmptyDefContent));
         config = new RawConfig(key, "", payload, configMd5, generation, false, null, Optional.empty());
         assertThat(config.getDefMd5(), is(""));

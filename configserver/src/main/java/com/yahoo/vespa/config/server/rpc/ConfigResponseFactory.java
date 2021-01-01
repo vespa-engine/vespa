@@ -26,12 +26,13 @@ public interface ConfigResponseFactory {
 
     /**
      * Creates a {@link ConfigResponse} for a given payload and generation.
-     * @param payload          the {@link ConfigPayload} to put in the response
-     * @param generation       the payload generation
-     * @param internalRedeploy whether this config generation was produced by an internal redeployment
-     *                         not a change to the application package
+     *
+     * @param payload        the {@link ConfigPayload} to put in the response
+     * @param generation     the payload generation
+     * @param applyOnRestart true if this config change should only be applied on restart,
+     *                       false if it should be applied immediately
      * @return a {@link ConfigResponse} that can be sent to the client
      */
-    ConfigResponse createResponse(ConfigPayload payload, long generation, boolean internalRedeploy);
+    ConfigResponse createResponse(ConfigPayload payload, long generation, boolean applyOnRestart);
 
 }

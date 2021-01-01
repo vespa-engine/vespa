@@ -24,7 +24,6 @@ public:
     virtual PendingMessageTracker& getPendingMessageTracker() = 0;
     virtual DistributorMetricSet& getMetrics() = 0;
     virtual void enableClusterStateBundle(const lib::ClusterStateBundle& state) = 0;
-    virtual BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const = 0;
     virtual const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const = 0;
     virtual void notifyDistributionChangeEnabled() = 0;
 

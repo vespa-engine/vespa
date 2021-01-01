@@ -87,7 +87,7 @@ public:
 
     public:
         bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
-        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
+        mbus::Routable::UP decode(document::ByteBuffer &in) const override;
     };
 
     /**
@@ -121,7 +121,7 @@ public:
 
     public:
         bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
-        mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
+        mbus::Routable::UP decode(document::ByteBuffer &in) const override;
     };
 
     ////////////////////////////////////////////////////////////////////////////////

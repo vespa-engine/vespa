@@ -10,6 +10,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import org.junit.Test;
@@ -233,7 +234,7 @@ public class NodeFailerTest {
         assertEquals(2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         assertEquals(Node.State.failed, tester.nodeRepository.getNode(readyFail1.hostname()).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.getNode(readyFail2.hostname()).get().state());
-        
+
         String downHost1 = tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname();
         String downHost2 = tester.nodeRepository.getNodes(NodeFailTester.app2, Node.State.active).get(3).hostname();
         tester.serviceMonitor.setHostDown(downHost1);
@@ -306,6 +307,36 @@ public class NodeFailerTest {
                    tester.highestIndex(tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active)).allocation().get().membership().index()
                    >
                    lastNode.allocation().get().membership().index());
+    }
+
+    @Test
+    public void re_activate_grace_period_test() {
+        NodeFailTester tester = NodeFailTester.withTwoApplications();
+        String downNode = tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname();
+
+        tester.serviceMonitor.setHostDown(downNode);
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.runMaintainers();
+        assertEquals(0, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+
+        tester.clock.advance(Duration.ofMinutes(75));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.runMaintainers();
+        assertEquals(1, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(downNode).get().state());
+
+        // Re-activate the node. It is still down, but should not be failed out until the grace period has passed again
+        tester.nodeRepository.reactivate(downNode, Agent.system, getClass().getSimpleName());
+        tester.clock.advance(Duration.ofMinutes(30));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.runMaintainers();
+        assertEquals(0, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+
+        tester.clock.advance(Duration.ofMinutes(45));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.runMaintainers();
+        assertEquals(1, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(downNode).get().state());
     }
 
     @Test

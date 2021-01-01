@@ -36,7 +36,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     protected final Request request;
     private final SlimeRequestData requestData;
     /** Response field */
-    private boolean internalRedeploy = false;
+    private boolean applyOnRestart = false;
     // Response values
     private boolean isDelayed = false;
     private Trace requestTrace = null;
@@ -67,8 +67,8 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public void addOkResponse(Payload payload, long generation, boolean internalRedeploy, String configMd5) {
-        this.internalRedeploy = internalRedeploy;
+    public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, String configMd5) {
+        this.applyOnRestart = applyOnRestart;
         boolean changedConfig = !configMd5.equals(getRequestConfigMd5());
         boolean changedConfigAndNewGeneration = changedConfig && ConfigUtils.isGenerationNewer(generation, getRequestGeneration());
         Payload responsePayload = payload.withCompression(getCompressionType());
@@ -79,7 +79,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
             addCommonReturnValues(jsonGenerator);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, configMd5);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_GENERATION, generation);
-            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_INTERNAL_REDEPLOY, internalRedeploy);
+            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_APPLY_ON_RESTART, applyOnRestart);
             jsonGenerator.writeObjectFieldStart(SlimeResponseData.RESPONSE_COMPRESSION_INFO);
             if (responsePayload == null) {
                 throw new RuntimeException("Payload is null for ' " + this + ", not able to create response");
@@ -111,7 +111,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public boolean isInternalRedeploy() { return internalRedeploy; }
+    public boolean applyOnRestart() { return applyOnRestart; }
 
     public static JRTServerConfigRequestV3 createFromRequest(Request req) {
         return new JRTServerConfigRequestV3(req);

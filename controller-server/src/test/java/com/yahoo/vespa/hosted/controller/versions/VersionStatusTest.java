@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -220,52 +219,52 @@ public class VersionStatusTest {
         var builder = new ApplicationPackageBuilder().region("us-west-1").region("us-east-3");
 
         // Setup applications - all running on version0
-        builder.upgradePolicy("canary");
+        ApplicationPackage canaryPolicy = builder.upgradePolicy("canary").build();
         var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")
-                            .submit(builder.build())
+                            .submit(canaryPolicy)
                             .deploy();
         var canary1 = tester.newDeploymentContext("tenant1", "canary1", "default")
-                            .submit(builder.build())
+                            .submit(canaryPolicy)
                             .deploy();
         var canary2 = tester.newDeploymentContext("tenant1", "canary2", "default")
-                            .submit(builder.build())
+                            .submit(canaryPolicy)
                             .deploy();
 
-        builder.upgradePolicy("default");
+        ApplicationPackage defaultPolicy = builder.upgradePolicy("default").build();
         var default0 = tester.newDeploymentContext("tenant1", "default0", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default1 = tester.newDeploymentContext("tenant1", "default1", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default2 = tester.newDeploymentContext("tenant1", "default2", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default3 = tester.newDeploymentContext("tenant1", "default3", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default4 = tester.newDeploymentContext("tenant1", "default4", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default5 = tester.newDeploymentContext("tenant1", "default5", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default6 = tester.newDeploymentContext("tenant1", "default6", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default7 = tester.newDeploymentContext("tenant1", "default7", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default8 = tester.newDeploymentContext("tenant1", "default8", "default")
-                             .submit(builder.build())
+                             .submit(defaultPolicy)
                              .deploy();
         var default9 = tester.newDeploymentContext("tenant1", "default9", "default")
-                            .submit(builder.build())
+                            .submit(defaultPolicy)
                             .deploy();
 
-        builder.upgradePolicy("conservative");
+        ApplicationPackage conservativePolicy = builder.upgradePolicy("conservative").build();
         var conservative0 = tester.newDeploymentContext("tenant1", "conservative0", "default")
-                .submit(builder.build())
+                .submit(conservativePolicy)
                 .deploy();
 
         // Applications that do not affect confidence calculation:

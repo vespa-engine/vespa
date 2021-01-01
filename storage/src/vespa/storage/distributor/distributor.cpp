@@ -1,18 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 //
-#include "distributor.h"
 #include "blockingoperationstarter.h"
-#include "throttlingoperationstarter.h"
-#include "idealstatemetricsset.h"
-#include "ownership_transfer_safe_time_point_calculator.h"
+#include "distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
-#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
-#include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storage/common/hostreporter/hostinfo.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
-#include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+#include "idealstatemetricsset.h"
+#include "operation_sequencer.h"
+#include "ownership_transfer_safe_time_point_calculator.h"
+#include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
+#include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/storage/common/node_identity.h>
+#include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
+#include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
 #include <vespa/log/log.h>
@@ -62,6 +64,7 @@ public:
 };
 
 Distributor::Distributor(DistributorComponentRegister& compReg,
+                         const NodeIdentity& node_identity,
                          framework::TickingThreadPool& threadPool,
                          DoneInitializeHandler& doneInitHandler,
                          bool manageActiveBucketCopies,
@@ -71,34 +74,36 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       DistributorInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _clusterStateBundle(lib::ClusterState()),
-      _compReg(compReg),
-      _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
-      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
-      _metrics(new DistributorMetricSet(_component.getLoadTypes()->getMetricLoadTypes())),
+      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
+      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
+      _component(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, "distributor"),
+      _metrics(std::make_shared<DistributorMetricSet>()),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
+      _operation_sequencer(std::make_unique<OperationSequencer>()),
       _pendingMessageTracker(compReg),
       _bucketDBUpdater(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, *this, compReg),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
       _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, manageActiveBucketCopies),
-      _externalOperationHandler(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, _idealStateManager, compReg),
+      _messageSender(messageSender),
+      _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(),
+                                *_operation_sequencer, *this, _component,
+                                _idealStateManager, _operationOwner),
       _threadPool(threadPool),
       _initializingIsUp(true),
       _doneInitializeHandler(doneInitHandler),
       _doneInitializing(false),
-      _messageSender(messageSender),
-      _bucketPriorityDb(new SimpleBucketPriorityDatabase()),
-      _scanner(new SimpleMaintenanceScanner(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
-      _throttlingStarter(new ThrottlingOperationStarter(_maintenanceOperationOwner)),
-      _blockingStarter(new BlockingOperationStarter(_pendingMessageTracker, *_throttlingStarter)),
-      _scheduler(new MaintenanceScheduler(_idealStateManager, *_bucketPriorityDb, *_blockingStarter)),
+      _bucketPriorityDb(std::make_unique<SimpleBucketPriorityDatabase>()),
+      _scanner(std::make_unique<SimpleMaintenanceScanner>(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
+      _throttlingStarter(std::make_unique<ThrottlingOperationStarter>(_maintenanceOperationOwner)),
+      _blockingStarter(std::make_unique<BlockingOperationStarter>(_pendingMessageTracker, *_operation_sequencer,
+                                                                  *_throttlingStarter)),
+      _scheduler(std::make_unique<MaintenanceScheduler>(_idealStateManager, *_bucketPriorityDb, *_blockingStarter)),
       _schedulingMode(MaintenanceScheduler::NORMAL_SCHEDULING_MODE),
       _recoveryTimeStarted(_component.getClock()),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
-      _clusterName(_component.getClusterName()),
-      _bucketIdHasher(new BucketGcTimeCalculator::BucketIdIdentityHasher()),
+      _bucketIdHasher(std::make_unique<BucketGcTimeCalculator::BucketIdIdentityHasher>()),
       _metricUpdateHook(*this),
       _metricLock(),
       _maintenanceStats(),
@@ -132,22 +137,10 @@ Distributor::getDistributorIndex() const
     return _component.getIndex();
 }
 
-const std::string&
-Distributor::getClusterName() const
-{
-    return _clusterName;
-}
-
 const PendingMessageTracker&
 Distributor::getPendingMessageTracker() const
 {
     return _pendingMessageTracker;
-}
-
-BucketOwnership
-Distributor::checkOwnershipInPendingState(const document::Bucket &b) const
-{
-    return _bucketDBUpdater.checkOwnershipInPendingState(b);
 }
 
 const lib::ClusterState*
@@ -217,6 +210,7 @@ void Distributor::onClose() {
     }
 
     LOG(debug, "Distributor::onClose invoked");
+    _pendingMessageTracker.abort_deferred_tasks();
     _bucketDBUpdater.flush();
     _externalOperationHandler.close_pending();
     _operationOwner.onClose();

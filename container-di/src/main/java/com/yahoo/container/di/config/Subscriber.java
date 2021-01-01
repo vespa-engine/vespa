@@ -12,9 +12,8 @@ import java.util.Map;
  */
 public interface Subscriber {
 
-    long waitNextGeneration();
+    long waitNextGeneration(boolean isInitializing);
     long generation();
-    boolean internalRedeploy();
 
     boolean configChanged();
     Map<ConfigKey<ConfigInstance>, ConfigInstance> config();

@@ -3,8 +3,7 @@
 #include "direct_tensor_saver.h"
 #include "direct_tensor_store.h"
 
-#include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -39,7 +38,7 @@ DirectTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
         const vespalib::eval::Value *tensor = _tensorStore.get_tensor(_refs[lid]);
         if (tensor) {
             stream.clear();
-            vespalib::eval::EngineOrFactory::get().encode(*tensor, stream);
+            encode_value(*tensor, stream);
             uint32_t sz = stream.size();
             datWriter->write(&sz, sizeof(sz));
             datWriter->write(stream.peek(), stream.size());

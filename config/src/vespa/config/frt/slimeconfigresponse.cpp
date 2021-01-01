@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "slimeconfigresponse.h"
 #include <vespa/config/common/misc.h>
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/fnet/frt/values.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.slimeconfigresponse");
@@ -66,7 +66,9 @@ ConfigState
 SlimeConfigResponse::readState() const
 {
     const Slime & data(*_data);
-    return ConfigState(data.get()[RESPONSE_CONFIG_MD5].asString().make_string(),  data.get()[RESPONSE_CONFIG_GENERATION].asLong(), data.get()[RESPONSE_INTERNAL_REDEPLOY].asBool());
+    return ConfigState(data.get()[RESPONSE_CONFIG_MD5].asString().make_string(),
+                       data.get()[RESPONSE_CONFIG_GENERATION].asLong(),
+                       data.get()[RESPONSE_APPLY_ON_RESTART].asBool());
 }
 
 vespalib::string

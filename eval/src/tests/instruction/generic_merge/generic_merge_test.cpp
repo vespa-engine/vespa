@@ -65,26 +65,5 @@ TEST(GenericMergeTest, generic_merge_works_for_fast_values) {
     test_generic_merge_with(FastValueBuilderFactory::get());
 }
 
-TensorSpec immediate_generic_merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
-    const auto &factory = SimpleValueBuilderFactory::get();
-    auto lhs = value_from_spec(a, factory);
-    auto rhs = value_from_spec(b, factory);
-    auto up = GenericMerge::perform_merge(*lhs, *rhs, fun, factory);
-    return spec_from_value(*up);
-}
-
-TEST(GenericMergeTest, immediate_generic_merge_works) {
-    ASSERT_TRUE((merge_layouts.size() % 2) == 0);
-    for (size_t i = 0; i < merge_layouts.size(); i += 2) {
-        TensorSpec lhs = spec(merge_layouts[i], N());
-        TensorSpec rhs = spec(merge_layouts[i + 1], Div16(N()));
-        SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-        for (auto fun: {operation::Add::f, operation::Mul::f, operation::Sub::f, operation::Max::f}) {
-            auto expect = ReferenceOperations::merge(lhs, rhs, fun);
-            auto actual = immediate_generic_merge(lhs, rhs, fun);
-            EXPECT_EQ(actual, expect);
-        }
-    }
-}
 
 GTEST_MAIN_RUN_ALL_TESTS()

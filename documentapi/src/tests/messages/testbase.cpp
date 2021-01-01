@@ -19,11 +19,9 @@ TestBase::TestBase() :
     _repo(new DocumentTypeRepo(readDocumenttypesConfig(
             TEST_PATH("../../../test/cfg/testdoctypes.cfg")))),
     _dataPath(TEST_PATH("../../../test/crosslanguagefiles")),
-    _loadTypes(),
-    _protocol(_loadTypes, _repo),
+    _protocol(_repo),
     _tests()
 {
-    _loadTypes.addLoadType(34, "foo", Priority::PRI_NORMAL_2);
 }
 
 int

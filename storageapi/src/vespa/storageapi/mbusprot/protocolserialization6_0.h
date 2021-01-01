@@ -3,10 +3,8 @@
 #pragma once
 
 #include "protocolserialization5_2.h"
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 /**
  * Protocol serialization version adding decoding and encoding
@@ -15,8 +13,7 @@ namespace mbusprot {
 class ProtocolSerialization6_0 : public ProtocolSerialization5_2
 {
 public:
-    ProtocolSerialization6_0(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                             const documentapi::LoadTypeSet &loadTypes);
+    ProtocolSerialization6_0(const std::shared_ptr<const document::DocumentTypeRepo> &repo);
 
     document::Bucket getBucket(document::ByteBuffer &buf) const override;
     void putBucket(const document::Bucket &bucket, vespalib::GrowableByteBuffer &buf) const override;
@@ -24,5 +21,4 @@ public:
     void putBucketSpace(document::BucketSpace bucketSpace, vespalib::GrowableByteBuffer &buf) const override;
 };
 
-}
 }

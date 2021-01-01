@@ -3,9 +3,7 @@
 #include "docsum_matcher.h"
 #include "match_tools.h"
 #include "search_session.h"
-#include <vespa/eval/eval/tensor.h>
-#include <vespa/eval/eval/tensor_engine.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -74,7 +72,7 @@ get_feature_set(const MatchToolsFactory &mtf,
                     auto obj = resolver.resolve(j).as_object(docId);
                     if (! obj.get().type().is_double()) {
                         vespalib::nbostream buf;
-                        vespalib::eval::EngineOrFactory::get().encode(obj.get(), buf);
+                        encode_value(obj.get(), buf);
                         f[j].set_data(vespalib::Memory(buf.peek(), buf.size()));
                     } else {
                         f[j].set_double(obj.get().as_double());

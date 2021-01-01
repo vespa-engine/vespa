@@ -38,10 +38,10 @@ public class GenericConfigSubscriberTest {
         GenericConfigSubscriber sub = new GenericConfigSubscriber(requesters);
         final List<String> defContent = List.of("myVal int");
         GenericConfigHandle handle = sub.subscribe(new ConfigKey<>("simpletypes", "id", "config"), defContent, sourceSet, JRTConfigRequesterTest.getTestTimingValues());
-        assertTrue(sub.nextConfig());
+        assertTrue(sub.nextConfig(false));
         assertTrue(handle.isChanged());
         assertThat(handle.getRawConfig().getPayload().withCompression(CompressionType.UNCOMPRESSED).toString(), is("{}")); // MockConnection returns empty string
-        assertFalse(sub.nextConfig());
+        assertFalse(sub.nextConfig(false));
         assertFalse(handle.isChanged());
     }
 

@@ -40,7 +40,8 @@
       "public static void uncheckAndIgnore(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.Class)",
       "public static java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException)",
       "public static varargs java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.String, java.lang.String[])",
-      "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.Class)"
+      "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.Class)",
+      "public static java.lang.RuntimeException throwUnchecked(java.lang.Throwable)"
     ],
     "fields": []
   },

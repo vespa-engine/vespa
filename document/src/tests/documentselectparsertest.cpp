@@ -37,8 +37,8 @@ protected:
     ~DocumentSelectParserTest();
 
     Document::SP createDoc(
-            const std::string& doctype, const std::string& id, uint32_t hint,
-            double hfloat, const std::string& hstr, const std::string& cstr,
+            vespalib::stringref doctype, vespalib::stringref id, uint32_t hint,
+            double hfloat, vespalib::stringref hstr, vespalib::stringref cstr,
             uint64_t hlong = 0);
 
     DocumentUpdate::SP createUpdate(
@@ -105,8 +105,8 @@ void DocumentSelectParserTest::SetUp()
 }
 
 Document::SP DocumentSelectParserTest::createDoc(
-        const std::string& doctype, const std::string& id, uint32_t hint,
-        double hfloat, const std::string& hstr, const std::string& cstr,
+        vespalib::stringref doctype, vespalib::stringref id, uint32_t hint,
+        double hfloat, vespalib::stringref hstr, vespalib::stringref cstr,
         uint64_t hlong)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
@@ -117,8 +117,8 @@ Document::SP DocumentSelectParserTest::createDoc(
         doc->setValue(doc->getField("headerlongval"), LongFieldValue(hlong));
     }
     doc->setValue(doc->getField("hfloatval"), FloatFieldValue(hfloat));
-    doc->setValue(doc->getField("hstringval"), StringFieldValue(hstr.c_str()));
-    doc->setValue(doc->getField("content"), StringFieldValue(cstr.c_str()));
+    doc->setValue(doc->getField("hstringval"), StringFieldValue(hstr));
+    doc->setValue(doc->getField("content"), StringFieldValue(cstr));
     return doc;
 }
 
@@ -1232,10 +1232,26 @@ TEST_F(DocumentSelectParserTest, testDocumentIdsInRemoves)
     PARSE("testdoctype1 and testdoctype1.headerval == 0", DocumentId("id:ns:testdoctype1::1"), Invalid);
 }
 
+namespace {
+
+#if defined(__cpp_char8_t)
+const char *
+char_from_u8(const char8_t * p) {
+    return reinterpret_cast<const char *>(p);
+}
+#else
+const char *
+char_from_u8(const char * p) {
+    return p;
+}
+#endif
+
+}
+
 TEST_F(DocumentSelectParserTest, testUtf8)
 {
     createDocs();
-    std::string utf8name(u8"H\u00e5kon");
+    vespalib::string utf8name = char_from_u8(u8"H\u00e5kon");
     EXPECT_EQ(size_t(6), utf8name.size());
 
     /// \todo TODO (was warning):  UTF8 test for glob/regex support in selection language disabled. Known not to work

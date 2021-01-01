@@ -3,11 +3,12 @@ package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * A node's membership in a cluster. This is a value object.
- * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired][/combinedId]"
+ * The format is "clusterType/clusterId/groupId/index[/exclusive][/retired][/stateful][/combinedId]"
  *
  * @author bratseth
  */
@@ -24,9 +25,10 @@ public class ClusterMembership {
         String[] components = stringValue.split("/");
         if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
-                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/combinedId]'");
+                                       "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/stateful][/combinedId]'");
 
         boolean exclusive = false;
+        boolean stateful = false;
         var combinedId = Optional.<String>empty();
         if (components.length > 4) {
             for (int i = 4; i < components.length; i++) {
@@ -34,18 +36,21 @@ public class ClusterMembership {
                 switch (component) {
                     case "exclusive": exclusive = true; break;
                     case "retired": retired = true; break;
+                    case "stateful": stateful = true; break;
                     default: combinedId = Optional.of(component); break;
                 }
             }
         }
 
-        this.cluster = ClusterSpec.specification(ClusterSpec.Type.valueOf(components[0]), ClusterSpec.Id.from(components[1]))
-                .group(ClusterSpec.Group.from(Integer.parseInt(components[2])))
-                .vespaVersion(vespaVersion)
-                .exclusive(exclusive)
-                .combinedId(combinedId.map(ClusterSpec.Id::from))
-                .dockerImageRepository(dockerImageRepo)
-                .build();
+        this.cluster = ClusterSpec.specification(ClusterSpec.Type.valueOf(components[0]),
+                                                 ClusterSpec.Id.from(components[1]))
+                                  .group(ClusterSpec.Group.from(Integer.parseInt(components[2])))
+                                  .vespaVersion(vespaVersion)
+                                  .exclusive(exclusive)
+                                  .combinedId(combinedId.map(ClusterSpec.Id::from))
+                                  .dockerImageRepository(dockerImageRepo)
+                                  .stateful(stateful)
+                                  .build();
         this.index = Integer.parseInt(components[3]);
         this.stringValue = toStringValue();
     }
@@ -64,6 +69,7 @@ public class ClusterMembership {
                "/" + index +
                ( cluster.isExclusive() ? "/exclusive" : "") +
                ( retired ? "/retired" : "") +
+               ( cluster.isStateful() ? "/stateful" : "") +
                ( cluster.combinedId().isPresent() ? "/" + cluster.combinedId().get().value() : "");
 
     }
@@ -98,13 +104,19 @@ public class ClusterMembership {
     public String stringValue() { return stringValue; }
 
     @Override
-    public int hashCode() { return stringValue().hashCode(); }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClusterMembership that = (ClusterMembership) o;
+        return index == that.index &&
+               retired == that.retired &&
+               cluster.equals(that.cluster) &&
+               stringValue.equals(that.stringValue);
+    }
 
     @Override
-    public boolean equals(Object other) {
-        if (other == this) return true;
-        if ( ! (other instanceof ClusterMembership)) return false;
-        return ((ClusterMembership)other).stringValue().equals(stringValue());
+    public int hashCode() {
+        return Objects.hash(cluster, index, retired, stringValue);
     }
 
     @Override

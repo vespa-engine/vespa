@@ -4,7 +4,6 @@
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 
 using search::tensor::ITensorAttribute;
-using vespalib::tensor::MutableDenseTensorView;
 
 namespace search::features {
 
@@ -18,7 +17,7 @@ DenseTensorAttributeExecutor(const ITensorAttribute& attribute)
 void
 DenseTensorAttributeExecutor::execute(uint32_t docId)
 {
-    _attribute.extract_dense_view(docId, _tensorView);
+    _tensorView.setCells(_attribute.extract_cells_ref(docId));
     outputs().set_object(0, _tensorView);
 }
 

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_dot_product_function.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <cblas.h>
@@ -67,7 +66,7 @@ DenseDotProductFunction::DenseDotProductFunction(const TensorFunction &lhs_in,
 }
 
 InterpretedFunction::Instruction
-DenseDotProductFunction::compile_self(EngineOrFactory, Stash &) const
+DenseDotProductFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     auto op = my_select(lhs().result_type().cell_type(), rhs().result_type().cell_type());
     return InterpretedFunction::Instruction(op);

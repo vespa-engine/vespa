@@ -52,7 +52,7 @@ public class AutoscalingTest {
         assertTrue("Too few measurements -> No change", tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
 
         tester.clock().advance(Duration.ofDays(1));
-        tester.addCpuMeasurements(0.25f, 1f, 60, application1);
+        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
                                                                   15, 1, 1.3,  28.6, 28.6,
                                                                   tester.autoscale(application1, cluster1.id(), min, max).target());
@@ -62,7 +62,7 @@ public class AutoscalingTest {
 
         tester.deactivateRetired(application1, cluster1, scaledResources);
 
-        tester.clock().advance(Duration.ofDays(1));
+        tester.clock().advance(Duration.ofDays(2));
         tester.addCpuMeasurements(0.8f, 1f, 3, application1);
         assertTrue("Load change is large, but insufficient measurements for new config -> No change",
                    tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
@@ -74,6 +74,8 @@ public class AutoscalingTest {
         tester.assertResources("Scaling down to minimum since usage has gone down significantly",
                                14, 1, 1.0, 30.8, 30.8,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
+
+        var events = tester.nodeRepository().applications().get(application1).get().cluster(cluster1.id()).get().scalingEvents();
     }
 
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
@@ -117,7 +119,7 @@ public class AutoscalingTest {
         tester.nodeRepository().getNodes(application1).stream()
               .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.slow);
 
-        tester.clock().advance(Duration.ofDays(1));
+        tester.clock().advance(Duration.ofDays(2));
         tester.addCpuMeasurements(0.25f, 1f, 120, application1);
         // Changing min and max from slow to any
         ClusterResources min = new ClusterResources( 2, 1,
@@ -225,6 +227,40 @@ public class AutoscalingTest {
     }
 
     @Test
+    public void not_using_out_of_service_measurements() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources(2, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(5, 1, new NodeResources(100, 1000, 1000, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 2, 1, resources);
+        tester.addMeasurements(0.5f, 0.6f, 0.7f, 1, false, true, 120, application1);
+        assertTrue("Not scaling up since nodes were measured while cluster was unstable",
+                   tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
+    }
+
+    @Test
+    public void not_using_unstable_measurements() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources(2, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(5, 1, new NodeResources(100, 1000, 1000, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 2, 1, resources);
+        tester.addMeasurements(0.5f, 0.6f, 0.7f, 1, true, false, 120, application1);
+        assertTrue("Not scaling up since nodes were measured while cluster was unstable",
+                   tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
+    }
+
+    @Test
     public void test_autoscaling_group_size_1() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
@@ -272,6 +308,7 @@ public class AutoscalingTest {
 
         // deploy
         tester.deploy(application1, cluster1, 6, 2, new NodeResources(10, 100, 100, 1));
+        tester.clock().advance(Duration.ofDays(1));
         tester.addMemMeasurements(1.0f, 1f, 1000, application1);
         tester.assertResources("Increase group size to reduce memory load",
                                8, 2, 12.9,  89.3, 62.5,
@@ -290,7 +327,7 @@ public class AutoscalingTest {
 
         // deploy
         tester.deploy(application1, cluster1, 6, 1, hostResources.withVcpu(hostResources.vcpu() / 2));
-        tester.clock().advance(Duration.ofDays(1));
+        tester.clock().advance(Duration.ofDays(2));
         tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
         tester.assertResources("Scaling down",
                                6, 1, 2.8, 4.0, 95.0,
@@ -313,8 +350,8 @@ public class AutoscalingTest {
         tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
         assertTrue(tester.autoscale(application1, cluster1.id(), min, max).target().isEmpty());
 
-        // Trying the same a day later causes autoscaling
-        tester.clock().advance(Duration.ofDays(1));
+        // Trying the same later causes autoscaling
+        tester.clock().advance(Duration.ofDays(2));
         tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
         tester.assertResources("Scaling down",
                                6, 1, 2.8, 4.0, 95.0,
@@ -376,7 +413,7 @@ public class AutoscalingTest {
         // deploy (Why 103 Gb memory? See AutoscalingTester.MockHostResourcesCalculator
         tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 103, 100, 1));
 
-        tester.clock().advance(Duration.ofDays(1));
+        tester.clock().advance(Duration.ofDays(2));
         tester.addMemMeasurements(0.9f, 0.6f, 120, application1);
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high.",
                                                                   8, 1, 3,  83, 34.3,
@@ -385,6 +422,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, scaledResources);
         tester.deactivateRetired(application1, cluster1, scaledResources);
 
+        tester.clock().advance(Duration.ofDays(2));
         tester.addMemMeasurements(0.3f, 0.6f, 1000, application1);
         tester.assertResources("Scaling down since resource usage has gone down",
                                5, 1, 3, 83, 36,

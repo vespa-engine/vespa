@@ -5,8 +5,7 @@
 #include "nearest_neighbor_index.h"
 #include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute.hpp"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
-#include <vespa/eval/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
@@ -19,7 +18,6 @@ using search::attribute::LoadUtils;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::slime::ObjectInserter;
-using vespalib::tensor::MutableDenseTensorView;
 
 namespace search::tensor {
 
@@ -173,14 +171,14 @@ DenseTensorAttribute::getTensor(DocId docId) const
     return _denseTensorStore.getTensor(ref);
 }
 
-void
-DenseTensorAttribute::extract_dense_view(DocId docId, MutableDenseTensorView &tensor) const
+vespalib::eval::TypedCells
+DenseTensorAttribute::extract_cells_ref(DocId docId) const
 {
     EntryRef ref;
     if (docId < getCommittedDocIdLimit()) {
         ref = _refVector[docId];
     }
-    _denseTensorStore.getTensor(ref, tensor);
+    return _denseTensorStore.get_typed_cells(ref);
 }
 
 bool

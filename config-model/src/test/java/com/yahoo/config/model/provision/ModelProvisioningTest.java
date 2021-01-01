@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.container.ContainerServiceType;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -951,6 +954,48 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    @Ignore // WIP, fails now
+    public void testClusterControllersWithNodeChange() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='3'/>" +
+                "  </content>" +
+                "</services>";
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(3);
+        VespaModel model = tester.createModel(services);
+
+        List<ClusterControllerContainer> containers = model.getContentClusters().get("bar").getClusterControllers().getContainers();
+        assertEquals(3, containers.size());
+        assertEquals("node-1-3-9-03", containers.get(0).getHostName());
+        assertEquals("node-1-3-9-02", containers.get(1).getHostName());
+        assertEquals("node-1-3-9-01", containers.get(2).getHostName());
+
+        int indexForHost03 = containers.get(1).index();
+        String hostnameForHost03 = containers.get(1).getHostName();
+
+        // Add 1 node to see if this changes index of already existing cluster controllers
+        tester.addHosts(4);
+        model = tester.createModel(services);
+        containers = model.getContentClusters().get("bar").getClusterControllers().getContainers();
+        assertEquals(3, containers.size());
+        assertEquals("node-1-3-9-04", containers.get(0).getHostName());
+        assertEquals("node-1-3-9-03", containers.get(1).getHostName());
+        assertEquals("node-1-3-9-02", containers.get(2).getHostName());
+
+        assertEquals(hostnameForHost03, containers.get(2).getHostName());
+        // TODO: Fails here because index has changed
+        assertEquals(indexForHost03, containers.get(2).index());
+    }
+
+    @Test
     public void testLogserverContainerWhenDedicatedLogserver() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -1813,6 +1858,101 @@ public class ModelProvisioningTest {
         assertEquals(2, content.getRootGroup().getNodes().size());
         ContainerCluster controller = content.getClusterControllers();
         assertEquals(1, controller.getContainers().size());
+    }
+
+    @Test
+    public void testStatefulProperty() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='qrs'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <container version='1.0' id='zk'>" +
+                "     <zookeeper/>" +
+                "     <nodes count='3'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='content'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(6);
+        VespaModel model = tester.createModel(servicesXml, true);
+
+        Map<String, Boolean> tests = Map.of("qrs", false,
+                                            "zk", true,
+                                            "content", true);
+        Map<String, List<HostResource>> hostsByCluster = model.hostSystem().getHosts().stream()
+                                                              .collect(Collectors.groupingBy(h -> h.spec().membership().get().cluster().id().value()));
+        tests.forEach((clusterId, stateful) -> {
+            List<HostResource> hosts = hostsByCluster.getOrDefault(clusterId, List.of());
+            assertFalse("Hosts are provisioned for '" + clusterId + "'", hosts.isEmpty());
+            assertEquals("Hosts in cluster '" + clusterId + "' are " + (stateful ? "" : "not ") + "stateful",
+                         stateful,
+                         hosts.stream().allMatch(h -> h.spec().membership().get().cluster().isStateful()));
+        });
+    }
+
+    @Test
+    public void containerWithZooKeeperSuboptimalNodeCountDuringRetirement() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='zk'>" +
+                "     <zookeeper/>" +
+                "     <nodes count='4'/>" + // (3 + 1 retired)
+                "  </container>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(4);
+        VespaModel model = tester.createModel(servicesXml, true, "node-1-3-9-01");
+        ApplicationContainerCluster cluster = model.getContainerClusters().get("zk");
+        assertEquals(1, cluster.getContainers().stream().filter(Container::isRetired).count());
+        assertEquals(3, cluster.getContainers().stream().filter(c -> !c.isRetired()).count());
+    }
+
+    @Test
+    public void containerWithZooKeeperJoiningServers() {
+        Function<Integer, String> servicesXml = (nodeCount) -> {
+            return "<?xml version='1.0' encoding='utf-8' ?>" +
+                   "<services>" +
+                   "  <container version='1.0' id='zk'>" +
+                   "     <zookeeper/>" +
+                   "     <nodes count='" + nodeCount + "'/>" +
+                   "  </container>" +
+                   "</services>";
+        };
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(5);
+        VespaModel model = tester.createModel(servicesXml.apply(3), true);
+
+        {
+            ApplicationContainerCluster cluster = model.getContainerClusters().get("zk");
+            ZookeeperServerConfig.Builder config = new ZookeeperServerConfig.Builder();
+            cluster.getContainers().forEach(c -> c.getConfig(config));
+            cluster.getConfig(config);
+            assertTrue("Initial servers are not joining", config.build().server().stream().noneMatch(ZookeeperServerConfig.Server::joining));
+        }
+        {
+            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(5), true, false, 0, Optional.of(model));
+            ApplicationContainerCluster cluster = nextModel.getContainerClusters().get("zk");
+            ZookeeperServerConfig.Builder config = new ZookeeperServerConfig.Builder();
+            cluster.getContainers().forEach(c -> c.getConfig(config));
+            cluster.getConfig(config);
+            assertEquals("New nodes are joining",
+                         Map.of(0, false,
+                                1, false,
+                                2, false,
+                                3, true,
+                                4, true),
+                         config.build().server().stream().collect(Collectors.toMap(ZookeeperServerConfig.Server::id,
+                                                                                   ZookeeperServerConfig.Server::joining)));
+        }
     }
 
     private VespaModel createNonProvisionedMultitenantModel(String services) {

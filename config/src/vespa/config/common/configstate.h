@@ -15,17 +15,17 @@ public:
     ConfigState()
         : md5(""),
           generation(0),
-          internalRedeploy(false)
+          applyOnRestart(false)
     { }
-    ConfigState(const vespalib::string & md5sum, int64_t gen, bool value)
+    ConfigState(const vespalib::string & md5sum, int64_t gen, bool _applyOnRestart)
         : md5(md5sum),
           generation(gen),
-          internalRedeploy(value)
+          applyOnRestart(_applyOnRestart)
     { }
 
     vespalib::string md5;
     int64_t generation;
-    bool internalRedeploy;
+    bool applyOnRestart;
 
     bool isNewerGenerationThan(const ConfigState & other) const {
         return isGenerationNewer(generation, other.generation);

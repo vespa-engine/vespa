@@ -19,10 +19,14 @@ using storage::lib::NodeType;
 
 namespace feedbm {
 
+namespace {
+    vespalib::string _Storage("storage");
+}
+
 DocumentApiMessageBusBmFeedHandler::DocumentApiMessageBusBmFeedHandler(BmMessageBus &message_bus)
     : IBmFeedHandler(),
       _name(vespalib::string("DocumentApiMessageBusBmFeedHandler(distributor)")),
-      _storage_address(std::make_unique<StorageMessageAddress>("storage", NodeType::DISTRIBUTOR, 0)),
+      _storage_address(std::make_unique<StorageMessageAddress>(&_Storage, NodeType::DISTRIBUTOR, 0)),
       _message_bus(message_bus),
       _route(_storage_address->to_mbus_route())
 {
@@ -79,12 +83,6 @@ const vespalib::string&
 DocumentApiMessageBusBmFeedHandler::get_name() const
 {
     return _name;
-}
-
-bool
-DocumentApiMessageBusBmFeedHandler::manages_buckets() const
-{
-    return true;
 }
 
 bool

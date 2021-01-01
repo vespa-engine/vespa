@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "engine_or_factory.h"
 #include "interpreted_function.h"
 #include <vector>
 
@@ -10,8 +9,9 @@ namespace vespalib { class Stash; }
 
 namespace vespalib::eval {
 
+struct ValueBuilderFactory;
 struct TensorFunction;
 
-std::vector<InterpretedFunction::Instruction> compile_tensor_function(EngineOrFactory engine, const TensorFunction &function, Stash &stash);
+std::vector<InterpretedFunction::Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash);
 
 } // namespace vespalib::eval

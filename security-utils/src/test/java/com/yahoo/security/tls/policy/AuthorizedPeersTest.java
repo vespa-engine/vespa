@@ -18,7 +18,7 @@ public class AuthorizedPeersTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void throws_exception_on_peer_policies_with_duplicate_names() {
-        List<RequiredPeerCredential> requiredPeerCredential = singletonList(new RequiredPeerCredential(CN, new HostGlobPattern("mycfgserver")));
+        List<RequiredPeerCredential> requiredPeerCredential = singletonList(RequiredPeerCredential.of(CN, "mycfgserver"));
         PeerPolicy peerPolicy1 = new PeerPolicy("duplicate-name", singleton(new Role("role")), requiredPeerCredential);
         PeerPolicy peerPolicy2 = new PeerPolicy("duplicate-name", singleton(new Role("anotherrole")), requiredPeerCredential);
         new AuthorizedPeers(new HashSet<>(asList(peerPolicy1, peerPolicy2)));

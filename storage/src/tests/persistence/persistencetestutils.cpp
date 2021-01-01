@@ -52,10 +52,10 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(const std::string & rootO
       _messageKeeper(),
       _node(NodeIndex(0), _config.getConfigId()),
       _component(_node.getComponentRegister(), "persistence test env"),
-      _metrics(_component.getLoadTypes()->getMetricLoadTypes())
+      _metrics()
 {
     _node.setupDummyPersistence();
-    _metrics.initDiskMetrics(_node.getLoadTypes()->getMetricLoadTypes(), 1, 1);
+    _metrics.initDiskMetrics(1, 1);
     _handler = std::make_unique<FileStorHandlerImpl>(_messageKeeper, _metrics, _node.getComponentRegister());
     _diskEnv = std::make_unique<PersistenceUtil>(_component, *_handler,
                                                  *_metrics.disk->threads[0], _node.getPersistenceProvider());

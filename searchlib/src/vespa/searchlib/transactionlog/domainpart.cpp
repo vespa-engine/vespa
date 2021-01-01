@@ -236,11 +236,8 @@ DomainPart::buildPacketMapping(bool allowTruncate)
                 _range.from(firstSerial);
             }
             _range.to(packet.range().to());
-            _packets.insert(std::make_pair(firstSerial, std::move(packet)));
-            {
-                std::lock_guard guard(_lock);
-                _skipList.push_back(SkipInfo(firstSerial, firstPos));
-            }
+            // Called only from constructor so no need to hold lock
+            _skipList.emplace_back(firstSerial, firstPos);
         } else {
             fSize = transLog.GetSize();
         }
@@ -259,7 +256,6 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
       _range(s),
       _sz(0),
       _byteSize(0),
-      _packets(),
       _fileName(fmt("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
       _transLog(std::make_unique<FastOS_File>(_fileName.c_str())),
       _skipList(),
@@ -345,10 +341,6 @@ DomainPart::close()
         throw runtime_error(fmt("Failed closing file '%s' of size %" PRId64 ".",
                                 _transLog->GetFileName(), _transLog->GetSize()));
     }
-    {
-        std::lock_guard guard(_lock);
-        _packets.clear();
-    }
     return retval;
 }
 
@@ -364,11 +356,9 @@ DomainPart::openAndFind(FastOS_FileInterface &file, const SerialNum &from)
     if (retval) {
         int64_t pos(_headerLen);
         std::lock_guard guard(_lock);
-        for(SkipList::const_iterator it(_skipList.begin()), mt(_skipList.end());
-            (it < mt) && (it->id() <= from);
-            it++)
-        {
-            pos = it->filePos();
+        for (const auto & skipInfo : _skipList) {
+            if (skipInfo.id() > from) break;
+            pos = skipInfo.filePos();
         }
         retval = file.SetPosition(pos);
     }
@@ -419,20 +409,8 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
     if ( ! chunk->getEntries().empty()) {
         write(*_transLog, *chunk);
     }
-
-    bool merged(false);
     std::lock_guard guard(_lock);
-    if ( ! _packets.empty() ) {
-        Packet & lastPacket = _packets.rbegin()->second;
-        if (lastPacket.sizeBytes() < 0xf000) {
-            lastPacket.merge(packet);
-            merged = true;
-        }
-    }
-    if (! merged ) {
-        _packets.insert(std::make_pair(firstSerial, std::move(packet)));
-        _skipList.push_back(SkipInfo(firstSerial, firstPos));
-    }
+    _skipList.emplace_back(firstSerial, firstPos);
 }
 
 void
@@ -450,76 +428,6 @@ DomainPart::sync()
         _syncedSerial = syncSerial;
     }
 }
-
-bool
-DomainPart::visit(SerialNumRange &r, Packet &packet)
-{
-    bool retval(false);
-    std::lock_guard guard(_lock);
-    LOG(spam, "Visit r(%" PRIu64 ", %" PRIu64 "] Checking %" PRIu64 " packets",
-               r.from(), r.to(), uint64_t(_packets.size()));
-    if ( ! isClosed() ) {
-        PacketList::const_iterator start(_packets.lower_bound(r.from() + 1));
-        PacketList::const_iterator end(_packets.upper_bound(r.to()));
-        if (start != _packets.end()) {
-            if ( ! start->second.range().contains(r.from() + 1) &&
-                (start != _packets.begin())) {
-                PacketList::const_iterator prev(start);
-                prev--;
-                if (prev->second.range().contains(r.from() + 1)) {
-                    start--;
-                }
-            }
-        } else {
-            if (!_packets.empty())
-                start--;
-        }
-        if ( start != _packets.end() && start->first <= r.to()) {
-            PacketList::const_iterator next(start);
-            next++;
-            if ((r.from() < start->first) &&
-                ((next != end) || ((next != _packets.end()) && ((r.to() + 1) == next->first))))
-            {
-                packet = start->second;
-                LOG(spam, "Visit whole packet[%" PRIu64 ", %" PRIu64 "]", packet.range().from(), packet.range().to());
-                if (next != _packets.end()) {
-                    r.from(next->first - 1);
-                    retval = true;
-                } else {
-                    /// This is the very last package. Can safely finish.
-                }
-            } else {
-                const nbostream & tmp = start->second.getHandle();
-                nbostream_longlivedbuf h(tmp.data(), tmp.size());
-                LOG(spam, "Visit partial[%" PRIu64 ", %" PRIu64 "] (%zd, %zd, %zd)",
-                           start->second.range().from(), start->second.range().to(), h.rp(), h.size(), h.capacity());
-                Packet newPacket(h.size());
-                for (; (h.size() > 0) && (r.from() < r.to()); ) {
-                    Packet::Entry e;
-                    e.deserialize(h);
-                    if (r.from() < e.serial()) {
-                        if (e.serial() <= r.to()) {
-                            LOG(spam, "Adding serial #%" PRIu64 ", of type %d and size %zd into packet of size %zu and %zu bytes",
-                                      e.serial(), e.type(), e.data().size(), newPacket.size(), newPacket.sizeBytes());
-                            newPacket.add(e);
-                            r.from(e.serial());
-                        } else {
-                            // Force breakout on visiting empty interval.
-                            r.from(r.to());
-                        }
-                    }
-                }
-                packet = std::move(newPacket);
-                retval = next != _packets.end();
-            }
-        }
-    } else {
-        /// File has been closed must continue from file.
-        retval = true;
-    }
-    return retval;
-}
-
 
 bool
 DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)

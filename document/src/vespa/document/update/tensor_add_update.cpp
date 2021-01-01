@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_add_update.h"
+#include "tensor_partial_update.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -9,9 +10,7 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/engine_or_factory.h>
-#include <vespa/eval/tensor/partial_update.h>
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -21,8 +20,7 @@
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
-using vespalib::eval::EngineOrFactory;
-using vespalib::tensor::TensorPartialUpdate;
+using vespalib::eval::FastValueBuilderFactory;
 
 namespace document {
 
@@ -87,8 +85,8 @@ TensorAddUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
     auto addTensor = _tensor->getAsTensorPtr();
     if (addTensor) {
-        auto engine = EngineOrFactory::get();
-        return TensorPartialUpdate::add(tensor, *addTensor, engine);
+        const auto &factory = FastValueBuilderFactory::get();
+        return TensorPartialUpdate::add(tensor, *addTensor, factory);
     }
     return {};
 }

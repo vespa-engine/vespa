@@ -18,7 +18,6 @@
 #include "ireplayconfig.h"
 #include "maintenancecontroller.h"
 #include "threading_service_config.h"
-#include <vespa/metrics/updatehook.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
@@ -42,6 +41,10 @@ namespace search {
 }
 
 namespace vespa::config::search::core::internal { class InternalProtonType; }
+namespace metrics {
+    class UpdateHook;
+    class MetricLockGuard;
+}
 
 namespace proton {
 class AttributeConfigInspector;
@@ -68,26 +71,6 @@ class DocumentDB : public DocumentDBConfigOwner,
                    public search::transactionlog::SyncProxy
 {
 private:
-    class MetricsUpdateHook : public metrics::UpdateHook {
-        DocumentDBTaggedMetrics _metrics;
-        DocumentDB &_db;
-    public:
-        MetricsUpdateHook(DocumentDB &s, const std::string &doc_type, size_t maxNumThreads)
-            : metrics::UpdateHook("documentdb-hook"),
-              _metrics(doc_type, maxNumThreads),
-              _db(s) {}
-        void updateMetrics(const MetricLockGuard & ) override { _db.updateMetrics(_metrics); }
-        DocumentDBTaggedMetrics &getMetrics() { return _metrics; }
-    };
-
-    struct DocumentStoreCacheStats {
-        search::CacheStats total;
-        search::CacheStats readySubDb;
-        search::CacheStats notReadySubDb;
-        search::CacheStats removedSubDb;
-        DocumentStoreCacheStats() : total(), readySubDb(), notReadySubDb(), removedSubDb() {}
-    };
-
     using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using StatusReportUP = std::unique_ptr<StatusReport>;
@@ -114,7 +97,6 @@ private:
     mutable std::condition_variable _configCV;
     DocumentDBConfig::SP          _activeConfigSnapshot;
     int64_t                       _activeConfigSnapshotGeneration;
-    SerialNum                     _activeConfigSnapshotSerialNum;
     const bool                    _validateAndSanitizeDocStore;
 
     vespalib::Gate                _initGate;
@@ -126,9 +108,10 @@ private:
     index::IndexConfig            _indexCfg;
     ConfigStore::UP               _config_store;
     std::shared_ptr<matching::SessionManager>  _sessionManager; // TODO: This should not have to be a shared pointer.
-    MetricsWireService             &_metricsWireService;
-    MetricsUpdateHook             _metricsHook;
-    vespalib::VarHolder<IFeedView::SP> _feedView;
+    MetricsWireService            &_metricsWireService;
+    DocumentDBTaggedMetrics        _metrics;
+    std::unique_ptr<metrics::UpdateHook>  _metricsHook;
+    vespalib::VarHolder<IFeedView::SP>    _feedView;
     MonitoredRefCount             _refCount;
     bool                          _syncFeedViewEnabled;
     IDocumentDBOwner             &_owner;
@@ -145,7 +128,7 @@ private:
     DocumentDBMetricsUpdater      _metricsUpdater;
 
     void registerReference();
-    void setActiveConfig(const DocumentDBConfig::SP &config, SerialNum serialNum, int64_t generation);
+    void setActiveConfig(const DocumentDBConfig::SP &config, int64_t generation);
     DocumentDBConfig::SP getActiveConfig() const;
     void internalInit();
     void initManagers();
@@ -294,7 +277,9 @@ public:
      *
      * @return document db metrics
      **/
-    DocumentDBTaggedMetrics &getMetrics() { return _metricsHook.getMetrics(); }
+    DocumentDBTaggedMetrics &getMetrics() {
+        return _metrics;
+    }
 
     /**
      * Obtain the metrics update hook for this document db.
@@ -302,7 +287,7 @@ public:
      * @return metrics update hook
      **/
     metrics::UpdateHook & getMetricsUpdateHook() {
-        return _metricsHook;
+        return *_metricsHook;
     }
 
     /**
@@ -414,7 +399,7 @@ public:
      * the metric manager). Do not call this function in multiple
      * threads at once.
      **/
-    void updateMetrics(DocumentDBTaggedMetrics &metrics);
+    void updateMetrics(const metrics::MetricLockGuard & guard);
 
     /**
      * Implement search::transactionlog::SyncProxy API.

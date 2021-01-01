@@ -2,13 +2,16 @@
 package com.yahoo.vespa.model.container;
 
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.handler.metrics.MetricsProxyApiConfig;
@@ -28,6 +31,7 @@ import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
@@ -54,7 +58,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         RankingConstantsConfig.Producer,
         ServletPathsConfig.Producer,
         ContainerMbusConfig.Producer,
-        MetricsProxyApiConfig.Producer {
+        MetricsProxyApiConfig.Producer,
+        ZookeeperServerConfig.Producer {
 
     public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
     public static final BindingPattern METRICS_V2_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(MetricsV2Handler.V2_PATH);
@@ -72,6 +77,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private final ConfigProducerGroup<Servlet> servletGroup;
     private final ConfigProducerGroup<RestApi> restApiGroup;
+    private final Set<String> previousHosts;
 
     private ContainerModelEvaluation modelEvaluation;
 
@@ -83,10 +89,16 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private Integer memoryPercentage = null;
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
-        super(parent, configSubId, clusterId, deployState);
+        super(parent, configSubId, clusterId, deployState, true);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
+        previousHosts = deployState.getPreviousModel().stream()
+                                   .map(Model::allocatedHosts)
+                                   .map(AllocatedHosts::getHosts)
+                                   .flatMap(Collection::stream)
+                                   .map(HostSpec::hostname)
+                                   .collect(Collectors.toUnmodifiableSet());
 
         addSimpleComponent(DEFAULT_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
@@ -249,6 +261,22 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ?
                                                              heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster :
                                                              heapSizePercentageOfTotalNodeMemory);
+        }
+    }
+
+    @Override
+    public void getConfig(ZookeeperServerConfig.Builder builder) {
+        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
+
+        // Note: Default client and server ports are used, so not set here
+        for (Container container : getContainers()) {
+            ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
+            serverBuilder.hostname(container.getHostName())
+                         .id(container.index())
+                         .joining(!previousHosts.isEmpty() &&
+                                  !previousHosts.contains(container.getHostName()));
+            builder.server(serverBuilder)
+                   .dynamicReconfiguration(true);
         }
     }
 

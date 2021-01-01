@@ -12,8 +12,6 @@
 
 namespace vespalib::eval {
 
-class Tensor;
-
 /**
  * An abstract Value.
  **/
@@ -69,7 +67,6 @@ struct Value {
     virtual bool is_tensor() const { return type().is_tensor(); }
     virtual double as_double() const;
     bool as_bool() const { return (as_double() != 0.0); }
-    virtual const Tensor *as_tensor() const { return nullptr; }
 // --- end of old interface
 };
 
@@ -198,6 +195,7 @@ struct ValueBuilderFactory {
     {
         return create_value_builder<T>(type, type.count_mapped_dimensions(), type.dense_subspace_size(), 1);
     }
+    std::unique_ptr<Value> copy(const Value &value) const;
     virtual ~ValueBuilderFactory() {}
 protected:
     virtual std::unique_ptr<ValueBuilderBase> create_value_builder_base(const ValueType &type,

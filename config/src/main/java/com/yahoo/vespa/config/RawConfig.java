@@ -31,7 +31,7 @@ public class RawConfig extends ConfigInstance {
     private final String configMd5;
     private final Optional<VespaVersion> vespaVersion;
     private long generation;
-    private boolean internalRedeploy;
+    private boolean applyOnRestart;
 
     /**
      * Constructor for an empty config (not yet resolved).
@@ -44,25 +44,27 @@ public class RawConfig extends ConfigInstance {
     }
 
     public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation,
-                     boolean internalRedeploy, List<String> defContent, Optional<VespaVersion> vespaVersion) {
-        this(key, defMd5, payload, configMd5, generation, internalRedeploy, 0, defContent, vespaVersion);
+                     boolean applyOnRestart, List<String> defContent,
+                     Optional<VespaVersion> vespaVersion) {
+        this(key, defMd5, payload, configMd5, generation, applyOnRestart, 0, defContent, vespaVersion);
     }
 
     /** Copy constructor */
     public RawConfig(RawConfig rawConfig) {
         this(rawConfig.key, rawConfig.defMd5, rawConfig.payload, rawConfig.configMd5,
-             rawConfig.generation, rawConfig.internalRedeploy, rawConfig.errorCode,
-             rawConfig.defContent, rawConfig.getVespaVersion());
+             rawConfig.generation, rawConfig.applyOnRestart,
+             rawConfig.errorCode, rawConfig.defContent, rawConfig.getVespaVersion());
     }
 
     public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation,
-                     boolean internalRedeploy, int errorCode, List<String> defContent, Optional<VespaVersion> vespaVersion) {
+                     boolean applyOnRestart, int errorCode, List<String> defContent,
+                     Optional<VespaVersion> vespaVersion) {
         this.key = key;
         this.defMd5 = ConfigUtils.getDefMd5FromRequest(defMd5, defContent);
         this.payload = payload;
         this.configMd5 = configMd5;
         this.generation = generation;
-        this.internalRedeploy = internalRedeploy;
+        this.applyOnRestart = applyOnRestart;
         this.errorCode = errorCode;
         this.defContent = defContent;
         this.vespaVersion = vespaVersion;
@@ -79,7 +81,7 @@ public class RawConfig extends ConfigInstance {
                              req.getNewPayload(),
                              req.getNewConfigMd5(),
                              req.getNewGeneration(),
-                             req.responseIsInternalRedeploy(),
+                             req.responseIsApplyOnRestart(),
                              0,
                              req.getDefContent().asList(),
                              req.getVespaVersion());
@@ -96,7 +98,7 @@ public class RawConfig extends ConfigInstance {
                              Payload.from(new Utf8String(""), CompressionInfo.uncompressed()),
                              req.getRequestConfigMd5(),
                              req.getRequestGeneration(),
-                             req.isInternalRedeploy(),
+                             req.applyOnRestart(),
                              0,
                              req.getDefContent().asList(),
                              req.getVespaVersion());
@@ -119,13 +121,9 @@ public class RawConfig extends ConfigInstance {
 
     public void setGeneration(long generation) { this.generation = generation; }
 
-    public void setInternalRedeploy(boolean internalRedeploy) { this.internalRedeploy = internalRedeploy; }
+    public void setApplyOnRestart(boolean applyOnRestart) { this.applyOnRestart = applyOnRestart; }
 
-    /**
-     * Returns whether this config generation was created by a system internal redeploy, not an
-     * application package change.
-     */
-    public boolean isInternalRedeploy() { return internalRedeploy; }
+    public boolean applyOnRestart() { return applyOnRestart; }
 
     public Payload getPayload() { return payload; }
 
@@ -165,24 +163,17 @@ public class RawConfig extends ConfigInstance {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        if (! (o instanceof RawConfig)) {
-            return false;
-        }
+        if (o == this) return true;
+        if (! (o instanceof RawConfig)) return false;
+
         RawConfig other = (RawConfig) o;
-        if (! (key.equals(other.key) &&
-                defMd5.equals(other.defMd5) &&
-                (errorCode == other.errorCode)) ) {
+        if (! (key.equals(other.key) && defMd5.equals(other.defMd5) && (errorCode == other.errorCode)) )
             return false;
-        }
+
         // Need to check error codes before isError, since unequal error codes always means unequal requests,
         // while non-zero and equal error codes means configs are equal.
-        if (isError())
-            return true;
-        if (generation != other.generation)
-            return false;
+        if (isError()) return true;
+        if (generation != other.generation) return false;
         if (configMd5 != null) {
             return configMd5.equals(other.configMd5);
         } else {

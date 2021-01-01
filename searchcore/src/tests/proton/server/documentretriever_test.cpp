@@ -20,10 +20,10 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcommon/common/schema.h>
@@ -89,11 +89,10 @@ using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
 using vespalib::make_string;
 using vespalib::string;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
-using vespalib::tensor::test::makeTensor;
 using namespace document::config_builder;
 using namespace search::index;
 
@@ -112,8 +111,8 @@ const char dyn_field_nas[] = "dynamic null attr string field"; // in document, n
 const char position_field[] = "position_field";
 vespalib::string dyn_field_tensor("dynamic_tensor_field");
 vespalib::string tensor_spec("tensor(x{})");
-std::unique_ptr<Value> static_tensor = makeTensor<Value>(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
-std::unique_ptr<Value> dynamic_tensor = makeTensor<Value>(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
+std::unique_ptr<Value> static_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
+std::unique_ptr<Value> dynamic_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
 const char zcurve_field[] = "position_field_zcurve";
 const char position_array_field[] = "position_array";
 const char zcurve_array_field[] = "position_array_zcurve";
@@ -169,7 +168,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         doc->set(zcurve_field, static_zcurve_value);
         doc->setValue(dyn_field_p, static_value_p);
         TensorFieldValue tensorFieldValue(tensorDataType);
-        tensorFieldValue = EngineOrFactory::get().copy(*static_tensor);
+        tensorFieldValue = SimpleValue::from_value(*static_tensor);
         doc->setValue(dyn_field_tensor, tensorFieldValue);
         if (_set_position_struct_field) {
             FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();

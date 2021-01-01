@@ -25,4 +25,6 @@ public interface Reindexing {
 
     }
 
+    Reindexing DISABLED_INSTANCE = new Reindexing() {};
+
 }

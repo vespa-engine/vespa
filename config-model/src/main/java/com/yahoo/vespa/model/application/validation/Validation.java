@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ClusterSizeReductionValidator;
@@ -24,6 +25,8 @@ import com.yahoo.vespa.model.application.validation.change.ResourcesReductionVal
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.Container;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -127,7 +130,6 @@ public class Validation {
     private static void deferConfigChangesForClustersToBeRestarted(List<ConfigChangeAction> actions, VespaModel model) {
         Set<ClusterSpec.Id> clustersToBeRestarted = actions.stream()
                                                            .filter(action -> action.getType() == ConfigChangeAction.Type.RESTART)
-                                                           .filter(action -> action.clusterId() != null) // TODO: Remove this line after October 2020
                                                            .map(action -> action.clusterId())
                                                            .collect(Collectors.toSet());
         for (var clusterToRestart : clustersToBeRestarted) {

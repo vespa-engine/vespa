@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
@@ -33,8 +34,8 @@ public class DeploymentMetricsRetrieverTest {
     public void getMetrics()  {
         MockModel mockModel = new MockModel(mockHosts());
         MockDeploymentMetricsRetriever mockMetricsRetriever = new MockDeploymentMetricsRetriever();
-        Application application = new Application(mockModel, null, 0, false,
-        null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
+        Application application = new Application(mockModel, null, 0,
+                                                  null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
         DeploymentMetricsRetriever clusterMetricsRetriever = new DeploymentMetricsRetriever(mockMetricsRetriever);
         clusterMetricsRetriever.getMetrics(application);
@@ -83,7 +84,13 @@ public class DeploymentMetricsRetrieverTest {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition targetDef) {
             throw new UnsupportedOperationException();
         }
 

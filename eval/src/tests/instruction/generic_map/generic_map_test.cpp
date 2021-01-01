@@ -60,24 +60,4 @@ TEST(GenericMapTest, generic_map_works_for_fast_values) {
     test_generic_map_with(FastValueBuilderFactory::get());
 }
 
-TensorSpec immediate_generic_map(const TensorSpec &a, map_fun_t func, const ValueBuilderFactory &factory)
-{
-    auto lhs = value_from_spec(a, factory);
-    auto up = GenericMap::perform_map(*lhs, func, factory);
-    return spec_from_value(*up);
-}
-
-TEST(GenericMapTest, immediate_generic_map_works) {
-    for (const auto & layout : map_layouts) {
-        TensorSpec lhs = spec(layout, Div16(N()));
-        ValueType lhs_type = ValueType::from_spec(lhs.type());
-        for (auto func : {operation::Floor::f, operation::Fabs::f, operation::Square::f, operation::Inv::f}) {
-            SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
-            auto expect = ReferenceOperations::map(lhs, func);
-            auto actual = immediate_generic_map(lhs, func, SimpleValueBuilderFactory::get());
-            EXPECT_EQ(actual, expect);
-        }
-    }
-}
-
 GTEST_MAIN_RUN_ALL_TESTS()

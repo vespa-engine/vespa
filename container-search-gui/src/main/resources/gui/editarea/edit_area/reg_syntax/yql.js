@@ -72,7 +72,7 @@ editAreaLoader.load_syntax["yql"] = {
 			,"CASE_SENSITIVE": false
 			,"MAX_TEXT_LENGTH": 50		// the maximum length of the text being analyzed before the cursor position
 			,"KEYWORDS": {
-				'': [	// the prefix of thoses items
+				'': [	// the prefix of these items
 						/**
 						 * 0 : the keyword the user is typing
 						 * 1 : (optionnal) the string inserted in code ("{@}" being the new position of the cursor, "§" beeing the equivalent to the value the typed string indicated if the previous )

@@ -8,8 +8,8 @@ vespa_add_library(eval_eval OBJECT
     cell_type.cpp
     compile_tensor_function.cpp
     delete_node.cpp
+    dense_cells_value.cpp
     double_value_builder.cpp
-    engine_or_factory.cpp
     fast_forest.cpp
     fast_sparse_map.cpp
     fast_value.cpp
@@ -25,12 +25,8 @@ vespa_add_library(eval_eval OBJECT
     operator_nodes.cpp
     optimize_tensor_function.cpp
     param_usage.cpp
-    simple_tensor.cpp
-    simple_tensor_engine.cpp
     simple_value.cpp
     string_stuff.cpp
-    tensor.cpp
-    tensor_engine.cpp
     tensor_function.cpp
     tensor_nodes.cpp
     tensor_spec.cpp

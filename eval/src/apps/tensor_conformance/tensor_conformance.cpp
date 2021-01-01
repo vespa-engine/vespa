@@ -7,14 +7,15 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/tensor_engine.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/streamed/streamed_value_builder_factory.h>
+#include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/eval/eval/test/test_io.h>
 #include <unistd.h>
 #include <functional>
@@ -28,8 +29,13 @@ using namespace vespalib::slime::convenience;
 using vespalib::slime::inject;
 using vespalib::slime::SlimeInserter;
 using slime::JsonFormat;
-using tensor::DefaultTensorEngine;
 using namespace std::placeholders;
+
+//-----------------------------------------------------------------------------
+
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory &simple_factory = SimpleValueBuilderFactory::get();
+const ValueBuilderFactory &streamed_factory = StreamedValueBuilderFactory::get();
 
 //-----------------------------------------------------------------------------
 
@@ -67,15 +73,25 @@ nbostream extract_data(const Inspector &value) {
 
 void insert_value(Cursor &cursor, const vespalib::string &name, const TensorSpec &spec) {
     nbostream data;
-    Value::UP value = SimpleTensorEngine::ref().from_spec(spec);
-    SimpleTensorEngine::ref().encode(*value, data);
+    Value::UP value = value_from_spec(spec, simple_factory);
+    encode_value(*value, data);
     cursor.setData(name, Memory(data.peek(), data.size()));
 }
 
 TensorSpec extract_value(const Inspector &inspector) {
     nbostream data = extract_data(inspector);
-    const auto &engine = SimpleTensorEngine::ref();
-    return engine.to_spec(*engine.decode(data));
+    return spec_from_value(*decode_value(data, simple_factory));
+}
+
+//-----------------------------------------------------------------------------
+
+TensorSpec ref_eval(const Inspector &test) {
+    auto fun = Function::parse(test["expression"].asString().make_string());
+    std::vector<TensorSpec> params;
+    for (size_t i = 0; i < fun->num_params(); ++i) {
+        params.push_back(extract_value(test["inputs"][fun->param_name(i)]));
+    }
+    return ReferenceEvaluation::eval(*fun, params);
 }
 
 //-----------------------------------------------------------------------------
@@ -88,23 +104,21 @@ std::vector<ValueType> get_types(const std::vector<Value::UP> &param_values) {
     return param_types;
 }
 
-TensorSpec eval_expr(const Inspector &test, EngineOrFactory engine, bool typed) {
+TensorSpec eval_expr(const Inspector &test, const ValueBuilderFactory &factory) {
     auto fun = Function::parse(test["expression"].asString().make_string());
     std::vector<Value::UP> param_values;
     std::vector<Value::CREF> param_refs;
     for (size_t i = 0; i < fun->num_params(); ++i) {
-        param_values.emplace_back(engine.from_spec(extract_value(test["inputs"][fun->param_name(i)])));
+        param_values.emplace_back(value_from_spec(extract_value(test["inputs"][fun->param_name(i)]), factory));
         param_refs.emplace_back(*param_values.back());
     }
-    NodeTypes types = typed ? NodeTypes(*fun, get_types(param_values)) : NodeTypes();
-    InterpretedFunction ifun(engine, *fun, types);
+    NodeTypes types = NodeTypes(*fun, get_types(param_values));
+    InterpretedFunction ifun(factory, *fun, types);
     InterpretedFunction::Context ctx(ifun);
     SimpleObjectParams params(param_refs);
     const Value &result = ifun.eval(ctx, params);
-    if (typed) {
-        ASSERT_EQUAL(result.type(), types.get_type(fun->root()));
-    }
-    return engine.to_spec(result);
+    ASSERT_EQUAL(result.type(), types.get_type(fun->root()));
+    return spec_from_value(result);
 }
 
 //-----------------------------------------------------------------------------
@@ -138,8 +152,7 @@ private:
         if (expect != nullptr) {
             insert_value(test.setObject("result"), "expect", *expect);
         } else {
-            insert_value(test.setObject("result"), "expect",
-                         eval_expr(test, SimpleTensorEngine::ref(), false));
+            insert_value(test.setObject("result"), "expect", ref_eval(test));
         }
     }
 public:
@@ -168,11 +181,11 @@ void evaluate(Input &in, Output &out) {
     auto handle_test = [&out](Slime &slime)
                        {
                            insert_value(slime["result"], "cpp_prod",
-                                   eval_expr(slime.get(), DefaultTensorEngine::ref(), true));
-                           insert_value(slime["result"], "cpp_prod_untyped",
-                                   eval_expr(slime.get(), DefaultTensorEngine::ref(), false));
-                           insert_value(slime["result"], "cpp_ref_typed",
-                                   eval_expr(slime.get(), SimpleTensorEngine::ref(), true));
+                                   eval_expr(slime.get(), prod_factory));
+                           insert_value(slime["result"], "cpp_simple_value",
+                                   eval_expr(slime.get(), simple_factory));
+                           insert_value(slime["result"], "cpp_streamed_value",
+                                   eval_expr(slime.get(), streamed_factory));
                            write_compact(slime, out);
                        };
     auto handle_summary = [&out](Slime &slime)
@@ -196,7 +209,7 @@ void verify(Input &in, Output &out) {
     std::map<vespalib::string,size_t> result_map;
     auto handle_test = [&result_map](Slime &slime)
                        {
-                           TensorSpec reference_result = eval_expr(slime.get(), SimpleTensorEngine::ref(), false);
+                           TensorSpec reference_result = ref_eval(slime.get());
                            for (const auto &result: extract_fields(slime["result"])) {
                                ++result_map[result];
                                TEST_STATE(make_string("verifying result: '%s'", result.c_str()).c_str());

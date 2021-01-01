@@ -35,6 +35,7 @@ vespa_add_library(searchlib_features OBJECT
     matchesfeature.cpp
     matchfeature.cpp
     max_reduce_prod_join_replacer.cpp
+    mutable_dense_value_view.cpp
     native_dot_product_feature.cpp
     nativeattributematchfeature.cpp
     nativefieldmatchfeature.cpp

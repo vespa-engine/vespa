@@ -78,10 +78,7 @@ public:
         getBucketStatus(out);
     }
 
-    DistributorComponent& getDistributorComponent() {
-        return _distributorComponent; }
-    StorageComponent::LoadTypeSetSP getLoadTypes() {
-        return _distributorComponent.getLoadTypes(); }
+    DistributorComponent& getDistributorComponent() { return _distributorComponent; }
     DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
 

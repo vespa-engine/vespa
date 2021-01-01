@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/eval/engine_or_factory.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
@@ -16,10 +16,10 @@ using search::tensor::TensorAttribute;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 
 Value::UP createTensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 namespace search::attribute {

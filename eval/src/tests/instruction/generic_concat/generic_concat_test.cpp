@@ -3,8 +3,6 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/eval/interpreted_function.h>
@@ -58,13 +56,6 @@ std::vector<Layout> concat_layouts = {
     {y(2),x({"a","b"})},                                {y(3),z({"c","d"})}
 };
 
-TensorSpec perform_simpletensor_concat(const TensorSpec &a, const TensorSpec &b, const std::string &dimension) {
-    auto lhs = SimpleTensor::create(a);
-    auto rhs = SimpleTensor::create(b);
-    auto out = SimpleTensor::concat(*lhs, *rhs, dimension);
-    return SimpleTensorEngine::ref().to_spec(*out);
-}
-
 TensorSpec perform_generic_concat(const TensorSpec &a, const TensorSpec &b,
                                   const std::string &concat_dim, const ValueBuilderFactory &factory)
 {
@@ -74,18 +65,6 @@ TensorSpec perform_generic_concat(const TensorSpec &a, const TensorSpec &b,
     auto my_op = GenericConcat::make_instruction(lhs->type(), rhs->type(), concat_dim, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
-}
-
-TEST(GenericConcatTest, generic_reference_concat_works) {
-    ASSERT_TRUE((concat_layouts.size() % 2) == 0);
-    for (size_t i = 0; i < concat_layouts.size(); i += 2) {
-        const TensorSpec lhs = spec(concat_layouts[i], N());
-        const TensorSpec rhs = spec(concat_layouts[i + 1], Div16(N()));
-        SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-        auto actual = ReferenceOperations::concat(lhs, rhs, "y");
-        auto expect = perform_simpletensor_concat(lhs, rhs, "y");
-        EXPECT_EQ(actual, expect);
-    }
 }
 
 void test_generic_concat_with(const ValueBuilderFactory &factory) {
@@ -131,24 +110,5 @@ TEST(GenericConcatTest, dense_concat_plan_can_be_created) {
     EXPECT_EQ(plan.right.out_stride, expect_right_out_s);
 }
 
-TensorSpec immediate_generic_concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim) {
-    const auto &factory = SimpleValueBuilderFactory::get();
-    auto lhs = value_from_spec(a, factory);
-    auto rhs = value_from_spec(b, factory);
-    auto up = GenericConcat::perform_concat(*lhs, *rhs, concat_dim, factory);
-    return spec_from_value(*up);
-}
-
-TEST(GenericConcatTest, immediate_generic_concat_works) {
-    ASSERT_TRUE((concat_layouts.size() % 2) == 0);
-    for (size_t i = 0; i < concat_layouts.size(); i += 2) {
-        const TensorSpec lhs = spec(concat_layouts[i], N());
-        const TensorSpec rhs = spec(concat_layouts[i + 1], Div16(N()));
-        SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-        auto actual = immediate_generic_concat(lhs, rhs, "y");
-        auto expect = ReferenceOperations::concat(lhs, rhs, "y");
-        EXPECT_EQ(actual, expect);
-    }
-}
 
 GTEST_MAIN_RUN_ALL_TESTS()

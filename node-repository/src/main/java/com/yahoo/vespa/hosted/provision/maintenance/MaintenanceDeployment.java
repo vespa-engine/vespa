@@ -177,7 +177,7 @@ class MaintenanceDeployment implements Closeable {
                     if ( deployment.activate().isEmpty()) return false;
 
                     log.info(agent + " redeployed " + application + " to " +
-                             ( verifyTarget ? this : "move " + (node.hostname() + " from " + fromHost)));
+                             ( verifyTarget ? this : "move " + (node + " from " + fromHost.hostname())));
                     return true;
                 }
                 finally {
@@ -225,7 +225,7 @@ class MaintenanceDeployment implements Closeable {
         @Override
         public String toString() {
             return "move " +
-                   ( isEmpty() ? "none" : (node.hostname() + " from " + fromHost + " to " + toHost));
+                   ( isEmpty() ? "none" : (node + " from " + fromHost.hostname() + " to " + toHost.hostname()));
         }
 
         public static Move empty() { return new Move(null, null, null); }

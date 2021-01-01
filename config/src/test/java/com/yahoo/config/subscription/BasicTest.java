@@ -15,7 +15,7 @@ public class BasicTest {
     public void testSubBasic() {
         ConfigSubscriber s = new ConfigSubscriber();
         ConfigHandle<AppConfig> h = s.subscribe(AppConfig.class, "raw:times 0");
-        s.nextConfig(0);
+        s.nextConfig(0, false);
         AppConfig c = h.getConfig();
         assertEquals(0, c.times());
         s.close();
@@ -25,7 +25,7 @@ public class BasicTest {
     public void testSubBasicGeneration() {
         ConfigSubscriber s = new ConfigSubscriber();
         ConfigHandle<AppConfig> h = s.subscribe(AppConfig.class, "raw:times 2");
-        s.nextGeneration(0);
+        s.nextGeneration(0, false);
         AppConfig c = h.getConfig();
         assertEquals(2, c.times());
         s.close();

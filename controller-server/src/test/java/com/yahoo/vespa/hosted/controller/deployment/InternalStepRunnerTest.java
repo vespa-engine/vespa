@@ -54,7 +54,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.er
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
@@ -110,7 +109,7 @@ public class InternalStepRunnerTest {
                                                                ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE,
                                                                new RuntimeException("Retry me"));
         tester.configServer().throwOnNextPrepare(exception);
-        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));
 
         tester.configServer().throwOnNextPrepare(exception);
@@ -346,14 +345,14 @@ public class InternalStepRunnerTest {
     @Test
     public void deployToDev() {
         ZoneId zone = JobType.devUsEast1.zone(system());
-        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
         tester.runner().run();
         RunId id = tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().id();
         assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.installReal));
 
         Version version = new Version("7.8.9");
         Future<?> concurrentDeployment = Executors.newSingleThreadExecutor().submit(() -> {
-            tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.of(version), applicationPackage);
+            tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.of(version), applicationPackage());
         });
         while ( ! concurrentDeployment.isDone())
             tester.runner().run();
@@ -365,7 +364,7 @@ public class InternalStepRunnerTest {
         tester.runner().run(); // Job run order determined by JobType enum order per application.
         tester.configServer().convergeServices(app.instanceId(), zone);
         assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.installReal));
-        assertEquals(applicationPackage.hash(), tester.configServer().application(app.instanceId(), zone).get().applicationPackage().hash());
+        assertEquals(applicationPackage().hash(), tester.configServer().application(app.instanceId(), zone).get().applicationPackage().hash());
         assertEquals(otherPackage.hash(), tester.configServer().application(app.instanceId(), JobType.perfUsEast3.zone(system())).get().applicationPackage().hash());
 
         tester.configServer().setVersion(version, app.instanceId(), zone);
@@ -423,7 +422,7 @@ public class InternalStepRunnerTest {
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.values());
         RunId id = app.startSystemTestTests();
 
-        List<X509Certificate> trusted = new ArrayList<>(publicCdApplicationPackage.trustedCertificates());
+        List<X509Certificate> trusted = new ArrayList<>(DeploymentContext.publicApplicationPackage().trustedCertificates());
         trusted.add(tester.jobs().run(id).get().testerCertificate().get());
         assertEquals(trusted, tester.configServer().application(app.instanceId(), id.type().zone(system())).get().applicationPackage().trustedCertificates());
 

@@ -61,7 +61,7 @@ protected:
 
     void add_desc(off_t pos, ssize_t len, bool highlight);
 
-    typedef JUNIPER_SET<MatchCandidate*,sequential_elem<MatchCandidate*> > cand_list;
+    typedef std::set<MatchCandidate*,sequential_elem<MatchCandidate*> > cand_list;
     typedef std::list<highlight_desc> print_list;
 
     /** Helper function to build a simple query highlight of the complete document */

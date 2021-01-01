@@ -6,9 +6,13 @@
 
 namespace storage::api {
 
+StorageReply::StorageReply(const StorageCommand& cmd)
+    : StorageReply(cmd, ReturnCode())
+{}
+
 StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
     : StorageMessage(cmd.getType().getReplyType(), cmd.getMsgId()),
-      _result(code)
+      _result(std::move(code))
 {
     setPriority(cmd.getPriority());
     if (cmd.getAddress()) {
@@ -26,10 +30,8 @@ StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
 StorageReply::~StorageReply() = default;
 
 void
-StorageReply::print(std::ostream& out, bool verbose,
-                    const std::string& indent) const
+StorageReply::print(std::ostream& out, bool , const std::string& ) const
 {
-    (void) verbose; (void) indent;
     out << "StorageReply(" << _type.getName() << ", " << _result << ")";
 }
 

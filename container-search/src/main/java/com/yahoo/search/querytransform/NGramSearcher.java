@@ -107,7 +107,7 @@ public class NGramSearcher extends Searcher {
      */
     protected Item splitToGrams(Item term, String text, int gramSize, Query query) {
         String index = ((HasIndexItem)term).getIndexName();
-        CompositeItem gramsItem = createGramRoot(query);
+        CompositeItem gramsItem = createGramRoot((HasIndexItem)term, query);
         gramsItem.setIndexName(index);
         Substring origin = ((BlockItem)term).getOrigin();
         for (Iterator<GramSplitter.Gram> i = getGramSplitter().split(text,gramSize); i.hasNext(); ) {
@@ -130,12 +130,20 @@ public class NGramSearcher extends Searcher {
      * called by {@link #splitToGrams}. This hook is provided to make it easy to create a subclass which
      * matches grams using a different composite item, e.g an OrItem.
      * <p>
-     * This default implementation return new AndItem();
+     * This default implementation returns createGramRoot(query).
      *
+     * @param term the term item this gram root is replacing in the query tree,
+     *             typically used to access the index name of the term when that is required by the new gram root
+     *             (such as in PhraseItem)
      * @param query the input query, to make it possible to return a different composite item type
      *        depending on the query content
      * @return the composite item to add the gram items to in {@link #splitToGrams}
      */
+    protected CompositeItem createGramRoot(HasIndexItem term, Query query) {
+        return createGramRoot(query);
+    }
+
+    /** Creates the root of the query subtree without access to the term being replaced. */
     protected CompositeItem createGramRoot(Query query) {
         return new AndItem();
     }

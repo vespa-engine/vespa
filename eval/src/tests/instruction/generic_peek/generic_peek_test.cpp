@@ -39,6 +39,7 @@ using PeekSpec = GenericPeek::SpecMap;
 
 TensorSpec reference_peek(const TensorSpec &param, const PeekSpec &spec) {
     std::vector<TensorSpec> children;
+    children.push_back(param);
     PeekSpec with_indexes;
     for (const auto & [dim_name, label_or_child] : spec) {
         const vespalib::string &dim = dim_name;
@@ -59,7 +60,7 @@ TensorSpec reference_peek(const TensorSpec &param, const PeekSpec &spec) {
                        }
                    }, label_or_child);
     }
-    return ReferenceOperations::peek(param, with_indexes, children);
+    return ReferenceOperations::peek(with_indexes, children);
 }
 
 TensorSpec perform_generic_peek(const TensorSpec &a, const ValueType &result_type,
@@ -71,7 +72,7 @@ TensorSpec perform_generic_peek(const TensorSpec &a, const ValueType &result_typ
     Stash stash;
     std::vector<Value::CREF> my_stack;
     my_stack.push_back(*param);
-    size_t child_idx = 0;
+    size_t child_idx = 1;
     for (auto & [dim_name, label_or_child] : spec) {
         if (std::holds_alternative<size_t>(label_or_child)) {
             // here, label_or_child is a size_t specifying the value
@@ -151,9 +152,7 @@ void verify_peek_equal(const TensorSpec &input,
     }
     if (reduce_dims.empty()) return;
     ValueType result_type = param_type.reduce(reduce_dims);
-    auto ref_spec = reference_peek(input, spec);
-    // use SimpleValue to add implicit cells with default value
-    auto expect = spec_from_value(*value_from_spec(ref_spec, SimpleValueBuilderFactory::get()));
+    auto expect = reference_peek(input, spec).normalize();
     SCOPED_TRACE(fmt("peek input: %s\n  peek spec: %s\n  peek result %s\n",
                      input.to_string().c_str(),
                      to_str(spec).c_str(),

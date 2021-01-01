@@ -238,7 +238,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
             tick(); // Trigger command processing and pending state setup.
         }
         NodeMaintenanceStatsTracker statsTracker;
-        StateChecker::Context c(getExternalOperationHandler(),
+        StateChecker::Context c(distributor_component(),
                                 getBucketSpaceRepo().get(params._bucket_space),
                                 statsTracker,
                                 bucket);
@@ -290,7 +290,7 @@ std::string StateCheckersTest::testSplit(uint32_t splitCount,
 
     SplitBucketStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     getConfig().setSplitSize(splitSize);
     getConfig().setSplitCount(splitCount);
     getConfig().setMinimalBucketSplit(minSplitBits);
@@ -375,7 +375,7 @@ StateCheckersTest::testInconsistentSplit(const document::BucketId& bid,
 {
     SplitInconsistentStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, true,
                             PendingMessage(), includePriority);
 }
@@ -433,7 +433,7 @@ StateCheckersTest::testJoin(uint32_t joinCount,
     getConfig().setMinimalBucketSplit(minSplitBits);
 
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, true, blocker, includePriority);
 }
 
@@ -586,7 +586,7 @@ StateCheckersTest::testSynchronizeAndMove(const std::string& bucketInfo,
 
     enableDistributorClusterState(clusterState);
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, blocker, includePriority);
 }
 
@@ -820,7 +820,7 @@ StateCheckersTest::testDeleteExtraCopies(
     }
     DeleteExtraCopiesStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, blocker, includePriority);
 }
 
@@ -937,7 +937,7 @@ std::string StateCheckersTest::testBucketState(
 
     BucketStateStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, PendingMessage(),
                             includePriority);
 }
@@ -1104,7 +1104,7 @@ std::string StateCheckersTest::testBucketStatePerGroup(
 
     BucketStateStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, PendingMessage(),
                             includePriority);
 }
@@ -1231,7 +1231,7 @@ std::string StateCheckersTest::testGarbageCollection(
     getConfig().setGarbageCollection("music", std::chrono::seconds(checkInterval));
     getConfig().setLastGarbageCollectionChangeTime(vespalib::steady_time(std::chrono::seconds(lastChangeTime)));
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker,
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker,
                             makeDocumentBucket(e.getBucketId()));
     getClock().setAbsoluteTimeInSeconds(nowTimestamp);
     return testStateChecker(checker, c, false, PendingMessage(),
@@ -1304,7 +1304,7 @@ TEST_F(StateCheckersTest, gc_inhibited_when_ideal_node_in_maintenance) {
     getConfig().setGarbageCollection("music", 3600s);
     getConfig().setLastGarbageCollectionChangeTime(vespalib::steady_time(vespalib::duration::zero()));
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker,
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker,
                             makeDocumentBucket(bucket));
     getClock().setAbsoluteTimeInSeconds(4000);
     // Would normally (in a non-maintenance case) trigger GC due to having
@@ -1448,7 +1448,7 @@ TEST_F(StateCheckersTest, context_populates_ideal_state_containers) {
     setupDistributor(2, 100, "distributor:1 storage:4");
 
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
+    StateChecker::Context c(distributor_component(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
 
     ASSERT_THAT(c.idealState, ElementsAre(1, 3));
     // TODO replace with UnorderedElementsAre once we can build gmock without issues
@@ -1491,7 +1491,7 @@ public:
     // NOTE: resets the bucket database!
     void runFor(const document::BucketId& bid) {
         Checker checker;
-        StateChecker::Context c(_fixture.getExternalOperationHandler(), _fixture.getDistributorBucketSpace(), _statsTracker, makeDocumentBucket(bid));
+        StateChecker::Context c(_fixture.distributor_component(), _fixture.getDistributorBucketSpace(), _statsTracker, makeDocumentBucket(bid));
         _result = _fixture.testStateChecker(
                 checker, c, false, StateCheckersTest::PendingMessage(), false);
     }

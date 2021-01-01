@@ -6,9 +6,9 @@
 #include "countvisitor.h"
 #include "testvisitor.h"
 #include "recoveryvisitor.h"
+#include "reindexing_visitor.h"
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
 
@@ -56,6 +56,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
     _visitorFactories["testvisitor"] = std::make_shared<TestVisitorFactory>();
     _visitorFactories["countvisitor"] = std::make_shared<CountVisitorFactory>();
     _visitorFactories["recoveryvisitor"] = std::make_shared<RecoveryVisitorFactory>();
+    _visitorFactories["reindexingvisitor"] = std::make_shared<ReindexingVisitorFactory>();
     _component.registerStatusPage(*this);
 }
 
@@ -171,15 +172,11 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
                     "No visitor threads configured. If you don't want visitors "
                     "to run, don't use visitormanager.", VESPA_STRLOC);
         }
-        _metrics->initThreads(config->visitorthreads, _component.getLoadTypes()->getMetricLoadTypes());
+        _metrics->initThreads(config->visitorthreads);
         for (int32_t i=0; i<config->visitorthreads; ++i) {
-            _visitorThread.push_back(std::make_pair(
-                    std::shared_ptr<VisitorThread>(
-                        new VisitorThread(i, _componentRegister,
-                                          _messageSessionFactory,
-                                          _visitorFactories,
-                                          *_metrics->threads[i], *this)),
-                    std::map<api::VisitorId, std::string>()));
+            _visitorThread.emplace_back(
+                    new VisitorThread(i, _componentRegister, _messageSessionFactory, _visitorFactories, *_metrics->threads[i], *this),
+                    std::map<api::VisitorId, std::string>());
         }
     }
     _maxFixedConcurrentVisitors = maxConcurrentVisitorsFixed;

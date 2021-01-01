@@ -21,6 +21,8 @@ public class RPCNetworkParams {
     private double connectionExpireSecs = 30;
     private int numTargetsPerSpec = 1;
     private int numNetworkThreads = 2;
+
+    private int transportEventsBeforeWakeup = 1;
     public enum Optimization {LATENCY, THROUGHPUT}
     Optimization optimization = Optimization.LATENCY;
 
@@ -214,6 +216,15 @@ public class RPCNetworkParams {
      */
     RPCNetworkParams setMaxOutputBufferSize(int maxOutputBufferSize) {
         this.maxOutputBufferSize = maxOutputBufferSize;
+        return this;
+    }
+
+    public int getTransportEventsBeforeWakeup() {
+        return transportEventsBeforeWakeup;
+    }
+
+    public RPCNetworkParams setTransportEventsBeforeWakeup(int transportEventsBeforeWakeup) {
+        this.transportEventsBeforeWakeup = transportEventsBeforeWakeup;
         return this;
     }
 }

@@ -102,7 +102,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             final ModelElement documentsNode = clusterElement.child("documents");
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
-            boolean useThreePhaseUpdates = deployState.getProperties().useThreePhaseUpdates();
+            boolean useThreePhaseUpdates = deployState.getProperties().featureFlags().useThreePhaseUpdates();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,

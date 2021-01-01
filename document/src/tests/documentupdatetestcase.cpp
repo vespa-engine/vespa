@@ -21,7 +21,8 @@
 #include <vespa/document/update/tensor_remove_update.h>
 #include <vespa/document/update/valueupdate.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -35,9 +36,9 @@
 
 using namespace document::config_builder;
 
+using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using vespalib::eval::EngineOrFactory;
 using vespalib::nbostream;
 
 namespace document {
@@ -775,7 +776,7 @@ TEST(DocumentUpdateTest, testMapValueUpdate)
 std::unique_ptr<vespalib::eval::Value>
 makeTensor(const TensorSpec &spec)
 {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 std::unique_ptr<TensorFieldValue>

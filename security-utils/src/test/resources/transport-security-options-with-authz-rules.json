@@ -1,0 +1,29 @@
+{
+  "files" : {
+    "private-key" : "/path/to/key.pem",
+    "certificates" : "/path/to/cert.pem",
+    "ca-certificates" : "/path/to/ca-certs.pem"
+  },
+  "authorized-peers" : [ {
+    "required-credentials" : [ {
+      "field" : "CN",
+      "must-match" : "mycfgserver"
+    }, {
+      "field" : "SAN_DNS",
+      "must-match" : "*.suffix.com"
+    }, {
+      "field" : "SAN_URI",
+      "must-match" : "myscheme://resource/path/"
+    } ],
+    "name" : "cfgserver",
+    "description" : "cfgserver policy description",
+    "roles" : [ "myrole" ]
+  }, {
+    "required-credentials" : [ {
+      "field" : "CN",
+      "must-match" : "hostname"
+    } ],
+    "name" : "node",
+    "roles" : [ "anotherrole" ]
+  } ]
+}

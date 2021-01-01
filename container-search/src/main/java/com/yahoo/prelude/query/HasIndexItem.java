@@ -2,8 +2,7 @@
 package com.yahoo.prelude.query;
 
 /**
- * An interface for items where it is useful to access an associated
- * index name.
+ * An interface for items where it is useful to access an index name.
  *
  * @author  Steinar Knutsen
  */
@@ -11,7 +10,7 @@ public interface HasIndexItem {
 
     String getIndexName();
 
-    /** @return how many phrase words does this item contain */
+    /** Returns how many phrase words does this item contain */
     int getNumWords();
 
 }

@@ -23,9 +23,11 @@ class DistributorBucketSpace;
 class UpdateOperation : public Operation
 {
 public:
-    UpdateOperation(DistributorComponent& manager,
-                    DistributorBucketSpace &bucketSpace,
-                    const std::shared_ptr<api::UpdateCommand> & msg,
+    UpdateOperation(DistributorNodeContext& node_ctx,
+                    DistributorOperationContext& op_ctx,
+                    DistributorBucketSpace& bucketSpace,
+                    const std::shared_ptr<api::UpdateCommand>& msg,
+                    std::vector<BucketDatabase::Entry> entries,
                     UpdateMetricSet& metric);
 
     void onStart(DistributorMessageSender& sender) override;
@@ -42,10 +44,11 @@ private:
     PersistenceMessageTrackerImpl _trackerInstance;
     PersistenceMessageTracker& _tracker;
     std::shared_ptr<api::UpdateCommand> _msg;
+    std::vector<BucketDatabase::Entry> _entries;
     const api::Timestamp _new_timestamp;
     const bool _is_auto_create_update;
 
-    DistributorComponent& _manager;
+    DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
     std::pair<document::BucketId, uint16_t> _newestTimestampLocation;
     api::BucketInfo _infoAtSendTime; // Should be same across all replicas

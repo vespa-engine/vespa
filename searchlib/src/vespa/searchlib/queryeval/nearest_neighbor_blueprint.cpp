@@ -4,16 +4,16 @@
 #include "nearest_neighbor_blueprint.h"
 #include "nearest_neighbor_iterator.h"
 #include "nns_index_iterator.h"
+#include <vespa/eval/eval/dense_cells_value.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.queryeval.nearest_neighbor_blueprint");
 
+using vespalib::eval::DenseCellsValue;
 using vespalib::eval::Value;
-using vespalib::tensor::DenseTensor;
 
 namespace search::queryeval {
 
@@ -21,7 +21,7 @@ namespace {
 
 template<typename LCT, typename RCT>
 void
-convert_cells(std::unique_ptr<Value> &original, vespalib::eval::ValueType want_type)
+convert_cells(std::unique_ptr<Value> &original, const vespalib::eval::ValueType &want_type)
 {
     auto old_cells = original->cells().typify<LCT>();
     std::vector<RCT> new_cells;
@@ -30,16 +30,16 @@ convert_cells(std::unique_ptr<Value> &original, vespalib::eval::ValueType want_t
         RCT conv = value;
         new_cells.push_back(conv);
     }
-    original = std::make_unique<DenseTensor<RCT>>(want_type, std::move(new_cells));
+    original = std::make_unique<DenseCellsValue<RCT>>(want_type, std::move(new_cells));
 }
 
 template<>
 void
-convert_cells<float,float>(std::unique_ptr<Value> &, vespalib::eval::ValueType) {}
+convert_cells<float,float>(std::unique_ptr<Value> &, const vespalib::eval::ValueType &) {}
 
 template<>
 void
-convert_cells<double,double>(std::unique_ptr<Value> &, vespalib::eval::ValueType) {}
+convert_cells<double,double>(std::unique_ptr<Value> &, const vespalib::eval::ValueType &) {}
 
 struct ConvertCellsSelector
 {

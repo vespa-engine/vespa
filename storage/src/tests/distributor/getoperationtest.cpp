@@ -45,7 +45,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
         createLinks();
 
         docId = document::DocumentId("id:ns:text/html::uri");
-        bucketId = getExternalOperationHandler().getBucketId(docId);
+        bucketId = distributor_component().getBucketId(docId);
     };
 
     void TearDown() override {
@@ -56,9 +56,9 @@ struct GetOperationTest : Test, DistributorTestUtil {
     void sendGet(api::InternalReadConsistency consistency = api::InternalReadConsistency::Strong) {
         auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::AllFields::NAME);
         op = std::make_unique<GetOperation>(
-                getExternalOperationHandler(), getDistributorBucketSpace(),
+                distributor_component(), getDistributorBucketSpace(),
                 getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
-                msg, getDistributor().getMetrics(). gets[msg->getLoadType()],
+                msg, getDistributor().getMetrics().gets,
                 consistency);
         op->start(_sender, framework::MilliSecTime(0));
     }
@@ -414,8 +414,7 @@ TEST_F(GetOperationTest, not_found) {
               "timestamp 0) ReturnCode(NONE)",
               _sender.getLastReply());
 
-    EXPECT_EQ(1, getDistributor().getMetrics().gets[documentapi::LoadType::DEFAULT].
-                                 failures.notfound.getValue());
+    EXPECT_EQ(1, getDistributor().getMetrics().gets.failures.notfound.getValue());
     EXPECT_FALSE(op->any_replicas_failed()); // "Not found" is not a failure.
     EXPECT_TRUE(last_reply_had_consistent_replicas());
     EXPECT_TRUE(op->newest_replica().has_value());

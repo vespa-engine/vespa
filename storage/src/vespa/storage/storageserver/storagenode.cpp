@@ -1,22 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "config_logging.h"
-#include "storagenode.h"
 #include "communicationmanager.h"
+#include "config_logging.h"
 #include "statemanager.h"
 #include "statereporter.h"
 #include "storagemetricsset.h"
+#include "storagenode.h"
 #include "storagenodecontext.h"
-#include "tls_statistics_metrics_wrapper.h"
 
-#include <vespa/storage/frameworkimpl/status/statuswebserver.h>
-#include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
+#include <vespa/metrics/metricmanager.h>
+#include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
 #include <vespa/storage/common/storage_chain_builder.h>
+#include <vespa/storage/frameworkimpl/status/statuswebserver.h>
+#include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/metrics/metricmanager.h>
 #include <fcntl.h>
 
 #include <vespa/log/log.h>
@@ -89,16 +89,15 @@ StorageNode::StorageNode(
       _serverConfig(),
       _clusterConfig(),
       _distributionConfig(),
-      _priorityConfig(),
       _doctypesConfig(),
       _bucketSpacesConfig(),
       _newServerConfig(),
       _newClusterConfig(),
       _newDistributionConfig(),
-      _newPriorityConfig(),
       _newDoctypesConfig(),
       _newBucketSpacesConfig(),
       _component(),
+      _node_identity(),
       _configUri(configUri),
       _communicationManager(nullptr),
       _chain_builder(std::make_unique<StorageChainBuilder>())
@@ -112,7 +111,6 @@ StorageNode::subscribeToConfigs()
     _configFetcher->subscribe<StorDistributionConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<UpgradingConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<StorServerConfig>(_configUri.getConfigId(), this);
-    _configFetcher->subscribe<StorPrioritymappingConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<BucketspacesConfig>(_configUri.getConfigId(), this);
 
     _configFetcher->start();
@@ -121,7 +119,6 @@ StorageNode::subscribeToConfigs()
     _serverConfig = std::move(_newServerConfig);
     _clusterConfig = std::move(_newClusterConfig);
     _distributionConfig = std::move(_newDistributionConfig);
-    _priorityConfig = std::move(_newPriorityConfig);
     _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
 }
 
@@ -145,11 +142,10 @@ StorageNode::initialize()
     _rootFolder = _serverConfig->rootFolder;
 
     _context.getComponentRegister().setNodeInfo(_serverConfig->clusterName, getNodeType(), _serverConfig->nodeIndex);
-    _context.getComponentRegister().setLoadTypes(make_shared<documentapi::LoadTypeSet>(_configUri));
     _context.getComponentRegister().setBucketIdFactory(document::BucketIdFactory());
     _context.getComponentRegister().setDistribution(make_shared<lib::Distribution>(*_distributionConfig));
-    _context.getComponentRegister().setPriorityConfig(*_priorityConfig);
     _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
+    _node_identity = std::make_unique<NodeIdentity>(_serverConfig->clusterName, getNodeType(), _serverConfig->nodeIndex);
 
     _metrics = std::make_shared<StorageMetricSet>();
     _component = std::make_unique<StorageComponent>(_context.getComponentRegister(), "storagenode");
@@ -164,11 +160,11 @@ StorageNode::initialize()
     // update node state according min used bits etc.
     // Needs node type to be set right away. Needs thread pool, index and
     // dead lock detector too, but not before open()
-    _stateManager.reset(new StateManager(
+    _stateManager = std::make_unique<StateManager>(
             _context.getComponentRegister(),
             _context.getComponentRegister().getMetricManager(),
             std::move(_hostInfo),
-            _singleThreadedDebugMode));
+            _singleThreadedDebugMode);
     _context.getComponentRegister().setNodeStateUpdater(*_stateManager);
 
     // Create VDS root folder, in case it doesn't already exist.
@@ -178,11 +174,11 @@ StorageNode::initialize()
 
     initializeNodeSpecific();
 
-    _statusMetrics.reset(new StatusMetricConsumer(
-            _context.getComponentRegister(), _context.getComponentRegister().getMetricManager()));
-    _stateReporter.reset(new StateReporter(
+    _statusMetrics = std::make_unique<StatusMetricConsumer>(
+            _context.getComponentRegister(), _context.getComponentRegister().getMetricManager());
+    _stateReporter = std::make_unique<StateReporter>(
             _context.getComponentRegister(), _context.getComponentRegister().getMetricManager(),
-            _generationFetcher));
+            _generationFetcher);
 
     // Start deadlock detector
     _deadLockDetector.reset(new DeadLockDetector(_context.getComponentRegister()));
@@ -335,10 +331,7 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         }
         _newClusterConfig.reset();
     }
-    if (_newPriorityConfig) {
-        _priorityConfig = std::move(_newPriorityConfig);
-        _context.getComponentRegister().setPriorityConfig(*_priorityConfig);
-    }
+
     if (_newBucketSpacesConfig) {
         _bucketSpacesConfig = std::move(_newBucketSpacesConfig);
         _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
@@ -490,19 +483,6 @@ void StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
         handleLiveConfigUpdate(concurrent_config_guard);
     }
 }
-
-void StorageNode::configure(std::unique_ptr<StorPrioritymappingConfig> config) {
-    log_config_received(*config);
-    {
-        std::lock_guard configLockGuard(_configLock);
-        _newPriorityConfig = std::move(config);
-    }
-    if (_priorityConfig) {
-        InitialGuard concurrent_config_guard(_initial_config_mutex);
-        handleLiveConfigUpdate(concurrent_config_guard);
-    }
-}
-
 void
 StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
                        bool hasChanged, int64_t generation)

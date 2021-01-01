@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -74,11 +75,10 @@ public class JRTConfigRequestV3Test {
     public void emptypayload() {
         ConfigPayload payload = ConfigPayload.empty();
         SlimeConfigResponse response = SlimeConfigResponse.fromConfigPayload(payload, 0, false, ConfigUtils.getMd5(payload));
-        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(), false, response.getConfigMd5());
+        serverReq.addOkResponse(serverReq.payloadFromResponse(response), response.getGeneration(),  false, response.getConfigMd5());
         assertTrue(clientReq.validateResponse());
         assertTrue(clientReq.hasUpdatedGeneration());
-        assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is("{}"));
-        assertFalse(clientReq.responseIsInternalRedeploy());
+        assertEquals("{}", clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString());
     }
 
     @Test
@@ -94,9 +94,7 @@ public class JRTConfigRequestV3Test {
     public void next_request_when_error_is_correct() {
         serverReq.addOkResponse(createPayload(), 999999, false, "newmd5");
         serverReq.addErrorResponse(ErrorCode.OUTDATED_CONFIG, "error message");
-        System.out.println(serverReq);
         JRTClientConfigRequest next = clientReq.nextRequest(6);
-        System.out.println(next);
         // Should use config md5 and generation from the request, not the response
         // when there are errors
         assertThat(next.getRequestConfigMd5(), is(clientReq.getRequestConfigMd5()));

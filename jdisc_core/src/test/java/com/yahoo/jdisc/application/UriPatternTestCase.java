@@ -124,32 +124,6 @@ public class UriPatternTestCase {
     }
 
     @Test
-    public void requireThatUriWithoutHostDoesNotThrowException() {
-        String schemeOnly = "scheme:schemeSpecificPart";
-        String schemeAndPath = "scheme:/path";
-        String pathOnly = "path";
-        String pathOnlyWithSlash = "/path";
-
-        UriPattern pattern = new UriPattern("scheme://host/path");
-        assertNotMatch(pattern, schemeOnly);
-        assertNotMatch(pattern, schemeAndPath);
-        assertNotMatch(pattern, pathOnly);
-        assertNotMatch(pattern, pathOnlyWithSlash);
-
-        pattern = new UriPattern("scheme*://host*/path*");
-        assertNotMatch(pattern, schemeOnly);
-        assertNotMatch(pattern, schemeAndPath);
-        assertNotMatch(pattern, pathOnly);
-        assertNotMatch(pattern, pathOnlyWithSlash);
-
-        pattern = new UriPattern("*://*/*");
-        assertMatch(pattern, schemeOnly, Arrays.asList("scheme", "", ""));
-        assertMatch(pattern, schemeAndPath, Arrays.asList("scheme", "", "path"));
-        assertMatch(pattern, pathOnly, Arrays.asList("", "", "path"));
-        assertMatch(pattern, pathOnlyWithSlash, Arrays.asList("", "", "path"));
-    }
-
-    @Test
     public void requireThatUriWithoutPathDoesNotThrowException() {
         UriPattern pattern = new UriPattern("scheme://host/path");
         assertNotMatch(pattern, "scheme://host");
@@ -173,12 +147,14 @@ public class UriPatternTestCase {
     }
 
     @Test
+    @SuppressWarnings("removal")
     public void requireThatPrioritiesAreOrderedDescending() {
         assertCompareLt(new UriPattern("scheme://host:69/path", 1),
                         new UriPattern("scheme://host:69/path", 0));
     }
 
     @Test
+    @SuppressWarnings("removal")
     public void requireThatPriorityOrdersBeforeScheme() {
         assertCompareLt(new UriPattern("*://host:69/path", 1),
                         new UriPattern("scheme://host:69/path", 0));
@@ -287,21 +263,23 @@ public class UriPatternTestCase {
     }
 
     @Test
-    public void requireThatUrisWithImplicitPortFromSchemeMatchesBindingWithExplicitPort() {
-        UriPattern httpPattern = new UriPattern("http://host:80/path");
-        assertMatch(httpPattern, "http://host/path", NO_GROUPS);
-
-        UriPattern httpsPattern = new UriPattern("https://host:443/path");
-        assertMatch(httpsPattern, "https://host/path", NO_GROUPS);
-    }
-
-    @Test
     public void requireThatHttpsSchemeIsHandledAsHttp() {
         UriPattern httpPattern = new UriPattern("http://host:80/path");
         assertMatch(httpPattern, "https://host:80/path", NO_GROUPS);
 
         UriPattern httpsPattern = new UriPattern("https://host:443/path");
         assertMatch(httpsPattern, "http://host:443/path", NO_GROUPS);
+    }
+
+    @Test
+    public void requireThatUrlEncodingIsNotDoneForPath() {
+        UriPattern encodedSlashPattern = new UriPattern("http://host:80/one%2Fpath");
+        assertMatch(encodedSlashPattern, "http://host:80/one%2Fpath", NO_GROUPS);
+        assertNotMatch(encodedSlashPattern, "http://host:80/one/path");
+
+        UriPattern actualSlashPattern = new UriPattern("http://host:80/two/paths");
+        assertNotMatch(actualSlashPattern, "http://host:80/two%2Fpaths");
+        assertMatch(actualSlashPattern, "http://host:80/two/paths", NO_GROUPS);
     }
 
     private static void assertIllegalPattern(String uri) {
@@ -314,7 +292,7 @@ public class UriPatternTestCase {
     }
 
     private static void assertCompareLt(String lhs, String rhs) {
-        assertCompareLt(new UriPattern(lhs, 0), new UriPattern(rhs, 0));
+        assertCompareLt(new UriPattern(lhs), new UriPattern(rhs));
     }
 
     private static void assertCompareLt(UriPattern lhs, UriPattern rhs) {
@@ -322,7 +300,7 @@ public class UriPatternTestCase {
     }
 
     private static void assertCompareEq(String lhs, String rhs) {
-        assertCompareEq(new UriPattern(lhs, 0), new UriPattern(rhs, 0));
+        assertCompareEq(new UriPattern(lhs), new UriPattern(rhs));
     }
 
     private static void assertCompareEq(UriPattern lhs, UriPattern rhs) {

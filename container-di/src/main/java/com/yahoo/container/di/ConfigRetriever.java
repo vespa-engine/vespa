@@ -46,11 +46,10 @@ public final class ConfigRetriever {
     }
 
     public ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
-                                     long leastGeneration,
-                                     boolean restartOnRedeploy) {
+                                     long leastGeneration, boolean isInitializing) {
         // Loop until we get config.
         while (true) {
-            Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration, restartOnRedeploy);
+            Optional<ConfigSnapshot> maybeSnapshot = getConfigsOnce(componentConfigKeys, leastGeneration, isInitializing);
             if (maybeSnapshot.isPresent()) {
                 var configSnapshot = maybeSnapshot.get();
                 resetComponentSubscriberIfBootstrap(configSnapshot);
@@ -59,13 +58,8 @@ public final class ConfigRetriever {
         }
     }
 
-    ConfigSnapshot getConfigs(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys, long leastGeneration) {
-        return getConfigs(componentConfigKeys, leastGeneration, false);
-    }
-
     Optional<ConfigSnapshot> getConfigsOnce(Set<ConfigKey<? extends ConfigInstance>> componentConfigKeys,
-                                            long leastGeneration,
-                                            boolean restartOnRedeploy) {
+                                            long leastGeneration, boolean isInitializing) {
         if (!Sets.intersection(componentConfigKeys, bootstrapKeys).isEmpty()) {
             throw new IllegalArgumentException(
                     "Component config keys [" + componentConfigKeys + "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
@@ -76,20 +70,18 @@ public final class ConfigRetriever {
         allKeys.addAll(bootstrapKeys);
         setupComponentSubscriber(allKeys);
 
-        return getConfigsOptional(leastGeneration, restartOnRedeploy);
+        return getConfigsOptional(leastGeneration, isInitializing);
     }
 
-    private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean restartOnRedeploy) {
-        long newestComponentGeneration = componentSubscriber.waitNextGeneration();
+    private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean isInitializing) {
+        long newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
         log.log(FINE, "getConfigsOptional: new component generation: " + newestComponentGeneration);
 
         // leastGeneration is only used to ensure newer generation when the previous generation was invalidated due to an exception
         if (newestComponentGeneration < leastGeneration) {
             return Optional.empty();
-        } else if (restartOnRedeploy && !componentSubscriber.internalRedeploy()) { // Don't reconfig - wait for restart
-            return Optional.empty();
         } else if (bootstrapSubscriber.generation() < newestComponentGeneration) {
-            long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration();
+            long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration(isInitializing);
             log.log(FINE, "getConfigsOptional: new bootstrap generation: " + bootstrapSubscriber.generation());
             Optional<ConfigSnapshot> bootstrapConfig = bootstrapConfigIfChanged();
             if (bootstrapConfig.isPresent()) {
@@ -100,8 +92,8 @@ public final class ConfigRetriever {
                     return componentsConfigIfChanged();
                 } else {
                     // This should not be a normal case, and hence a warning to allow investigation.
-                    log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration + ") and components configs ("
-                                + newestComponentGeneration + ").");
+                    log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration +
+                                ") and components configs (" + newestComponentGeneration + ").");
                     return Optional.empty();
                 }
             }
@@ -120,7 +112,7 @@ public final class ConfigRetriever {
     }
 
     private Optional<ConfigSnapshot> configIfChanged(Subscriber subscriber,
-            Function<Map<ConfigKey<? extends ConfigInstance>, ConfigInstance>, ConfigSnapshot> constructor) {
+                                                     Function<Map<ConfigKey<? extends ConfigInstance>, ConfigInstance>, ConfigSnapshot> constructor) {
         if (subscriber.configChanged()) {
             return Optional.of(constructor.apply(Keys.covariantCopy(subscriber.config())));
         } else {

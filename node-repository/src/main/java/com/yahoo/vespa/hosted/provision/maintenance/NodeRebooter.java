@@ -3,8 +3,8 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -32,7 +32,7 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
 
     NodeRebooter(NodeRepository nodeRepository, FlagSource flagSource, Metric metric) {
         super(nodeRepository, Duration.ofMinutes(25), metric);
-        this.rebootIntervalInDays = Flags.REBOOT_INTERVAL_IN_DAYS.bindTo(flagSource);
+        this.rebootIntervalInDays = PermanentFlags.REBOOT_INTERVAL_IN_DAYS.bindTo(flagSource);
         this.random = new Random(nodeRepository.clock().millis()); // seed with clock for test determinism
     }
 

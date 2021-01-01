@@ -2,11 +2,11 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.io.IOUtils;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TransportSecurityOptions;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -15,6 +15,7 @@ import org.junit.rules.TemporaryFolder;
 import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,14 +23,14 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
-import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication;
 import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForClientServerCommunication;
+import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication;
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.zookeeper.Configurator.ZOOKEEPER_JUTE_MAX_BUFFER;
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -53,7 +54,7 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void config_is_written_correctly_when_one_server() throws IOException {
+    public void config_is_written_correctly_when_one_server() {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
         validateConfigFileSingleHost(cfgFile);
@@ -61,12 +62,12 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void config_is_written_correctly_when_multiple_servers() throws IOException {
+    public void config_is_written_correctly_when_multiple_servers() {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
-        builder.server(newServer(0, "foo", 123, 321));
-        builder.server(newServer(1, "bar", 234, 432));
-        builder.server(newServer(2, "baz", 345, 543));
+        builder.server(newServer(0, "foo", 123, 321, false));
+        builder.server(newServer(1, "bar", 234, 432, false));
+        builder.server(newServer(2, "baz", 345, 543, true));
         builder.myidFile(idFile.getAbsolutePath());
         builder.myid(1);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
@@ -75,7 +76,7 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void config_is_written_correctly_with_tls_for_quorum_communication_port_unification() throws IOException {
+    public void config_is_written_correctly_with_tls_for_quorum_communication_port_unification() {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.PORT_UNIFICATION);
         builder.tlsForClientServerCommunication(TlsForClientServerCommunication.PORT_UNIFICATION);
@@ -86,7 +87,7 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void config_is_written_correctly_with_tls_for_quorum_communication_tls_with_port_unification() throws IOException {
+    public void config_is_written_correctly_with_tls_for_quorum_communication_tls_with_port_unification() {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.TLS_WITH_PORT_UNIFICATION);
         builder.tlsForClientServerCommunication(TlsForClientServerCommunication.TLS_WITH_PORT_UNIFICATION);
@@ -97,7 +98,7 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void config_is_written_correctly_with_tls_for_quorum_communication_tls_only() throws IOException {
+    public void config_is_written_correctly_with_tls_for_quorum_communication_tls_only() {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
         builder.tlsForQuorumCommunication(TlsForQuorumCommunication.TLS_ONLY);
         builder.tlsForClientServerCommunication(TlsForClientServerCommunication.TLS_ONLY);
@@ -107,28 +108,18 @@ public class ConfiguratorTest {
         validateThatJksKeyStoreFileExists(jksKeyStoreFile);
     }
 
-    private ZookeeperServerConfig.Builder createConfigBuilderForSingleHost(File cfgFile, File idFile, File jksKeyStoreFile) {
-        ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
-        builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
-        builder.myidFile(idFile.getAbsolutePath());
-        builder.server(newServer(0, "foo", 123, 321));
-        builder.myid(0);
-        builder.jksKeyStoreFile(jksKeyStoreFile.getAbsolutePath());
-        return builder;
-    }
-
     @Test(expected = RuntimeException.class)
     public void require_that_this_id_must_be_present_amongst_servers() {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
-        builder.server(newServer(1, "bar", 234, 432));
-        builder.server(newServer(2, "baz", 345, 543));
+        builder.server(newServer(1, "bar", 234, 432, false));
+        builder.server(newServer(2, "baz", 345, 543, false));
         builder.myid(0);
         new Configurator(builder.build()).writeConfigToDisk(Optional.empty());
     }
 
     @Test
-    public void juteMaxBufferCanBeSet() throws IOException {
+    public void jute_max_buffer_can_be_set() throws IOException {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.myid(0);
         File idFile = folder.newFile();
@@ -147,17 +138,28 @@ public class ConfiguratorTest {
         assertEquals("" + max_buffer, System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER));
     }
 
-    private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, int electionPort, int quorumPort) {
+    private ZookeeperServerConfig.Builder createConfigBuilderForSingleHost(File cfgFile, File idFile, File jksKeyStoreFile) {
+        ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
+        builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
+        builder.myidFile(idFile.getAbsolutePath());
+        builder.server(newServer(0, "foo", 123, 321, false));
+        builder.myid(0);
+        builder.jksKeyStoreFile(jksKeyStoreFile.getAbsolutePath());
+        return builder;
+    }
+
+    private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, int electionPort, int quorumPort, boolean joining) {
         ZookeeperServerConfig.Server.Builder builder = new ZookeeperServerConfig.Server.Builder();
         builder.id(id);
         builder.hostname(hostName);
         builder.electionPort(electionPort);
         builder.quorumPort(quorumPort);
+        builder.joining(joining);
         return builder;
     }
 
-    private void validateIdFile(File idFile, String expected) throws IOException {
-        String actual = IOUtils.readFile(idFile);
+    private void validateIdFile(File idFile, String expected) {
+        String actual = Exceptions.uncheck(() -> Files.readString(idFile.toPath()));
         assertEquals(expected, actual);
     }
 
@@ -168,7 +170,6 @@ public class ConfiguratorTest {
                "maxClientCnxns=0\n" +
                "snapCount=50000\n" +
                "dataDir=" + getDefaults().underVespaHome("var/zookeeper") + "\n" +
-               "clientPort=2181\n" +
                "secureClientPort=2184\n" +
                "autopurge.purgeInterval=1\n" +
                "autopurge.snapRetainCount=15\n" +
@@ -177,7 +178,9 @@ public class ConfiguratorTest {
                "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n" +
                "quorumListenOnAllIPs=true\n" +
                "standaloneEnabled=false\n" +
-               "reconfigEnabled=true\n";
+               "reconfigEnabled=true\n" +
+               "skipACL=yes\n" +
+               "metricsProvider.className=org.apache.zookeeper.metrics.impl.NullMetricsProvider\n";
     }
 
     private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
@@ -200,10 +203,10 @@ public class ConfiguratorTest {
         return sb.toString();
     }
 
-    private void validateConfigFileSingleHost(File cfgFile) throws IOException {
+    private void validateConfigFileSingleHost(File cfgFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
+                "server.0=foo:321:123;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
@@ -228,12 +231,12 @@ public class ConfiguratorTest {
                "ssl.protocol=TLS\n";
     }
 
-    private void validateConfigFileMultipleHosts(File cfgFile) throws IOException {
+    private void validateConfigFileMultipleHosts(File cfgFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
-                "server.1=bar:432:234\n" +
-                "server.2=baz:543:345\n" +
+                "server.0=foo:321:123;2181\n" +
+                "server.1=bar:432:234;2181\n" +
+                "server.2=baz:543:345:observer;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
@@ -242,10 +245,10 @@ public class ConfiguratorTest {
         validateConfigFile(cfgFile, expected);
     }
 
-    private void validateConfigFilePortUnification(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) throws IOException {
+    private void validateConfigFilePortUnification(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
+                "server.0=foo:321:123;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
                 "portUnification=true\n" +
@@ -256,10 +259,10 @@ public class ConfiguratorTest {
         validateConfigFile(cfgFile, expected);
     }
 
-    private void validateConfigFileTlsWithPortUnification(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) throws IOException {
+    private void validateConfigFileTlsWithPortUnification(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
+                "server.0=foo:321:123;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=true\n" +
                 "portUnification=true\n" +
@@ -270,10 +273,10 @@ public class ConfiguratorTest {
         validateConfigFile(cfgFile, expected);
     }
 
-    private void validateConfigFileTlsOnly(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) throws IOException {
+    private void validateConfigFileTlsOnly(File cfgFile, File jksKeyStoreFile, File caCertificatesFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123\n" +
+                "server.0=foo:321:123;2181\n" +
                 commonTlsQuorumConfig() +
                 "sslQuorum=true\n" +
                 "portUnification=false\n" +
@@ -284,8 +287,8 @@ public class ConfiguratorTest {
         validateConfigFile(cfgFile, expected);
     }
 
-    private void validateConfigFile(File cfgFile, String expected) throws IOException {
-        String actual = IOUtils.readFile(cfgFile);
+    private void validateConfigFile(File cfgFile, String expected) {
+        String actual = Exceptions.uncheck(() -> Files.readString(cfgFile.toPath()));
         assertEquals(expected, actual);
     }
 
@@ -293,25 +296,29 @@ public class ConfiguratorTest {
         assertTrue(cfgFile.exists() && cfgFile.canRead());
     }
 
-    private Optional<TransportSecurityOptions> createTransportSecurityOptions() throws IOException {
-        KeyPair keyPair = KeyUtils.generateKeypair(EC);
-        Path privateKeyFile = folder.newFile().toPath();
-        Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
+    private Optional<TransportSecurityOptions> createTransportSecurityOptions() {
+        try {
+            KeyPair keyPair = KeyUtils.generateKeypair(EC);
+            Path privateKeyFile = folder.newFile().toPath();
+            Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
 
-        X509Certificate certificate = X509CertificateBuilder
-                .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, EPOCH.plus(1, DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
-                .build();
-        Path certificateChainFile = folder.newFile().toPath();
-        String certificatePem = X509CertificateUtils.toPem(certificate);
-        Files.writeString(certificateChainFile, certificatePem);
+            X509Certificate certificate = X509CertificateBuilder
+                    .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, EPOCH.plus(1, DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
+                    .build();
+            Path certificateChainFile = folder.newFile().toPath();
+            String certificatePem = X509CertificateUtils.toPem(certificate);
+            Files.writeString(certificateChainFile, certificatePem);
 
-        Path caCertificatesFile = folder.newFile().toPath();
-        Files.writeString(caCertificatesFile, certificatePem);
+            Path caCertificatesFile = folder.newFile().toPath();
+            Files.writeString(caCertificatesFile, certificatePem);
 
-        return Optional.of(new TransportSecurityOptions.Builder()
-                                   .withCertificates(certificateChainFile, privateKeyFile)
-                                   .withCaCertificates(caCertificatesFile)
-                                   .build());
+            return Optional.of(new TransportSecurityOptions.Builder()
+                                       .withCertificates(certificateChainFile, privateKeyFile)
+                                       .withCaCertificates(caCertificatesFile)
+                                       .build());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

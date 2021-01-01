@@ -36,7 +36,8 @@ private:
 public:
     PersistenceMessageTrackerImpl(PersistenceOperationMetricSet& metric,
                                   std::shared_ptr<api::BucketInfoReply> reply,
-                                  DistributorComponent&,
+                                  DistributorNodeContext& node_ctx,
+                                  DistributorOperationContext& op_ctx,
                                   api::Timestamp revertTimestamp = 0);
     ~PersistenceMessageTrackerImpl() override;
 
@@ -70,7 +71,7 @@ private:
 
     PersistenceOperationMetricSet& _metric;
     std::shared_ptr<api::BucketInfoReply> _reply;
-    DistributorComponent& _manager;
+    DistributorOperationContext& _op_ctx;
     api::Timestamp _revertTimestamp;
     std::vector<BucketNodePair> _revertNodes;
     mbus::Trace _trace;

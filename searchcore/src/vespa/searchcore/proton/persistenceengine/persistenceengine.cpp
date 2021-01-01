@@ -3,7 +3,6 @@
 #include "persistenceengine.h"
 #include "ipersistenceengineowner.h"
 #include "transport_latch.h"
-#include <vespa/metrics/loadmetric.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>

@@ -55,9 +55,9 @@ public class FlavorConfigBuilder {
             else if (flavorName.equals("host2"))
                 flavorConfigBuilder.addFlavor(flavorName, 16, 24, 100, 1, Flavor.Type.BARE_METAL);
             else if (flavorName.equals("host3"))
-                flavorConfigBuilder.addFlavor(flavorName, 24, 64, 100, 1, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 24, 64, 100, 10, Flavor.Type.BARE_METAL);
             else if (flavorName.equals("host4"))
-                flavorConfigBuilder.addFlavor(flavorName, 48, 128, 1000, 1, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 48, 128, 1000, 10, Flavor.Type.BARE_METAL);
             else if (flavorName.equals("devhost"))
                 flavorConfigBuilder.addFlavor(flavorName, 4.,  80., 100, 10, Flavor.Type.BARE_METAL);
             else

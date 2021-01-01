@@ -9,6 +9,8 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/metrics/metrictimer.h>
+
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketownershiphandler");
@@ -35,9 +37,7 @@ ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
     _component.registerMetric(_metrics);
 }
 
-ChangedBucketOwnershipHandler::~ChangedBucketOwnershipHandler()
-{
-}
+ChangedBucketOwnershipHandler::~ChangedBucketOwnershipHandler() = default;
 
 void
 ChangedBucketOwnershipHandler::configure(

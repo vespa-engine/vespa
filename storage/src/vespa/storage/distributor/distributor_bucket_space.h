@@ -1,7 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "bucketownership.h"
+#include "bucket_ownership_flags.h"
+#include "ideal_service_layer_nodes_bundle.h"
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <memory>
+#include <vector>
 
 namespace storage {
 class BucketDatabase;
@@ -29,8 +35,19 @@ class DistributorBucketSpace {
     std::unique_ptr<BucketDatabase>  _bucketDatabase;
     std::shared_ptr<const lib::ClusterState> _clusterState;
     std::shared_ptr<const lib::Distribution> _distribution;
+    uint16_t                                 _node_index;
+    uint16_t                                 _distribution_bits;
+    std::shared_ptr<const lib::ClusterState> _pending_cluster_state;
+    std::vector<bool>                        _available_nodes;
+    mutable vespalib::hash_map<document::BucketId, BucketOwnershipFlags, document::BucketId::hash>  _ownerships;
+    mutable vespalib::hash_map<document::BucketId, IdealServiceLayerNodesBundle, document::BucketId::hash> _ideal_nodes;
+
+    void clear();
+    void enumerate_available_nodes();
+    bool owns_bucket_in_state(const lib::Distribution& distribution, const lib::ClusterState& cluster_state, document::BucketId bucket) const;
 public:
     explicit DistributorBucketSpace();
+    explicit DistributorBucketSpace(uint16_t node_index);
     ~DistributorBucketSpace();
 
     DistributorBucketSpace(const DistributorBucketSpace&) = delete;
@@ -62,6 +79,35 @@ public:
         return _distribution;
     }
 
+    void set_pending_cluster_state(std::shared_ptr<const lib::ClusterState> pending_cluster_state);
+    const lib::ClusterState& get_pending_cluster_state() const noexcept { return *_pending_cluster_state; }
+
+    /**
+     * Returns true if this distributor owns the given bucket in the
+     * given cluster and current distribution config.
+     * Only used by unit tests.
+     */
+    bool owns_bucket_in_state(const lib::ClusterState& clusterState, document::BucketId bucket) const;
+
+    const std::vector<bool>& get_available_nodes() const { return _available_nodes; }
+
+    /**
+     * Returns the ideal nodes bundle for the given bucket.
+     */
+    const IdealServiceLayerNodesBundle &get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const;
+
+    /*
+     * Return bucket ownership flags for the given bucket. Bucket is always
+     * considered owned in pending state if there is no pending state.
+     */
+    BucketOwnershipFlags get_bucket_ownership_flags(document::BucketId bucket) const;
+
+    /**
+     * Returns the ownership status of a bucket as decided with the current
+     * distribution and cluster state -and- that of the pending cluster
+     * state and distribution (if any pending exists).
+     */
+    BucketOwnership check_ownership_in_pending_and_current_state(document::BucketId bucket) const;
 };
 
 }

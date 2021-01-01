@@ -1,8 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "value_compare.h"
-#include <vespa/eval/eval/tensor.h>
-#include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/eval/eval/value_codec.h>
 
 namespace vespalib::eval {

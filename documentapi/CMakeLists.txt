@@ -15,7 +15,6 @@ vespa_define_module(
 
     LIBS
     src/vespa/documentapi
-    src/vespa/documentapi/loadtypes
     src/vespa/documentapi/messagebus
     src/vespa/documentapi/messagebus/messages
     src/vespa/documentapi/messagebus/policies
@@ -24,7 +23,6 @@ vespa_define_module(
     messagebus_messagebus-test
 
     TESTS
-    src/tests/loadtypes
     src/tests/messagebus
     src/tests/messages
     src/tests/policies

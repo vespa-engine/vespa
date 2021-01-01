@@ -3,6 +3,7 @@
 #include "transport.h"
 #include "transport_thread.h"
 #include "iocomponent.h"
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <chrono>
 #include <xxhash.h>
 
@@ -24,15 +25,34 @@ VESPA_THREAD_STACK_TAG(fnet_work_pool);
 
 } // namespace <unnamed>
 
-FNET_Transport::FNET_Transport(vespalib::AsyncResolver::SP resolver, vespalib::CryptoEngine::SP crypto, size_t num_threads)
-    : _async_resolver(std::move(resolver)),
-      _crypto_engine(std::move(crypto)),
-      _work_pool(1, 128 * 1024, fnet_work_pool, 1024),
-      _threads()
+TransportConfig::TransportConfig(int num_threads)
+    : _config(),
+      _resolver(),
+      _crypto(),
+      _num_threads(num_threads)
+{}
+
+TransportConfig::~TransportConfig() = default;
+
+vespalib::AsyncResolver::SP
+TransportConfig::resolver() const {
+    return _resolver ? _resolver : vespalib::AsyncResolver::get_shared();
+}
+vespalib::CryptoEngine::SP
+TransportConfig::crypto() const {
+    return _crypto ? _crypto : vespalib::CryptoEngine::get_default();
+}
+
+FNET_Transport::FNET_Transport(TransportConfig cfg)
+    : _async_resolver(cfg.resolver()),
+      _crypto_engine(cfg.crypto()),
+      _work_pool(std::make_unique<vespalib::ThreadStackExecutor>(1, 128 * 1024, fnet_work_pool, 1024)),
+      _threads(),
+      _config(cfg.config())
 {
-    assert(num_threads >= 1);
-    for (size_t i = 0; i < num_threads; ++i) {
-        _threads.emplace_back(new FNET_TransportThread(*this));
+    assert(cfg.num_threads() >= 1);
+    for (size_t i = 0; i < cfg.num_threads(); ++i) {
+        _threads.emplace_back(std::make_unique<FNET_TransportThread>(*this));
     }
 }
 
@@ -41,7 +61,7 @@ FNET_Transport::~FNET_Transport() = default;
 void
 FNET_Transport::post_or_perform(vespalib::Executor::Task::UP task)
 {
-    if (auto rejected = _work_pool.execute(std::move(task))) {
+    if (auto rejected = _work_pool->execute(std::move(task))) {
         rejected->run();
     }
 }
@@ -102,38 +122,6 @@ FNET_Transport::GetNumIOComponents()
 }
 
 void
-FNET_Transport::SetIOCTimeOut(uint32_t ms)
-{
-    for (const auto &thread: _threads) {
-        thread->SetIOCTimeOut(ms);
-    }
-}
-
-void
-FNET_Transport::SetMaxInputBufferSize(uint32_t bytes)
-{
-    for (const auto &thread: _threads) {
-        thread->SetMaxInputBufferSize(bytes);
-    }
-}
-
-void
-FNET_Transport::SetMaxOutputBufferSize(uint32_t bytes)
-{
-    for (const auto &thread: _threads) {
-        thread->SetMaxOutputBufferSize(bytes);
-    }
-}
-
-void
-FNET_Transport::SetTCPNoDelay(bool noDelay)
-{
-    for (const auto &thread: _threads) {
-        thread->SetTCPNoDelay(noDelay);
-    }
-}
-
-void
 FNET_Transport::sync()
 {
     for (const auto &thread: _threads) {
@@ -161,7 +149,7 @@ FNET_Transport::ShutDown(bool waitFinished)
     }
     if (waitFinished) {
         _async_resolver->wait_for_pending_resolves();
-        _work_pool.shutdown().sync();
+        _work_pool->shutdown().sync();
     }
 }
 
@@ -172,7 +160,7 @@ FNET_Transport::WaitFinished()
         thread->WaitFinished();
     }
     _async_resolver->wait_for_pending_resolves();
-    _work_pool.shutdown().sync();
+    _work_pool->shutdown().sync();
 }
 
 bool

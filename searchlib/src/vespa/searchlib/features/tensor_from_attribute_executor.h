@@ -3,9 +3,11 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
+
+using vespalib::eval::FastValueBuilderFactory;
 
 namespace search::features {
 
@@ -20,6 +22,7 @@ private:
     const search::attribute::IAttributeVector *_attribute;
     vespalib::eval::ValueType _type;
     WeightedBufferType _attrBuffer;
+    std::vector<vespalib::stringref> _addr_ref;
     std::unique_ptr<vespalib::eval::Value> _tensor;
 
 public:
@@ -28,9 +31,11 @@ public:
         : _attribute(attribute),
           _type(vespalib::eval::ValueType::tensor_type({{dimension}})),
           _attrBuffer(),
+          _addr_ref(),
           _tensor()
     {
         _attrBuffer.allocate(_attribute->getMaxValueCount());
+        _addr_ref.reserve(1);
     }
     void execute(uint32_t docId) override;
 };
@@ -40,15 +45,16 @@ void
 TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
 {
     _attrBuffer.fill(*_attribute, docId);
-    vespalib::tensor::DirectSparseTensorBuilder<double> builder(_type);
-    builder.reserve(_attrBuffer.size());
-    vespalib::tensor::SparseTensorAddressBuilder address;
+    auto factory = FastValueBuilderFactory::get();
+    auto builder = factory.create_value_builder<double>(_type, 1, 1, _attrBuffer.size());
     for (size_t i = 0; i < _attrBuffer.size(); ++i) {
-        address.clear();
-        address.add(vespalib::string(_attrBuffer[i].value()));
-        builder.insertCell(address, _attrBuffer[i].weight(), [](double, double v){ return v; });
+        vespalib::string label(_attrBuffer[i].value());
+        _addr_ref.clear();
+        _addr_ref.push_back(label);
+        auto cell_array = builder->add_subspace(_addr_ref);
+        cell_array[0] = _attrBuffer[i].weight();
     }
-    _tensor = builder.build();
+    _tensor = builder->build(std::move(builder));
     outputs().set_object(0, *_tensor);
 }
 

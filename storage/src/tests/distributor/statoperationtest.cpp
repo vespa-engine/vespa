@@ -32,7 +32,6 @@ TEST_F(StatOperationTest, bucket_info) {
     addNodesToBucketDB(document::BucketId(16, 5), "0=4/2/100,1=4/2/100");
 
     StatBucketOperation op(
-            getExternalOperationHandler(),
             getDistributorBucketSpace(),
             std::make_shared<api::StatBucketCommand>(
                     makeDocumentBucket(document::BucketId(16, 5)), ""));
@@ -74,7 +73,7 @@ TEST_F(StatOperationTest, bucket_list) {
     StatBucketListOperation op(
             getDistributorBucketSpace().getBucketDatabase(),
             getIdealStateManager(),
-            getExternalOperationHandler().getIndex(),
+            distributor_component().getIndex(),
             msg);
     op.start(_sender, framework::MilliSecTime(0));
 

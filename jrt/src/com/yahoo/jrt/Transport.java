@@ -27,6 +27,7 @@ public class Transport {
     private final Worker            worker;
     private final AtomicInteger     runCnt;
     private final boolean tcpNoDelay;
+    private final int eventsBeforeWakeup;
 
     private final TransportMetrics metrics = TransportMetrics.getInstance();
     private final ArrayList<TransportThread> threads = new ArrayList<>();
@@ -42,12 +43,14 @@ public class Transport {
      * @param fatalHandler fatal error handler
      * @param cryptoEngine crypto engine to use
      * @param numThreads number of {@link TransportThread}s.
+     * @param eventsBeforeWakeup number write events in Q before waking thread up
      **/
-    public Transport(String name, FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay) {
+    public Transport(String name, FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay, int eventsBeforeWakeup) {
         this.name = name;
         this.fatalHandler = fatalHandler; // NB: this must be set first
         this.cryptoEngine = cryptoEngine;
         this.tcpNoDelay = tcpNoDelay;
+        this.eventsBeforeWakeup = Math.max(1, eventsBeforeWakeup);
         connector = new Connector();
         worker = new Worker(this);
         runCnt = new AtomicInteger(numThreads);
@@ -55,10 +58,23 @@ public class Transport {
             threads.add(new TransportThread(this, i));
         }
     }
-    public Transport(String name, CryptoEngine cryptoEngine, int numThreads) { this(name, null, cryptoEngine, numThreads, true); }
-    public Transport(String name, int numThreads) { this(name, null, CryptoEngine.createDefault(), numThreads, true); }
-    public Transport(String name, int numThreads, boolean tcpNoDelay) { this(name, null, CryptoEngine.createDefault(), numThreads, tcpNoDelay); }
-    public Transport(String name) { this(name, null, CryptoEngine.createDefault(), 1, true); }
+    public Transport(String name, CryptoEngine cryptoEngine, int numThreads, int eventsBeforeWakeup) {
+        this(name, null, cryptoEngine, numThreads, true, eventsBeforeWakeup);
+    }
+    public Transport(String name, CryptoEngine cryptoEngine, int numThreads) {
+        this(name, null, cryptoEngine, numThreads, true, 1);
+    }
+    public Transport(String name, int numThreads, int eventsBeforeWakeup) {
+        this(name, null, CryptoEngine.createDefault(), numThreads, true, eventsBeforeWakeup);
+    }
+    public Transport(String name, int numThreads, boolean tcpNoDelay, int eventsBeforeWakeup) {
+        this(name, null, CryptoEngine.createDefault(), numThreads, tcpNoDelay, eventsBeforeWakeup); }
+    public Transport(String name, int numThreads) {
+        this(name, null, CryptoEngine.createDefault(), numThreads, true, 1);
+    }
+    public Transport(String name) {
+        this(name, null, CryptoEngine.createDefault(), 1, true, 1);
+    }
     // Only for testing
     public Transport() { this("default"); }
 
@@ -72,6 +88,7 @@ public class Transport {
     }
 
     boolean getTcpNoDelay() { return tcpNoDelay; }
+    int getEventsBeforeWakeup() { return eventsBeforeWakeup; }
 
     String getName() { return name; }
 

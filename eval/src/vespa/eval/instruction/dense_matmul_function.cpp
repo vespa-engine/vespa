@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_matmul_function.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
@@ -43,7 +42,7 @@ void my_matmul_op(InterpretedFunction::State &state, uint64_t param) {
         }
         lhs += (lhs_common_inner ? self.common_size : 1);
     }
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool lhs_common_inner, bool rhs_common_inner>
@@ -57,7 +56,7 @@ void my_cblas_double_matmul_op(InterpretedFunction::State &state, uint64_t param
                 lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
                 rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
                 0.0, dst_cells.begin(), self.rhs_size);
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 template <bool lhs_common_inner, bool rhs_common_inner>
@@ -71,7 +70,7 @@ void my_cblas_float_matmul_op(InterpretedFunction::State &state, uint64_t param)
                 lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
                 rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
                 0.0, dst_cells.begin(), self.rhs_size);
-    state.pop_pop_push(state.stash.create<tensor::DenseTensorView>(self.result_type, TypedCells(dst_cells)));
+    state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
 bool is_matrix(const ValueType &type) {
@@ -160,7 +159,7 @@ DenseMatMulFunction::DenseMatMulFunction(const ValueType &result_type,
 DenseMatMulFunction::~DenseMatMulFunction() = default;
 
 InterpretedFunction::Instruction
-DenseMatMulFunction::compile_self(EngineOrFactory, Stash &stash) const
+DenseMatMulFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     using MyTypify = TypifyValue<TypifyCellType,TypifyBool>;
     Self &self = stash.create<Self>(result_type(), _lhs_size, _common_size, _rhs_size);

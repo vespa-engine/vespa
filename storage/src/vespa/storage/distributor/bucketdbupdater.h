@@ -43,9 +43,6 @@ public:
     ~BucketDBUpdater() override;
 
     void flush();
-    // If there is a pending state, returns ownership state of bucket in it.
-    // Otherwise always returns "is owned", i.e. it must also be checked in the current state.
-    BucketOwnership checkOwnershipInPendingState(const document::Bucket&) const;
     const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const;
     void recheckBucketInfo(uint32_t nodeIdx, const document::Bucket& bucket);
 

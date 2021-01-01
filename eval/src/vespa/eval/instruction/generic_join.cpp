@@ -195,16 +195,6 @@ struct SelectGenericJoinOp {
     }
 };
 
-struct PerformGenericJoin {
-    template <typename LCT, typename RCT, typename OCT, typename Fun>
-    static auto invoke(const Value &a, const Value &b, const JoinParam &param)
-    {
-        return generic_mixed_join<LCT, RCT, OCT, Fun>(a, b, param);
-    }
-};
-
-
-
 //-----------------------------------------------------------------------------
 
 } // namespace <unnamed>
@@ -325,17 +315,6 @@ GenericJoin::make_instruction(const ValueType &lhs_type, const ValueType &rhs_ty
     auto &param = stash.create<JoinParam>(lhs_type, rhs_type, function, factory);
     auto fun = typify_invoke<4,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function, param);
     return Instruction(fun, wrap_param<JoinParam>(param));
-}
-
-
-Value::UP
-GenericJoin::perform_join(const Value &a, const Value &b, join_fun_t function,
-                          const ValueBuilderFactory &factory)
-{
-    JoinParam param(a.type(), b.type(), function, factory);
-    return typify_invoke<4,JoinTypify,PerformGenericJoin>(
-            a.type().cell_type(), b.type().cell_type(), param.res_type.cell_type(), function,
-            a, b, param);
 }
 
 } // namespace

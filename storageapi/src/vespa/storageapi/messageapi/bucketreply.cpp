@@ -9,14 +9,6 @@ using document::BucketId;
 
 namespace storage::api {
 
-BucketReply::BucketReply(const BucketCommand& cmd,
-                         const ReturnCode& code)
-    : StorageReply(cmd, code),
-      _bucket(cmd.getBucket()),
-      _originalBucket(cmd.getOriginalBucketId())
-{
-}
-
 void
 BucketReply::remapBucketId(const BucketId& bucket) {
     if (_originalBucket.getRawId() == 0) {

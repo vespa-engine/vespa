@@ -87,7 +87,8 @@ public class RPCNetwork implements Network, MethodHandler {
     public RPCNetwork(RPCNetworkParams params, SlobrokConfigSubscriber slobrokConfig) {
         this.slobroksConfig = slobrokConfig;
         identity = params.getIdentity();
-        orb = new Supervisor(new Transport("mbus-rpc-" + identity.getServicePrefix(), params.getNumNetworkThreads(), shouldEnableTcpNodelay(params.getOptimization())));
+        orb = new Supervisor(new Transport("mbus-rpc-" + identity.getServicePrefix(), params.getNumNetworkThreads(),
+                shouldEnableTcpNodelay(params.getOptimization()), params.getTransportEventsBeforeWakeup()));
         orb.setMaxInputBufferSize(params.getMaxInputBufferSize());
         orb.setMaxOutputBufferSize(params.getMaxOutputBufferSize());
         targetPool = new RPCTargetPool(params.getConnectionExpireSecs(), params.getNumTargetsPerSpec());

@@ -202,9 +202,13 @@
       "public com.yahoo.config.subscription.ConfigHandle subscribe(java.lang.Class, java.lang.String, long)",
       "protected void checkStateBeforeSubscribe()",
       "protected void subscribeAndHandleErrors(com.yahoo.config.subscription.impl.ConfigSubscription, com.yahoo.vespa.config.ConfigKey, com.yahoo.config.subscription.ConfigHandle, com.yahoo.vespa.config.TimingValues)",
+      "public boolean nextConfig(boolean)",
       "public boolean nextConfig()",
+      "public boolean nextConfig(long, boolean)",
       "public boolean nextConfig(long)",
+      "public boolean nextGeneration(boolean)",
       "public boolean nextGeneration()",
+      "public boolean nextGeneration(long, boolean)",
       "public boolean nextGeneration(long)",
       "protected void throwIfExceptionSet(com.yahoo.config.subscription.impl.ConfigSubscription)",
       "public void close()",
@@ -218,7 +222,6 @@
       "public boolean isClosed()",
       "public com.yahoo.config.subscription.ConfigHandle subscribe(com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber, java.lang.Class, java.lang.String)",
       "public long getGeneration()",
-      "public boolean isInternalRedeploy()",
       "protected void finalize()"
     ],
     "fields": [

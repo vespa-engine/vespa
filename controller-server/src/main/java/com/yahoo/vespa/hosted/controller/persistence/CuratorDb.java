@@ -188,6 +188,10 @@ public class CuratorDb {
         return curator.lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
     }
 
+    public Lock lockMeteringRefreshTime() throws TimeoutException {
+        return tryLock(lockRoot.append("meteringRefreshTime"));
+    }
+
     // -------------- Helpers ------------------------------------------
 
     /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
@@ -519,6 +523,18 @@ public class CuratorDb {
         return allEndpointCertificateMetadata;
     }
 
+    // -------------- Metering view refresh times ----------------------------
+
+    public void writeMeteringRefreshTime(long timestamp) {
+        curator.set(meteringRefreshPath(), Long.toString(timestamp).getBytes());
+    }
+
+    public long readMeteringRefreshTime() {
+        return curator.getData(meteringRefreshPath())
+                .map(String::new).map(Long::parseLong)
+                .orElse(0l);
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
@@ -638,6 +654,10 @@ public class CuratorDb {
 
     private static Path endpointCertificatePath(ApplicationId id) {
         return endpointCertificateRoot.append(id.serializedForm());
+    }
+
+    private static Path meteringRefreshPath() {
+        return root.append("meteringRefreshTime");
     }
 
 }

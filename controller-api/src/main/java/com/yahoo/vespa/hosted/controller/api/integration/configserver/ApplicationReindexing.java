@@ -64,17 +64,17 @@ public class ApplicationReindexing {
 
     public static class Cluster {
 
-        private final Status common;
+        private final Optional<Status> common;
         private final Map<String, Long> pending;
         private final Map<String, Status> ready;
 
         public Cluster(Status common, Map<String, Long> pending, Map<String, Status> ready) {
-            this.common = requireNonNull(common);
+            this.common = Optional.ofNullable(common);
             this.pending = Map.copyOf(pending);
             this.ready = Map.copyOf(ready);
         }
 
-        public Status common() {
+        public Optional<Status> common() {
             return common;
         }
 
@@ -120,9 +120,9 @@ public class ApplicationReindexing {
         private final Instant endedAt;
         private final State state;
         private final String message;
-        private final String progress;
+        private final Double progress;
 
-        public Status(Instant readyAt, Instant startedAt, Instant endedAt, State state, String message, String progress) {
+        public Status(Instant readyAt, Instant startedAt, Instant endedAt, State state, String message, Double progress) {
             this.readyAt = readyAt;
             this.startedAt = startedAt;
             this.endedAt = endedAt;
@@ -140,7 +140,7 @@ public class ApplicationReindexing {
         public Optional<Instant> endedAt() { return Optional.ofNullable(endedAt); }
         public Optional<State> state() { return Optional.ofNullable(state); }
         public Optional<String> message() { return Optional.ofNullable(message); }
-        public Optional<String> progress() { return Optional.ofNullable(progress); }
+        public Optional<Double> progress() { return Optional.ofNullable(progress); }
 
         @Override
         public boolean equals(Object o) {

@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_space_distribution_context.h"
+#include "crypto_uuid_generator.h"
 #include "externaloperationhandler.h"
 #include "distributor.h"
+#include "operation_sequencer.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
@@ -11,8 +13,10 @@
 #include <vespa/storage/distributor/operations/external/getoperation.h>
 #include <vespa/storage/distributor/operations/external/statbucketoperation.h>
 #include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
+#include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
 #include <vespa/storage/distributor/operations/external/removelocationoperation.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
@@ -27,41 +31,58 @@ LOG_SETUP(".distributor.manager");
 namespace storage::distributor {
 
 class DirectDispatchSender : public DistributorMessageSender {
-    Distributor& _distributor;
+    DistributorNodeContext& _node_ctx;
+    NonTrackingMessageSender& _msg_sender;
 public:
-    explicit DirectDispatchSender(Distributor& distributor)
-        : _distributor(distributor)
+    DirectDispatchSender(DistributorNodeContext& node_ctx,
+                         NonTrackingMessageSender& msg_sender)
+        : _node_ctx(node_ctx),
+          _msg_sender(msg_sender)
     {}
     ~DirectDispatchSender() override = default;
 
     void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
-        _distributor.send_up_without_tracking(cmd);
+        _msg_sender.send_up_without_tracking(cmd);
     }
     void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
-        _distributor.send_up_without_tracking(reply);
+        _msg_sender.send_up_without_tracking(reply);
     }
     int getDistributorIndex() const override {
-        return _distributor.getDistributorIndex(); // Thread safe
+        return _node_ctx.node_index();
     }
-    const std::string& getClusterName() const override {
-        return _distributor.getClusterName(); // Thread safe
+    const ClusterContext & cluster_context() const override {
+        return _node_ctx;
     }
     const PendingMessageTracker& getPendingMessageTracker() const override {
         abort(); // Never called by the messages using this component.
     }
+    const OperationSequencer& operation_sequencer() const noexcept override {
+        abort(); // Never called by the messages using this component.
+    }
 };
 
-ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
-                                                   DistributorBucketSpaceRepo& bucketSpaceRepo,
-                                                   DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_ctx,
+                                                   DistributorOperationContext& op_ctx,
+                                                   DistributorMetricSet& metrics,
+                                                   ChainedMessageSender& msg_sender,
+                                                   OperationSequencer& operation_sequencer,
+                                                   NonTrackingMessageSender& non_tracking_sender,
+                                                   DocumentSelectionParser& parser,
                                                    const MaintenanceOperationGenerator& gen,
-                                                   DistributorComponentRegister& compReg)
-    : DistributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "External operation handler"),
-      _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(owner)),
+                                                   OperationOwner& operation_owner)
+    : _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
+      _metrics(metrics),
+      _msg_sender(msg_sender),
+      _operation_sequencer(operation_sequencer),
+      _parser(parser),
+      _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(node_ctx, non_tracking_sender)),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached(), // At epoch
+      _distributor_operation_owner(operation_owner),
       _non_main_thread_ops_mutex(),
-      _non_main_thread_ops_owner(*_direct_dispatch_sender, getClock()),
+      _non_main_thread_ops_owner(*_direct_dispatch_sender, _node_ctx.clock()),
+      _uuid_generator(std::make_unique<CryptoUuidGenerator>()),
       _concurrent_gets_enabled(false),
       _use_weak_internal_read_consistency_for_gets(false)
 {
@@ -99,11 +120,11 @@ ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime)
 bool
 ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
 {
-    const auto now = TimePoint(std::chrono::seconds(getClock().getTimeInSeconds().getTime()));
+    const auto now = TimePoint(std::chrono::seconds(_node_ctx.clock().getTimeInSeconds().getTime()));
     if (now < _rejectFeedBeforeTimeReached) {
         api::StorageReply::UP reply(cmd.makeReply());
         reply->setResult(makeSafeTimeRejectionResult(now));
-        sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+        _msg_sender.sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
         return false;
     }
     return true;
@@ -112,7 +133,7 @@ ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
 void ExternalOperationHandler::bounce_with_result(api::StorageCommand& cmd, const api::ReturnCode& result) {
     api::StorageReply::UP reply(cmd.makeReply());
     reply->setResult(result);
-    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+    _msg_sender.sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
 
 void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd,
@@ -137,7 +158,7 @@ void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageComman
 }
 
 void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd) {
-    const auto& cluster_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
+    const auto& cluster_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
     bounce_with_wrong_distribution(cmd, cluster_state);
 }
 
@@ -153,7 +174,7 @@ void ExternalOperationHandler::bounce_with_busy_during_state_transition(
     api::StorageReply::UP reply(cmd.makeReply());
     api::ReturnCode ret(api::ReturnCode::BUSY, status_str);
     reply->setResult(ret);
-    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+    _msg_sender.sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
 
 bool
@@ -161,8 +182,10 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
                                                               const document::BucketId &bucketId,
                                                               PersistenceOperationMetricSet& persistenceMetrics)
 {
-    document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
-    if (!ownsBucketInCurrentState(bucket)) {
+    auto &bucket_space(_op_ctx.bucket_space_repo().get(cmd.getBucket().getBucketSpace()));
+    auto bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucketId);
+    if (!bucket_ownership_flags.owned_in_current_state()) {
+        document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
         bounce_with_wrong_distribution(cmd);
@@ -170,12 +193,11 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
         return false;
     }
 
-    auto pending = getDistributor().checkOwnershipInPendingState(bucket);
-    if (!pending.isOwned()) {
+    if (!bucket_ownership_flags.owned_in_pending_state()) {
         // We return BUSY here instead of WrongDistributionReply to avoid clients potentially
         // ping-ponging between cluster state versions during a state transition.
-        auto& current_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
-        auto& pending_state = pending.getNonOwnedState();
+        auto& current_state = bucket_space.getClusterState();
+        auto& pending_state = bucket_space.get_pending_cluster_state();
         bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
         return false;
     }
@@ -202,7 +224,7 @@ ExternalOperationHandler::makeConcurrentMutationRejectionReply(api::StorageComma
 }
 
 bool ExternalOperationHandler::allowMutation(const SequencingHandle& handle) const {
-    const auto& config(getDistributor().getConfig());
+    const auto& config(_op_ctx.distributor_config());
     if (!config.getSequenceMutatingOperations()) {
         // Sequencing explicitly disabled, so always allow.
         return true;
@@ -217,7 +239,9 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         PersistenceOperationMetricSet& metrics,
         Func func)
 {
-    if (!ownsBucketInCurrentState(bucket)) {
+    auto &bucket_space(_op_ctx.bucket_space_repo().get(bucket.getBucketSpace()));
+    auto bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucket.getBucketId());
+    if (!bucket_ownership_flags.owned_in_current_state()) {
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
         bounce_with_wrong_distribution(cmd);
@@ -225,108 +249,140 @@ void ExternalOperationHandler::bounce_or_invoke_read_only_op(
         return;
     }
 
-    auto pending = getDistributor().checkOwnershipInPendingState(bucket);
-    if (pending.isOwned()) {
-        func(_bucketSpaceRepo);
+    if (bucket_ownership_flags.owned_in_pending_state()) {
+        func(_op_ctx.bucket_space_repo());
     } else {
-        if (getDistributor().getConfig().allowStaleReadsDuringClusterStateTransitions()) {
-            func(_readOnlyBucketSpaceRepo);
+        if (_op_ctx.distributor_config().allowStaleReadsDuringClusterStateTransitions()) {
+            func(_op_ctx.read_only_bucket_space_repo());
         } else {
-            auto& current_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
-            auto& pending_state = pending.getNonOwnedState();
+            auto& current_state = bucket_space.getClusterState();
+            auto& pending_state = bucket_space.get_pending_cluster_state();
             bounce_with_busy_during_state_transition(cmd, current_state, pending_state);
         }
     }
 }
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
-{
-    const documentapi::LoadType & loadType = cmd->getLoadType();
-    auto& metrics = getMetrics().puts[loadType];
-    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
+namespace {
+
+bool put_is_from_reindexing_visitor(const api::PutCommand& cmd) {
+    const auto& tas_cond = cmd.getCondition();
+    return (tas_cond.isPresent() && (tas_cond.getSelection().starts_with(reindexing_bucket_lock_bypass_prefix())));
+}
+
+// Precondition: put_is_from_reindexing_visitor(cmd) == true
+std::string extract_reindexing_token(const api::PutCommand& cmd) {
+    const std::string& tas_str = cmd.getCondition().getSelection();
+    auto eq_idx = tas_str.find_first_of('=');
+    if (eq_idx != std::string::npos) {
+        return tas_str.substr(eq_idx + 1);
+    }
+    return "";
+}
+
+}
+
+bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
+    auto& metrics = getMetrics().puts;
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
     if (cmd->getTimestamp() == 0) {
-        cmd->setTimestamp(getUniqueTimestamp());
+        cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
     }
 
-    auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
-    if (allowMutation(handle)) {
-        document::BucketSpace bucketSpace = cmd->getBucket().getBucketSpace();
-        _op = std::make_shared<PutOperation>(*this,
-                                             _bucketSpaceRepo.get(bucketSpace),
-                                             std::move(cmd), getMetrics().puts[loadType], std::move(handle));
+    const auto bucket_space = cmd->getBucket().getBucketSpace();
+    auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
+    bool allow = allowMutation(handle);
+    if (put_is_from_reindexing_visitor(*cmd)) {
+        auto expect_token = extract_reindexing_token(*cmd);
+        if (!allow && handle.is_blocked_by_bucket()) {
+            if (handle.is_bucket_blocked_with_token(expect_token)) {
+                cmd->setCondition(documentapi::TestAndSetCondition()); // Must clear TaS or the backend will reject the op
+                allow = true;
+            } else {
+                bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                                                         "Expected bucket lock token did not match actual lock token"));
+                return true;
+            }
+        } else {
+            bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                                                     "Operation expects a read-for-write bucket lock to be present, "
+                                                     "but none currently exists"));
+            return true;
+        }
+    }
+    if (allow) {
+        _op = std::make_shared<PutOperation>(_node_ctx, _op_ctx,
+                                             _op_ctx.bucket_space_repo().get(bucket_space),
+                                             std::move(cmd), getMetrics().puts, std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;
 }
 
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
-{
-    const documentapi::LoadType & loadType = cmd->getLoadType();
-    auto& metrics = getMetrics().updates[loadType];
-    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
+bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand>& cmd) {
+    auto& metrics = getMetrics().updates;
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
     if (cmd->getTimestamp() == 0) {
-        cmd->setTimestamp(getUniqueTimestamp());
+        cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
     }
-    auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
+    const auto bucket_space = cmd->getBucket().getBucketSpace();
+    auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     if (allowMutation(handle)) {
-        document::BucketSpace bucketSpace = cmd->getBucket().getBucketSpace();
-        _op = std::make_shared<TwoPhaseUpdateOperation>(*this,
-                                                        _bucketSpaceRepo.get(bucketSpace),
+        _op = std::make_shared<TwoPhaseUpdateOperation>(_node_ctx, _op_ctx, _parser,
+                                                        _op_ctx.bucket_space_repo().get(bucket_space),
                                                         std::move(cmd), getMetrics(), std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;
 }
 
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
-{
-    const documentapi::LoadType & loadType = cmd->getLoadType();
-    auto& metrics = getMetrics().removes[loadType];
-    if (!checkTimestampMutationPreconditions(*cmd, getBucketId(cmd->getDocumentId()), metrics)) {
+bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand>& cmd) {
+    auto& metrics = getMetrics().removes;
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
     }
 
     if (cmd->getTimestamp() == 0) {
-        cmd->setTimestamp(getUniqueTimestamp());
+        cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
     }
-    auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
+    const auto bucket_space = cmd->getBucket().getBucketSpace();
+    auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     if (allowMutation(handle)) {
-        auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
+        auto &distributorBucketSpace(_op_ctx.bucket_space_repo().get(bucket_space));
 
-        _op = std::make_shared<RemoveOperation>(*this, distributorBucketSpace, std::move(cmd),
-                                                getMetrics().removes[loadType], std::move(handle));
+        _op = std::make_shared<RemoveOperation>(_node_ctx, _op_ctx, distributorBucketSpace, std::move(cmd),
+                                                getMetrics().removes, std::move(handle));
     } else {
-        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
+        _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
 
     return true;
 }
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
-{
+bool ExternalOperationHandler::onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>& cmd) {
     document::BucketId bid;
-    RemoveLocationOperation::getBucketId(*this, *cmd, bid);
+    RemoveLocationOperation::getBucketId(_node_ctx, _parser, *cmd, bid);
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), bid);
 
-    auto& metrics = getMetrics().removelocations[cmd->getLoadType()];
+    auto& metrics = getMetrics().removelocations;
     if (!checkTimestampMutationPreconditions(*cmd, bucket.getBucketId(), metrics)) {
         return true;
     }
 
-    _op = std::make_shared<RemoveLocationOperation>(*this, _bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()),
-                                                    std::move(cmd), getMetrics().removelocations[cmd->getLoadType()]);
+    _op = std::make_shared<RemoveLocationOperation>(_node_ctx, _op_ctx, _parser,
+                                                    _op_ctx.bucket_space_repo().get(cmd->getBucket().getBucketSpace()),
+                                                    std::move(cmd), getMetrics().removelocations);
     return true;
 }
 
@@ -337,9 +393,9 @@ api::InternalReadConsistency ExternalOperationHandler::desired_get_read_consiste
 }
 
 std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(const std::shared_ptr<api::GetCommand>& cmd) {
-    document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
-    auto& metrics = getMetrics().gets[cmd->getLoadType()];
-    auto snapshot = getDistributor().read_snapshot_for_bucket(bucket);
+    document::Bucket bucket(cmd->getBucket().getBucketSpace(), _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()));
+    auto& metrics = getMetrics().gets;
+    auto snapshot = _op_ctx.read_snapshot_for_bucket(bucket);
     if (!snapshot.is_routable()) {
         const auto& ctx = snapshot.context();
         if (ctx.has_pending_state_transition()) {
@@ -354,45 +410,49 @@ std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(
     // The snapshot is aware of whether stale reads are enabled, so we don't have to check that here.
     const auto* space_repo = snapshot.bucket_space_repo();
     assert(space_repo != nullptr);
-    return std::make_shared<GetOperation>(*this, space_repo->get(bucket.getBucketSpace()),
+    return std::make_shared<GetOperation>(_node_ctx, space_repo->get(bucket.getBucketSpace()),
                                           snapshot.steal_read_guard(), cmd, metrics,
                                           desired_get_read_consistency());
 }
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
-{
+bool ExternalOperationHandler::onGet(const std::shared_ptr<api::GetCommand>& cmd) {
     _op = try_generate_get_operation(cmd);
     return true;
 }
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, StatBucket)
-{
-    auto& metrics = getMetrics().stats[cmd->getLoadType()];
+bool ExternalOperationHandler::onStatBucket(const std::shared_ptr<api::StatBucketCommand>& cmd) {
+    auto& metrics = getMetrics().stats;
     bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
         auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
-        _op = std::make_shared<StatBucketOperation>(*this, bucket_space, cmd);
+        _op = std::make_shared<StatBucketOperation>(bucket_space, cmd);
     });
     return true;
 }
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, GetBucketList)
-{
-    auto& metrics = getMetrics().getbucketlists[cmd->getLoadType()];
+bool ExternalOperationHandler::onGetBucketList(const std::shared_ptr<api::GetBucketListCommand>& cmd) {
+    auto& metrics = getMetrics().getbucketlists;
     bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
         auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
         auto& bucket_database = bucket_space.getBucketDatabase();
-        _op = std::make_shared<StatBucketListOperation>(bucket_database, _operationGenerator, getIndex(), cmd);
+        _op = std::make_shared<StatBucketListOperation>(bucket_database, _operationGenerator, _node_ctx.node_index(), cmd);
     });
     return true;
 }
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
-{
+bool ExternalOperationHandler::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>& cmd) {
     // TODO same handling as Gets (VisitorOperation needs to change)
-    const DistributorConfiguration& config(getDistributor().getConfig());
+    const auto& config(_op_ctx.distributor_config());
     VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(), config.getMaxVisitorsPerNodePerClientVisitor());
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
-    _op = Operation::SP(new VisitorOperation(*this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits[cmd->getLoadType()]));
+    auto &distributorBucketSpace(_op_ctx.bucket_space_repo().get(cmd->getBucket().getBucketSpace()));
+    auto visit_op = std::make_shared<VisitorOperation>(_node_ctx, _op_ctx, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits);
+    if (visit_op->is_read_for_write()) {
+        _op = std::make_shared<ReadForWriteVisitorOperationStarter>(std::move(visit_op), _operation_sequencer,
+                                                                    _distributor_operation_owner,
+                                                                    _op_ctx.pending_message_tracker(),
+                                                                    *_uuid_generator);
+    } else {
+        _op = std::move(visit_op);
+    }
     return true;
 }
 

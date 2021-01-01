@@ -490,22 +490,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("application-clusters.json"));
 
         // GET logs
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/dev/region/us-central-1/instance/default/logs?from=1233&to=3214", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/dev/region/us-east-1/instance/default/logs?from=1233&to=3214", GET)
                         .userIdentity(USER_ID),
                 "INFO - All good");
 
+        // GET controller logs
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/prod/region/controller/instance/default/logs?from=1233&to=3214", GET)
+                                      .userIdentity(USER_ID),
+                              "INFO - All good");
+
         // Get content - root
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-central-1/content/", GET).userIdentity(USER_ID),
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/", GET).userIdentity(USER_ID),
                 "{\"path\":\"/\"}");
         // Get content - ignore query params
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-central-1/content/bar/file.json?query=param", GET).userIdentity(USER_ID),
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/bar/file.json?query=param", GET).userIdentity(USER_ID),
                 "{\"path\":\"/bar/file.json\"}");
 
 
         updateMetrics();
 
         // GET metrics
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/dev/region/us-central-1/instance/default/metrics", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/environment/dev/region/us-east-1/instance/default/metrics", GET)
                         .userIdentity(USER_ID),
                                 new File("proton-metrics.json"));
 
@@ -608,7 +613,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET to get reindexing status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindexing", GET)
                                       .userIdentity(USER_ID),
-                              "{\"enabled\":true,\"status\":{\"readyAtMillis\":123},\"clusters\":[{\"name\":\"cluster\",\"status\":{\"readyAtMillis\":234},\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345,\"startedAtMillis\":456,\"endedAtMillis\":567,\"state\":\"failed\",\"message\":\"(＃｀д´)ﾉ\",\"progress\":\"some\"}]}]}");
+                              "{\"enabled\":true,\"status\":{\"readyAtMillis\":123},\"clusters\":[{\"name\":\"cluster\",\"status\":{\"readyAtMillis\":234},\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345,\"startedAtMillis\":456,\"endedAtMillis\":567,\"state\":\"failed\",\"message\":\"(＃｀д´)ﾉ\",\"progress\":0.1}]}]}");
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
@@ -622,20 +627,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(SCREWDRIVER_ID));
 
-        // POST a 'restart application' in staging environment command
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-central-1/instance/instance1/restart", POST)
+        // POST a 'restart application' in staging environment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/instance1/restart", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in staging.us-central-1\"}");
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in staging.us-east-3\"}");
 
-        // POST a 'restart application' in staging test command
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-central-1/instance/instance1/restart", POST)
+        // POST a 'restart application' in test environment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/instance1/restart", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in test.us-central-1\"}");
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in test.us-east-1\"}");
 
-        // POST a 'restart application' in staging dev command
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-central-1/instance/instance1/restart", POST)
+        // POST a 'restart application' in dev environment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/restart", POST)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in dev.us-central-1\"}");
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in dev.us-east-1\"}");
 
         // POST a 'restart application' command with a host filter (other filters not supported yet)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
@@ -1158,28 +1163,28 @@ public class ApplicationApiTest extends ControllerContainerTest {
         
         // POST (deploy) an application with an invalid application package
         MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1/deploy", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
                               new File("deploy-failure.json"), 400);
 
         // POST (deploy) an application without available capacity
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to prepare application", "Out of capacity", ConfigServerException.ErrorCode.OUT_OF_CAPACITY, null));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1/deploy", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
                               new File("deploy-out-of-capacity.json"), 400);
 
         // POST (deploy) an application where activation fails
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to activate application", "Activation conflict", ConfigServerException.ErrorCode.ACTIVATION_CONFLICT, null));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1/deploy", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
                               new File("deploy-activation-conflict.json"), 409);
 
         // POST (deploy) an application where we get an internal server error
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to deploy application", "Internal server error", ConfigServerException.ErrorCode.INTERNAL_SERVER_ERROR, null));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1/deploy", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
                               new File("deploy-internal-server-error.json"), 500);

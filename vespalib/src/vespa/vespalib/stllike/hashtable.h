@@ -50,7 +50,7 @@ namespace vespalib {
 class hashtable_base
 {
 public:
-    typedef unsigned int next_t;
+    using next_t = uint32_t;
     /**
      * This is a standard modulator that does modulo/hashTableSize.
      * Hashtable size is selected from a a set of prime numbers.
@@ -79,8 +79,10 @@ public:
     private:
         next_t _mask;
     };
-    static size_t getModuloStl(size_t newSize);
-    static size_t getModuloSimple(size_t newSize);
+    static size_t getModuloStl(size_t size);
+    static size_t getModuloSimple(size_t size) {
+        return std::max(size_t(8), roundUp2inN(size));
+    }
 protected:
     struct DefaultMoveHandler
     {
@@ -98,11 +100,11 @@ class hash_node {
 public:
     using next_t=hashtable_base::next_t;
     enum {npos=-1u, invalid=-2u};
-    hash_node() : _next(invalid) {}
+    hash_node() : _node(), _next(invalid) {}
     hash_node(const V & node, next_t next=npos)
-        : _next(next), _node(node) {}
+        : _node(node), _next(next) {}
     hash_node(V &&node, next_t next=npos)
-        : _next(next), _node(std::move(node)) {}
+        : _node(std::move(node)), _next(next) {}
     hash_node(hash_node &&) noexcept = default;
     hash_node &operator=(hash_node &&) noexcept = default;
     hash_node(const hash_node &) = default;             // These will not be created
@@ -119,8 +121,8 @@ public:
     bool valid()         const { return _next != invalid; }
     bool hasNext()       const { return valid() && (_next != npos); }
 private:
-    next_t  _next;
     V       _node;
+    next_t  _next;
 };
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator = hashtable_base::prime_modulator>
@@ -129,7 +131,7 @@ class hashtable : public hashtable_base
 private:
     using Node=hash_node<Value>;
 protected:
-    typedef vespalib::Array<Node> NodeStore;
+    using NodeStore = vespalib::Array<Node>;
     virtual void move(NodeStore && oldStore);
 public:
     class const_iterator;
@@ -246,6 +248,9 @@ public:
     insert_result insert(V && node) {
         return insertInternal(std::forward<V>(node));
     }
+    // This will insert unconditionally, without checking presence, and might cause duplicates.
+    // Use at you own risk.
+    void force_insert(Value && value);
     
     /// This gives faster iteration than can be achieved by the iterators.
     template <typename Func>
@@ -274,10 +279,10 @@ public:
     size_t getMemoryUsed() const;
 
 protected:
-    /// These two methods are only for the ones that know what they are doing.
-    /// valid input here are stuff returned from iterator.getInternalIndex.
     template <typename V>
     insert_result insertInternal(V && node);
+    /// These two methods are only for the ones that know what they are doing.
+    /// valid input here are stuff returned from iterator.getInternalIndex.
     Value & getByInternalIndex(size_t index)             { return _nodes[index].getValue(); }
     const Value & getByInternalIndex(size_t index) const { return _nodes[index].getValue(); }
     template <typename MoveHandler>

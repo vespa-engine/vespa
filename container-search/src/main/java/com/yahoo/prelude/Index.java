@@ -44,11 +44,14 @@ public class Index {
     /** The null index - don't use this for name lookups */
     public static final Index nullIndex = new Index("(null)");
 
-    private String name;
+    private final String name;
 
-    private List<String> aliases = new ArrayList<>();
+    private String type; // TODO: Parse to a type object; do not expose this as a string
+
+    private final List<String> aliases = new ArrayList<>();
 
     // The state resulting from adding commands to this (using addCommand)
+    private boolean tensor = false;
     private boolean uriIndex = false;
     private boolean hostIndex = false;
     private StemMode stemMode = StemMode.NONE;
@@ -79,11 +82,11 @@ public class Index {
     /** The string terminating an exact token in this index, or null to use the default (space) */
     private String exactTerminator = null;
 
-    /** Commands which are not coverted into a field */
-    private Set<String> commands = new java.util.HashSet<>();
+    /** Commands which are not converted into a field */
+    private final Set<String> commands = new java.util.HashSet<>();
 
     /** All the commands added to this, including those converted to fields above */
-    private List<String> allCommands = new java.util.ArrayList<>();
+    private final List<String> allCommands = new java.util.ArrayList<>();
 
     public Index(String name) {
         this.name = name;
@@ -139,62 +142,70 @@ public class Index {
     }
 
     /** Adds a type or untyped command string to this */
-    public Index addCommand(String commandString) {
-        allCommands.add(commandString);
+    public Index addCommand(String command) {
+        allCommands.add(command);
 
-        if ("fullurl".equals(commandString)) {
+        if (command.startsWith("type tensor(") || command.startsWith("type tensor<")) { // TODO: Type info can replace numerical, predicate, multivalue
+            setTensor(true);
+        } else if ("fullurl".equals(command)) {
             setUriIndex(true);
-        } else if ("urlhost".equals(commandString)) {
+        } else if ("urlhost".equals(command)) {
             setHostIndex(true);
-        } else if (commandString.startsWith("stem ")) {
-            setStemMode(commandString.substring(5));
-        } else if (commandString.startsWith("stem:")) {
-            setStemMode(commandString.substring(5));
-        } else if ("stem".equals(commandString)) {
+        } else if (command.startsWith("stem ")) {
+            setStemMode(command.substring(5));
+        } else if (command.startsWith("stem:")) {
+            setStemMode(command.substring(5));
+        } else if ("stem".equals(command)) {
             setStemMode(StemMode.SHORTEST);
-        } else if ("word".equals(commandString)) {
+        } else if ("word".equals(command)) {
             setExact(true, null);
-        } else if ("exact".equals(commandString)) {
+        } else if ("exact".equals(command)) {
             setExact(true, " ");
-        } else if ("dynteaser".equals(commandString)) {
+        } else if ("dynteaser".equals(command)) {
             setDynamicSummary(true);
-        } else if ("highlight".equals(commandString)) {
+        } else if ("highlight".equals(command)) {
             setHighlightSummary(true);
-        } else if ("lowercase".equals(commandString)) {
+        } else if ("lowercase".equals(command)) {
             setLowercase(true);
-        } else if (commandString.startsWith("exact ")) {
-            setExact(true, commandString.substring(6));
-        } else if (commandString.startsWith("ngram ")) {
-            setNGram(true, Integer.parseInt(commandString.substring(6)));
-        } else if (commandString.equals("attribute")) {
+        } else if (command.startsWith("exact ")) {
+            setExact(true, command.substring(6));
+        } else if (command.startsWith("ngram ")) {
+            setNGram(true, Integer.parseInt(command.substring(6)));
+        } else if (command.equals("attribute")) {
             setAttribute(true);
-        } else if (commandString.equals("default-position")) {
+        } else if (command.equals("default-position")) {
             setDefaultPosition(true);
-        } else if (commandString.equals("plain-tokens")) {
+        } else if (command.equals("plain-tokens")) {
             setPlainTokens(true);
-        } else if (commandString.equals("multivalue")) {
+        } else if (command.equals("multivalue")) {
             setMultivalue(true);
-        } else if (commandString.equals("fast-search")) {
+        } else if (command.equals("fast-search")) {
             setFastSearch(true);
-        } else if (commandString.equals("normalize")) {
+        } else if (command.equals("normalize")) {
             setNormalize(true);
-        } else if (commandString.equals("literal-boost")) {
+        } else if (command.equals("literal-boost")) {
             setLiteralBoost(true);
-        } else if (commandString.equals("numerical")) {
+        } else if (command.equals("numerical")) {
             setNumerical(true);
-        } else if (commandString.equals("predicate")) {
+        } else if (command.equals("predicate")) {
             setPredicate(true);
-        } else if (commandString.startsWith("predicate-bounds ")) {
-            setPredicateBounds(commandString.substring(17));
-        } else if (commandString.equals("phrase-segmenting")) {
+        } else if (command.startsWith("predicate-bounds ")) {
+            setPredicateBounds(command.substring(17));
+        } else if (command.equals("phrase-segmenting")) {
             setPhraseSegmenting(true);
-        } else if (commandString.startsWith("phrase-segmenting ")) {
-            setPhraseSegmenting(Boolean.parseBoolean(commandString.substring("phrase-segmenting ".length())));
+        } else if (command.startsWith("phrase-segmenting ")) {
+            setPhraseSegmenting(Boolean.parseBoolean(command.substring("phrase-segmenting ".length())));
         } else {
-            commands.add(commandString);
+            commands.add(command);
         }
         return this;
     }
+
+    private void setTensor(boolean tensor) {
+        this.tensor = tensor;
+    }
+
+    public boolean isTensor() { return tensor; }
 
     private void setPredicateBounds(String bounds) {
         if ( ! bounds.startsWith("[..")) {
@@ -270,9 +281,7 @@ public class Index {
         return "(null)".equals(name);
     }
 
-    public boolean isAttribute() {
-        return isAttribute;
-    }
+    public boolean isAttribute() { return isAttribute; }
 
     public void setAttribute(boolean isAttribute) {
         this.isAttribute = isAttribute;

@@ -6,13 +6,14 @@
 #include <tests/common/message_sender_stub.h>
 #include <cassert>
 #include <string>
+#include "dummy_cluster_context.h"
 
 namespace storage {
 
 class DistributorMessageSenderStub : public distributor::DistributorMessageSender {
     MessageSenderStub _stub_impl;
-    std::string _cluster_name;
     distributor::PendingMessageTracker* _pending_message_tracker;
+    distributor::OperationSequencer* _operation_sequencer;
 public:
 
     DistributorMessageSenderStub();
@@ -82,8 +83,8 @@ public:
         return 0;
     }
 
-    const std::string& getClusterName() const override {
-        return _cluster_name;
+    const ClusterContext& cluster_context() const override {
+        return dummy_cluster_context;
     }
 
     const distributor::PendingMessageTracker& getPendingMessageTracker() const override {
@@ -93,6 +94,15 @@ public:
 
     void setPendingMessageTracker(distributor::PendingMessageTracker& tracker) {
         _pending_message_tracker = &tracker;
+    }
+
+    const distributor::OperationSequencer& operation_sequencer() const noexcept override {
+        assert(_operation_sequencer);
+        return *_operation_sequencer;
+    }
+
+    void set_operation_sequencer(distributor::OperationSequencer& op_seq) {
+        _operation_sequencer = &op_seq;
     }
 };
 

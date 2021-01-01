@@ -251,7 +251,7 @@ template <typename B, typename M>
 void
 MultiValueAttribute<B, M>::clearDocs(DocId lidLow, DocId lidLimit)
 {
-    _mvMapping.clearDocs(lidLow, lidLimit, [=](uint32_t docId) { this->clearDoc(docId); });
+    _mvMapping.clearDocs(lidLow, lidLimit, [this](uint32_t docId) { this->clearDoc(docId); });
 }
 
 

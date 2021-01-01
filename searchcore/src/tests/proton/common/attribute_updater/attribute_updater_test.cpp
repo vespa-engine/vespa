@@ -22,8 +22,10 @@
 #include <vespa/document/update/tensor_add_update.h>
 #include <vespa/document/update/tensor_modify_update.h>
 #include <vespa/document/update/tensor_remove_update.h>
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
@@ -50,10 +52,10 @@ using search::tensor::ITensorAttribute;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::SerializedTensorAttribute;
 using search::tensor::TensorAttribute;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::eval::TensorSpec;
 
 namespace search {
 
@@ -411,7 +413,7 @@ getTensorDataType(const vespalib::string &spec)
 std::unique_ptr<Value>
 makeTensor(const TensorSpec &spec)
 {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 std::unique_ptr<TensorFieldValue>
@@ -441,7 +443,7 @@ struct TensorFixture : public Fixture {
     }
 
     void assertTensor(const TensorSpec &expSpec) {
-        auto actual = EngineOrFactory::get().to_spec(*attribute->getTensor(1));
+        auto actual = spec_from_value(*attribute->getTensor(1));
         EXPECT_EQUAL(expSpec, actual);
     }
 };

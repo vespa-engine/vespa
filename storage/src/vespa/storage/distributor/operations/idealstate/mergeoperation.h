@@ -47,7 +47,7 @@ public:
             std::vector<MergeMetaData>&);
 
     bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const override;
-    bool isBlocked(const PendingMessageTracker& pendingMessages) const override;
+    bool isBlocked(const PendingMessageTracker& pendingMessages, const OperationSequencer&) const override;
 private:
     static void addIdealNodes(
             const std::vector<uint16_t>& idealNodes,

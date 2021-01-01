@@ -51,7 +51,7 @@ public class ConfigRetrieverTest {
     public void require_that_bootstrap_configs_come_first() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
-        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, false);
+        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
 
         assertThat(bootstrapConfigs, Matchers.instanceOf(BootstrapConfigs.class));
     }
@@ -61,31 +61,15 @@ public class ConfigRetrieverTest {
     public void require_that_components_comes_after_bootstrap() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
-        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, false);
+        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
 
         ConfigKey<? extends ConfigInstance> testConfigKey = new ConfigKey<>(TestConfig.class, dirConfigSource.configId());
-        ConfigSnapshot componentsConfigs = retriever.getConfigs(Collections.singleton(testConfigKey), 0);
+        ConfigSnapshot componentsConfigs = retriever.getConfigs(Collections.singleton(testConfigKey), 0, true);
 
         if (componentsConfigs instanceof ComponentsConfigs) {
             assertThat(componentsConfigs.size(), is(3));
         } else {
             fail("ComponentsConfigs has unexpected type: " + componentsConfigs);
-        }
-    }
-
-    @Test
-    @SuppressWarnings("unused")
-    public void require_no_reconfig_when_restart_on_redeploy() {
-        // TODO
-        writeConfigs();
-        ConfigRetriever retriever = createConfigRetriever();
-        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, false);
-
-        ConfigKey<? extends ConfigInstance> testConfigKey = new ConfigKey<>(TestConfig.class, dirConfigSource.configId());
-        Optional<ConfigSnapshot> componentsConfigs = retriever.getConfigsOnce(Collections.singleton(testConfigKey), 0, true);
-
-        if (componentsConfigs.isPresent()) {
-            fail("Expected no configs");
         }
     }
 
@@ -100,20 +84,20 @@ public class ConfigRetrieverTest {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
         ConfigKey<? extends ConfigInstance> testConfigKey = new ConfigKey<>(TestConfig.class, dirConfigSource.configId());
-        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, false);
-        ConfigSnapshot componentsConfigs = retriever.getConfigs(Collections.singleton(testConfigKey), 0, false);
+        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
+        ConfigSnapshot componentsConfigs = retriever.getConfigs(Collections.singleton(testConfigKey), 0, true);
         Set<ConfigKey<? extends ConfigInstance>> keys = new HashSet<>();
         keys.add(testConfigKey);
         keys.add(new ConfigKey<>(TestConfig.class, ""));
-        retriever.getConfigs(keys, 0);
+        retriever.getConfigs(keys, 0, true);
     }
 
     @Test
     public void require_that_empty_components_keys_after_bootstrap_returns_components_configs() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
-        assertThat(retriever.getConfigs(Collections.emptySet(), 0), instanceOf(BootstrapConfigs.class));
-        assertThat(retriever.getConfigs(Collections.emptySet(), 0), instanceOf(ComponentsConfigs.class));
+        assertThat(retriever.getConfigs(Collections.emptySet(), 0, true), instanceOf(BootstrapConfigs.class));
+        assertThat(retriever.getConfigs(Collections.emptySet(), 0, true), instanceOf(ComponentsConfigs.class));
     }
 
     public void writeConfigs() {

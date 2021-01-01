@@ -64,8 +64,6 @@ getStorageMessageBucket(const api::StorageMessage& msg)
             return static_cast<const ReadBucketList&>(msg).getBucket();
         case ReadBucketInfo::ID:
             return static_cast<const ReadBucketInfo&>(msg).getBucket();
-        case InternalBucketJoinCommand::ID:
-            return static_cast<const InternalBucketJoinCommand&>(msg).getBucket();
         case RecheckBucketInfoCommand::ID:
             return static_cast<const RecheckBucketInfoCommand&>(msg).getBucket();
         default:

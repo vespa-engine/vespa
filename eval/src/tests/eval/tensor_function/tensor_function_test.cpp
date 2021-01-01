@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_function.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -13,15 +13,17 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::tensor_function;
 
+const auto &simple_factory = SimpleValueBuilderFactory::get();
+
 struct EvalCtx {
-    EngineOrFactory engine;
+    const ValueBuilderFactory &factory;
     Stash stash;
     std::vector<Value::UP> tensors;
     std::vector<Value::CREF> params;
     InterpretedFunction::UP ifun;
     std::unique_ptr<InterpretedFunction::Context> ictx;
-    EvalCtx(EngineOrFactory engine_in)
-        : engine(engine_in), stash(), tensors(), params(), ifun(), ictx() {}
+    EvalCtx(const ValueBuilderFactory &factory_in)
+        : factory(factory_in), stash(), tensors(), params(), ifun(), ictx() {}
     ~EvalCtx() {}
     size_t add_tensor(Value::UP tensor) {
         size_t id = params.size();
@@ -34,18 +36,18 @@ struct EvalCtx {
         tensors[idx] = std::move(tensor);
     }
     const Value &eval(const TensorFunction &fun) {
-        ifun = std::make_unique<InterpretedFunction>(engine, fun);
+        ifun = std::make_unique<InterpretedFunction>(factory, fun);
         ictx = std::make_unique<InterpretedFunction::Context>(*ifun);
         return ifun->eval(*ictx, SimpleObjectParams(params));
     }
     Value::UP make_double(double value) {
-        return engine.from_spec(TensorSpec("double").add({}, value));
+        return value_from_spec(TensorSpec("double").add({}, value), factory);
     }
     Value::UP make_true() {
-        return engine.from_spec(TensorSpec("double").add({}, 1.0));
+        return value_from_spec(TensorSpec("double").add({}, 1.0), factory);
     }
     Value::UP make_false() {
-        return engine.from_spec(TensorSpec("double").add({}, 0.0));
+        return value_from_spec(TensorSpec("double").add({}, 0.0), factory);
     }
     Value::UP make_vector(std::initializer_list<double> cells, vespalib::string dim = "x", bool mapped = false) {
         vespalib::string type_spec = mapped
@@ -59,135 +61,130 @@ struct EvalCtx {
                                       : TensorSpec::Label(idx++);
             spec.add({{dim, label}}, cell_value);
         }
-        return engine.from_spec(spec);
+        return value_from_spec(spec, factory);
     }
     Value::UP make_mixed_tensor(double a, double b, double c, double d) {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x{},y[2])")
                 .add({{"x", "foo"}, {"y", 0}}, a)
                 .add({{"x", "foo"}, {"y", 1}}, b)
                 .add({{"x", "bar"}, {"y", 0}}, c)
-                .add({{"x", "bar"}, {"y", 1}}, d));
+                .add({{"x", "bar"}, {"y", 1}}, d), factory);
     }
     Value::UP make_tensor_matrix_first_half() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x[2])")
                 .add({{"x", 0}}, 1.0)
-                .add({{"x", 1}}, 3.0));
+                .add({{"x", 1}}, 3.0), factory);
     }
     Value::UP make_tensor_matrix_second_half() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x[2])")
                 .add({{"x", 0}}, 2.0)
-                .add({{"x", 1}}, 4.0));
+                .add({{"x", 1}}, 4.0), factory);
     }
     Value::UP make_tensor_matrix() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x[2],y[2])")
                 .add({{"x", 0}, {"y", 0}}, 1.0)
                 .add({{"x", 0}, {"y", 1}}, 2.0)
                 .add({{"x", 1}, {"y", 0}}, 3.0)
-                .add({{"x", 1}, {"y", 1}}, 4.0));
+                .add({{"x", 1}, {"y", 1}}, 4.0), factory);
     }
     Value::UP make_tensor_matrix_renamed() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(y[2],z[2])")
                 .add({{"z", 0}, {"y", 0}}, 1.0)
                 .add({{"z", 0}, {"y", 1}}, 2.0)
                 .add({{"z", 1}, {"y", 0}}, 3.0)
-                .add({{"z", 1}, {"y", 1}}, 4.0));
+                .add({{"z", 1}, {"y", 1}}, 4.0), factory);
     }
     Value::UP make_tensor_reduce_input() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x[3],y[2])")
                 .add({{"x",0},{"y",0}}, 1)
                 .add({{"x",1},{"y",0}}, 2)
                 .add({{"x",2},{"y",0}}, 3)
                 .add({{"x",0},{"y",1}}, 4)
                 .add({{"x",1},{"y",1}}, 5)
-                .add({{"x",2},{"y",1}}, 6));
+                .add({{"x",2},{"y",1}}, 6), factory);
     }
     Value::UP make_tensor_reduce_y_output() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x[3])")
                 .add({{"x",0}}, 5)
                 .add({{"x",1}}, 7)
-                .add({{"x",2}}, 9));
+                .add({{"x",2}}, 9), factory);
     }
     Value::UP make_tensor_map_input() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x{},y{})")
                 .add({{"x","1"},{"y","1"}}, 1)
                 .add({{"x","2"},{"y","1"}}, -3)
-                .add({{"x","1"},{"y","2"}}, 5));
+                .add({{"x","1"},{"y","2"}}, 5), factory);
     }
     Value::UP make_tensor_map_output() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x{},y{})")
                 .add({{"x","1"},{"y","1"}}, -1)
                 .add({{"x","2"},{"y","1"}}, 3)
-                .add({{"x","1"},{"y","2"}}, -5));
+                .add({{"x","1"},{"y","2"}}, -5), factory);
     }
     Value::UP make_tensor_join_lhs() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x{},y{})")
                 .add({{"x","1"},{"y","1"}}, 1)
                 .add({{"x","2"},{"y","1"}}, 3)
-                .add({{"x","1"},{"y","2"}}, 5));
+                .add({{"x","1"},{"y","2"}}, 5), factory);
     }
     Value::UP make_tensor_join_rhs() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(y{},z{})")
                 .add({{"y","1"},{"z","1"}}, 7)
                 .add({{"y","2"},{"z","1"}}, 11)
-                .add({{"y","1"},{"z","2"}}, 13));
+                .add({{"y","1"},{"z","2"}}, 13), factory);
     }
     Value::UP make_tensor_join_output() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x{},y{},z{})")
                 .add({{"x","1"},{"y","1"},{"z","1"}}, 7)
                 .add({{"x","1"},{"y","1"},{"z","2"}}, 13)
                 .add({{"x","2"},{"y","1"},{"z","1"}}, 21)
                 .add({{"x","2"},{"y","1"},{"z","2"}}, 39)
-                .add({{"x","1"},{"y","2"},{"z","1"}}, 55));
+                .add({{"x","1"},{"y","2"},{"z","1"}}, 55), factory);
     }
     Value::UP make_tensor_merge_lhs() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x{})")
                 .add({{"x","1"}}, 1)
                 .add({{"x","2"}}, 3)
-                .add({{"x","3"}}, 5));
+                .add({{"x","3"}}, 5), factory);
     }
     Value::UP make_tensor_merge_rhs() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x{})")
                 .add({{"x","2"}}, 7)
                 .add({{"x","3"}}, 9)
-                .add({{"x","4"}}, 11));
+                .add({{"x","4"}}, 11), factory);
     }
     Value::UP make_tensor_merge_output() {
-        return engine.from_spec(
+        return value_from_spec(
                 TensorSpec("tensor(x{})")
                 .add({{"x","1"}}, 1)
                 .add({{"x","2"}}, 10)
                 .add({{"x","3"}}, 14)
-                .add({{"x","4"}}, 11));
+                .add({{"x","4"}}, 11), factory);
     }
 };
 
 void verify_equal(const Value &expect, const Value &value) {
-    const Tensor *tensor = value.as_tensor();
-    ASSERT_TRUE(tensor != nullptr);
-    const Tensor *expect_tensor = expect.as_tensor();
-    ASSERT_TRUE(expect_tensor != nullptr);
-    ASSERT_EQUAL(&expect_tensor->engine(), &tensor->engine());
-    auto expect_spec = expect_tensor->engine().to_spec(expect);
-    auto value_spec = tensor->engine().to_spec(value);
+    auto expect_spec = spec_from_value(expect);
+    auto value_spec = spec_from_value(value);
     EXPECT_EQUAL(expect_spec, value_spec);
 }
 
 TEST("require that const_value works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     Value::UP my_const = ctx.make_tensor_matrix();
     Value::UP expect = ctx.make_tensor_matrix();
     const auto &fun = const_value(*my_const, ctx.stash);
@@ -197,7 +194,7 @@ TEST("require that const_value works") {
 }
 
 TEST("require that tensor injection works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
     Value::UP expect = ctx.make_tensor_matrix();
     const auto &fun = inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash);
@@ -207,7 +204,7 @@ TEST("require that tensor injection works") {
 }
 
 TEST("require that partial tensor reduction works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     Value::UP expect = ctx.make_tensor_reduce_y_output();
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {"y"}, ctx.stash);
@@ -217,7 +214,7 @@ TEST("require that partial tensor reduction works") {
 }
 
 TEST("require that full tensor reduction works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
@@ -228,7 +225,7 @@ TEST("require that full tensor reduction works") {
 }
 
 TEST("require that tensor map works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_map_input());
     Value::UP expect = ctx.make_tensor_map_output();
     const auto &fun = map(inject(ValueType::from_spec("tensor(x{},y{})"), a_id, ctx.stash), operation::Neg::f, ctx.stash);
@@ -238,7 +235,7 @@ TEST("require that tensor map works") {
 }
 
 TEST("require that tensor join works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_join_lhs());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_join_rhs());
     Value::UP expect = ctx.make_tensor_join_output();
@@ -251,7 +248,7 @@ TEST("require that tensor join works") {
 }
 
 TEST("require that tensor merge works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_merge_lhs());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_merge_rhs());
     Value::UP expect = ctx.make_tensor_merge_output();
@@ -264,7 +261,7 @@ TEST("require that tensor merge works") {
 }
 
 TEST("require that tensor concat works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix_first_half());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_matrix_second_half());
     Value::UP expect = ctx.make_tensor_matrix();
@@ -277,7 +274,7 @@ TEST("require that tensor concat works") {
 }
 
 TEST("require that tensor create works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     size_t b_id = ctx.add_tensor(ctx.make_double(2.0));
     Value::UP my_const = ctx.make_double(3.0);
@@ -298,15 +295,17 @@ TEST("require that tensor create works") {
 }
 
 TEST("require that single value tensor peek works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
+    size_t b_id = ctx.add_tensor(ctx.make_double(1000.0));
     Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
     Value::UP expect = ctx.make_vector({2.0, 3.0, 0.0});
     const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
+    const auto &b = inject(ValueType::from_spec("double"), b_id, ctx.stash);
     const auto &t = const_value(*my_const, ctx.stash);
     const auto &peek1 = peek(t, {{"x", "foo"}, {"y", a}}, ctx.stash);
     const auto &peek2 = peek(t, {{"x", "bar"}, {"y", size_t(0)}}, ctx.stash);
-    const auto &peek3 = peek(t, {{"x", "bar"}, {"y", size_t(1000)}}, ctx.stash);
+    const auto &peek3 = peek(t, {{"x", "bar"}, {"y", b}}, ctx.stash);
     const auto &fun = create(ValueType::from_spec("tensor(x[3])"),
                              {
                                  {{{"x", 0}}, peek1},
@@ -320,7 +319,7 @@ TEST("require that single value tensor peek works") {
 }
 
 TEST("require that tensor subspace tensor peek works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
     Value::UP expect = ctx.make_vector({3.0, 4.0}, "y");
     const auto &t = const_value(*my_const, ctx.stash);
@@ -331,7 +330,7 @@ TEST("require that tensor subspace tensor peek works") {
 }
 
 TEST("require that automatic string conversion tensor peek works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     Value::UP my_const = ctx.make_vector({1.0, 2.0, 3.0}, "x", true);
     const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
@@ -345,7 +344,7 @@ TEST("require that automatic string conversion tensor peek works") {
 }
 
 TEST("require that tensor rename works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
     Value::UP expect = ctx.make_tensor_matrix_renamed();
     const auto &fun = rename(inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash),
@@ -356,7 +355,7 @@ TEST("require that tensor rename works") {
 }
 
 TEST("require that if_node works") {
-    EvalCtx ctx(SimpleTensorEngine::ref());
+    EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_true());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_matrix_first_half());
     size_t c_id = ctx.add_tensor(ctx.make_tensor_matrix_second_half());

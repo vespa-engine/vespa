@@ -227,16 +227,13 @@ MergeOperation::deleteSourceOnlyNodes(
         getBucketId().toString().c_str());
 
     if (!sourceOnlyNodes.empty()) {
-        _removeOperation.reset(
-                new RemoveBucketOperation(
-                        _manager->getDistributorComponent().getClusterName(),
-                        BucketAndNodes(getBucket(), sourceOnlyNodes)));
+        _removeOperation = std::make_unique<RemoveBucketOperation>(
+                        _manager->getDistributorComponent().cluster_context(),
+                        BucketAndNodes(getBucket(), sourceOnlyNodes));
         // Must not send removes to source only copies if something has caused
         // pending load to the copy after the merge was sent!
-        if (_removeOperation->isBlocked(sender.getPendingMessageTracker())) {
-            LOG(debug,
-                "Source only removal for %s was blocked by a pending "
-                "operation",
+        if (_removeOperation->isBlocked(sender.getPendingMessageTracker(), sender.operation_sequencer())) {
+            LOG(debug, "Source only removal for %s was blocked by a pending operation",
                 getBucketId().toString().c_str());
             _ok = false;
             done();
@@ -324,14 +321,15 @@ bool MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint8_t pri)
     return IdealStateOperation::shouldBlockThisOperation(messageType, pri);
 }
 
-bool MergeOperation::isBlocked(const PendingMessageTracker& pending_tracker) const {
+bool MergeOperation::isBlocked(const PendingMessageTracker& pending_tracker,
+                               const OperationSequencer& op_seq) const {
     const auto& node_info = pending_tracker.getNodeInfo();
     for (auto node : getNodes()) {
         if (node_info.isBusy(node)) {
             return true;
         }
     }
-    return IdealStateOperation::isBlocked(pending_tracker);
+    return IdealStateOperation::isBlocked(pending_tracker, op_seq);
 }
 
 }

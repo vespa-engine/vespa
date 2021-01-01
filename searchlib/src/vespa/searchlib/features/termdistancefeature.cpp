@@ -13,7 +13,7 @@ namespace search::features {
 
 
 TermDistanceExecutor::TermDistanceExecutor(const IQueryEnvironment & env,
-                                           [[maybe_unused]] const TermDistanceParams & params) :
+                                           const TermDistanceParams & params) :
     FeatureExecutor(),
     _termA(env.getTerm(params.termX)),
     _termB(env.getTerm(params.termY)),

@@ -12,7 +12,7 @@ namespace vespalib::eval { struct ValueBuilderFactory; }
 
 namespace vespalib::eval::instruction {
 
-using join_fun_t = vespalib::eval::operation::op2_t;
+using join_fun_t = operation::op2_t;
 
 //-----------------------------------------------------------------------------
 
@@ -21,10 +21,6 @@ struct GenericJoin {
     make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
                      join_fun_t function,
                      const ValueBuilderFactory &factory, Stash &stash);
-
-    static Value::UP
-    perform_join(const Value &a, const Value &b, join_fun_t function,
-                 const ValueBuilderFactory &factory);
 };
 
 //-----------------------------------------------------------------------------

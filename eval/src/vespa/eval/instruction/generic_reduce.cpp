@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <cassert>
+#include <array>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -153,13 +154,6 @@ struct SelectGenericReduceOp {
     }
 };
 
-struct PerformGenericReduce {
-    template <typename ICT, typename OCT, typename AGGR>
-    static auto invoke(const Value &input, const ReduceParam &param) {
-        return generic_reduce<ICT, OCT, typename AGGR::template templ<OCT>>(input, param);
-    }
-};
-
 //-----------------------------------------------------------------------------
 
 } // namespace <unnamed>
@@ -246,18 +240,6 @@ GenericReduce::make_instruction(const ValueType &type, Aggr aggr, const std::vec
     auto &param = stash.create<ReduceParam>(type, dimensions, factory);
     auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(type.cell_type(), param.res_type.cell_type(), aggr, param);
     return Instruction(fun, wrap_param<ReduceParam>(param));
-}
-
-
-Value::UP
-GenericReduce::perform_reduce(const Value &a, Aggr aggr,
-                              const std::vector<vespalib::string> &dimensions,
-                              const ValueBuilderFactory &factory)
-{
-    ReduceParam param(a.type(), dimensions, factory);
-    return typify_invoke<3,ReduceTypify,PerformGenericReduce>(
-            a.type().cell_type(), param.res_type.cell_type(), aggr,
-            a, param);
 }
 
 } // namespace

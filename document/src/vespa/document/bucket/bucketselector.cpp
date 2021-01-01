@@ -31,6 +31,8 @@ using namespace document::select;
         BucketVisitor(const BucketIdFactory& factory)
             : _factory(factory), _buckets(), _unknown(true) {}
 
+        ~BucketVisitor() override;
+
         void visitAndBranch(const document::select::And& node) override {
             BucketVisitor left(_factory);
             node.getLeft().visit(left);
@@ -155,6 +157,9 @@ using namespace document::select;
         void visitNullValueNode(const NullValueNode &) override {}
         void visitInvalidValueNode(const InvalidValueNode &) override {}
     };
+
+BucketVisitor::~BucketVisitor() = default;
+
 //}
 
 BucketSelector::BucketSelector(const document::BucketIdFactory& factory)

@@ -22,4 +22,14 @@ vespa_add_library(eval_instruction OBJECT
     generic_rename.cpp
     index_lookup_table.cpp
     join_with_number_function.cpp
+    dense_add_dimension_optimizer.cpp
+    dense_fast_rename_optimizer.cpp
+    dense_pow_as_map_optimizer.cpp
+    dense_remove_dimension_optimizer.cpp
+    dense_replace_type_function.cpp
+    dense_simple_join_function.cpp
+    dense_simple_map_function.cpp
+    dense_single_reduce_function.cpp
+    dense_tensor_create_function.cpp
+    vector_from_doubles_function.cpp
 )

@@ -5,25 +5,42 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 
+import java.nio.file.Path;
+
 /**
- * Main component controlling startup and stop of zookeeper server
- *
  * @author Ulf Lilleengen
- * @author Harald Musum
+ * @author hmusum
  */
 public class VespaZooKeeperServerImpl extends AbstractComponent implements VespaZooKeeperServer {
 
-    private final ZooKeeperRunner zooKeeperRunner;
+    private final VespaQuorumPeer peer;
+    private final ZooKeeperRunner runner;
 
     @Inject
     public VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig) {
-        this.zooKeeperRunner = new ZooKeeperRunner(zookeeperServerConfig);
+        this.peer = new VespaQuorumPeer();
+        this.runner = new ZooKeeperRunner(zookeeperServerConfig, this);
     }
 
     @Override
     public void deconstruct() {
-        zooKeeperRunner.shutdown();
+        runner.shutdown();
         super.deconstruct();
+    }
+
+    @Override
+    public void shutdown() {
+        peer.shutdown();
+    }
+
+    @Override
+    public void start(Path configFilePath) {
+        peer.start(configFilePath);
+    }
+
+    @Override
+    public boolean reconfigurable() {
+        return false;
     }
 
 }

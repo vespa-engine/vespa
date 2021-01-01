@@ -1,12 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "operationtargetresolverimpl.h"
+#include "distributor_bucket_space.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/printable.hpp>
 #include <sstream>
 #include <cassert>
 
 namespace storage::distributor {
+
+namespace {
+
+lib::IdealNodeList
+make_node_list(const std::vector<uint16_t>& nodes)
+{
+    lib::IdealNodeList list;
+    for (auto node : nodes) {
+        list.push_back(lib::Node(lib::NodeType::STORAGE, node));
+    }
+    return list;
+}
+
+}
 
 BucketInstance::BucketInstance(
         const document::BucketId& id, const api::BucketInfo& info,
@@ -54,15 +69,12 @@ BucketInstanceList::add(BucketDatabase::Entry& e,
 }
 
 void
-BucketInstanceList::populate(const document::BucketId& specificId, BucketDatabase& db,
-                             const lib::IdealNodeCalculator& idealNodeCalc)
+BucketInstanceList::populate(const document::BucketId& specificId, const DistributorBucketSpace& distributor_bucket_space, BucketDatabase& db)
 {
     std::vector<BucketDatabase::Entry> entries;
     db.getParents(specificId, entries);
     for (uint32_t i=0; i<entries.size(); ++i) {
-        lib::IdealNodeList idealNodes(idealNodeCalc.getIdealStorageNodes(
-                entries[i].getBucketId(),
-                lib::IdealNodeCalculator::UpInitMaintenance));
+        lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(entries[i].getBucketId()).get_available_nonretired_or_maintenance_nodes()));
         add(entries[i], idealNodes);
     }
 }
@@ -108,17 +120,16 @@ BucketInstanceList::leastSpecificLeafBucketInSubtree(
 
 void
 BucketInstanceList::extendToEnoughCopies(
+        const DistributorBucketSpace& distributor_bucket_space,
         const BucketDatabase& db,
         const document::BucketId& targetIfNonPreExisting,
-        const document::BucketId& mostSpecificId,
-        const lib::IdealNodeCalculator& idealNodeCalc)
+        const document::BucketId& mostSpecificId)
 {
     document::BucketId newTarget(_instances.empty() ? targetIfNonPreExisting
                                                     : _instances[0]._bucket);
     newTarget = leastSpecificLeafBucketInSubtree(newTarget, mostSpecificId, db);
 
-    lib::IdealNodeList idealNodes(idealNodeCalc.getIdealStorageNodes(
-            newTarget, lib::IdealNodeCalculator::UpInit));
+    lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(newTarget).get_available_nonretired_nodes()));
     for (uint32_t i=0; i<idealNodes.size(); ++i) {
         if (!contains(idealNodes[i])) {
             _instances.push_back(BucketInstance(
@@ -182,14 +193,14 @@ OperationTargetResolverImpl::getAllInstances(OperationType type,
 {
     BucketInstanceList instances;
     if (type == PUT) {
-        instances.populate(id, _bucketDatabase, _idealNodeCalculator);
+        instances.populate(id, _distributor_bucket_space, _bucketDatabase);
         instances.sort(InstanceOrder());
         instances.removeNodeDuplicates();
         instances.extendToEnoughCopies(
+                _distributor_bucket_space,
                 _bucketDatabase,
                 _bucketDatabase.getAppropriateBucket(_minUsedBucketBits, id),
-                id,
-                _idealNodeCalculator);
+                id);
     } else {
         throw vespalib::IllegalArgumentException(
                 "Unsupported operation type given", VESPA_STRLOC);

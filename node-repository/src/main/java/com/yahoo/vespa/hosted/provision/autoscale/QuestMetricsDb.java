@@ -4,10 +4,12 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.defaults.Defaults;
 import io.questdb.cairo.CairoConfiguration;
 import io.questdb.cairo.CairoEngine;
+import io.questdb.cairo.CairoException;
 import io.questdb.cairo.DefaultCairoConfiguration;
 import io.questdb.cairo.TableWriter;
 import io.questdb.cairo.sql.Record;
@@ -40,14 +42,14 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class QuestMetricsDb implements MetricsDb {
+public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private static final Logger log = Logger.getLogger(QuestMetricsDb.class.getName());
-    private static final String tableName = "metrics";
+    private static final String table = "metrics";
 
     private final Clock clock;
     private final String dataDir;
-    private final CairoEngine engine;
+    private CairoEngine engine;
 
     private long highestTimestampAdded = 0;
 
@@ -63,8 +65,11 @@ public class QuestMetricsDb implements MetricsDb {
             && ! new File(Defaults.getDefaults().vespaHome()).exists())
             dataDir = "data"; // We're injected, but not on a node with Vespa installed
         this.dataDir = dataDir;
+        initializeDb();
+    }
 
-        IOUtils.createDirectory(dataDir + "/" + tableName);
+    private void initializeDb() {
+        IOUtils.createDirectory(dataDir + "/" + table);
 
         // silence Questdb's custom logging system
         IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
@@ -73,26 +78,41 @@ public class QuestMetricsDb implements MetricsDb {
 
         CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
         engine = new CairoEngine(configuration);
-        ensureExists(tableName);
+        ensureExists(table);
     }
 
     @Override
     public void add(Collection<Pair<String, MetricSnapshot>> snapshots) {
-        try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), tableName)) {
-            for (var snapshot : snapshots) {
-                long atMillis = adjustIfRecent(snapshot.getSecond().at().toEpochMilli(), highestTimestampAdded);
-                if (atMillis < highestTimestampAdded) continue; // Ignore old data
-                highestTimestampAdded = atMillis;
-                TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
-                row.putStr(0, snapshot.getFirst());
-                row.putFloat(2, (float)snapshot.getSecond().cpu());
-                row.putFloat(3, (float)snapshot.getSecond().memory());
-                row.putFloat(4, (float)snapshot.getSecond().disk());
-                row.putLong(5, snapshot.getSecond().generation());
-                row.append();
-            }
-            writer.commit();
+        try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), table)) {
+            add(snapshots, writer);
         }
+        catch (CairoException e) {
+            if (e.getMessage().contains("Cannot read offset")) {
+                // This error seems non-recoverable
+                repair(e);
+                try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), table)) {
+                    add(snapshots, writer);
+                }
+            }
+        }
+    }
+
+    private void add(Collection<Pair<String, MetricSnapshot>> snapshots, TableWriter writer) {
+        for (var snapshot : snapshots) {
+            long atMillis = adjustIfRecent(snapshot.getSecond().at().toEpochMilli(), highestTimestampAdded);
+            if (atMillis < highestTimestampAdded) continue; // Ignore old data
+            highestTimestampAdded = atMillis;
+            TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
+            row.putStr(0, snapshot.getFirst());
+            row.putFloat(2, (float)snapshot.getSecond().cpu());
+            row.putFloat(3, (float)snapshot.getSecond().memory());
+            row.putFloat(4, (float)snapshot.getSecond().disk());
+            row.putLong(5, snapshot.getSecond().generation());
+            row.putBool(6, snapshot.getSecond().inService());
+            row.putBool(7, snapshot.getSecond().stable());
+            row.append();
+        }
+        writer.commit();
     }
 
     @Override
@@ -116,7 +136,7 @@ public class QuestMetricsDb implements MetricsDb {
         SqlExecutionContext context = newContext();
         int partitions = 0;
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
-            File tableRoot = new File(dataDir, tableName);
+            File tableRoot = new File(dataDir, table);
             List<String> removeList = new ArrayList<>();
             for (String dirEntry : tableRoot.list()) {
                 File partitionDir = new File(tableRoot, dirEntry);
@@ -131,7 +151,7 @@ public class QuestMetricsDb implements MetricsDb {
             }
             // Remove unless all partitions are old: Removing all partitions "will be supported in the future"
             if ( removeList.size() < partitions && ! removeList.isEmpty())
-                compiler.compile("alter table " + tableName + " drop partition " +
+                compiler.compile("alter table " + table + " drop partition " +
                                  removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
                                  context);
         }
@@ -141,27 +161,78 @@ public class QuestMetricsDb implements MetricsDb {
     }
 
     @Override
+    public void deconstruct() { close(); }
+
+    @Override
     public void close() {
         if (engine != null)
             engine.close();
     }
 
-    private void ensureExists(String tableName) {
-        SqlExecutionContext context = newContext();
-        if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), tableName)) return;
+    /**
+     * Repairs this db on corruption.
+     *
+     * @param e the exception indicating corruption
+     */
+    private void repair(Exception e) {
+        log.log(Level.WARNING, "QuestDb seems corrupted, wiping data and starting over", e);
+        IOUtils.recursiveDeleteDir(new File(dataDir));
+        initializeDb();
+    }
 
+    private void ensureExists(String table) {
+        SqlExecutionContext context = newContext();
+        if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table)) { // table exists
+            ensureUpdated(table, context);
+        } else {
+            create(table, context);
+        }
+    }
+
+    private void ensureUpdated(String table, SqlExecutionContext context) {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
-            compiler.compile("create table " + tableName +
-                             " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float, application_generation long)" +
+            if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table)) {
+                ensureColumnExists("inService", "boolean", table, compiler, context); // TODO: Remove after December 2020
+                ensureColumnExists("stable", "boolean", table, compiler, context); // TODO: Remove after December 2020
+            }
+        } catch (SqlException e) {
+            repair(e);
+        }
+    }
+
+    private void create(String table, SqlExecutionContext context) {
+        try (SqlCompiler compiler = new SqlCompiler(engine)) {
+            compiler.compile("create table " + table +
+                             " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
+                             "  application_generation long, inService boolean, stable boolean)" +
                              " timestamp(at)" +
                              "PARTITION BY DAY;",
                              context);
-            // We should do this if we get a version where selecting on stringhs work embedded, see below
+            // We should do this if we get a version where selecting on strings work embedded, see below
             // compiler.compile("alter table " + tableName + " alter column hostname add index", context);
         }
         catch (SqlException e) {
-            throw new IllegalStateException("Could not create Quest db table '" + tableName + "'", e);
+            throw new IllegalStateException("Could not create Quest db table '" + table + "'", e);
         }
+    }
+
+    private void ensureColumnExists(String column, String columnType,
+                                    String table, SqlCompiler compiler, SqlExecutionContext context) throws SqlException {
+        if (columnNamesOf(table, compiler, context).contains(column)) return;
+        compiler.compile("alter table " + table + " add column " + column + " " + columnType, context);
+    }
+
+    private List<String> columnNamesOf(String tableName, SqlCompiler compiler, SqlExecutionContext context) throws SqlException {
+        List<String> columns = new ArrayList<>();
+        try (RecordCursorFactory factory = compiler.compile("show columns from " + tableName, context).getRecordCursorFactory()) {
+            try (RecordCursor cursor = factory.getCursor(context)) {
+                Record record = cursor.getRecord();
+                while (cursor.hasNext()) {
+                    columns.add(record.getStr(0).toString());
+                }
+            }
+        }
+        return columns;
     }
 
     private long adjustIfRecent(long timestamp, long highestTimestampAdded) {
@@ -182,7 +253,7 @@ public class QuestMetricsDb implements MetricsDb {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
         String from = formatter.format(startTime).substring(0, 19) + ".000000Z";
         String to = formatter.format(clock.instant()).substring(0, 19) + ".000000Z";
-        String sql = "select * from " + tableName + " where at in('" + from + "', '" + to + "');";
+        String sql = "select * from " + table + " where at in('" + from + "', '" + to + "');";
 
         // WHERE clauses does not work:
         // String sql = "select * from " + tableName + " where hostname in('host1', 'host2', 'host3');";
@@ -200,7 +271,8 @@ public class QuestMetricsDb implements MetricsDb {
                                                          record.getFloat(3),
                                                          record.getFloat(4),
                                                          record.getLong(5),
-                                                         true));
+                                                         record.getBool(6),
+                                                         record.getBool(7)));
                     }
                 }
             }

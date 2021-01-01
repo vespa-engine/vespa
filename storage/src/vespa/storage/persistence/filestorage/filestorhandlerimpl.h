@@ -17,7 +17,7 @@
 
 #include "filestorhandler.h"
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
@@ -54,7 +54,7 @@ public:
 
         MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd, const document::Bucket &bId);
         MessageEntry(MessageEntry &&) noexcept ;
-        MessageEntry(const MessageEntry &);
+        MessageEntry(const MessageEntry &) noexcept;
         MessageEntry & operator = (const MessageEntry &) = delete;
         ~MessageEntry();
 
@@ -248,8 +248,6 @@ private:
     mutable std::mutex              _pauseMonitor;
     mutable std::condition_variable _pauseCond;
     std::atomic<bool>               _paused;
-
-    void reply(api::StorageMessage&, DiskState state) const;
 
     // Returns the index in the targets array we are sending to, or -1 if none of them match.
     int calculateTargetBasedOnDocId(const api::StorageMessage& msg, std::vector<RemapInfo*>& targets);

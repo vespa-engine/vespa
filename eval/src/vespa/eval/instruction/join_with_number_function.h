@@ -20,16 +20,16 @@ private:
     tensor_function::join_fun_t _function;
 public:
     
-    JoinWithNumberFunction(const vespalib::eval::tensor_function::Join &original_join, bool number_on_left);
+    JoinWithNumberFunction(const tensor_function::Join &original_join, bool number_on_left);
     ~JoinWithNumberFunction();
     Primary primary() const { return _primary; }
     bool inplace() const;
     bool result_is_mutable() const override { return true; }
 
-    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
-} // namespace vespalib::tensor
+} // namespace vespalib::eval
 

@@ -9,8 +9,8 @@ LOG_SETUP(".messagetracker");
 
 namespace storage::distributor {
 
-MessageTracker::MessageTracker(const std::string& clusterName)
-    : _clusterName(clusterName)
+MessageTracker::MessageTracker(const ClusterContext& cluster_context)
+  : _cluster_ctx(cluster_context)
 {}
 
 MessageTracker::~MessageTracker() = default;
@@ -19,8 +19,7 @@ void
 MessageTracker::flushQueue(MessageSender& sender)
 {
     for (uint32_t i = 0; i < _commandQueue.size(); i++) {
-        _commandQueue[i]._msg->setAddress(
-                api::StorageMessageAddress(_clusterName, lib::NodeType::STORAGE, _commandQueue[i]._target));
+        _commandQueue[i]._msg->setAddress(api::StorageMessageAddress::create(_cluster_ctx.cluster_name_ptr(), lib::NodeType::STORAGE, _commandQueue[i]._target));
         _sentMessages[_commandQueue[i]._msg->getMsgId()] = _commandQueue[i]._target;
         sender.sendCommand(_commandQueue[i]._msg);
     }

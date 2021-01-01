@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_peek_function.h"
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {
@@ -61,7 +60,7 @@ DenseTensorPeekFunction::push_children(std::vector<Child::CREF> &target) const
 }
 
 InterpretedFunction::Instruction
-DenseTensorPeekFunction::compile_self(EngineOrFactory, Stash &) const
+DenseTensorPeekFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     using MyTypify = TypifyCellType;
     auto op = typify_invoke<1,MyTypify,MyTensorPeekOp>(_children[0].get().result_type().cell_type());

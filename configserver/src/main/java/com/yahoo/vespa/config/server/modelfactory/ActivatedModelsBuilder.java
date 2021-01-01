@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.Provisioned;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -33,6 +35,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -50,6 +53,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final TenantName tenant;
     private final long applicationGeneration;
     private final SessionZooKeeperClient zkClient;
+    private final Optional<ApplicationSet> currentActiveApplicationSet;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
@@ -60,6 +64,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     public ActivatedModelsBuilder(TenantName tenant,
                                   long applicationGeneration,
                                   SessionZooKeeperClient zkClient,
+                                  Optional<ApplicationSet> currentActiveApplicationSet,
                                   GlobalComponentRegistry globalComponentRegistry) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               globalComponentRegistry.getConfigserverConfig(),
@@ -68,6 +73,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.tenant = tenant;
         this.applicationGeneration = applicationGeneration;
         this.zkClient = zkClient;
+        this.currentActiveApplicationSet = currentActiveApplicationSet;
         this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
         this.configDefinitionRepo = globalComponentRegistry.getStaticConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
@@ -90,7 +96,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
-                Optional.empty(),
+                modelOf(modelFactory.version()),
                 permanentApplicationPackage.applicationPackage(),
                 new SilentDeployLogger(),
                 configDefinitionRepo,
@@ -110,10 +116,14 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         return new Application(modelFactory.createModel(modelContext),
                                serverCache,
                                applicationGeneration,
-                               applicationPackage.getMetaData().isInternalRedeploy(),
                                modelFactory.version(),
                                applicationMetricUpdater,
                                applicationId);
+    }
+
+    private Optional<Model> modelOf(Version version) {
+        if (currentActiveApplicationSet.isEmpty()) return Optional.empty();
+        return currentActiveApplicationSet.get().get(version).map(Application::getModel);
     }
 
     private static <T> Optional<T> getForVersionOrLatest(Map<Version, T> map, Version version) {
@@ -122,7 +132,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         }
         T value = map.get(version);
         if (value == null) {
-            value = map.get(map.keySet().stream().max((a, b) -> a.compareTo(b)).get());
+            value = map.get(map.keySet().stream().max(Comparator.naturalOrder()).get());
         }
         return Optional.of(value);
     }

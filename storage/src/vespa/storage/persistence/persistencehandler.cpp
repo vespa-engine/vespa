@@ -17,7 +17,7 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
     : _clock(component.getClock()),
       _env(component, filestorHandler, metrics, provider),
       _processAllHandler(_env, provider),
-      _mergeHandler(_env, provider, component.getClusterName(), _clock,
+      _mergeHandler(_env, provider, component.cluster_context(), _clock,
                     cfg.bucketMergeChunkSize,
                     cfg.commonMergeChainOptimalizationMinimumSize),
       _asyncHandler(_env, provider, sequencedExecutor, component.getBucketIdFactory()),
@@ -73,8 +73,6 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
             return _simpleHandler.handleReadBucketList(static_cast<ReadBucketList&>(msg), std::move(tracker));
         case ReadBucketInfo::ID:
             return _simpleHandler.handleReadBucketInfo(static_cast<ReadBucketInfo&>(msg), std::move(tracker));
-        case InternalBucketJoinCommand::ID:
-            return _splitJoinHandler.handleInternalBucketJoin(static_cast<InternalBucketJoinCommand&>(msg), std::move(tracker));
         case RecheckBucketInfoCommand::ID:
             return _splitJoinHandler.handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg), std::move(tracker));
         default:

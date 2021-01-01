@@ -57,6 +57,21 @@ public:
         virtual bool process(const ConstEntryRef& e) = 0;
     };
 
+    /*
+     * Interface class used by process_update() for updating an entry
+     * with a single call to the bucket database.
+     */
+    struct EntryUpdateProcessor {
+        virtual ~EntryUpdateProcessor() = default;
+        virtual Entry create_entry(const document::BucketId& bucket) const = 0;
+        /*
+         * Modifies entry.
+         * returns true if modified entry should be kept.
+         * returns false if entry should be removed.
+         */
+        virtual bool process_entry(Entry &entry) const = 0;
+    };
+
     ~BucketDatabase() override = default;
 
     virtual Entry get(const document::BucketId& bucket) const = 0;
@@ -81,6 +96,8 @@ public:
      * database if it wasn't found.
      */
     virtual void update(const Entry& newEntry) = 0;
+
+    virtual void process_update(const document::BucketId& bucket, EntryUpdateProcessor &processor, bool create_if_nonexisting) = 0;
 
     virtual void forEach(
             EntryProcessor&,

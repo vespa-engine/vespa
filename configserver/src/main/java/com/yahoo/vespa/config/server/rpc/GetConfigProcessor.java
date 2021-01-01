@@ -125,7 +125,7 @@ class GetConfigProcessor implements Runnable {
         // config == null is not an error, but indicates that the config will be returned later.
         if ((config != null) && (!config.hasEqualConfig(request) || config.hasNewerGeneration(request) || forceResponse)) {
             // debugLog(trace, "config response before encoding:" + config.toString());
-            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.isInternalRedeploy(), config.getConfigMd5());
+            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.applyOnRestart(), config.getConfigMd5());
             if (logDebug(trace)) {
                 debugLog(trace, "return response: " + request.getShortDescription());
             }

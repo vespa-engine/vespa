@@ -2,26 +2,24 @@
 
 #include "optimize_tensor_function.h"
 #include "tensor_function.h"
-#include "tensor_engine.h"
 #include "simple_value.h"
 
 #include <vespa/eval/instruction/dense_dot_product_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
 #include <vespa/eval/instruction/dense_matmul_function.h>
 #include <vespa/eval/instruction/dense_multi_matmul_function.h>
-#include <vespa/eval/tensor/dense/dense_fast_rename_optimizer.h>
-#include <vespa/eval/tensor/dense/dense_add_dimension_optimizer.h>
-#include <vespa/eval/tensor/dense/dense_single_reduce_function.h>
-#include <vespa/eval/tensor/dense/dense_remove_dimension_optimizer.h>
+#include <vespa/eval/instruction/dense_fast_rename_optimizer.h>
+#include <vespa/eval/instruction/dense_add_dimension_optimizer.h>
+#include <vespa/eval/instruction/dense_single_reduce_function.h>
+#include <vespa/eval/instruction/dense_remove_dimension_optimizer.h>
 #include <vespa/eval/instruction/dense_lambda_peek_optimizer.h>
-#include <vespa/eval/tensor/dense/dense_lambda_function.h>
 #include <vespa/eval/instruction/dense_simple_expand_function.h>
-#include <vespa/eval/tensor/dense/dense_simple_join_function.h>
+#include <vespa/eval/instruction/dense_simple_join_function.h>
 #include <vespa/eval/instruction/join_with_number_function.h>
-#include <vespa/eval/tensor/dense/dense_pow_as_map_optimizer.h>
-#include <vespa/eval/tensor/dense/dense_simple_map_function.h>
-#include <vespa/eval/tensor/dense/vector_from_doubles_function.h>
-#include <vespa/eval/tensor/dense/dense_tensor_create_function.h>
+#include <vespa/eval/instruction/dense_pow_as_map_optimizer.h>
+#include <vespa/eval/instruction/dense_simple_map_function.h>
+#include <vespa/eval/instruction/vector_from_doubles_function.h>
+#include <vespa/eval/instruction/dense_tensor_create_function.h>
 #include <vespa/eval/instruction/dense_tensor_peek_function.h>
 
 #include <vespa/log/log.h>
@@ -30,8 +28,6 @@ LOG_SETUP(".eval.eval.optimize_tensor_function");
 namespace vespalib::eval {
 
 namespace {
-
-using namespace vespalib::tensor;
 
 const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, const TensorFunction &expr, Stash &stash) {
     if (&factory == &SimpleValueBuilderFactory::get()) {
@@ -82,11 +78,9 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, c
 
 } // namespace vespalib::eval::<unnamed>
 
-const TensorFunction &optimize_tensor_function(EngineOrFactory engine, const TensorFunction &function, Stash &stash) {
+const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash) {
     LOG(debug, "tensor function before optimization:\n%s\n", function.as_string().c_str());
-    const TensorFunction &optimized = (engine.is_engine())
-                                      ? engine.engine().optimize(function, stash)
-                                      : optimize_for_factory(engine.factory(), function, stash);
+    const TensorFunction &optimized = optimize_for_factory(factory, function, stash);
     LOG(debug, "tensor function after optimization:\n%s\n", optimized.as_string().c_str());
     return optimized;
 }

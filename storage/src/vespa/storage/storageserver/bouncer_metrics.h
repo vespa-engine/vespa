@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/countmetric.h>
 
 namespace storage {
 

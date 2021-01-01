@@ -141,7 +141,7 @@ TEST("require that agent returns correct values") {
     ConfigState cs;
     ASSERT_EQUAL(cs.md5, handler.getConfigState().md5);
     ASSERT_EQUAL(cs.generation, handler.getConfigState().generation);
-    ASSERT_EQUAL(cs.internalRedeploy, handler.getConfigState().internalRedeploy);
+    ASSERT_EQUAL(cs.applyOnRestart, handler.getConfigState().applyOnRestart);
 }
 
 TEST("require that successful request is delivered to holder") {

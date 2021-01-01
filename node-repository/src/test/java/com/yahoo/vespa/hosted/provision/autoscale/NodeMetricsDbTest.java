@@ -40,7 +40,7 @@ public class NodeMetricsDbTest {
         MetricsDb db = MetricsDb.createTestInstance(tester.nodeRepository());
         Collection<Pair<String, MetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0, true)));
+            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0, true, false)));
             clock.advance(Duration.ofMinutes(120));
         }
         db.add(values);
@@ -50,7 +50,7 @@ public class NodeMetricsDbTest {
 
         assertEquals(35, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
         db.gc();
-        assertEquals( 5, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
+        assertEquals(23, measurementCount(db.getNodeTimeseries(clock.instant().minus(Duration.ofHours(72)), Set.of(node0))));
     }
 
     private int measurementCount(List<NodeTimeseries> measurements) {

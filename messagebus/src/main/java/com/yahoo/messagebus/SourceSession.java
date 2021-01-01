@@ -186,7 +186,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
             if (msg.isExpired()) {
                 Error error = new Error(ErrorCode.TIMEOUT, "Timed out in sendQ");
                 notifyComplete(new Result(error));
-                replyHandler.handleReply(createSendTimedoutReply(msg, error));
+                replyHandler.handleReply(createSendTimedOutReply(msg, error));
                 return true;
             }
             return false;
@@ -214,7 +214,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         }
     }
 
-    private Reply createSendTimedoutReply(Message msg, Error error) {
+    private Reply createSendTimedOutReply(Message msg, Error error) {
         Reply reply = new EmptyReply();
         reply.setMessage(msg);
         reply.addError(error);

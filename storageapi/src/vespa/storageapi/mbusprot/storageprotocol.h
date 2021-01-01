@@ -15,8 +15,7 @@ public:
 
     static mbus::string NAME;
 
-    StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo>,
-                    const documentapi::LoadTypeSet& loadTypes);
+    explicit StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo>);
     ~StorageProtocol() override;
 
     const mbus::string& getName() const override { return NAME; }
@@ -29,7 +28,7 @@ private:
     ProtocolSerialization5_1 _serializer5_1;
     ProtocolSerialization5_2 _serializer5_2;
     ProtocolSerialization6_0 _serializer6_0;
-    ProtocolSerialization7 _serializer7_0;
+    ProtocolSerialization7   _serializer7_0;
 };
 
 }

@@ -7,12 +7,14 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
 
-namespace vespalib {
-namespace ws {
+namespace vespalib::ws {
 
 class WebsocketServer : public Handler<Socket> {
 public:
     struct StaticPage {
+        StaticPage(const vespalib::string & type, const vespalib::string & content_in);
+        StaticPage(const StaticPage &);
+        StaticPage & operator = (const StaticPage &);
         StaticPage(StaticPage &&) = default;
         StaticPage & operator = (StaticPage &&) = default;
         ~StaticPage();
@@ -28,10 +30,9 @@ private:
 
 public:
     WebsocketServer(int port_in, StaticRepo &&repo = StaticRepo());
-    ~WebsocketServer();
+    ~WebsocketServer() override;
     void handle(std::unique_ptr<Socket> socket) override;
     int port() { return _acceptor.port(); }
 };
 
 } // namespace vespalib::ws
-} // namespace vespalib

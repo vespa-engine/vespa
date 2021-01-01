@@ -22,6 +22,7 @@ private:
 public:
     TensorMap(Node_UP child, std::shared_ptr<Function const> lambda)
         : _child(std::move(child)), _lambda(std::move(lambda)) {}
+    const Node &child() const { return *_child; }
     const Function &lambda() const { return *_lambda; }
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
@@ -52,6 +53,8 @@ private:
 public:
     TensorJoin(Node_UP lhs, Node_UP rhs, std::shared_ptr<Function const> lambda)
         : _lhs(std::move(lhs)), _rhs(std::move(rhs)), _lambda(std::move(lambda)) {}
+    const Node &lhs() const { return *_lhs; }
+    const Node &rhs() const { return *_rhs; }
     const Function &lambda() const { return *_lambda; }
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
@@ -84,6 +87,8 @@ private:
 public:
     TensorMerge(Node_UP lhs, Node_UP rhs, std::shared_ptr<Function const> lambda)
         : _lhs(std::move(lhs)), _rhs(std::move(rhs)), _lambda(std::move(lambda)) {}
+    const Node &lhs() const { return *_lhs; }
+    const Node &rhs() const { return *_rhs; }
     const Function &lambda() const { return *_lambda; }
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
@@ -116,8 +121,9 @@ private:
 public:
     TensorReduce(Node_UP child, Aggr aggr_in, std::vector<vespalib::string> dimensions_in)
         : _child(std::move(child)), _aggr(aggr_in), _dimensions(std::move(dimensions_in)) {}
-    const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
+    const Node &child() const { return *_child; }
     Aggr aggr() const { return _aggr; }
+    const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "reduce(";
@@ -150,6 +156,7 @@ private:
 public:
     TensorRename(Node_UP child, std::vector<vespalib::string> from_in, std::vector<vespalib::string> to_in)
         : _child(std::move(child)), _from(std::move(from_in)), _to(std::move(to_in)) {}
+    const Node &child() const { return *_child; }
     const std::vector<vespalib::string> &from() const { return _from; }
     const std::vector<vespalib::string> &to() const { return _to; }
     vespalib::string dump(DumpContext &ctx) const override {
@@ -196,6 +203,8 @@ private:
 public:
     TensorConcat(Node_UP lhs, Node_UP rhs, const vespalib::string &dimension_in)
         : _lhs(std::move(lhs)), _rhs(std::move(rhs)), _dimension(dimension_in) {}
+    const Node &lhs() const { return *_lhs; }
+    const Node &rhs() const { return *_rhs; }
     const vespalib::string &dimension() const { return _dimension; }
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;

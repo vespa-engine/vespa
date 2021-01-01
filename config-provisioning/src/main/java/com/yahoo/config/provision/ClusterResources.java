@@ -1,9 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.yahoo.config.Node;
-
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -61,6 +58,10 @@ public class ClusterResources {
                             .withMemoryGb(nodeResources.memoryGb() * nodes)
                             .withDiskGb(nodeResources.diskGb() * nodes)
                             .withBandwidthGbps(nodeResources.bandwidthGbps() * nodes);
+    }
+
+    public ClusterResources justNumbers() {
+        return new ClusterResources(nodes, groups, nodeResources.justNumbers());
     }
 
     @Override

@@ -41,13 +41,13 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
       _docMan(),
       _nodeStateUpdater(type),
       _configId(configId),
+      _node_identity("test_cluster", type, index),
       _initialized(false)
 {
         // Use config to adjust values
     vespalib::string clusterName = "mycluster";
     uint32_t redundancy = 2;
     uint32_t nodeCount = 10;
-    documentapi::LoadTypeSet::SP loadTypes;
     if (!configId.empty()) {
         config::ConfigUri uri(configId);
         std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
@@ -55,15 +55,8 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
         if (index == 0xffff) index = serverConfig->nodeIndex;
         redundancy = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(uri.getConfigId(), uri.getContext())->redundancy;
         nodeCount = config::ConfigGetter<vespa::config::content::FleetcontrollerConfig>::getConfig(uri.getConfigId(), uri.getContext())->totalStorageCount;
-        _compReg.setPriorityConfig(
-                *config::ConfigGetter<StorageComponent::PriorityConfig>
-                    ::getConfig(uri.getConfigId(), uri.getContext()));
-        loadTypes = std::make_shared<documentapi::LoadTypeSet>(
-                *config::ConfigGetter<vespa::config::content::LoadTypeConfig>
-                    ::getConfig(uri.getConfigId(), uri.getContext()));
     } else {
         if (index == 0xffff) index = 0;
-        loadTypes.reset(new documentapi::LoadTypeSet);
     }
     if (index >= nodeCount) nodeCount = index + 1;
     if (redundancy > nodeCount) redundancy = nodeCount;
@@ -71,7 +64,6 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
     _compReg.setNodeInfo(clusterName, type, index);
     _compReg.setNodeStateUpdater(_nodeStateUpdater);
     _compReg.setDocumentTypeRepo(_docMan.getTypeRepoSP());
-    _compReg.setLoadTypes(loadTypes);
     _compReg.setBucketIdFactory(document::BucketIdFactory());
     auto distr = std::make_shared<lib::Distribution>(
             lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));

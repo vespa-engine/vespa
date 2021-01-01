@@ -52,7 +52,7 @@ extern const vespalib::Memory RESPONSE_CONFIG_MD5;
 extern const vespalib::Memory RESPONSE_CONFIG_GENERATION;
 extern const vespalib::Memory RESPONSE_PAYLOAD;
 extern const vespalib::Memory RESPONSE_TRACE;
-extern const vespalib::Memory RESPONSE_INTERNAL_REDEPLOY;
+extern const vespalib::Memory RESPONSE_APPLY_ON_RESTART;
 
 const vespalib::slime::Inspector & extractPayload(const vespalib::Slime & data);
 

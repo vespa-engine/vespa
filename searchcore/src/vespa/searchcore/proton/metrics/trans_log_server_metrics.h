@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricset.h>
+#include <vespa/metrics/valuemetric.h>
 #include <vespa/searchlib/transactionlog/domainconfig.h>
 
 namespace proton {
@@ -21,7 +22,7 @@ public:
 
         typedef std::unique_ptr<DomainMetrics> UP;
         DomainMetrics(metrics::MetricSet *parent, const vespalib::string &documentType);
-        ~DomainMetrics();
+        ~DomainMetrics() override;
         void update(const search::transactionlog::DomainInfo &stats);
     };
 

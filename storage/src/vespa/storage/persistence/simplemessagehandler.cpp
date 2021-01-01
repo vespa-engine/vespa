@@ -3,7 +3,6 @@
 #include "simplemessagehandler.h"
 #include "persistenceutil.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
@@ -64,7 +63,7 @@ SimpleMessageHandler::SimpleMessageHandler(const PersistenceUtil& env, spi::Pers
 MessageTracker::UP
 SimpleMessageHandler::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker) const
 {
-    auto& metrics = _env._metrics.get[cmd.getLoadType()];
+    auto& metrics = _env._metrics.get;
     tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
@@ -89,7 +88,7 @@ SimpleMessageHandler::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker
 MessageTracker::UP
 SimpleMessageHandler::handleRevert(api::RevertCommand& cmd, MessageTracker::UP tracker) const
 {
-    tracker->setMetric(_env._metrics.revert[cmd.getLoadType()]);
+    tracker->setMetric(_env._metrics.revert);
     spi::Bucket b = spi::Bucket(cmd.getBucket());
     const std::vector<api::Timestamp> & tokens = cmd.getRevertTokens();
     for (const api::Timestamp & token : tokens) {
@@ -105,7 +104,6 @@ SimpleMessageHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageT
     LOG(debug, "CreateBucket(%s)", cmd.getBucketId().toString().c_str());
     if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
         LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
-        DUMP_LOGGED_BUCKET_OPERATIONS(cmd.getBucketId());
     }
     spi::Bucket spiBucket(cmd.getBucket());
     _spi.createBucket(spiBucket, tracker->context());
@@ -147,7 +145,6 @@ SimpleMessageHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageT
 {
     tracker->setMetric(_env._metrics.deleteBuckets);
     LOG(debug, "DeletingBucket(%s)", cmd.getBucketId().toString().c_str());
-    LOG_BUCKET_OPERATION(cmd.getBucketId(), "deleteBucket()");
     if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
         _env._fileStorHandler.clearMergeStatus(cmd.getBucket(),
                                                api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));
@@ -183,13 +180,12 @@ SimpleMessageHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageT
 MessageTracker::UP
 SimpleMessageHandler::handleGetIter(GetIterCommand& cmd, MessageTracker::UP tracker) const
 {
-    tracker->setMetric(_env._metrics.visit[cmd.getLoadType()]);
+    tracker->setMetric(_env._metrics.visit);
     spi::IterateResult result(_spi.iterate(cmd.getIteratorId(), cmd.getMaxByteSize(), tracker->context()));
     if (tracker->checkForError(result)) {
         auto reply = std::make_shared<GetIterReply>(cmd);
         reply->getEntries() = result.steal_entries();
-        _env._metrics.visit[cmd.getLoadType()].
-                documentsPerIterate.addValue(reply->getEntries().size());
+        _env._metrics.visit.documentsPerIterate.addValue(reply->getEntries().size());
         if (result.isCompleted()) {
             reply->setCompleted();
         }

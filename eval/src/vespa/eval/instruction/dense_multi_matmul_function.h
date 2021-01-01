@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/tensor_function.h>
 
 namespace vespalib::eval {
@@ -44,7 +43,7 @@ public:
     bool lhs_common_inner() const { return _lhs_common_inner; }
     bool rhs_common_inner() const { return _rhs_common_inner; }
 
-    InterpretedFunction::Instruction compile_self(EngineOrFactory engine, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };

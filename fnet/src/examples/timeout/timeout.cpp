@@ -1,7 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/fnet/signalshutdown.h>
+#include <vespa/fnet/packetqueue.h>
+#include <vespa/fnet/controlpacket.h>
 #include <vespa/fastos/app.h>
+#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
 

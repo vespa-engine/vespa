@@ -2,21 +2,26 @@
 package com.yahoo.container.jdisc.component;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.Deconstructable;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
-import java.util.logging.Level;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
@@ -32,18 +37,36 @@ public class Deconstructor implements ComponentDeconstructor {
 
     private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
 
-    private final ScheduledExecutorService executor =
-            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
+    private static final Duration RECONFIG_DECONSTRUCT_DELAY = Duration.ofSeconds(60);
 
+    // This must be smaller than the shutdownDeadlineExecutor delay in ConfiguredApplication
+    private static final Duration SHUTDOWN_DECONSTRUCT_TIMEOUT = Duration.ofSeconds(45);
+
+    public enum Mode {
+        RECONFIG,  // Delay deconstruction to allow old components to finish processing in-flight requests.
+        SHUTDOWN   // The container is shutting down. Start deconstructing immediately, and wait until all components
+                   // are deconstructed, to prevent shutting down while deconstruct is in progress.
+    }
+
+    private final ScheduledExecutorService executor =
+            Executors.newScheduledThreadPool(2, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
+
+    private final Mode mode;
     private final Duration delay;
 
-    public Deconstructor(boolean delayDeconstruction) {
-        this.delay = delayDeconstruction ? Duration.ofSeconds(60) : Duration.ZERO;
+    public Deconstructor(Mode mode) {
+        this(mode, (mode == Mode.RECONFIG) ? RECONFIG_DECONSTRUCT_DELAY : Duration.ZERO);
+    }
+
+    // For testing only
+    Deconstructor(Mode mode, Duration reconfigDeconstructDelay) {
+        this.mode = mode;
+        this.delay = reconfigDeconstructDelay;
     }
 
     @Override
-    public void deconstruct(Collection<Object> components, Collection<Bundle> bundles) {
-        Collection<AbstractComponent> destructibleComponents = new ArrayList<>();
+    public void deconstruct(List<Object> components, Collection<Bundle> bundles) {
+        Collection<Deconstructable> destructibleComponents = new ArrayList<>();
         for (var component : components) {
             if (component instanceof AbstractComponent) {
                 AbstractComponent abstractComponent = (AbstractComponent) component;
@@ -51,28 +74,43 @@ public class Deconstructor implements ComponentDeconstructor {
                     destructibleComponents.add(abstractComponent);
                 }
             } else if (component instanceof Provider) {
-                // TODO Providers should most likely be deconstructed similarly to AbstractComponent
-                log.log(FINE, () -> "Starting deconstruction of provider " + component);
-                ((Provider<?>) component).deconstruct();
-                log.log(FINE, () -> "Finished deconstruction of provider " + component);
+                destructibleComponents.add((Deconstructable) component);
             } else if (component instanceof SharedResource) {
                 log.log(FINE, () -> "Releasing container reference to resource " + component);
                 // No need to delay release, as jdisc does ref-counting
                 ((SharedResource) component).release();
             }
         }
-        if (! destructibleComponents.isEmpty() || ! bundles.isEmpty())
-            executor.schedule(new DestructComponentTask(destructibleComponents, bundles),
+        if (!destructibleComponents.isEmpty() || !bundles.isEmpty()) {
+            var task = executor.schedule(new DestructComponentTask(destructibleComponents, bundles),
                               delay.getSeconds(), TimeUnit.SECONDS);
+            if (mode.equals(Mode.SHUTDOWN)) {
+                waitFor(task, SHUTDOWN_DECONSTRUCT_TIMEOUT);
+            }
+        }
+    }
+
+    private void waitFor(ScheduledFuture<?> task, Duration timeout) {
+        try {
+            log.info("Waiting up to " + timeout.toSeconds() + " seconds for all components to deconstruct.");
+            task.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.info("Interrupted while waiting for component deconstruction to finish.");
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            log.warning("Component deconstruction threw an exception: " + e.getMessage());
+        } catch (TimeoutException e) {
+            log.warning("Component deconstruction timed out.");
+        }
     }
 
     private static class DestructComponentTask implements Runnable {
 
         private final Random random = new Random(System.nanoTime());
-        private final Collection<AbstractComponent> components;
+        private final Collection<Deconstructable> components;
         private final Collection<Bundle> bundles;
 
-        DestructComponentTask(Collection<AbstractComponent> components, Collection<Bundle> bundles) {
+        DestructComponentTask(Collection<Deconstructable> components, Collection<Bundle> bundles) {
             this.components = components;
             this.bundles = bundles;
         }
@@ -89,10 +127,10 @@ public class Deconstructor implements ComponentDeconstructor {
         @Override
         public void run() {
             for (var component : components) {
-                log.log(FINE, () -> "Starting deconstruction of component " + component);
+                log.log(FINE, () -> "Starting deconstruction of " + component);
                 try {
                     component.deconstruct();
-                    log.log(FINE, () -> "Finished deconstructing of component " + component);
+                    log.log(FINE, () -> "Finished deconstructing of " + component);
                 } catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
                     log.log(WARNING, "Exception thrown when deconstructing component " + component, e);
                 } catch (Error e) {

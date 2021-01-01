@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -23,6 +22,7 @@ import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -36,7 +36,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingControll
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -63,7 +62,9 @@ import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateManager;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
+import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -71,16 +72,19 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import com.yahoo.yolean.Exceptions;
 
 import java.security.Principal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,15 +92,20 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static java.util.Comparator.naturalOrder;
+import static java.util.function.Function.identity;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * A singleton owned by the Controller which contains the methods and state for controlling applications.
@@ -135,7 +144,7 @@ public class ApplicationController {
         this.clock = clock;
         this.artifactRepository = controller.serviceRegistry().artifactRepository();
         this.applicationStore = controller.serviceRegistry().applicationStore();
-        this.dockerImageRepoFlag = Flags.DOCKER_IMAGE_REPO.bindTo(flagSource);
+        this.dockerImageRepoFlag = PermanentFlags.DOCKER_IMAGE_REPO.bindTo(flagSource);
         this.provisionApplicationRoles = Flags.PROVISION_APPLICATION_ROLES.bindTo(flagSource);
         this.billingController = billingController;
 
@@ -249,26 +258,50 @@ public class ApplicationController {
 
     public ApplicationStore applicationStore() {  return applicationStore; }
 
-    /** Returns all content clusters in all current deployments of the given application. */
-    public Map<ZoneId, List<String>> contentClustersByZone(Collection<DeploymentId> ids) {
+    /** Returns all currently reachable content clusters among the given deployments. */
+    public Map<ZoneId, List<String>> reachableContentClustersByZone(Collection<DeploymentId> ids) {
         Map<ZoneId, List<String>> clusters = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (DeploymentId id : ids)
-            clusters.put(id.zoneId(), List.copyOf(configServer.getContentClusters(id)));
+            if (isHealthy(id))
+                clusters.put(id.zoneId(), List.copyOf(configServer.getContentClusters(id)));
+
         return Collections.unmodifiableMap(clusters);
+    }
+
+    /** Reads the oldest installed platform for the given application and zone from job history, or a node repo. */
+    private Optional<Version> oldestInstalledPlatform(JobStatus job) {
+        Version oldest = null;
+        for (Run run : job.runs().descendingMap().values()) {
+            Version version = run.versions().targetPlatform();
+            if (oldest == null || version.isBefore(oldest))
+                oldest = version;
+
+            if (run.status() == RunStatus.success)
+                return Optional.of(oldest);
+        }
+        // If no successful run was found, ask the node repository in the relevant zone.
+        return oldestInstalledPlatform(job.id());
+    }
+
+    /** Reads the oldest installed platform for the given application and zone from the node repo of that zone. */
+    private Optional<Version> oldestInstalledPlatform(JobId job) {
+        return configServer.nodeRepository().list(job.type().zone(controller.system()),
+                                                  job.application(),
+                                                  EnumSet.of(active, reserved))
+                           .stream()
+                           .map(Node::currentVersion)
+                           .filter(version -> ! version.isEmpty())
+                           .min(naturalOrder());
     }
 
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
     public Version oldestInstalledPlatform(TenantAndApplicationId id) {
-        return requireApplication(id).instances().values().stream()
-                                     .flatMap(instance -> instance.productionDeployments().keySet().stream()
-                                                                  .flatMap(zone -> configServer.nodeRepository().list(zone,
-                                                                                                                      id.instance(instance.name()),
-                                                                                                                      EnumSet.of(active, reserved))
-                                                                                               .stream())
-                                                                  .map(Node::currentVersion)
-                                                                  .filter(version -> ! version.isEmpty()))
-                                     .min(naturalOrder())
-                                     .orElseGet(controller::readSystemVersion);
+        return controller.jobController().deploymentStatus(requireApplication(id)).jobs()
+                         .production().asList().stream()
+                         .map(this::oldestInstalledPlatform)
+                         .flatMap(Optional::stream)
+                         .min(naturalOrder())
+                         .orElse(controller.readSystemVersion());
     }
 
     /**
@@ -740,6 +773,20 @@ public class ApplicationController {
     }
 
     /**
+     * Asks the config server whether this deployment is currently healthy, i.e., serving traffic as usual.
+     * If this cannot be ascertained, we must assumed it is not.
+     */
+    public boolean isHealthy(DeploymentId deploymentId) {
+        try {
+            return ! isSuspended(deploymentId); // consider adding checks again global routing status, etc.?
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed getting suspension status of " + deploymentId + ": " + Exceptions.toMessageString(e));
+            return false;
+        }
+    }
+
+    /**
      * Asks the config server whether this deployment is currently <i>suspended</i>:
      * Not in a state where it should receive traffic.
      */
@@ -749,7 +796,8 @@ public class ApplicationController {
         }
         catch (ConfigServerException e) {
             if (e.getErrorCode() == ConfigServerException.ErrorCode.NOT_FOUND)
-                return false;
+                return false; // If the application wasn't found, it's not suspended.
+
             throw e;
         }
     }

@@ -121,7 +121,7 @@ ServerSpec::createSourceFactory(const TimingValues & timingValues) const
 {
     const auto vespaVersion = VespaVersion::getCurrentVersion();
     return std::make_unique<FRTSourceFactory>(std::make_unique<FRTConnectionPool>(*this, timingValues), timingValues,
-                                              _protocolVersion, _traceLevel, vespaVersion, _compressionType);
+                                              _traceLevel, vespaVersion, _compressionType);
 }
 
 

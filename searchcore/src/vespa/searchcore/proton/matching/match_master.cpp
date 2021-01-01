@@ -10,7 +10,6 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/inject.h>
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>

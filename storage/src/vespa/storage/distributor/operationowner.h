@@ -40,12 +40,16 @@ public:
             return _sender.getDistributorIndex();
         }
         
-        const std::string& getClusterName() const override {
-            return _sender.getClusterName();
+        const ClusterContext & cluster_context() const override {
+            return _sender.cluster_context();
         }
 
         const PendingMessageTracker& getPendingMessageTracker() const override {
             return _sender.getPendingMessageTracker();
+        }
+
+        const OperationSequencer& operation_sequencer() const noexcept override {
+            return _sender.operation_sequencer();
         }
 
     private:
@@ -59,7 +63,7 @@ public:
     : _sender(sender),
       _clock(clock) {
     }
-    ~OperationOwner();
+    ~OperationOwner() override;
 
     /**
        Handles replies from storage, mapping from a message id to an operation.
@@ -81,6 +85,8 @@ public:
        appropriate callback.
      */
     void erase(api::StorageMessage::Id msgId);
+
+    [[nodiscard]] DistributorMessageSender& sender() noexcept { return _sender; }
 
     void onClose();
     uint32_t size() const { return _sentMessageMap.size(); }

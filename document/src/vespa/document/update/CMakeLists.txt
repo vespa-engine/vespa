@@ -15,6 +15,7 @@ vespa_add_library(document_updates OBJECT
     removevalueupdate.cpp
     tensor_add_update.cpp
     tensor_modify_update.cpp
+    tensor_partial_update.cpp
     tensor_remove_update.cpp
     valueupdate.cpp
     DEPENDS

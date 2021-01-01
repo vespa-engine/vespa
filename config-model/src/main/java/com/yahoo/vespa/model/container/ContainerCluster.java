@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -50,6 +51,7 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
+import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.Http;
@@ -100,7 +102,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer
+        ConfigserverConfig.Producer,
+        CuratorConfig.Producer
 {
 
     /**
@@ -147,6 +150,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final List<String> endpointAliases = new ArrayList<>();
     private final ComponentGroup<Component<?, ?>> componentGroup;
     private final boolean isHostedVespa;
+    private final boolean zooKeeperLocalhostAffinity;
 
     private final Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
 
@@ -161,11 +165,12 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private boolean deferChangesUntilRestart = false;
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
+    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
+        this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
 
         componentGroup = new ComponentGroup<>(this, "component");
 
@@ -408,6 +413,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(ComponentsConfig.Builder builder) {
+        builder.setApplyOnRestart(getDeferChangesUntilRestart()); //  Sufficient to set on one config
         builder.components.addAll(ComponentsConfigGenerator.generate(getAllComponents()));
         builder.components(new ComponentsConfig.Components.Builder().id("com.yahoo.container.core.config.HandlersConfigurerDi$RegistriesHack"));
     }
@@ -552,7 +558,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     /**
      * Returns a config server config containing the right zone settings (and defaults for the rest).
-     * This is useful to allow applications to find out in which zone they are runnung by having the Zone
+     * This is useful to allow applications to find out in which zone they are running by having the Zone
      * object (which is constructed from this config) injected.
      */
     @Override
@@ -560,6 +566,15 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         builder.system(zone.system().value());
         builder.environment(zone.environment().value());
         builder.region(zone.region().value());
+    }
+
+    @Override
+    public void getConfig(CuratorConfig.Builder builder) {
+        if (getParent() instanceof ConfigserverCluster) return; // Produces its own config
+        for (var container : containers) {
+            builder.server(new CuratorConfig.Server.Builder().hostname(container.getHostResource().getHostname()));
+        }
+        builder.zookeeperLocalhostAffinity(zooKeeperLocalhostAffinity);
     }
 
     private List<ClusterInfoConfig.Services.Ports.Builder> getPorts(Service service) {

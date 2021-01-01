@@ -307,7 +307,7 @@ private:
     // Used by visitor client to identify what visitor messages belong to
     api::StorageMessage::Id _visitorCmdId;
     api::VisitorId _visitorId;
-    std::shared_ptr<api::StorageCommand> _initiatingCmd;
+    std::shared_ptr<api::CreateVisitorCommand> _initiatingCmd;
     api::StorageMessage::Priority _priority;
 
     api::ReturnCode _result;
@@ -348,6 +348,14 @@ protected:
      * Returns true iff message was added to internal trace tree.
      */
     bool addBoundedTrace(uint32_t level, const vespalib::string& message);
+
+    const vdslib::Parameters& visitor_parameters() const noexcept;
+
+    // Possibly modifies the ReturnCode parameter in-place if its return code should
+    // be changed based on visitor subclass-specific behavior.
+    // Returns true if the visitor itself should be failed (aborted) with the
+    // error code, false if the DocumentAPI message should be retried later.
+    [[nodiscard]] virtual bool remap_docapi_message_error_code(api::ReturnCode& in_out_code);
 public:
     Visitor(StorageComponent& component);
     virtual ~Visitor();
@@ -381,10 +389,6 @@ public:
         { _visitorInfoTimeout = timeout; }
     void setOwnNodeIndex(uint16_t nodeIndex) { _ownNodeIndex = nodeIndex; }
     void setBucketSpace(document::BucketSpace bucketSpace) { _bucketSpace = bucketSpace; }
-
-    const documentapi::LoadType& getLoadType() const {
-        return _initiatingCmd->getLoadType();
-    }
 
     /** Override this to know which buckets are currently being visited. */
     virtual void startingVisitor(const std::vector<document::BucketId>&) {}
@@ -472,7 +476,7 @@ public:
                VisitorMessageSession::UP,
                documentapi::Priority::Value);
 
-    void attach(std::shared_ptr<api::StorageCommand> initiatingCmd,
+    void attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
                 const mbus::Route& controlAddress,
                 const mbus::Route& dataAddress,
                 framework::MilliSecTime timeout);

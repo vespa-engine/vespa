@@ -5,18 +5,18 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The autoscaler makes decisions about the flavor and node count that should be allocated to a cluster
- * based on observed behavior.
+ * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
  *
  * @author bratseth
  */
@@ -44,7 +44,7 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Advice suggest(Cluster cluster, List<Node> clusterNodes) {
+    public Advice suggest(Cluster cluster, NodeList clusterNodes) {
         return autoscale(cluster, clusterNodes, Limits.empty(), cluster.exclusive());
     }
 
@@ -54,30 +54,34 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Advice autoscale(Cluster cluster, List<Node> clusterNodes) {
-        if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is disabled"); // Shortcut
+    public Advice autoscale(Cluster cluster, NodeList clusterNodes) {
+        if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is not enabled");
         return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive());
     }
 
-    private Advice autoscale(Cluster cluster, List<Node> clusterNodes, Limits limits, boolean exclusive) {
-        ClusterSpec.Type clusterType = clusterNodes.get(0).allocation().get().membership().cluster().type();
-        if (unstable(clusterNodes, nodeRepository))
+    private Advice autoscale(Cluster cluster, NodeList clusterNodes, Limits limits, boolean exclusive) {
+        if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
-        AllocatableClusterResources currentAllocation =
-                new AllocatableClusterResources(clusterNodes, nodeRepository, cluster.exclusive());
+        Duration scalingWindow = scalingWindow(clusterNodes.clusterSpec(), cluster);
+        if (scaledIn(scalingWindow, cluster))
+            return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last rescaling");
 
-        ClusterTimeseries clusterTimeseries = new ClusterTimeseries(cluster, clusterNodes, metricsDb, nodeRepository);
+        ClusterTimeseries clusterTimeseries =
+                new ClusterTimeseries(nodeRepository.clock().instant().minus(scalingWindow), cluster, clusterNodes, metricsDb);
+        AllocatableClusterResources currentAllocation =
+                new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
 
         int measurementsPerNode = clusterTimeseries.measurementsPerNode();
-        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterType))
-            return Advice.none("Collecting more data before making new scaling decisions" +
-                               ": Has " + measurementsPerNode + " data points per node");
+        if  (measurementsPerNode < minimumMeasurementsPerNode(scalingWindow))
+            return Advice.none("Collecting more data before making new scaling decisions: " +
+                               "Have " + measurementsPerNode + " measurements per node but require " +
+                               minimumMeasurementsPerNode(scalingWindow));
 
         int nodesMeasured = clusterTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
-            return Advice.none("Collecting more data before making new scaling decisions" +
-                               ": Has measurements from " + nodesMeasured + " but need from " + clusterNodes.size());
+            return Advice.none("Collecting more data before making new scaling decisions: " +
+                               "Have measurements from " + nodesMeasured + " but require from " + clusterNodes.size());
 
         double cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
         double memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
@@ -91,9 +95,10 @@ public class Autoscaler {
             return Advice.dontScale("No allocation changes are possible within configured limits");
 
         if (similar(bestAllocation.get(), currentAllocation))
-            return Advice.dontScale("Cluster is ideally scaled (within configured limits)");
-        if (isDownscaling(bestAllocation.get(), currentAllocation) && recentlyScaled(cluster, clusterNodes))
-            return Advice.dontScale("Waiting a while before scaling down");
+            return Advice.dontScale("Cluster is ideally scaled within configured limits");
+
+        if (isDownscaling(bestAllocation.get(), currentAllocation) && scaledIn(scalingWindow.multipliedBy(3), cluster))
+            return Advice.dontScale("Waiting " + scalingWindow.multipliedBy(3) + " since last rescaling before reducing resources");
 
         return Advice.scaleTo(bestAllocation.get().toAdvertisedClusterResources());
     }
@@ -120,49 +125,64 @@ public class Autoscaler {
         return ! targetTotal.justNumbers().satisfies(currentTotal.justNumbers());
     }
 
-    private boolean recentlyScaled(Cluster cluster, List<Node> clusterNodes) {
-        Duration downscalingDelay = downscalingDelay(clusterNodes.get(0).allocation().get().membership().cluster().type());
+    private boolean scaledIn(Duration delay, Cluster cluster) {
         return cluster.lastScalingEvent().map(event -> event.at()).orElse(Instant.MIN)
-                      .isAfter(nodeRepository.clock().instant().minus(downscalingDelay));
+                      .isAfter(nodeRepository.clock().instant().minus(delay));
     }
 
     /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */
-    static Duration scalingWindow(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return Duration.ofHours(12);
-        return Duration.ofMinutes(30);
+    private Duration scalingWindow(ClusterSpec clusterSpec, Cluster cluster) {
+        int completedEventCount = 0;
+        Duration totalDuration = Duration.ZERO;
+        for (ScalingEvent event : cluster.scalingEvents()) {
+            if (event.duration().isEmpty()) continue;
+            completedEventCount++;
+            totalDuration = totalDuration.plus(event.duration().get());
+        }
+
+        if (completedEventCount == 0) { // Use defaults
+            if (clusterSpec.isStateful()) return Duration.ofHours(12);
+            return Duration.ofMinutes(10);
+        }
+        else {
+            Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
+
+            // TODO: Remove when we have reliable completion for content clusters
+            if (clusterSpec.isStateful() && predictedDuration.minus(Duration.ofHours(12)).isNegative())
+                return Duration.ofHours(12);
+
+            if (predictedDuration.minus(Duration.ofMinutes(5)).isNegative()) return Duration.ofMinutes(5); // minimum
+            return predictedDuration;
+        }
     }
 
     static Duration maxScalingWindow() {
-        return Duration.ofHours(12);
+        return Duration.ofHours(48);
     }
 
-    /** Measurements are currently taken once a minute. See also scalingWindow */
-    static int minimumMeasurementsPerNode(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return 60;
-        return 7;
+    /** Returns the minimum measurements per node (average) we require to give autoscaling advice.*/
+    private int minimumMeasurementsPerNode(Duration scalingWindow) {
+        // Measurements are ideally taken every minute, but no guarantees
+        // (network, nodes may be down, collecting is single threaded and may take longer than 1 minute to complete).
+        // Since the metric window is 5 minutes, we won't really improve from measuring more often.
+        long minimumMeasurements = scalingWindow.toMinutes() / 5;
+        minimumMeasurements = Math.round(0.8 * minimumMeasurements); // Allow 20% metrics collection blackout
+        if (minimumMeasurements < 1) minimumMeasurements = 1;
+        return (int)minimumMeasurements;
     }
 
-    /**
-     * We should wait a while before scaling down after a scaling event as a peak in usage
-     * indicates more peaks may arrive in the near future.
-     */
-    static Duration downscalingDelay(ClusterSpec.Type clusterType) {
-        if (clusterType.isContent()) return Duration.ofHours(12);
-        return Duration.ofHours(1);
-    }
-
-    public static boolean unstable(List<Node> nodes, NodeRepository nodeRepository) {
+    public static boolean stable(NodeList nodes, NodeRepository nodeRepository) {
         // The cluster is processing recent changes
         if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                             node.allocation().get().membership().retired() ||
                                             node.allocation().get().isRemovable()))
-            return true;
+            return false;
 
         // A deployment is ongoing
-        if (nodeRepository.getNodes(nodes.get(0).allocation().get().owner(), Node.State.reserved).size() > 0)
-            return true;
+        if (nodeRepository.getNodes(nodes.first().get().allocation().get().owner(), Node.State.reserved).size() > 0)
+            return false;
 
-        return false;
+        return true;
     }
 
     public static class Advice {
@@ -197,6 +217,13 @@ public class Autoscaler {
         private static Advice scaleTo(ClusterResources target) {
             return new Advice(Optional.of(target), true, "Scaling due to load changes");
         }
+
+        @Override
+        public String toString() {
+            return "autoscaling advice: " +
+                   (present ? (target.isPresent() ? "Scale to " + target.get() : "Don't scale") : " None");
+        }
+
     }
 
 }

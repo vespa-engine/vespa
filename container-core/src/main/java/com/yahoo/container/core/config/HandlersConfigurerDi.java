@@ -74,7 +74,7 @@ public class HandlersConfigurerDi {
 
         this.vespaContainer = vespaContainer;
         container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
-        getNewComponentGraph(discInjector, false);
+        getNewComponentGraph(discInjector, true);
     }
 
     private static class ContainerAndDiOsgi extends OsgiImpl implements OsgiWrapper {
@@ -128,10 +128,10 @@ public class HandlersConfigurerDi {
     /**
      * Wait for new config to arrive and produce the new graph
      */
-    public void getNewComponentGraph(Injector discInjector, boolean restartOnRedeploy) {
+    public void getNewComponentGraph(Injector discInjector, boolean isInitializing) {
         currentGraph = container.getNewComponentGraph(currentGraph,
                                                       createFallbackInjector(vespaContainer, discInjector),
-                                                      restartOnRedeploy);
+                                                      isInitializing);
     }
 
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {

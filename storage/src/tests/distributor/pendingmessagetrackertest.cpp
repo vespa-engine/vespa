@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <tests/common/dummystoragelink.h>
-#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -49,6 +49,12 @@ public:
     std::chrono::milliseconds atTime() const { return _atTime; }
 };
 
+api::StorageMessageAddress
+makeStorageAddress(uint16_t node) {
+    static vespalib::string _storage("storage");
+    return {&_storage, lib::NodeType::STORAGE, node};
+}
+
 class Fixture
 {
     StorageComponentRegisterImpl _compReg;
@@ -77,6 +83,26 @@ public:
         _tracker->reply(*putReply);
     }
 
+    std::shared_ptr<api::PutCommand> createPutToNode(uint16_t node) const {
+        document::BucketId bucket(16, 1234);
+        auto cmd = std::make_shared<api::PutCommand>(
+                makeDocumentBucket(bucket),
+                createDummyDocumentForBucket(bucket),
+                api::Timestamp(123456));
+        cmd->setAddress(makeStorageAddress(node));
+        return cmd;
+    }
+
+    std::shared_ptr<api::GetCommand> create_get_to_node(uint16_t node) const {
+        document::BucketId bucket(16, 1234);
+        auto cmd = std::make_shared<api::GetCommand>(
+                makeDocumentBucket(bucket),
+                document::DocumentId("id::testdoctype1:n=1234:foo"),
+                "[all]");
+        cmd->setAddress(makeStorageAddress(node));
+        return cmd;
+    }
+
     PendingMessageTracker& tracker() { return *_tracker; }
     auto& clock() { return _clock; }
 
@@ -87,25 +113,9 @@ private:
         return id.str();
     }
 
-    document::Document::SP createDummyDocumentForBucket(
-            const document::BucketId& bucket) const
+    document::Document::SP createDummyDocumentForBucket(const document::BucketId& bucket) const
     {
-        return _testDocMan.createDocument("foobar", 
-                                          createDummyIdString(bucket));
-    }
-
-    api::StorageMessageAddress makeStorageAddress(uint16_t node) const {
-        return {"storage", lib::NodeType::STORAGE, node};
-    }
-
-    std::shared_ptr<api::PutCommand> createPutToNode(uint16_t node) const {
-        document::BucketId bucket(16, 1234);
-        auto cmd = std::make_shared<api::PutCommand>(
-                makeDocumentBucket(bucket),
-                createDummyDocumentForBucket(bucket),
-                api::Timestamp(123456));
-        cmd->setAddress(makeStorageAddress(node));
-        return cmd;
+        return _testDocMan.createDocument("foobar", createDummyIdString(bucket));
     }
 
     std::shared_ptr<api::RemoveCommand> createRemoveToNode(
@@ -151,7 +161,7 @@ TEST_F(PendingMessageTrackerTest, simple) {
     auto remove = std::make_shared<api::RemoveCommand>(
                     makeDocumentBucket(document::BucketId(16, 1234)),
                     document::DocumentId("id:footype:testdoc:n=1234:foo"), 1001);
-    remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
+    remove->setAddress(makeStorageAddress(0));
     tracker.insert(remove);
 
     {
@@ -186,7 +196,7 @@ PendingMessageTrackerTest::insertMessages(PendingMessageTracker& tracker)
         auto remove = std::make_shared<api::RemoveCommand>(
                         makeDocumentBucket(document::BucketId(16, 1234)),
                         document::DocumentId(ost.str()), 1000 + i);
-        remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, i % 2));
+        remove->setAddress(makeStorageAddress(i % 2));
         tracker.insert(remove);
     }
 
@@ -194,7 +204,7 @@ PendingMessageTrackerTest::insertMessages(PendingMessageTracker& tracker)
         std::ostringstream ost;
         ost << "id:footype:testdoc:n=4567:" << i;
         auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(16, 4567)), document::DocumentId(ost.str()), 2000 + i);
-        remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, i % 2));
+        remove->setAddress(makeStorageAddress(i % 2));
         tracker.insert(remove);
     }
 }
@@ -323,7 +333,7 @@ TEST_F(PendingMessageTrackerTest, get_pending_message_types) {
 
     auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid),
                                                        document::DocumentId("id:footype:testdoc:n=1234:foo"), 1001);
-    remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
+    remove->setAddress(makeStorageAddress(0));
     tracker.insert(remove);
 
     {
@@ -358,7 +368,7 @@ TEST_F(PendingMessageTrackerTest, has_pending_message) {
     {
         auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid),
                                                            document::DocumentId("id:footype:testdoc:n=1234:foo"), 1001);
-        remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
+        remove->setAddress(makeStorageAddress(1));
         tracker.insert(remove);
     }
 
@@ -434,6 +444,77 @@ TEST_F(PendingMessageTrackerTest, busy_node_duration_can_be_adjusted) {
     EXPECT_TRUE(f.tracker().getNodeInfo().isBusy(0));
     f.clock().addSecondsToTime(11);
     EXPECT_FALSE(f.tracker().getNodeInfo().isBusy(0));
+}
+
+namespace {
+
+document::BucketId bucket_of(const document::DocumentId& id) {
+    return document::BucketId(16, id.getGlobalId().convertToBucketId().getId());
+}
+
+}
+
+TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_no_pending_write_ops) {
+    Fixture f;
+    auto cmd = f.createPutToNode(0);
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    auto state = TaskRunState::Aborted;
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
+        state = s;
+    }));
+    EXPECT_EQ(state, TaskRunState::OK);
+}
+
+TEST_F(PendingMessageTrackerTest, start_deferred_task_immediately_if_only_pending_read_ops) {
+    Fixture f;
+    auto cmd = f.create_get_to_node(0);
+    f.tracker().insert(cmd);
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    auto state = TaskRunState::Aborted;
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
+        state = s;
+    }));
+    EXPECT_EQ(state, TaskRunState::OK);
+}
+
+TEST_F(PendingMessageTrackerTest, deferred_task_not_started_before_pending_ops_completed) {
+    Fixture f;
+    auto cmd = f.sendPut(RequestBuilder().toNode(0));
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    auto state = TaskRunState::Aborted;
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
+        state = s;
+    }));
+    EXPECT_EQ(state, TaskRunState::Aborted);
+    f.sendPutReply(*cmd, RequestBuilder()); // Deferred task should be run as part of this.
+    EXPECT_EQ(state, TaskRunState::OK);
+}
+
+TEST_F(PendingMessageTrackerTest, deferred_task_can_be_started_with_pending_read_op) {
+    Fixture f;
+    auto cmd = f.sendPut(RequestBuilder().toNode(0));
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    auto state = TaskRunState::Aborted;
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
+        state = s;
+    }));
+    EXPECT_EQ(state, TaskRunState::Aborted);
+    f.tracker().insert(f.create_get_to_node(0)); // Concurrent Get and Put
+    f.sendPutReply(*cmd, RequestBuilder()); // Deferred task should be allowed to run
+    EXPECT_EQ(state, TaskRunState::OK);
+}
+
+TEST_F(PendingMessageTrackerTest, abort_invokes_deferred_tasks_with_aborted_status) {
+    Fixture f;
+    auto cmd = f.sendPut(RequestBuilder().toNode(0));
+    auto bucket_id = bucket_of(cmd->getDocumentId());
+    auto state = TaskRunState::OK;
+    f.tracker().run_once_no_pending_for_bucket(makeDocumentBucket(bucket_id), make_deferred_task([&](TaskRunState s){
+        state = s;
+    }));
+    EXPECT_EQ(state, TaskRunState::OK);
+    f.tracker().abort_deferred_tasks();
+    EXPECT_EQ(state, TaskRunState::Aborted);
 }
 
 }

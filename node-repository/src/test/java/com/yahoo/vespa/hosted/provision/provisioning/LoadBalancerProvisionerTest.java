@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mpolden
@@ -234,6 +235,31 @@ public class LoadBalancerProvisionerTest {
         tester.activate(controllerApp, nodes);
         assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
         assertEquals(cluster, lbs.get().get(0).id().cluster());
+    }
+
+    @Test
+    public void reject_load_balancers_with_clashing_names() {
+        ApplicationId instance1 = ApplicationId.from("t1", "a1", "default");
+        ApplicationId instance2 = ApplicationId.from("t1", "a1", "dev");
+        ApplicationId instance3 = ApplicationId.from("t1", "a1", "qrs");
+        ClusterSpec.Id devCluster = ClusterSpec.Id.from("dev");
+        ClusterSpec.Id defaultCluster = ClusterSpec.Id.from("default");
+
+        // instance1 is deployed
+        tester.activate(instance1, prepare(instance1, clusterRequest(ClusterSpec.Type.container, devCluster)));
+
+        // instance2 clashes because cluster name matches instance1
+        try {
+            prepare(instance2, clusterRequest(ClusterSpec.Type.container, defaultCluster));
+            fail("Expected exception");
+        } catch (IllegalArgumentException ignored) {
+        }
+
+        // instance2 changes cluster name and does not clash
+        tester.activate(instance2, prepare(instance2, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs"))));
+
+        // instance3 clashes because instance name matches instance2 cluster
+        tester.activate(instance3, prepare(instance3, clusterRequest(ClusterSpec.Type.container, defaultCluster)));
     }
 
     private void dirtyNodesOf(ApplicationId application) {

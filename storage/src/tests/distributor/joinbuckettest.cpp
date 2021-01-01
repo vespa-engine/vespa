@@ -6,6 +6,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
+#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -36,7 +37,7 @@ TEST_F(JoinOperationTest, simple) {
 
     enableDistributorClusterState("distributor:1 storage:1");
 
-    JoinOperation op("storage",
+    JoinOperation op(dummy_cluster_context,
                      BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
                                     toVector<uint16_t>(0)),
                      toVector(document::BucketId(33, 1),
@@ -91,7 +92,7 @@ TEST_F(JoinOperationTest, send_sparse_joins_to_nodes_without_both_source_buckets
 
     enableDistributorClusterState("distributor:1 storage:2");
 
-    JoinOperation op("storage",
+    JoinOperation op(dummy_cluster_context,
                      BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
                                     toVector<uint16_t>(0, 1)),
                      toVector(document::BucketId(33, 1),

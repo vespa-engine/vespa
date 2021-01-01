@@ -17,9 +17,9 @@ public class TenantId extends NonDefaultIdentifier {
     }
 
     public static void validate(String id) {
-        if (!strictPattern.matcher(id).matches()) {
+        if ( ! strictPattern.matcher(id).matches())
             throwInvalidId(id, strictPatternExplanation);
-        }
+        new TenantId(id); // validate
     }
 
 }

@@ -13,7 +13,7 @@ import com.yahoo.text.Utf8String;
  * across the network is part of the Network interface, whereas this interface exposes the required
  * functionality of a network owner to be able to decode and deliver incoming messages.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public interface NetworkOwner {
 

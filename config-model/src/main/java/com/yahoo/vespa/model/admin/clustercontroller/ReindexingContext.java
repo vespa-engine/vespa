@@ -5,7 +5,11 @@ import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.documentmodel.NewDocumentType;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Context required to configure automatic reindexing for a given cluster controller cluster (for a given content cluster).
@@ -14,20 +18,37 @@ import java.util.Objects;
  */
 public class ReindexingContext {
 
+    private final Object monitor = new Object();
+    private final Map<String, Set<NewDocumentType>> documentTypesPerCluster = new HashMap<>();
     private final Reindexing reindexing;
-    private final String contentClusterName;
-    private final Collection<NewDocumentType> documentTypes;
+    private final double windowSizeIncrement;
 
-    public ReindexingContext(
-            Reindexing reindexing,
-            String contentClusterName,
-            Collection<NewDocumentType> documentTypes) {
+    public ReindexingContext(Reindexing reindexing, double windowSizeIncrement) {
         this.reindexing = Objects.requireNonNull(reindexing);
-        this.contentClusterName = Objects.requireNonNull(contentClusterName);
-        this.documentTypes = Objects.requireNonNull(documentTypes);
+        this.windowSizeIncrement = windowSizeIncrement;
+    }
+
+    public void addDocumentType(String clusterId, NewDocumentType type) {
+        synchronized (monitor) {
+            documentTypesPerCluster.computeIfAbsent(clusterId, ignored -> new HashSet<>())
+                    .add(type);
+        }
+    }
+
+    public Collection<String> clusterIds() {
+        synchronized (monitor) {
+            return new HashSet<>(documentTypesPerCluster.keySet());
+        }
+    }
+
+    public Collection<NewDocumentType> documentTypesForCluster(String clusterId) {
+        synchronized (monitor) {
+            return new HashSet<>(documentTypesPerCluster.getOrDefault(clusterId, Set.of()));
+        }
     }
 
     public Reindexing reindexing() { return reindexing; }
-    public String contentClusterName() { return contentClusterName; }
-    public Collection<NewDocumentType> documentTypes() { return documentTypes; }
+
+    public double windowSizeIncrement() { return windowSizeIncrement; }
+
 }

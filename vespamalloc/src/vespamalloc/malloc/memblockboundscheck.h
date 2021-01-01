@@ -20,11 +20,11 @@ public:
         return p ? (p+alignment()) : nullptr;
     }
 
-    void setThreadId(int th)              { if (_ptr) { static_cast<uint32_t*>(_ptr)[2] = th; } }
+    void setThreadId(uint32_t th)         { if (_ptr) { static_cast<uint32_t *>(_ptr)[2] = th; } }
     bool allocated()                const { return (static_cast<uint32_t*>(_ptr)[3] == ALLOC_MAGIC); }
     size_t size()                   const { return static_cast<const uint32_t *>(_ptr)[0]; }
     size_t alignment()              const { return static_cast<const uint32_t *>(_ptr)[1]; }
-    int threadId()                  const { return static_cast<int*>(_ptr)[2]; }
+    uint32_t threadId()                  const { return static_cast<uint32_t *>(_ptr)[2]; }
     Stack * callStack()                   { return reinterpret_cast<Stack *>((char *)_ptr + size() + alignment()); }
     const Stack * callStack()       const { return reinterpret_cast<const Stack *>((const char *)_ptr + size() + alignment()); }
     void fillMemory(size_t sz) {

@@ -1,0 +1,12 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "tensor_model.h"
+
+namespace vespalib::eval::test {
+
+Seq::~Seq() = default;
+
+Domain::Domain(const Domain &) = default;
+Domain::~Domain() = default;
+
+}

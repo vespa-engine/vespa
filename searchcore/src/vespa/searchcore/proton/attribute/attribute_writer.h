@@ -56,7 +56,7 @@ public:
         // When this is true, the context only contains a single field.
         bool _use_two_phase_put;
     public:
-        WriteContext(ExecutorId executorId);
+        WriteContext(ExecutorId executorId) noexcept;
         WriteContext(WriteContext &&rhs) noexcept;
         ~WriteContext();
         WriteContext &operator=(WriteContext &&rhs) noexcept;

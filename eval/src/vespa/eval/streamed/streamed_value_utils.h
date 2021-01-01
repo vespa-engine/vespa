@@ -29,9 +29,9 @@ struct LabelStream {
  **/
 struct LabelBlock {
     static constexpr size_t npos = -1;
-    size_t ss_idx;
+    size_t subspace_index;
     ConstArrayRef<vespalib::stringref> address;
-    operator bool() const { return ss_idx != npos; }
+    operator bool() const { return subspace_index != npos; }
 };
 
 /**

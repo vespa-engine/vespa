@@ -2,19 +2,20 @@
 vespa_add_library(storage_common OBJECT
     SOURCES
     bucketmessages.cpp
-    bucketoperationlogger.cpp
     content_bucket_space.cpp
     content_bucket_space_repo.cpp
     distributorcomponent.cpp
     global_bucket_space_distribution_converter.cpp
     messagebucket.cpp
     messagesender.cpp
+    node_identity.cpp
+    reindexing_constants.cpp
     servicelayercomponent.cpp
     statusmessages.cpp
     statusmetricconsumer.cpp
+    storage_chain_builder.cpp
     storagecomponent.cpp
     storagelink.cpp
     storagelinkqueued.cpp
-    storage_chain_builder.cpp
     DEPENDS
 )

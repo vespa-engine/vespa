@@ -41,6 +41,8 @@ public:
     {
     }
 
+    ~MyPostingList() override;
+
     bool next(uint32_t doc_id) override {
         if (_index < _entries.size()) {
             while (_entries[_index].first <= doc_id) {
@@ -69,6 +71,8 @@ public:
     }
     uint32_t getInterval() const override { return _interval; }
 };
+
+MyPostingList::~MyPostingList() = default;
 
 template <int N>
 vector<PredicatePostingList::UP>

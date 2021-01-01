@@ -12,10 +12,10 @@
 #include "pendingmessagetracker.h"
 #include "statusreporterdelegate.h"
 #include <vespa/config/config.h>
-#include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
+#include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
@@ -26,16 +26,18 @@
 namespace storage {
     struct DoneInitializeHandler;
     class HostInfo;
+    class NodeIdentity;
 }
 
 namespace storage::distributor {
 
-class DistributorBucketSpaceRepo;
-class SimpleMaintenanceScanner;
 class BlockingOperationStarter;
-class ThrottlingOperationStarter;
 class BucketPriorityDatabase;
+class DistributorBucketSpaceRepo;
+class OperationSequencer;
 class OwnershipTransferSafeTimePointCalculator;
+class SimpleMaintenanceScanner;
+class ThrottlingOperationStarter;
 
 class Distributor : public StorageLink,
                     public DistributorInterface,
@@ -43,10 +45,12 @@ class Distributor : public StorageLink,
                     public framework::StatusReporter,
                     public framework::TickingThread,
                     public MinReplicaProvider,
-                    public BucketSpacesStatsProvider
+                    public BucketSpacesStatsProvider,
+                    public NonTrackingMessageSender
 {
 public:
     Distributor(DistributorComponentRegister&,
+                const NodeIdentity& node_identity,
                 framework::TickingThreadPool&,
                 DoneInitializeHandler&,
                 bool manageActiveBucketCopies,
@@ -55,25 +59,30 @@ public:
 
     ~Distributor() override;
 
+    const ClusterContext& cluster_context() const override {
+        return _component.cluster_context();
+    }
     void onOpen() override;
     void onClose() override;
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
     void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
     // Bypasses message tracker component. Thread safe.
-    void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&);
+    void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) override;
 
     ChainedMessageSender& getMessageSender() override {
         return (_messageSender == 0 ? *this : *_messageSender);
     }
 
     DistributorMetricSet& getMetrics() override { return *_metrics; }
-    
+
     PendingMessageTracker& getPendingMessageTracker() override {
         return _pendingMessageTracker;
     }
 
-    BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const override;
+    const OperationSequencer& operation_sequencer() const noexcept override {
+        return *_operation_sequencer;
+    }
 
     const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
 
@@ -150,7 +159,6 @@ public:
     }
 
     int getDistributorIndex() const override;
-    const std::string& getClusterName() const override;
     const PendingMessageTracker& getPendingMessageTracker() const override;
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
@@ -262,23 +270,24 @@ private:
 
     lib::ClusterStateBundle _clusterStateBundle;
 
-    DistributorComponentRegister& _compReg;
-    storage::DistributorComponent _component;
     std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
     // Read-only bucket space repo with DBs that only contain buckets transiently
     // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
     // and the DBs are empty during non-transition phases.
     std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
+    storage::distributor::DistributorComponent _component;
     std::shared_ptr<DistributorMetricSet> _metrics;
 
     OperationOwner _operationOwner;
     OperationOwner _maintenanceOperationOwner;
 
+    std::unique_ptr<OperationSequencer> _operation_sequencer;
     PendingMessageTracker _pendingMessageTracker;
     BucketDBUpdater _bucketDBUpdater;
     StatusReporterDelegate _distributorStatusDelegate;
     StatusReporterDelegate _bucketDBStatusDelegate;
     IdealStateManager _idealStateManager;
+    ChainedMessageSender* _messageSender;
     ExternalOperationHandler _externalOperationHandler;
 
     std::shared_ptr<lib::Distribution> _distribution;
@@ -309,8 +318,6 @@ private:
     DoneInitializeHandler& _doneInitializeHandler;
     bool _doneInitializing;
 
-    ChainedMessageSender* _messageSender;
-
     std::unique_ptr<BucketPriorityDatabase> _bucketPriorityDb;
     std::unique_ptr<SimpleMaintenanceScanner> _scanner;
     std::unique_ptr<ThrottlingOperationStarter> _throttlingStarter;
@@ -319,7 +326,6 @@ private:
     MaintenanceScheduler::SchedulingMode _schedulingMode;
     framework::MilliSecTimer _recoveryTimeStarted;
     framework::ThreadWaitInfo _tickResult;
-    const std::string _clusterName;
     BucketDBMetricUpdater _bucketDBMetricUpdater;
     std::unique_ptr<BucketGcTimeCalculator::BucketIdHasher> _bucketIdHasher;
     MetricUpdateHook _metricUpdateHook;

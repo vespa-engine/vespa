@@ -107,14 +107,6 @@ struct SelectGenericRenameOp {
     }
 };
 
-struct PerformGenericRename {
-    template <typename CT>
-    static auto invoke(const Value &a, const RenameParam &param) {
-        return generic_rename<CT>(a, param.sparse_plan, param.dense_plan,
-                                  param.res_type, param.factory);
-    }
-};
-
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
@@ -192,20 +184,6 @@ GenericRename::make_instruction(const ValueType &lhs_type,
                                             factory);
     auto fun = typify_invoke<1,TypifyCellType,SelectGenericRenameOp>(param.res_type.cell_type());
     return Instruction(fun, wrap_param<RenameParam>(param));
-}
-
-
-Value::UP
-GenericRename::perform_rename(const Value &a,
-                              const std::vector<vespalib::string> &rename_dimension_from,
-                              const std::vector<vespalib::string> &rename_dimension_to,
-                              const ValueBuilderFactory &factory)
-{
-    RenameParam param(a.type(),
-                      rename_dimension_from, rename_dimension_to,
-                      factory);
-    return typify_invoke<1,TypifyCellType,PerformGenericRename>(a.type().cell_type(),
-                                                                a, param);
 }
 
 } // namespace

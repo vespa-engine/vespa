@@ -32,11 +32,11 @@ public interface JRTServerConfigRequest extends JRTConfigRequest, GetConfigReque
      *
      * @param payload The config payload that the client should receive.
      * @param generation The config generation of the given payload.
-     * @param internalRedeployment whether this payload was generated from an internal redeployment not an
-     *                             application package change
+     * @param applyOnRestart true if this config should only be applied on the next restart,
+     *                       false if it should be applied right away
      * @param configMd5 The md5sum of the given payload.
      */
-    void addOkResponse(Payload payload, long generation, boolean internalRedeployment, String configMd5);
+    void addOkResponse(Payload payload, long generation, boolean applyOnRestart, String configMd5);
 
     /**
      * Get the current config md5 of the client config.
@@ -59,11 +59,7 @@ public interface JRTServerConfigRequest extends JRTConfigRequest, GetConfigReque
      */
     boolean isDelayedResponse();
 
-    /**
-     * Returns whether the response config was created by a system internal redeploy, not an application
-     * package change
-     */
-    boolean isInternalRedeploy();
+    boolean applyOnRestart();
 
     /**
      * Get the request trace for this request. The trace can be used to trace config execution to provide useful

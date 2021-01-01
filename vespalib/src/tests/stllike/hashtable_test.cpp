@@ -7,6 +7,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <memory>
 #include <vector>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 using vespalib::hashtable;
 using std::vector;
@@ -38,17 +39,12 @@ TEST("require that hashtable can store unique_ptrs") {
     // it = table.find(42);  // This will crash, since the key is removed.
 }
 
-template<typename To, typename Entry>
-struct First : std::unary_function<To, Entry> {
-    To &operator()(Entry& p) const { return p.first; }
-    const To& operator()(const Entry& p) const { return p.first; }
-};
 
 template <typename K, typename V> using Entry =
     std::pair<K, std::unique_ptr<V>>;
 typedef hashtable<int, Entry<int, int>,
                   vespalib::hash<int>, std::equal_to<int>,
-                  First<int, Entry<int, int>>> PairHashtable;
+                  Select1st<Entry<int, int>>> PairHashtable;
 
 TEST("require that hashtable can store pairs of <key, unique_ptr to value>") {
     PairHashtable table(100);
@@ -71,6 +67,55 @@ TEST("require that hashtable<int> can be copied") {
     table.insert(42);
     set_hashtable<int> table2(table);
     EXPECT_EQUAL(42, *table2.find(42));
+}
+
+TEST("require that you can insert duplicates") {
+    using Pair = std::pair<int, vespalib::string>;
+    using Map = hashtable<int, Pair, vespalib::hash<int>, std::equal_to<int>, Select1st<Pair>>;
+
+    Map m(1);
+    EXPECT_EQUAL(0u, m.size());
+    EXPECT_EQUAL(8u, m.capacity());
+    auto res = m.insert(Pair(1, "1"));
+    EXPECT_TRUE(res.second);
+    EXPECT_EQUAL(1u, m.size());
+    EXPECT_EQUAL(8u, m.capacity());
+    res = m.insert(Pair(1, "1.2"));
+    EXPECT_FALSE(res.second);
+    auto found = m.find(1);
+    ASSERT_TRUE(found != m.end());
+    EXPECT_EQUAL(found->second, "1");
+
+    m.force_insert(Pair(1, "1.2"));
+    EXPECT_EQUAL(2u, m.size());
+    EXPECT_EQUAL(8u, m.capacity());
+    m.force_insert(Pair(1, "1.3"));
+    EXPECT_EQUAL(3u, m.size());
+    EXPECT_EQUAL(16u, m.capacity()); // Resize has been conducted
+    Pair expected[3] = {{1,"1"},{1,"1.2"},{1,"1.3"}};
+    size_t index(0);
+    for (const auto & e : m) {
+        EXPECT_EQUAL(expected[index].first, e.first);
+        EXPECT_EQUAL(expected[index].second, e.second);
+        index++;
+    }
+    found = m.find(1);
+    ASSERT_TRUE(found != m.end());
+    EXPECT_EQUAL(found->second, "1");
+
+    m.erase(1);
+    EXPECT_EQUAL(2u, m.size());
+    EXPECT_EQUAL(16u, m.capacity());
+    found = m.find(1);
+    ASSERT_TRUE(found != m.end());
+    EXPECT_EQUAL(found->second, "1.3");
+
+    m.erase(1);
+    EXPECT_EQUAL(1u, m.size());
+    EXPECT_EQUAL(16u, m.capacity());
+    found = m.find(1);
+    ASSERT_TRUE(found != m.end());
+    EXPECT_EQUAL(found->second, "1.2");
 }
 
 template<typename To, typename Vector>

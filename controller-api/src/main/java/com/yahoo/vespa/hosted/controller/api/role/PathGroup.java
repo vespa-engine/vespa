@@ -286,6 +286,26 @@ enum PathGroup {
         return EnumSet.complementOf(EnumSet.copyOf(List.of(pathGroups)));
     }
 
+    static Set<PathGroup> allExcept(Set<PathGroup> pathGroups) {
+        return EnumSet.complementOf(EnumSet.copyOf(pathGroups));
+    }
+
+    static Set<PathGroup> billingPaths() {
+        var paths = billingPathsNoToken();
+        paths.add(PathGroup.billingToken);
+        return paths;
+    }
+
+    static Set<PathGroup> billingPathsNoToken() {
+        return EnumSet.of(
+                PathGroup.billingCollection,
+                PathGroup.billingInstrument,
+                PathGroup.billingList,
+                PathGroup.billingPlan,
+                PathGroup.hostedAccountant
+        );
+    }
+
     /** Returns whether this group matches path in given context */
     boolean matches(URI uri, Context context) {
         return get(uri).map(p -> {

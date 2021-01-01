@@ -3,7 +3,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <vespa/eval/eval/engine_or_factory.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/fef/matchdata.h>
@@ -27,7 +28,7 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::CellType;
 using vespalib::eval::TensorSpec;
-using vespalib::eval::EngineOrFactory;
+using vespalib::eval::SimpleValue;
 using search::tensor::DistanceFunction;
 using search::attribute::DistanceMetric;
 
@@ -41,7 +42,7 @@ DistanceFunction::UP euclid_d = search::tensor::make_distance_function(DistanceM
 DistanceFunction::UP euclid_f = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::FLOAT);
 
 std::unique_ptr<Value> createTensor(const TensorSpec &spec) {
-    return EngineOrFactory::get().from_spec(spec);
+    return SimpleValue::from_spec(spec);
 }
 
 std::unique_ptr<Value> createTensor(const vespalib::string& type_spec, double v1, double v2) {

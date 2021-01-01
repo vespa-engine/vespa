@@ -5,6 +5,7 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -39,7 +40,7 @@ TEST_F(BucketStateOperationTest, activate_single_node) {
     BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0));
     std::vector<uint16_t> active;
     active.push_back(0);
-    SetBucketStateOperation op("storage", bucketAndNodes, active);
+    SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -48,8 +49,7 @@ TEST_F(BucketStateOperationTest, activate_single_node) {
 
     std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
     ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-    EXPECT_EQ(api::StorageMessageAddress(
-                      "storage", lib::NodeType::STORAGE, 0).toString(),
+    EXPECT_EQ(api::StorageMessageAddress(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 0).toString(),
               msg->getAddress()->toString());
 
     auto& cmd = dynamic_cast<const api::SetBucketStateCommand&>(*msg);
@@ -76,7 +76,7 @@ TEST_F(BucketStateOperationTest, activate_and_deactivate_nodes) {
     BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0, 1));
     std::vector<uint16_t> active;
     active.push_back(1);
-    SetBucketStateOperation op("storage", bucketAndNodes, active);
+    SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -85,8 +85,7 @@ TEST_F(BucketStateOperationTest, activate_and_deactivate_nodes) {
     {
         std::shared_ptr<api::StorageCommand> msg = _sender.command(0);
         ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-        EXPECT_EQ(api::StorageMessageAddress(
-                          "storage", lib::NodeType::STORAGE, 1).toString(),
+        EXPECT_EQ(api::StorageMessageAddress(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 1).toString(),
                   msg->getAddress()->toString());
 
         auto& cmd = dynamic_cast<const api::SetBucketStateCommand&>(*msg);
@@ -101,8 +100,8 @@ TEST_F(BucketStateOperationTest, activate_and_deactivate_nodes) {
     {
         std::shared_ptr<api::StorageCommand> msg  = _sender.command(1);
         ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-        EXPECT_EQ(api::StorageMessageAddress(
-                          "storage", lib::NodeType::STORAGE, 0).toString(),
+        EXPECT_EQ(api::StorageMessageAddress(dummy_cluster_context.cluster_name_ptr(),
+                                             lib::NodeType::STORAGE, 0).toString(),
                   msg->getAddress()->toString());
 
         auto& cmd = dynamic_cast<const api::SetBucketStateCommand&>(*msg);
@@ -133,7 +132,7 @@ TEST_F(BucketStateOperationTest, do_not_deactivate_if_activate_fails) {
     BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0, 1));
     std::vector<uint16_t> active;
     active.push_back(1);
-    SetBucketStateOperation op("storage", bucketAndNodes, active);
+    SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -142,8 +141,8 @@ TEST_F(BucketStateOperationTest, do_not_deactivate_if_activate_fails) {
     {
         std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
         ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-        EXPECT_EQ(api::StorageMessageAddress(
-                          "storage", lib::NodeType::STORAGE, 1).toString(),
+        EXPECT_EQ(api::StorageMessageAddress(dummy_cluster_context.cluster_name_ptr(),
+                                             lib::NodeType::STORAGE, 1).toString(),
                   msg->getAddress()->toString());
 
         auto& cmd = dynamic_cast<const api::SetBucketStateCommand&>(*msg);
@@ -176,7 +175,7 @@ TEST_F(BucketStateOperationTest, bucket_db_not_updated_on_failure) {
     BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0));
     std::vector<uint16_t> active;
     active.push_back(0);
-    SetBucketStateOperation op("storage", bucketAndNodes, active);
+    SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
@@ -185,8 +184,8 @@ TEST_F(BucketStateOperationTest, bucket_db_not_updated_on_failure) {
 
     std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
     ASSERT_EQ(msg->getType(), api::MessageType::SETBUCKETSTATE);
-    EXPECT_EQ(api::StorageMessageAddress(
-                      "storage", lib::NodeType::STORAGE, 0).toString(),
+    EXPECT_EQ(api::StorageMessageAddress(dummy_cluster_context.cluster_name_ptr(),
+                                         lib::NodeType::STORAGE, 0).toString(),
               msg->getAddress()->toString());
 
     std::shared_ptr<api::StorageReply> reply(msg->makeReply().release());

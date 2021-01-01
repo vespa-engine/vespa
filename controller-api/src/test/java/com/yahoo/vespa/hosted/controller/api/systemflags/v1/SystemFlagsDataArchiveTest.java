@@ -2,16 +2,20 @@
 
 package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.text.JSON;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.FlagData;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -26,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +40,9 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author bjorncs
@@ -52,6 +60,7 @@ public class SystemFlagsDataArchiveTest {
     public final ExpectedException expectedException = ExpectedException.none();
 
     private static final FlagsTarget mainControllerTarget = FlagsTarget.forController(SYSTEM);
+    private static final FlagsTarget cdControllerTarget = FlagsTarget.forController(SystemName.cd);
     private static final FlagsTarget prodUsWestCfgTarget = createConfigserverTarget(Environment.prod, "us-west-1");
     private static final FlagsTarget prodUsEast3CfgTarget = createConfigserverTarget(Environment.prod, "us-east-3");
     private static final FlagsTarget devUsEast1CfgTarget = createConfigserverTarget(Environment.dev, "us-east-1");
@@ -260,6 +269,30 @@ public class SystemFlagsDataArchiveTest {
         }
     }
 
+    @Test
+    public void ignores_files_not_related_to_specified_system_definition() {
+        ZoneRegistry registry = createZoneRegistryMock();
+        Path testDirectory = Paths.get("src/test/resources/system-flags-for-multiple-systems/");
+        var archive = SystemFlagsDataArchive.fromDirectoryAndSystem(testDirectory, registry);
+        assertFlagDataHasValue(archive, MY_TEST_FLAG, cdControllerTarget, "default"); // Would be 'cd.controller' if files for CD system were included
+        assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "default");
+        assertFlagDataHasValue(archive, MY_TEST_FLAG, prodUsWestCfgTarget, "main.prod.us-west-1");
+    }
+
+    @SuppressWarnings("unchecked") // workaround for mocking a method for generic return type
+    private static ZoneRegistry createZoneRegistryMock() {
+        // Cannot use the standard registry mock as it's located in controller-server module
+        ZoneRegistry registryMock = mock(ZoneRegistry.class);
+        when(registryMock.system()).thenReturn(SystemName.main);
+        when(registryMock.getConfigServerVipUri(any())).thenReturn(URI.create("http://localhost:8080/"));
+        when(registryMock.getConfigServerHttpsIdentity(any())).thenReturn(new AthenzService("domain", "servicename"));
+        ZoneList zoneListMock = mock(ZoneList.class);
+        when(zoneListMock.reachable()).thenReturn(zoneListMock);
+        when(zoneListMock.zones()).thenReturn((List)List.of(new SimpleZone("prod.us-west-1"), new SimpleZone("prod.us-east-3")));
+        when(registryMock.zones()).thenReturn(zoneListMock);
+        return registryMock;
+    }
+
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {
         assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "main.controller");
         assertFlagDataHasValue(archive, MY_TEST_FLAG, prodUsWestCfgTarget, "main.prod.us-west-1");
@@ -284,6 +317,16 @@ public class SystemFlagsDataArchiveTest {
         return archive.flagData(target).stream()
                 .filter(d -> d.id().equals(flagId))
                 .collect(toList());
+    }
+
+    private static class SimpleZone implements ZoneApi {
+        final ZoneId zoneId;
+        SimpleZone(String zoneId) { this.zoneId = ZoneId.from(zoneId); }
+
+        @Override public SystemName getSystemName() { return  SystemName.main; }
+        @Override public ZoneId getId() { return zoneId; }
+        @Override public CloudName getCloudName() { throw new UnsupportedOperationException(); }
+        @Override public String getCloudNativeRegionName() { throw new UnsupportedOperationException(); }
     }
 
 }
