@@ -230,11 +230,9 @@ public class MockCuratorFramework implements CuratorFramework  {
             }
 
             @Override
-            public void removeWatchers() {
-
-            }
+            public void removeWatchers() {}
         }
-        return new MockWatcherRemoveCuratorFramework(true, true);
+        return new MockWatcherRemoveCuratorFramework(true, false);
     }
 
     @Override
@@ -460,7 +458,7 @@ public class MockCuratorFramework implements CuratorFramework  {
                 }
             } else if (c > '\u0000' && c < '\u001f' || c > '\u007f' && c < '\u009F'
                        || c > '\ud800' && c < '\uf8ff' || c > '\ufff0' && c < '\uffff') {
-                reason = "invalid charater @" + i;
+                reason = "invalid character @" + i;
                 break;
             }
         }
