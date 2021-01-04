@@ -64,8 +64,6 @@ class FileStorManager : public StorageLinkQueued,
 
     std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;
     config::ConfigFetcher _configFetcher;
-    uint32_t              _threadLockCheckInterval; // In seconds
-    bool                  _failDiskOnError;
     bool                  _use_async_message_handling_on_schedule;
     std::shared_ptr<FileStorMetrics> _metrics;
     std::unique_ptr<FileStorHandler> _filestorHandler;

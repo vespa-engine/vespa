@@ -3,22 +3,10 @@ namespace=vespa.config.content
 
 ## DETECT FAILURE PARAMETERS
 
-## After seeing given number of errors on a disk, storage will disable the
-## disk and restart. If set to 0, storage will never disable disks. Note
-## that if you get disk errors, which arent automatically fixed, this will
-## make storage keep failing all operations towards this disk, and all
-## retries will use the same disk and same file, so you might end up with a
-## lot of operations that can never succeed. Thus, it is not recommended to
-## turn this off.
+## Deprecated and unused - will soon go away
 fail_disk_after_error_count int default=1 restart
 
-## If a disk operation takes more time in seconds than the disk operation
-## timeout, storage will consider that a disk failure, and mark the disk
-## bad, restart and not use the disk anymore. Note that currently, this
-## includes CPU time too, so if used, this parameter should be set fairly
-## high as we still sometimes have some operations that might take a few
-## seconds. Disabled by default as we currently have these long operations
-## during normal load.
+## Deprecated and unused - will soon go away
 disk_operation_timeout int default=0 restart
 
 ## PERFORMANCE PARAMETERS
