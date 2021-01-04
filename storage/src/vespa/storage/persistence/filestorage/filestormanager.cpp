@@ -52,8 +52,6 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _threads(),
       _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
       _configFetcher(configUri.getContext()),
-      _threadLockCheckInterval(60),
-      _failDiskOnError(false),
       _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>()),
       _closed(false),
@@ -163,8 +161,6 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
     // If true, this is not the first configure.
     bool liveUpdate = ! _threads.empty();
 
-    _threadLockCheckInterval = config->diskOperationTimeout;
-    _failDiskOnError = (config->failDiskAfterErrorCount > 0);
     _use_async_message_handling_on_schedule = config->useAsyncMessageHandlingOnSchedule;
 
     if (!liveUpdate) {
