@@ -4,6 +4,9 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -16,17 +19,19 @@ import static org.junit.Assert.fail;
  */
 public class QuotaValidatorTest {
 
+    private final Zone publicZone = new Zone(SystemName.Public, Environment.prod, RegionName.from("foo"));
+    private final Zone publicCdZone = new Zone(SystemName.PublicCd, Environment.prod, RegionName.from("foo"));
     private final Quota quota = Quota.unlimited().withClusterSize(10).withBudget(BigDecimal.valueOf(1));
 
     @Test
     public void test_deploy_under_quota() {
-        var tester = new ValidationTester(5, false, new TestProperties().setHostedVespa(true).setQuota(quota));
+        var tester = new ValidationTester(5, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         tester.deploy(null, getServices("testCluster", 5), Environment.prod, null);
     }
 
     @Test
     public void test_deploy_above_quota_clustersize() {
-        var tester = new ValidationTester(11, false, new TestProperties().setHostedVespa(true).setQuota(quota));
+        var tester = new ValidationTester(11, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
             tester.deploy(null, getServices("testCluster", 11), Environment.prod, null);
             fail();
@@ -37,13 +42,25 @@ public class QuotaValidatorTest {
 
     @Test
     public void test_deploy_above_quota_budget() {
-        var tester = new ValidationTester(10, false, new TestProperties().setHostedVespa(true).setQuota(quota));
+        var tester = new ValidationTester(10, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
             assertEquals("Hourly spend for maximum specified resources ($-.--) exceeds budget from quota ($-.--)!",
                          ValidationTester.censorNumbers(e.getMessage()));
+        }
+    }
+
+    @Test
+    public void test_deploy_above_quota_budget_in_publiccd() {
+        var tester = new ValidationTester(10, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicCdZone));
+        try {
+            tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
+            fail();
+        } catch (RuntimeException e) {
+            assertEquals("Hourly spend for maximum specified resources ($-.--) exceeds budget from quota ($-.--)!",
+                    ValidationTester.censorNumbers(e.getMessage()));
         }
     }
 
