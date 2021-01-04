@@ -223,14 +223,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // These need to be setup so that they will use the container's config id, since each container
         // have different config (id of zookeeper server)
-        cluster.getContainers().forEach(container -> {
-            container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer", container));
-            container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.Reconfigurer", container));
-            container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl", container));
-        });
+        cluster.getContainers().forEach(ContainerModelBuilder::addReconfigurableZooKeeperServerComponents);
     }
 
-    private SimpleComponent zookeeperComponent(String idSpec, Container container) {
+    public static void addReconfigurableZooKeeperServerComponents(Container container) {
+        container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer", container));
+        container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.Reconfigurer", container));
+        container.addComponent(zookeeperComponent("com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl", container));
+    }
+
+    private static SimpleComponent zookeeperComponent(String idSpec, Container container) {
         String configId = container.getConfigId();
         return new SimpleComponent(new ComponentModel(idSpec, null, "zookeeper-server", configId));
     }

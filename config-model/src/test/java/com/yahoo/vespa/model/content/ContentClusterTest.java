@@ -1005,8 +1005,7 @@ public class ContentClusterTest extends ContentBaseTest {
             var builder = new ComponentsConfig.Builder();
             c.getConfig(builder);
             assertEquals(1, new ComponentsConfig(builder).components().stream()
-                    .filter(component -> component.id().equals("clustercontroller-zookeeper-server"))
-                    .map(component -> component.classId().equals(expectedClassName))
+                    .filter(component -> component.classId().equals(expectedClassName))
                     .count());
         }
     }
@@ -1015,6 +1014,8 @@ public class ContentClusterTest extends ContentBaseTest {
     public void reconfigurableZookeeperServerForClusterController() {
         assertZookeeperServerImplementation(false, "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl");
         assertZookeeperServerImplementation(true, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
+        assertZookeeperServerImplementation(true, "com.yahoo.vespa.zookeeper.Reconfigurer");
+        assertZookeeperServerImplementation(true, "com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl");
     }
 
 }
