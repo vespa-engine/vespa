@@ -383,7 +383,10 @@ struct MultiLockGuard {
     std::map<uint16_t, std::mutex*> monitors;
     std::vector<std::shared_ptr<monitor_guard>> guards;
 
-    MultiLockGuard() = default;
+    MultiLockGuard();
+    MultiLockGuard(const MultiLockGuard &) = delete;
+    MultiLockGuard & operator=(const MultiLockGuard &) = delete;
+    ~MultiLockGuard();
 
     void addLock(std::mutex & lock, uint16_t stripe_index) {
         monitors[stripe_index] = & lock;
@@ -394,6 +397,9 @@ struct MultiLockGuard {
         }
     }
 };
+
+MultiLockGuard::MultiLockGuard() = default;
+MultiLockGuard::~MultiLockGuard() = default;
 
 document::DocumentId
 getDocId(const api::StorageMessage& msg) {
@@ -696,13 +702,6 @@ FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<Remap
         }
     }
 
-}
-
-void
-FileStorHandlerImpl::remapQueueAfterDiskMove(const document::Bucket& bucket)
-{
-    RemapInfo target(bucket);
-    remapQueue(RemapInfo(bucket), target, FileStorHandlerImpl::MOVE);
 }
 
 void

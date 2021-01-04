@@ -191,7 +191,6 @@ public:
 
     FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId) override;
 
-    void remapQueueAfterDiskMove(const document::Bucket& bucket) override;
     void remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target) override;
     void remapQueueAfterSplit(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2) override;
 
