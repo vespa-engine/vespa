@@ -959,10 +959,11 @@ private:
             _path[level].adjustLeftVictimKilled();
         }
         if (stolen != 0) {
-            if (level > 0)
+            if (level > 0) {
                 _path[level - 1].adjustSteal(stolen);
-            else
+            } else {
                 _leaf.adjustSteal(stolen);
+            }
         }
     }
 
