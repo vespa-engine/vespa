@@ -7,6 +7,7 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 
 namespace slobrok::api { class IMirrorAPI; }
