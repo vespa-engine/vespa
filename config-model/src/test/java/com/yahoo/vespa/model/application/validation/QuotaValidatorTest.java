@@ -48,7 +48,7 @@ public class QuotaValidatorTest {
             fail();
         } catch (RuntimeException e) {
             assertEquals("Hourly spend for maximum specified resources ($-.--) exceeds budget from quota ($-.--)!",
-                         ValidationTester.censorNumbers(e.getMessage()));
+                    ValidationTester.censorNumbers(e.getMessage()));
         }
     }
 
@@ -59,7 +59,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("Hourly spend for maximum specified resources ($-.--) exceeds budget from quota ($-.--)!",
+            assertEquals("publiccd: Hourly spend for maximum specified resources ($-.--) exceeds budget from quota ($-.--)!",
                     ValidationTester.censorNumbers(e.getMessage()));
         }
     }
