@@ -211,7 +211,7 @@ TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_locks_bucket_with_random
     auto op = create_rfw_op(create_nested_visitor_op(true));
     _op_owner->start(op, OperationStarter::Priority(120));
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
-    auto cmd = dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
+    auto cmd = std::dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
     ASSERT_TRUE(cmd);
     EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(),
                                        vespalib::stringref("not found :I")),
