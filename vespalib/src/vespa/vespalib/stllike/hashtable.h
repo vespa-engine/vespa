@@ -3,6 +3,7 @@
 
 #include <iterator>
 #include <vespa/vespalib/util/array.h>
+#include <algorithm>
 
 namespace vespalib {
 
