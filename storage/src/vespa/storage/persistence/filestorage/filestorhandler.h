@@ -104,9 +104,8 @@ public:
     virtual void setDiskState(DiskState state) = 0;
     virtual DiskState getDiskState() const = 0;
 
-    /** Check whether it is enabled or not. */
-    bool enabled() { return (getDiskState() == AVAILABLE); }
-    bool closed() { return (getDiskState() == CLOSED); }
+    /** Check if it has been closed. */
+    bool closed() const { return (getDiskState() == CLOSED); }
     /** Closes all disk threads. */
     virtual void close() = 0;
 
@@ -189,11 +188,6 @@ public:
                                       RemapInfo& target1,
                                       RemapInfo& target2) = 0;
 
-    struct DeactivateCallback {
-        virtual ~DeactivateCallback() {}
-        virtual void handleDeactivate() = 0;
-    };
-
     /**
      * Fail all operations towards a single bucket currently queued to the
      * given thread with the given error code.
@@ -221,11 +215,6 @@ public:
      * @return Returns true if the bucket is being merged.
      */
     virtual bool isMerging(const document::Bucket& bucket) const = 0;
-
-    /**
-     * @return Returns the number of active merges on the node.
-     */
-    virtual uint32_t getNumActiveMerges() const = 0;
 
     /** Removes the merge status for the given bucket. */
     virtual void clearMergeStatus(const document::Bucket&) = 0;

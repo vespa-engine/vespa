@@ -33,7 +33,7 @@ PersistenceThread::run(framework::ThreadHandle& thread)
 {
     LOG(debug, "Started persistence thread");
 
-    while (!thread.interrupted() && !_fileStorHandler.closed()) {
+    while (!thread.interrupted()) {
         thread.registerTick();
 
         FileStorHandler::LockedMessage lock(_fileStorHandler.getNextMessage(_stripeId));
