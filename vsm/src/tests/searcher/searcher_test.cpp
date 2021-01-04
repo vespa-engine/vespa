@@ -27,7 +27,7 @@ template <typename T>
 class Vector : public std::vector<T>
 {
 public:
-    Vector<T>() : std::vector<T>() {}
+    Vector() : std::vector<T>() {}
     Vector<T> & add(T v) { this->push_back(v); return *this; }
 };
 
