@@ -109,7 +109,6 @@ private:
     FastOS_ThreadPool               _threadPool;
     uint32_t                        _distributionKey;
     bool                            _isInitializing;
-    bool                            _isReplayDone;
     bool                            _abortInit;
     bool                            _initStarted;
     bool                            _initComplete;
