@@ -1119,7 +1119,7 @@ FileStorHandlerImpl::BucketLock::BucketLock(const monitor_guard & guard, Stripe&
 {
     if (_bucket.getBucketId().getRawId() != 0) {
         _stripe.lock(guard, _bucket, lockReq, Stripe::LockEntry(priority, msgType, msgId));
-        LOG(debug, "Locked bucket %s for message %" PRIu64 " with priority %u in mode %s",
+        LOG(spam, "Locked bucket %s for message %" PRIu64 " with priority %u in mode %s",
             bucket.getBucketId().toString().c_str(), msgId, priority, api::to_string(lockReq));
     }
 }
@@ -1128,7 +1128,7 @@ FileStorHandlerImpl::BucketLock::BucketLock(const monitor_guard & guard, Stripe&
 FileStorHandlerImpl::BucketLock::~BucketLock() {
     if (_bucket.getBucketId().getRawId() != 0) {
         _stripe.release(_bucket, _lockReq, _uniqueMsgId);
-        LOG(debug, "Unlocked bucket %s for message %" PRIu64 " in mode %s",
+        LOG(spam, "Unlocked bucket %s for message %" PRIu64 " in mode %s",
             _bucket.getBucketId().toString().c_str(), _uniqueMsgId, api::to_string(_lockReq));
     }
 }
