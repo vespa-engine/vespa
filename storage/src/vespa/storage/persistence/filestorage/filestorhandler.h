@@ -151,18 +151,6 @@ public:
     virtual BucketLockInterface::SP lock(const document::Bucket&, api::LockingRequirements lockReq) = 0;
 
     /**
-     * Called by FileStorThread::onBucketDiskMove() after moving file, in case
-     * we need to move operations from one disk queue to another.
-     *
-     * get/put/remove/update/revert/stat/multiop - Move to correct queue
-     * merge messages - Move to correct queue. Move any filestor thread state.
-     * join/split/getiter/repair/deletebucket - Move to correct queue
-     * requeststatus - Ignore
-     * readbucketinfo/bucketdiskmove/internalbucketjoin - Fail and log errors
-     */
-    virtual void remapQueueAfterDiskMove(const document::Bucket &bucket) = 0;
-
-    /**
      * Called by FileStorThread::onJoin() after joining a bucket into another,
      * in case we need to move operations from one disk queue to another, and
      * to remap operations to contain correct bucket target.
