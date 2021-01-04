@@ -174,7 +174,7 @@ public:
             _seen.push_back(value);
         }
     };
-    constexpr T result() const {
+    T result() const {
         if (_seen.empty()) {
             return std::numeric_limits<T>::quiet_NaN();
         }
