@@ -1036,7 +1036,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             wantedStateChanged = false;
             isMaster = false;
         }
-        metricUpdater.isMaster(isMaster);
+        metricUpdater.updateMasterState(isMaster);
         return didWork;
     }
 

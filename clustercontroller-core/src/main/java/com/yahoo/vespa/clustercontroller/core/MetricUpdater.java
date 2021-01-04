@@ -75,7 +75,7 @@ public class MetricUpdater {
         metricReporter.set("agreed-master-votes", maxCount);
     }
 
-    public void isMaster(boolean isMaster) {
+    public void updateMasterState(boolean isMaster) {
         metricReporter.set("is-master", isMaster ? 1 : 0);
     }
 
