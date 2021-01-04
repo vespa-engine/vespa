@@ -104,13 +104,6 @@ FileStorHandlerImpl::isMerging(const document::Bucket& bucket) const
     return (_mergeStates.find(bucket) != _mergeStates.end());
 }
 
-uint32_t
-FileStorHandlerImpl::getNumActiveMerges() const
-{
-    std::lock_guard mlock(_mergeStatesLock);
-    return _mergeStates.size();
-}
-
 void
 FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket)
 {
@@ -868,7 +861,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(vespalib::duration timeout)
     // if none can be found and then exiting if the same is the case on the
     // second attempt. This is key to allowing the run loop to register
     // ticks at regular intervals while not busy-waiting.
-    for (int attempt = 0; (attempt < 2) && ! _owner.isClosed() && !_owner.isPaused(); ++attempt) {
+    for (int attempt = 0; (attempt < 2) && !_owner.isPaused(); ++attempt) {
         PriorityIdx& idx(bmi::get<1>(*_queue));
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
 
@@ -888,7 +881,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(vespalib::duration timeout)
 FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
 {
-    if (_owner.isClosed() || _owner.isPaused()) {
+    if (_owner.isPaused()) {
         return {};
     }
     PriorityIdx& idx(bmi::get<1>(*_queue));
