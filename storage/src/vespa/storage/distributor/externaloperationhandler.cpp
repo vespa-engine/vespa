@@ -266,7 +266,9 @@ namespace {
 
 bool put_is_from_reindexing_visitor(const api::PutCommand& cmd) {
     const auto& tas_cond = cmd.getCondition();
-    return (tas_cond.isPresent() && (tas_cond.getSelection().starts_with(reindexing_bucket_lock_bypass_prefix())));
+    const char* prefix = reindexing_bucket_lock_bypass_prefix();
+    // Use starts_with when dropping support for gcc 8.
+    return (tas_cond.isPresent() && (tas_cond.getSelection().substr(0, strlen(prefix)) == prefix));
 }
 
 // Precondition: put_is_from_reindexing_visitor(cmd) == true
