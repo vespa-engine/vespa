@@ -127,7 +127,17 @@ setup_ideal_nodes_bundle(IdealServiceLayerNodesBundle& ideal_nodes_bundle,
     ideal_nodes_bundle.set_available_nonretired_or_maintenance_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_or_maintenance_up_states));
 }
 
-// Ideal service layer nodes bundle used when bucket id used bits > 33.
+/*
+ * Check if we trigger a streaming search latency optimization where
+ * we spread out data for a single group over multiple storage nodes.
+ * See storage::lib::Distribution::getStorageSeed for details.
+ */
+bool is_split_group_bucket(document::BucketId bucket) noexcept
+{
+    return bucket.getUsedBits() > 33;
+}
+
+// Ideal service layer nodes bundle used when is_split_group_bucket returns true
 thread_local IdealServiceLayerNodesBundle fallback_ideal_nodes_bundle;
 
 }
@@ -136,12 +146,12 @@ const IdealServiceLayerNodesBundle&
 DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const
 {
     assert(bucket.getUsedBits() >= _distribution_bits);
-    if (bucket.getUsedBits() > 33) {
+    if (is_split_group_bucket(bucket)) {
         IdealServiceLayerNodesBundle &ideal_nodes_bundle = fallback_ideal_nodes_bundle;
         setup_ideal_nodes_bundle(ideal_nodes_bundle, *_distribution, *_clusterState, bucket);
         return ideal_nodes_bundle;
     }
-    document::BucketId lookup_bucket((bucket.getUsedBits() > 33) ? bucket.getUsedBits() : _distribution_bits, bucket.getId());
+    document::BucketId lookup_bucket(is_split_group_bucket(bucket) ? bucket.getUsedBits() : _distribution_bits, bucket.getId());
     auto itr = _ideal_nodes.find(lookup_bucket);
     if (itr != _ideal_nodes.end()) {
         return itr->second;
