@@ -1002,7 +1002,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         boolean didWork = false;
         if (masterElectionHandler.isMaster()) {
             if ( ! isMaster) {
-                metricUpdater.becameMaster();
                 // If we just became master, restore state from ZooKeeper
                 stateChangeHandler.setStateChangedFlag();
                 systemStateBroadcaster.resetBroadcastedClusterStateBundle();
@@ -1032,12 +1031,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if (isMaster) {
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node is no longer fleetcontroller master.", timer.getCurrentTimeInMillis()));
                 firstAllowedStateBroadcast = Long.MAX_VALUE;
-                metricUpdater.noLongerMaster();
                 failAllVersionDependentTasks();
             }
             wantedStateChanged = false;
             isMaster = false;
         }
+        metricUpdater.isMaster(isMaster);
         return didWork;
     }
 

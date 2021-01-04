@@ -75,14 +75,8 @@ public class MetricUpdater {
         metricReporter.set("agreed-master-votes", maxCount);
     }
 
-    public void becameMaster() {
-        metricReporter.set("is-master", 1);
-        metricReporter.add("master-change", 1);
-    }
-
-    public void noLongerMaster() {
-        metricReporter.set("is-master", 0);
-        metricReporter.add("master-change", 1);
+    public void isMaster(boolean isMaster) {
+        metricReporter.set("is-master", isMaster ? 1 : 0);
     }
 
     public void addTickTime(long millis, boolean didWork) {
