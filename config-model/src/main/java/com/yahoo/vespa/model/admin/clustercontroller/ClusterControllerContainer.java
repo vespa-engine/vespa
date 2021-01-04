@@ -20,6 +20,7 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
 import java.util.Set;
@@ -54,9 +55,6 @@ public class ClusterControllerContainer extends Container implements
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler",
                    "/cluster/v2/*",
                    CLUSTERCONTROLLER_BUNDLE);
-        addComponent("clustercontroller-zookeeper-server",
-                     zooKeeperServerImplementation(runStandaloneZooKeeper, deployState.featureFlags().reconfigurableZookeeperServer()),
-                     ZOOKEEPER_SERVER_BUNDLE);
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog,
                                             "controller",
                                             deployState.isHosted()));
@@ -67,6 +65,7 @@ public class ClusterControllerContainer extends Container implements
         addFileBundle("clustercontroller-utils");
         addFileBundle("zookeeper-server");
         configureReindexing();
+        configureZooKeeperServer(runStandaloneZooKeeper, deployState.featureFlags().reconfigurableZookeeperServer());
     }
 
     @Override
@@ -84,13 +83,16 @@ public class ClusterControllerContainer extends Container implements
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
     }
 
-    private String zooKeeperServerImplementation(boolean runStandaloneZooKeeper, boolean reconfigurable) {
-        if (reconfigurable)
-            return "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer";
-        else
-            return runStandaloneZooKeeper
-                    ? "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl"
-                    : "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer";
+    private void configureZooKeeperServer(boolean runStandaloneZooKeeper, boolean reconfigurable) {
+        if (reconfigurable) {
+            ContainerModelBuilder.addReconfigurableZooKeeperServerComponents(this);
+        } else {
+            addComponent("clustercontroller-zookeeper-server",
+                         runStandaloneZooKeeper
+                                 ? "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl"
+                                 : "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
+                         ZOOKEEPER_SERVER_BUNDLE);
+        }
     }
 
     private void addHandler(Handler<?> h, String path) {
