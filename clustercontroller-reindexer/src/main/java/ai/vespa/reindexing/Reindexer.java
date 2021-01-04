@@ -229,7 +229,7 @@ public class Reindexer {
         }
 
         String route() {
-            return name;
+            return name + "-direct";
         }
 
         String bucketSpaceOf(DocumentType documentType) {

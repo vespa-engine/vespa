@@ -2,11 +2,8 @@
 package com.yahoo.vespaclient;
 
 public class ClusterDef {
-    public ClusterDef(String name) {
-        this.name = name;
-    }
-
-    String name;
-
+    private final String name;
+    public ClusterDef(String name) { this.name = name; }
     public String getName() { return name; }
+    public String getRoute() { return name + "-direct"; }
 }

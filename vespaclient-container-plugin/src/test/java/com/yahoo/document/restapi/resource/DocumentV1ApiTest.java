@@ -138,7 +138,7 @@ public class DocumentV1ApiTest {
     public void testResolveCluster() {
         assertEquals("content",
                      DocumentV1ApiHandler.resolveCluster(Optional.empty(), clusters).name());
-        assertEquals("content",
+        assertEquals("content-direct",
                      DocumentV1ApiHandler.resolveCluster(Optional.of("content"), clusters).route());
         try {
             DocumentV1ApiHandler.resolveCluster(Optional.empty(), Map.of());
@@ -192,7 +192,7 @@ public class DocumentV1ApiTest {
 
         // GET at root is a visit. Numeric parameters have an upper bound.
         access.expect(parameters -> {
-            assertEquals("content", parameters.getRoute().toString());
+            assertEquals("content-direct", parameters.getRoute().toString());
             assertEquals("default", parameters.getBucketSpace());
             assertEquals(1024, parameters.getMaxTotalHits());
             assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
@@ -274,7 +274,7 @@ public class DocumentV1ApiTest {
         // GET with full document ID is a document get operation which returns 404 when no document is found
         access.session.expect((id, parameters) -> {
             assertEquals(doc1.getId(), id);
-            assertEquals(parameters().withRoute("content").withFieldSet("go"), parameters);
+            assertEquals(parameters().withRoute("content-direct").withFieldSet("go"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, null));
             return new Result(Result.ResultType.SUCCESS, null);
         });
