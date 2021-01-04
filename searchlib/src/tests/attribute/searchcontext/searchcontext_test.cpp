@@ -650,7 +650,7 @@ Verifier<T, A>::Verifier(const std::vector<T> & keys, const vespalib::string & k
     size_t i(0);
     for (uint32_t doc : getExpectedDocIds()) {
         EXPECT_TRUE(nullptr != dynamic_cast<A *>(_attribute.get()));
-        EXPECT_TRUE(dynamic_cast<A *>(_attribute.get())->update(doc, keys[(i++)%keys.size()]));
+        EXPECT_TRUE(dynamic_cast<A &>(*_attribute).update(doc, keys[(i++)%keys.size()]));
     }
     _attribute->commit(true);
     _sc = SearchContextTest::getSearch(*_attribute, keyAsString);

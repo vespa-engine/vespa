@@ -66,7 +66,7 @@ public:
 
         std::shared_ptr<api::StorageCommand> msg =  _sender.command(idx);
         api::StorageReply::SP reply(msg->makeReply().release());
-        dynamic_cast<api::BucketInfoReply*>(reply.get())->setBucketInfo(info);
+        dynamic_cast<api::BucketInfoReply&>(*reply).setBucketInfo(info);
         reply->setResult(result);
 
         op->receive(_sender, reply);
