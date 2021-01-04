@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "message_codec_provider.h"
 #include <vespa/storageapi/mbusprot/protocolserialization7.h>
+#include <mutex>
 
 namespace storage::rpc {
 
