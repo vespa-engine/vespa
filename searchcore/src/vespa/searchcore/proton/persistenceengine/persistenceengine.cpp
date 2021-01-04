@@ -8,6 +8,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/base/exceptions.h>
+#include <thread>
 
 
 #include <vespa/log/log.h>
