@@ -4,6 +4,7 @@
 
 #include <vespa/document/annotation/spantreevisitor.h>
 #include <map>
+#include <cstddef>
 
 namespace vespalib { class nbostream; }
 

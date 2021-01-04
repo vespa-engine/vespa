@@ -2,6 +2,7 @@
 #pragma once
 
 #include <map>
+#include <cstddef>
 
 template<typename _key, typename _val>
 class simplemap
