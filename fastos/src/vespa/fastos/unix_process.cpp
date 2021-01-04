@@ -12,6 +12,7 @@
 #ifndef __linux__
 #include <signal.h>
 #endif
+#include <thread>
 
 #ifndef AF_LOCAL
 #define AF_LOCAL        AF_UNIX
