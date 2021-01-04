@@ -101,10 +101,17 @@ void
 DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t elemsNeeded)
 {
     size_t activeBufferId = _activeBufferIds[typeId];
-    do {
+    for (size_t i = 0; i < getNumBuffers(); ++i) {
         // start using next buffer
         activeBufferId = nextBufferId(activeBufferId);
-    } while (!_states[activeBufferId].isFree());
+        if (_states[activeBufferId].isFree()) {
+            break;
+        }
+    }
+    if (!_states[activeBufferId].isFree()) {
+        LOG(error, "did not find free buffer");
+        abort();
+    }
     onActive(activeBufferId, typeId, elemsNeeded);
     _activeBufferIds[typeId] = activeBufferId;
 }
@@ -131,10 +138,14 @@ DataStoreBase::initActiveBuffers()
     uint32_t numTypes = _activeBufferIds.size();
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
         size_t activeBufferId = 0;
-        while (!_states[activeBufferId].isFree()) {
+        for (size_t i = 0; i < getNumBuffers(); ++i) {
+            if (_states[activeBufferId].isFree()) {
+                 break;
+            }
             // start using next buffer
             activeBufferId = nextBufferId(activeBufferId);
         }
+        assert(_states[activeBufferId].isFree());
         onActive(activeBufferId, typeId, 0u);
         _activeBufferIds[typeId] = activeBufferId;
     }
