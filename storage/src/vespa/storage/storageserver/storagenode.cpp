@@ -369,13 +369,13 @@ StorageNode::removeConfigSubscriptions()
 void
 StorageNode::shutdown()
 {
-        // Try to shut down in opposite order of initialize. Bear in mind that
-        // we might be shutting down after init exception causing only parts
-        // of the server to have initialize
+    // Try to shut down in opposite order of initialize. Bear in mind that
+    // we might be shutting down after init exception causing only parts
+    // of the server to have initialize
     LOG(debug, "Shutting down storage node of type %s", getNodeType().toString().c_str());
     if (!_attemptedStopped) {
-        LOG(warning, "Storage killed before requestShutdown() was called. No "
-                     "reason has been given for why we're stopping.");
+        LOG(debug, "Storage killed before requestShutdown() was called. No "
+                   "reason has been given for why we're stopping.");
     }
         // Remove the subscription to avoid more callbacks from config
     removeConfigSubscriptions();
@@ -401,12 +401,12 @@ StorageNode::shutdown()
         _context.getComponentRegister().getMetricManager().stop();
     }
 
-        // Delete the status web server before the actual status providers, to
-        // ensure that web server does not query providers during shutdown
+    // Delete the status web server before the actual status providers, to
+    // ensure that web server does not query providers during shutdown
     _statusWebServer.reset();
 
-        // For this to be safe, noone can touch the state updater after we start
-        // deleting the storage chain
+    // For this to be safe, no-one can touch the state updater after we start
+    // deleting the storage chain
     LOG(debug, "Removing state updater pointer as we're about to delete it.");
     if (_chain) {
         LOG(debug, "Deleting storage chain");

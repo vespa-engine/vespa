@@ -187,7 +187,7 @@ int StorageApp::Main()
     // main loop - wait for termination signal
     while (!_process->getNode().attemptedStopped()) {
         if (_process->configUpdated()) {
-            LOG(debug, "Config updated. Progagating config updates");
+            LOG(debug, "Config updated. Propagating config updates");
             ResumeGuard guard(_process->getNode().pause());
             _process->updateConfig();
         }
@@ -197,7 +197,7 @@ int StorageApp::Main()
         handleSignals();
     }
     LOG(debug, "Server was attempted stopped, shutting down");
-    // Create guard that will forcifully kill storage if destruction takes longer
+    // Create guard that will forcefully kill storage if destruction takes longer
     // time than given timeout.
     vespalib::ShutdownGuard shutdownGuard(getMaxShutDownTime());
     LOG(debug, "Attempting proper shutdown");

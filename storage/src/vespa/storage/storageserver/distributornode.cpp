@@ -23,9 +23,8 @@ DistributorNode::DistributorNode(
         StorageLink::UP communicationManager,
         std::unique_ptr<IStorageChainBuilder> storage_chain_builder)
     : StorageNode(configUri, context, generationFetcher,
-            std::unique_ptr<HostInfo>(new HostInfo()),
-                  communicationManager.get() == 0 ? NORMAL
-                                                  : SINGLE_THREADED_TEST_MODE),
+                  std::make_unique<HostInfo>(),
+                  !communicationManager ? NORMAL : SINGLE_THREADED_TEST_MODE),
       _threadPool(framework::TickingThreadPool::createDefault("distributor")),
       _context(context),
       _lastUniqueTimestampRequested(0),
@@ -36,16 +35,9 @@ DistributorNode::DistributorNode(
     if (storage_chain_builder) {
         set_storage_chain_builder(std::move(storage_chain_builder));
     }
-    try{
+    try {
         initialize();
-    } catch (const vespalib::NetworkSetupFailureException & e) {
-        LOG(warning, "Network failure: '%s'", e.what());
-        throw;
     } catch (const vespalib::Exception & e) {
-        LOG(error, "Caught exception %s during startup. Calling destruct "
-                   "functions in hopes of dying gracefully.",
-            e.getMessage().c_str());
-        requestShutdown("Failed to initialize: " + e.getMessage());
         shutdownDistributor();
         throw;
     }
