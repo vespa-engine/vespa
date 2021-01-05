@@ -5,6 +5,17 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/clearvalueupdate.h>
+#include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/update/addvalueupdate.h>
+#include <vespa/document/update/tensor_remove_update.h>
+#include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/document/update/tensor_add_update.h>
+#include <vespa/document/update/tensor_partial_update.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/document/update/removefieldpathupdate.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
@@ -18,6 +29,7 @@
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/server/configstore.h>
+#include <vespa/searchcore/proton/server/feed_reject_helper.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/feedhandler.h>
@@ -278,7 +290,7 @@ struct SchemaContext {
 };
 
 SchemaContext::SchemaContext()
-    : schema(new Schema()),
+    : schema(std::make_shared<Schema>()),
       builder()
 {
     schema->addAttributeField(Schema::AttributeField("tensor", DataType::TENSOR, CollectionType::SINGLE, "tensor(x{},y{})"));
@@ -320,7 +332,7 @@ struct UpdateContext {
     DocumentUpdate::SP update;
     BucketId           bucketId;
     UpdateContext(const vespalib::string &docId, DocBuilder &builder) :
-        update(new DocumentUpdate(*builder.getDocumentTypeRepo(), builder.getDocumentType(), DocumentId(docId))),
+        update(std::make_shared<DocumentUpdate>(*builder.getDocumentTypeRepo(), builder.getDocumentType(), DocumentId(docId))),
         bucketId(BucketFactory::getBucketId(update->getId()))
     {
     }
@@ -683,6 +695,7 @@ TEST_F("require that update is rejected if resource limit is reached", FeedHandl
     f.writeFilter._message = "Attribute resource limit reached";
 
     UpdateContext updCtx("id:test:searchdocument::foo", *f.schema.builder);
+    updCtx.addFieldUpdate("tensor");
     auto op = std::make_unique<UpdateOperation>(updCtx.bucketId, Timestamp(10), updCtx.update);
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
@@ -804,6 +817,63 @@ TEST_F("require that put with different document type repo is ok", FeedHandlerFi
     f.handler.performOperation(std::move(token_context.token), std::move(op));
     EXPECT_EQUAL(1, f.feedView.put_count);
     EXPECT_EQUAL(1, f.tls_writer.store_count);
+}
+
+TEST("require that fixed size field values are detected") {
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::BoolFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::ByteFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::ShortFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::IntFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::LongFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::FloatFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::DoubleFieldValue()));
+
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::StringFieldValue()));
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::RawFieldValue()));
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::PredicateFieldValue()));
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::ReferenceFieldValue()));
+
+    document::ArrayDataType intArrayType(*document::DataType::INT);
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::ArrayFieldValue(intArrayType)));
+}
+
+using namespace document;
+
+TEST("require that clear, remove, tensor_remove and artithmetic updates ignore feed rejection") {
+    EXPECT_FALSE(FeedRejectHelper::mustReject(ClearValueUpdate()));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(RemoveValueUpdate(StringFieldValue())));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 5.0)));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(TensorRemoveUpdate(std::make_unique<TensorFieldValue>())));
+}
+
+TEST("require that add, map, tensor_modify and tensor_add updates will be rejected") {
+    EXPECT_TRUE(FeedRejectHelper::mustReject(AddValueUpdate(IntFieldValue())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(MapValueUpdate(IntFieldValue(), ClearValueUpdate())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
+                                                                std::make_unique<TensorFieldValue>())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(TensorAddUpdate(std::make_unique<TensorFieldValue>())));
+}
+TEST("require that assign updates will be rejected based on their content") {
+    EXPECT_FALSE(FeedRejectHelper::mustReject(AssignValueUpdate(IntFieldValue())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(AssignValueUpdate(StringFieldValue())));
+}
+
+TEST_F("require that update with a fieldpath update will be rejected", SchemaContext) {
+    const DocumentType *docType = f.getRepo()->getDocumentType(f.getDocType().getName());
+    auto docUpdate = std::make_unique<DocumentUpdate>(*f.getRepo(), *docType, DocumentId("id:ns:" + docType->getName() + "::1"));
+    docUpdate->addFieldPathUpdate(FieldPathUpdate::CP(std::make_unique<RemoveFieldPathUpdate>()));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(*docUpdate));
+}
+
+TEST_F("require that all value updates will be inspected before rejected", SchemaContext) {
+    const DocumentType *docType = f.getRepo()->getDocumentType(f.getDocType().getName());
+    auto docUpdate = std::make_unique<DocumentUpdate>(*f.getRepo(), *docType, DocumentId("id:ns:" + docType->getName() + "::1"));
+    docUpdate->addUpdate(FieldUpdate(docType->getField("i1")).addUpdate(ClearValueUpdate()));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(*docUpdate));
+    docUpdate->addUpdate(FieldUpdate(docType->getField("i1")).addUpdate(ClearValueUpdate()));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(*docUpdate));
+    docUpdate->addUpdate(FieldUpdate(docType->getField("i1")).addUpdate(AssignValueUpdate(StringFieldValue())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(*docUpdate));
 }
 
 }  // namespace

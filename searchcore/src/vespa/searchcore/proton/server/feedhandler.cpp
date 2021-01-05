@@ -6,6 +6,7 @@
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
 #include "configstore.h"
+#include "feed_reject_helper.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -583,14 +584,9 @@ FeedHandler::tlsPrune(SerialNum oldest_to_keep) {
 
 namespace {
 
-bool
-isRejectableFeedOperation(FeedOperation::Type type)
-{
-    return type == FeedOperation::PUT || type == FeedOperation::UPDATE_42 || type == FeedOperation::UPDATE;
-}
-
 template <typename ResultType>
-void feedOperationRejected(FeedToken & token, const vespalib::string &opType, const vespalib::string &docId,
+void
+feedOperationRejected(FeedToken & token, const vespalib::string &opType, const vespalib::string &docId,
                            const DocTypeName & docTypeName, const vespalib::string &rejectMessage)
 {
     if (token) {
@@ -621,7 +617,7 @@ notifyFeedOperationRejected(FeedToken & token, const FeedOperation &op,
 bool
 FeedHandler::considerWriteOperationForRejection(FeedToken & token, const FeedOperation &op)
 {
-    if (!_writeFilter.acceptWriteOperation() && isRejectableFeedOperation(op.getType())) {
+    if (!_writeFilter.acceptWriteOperation() && FeedRejectHelper::isRejectableFeedOperation(op)) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
         if (!state.acceptWriteOperation()) {
             notifyFeedOperationRejected(token, op, _docTypeName, state.message());
