@@ -3,15 +3,19 @@ package com.yahoo.vespa.model.utils;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.producer.UserConfigRepo;
-import java.util.logging.Level;
-import com.yahoo.vespa.config.*;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinition.DefaultValued;
+import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Utility methods for sending files to a collection of nodes.
@@ -84,7 +88,7 @@ public class FileSender implements Serializable {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
             // TODO: throw new IllegalArgumentException("Not able to find config definition for " + builder);
-            logger.log(Level.WARNING, "Not able to find config definition for " + key + ". Will not send files for this config");
+            logger.log(Level.FINE, "Not able to find config definition for " + key + ". Will not send files for this config");
             return;
         }
         // Inspect fields at this level
