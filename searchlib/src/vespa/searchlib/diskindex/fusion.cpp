@@ -6,9 +6,11 @@
 #include "field_length_scanner.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/searchlib/util/postingpriorityqueue.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/vespalib/util/error.h>
@@ -139,7 +141,7 @@ Fusion::openInputWordReaders(const vespalib::string & dir, const SchemaUtil::Ind
 
 bool
 Fusion::renumberFieldWordIds(const vespalib::string & dir, const SchemaUtil::IndexIterator &index,
-                             WordNumMappingList & list, uint64_t &  numWordIds)
+                             WordNumMappingList & list, uint64_t &  numWordIds, const IFlushToken& flush_token)
 {
     vespalib::string indexName = index.getName();
     LOG(debug, "Renumber word IDs for field %s", indexName.c_str());
@@ -151,7 +153,10 @@ Fusion::renumberFieldWordIds(const vespalib::string & dir, const SchemaUtil::Ind
     if (!openInputWordReaders(dir, index, readers, heap)) {
         return false;
     }
-    heap.merge(out, 4);
+    heap.merge(out, 4, flush_token);
+    if (flush_token.stop_requested()) {
+        return false;
+    }
     assert(heap.empty());
     numWordIds = out.getWordNum();
 
@@ -172,7 +177,7 @@ Fusion::renumberFieldWordIds(const vespalib::string & dir, const SchemaUtil::Ind
 
 
 bool
-Fusion::mergeFields(vespalib::ThreadExecutor & executor)
+Fusion::mergeFields(vespalib::ThreadExecutor & executor, std::shared_ptr<IFlushToken> flush_token)
 {
     const Schema &schema = getSchema();
     std::atomic<uint32_t> failed(0);
@@ -181,8 +186,8 @@ Fusion::mergeFields(vespalib::ThreadExecutor & executor)
     vespalib::CountDownLatch  done(schema.getNumIndexFields());
     for (SchemaUtil::IndexIterator iter(schema); iter.isValid(); ++iter) {
         concurrent.wait();
-        executor.execute(vespalib::makeLambdaTask([this, index=iter.getIndex(), &failed, &done, &concurrent]() {
-            if (!mergeField(index)) {
+        executor.execute(vespalib::makeLambdaTask([this, index=iter.getIndex(), &failed, &done, &concurrent, flush_token]() {
+            if (!mergeField(index, flush_token)) {
                 failed++;
             }
             concurrent.post();
@@ -197,7 +202,7 @@ Fusion::mergeFields(vespalib::ThreadExecutor & executor)
 
 
 bool
-Fusion::mergeField(uint32_t id)
+Fusion::mergeField(uint32_t id, std::shared_ptr<IFlushToken> flush_token)
 {
     typedef SchemaUtil::IndexIterator IndexIterator;
     typedef SchemaUtil::IndexSettings IndexSettings;
@@ -222,14 +227,20 @@ Fusion::mergeField(uint32_t id)
 
     WordNumMappingList list(_oldIndexes.size());
     uint64_t numWordIds(0);
-    if (!renumberFieldWordIds(indexDir, index, list, numWordIds)) {
+    if (!renumberFieldWordIds(indexDir, index, list, numWordIds, *flush_token)) {
+        if (flush_token->stop_requested()) {
+            return false;
+        }
         LOG(error, "Could not renumber field word ids for field %s dir %s", indexName.c_str(), indexDir.c_str());
         return false;
     }
 
     // Tokamak
-    bool res = mergeFieldPostings(index, list, numWordIds);
+    bool res = mergeFieldPostings(index, list, numWordIds, *flush_token);
     if (!res) {
+        if (flush_token->stop_requested()) {
+            return false;
+        }
         throw IllegalArgumentException(make_string("Could not merge field postings for field %s dir %s",
                                                    indexName.c_str(), indexDir.c_str()));
     }
@@ -387,7 +398,7 @@ Fusion::setupMergeHeap(const std::vector<std::unique_ptr<FieldReader> > & reader
 
 
 bool
-Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index, const WordNumMappingList & list, uint64_t numWordIds)
+Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index, const WordNumMappingList & list, uint64_t numWordIds, const IFlushToken& flush_token)
 {
     std::vector<std::unique_ptr<FieldReader>> readers;
     PostingPriorityQueue<FieldReader> heap;
@@ -409,7 +420,10 @@ Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index, const WordNum
         return false;
     }
 
-    heap.merge(fieldWriter, 4);
+    heap.merge(fieldWriter, 4, flush_token);
+    if (flush_token.stop_requested()) {
+        return false;
+    }
     assert(heap.empty());
 
     for (auto &reader : readers) {
@@ -510,7 +524,8 @@ bool
 Fusion::merge(const Schema &schema, const vespalib::string &dir, const std::vector<vespalib::string> &sources,
               const SelectorArray &selector, bool dynamicKPosOccFormat,
               const TuneFileIndexing &tuneFileIndexing, const FileHeaderContext &fileHeaderContext,
-              vespalib::ThreadExecutor & executor)
+              vespalib::ThreadExecutor & executor,
+              std::shared_ptr<IFlushToken> flush_token)
 {
     assert(sources.size() <= 255);
     uint32_t docIdLimit = selector.size();
@@ -550,7 +565,7 @@ Fusion::merge(const Schema &schema, const vespalib::string &dir, const std::vect
     try {
         auto fusion = std::make_unique<Fusion>(trimmedDocIdLimit, schema, dir, sources, selector,
                                                dynamicKPosOccFormat, tuneFileIndexing, fileHeaderContext);
-        return fusion->mergeFields(executor);
+        return fusion->mergeFields(executor, flush_token);
     } catch (const std::exception & e) {
         LOG(error, "%s", e.what());
         return false;

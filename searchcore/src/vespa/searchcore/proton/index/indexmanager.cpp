@@ -3,6 +3,7 @@
 #include "indexmanager.h"
 #include "diskindexwrapper.h"
 #include "memoryindexwrapper.h"
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 
@@ -11,6 +12,7 @@ using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
 using search::index::Schema;
 using search::index::SchemaUtil;
+using search::FlushToken;
 using search::TuneFileIndexing;
 using search::TuneFileIndexManager;
 using search::TuneFileSearch;
@@ -68,7 +70,7 @@ IndexManager::MaintainerOperations::runFusion(const Schema &schema,
     SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext, serialNum);
     const bool dynamic_k_doc_pos_occ_format = false;
     return Fusion::merge(schema, outputDir, sources, selectorArray, dynamic_k_doc_pos_occ_format,
-                         _tuneFileIndexing, fileHeaderContext, _threadingService.shared());
+                         _tuneFileIndexing, fileHeaderContext, _threadingService.shared(), std::make_shared<FlushToken>());
 }
 
 
