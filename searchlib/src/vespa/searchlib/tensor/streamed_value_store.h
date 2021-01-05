@@ -7,7 +7,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/streamed/streamed_value.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 
 namespace search::tensor {
 
@@ -15,15 +15,42 @@ namespace search::tensor {
  * Class for StreamedValue tensors in memory.
  */
 class StreamedValueStore : public TensorStore {
+public:
+    using Value = vespalib::eval::Value;
+    using ValueType = vespalib::eval::ValueType;
+    using Handles = vespalib::SharedStringRepo::StrongHandles;
+    using MemoryUsage = vespalib::MemoryUsage;
+
+    // interface for tensor entries
+    struct TensorEntry {
+        using SP = std::shared_ptr<TensorEntry>;
+        virtual Value::UP create_fast_value_view(const ValueType &type_ref) const = 0;
+        virtual void encode_value(const ValueType &type, vespalib::nbostream &target) const = 0;
+        virtual MemoryUsage get_memory_usage() const = 0;
+        virtual ~TensorEntry();
+        static TensorEntry::SP create_shared_entry(const Value &value);
+    };
+
+    // implementation of tensor entries
+    template <typename CT>
+    struct TensorEntryImpl : public TensorEntry {
+        Handles handles;
+        std::vector<CT> cells;
+        TensorEntryImpl(const Value &value, size_t num_mapped, size_t dense_size);
+        Value::UP create_fast_value_view(const ValueType &type_ref) const override;
+        void encode_value(const ValueType &type, vespalib::nbostream &target) const override;
+        MemoryUsage get_memory_usage() const override;
+        ~TensorEntryImpl() override;
+    };
+
 private:
     // Note: Must use SP (instead of UP) because of fallbackCopy() and initializeReservedElements() in BufferType,
     //       and implementation of move().
-    using TensorSP = std::shared_ptr<vespalib::eval::Value>;
-    using TensorStoreType = vespalib::datastore::DataStore<TensorSP>;
+    using TensorStoreType = vespalib::datastore::DataStore<TensorEntry::SP>;
 
-    class TensorBufferType : public vespalib::datastore::BufferType<TensorSP> {
+    class TensorBufferType : public vespalib::datastore::BufferType<TensorEntry::SP> {
     private:
-        using ParentType = BufferType<TensorSP>;
+        using ParentType = BufferType<TensorEntry::SP>;
         using ParentType::_emptyEntry;
         using CleanContext = typename ParentType::CleanContext;
     public:
@@ -32,7 +59,7 @@ private:
     };
     TensorStoreType _concrete_store;
     const vespalib::eval::ValueType _tensor_type;
-    EntryRef add_entry(TensorSP tensor);
+    EntryRef add_entry(TensorEntry::SP tensor);
 public:
     StreamedValueStore(const vespalib::eval::ValueType &tensor_type);
     ~StreamedValueStore() override;
@@ -42,7 +69,7 @@ public:
     void holdTensor(EntryRef ref) override;
     EntryRef move(EntryRef ref) override;
 
-    const vespalib::eval::Value * get_tensor(EntryRef ref) const;
+    const TensorEntry * get_tensor_entry(EntryRef ref) const;
     bool encode_tensor(EntryRef ref, vespalib::nbostream &target) const;
 
     EntryRef store_tensor(const vespalib::eval::Value &tensor);

@@ -13,29 +13,21 @@ namespace vespalib::eval {
   **/
 class StreamedValueIndex : public Value::Index
 {
-public:
+private:
+    uint32_t _num_mapped_dims;
+    uint32_t _num_subspaces;
+    const std::vector<label_t> &_labels_ref;
 
-    struct SerializedDataRef {
-        uint32_t num_mapped_dims;
-        uint32_t num_subspaces;
-        const std::vector<label_t> labels;
-    };
-    StreamedValueIndex(uint32_t num_mapped_dims, uint32_t num_subspaces, const std::vector<label_t> &labels_in)
-      : _data{num_mapped_dims, num_subspaces, labels_in}
+public:
+    StreamedValueIndex(uint32_t num_mapped_dims, uint32_t num_subspaces, const std::vector<label_t> &labels_ref)
+        : _num_mapped_dims(num_mapped_dims),
+          _num_subspaces(num_subspaces),
+          _labels_ref(labels_ref)
     {}
 
     // index API:
-    size_t size() const override { return _data.num_subspaces; }
+    size_t size() const override { return _num_subspaces; }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
-
-    // NB NOTE WARNING XXX: simply serializing the handle view and
-    // discarding the backing streamed value will result in dangling
-    // string enum value usage when the value is later deserialized.
-    SerializedDataRef get_data_reference() const { return _data; }
-
-private:
-    SerializedDataRef _data;
 };
 
 } // namespace
-

@@ -53,8 +53,8 @@ SerializedFastValueAttribute::getTensor(DocId docId) const
     if (!ref.valid()) {
         return {};
     }
-    if (const auto * ptr = _streamedValueStore.get_tensor(ref)) {
-        return FastValueBuilderFactory::get().copy(*ptr);
+    if (const auto * ptr = _streamedValueStore.get_tensor_entry(ref)) {
+        return ptr->create_fast_value_view(_tensor_type);
     }
     return {};
 }

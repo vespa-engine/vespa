@@ -90,7 +90,7 @@ struct StreamedIterationView : Value::Index::View
 std::unique_ptr<Value::Index::View>
 StreamedValueIndex::create_view(const std::vector<size_t> &dims) const
 {
-    LabelBlockStream label_stream(_data.num_subspaces, _data.labels, _data.num_mapped_dims);
+    LabelBlockStream label_stream(_num_subspaces, _labels_ref, _num_mapped_dims);
     if (dims.empty()) {
         return std::make_unique<StreamedIterationView>(std::move(label_stream));
     }

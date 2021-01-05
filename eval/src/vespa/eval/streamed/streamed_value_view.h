@@ -39,7 +39,6 @@ public:
     MemoryUsage get_memory_usage() const final override {
         return self_memory_usage<StreamedValueView>();
     }
-    auto get_data_reference() const { return _my_index.get_data_reference(); }
 };
 
 } // namespace
