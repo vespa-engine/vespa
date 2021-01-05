@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.math.BigDecimal;
@@ -22,10 +23,10 @@ public class QuotaValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         var quota = deployState.getProperties().quota();
         quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, model));
-        quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, model));
+        quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, model, deployState.getProperties().zone().system()));
     }
 
-    private void validateBudget(BigDecimal budget, VespaModel model) {
+    private void validateBudget(BigDecimal budget, VespaModel model, SystemName systemName) {
         var spend = model.provisioned().all().values().stream()
                 .filter(Objects::nonNull)
                 .map(Capacity::maxResources)
@@ -33,7 +34,7 @@ public class QuotaValidator extends Validator {
                 .sum();
 
         if (budget.doubleValue() < spend) {
-            throwBudgetExceeded(spend, budget);
+            throwBudgetExceeded(spend, budget, systemName);
         }
     }
 
@@ -56,8 +57,9 @@ public class QuotaValidator extends Validator {
         }
     }
 
-    private void throwBudgetExceeded(double spend, BigDecimal budget) {
+    private void throwBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
         var message = String.format(Locale.US, "Hourly spend for maximum specified resources ($%.2f) exceeds budget from quota ($%.2f)!", spend, budget);
-        throw new IllegalArgumentException(message);
+        var messageWithSystem = (systemName.equals(SystemName.Public) ? "" : systemName.value() + ": ") + message;
+        throw new IllegalArgumentException(messageWithSystem);
     }
 }
