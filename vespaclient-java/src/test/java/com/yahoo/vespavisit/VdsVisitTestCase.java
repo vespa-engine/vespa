@@ -228,17 +228,17 @@ public class VdsVisitTestCase {
     @Test
     public void testAutoSelectClusterRoute() throws Exception {
         List<ClusterDef> clusterDefs = new ArrayList<>();
-        clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
+        clusterDefs.add(new ClusterDef("storage"));
         ClusterList clusterList = new ClusterList(clusterDefs);
 
         String route = VdsVisit.resolveClusterRoute(clusterList, null);
-        assertEquals("[Storage:cluster=storage;clusterconfigid=content/cluster.foo/storage]", route);
+        assertEquals("[Content:cluster=storage]", route);
     }
 
     @Test
     public void testBadClusterName() throws Exception {
         List<ClusterDef> clusterDefs = new ArrayList<>();
-        clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
+        clusterDefs.add(new ClusterDef("storage"));
         ClusterList clusterList = new ClusterList(clusterDefs);
         try {
             VdsVisit.resolveClusterRoute(clusterList, "borkbork");
@@ -252,8 +252,8 @@ public class VdsVisitTestCase {
     @Test
     public void testRequireClusterOptionIfMultipleClusters() {
         List<ClusterDef> clusterDefs = new ArrayList<>();
-        clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
-        clusterDefs.add(new ClusterDef("storage2", "content/cluster.bar/storage"));
+        clusterDefs.add(new ClusterDef("storage"));
+        clusterDefs.add(new ClusterDef("storage2"));
         ClusterList clusterList = new ClusterList(clusterDefs);
         try {
             VdsVisit.resolveClusterRoute(clusterList, null);
@@ -265,12 +265,12 @@ public class VdsVisitTestCase {
     @Test
     public void testExplicitClusterOptionWithMultipleClusters() {
         List<ClusterDef> clusterDefs = new ArrayList<>();
-        clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
-        clusterDefs.add(new ClusterDef("storage2", "content/cluster.bar/storage"));
+        clusterDefs.add(new ClusterDef("storage"));
+        clusterDefs.add(new ClusterDef("storage2"));
         ClusterList clusterList = new ClusterList(clusterDefs);
 
         String route = VdsVisit.resolveClusterRoute(clusterList, "storage2");
-        assertEquals("[Storage:cluster=storage2;clusterconfigid=content/cluster.bar/storage]", route);
+        assertEquals("[Content:cluster=storage2]", route);
     }
 
     @Test
