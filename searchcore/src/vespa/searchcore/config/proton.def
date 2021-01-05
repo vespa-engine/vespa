@@ -29,7 +29,7 @@ numthreadspersearch int default=1 restart
 numsummarythreads int default=16 restart
 
 ## Perform extra validation of stored data on startup
-## It requires a restart to be enabled, but no restart to be disabled.
+## It requires a restart to enable, but no restart to disable.
 ## Hence it must always be followed by a manual restart when enabled.
 validate_and_sanitize_docstore enum {NO, YES} default = NO
 
