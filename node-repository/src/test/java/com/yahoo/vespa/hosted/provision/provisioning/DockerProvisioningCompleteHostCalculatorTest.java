@@ -51,7 +51,6 @@ public class DockerProvisioningCompleteHostCalculatorTest {
                            7, 1, 0.7, 4.6, 14.3, 1.0,
                            app1, cluster1);
 
-        System.out.println("---------------------redeploying the same---------------------");
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
                                                       new ClusterResources(7, 1, newMaxResources)));
         tester.assertNodes("Redeploying the same ranges does not cause changes",
@@ -88,12 +87,6 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         }
 
         NodeResources realResourcesOf(NodeResources advertisedResources) {
-            var r = advertisedResources.withMemoryGb(advertisedResources.memoryGb() -
-                                                     memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), advertisedResources, false))
-                                       .withDiskGb(advertisedResources.diskGb() -
-                                                   diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), advertisedResources, false));
-            System.out.println("        real given " + advertisedResources + ": " + r);
-            System.out.println("        adv. given those: " + realToRequest(r, false));
             return advertisedResources.withMemoryGb(advertisedResources.memoryGb() -
                                                     memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), advertisedResources, false))
                                       .withDiskGb(advertisedResources.diskGb() -
