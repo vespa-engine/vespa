@@ -594,6 +594,8 @@ public class SessionRepository {
             IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());
             log.log(Level.FINE, "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
             Files.move(tempDestinationDir, destinationDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException ioException) {
+            if ( ! destinationDir.exists()) throw ioException; // If destination dir exists app has already been copied
         } finally {
             // In case some of the operations above fail
             if (tempDestinationDir != null)
