@@ -168,19 +168,6 @@ public class TenantRepository {
         return curator.getChildren(tenantsPath).stream().map(TenantName::from).collect(Collectors.toSet());
     }
 
-    /** Public for testing. */
-    public synchronized void updateTenants() {
-        Set<TenantName> allTenants = readTenantsFromZooKeeper(curator);
-        log.log(Level.FINE, "Create tenants, tenants found in zookeeper: " + allTenants);
-        for (TenantName tenantName : Set.copyOf(tenants.keySet()))
-            if ( ! allTenants.contains(tenantName))
-                zkWatcherExecutor.execute(tenantName, () -> closeTenant(tenantName));
-        for (TenantName tenantName : allTenants)
-            if ( ! tenants.containsKey(tenantName))
-                zkWatcherExecutor.execute(tenantName, () -> bootstrapTenant(tenantName));
-        metricUpdater.setTenants(tenants.size());
-    }
-
     private void bootstrapTenants() {
         // Keep track of tenants created
         Map<TenantName, Future<?>> futures = new HashMap<>();
@@ -213,7 +200,7 @@ public class TenantRepository {
     }
 
     // Use when bootstrapping an existing tenant based on ZooKeeper data
-    protected void bootstrapTenant(TenantName tenantName) {
+    protected synchronized void bootstrapTenant(TenantName tenantName) {
         createTenant(tenantName, readCreatedTimeFromZooKeeper(tenantName));
     }
 
@@ -329,7 +316,9 @@ public class TenantRepository {
         log.log(Level.INFO, "Deleting tenant '" + name + "'");
         // Deletes the tenant tree from ZooKeeper (application and session status for the tenant)
         // and triggers Tenant.close().
-        curator.delete(tenants.get(name).getPath());
+        Path path = tenants.get(name).getPath();
+        closeTenant(name);
+        curator.delete(path);
     }
 
     private synchronized void closeTenant(TenantName name) {
@@ -393,10 +382,27 @@ public class TenantRepository {
     private void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
         switch (event.getType()) {
             case CHILD_ADDED:
-            case CHILD_REMOVED:
-                updateTenants();
+                TenantName t1 = getTenantNameFromEvent(event);
+                if ( ! tenants.containsKey(t1))
+                    zkWatcherExecutor.execute(t1, () -> bootstrapTenant(t1));
                 break;
+            case CHILD_REMOVED:
+                TenantName t2 = getTenantNameFromEvent(event);
+                if (tenants.containsKey(t2))
+                    zkWatcherExecutor.execute(t2, () -> deleteTenant(t2));
+                break;
+            default:
+                break; // Nothing to do
         }
+        metricUpdater.setTenants(tenants.size());
+    }
+
+    private TenantName getTenantNameFromEvent(PathChildrenCacheEvent event) {
+        String path = event.getData().getPath();
+        String[] pathElements = path.split("/");
+        if (pathElements.length == 0)
+            throw new IllegalArgumentException("Path " + path + " does not contain a tenant name");
+        return TenantName.from(pathElements[pathElements.length - 1]);
     }
 
     public void close() {
