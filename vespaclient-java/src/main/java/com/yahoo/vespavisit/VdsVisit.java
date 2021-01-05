@@ -600,7 +600,7 @@ public class VdsVisit {
                                                names + ". Please use the -c option to select one of them as a target for visiting.");
         }
 
-        return found.getRoute();
+        return "[Storage:cluster=" + found.getName() + ";clusterconfigid=" + found.getConfigId() + "]";
     }
 
     protected static void verbosePrintParameters(VdsVisitParameters vdsParams, PrintStream out) {

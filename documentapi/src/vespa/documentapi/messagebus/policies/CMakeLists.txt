@@ -3,6 +3,7 @@ vespa_add_library(documentapi_documentapipolicies OBJECT
     SOURCES
     andpolicy.cpp
     externslobrokpolicy.cpp
+    storagepolicy.cpp
     contentpolicy.cpp
     messagetypepolicy.cpp
     documentrouteselectorpolicy.cpp

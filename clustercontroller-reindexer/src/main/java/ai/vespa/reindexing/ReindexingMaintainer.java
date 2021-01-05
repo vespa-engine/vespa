@@ -141,6 +141,7 @@ public class ReindexingMaintainer extends AbstractComponent {
         return clusters.storage().stream()
                        .filter(storage -> storage.name().equals(name))
                        .map(storage -> new Cluster(name,
+                                                   storage.configid(),
                                                    bucketSpaces.cluster(name)
                                                                .documentType().entrySet().stream()
                                                                .collect(toMap(entry -> manager.getDocumentType(entry.getKey()),

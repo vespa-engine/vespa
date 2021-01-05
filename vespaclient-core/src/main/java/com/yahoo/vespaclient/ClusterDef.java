@@ -2,8 +2,14 @@
 package com.yahoo.vespaclient;
 
 public class ClusterDef {
-    private final String name;
-    public ClusterDef(String name) { this.name = name; }
+    public ClusterDef(String name, String configId) {
+        this.name = name;
+        this.configId = configId;
+    }
+
+    String name;
+    String configId;
+
     public String getName() { return name; }
-    public String getRoute() { return name + "-direct"; }
+    public String getConfigId() { return configId; }
 }

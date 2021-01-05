@@ -263,7 +263,7 @@ public class DocumentProtocol implements Protocol {
         putRoutingPolicyFactory("MessageType", new RoutingPolicyFactories.MessageTypePolicyFactory(cfg));
         putRoutingPolicyFactory("RoundRobin", new RoutingPolicyFactories.RoundRobinPolicyFactory());
         putRoutingPolicyFactory("LoadBalancer", new RoutingPolicyFactories.LoadBalancerPolicyFactory());
-        putRoutingPolicyFactory("Storage", new RoutingPolicyFactories.ContentPolicyFactory());
+        putRoutingPolicyFactory("Storage", new RoutingPolicyFactories.StoragePolicyFactory());
         putRoutingPolicyFactory("SubsetService", new RoutingPolicyFactories.SubsetServicePolicyFactory());
 
         // Prepare version specifications to use when adding routable factories.

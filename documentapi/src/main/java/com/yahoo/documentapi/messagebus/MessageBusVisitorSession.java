@@ -917,7 +917,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             }
         }
         if (isErrorOfType(reply, DocumentProtocol.ERROR_WRONG_DISTRIBUTION)) {
-            handleWrongDistributionReply((WrongDistributionReply) reply);
+            handleWrongDistributionReply((WrongDistributionReply)reply);
         } else {
             if (shouldReportError(reply)) {
                 reportVisitorError(message);
