@@ -4,38 +4,40 @@ package com.yahoo.vespaclient;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.config.subscription.ConfigGetter;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /** A list of content clusters, either obtained from a list, a given config or by self-subscribing */
 public class ClusterList {
 
-    private final List<ClusterDef> contentClusters;
+    List<ClusterDef> contentClusters = new ArrayList<>();
 
     public ClusterList() {
-        this(List.of());
+        this(new ArrayList<>());
     }
     
     public ClusterList(List<ClusterDef> contentClusters) {
-        this.contentClusters = List.copyOf(contentClusters);
+        this.contentClusters = contentClusters;
     }
 
     public ClusterList(String configId) {
-        this(new ConfigGetter<>(ClusterListConfig.class).getConfig(configId));
+        configure(new ConfigGetter<>(ClusterListConfig.class).getConfig(configId));
     }
     
     public ClusterList(ClusterListConfig config) {
-        this(parse(config));
+        configure(config);
     }
 
+    private void configure(ClusterListConfig config) {
+        contentClusters.clear(); // TODO: Create a new
+        for (int i = 0; i < config.storage().size(); i++)
+            contentClusters.add(new ClusterDef(config.storage(i).name(), config.storage(i).configid()));
+    }
+
+    /** Returns a reference to the mutable list */
     public List<ClusterDef> getStorageClusters() {
-        return contentClusters;
-    }
-
-    private static List<ClusterDef> parse(ClusterListConfig config) {
-        return config.storage().stream()
-                     .map(storage -> new ClusterDef(storage.name()))
-                     .collect(Collectors.toUnmodifiableList());
+        return contentClusters; // TODO: Use immutable list
     }
 
 }

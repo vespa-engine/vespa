@@ -217,10 +217,12 @@ public class Reindexer {
     static class Cluster {
 
         private final String name;
+        private final String configId;
         private final Map<DocumentType, String> documentBuckets;
 
-        Cluster(String name, Map<DocumentType, String> documentBuckets) {
+        Cluster(String name, String configId, Map<DocumentType, String> documentBuckets) {
             this.name = requireNonNull(name);
+            this.configId = requireNonNull(configId);
             this.documentBuckets = Map.copyOf(documentBuckets);
         }
 
@@ -229,7 +231,7 @@ public class Reindexer {
         }
 
         String route() {
-            return name + "-direct";
+            return "[Storage:cluster=" + name + ";clusterconfigid=" + configId + "]";
         }
 
         String bucketSpaceOf(DocumentType documentType) {
@@ -242,18 +244,20 @@ public class Reindexer {
             if (o == null || getClass() != o.getClass()) return false;
             Cluster cluster = (Cluster) o;
             return name.equals(cluster.name) &&
+                   configId.equals(cluster.configId) &&
                    documentBuckets.equals(cluster.documentBuckets);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, documentBuckets);
+            return Objects.hash(name, configId, documentBuckets);
         }
 
         @Override
         public String toString() {
             return "Cluster{" +
                    "name='" + name + '\'' +
+                   ", configId='" + configId + '\'' +
                    ", documentBuckets=" + documentBuckets +
                    '}';
         }

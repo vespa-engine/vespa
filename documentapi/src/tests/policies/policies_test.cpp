@@ -4,13 +4,13 @@
 
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/messagebus/policies/andpolicy.h>
-#include <vespa/documentapi/messagebus/policies/contentpolicy.h>
 #include <vespa/documentapi/messagebus/policies/documentrouteselectorpolicy.h>
 #include <vespa/documentapi/messagebus/policies/errorpolicy.h>
 #include <vespa/documentapi/messagebus/policies/externpolicy.h>
 #include <vespa/documentapi/messagebus/policies/loadbalancerpolicy.h>
 #include <vespa/documentapi/messagebus/policies/localservicepolicy.h>
 #include <vespa/documentapi/messagebus/policies/roundrobinpolicy.h>
+#include <vespa/documentapi/messagebus/policies/storagepolicy.h>
 #include <vespa/documentapi/messagebus/policies/subsetservicepolicy.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingnode.h>
@@ -51,7 +51,7 @@ private:
 private:
     bool trySelect(TestFrame &frame, uint32_t numSelects, const std::vector<string> &expected);
     void setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &pattern, int32_t numEntries = -1);
-    ContentPolicy &setupContentPolicy(TestFrame &frame, const string &param,
+    StoragePolicy &setupStoragePolicy(TestFrame &frame, const string &param,
                                       const string &pattern = "", int32_t numEntries = -1);
     bool isErrorPolicy(const string &name, const string &param);
     void assertMirrorReady(const IMirrorAPI &mirror);
@@ -83,10 +83,10 @@ public:
     void requireThatExternPolicyWithUnknownPatternSelectsNone();
     void requireThatExternPolicySelectsFromExternSlobrok();
     void requireThatExternPolicyMergesOneReplyAsProtocol();
-    void requireThatContentPolicyWithIllegalParamIsAnErrorPolicy();
-    void requireThatContentPolicyIsRandomWithoutState();
-    void requireThatContentPolicyIsTargetedWithState();
-    void requireThatContentPolicyCombinesSystemAndSlobrokState();
+    void requireThatStoragePolicyWithIllegalParamIsAnErrorPolicy();
+    void requireThatStoragePolicyIsRandomWithoutState();
+    void requireThatStoragePolicyIsTargetedWithState();
+    void requireThatStoragePolicyCombinesSystemAndSlobrokState();
 };
 
 TEST_APPHOOK(Test);
@@ -128,10 +128,10 @@ Test::Main() {
     requireThatExternPolicySelectsFromExternSlobrok();         TEST_FLUSH();
     requireThatExternPolicyMergesOneReplyAsProtocol();         TEST_FLUSH();
 
-    requireThatContentPolicyWithIllegalParamIsAnErrorPolicy(); TEST_FLUSH();
-    requireThatContentPolicyIsRandomWithoutState();            TEST_FLUSH();
-    requireThatContentPolicyIsTargetedWithState();             TEST_FLUSH();
-    requireThatContentPolicyCombinesSystemAndSlobrokState();   TEST_FLUSH();
+    requireThatStoragePolicyWithIllegalParamIsAnErrorPolicy(); TEST_FLUSH();
+    requireThatStoragePolicyIsRandomWithoutState();            TEST_FLUSH();
+    requireThatStoragePolicyIsTargetedWithState();             TEST_FLUSH();
+    requireThatStoragePolicyCombinesSystemAndSlobrokState();   TEST_FLUSH();
 
     TEST_DONE();
 }
@@ -782,15 +782,15 @@ void Test::testLoadBalancer() {
 }
 
 void
-Test::requireThatContentPolicyWithIllegalParamIsAnErrorPolicy()
+Test::requireThatStoragePolicyWithIllegalParamIsAnErrorPolicy()
 {
-    EXPECT_TRUE(isErrorPolicy("Content", ""));
-    EXPECT_TRUE(isErrorPolicy("Content", "config=foo;slobroks=foo"));
-    EXPECT_TRUE(isErrorPolicy("Content", "slobroks=foo"));
+    EXPECT_TRUE(isErrorPolicy("Storage", ""));
+    EXPECT_TRUE(isErrorPolicy("Storage", "config=foo;slobroks=foo"));
+    EXPECT_TRUE(isErrorPolicy("Storage", "slobroks=foo"));
 }
 
 void
-Test::requireThatContentPolicyIsRandomWithoutState()
+Test::requireThatStoragePolicyIsRandomWithoutState()
 {
     TestFrame frame(_repo);
     frame.setMessage(newPutDocumentMessage("id:ns:testdoc::"));
@@ -808,7 +808,7 @@ Test::requireThatContentPolicyIsRandomWithoutState()
     string param = vespalib::make_string(
             "cluster=mycluster;slobroks=tcp/localhost:%d;clusterconfigid=%s;syncinit",
             slobrok.port(), getDefaultDistributionConfig(2, 5).c_str());
-    ContentPolicy &policy = setupContentPolicy(
+    StoragePolicy &policy = setupStoragePolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 5);
     ASSERT_TRUE(policy.getSystemState() == nullptr);
@@ -826,15 +826,15 @@ Test::requireThatContentPolicyIsRandomWithoutState()
     }
 }
 
-ContentPolicy &
-Test::setupContentPolicy(TestFrame &frame, const string &param,
+StoragePolicy &
+Test::setupStoragePolicy(TestFrame &frame, const string &param,
                          const string &pattern, int32_t numEntries)
 {
-    frame.setHop(mbus::HopSpec("test", vespalib::make_string("[Content:%s]", param.c_str())));
+    frame.setHop(mbus::HopSpec("test", vespalib::make_string("[Storage:%s]", param.c_str())));
     mbus::MessageBus &mbus = frame.getMessageBus();
     const mbus::HopBlueprint *hop = mbus.getRoutingTable(DocumentProtocol::NAME)->getHop("test");
     const mbus::PolicyDirective dir = static_cast<mbus::PolicyDirective&>(*hop->getDirective(0));
-    ContentPolicy &policy = static_cast<ContentPolicy&>(*mbus.getRoutingPolicy(DocumentProtocol::NAME,
+    StoragePolicy &policy = static_cast<StoragePolicy&>(*mbus.getRoutingPolicy(DocumentProtocol::NAME,
                                                                                dir.getName(), dir.getParam()));
     policy.initSynchronous();
     assertMirrorReady(*policy.getMirror());
@@ -845,7 +845,7 @@ Test::setupContentPolicy(TestFrame &frame, const string &param,
 }
 
 void
-Test::requireThatContentPolicyIsTargetedWithState()
+Test::requireThatStoragePolicyIsTargetedWithState()
 {
     TestFrame frame(_repo);
     frame.setMessage(newPutDocumentMessage("id:ns:testdoc::"));
@@ -863,7 +863,7 @@ Test::requireThatContentPolicyIsTargetedWithState()
     string param = vespalib::make_string(
             "cluster=mycluster;slobroks=tcp/localhost:%d;clusterconfigid=%s;syncinit",
             slobrok.port(), getDefaultDistributionConfig(2, 5).c_str());
-    ContentPolicy &policy = setupContentPolicy(
+    StoragePolicy &policy = setupStoragePolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 5);
     ASSERT_TRUE(policy.getSystemState() == nullptr);
@@ -888,7 +888,7 @@ Test::requireThatContentPolicyIsTargetedWithState()
 }
 
 void
-Test::requireThatContentPolicyCombinesSystemAndSlobrokState()
+Test::requireThatStoragePolicyCombinesSystemAndSlobrokState()
 {
     TestFrame frame(_repo);
     frame.setMessage(newPutDocumentMessage("id:ns:testdoc::"));
@@ -902,7 +902,7 @@ Test::requireThatContentPolicyCombinesSystemAndSlobrokState()
     string param = vespalib::make_string(
             "cluster=mycluster;slobroks=tcp/localhost:%d;clusterconfigid=%s;syncinit",
             slobrok.port(), getDefaultDistributionConfig(2, 5).c_str());
-    ContentPolicy &policy = setupContentPolicy(
+    StoragePolicy &policy = setupStoragePolicy(
             frame, param,
             "storage/cluster.mycluster/distributor/*/default", 1);
     ASSERT_TRUE(policy.getSystemState() == nullptr);

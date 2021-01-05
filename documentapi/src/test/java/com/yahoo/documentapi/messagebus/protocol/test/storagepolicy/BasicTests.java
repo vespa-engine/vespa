@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
-public class BasicTests extends ContentPolicyTestEnvironment {
+public class BasicTests extends StoragePolicyTestEnvironment {
 
     /** Test that we can send a message through the policy. */
     @Test
