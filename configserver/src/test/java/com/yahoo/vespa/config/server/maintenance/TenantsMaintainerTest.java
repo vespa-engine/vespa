@@ -47,7 +47,6 @@ public class TenantsMaintainerTest {
 
         clock.advance(TenantsMaintainer.defaultTtlForUnusedTenant.plus(Duration.ofDays(1)));
         new TenantsMaintainer(applicationRepository, tester.curator(), new InMemoryFlagSource(), Duration.ofDays(1), clock).run();
-        tenantRepository.updateTenants();
 
         // One tenant should now have been deleted
         assertNull(tenantRepository.getTenant(shouldBeDeleted));
