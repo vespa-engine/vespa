@@ -235,7 +235,7 @@ public class Curator implements VespaCurator, AutoCloseable {
      */
     public void createAtomically(Path... paths) {
         try {
-            @SuppressWarnings("deprecation") CuratorTransaction transaction = framework().inTransaction();
+            CuratorTransaction transaction = framework().inTransaction();
             for (Path path : paths) {
                 if ( ! exists(path)) {
                     transaction = transaction.create().forPath(path.getAbsolute(), new byte[0]).and();
