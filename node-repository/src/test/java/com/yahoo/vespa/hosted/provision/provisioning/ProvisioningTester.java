@@ -574,6 +574,16 @@ public class ProvisioningTester {
         assertEquals(expectedSwitches, switchesOf(activeNodes, allNodes));
     }
 
+    public List<Node> activeNodesOn(String switchHostname, ApplicationId application, ClusterSpec.Id cluster) {
+        NodeList allNodes = nodeRepository.list();
+        NodeList activeNodes = allNodes.state(Node.State.active).owner(application).cluster(cluster);
+        return activeNodes.stream().filter(node -> {
+            Optional<String> allocatedSwitchHostname = allNodes.parentOf(node).flatMap(Node::switchHostname);
+            return allocatedSwitchHostname.isPresent() &&
+                   allocatedSwitchHostname.get().equals(switchHostname);
+        }).collect(Collectors.toList());
+    }
+
     public Set<String> switchesOf(NodeList applicationNodes, NodeList allNodes) {
         assertTrue("All application nodes are children", applicationNodes.stream().allMatch(node -> node.parentHostname().isPresent()));
         Set<String> switches = new HashSet<>();
