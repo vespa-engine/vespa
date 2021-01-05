@@ -455,7 +455,6 @@ public class DeploymentContext {
 
         if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
-            Versions versions = currentRun(job).versions();
             tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
             configServer().convergeServices(id.application(), zone);
             runner.advance(currentRun(job));
