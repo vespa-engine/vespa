@@ -22,6 +22,7 @@ public:
     static void iterateAll(spi::PersistenceProvider&,
                            const spi::Bucket&,
                            const std::string& documentSelection,
+                           std::shared_ptr<document::FieldSet> field_set,
                            EntryProcessor&,
                            spi::IncludedVersions,
                            spi::Context&);
