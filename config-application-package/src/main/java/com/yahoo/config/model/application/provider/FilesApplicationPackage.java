@@ -611,16 +611,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
-        File tempDir = Files.createTempDirectory("preprocessed").toFile();
-        IOUtils.copyDirectory(appDir, tempDir, -1, (dir, name) -> ! name.equals(preprocessed) &&
+        IOUtils.recursiveDeleteDir(preprocessedDir);
+        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(preprocessed) &&
                                                                                          ! name.equals(SERVICES) &&
                                                                                          ! name.equals(HOSTS) &&
                                                                                          ! name.equals(CONFIG_DEFINITIONS_DIR));
-        if (preprocessedDir.exists()) {
-            log.log(Level.INFO, "Preprocessed directory " + preprocessedDir.getAbsolutePath() + " already exists, deleting it");
-            IOUtils.recursiveDeleteDir(preprocessedDir);
-        }
-        Files.move(tempDir.toPath(), preprocessedDir.toPath());
         preprocessXML(new File(preprocessedDir, SERVICES), getServicesFile(), zone);
         preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
         FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
