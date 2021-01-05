@@ -824,7 +824,7 @@ public class MockCuratorFramework implements CuratorFramework  {
 
         @Override
         public ACLBackgroundPathAndBytesable<String> storingStatIn(Stat stat) {
-            return null;
+            return this;
         }
 
     }
@@ -877,7 +877,7 @@ public class MockCuratorFramework implements CuratorFramework  {
 
         @Override
         public ACLCreateModeStatBackgroundPathAndBytesable<String> withProtection() {
-            return null;
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
         public String forPath(String s) throws Exception {
@@ -919,9 +919,7 @@ public class MockCuratorFramework implements CuratorFramework  {
         }
 
         @Override
-        public CreateBuilderMain withTtl(long l) {
-            return null;
-        }
+        public CreateBuilderMain withTtl(long l) { return this; }
 
         @Override
         public CreateBuilder2 orSetData() {
@@ -945,7 +943,7 @@ public class MockCuratorFramework implements CuratorFramework  {
 
         @Override
         public BackgroundPathAndBytesable<String> withACL(List<ACL> list) {
-            return null;
+            return this;
         }
 
         @Override
@@ -956,8 +954,9 @@ public class MockCuratorFramework implements CuratorFramework  {
 
         @Override
         public BackgroundPathAndBytesable<String> withACL(List<ACL> list, boolean b) {
-            return null;
+            return this;
         }
+
     }
 
     private static class MockBackgroundPathableBuilder<T> implements BackgroundPathable<T>, Watchable<BackgroundPathable<T>> {
