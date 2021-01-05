@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -46,8 +47,8 @@ public class SwitchRebalancer extends NodeMover<Move> {
     protected Move suggestedMove(Node node, Node fromHost, Node toHost, NodeList allNodes) {
         NodeList clusterNodes = clusterOf(node, allNodes);
         NodeList clusterHosts = allNodes.parentsOf(clusterNodes);
-        if (isBalanced(clusterNodes, clusterHosts)) return Move.empty();
-        if (switchInUse(toHost, clusterHosts)) return Move.empty();
+        if (onExclusiveSwitch(node, clusterHosts)) return Move.empty();
+        if (!increasesExclusiveSwitches(clusterNodes, clusterHosts, toHost)) return Move.empty();
         return new Move(node, fromHost, toHost);
     }
 
@@ -65,29 +66,31 @@ public class SwitchRebalancer extends NodeMover<Move> {
                        .cluster(cluster);
     }
 
-    /** Returns whether switch of host is already in use by given cluster */
-    private boolean switchInUse(Node host, NodeList clusterHosts) {
-        if (host.switchHostname().isEmpty()) return false;
-        for (var clusterHost : clusterHosts) {
-            if (clusterHost.switchHostname().isEmpty()) continue;
-            if (clusterHost.switchHostname().get().equals(host.switchHostname().get())) return true;
-        }
-        return false;
+    /** Returns whether allocatedNode is on an exclusive switch */
+    private boolean onExclusiveSwitch(Node allocatedNode, NodeList clusterHosts) {
+        Optional<String> allocatedSwitch = clusterHosts.parentOf(allocatedNode).flatMap(Node::switchHostname);
+        if (allocatedSwitch.isEmpty()) return true;
+        return clusterHosts.stream()
+                           .flatMap(host -> host.switchHostname().stream())
+                           .filter(switchHostname -> switchHostname.equals(allocatedSwitch.get()))
+                           .count() == 1;
     }
 
-    /** Returns whether given cluster nodes are balanced optimally on exclusive switches */
-    private boolean isBalanced(NodeList clusterNodes, NodeList clusterHosts) {
-        Set<String> switches = new HashSet<>();
-        int exclusiveSwitches = 0;
+    /** Returns whether allocating a node on toHost would increase the number of exclusive switches */
+    private boolean increasesExclusiveSwitches(NodeList clusterNodes, NodeList clusterHosts, Node toHost) {
+        if (toHost.switchHostname().isEmpty()) return false;
+        Set<String> activeSwitches = new HashSet<>();
+        int unknownSwitches = 0;
         for (var host : clusterHosts) {
             if (host.switchHostname().isEmpty()) {
-                exclusiveSwitches++; // Unknown switch counts as exclusive
+                unknownSwitches++;
             } else {
-                switches.add(host.switchHostname().get());
+                activeSwitches.add(host.switchHostname().get());
             }
         }
-        exclusiveSwitches += switches.size();
-        return clusterNodes.size() <= exclusiveSwitches;
+        int exclusiveSwitches = unknownSwitches + activeSwitches.size();
+        return clusterNodes.size() > exclusiveSwitches &&
+               !activeSwitches.contains(toHost.switchHostname().get());
     }
 
 }
