@@ -952,7 +952,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         String name() { return name; }
-        String route() { return name() + "-direct"; }
+        String route() { return "[Content:cluster=" + name() + "]"; }
         Optional<String> bucketOf(String documentType) { return Optional.ofNullable(documentBuckets.get(documentType)); }
 
     }

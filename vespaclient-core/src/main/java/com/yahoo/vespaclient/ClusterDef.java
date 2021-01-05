@@ -5,5 +5,5 @@ public class ClusterDef {
     private final String name;
     public ClusterDef(String name) { this.name = name; }
     public String getName() { return name; }
-    public String getRoute() { return name + "-direct"; }
+    public String getRoute() { return "[Content:cluster=" + name + "]"; }
 }
