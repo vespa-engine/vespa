@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.OrchestratorStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -118,7 +119,7 @@ public interface NodeRepository {
                         versionFrom(node.getWantedOsVersion()),
                         Optional.ofNullable(node.getCurrentFirmwareCheck()).map(Instant::ofEpochMilli),
                         Optional.ofNullable(node.getWantedFirmwareCheck()).map(Instant::ofEpochMilli),
-                        fromBoolean(node.getAllowedToBeDown()),
+                        toServiceState(node.getOrchestratorStatus()),
                         Optional.ofNullable(node.suspendedSinceMillis()).map(Instant::ofEpochMilli),
                         toInt(node.getCurrentRestartGeneration()),
                         toInt(node.getRestartGeneration()),
@@ -204,10 +205,15 @@ public interface NodeRepository {
         }
     }
 
-    private static Node.ServiceState fromBoolean(Boolean allowedDown) {
-        return (allowedDown == null)
-                ? Node.ServiceState.unorchestrated
-                : allowedDown ? Node.ServiceState.allowedDown : Node.ServiceState.expectedUp;
+    private static Node.ServiceState toServiceState(OrchestratorStatus orchestratorStatus) {
+        switch (orchestratorStatus) {
+            case ALLOWED_TO_BE_DOWN: return Node.ServiceState.allowedDown;
+            case PERMANENTLY_DOWN: return Node.ServiceState.permanentlyDown;
+            case NO_REMARKS: return Node.ServiceState.expectedUp;
+            case OTHER: return Node.ServiceState.unknown;
+        }
+
+        return Node.ServiceState.unknown;
     }
 
     private static double toDouble(Double d) {
