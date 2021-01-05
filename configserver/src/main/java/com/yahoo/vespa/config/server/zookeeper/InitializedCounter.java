@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import java.util.logging.Level;
@@ -41,13 +41,7 @@ public class InitializedCounter {
      * @return true, if an application exists, false otherwise
      */
     private static boolean applicationExists(ConfigCurator configCurator, String appsPath) {
-        // TODO Need to try and catch now since interface should not expose Zookeeper exceptions
-        try {
-            return configCurator.exists(appsPath);
-        } catch (Exception e) {
-            log.log(Level.WARNING, e.getMessage());
-            return false;
-        }
+        return configCurator.exists(appsPath);
     }
 
     /**
