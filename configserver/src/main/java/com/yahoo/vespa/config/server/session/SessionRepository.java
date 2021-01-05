@@ -579,12 +579,7 @@ public class SessionRepository {
     }
 
     private void copyApp(File sourceDir, File destinationDir) throws IOException {
-        if (destinationDir.exists()) {
-            log.log(Level.INFO, "Destination dir " + destinationDir + " already exists, app has already been copied");
-            return;
-        }
-        if (! sourceDir.isDirectory())
-            throw new IllegalArgumentException(sourceDir.getAbsolutePath() + " is not a directory");
+        if (! sourceDir.isDirectory()) throw new IllegalArgumentException(sourceDir.getAbsolutePath() + " is not a directory");
 
         // Copy app atomically: Copy to a temp dir and move to destination
         java.nio.file.Path tempDestinationDir = null;
@@ -595,7 +590,8 @@ public class SessionRepository {
             log.log(Level.FINE, "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
             Files.move(tempDestinationDir, destinationDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException ioException) {
-            if ( ! destinationDir.exists()) throw ioException; // If destination dir exists app has already been copied
+            if ( ! destinationDir.exists()) throw ioException;
+            log.log(Level.INFO, "Destination dir " + destinationDir + " already exists, app has already been copied");
         } finally {
             // In case some of the operations above fail
             if (tempDestinationDir != null)
