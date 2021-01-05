@@ -40,15 +40,15 @@ void
 BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
                             const spi::Bucket& bucket,
                             const std::string& documentSelection,
+                            std::shared_ptr<document::FieldSet> field_set,
                             EntryProcessor& processor,
                             spi::IncludedVersions versions,
                             spi::Context& context)
 {
-    spi::Selection sel
-        = spi::Selection(spi::DocumentSelection(documentSelection));
+    spi::Selection sel = spi::Selection(spi::DocumentSelection(documentSelection));
     spi::CreateIteratorResult createIterResult(provider.createIterator(
             bucket,
-            std::make_shared<document::AllFields>(),
+            std::move(field_set),
             sel,
             versions,
             context));
