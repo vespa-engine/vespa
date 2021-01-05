@@ -69,6 +69,7 @@ if [[ $SHOULD_BUILD == systemtest ]]; then
   export SYSTEM_TEST_DIR=$(pwd)/system-test
   export RUBYLIB="$SYSTEM_TEST_DIR/lib:$SYSTEM_TEST_DIR/tests"
   useradd vespa
+  export USER=$(whoami)
 
   $SYSTEM_TEST_DIR/lib/node_server.rb &
   NODE_SERVER_PID=$!
