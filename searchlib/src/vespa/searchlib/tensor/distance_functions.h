@@ -26,6 +26,9 @@ public:
         assert(sz == rhs_vector.size());
         return _computer.squaredEuclideanDistance(&lhs_vector[0], &rhs_vector[0], sz);
     }
+    double convert_threshold(double threshold) const override {
+        return threshold*threshold;
+    }
     double to_rawscore(double distance) const override {
         double d = sqrt(distance);
         double score = 1.0 / (1.0 + d);
@@ -75,6 +78,10 @@ public:
         double distance = 1.0 - cosine_similarity; // in range [0,2]
         return distance;
     }
+    double convert_threshold(double threshold) const override {
+        double cosine_similarity = cos(threshold);
+        return 1.0 - cosine_similarity;
+    }
     double to_rawscore(double distance) const override {
         double cosine_similarity = 1.0 - distance;
         // should be in in range [-1,1] but roundoff may cause problems:
@@ -111,6 +118,9 @@ public:
         assert(sz == rhs_vector.size());
         double score = 1.0 - _computer.dotProduct(&lhs_vector[0], &rhs_vector[0], sz);
         return std::max(0.0, score);
+    }
+    double convert_threshold(double threshold) const override {
+        return threshold;
     }
     double to_rawscore(double distance) const override {
         double score = 1.0 / (1.0 + distance);
@@ -163,6 +173,11 @@ public:
         double hav_central_angle = hav_lat + cos(lat_A)*cos(lat_B)*hav_lon;
         return hav_central_angle;
     }
+    double convert_threshold(double threshold) const override {
+        double half_angle = threshold / (2 * 6371.0088);
+        double rt_hav = sin(half_angle);
+        return rt_hav * rt_hav;
+    }
     double to_rawscore(double distance) const override {
         double hav_diff = sqrt(distance);
         // distance in kilometers:
@@ -196,6 +211,9 @@ public:
             sum += (lhs_vector[i] == rhs_vector[i]) ? 0 : 1;
         }
         return (double)sum;
+    }
+    double convert_threshold(double threshold) const override {
+        return threshold;
     }
     double to_rawscore(double distance) const override {
         double score = 1.0 / (1.0 + distance);
