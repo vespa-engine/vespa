@@ -11,31 +11,40 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.recipes.CuratorLockException;
 import org.apache.curator.CuratorZookeeperClient;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.WatcherRemoveCuratorFramework;
 import org.apache.curator.framework.api.ACLBackgroundPathAndBytesable;
 import org.apache.curator.framework.api.ACLCreateModeBackgroundPathAndBytesable;
 import org.apache.curator.framework.api.ACLCreateModePathAndBytesable;
+import org.apache.curator.framework.api.ACLCreateModeStatBackgroundPathAndBytesable;
 import org.apache.curator.framework.api.ACLPathAndBytesable;
+import org.apache.curator.framework.api.ACLableExistBuilderMain;
 import org.apache.curator.framework.api.BackgroundCallback;
 import org.apache.curator.framework.api.BackgroundPathAndBytesable;
 import org.apache.curator.framework.api.BackgroundPathable;
 import org.apache.curator.framework.api.BackgroundVersionable;
 import org.apache.curator.framework.api.ChildrenDeletable;
-import org.apache.curator.framework.api.CreateBackgroundModeACLable;
+import org.apache.curator.framework.api.CreateBackgroundModeStatACLable;
 import org.apache.curator.framework.api.CreateBuilder;
+import org.apache.curator.framework.api.CreateBuilder2;
+import org.apache.curator.framework.api.CreateBuilderMain;
+import org.apache.curator.framework.api.CreateProtectACLCreateModePathAndBytesable;
 import org.apache.curator.framework.api.CuratorListener;
 import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.framework.api.DeleteBuilder;
+import org.apache.curator.framework.api.DeleteBuilderMain;
 import org.apache.curator.framework.api.ErrorListenerPathAndBytesable;
 import org.apache.curator.framework.api.ErrorListenerPathable;
 import org.apache.curator.framework.api.ExistsBuilder;
-import org.apache.curator.framework.api.ExistsBuilderMain;
 import org.apache.curator.framework.api.GetACLBuilder;
 import org.apache.curator.framework.api.GetChildrenBuilder;
+import org.apache.curator.framework.api.GetConfigBuilder;
 import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.curator.framework.api.GetDataWatchBackgroundStatable;
 import org.apache.curator.framework.api.PathAndBytesable;
 import org.apache.curator.framework.api.Pathable;
-import org.apache.curator.framework.api.ProtectACLCreateModePathAndBytesable;
+import org.apache.curator.framework.api.ProtectACLCreateModeStatPathAndBytesable;
+import org.apache.curator.framework.api.ReconfigBuilder;
+import org.apache.curator.framework.api.RemoveWatchesBuilder;
 import org.apache.curator.framework.api.SetACLBuilder;
 import org.apache.curator.framework.api.SetDataBackgroundVersionable;
 import org.apache.curator.framework.api.SetDataBuilder;
@@ -44,13 +53,16 @@ import org.apache.curator.framework.api.UnhandledErrorListener;
 import org.apache.curator.framework.api.VersionPathAndBytesable;
 import org.apache.curator.framework.api.WatchPathable;
 import org.apache.curator.framework.api.Watchable;
+import org.apache.curator.framework.api.transaction.CuratorMultiTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransactionBridge;
 import org.apache.curator.framework.api.transaction.CuratorTransactionFinal;
 import org.apache.curator.framework.api.transaction.CuratorTransactionResult;
 import org.apache.curator.framework.api.transaction.TransactionCheckBuilder;
 import org.apache.curator.framework.api.transaction.TransactionCreateBuilder;
+import org.apache.curator.framework.api.transaction.TransactionCreateBuilder2;
 import org.apache.curator.framework.api.transaction.TransactionDeleteBuilder;
+import org.apache.curator.framework.api.transaction.TransactionOp;
 import org.apache.curator.framework.api.transaction.TransactionSetDataBuilder;
 import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.listen.Listenable;
@@ -63,6 +75,8 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
+import org.apache.curator.framework.schema.SchemaSet;
+import org.apache.curator.framework.state.ConnectionStateErrorPolicy;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.RetryForever;
 import org.apache.curator.utils.EnsurePath;
@@ -71,6 +85,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.server.quorum.flexible.QuorumVerifier;
 
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -82,6 +97,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -184,10 +200,55 @@ public class MockCuratorFramework implements CuratorFramework  {
         throw new UnsupportedOperationException("Not implemented in MockCurator");
     }
 
+
+    @Override
+    public ReconfigBuilder reconfig() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
+    @Override
+    public GetConfigBuilder getConfig() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
     @Override
     public CuratorTransaction inTransaction() {
         return new MockCuratorTransactionFinal();
     }
+
+    @Override
+    public CuratorMultiTransaction transaction() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
+    @Override
+    public TransactionOp transactionOp() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
+    @Override
+    public RemoveWatchesBuilder watches() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
+    @Override
+    public WatcherRemoveCuratorFramework newWatcherRemoveCuratorFramework() {
+        class MockWatcherRemoveCuratorFramework extends MockCuratorFramework implements WatcherRemoveCuratorFramework {
+
+            public MockWatcherRemoveCuratorFramework(boolean stableOrdering, boolean shouldTimeoutOnEnter) {
+                super(stableOrdering, shouldTimeoutOnEnter);
+            }
+
+            @Override
+            public void removeWatchers() {}
+        }
+        return new MockWatcherRemoveCuratorFramework(true, false);
+    }
+
+    @Override
+    public ConnectionStateErrorPolicy getConnectionStateErrorPolicy() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
+    @Override
+    public QuorumVerifier getCurrentConfig() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
+    @Override
+    public SchemaSet getSchemaSet() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
+    @Override
+    public boolean isZk34CompatibilityMode() { return false; }
+
+    @Override
+    public CompletableFuture<Void> runSafe(Runnable runnable) { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
     @Override
     @Deprecated
@@ -264,7 +325,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     // ----- Factory methods for mocks */
 
     public InterProcessLock createMutex(String path) {
-        return new MockCuratorFramework.MockLock(path);
+        return new MockLock(path);
     }
 
     public MockAtomicCounter createAtomicCounter(String path) {
@@ -272,7 +333,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     }
 
     public Curator.CompletionWaiter createCompletionWaiter() {
-        return new MockCuratorFramework.MockCompletionWaiter();
+        return new MockCompletionWaiter();
     }
 
     public Curator.DirectoryCache createDirectoryCache(String path) {
@@ -397,7 +458,7 @@ public class MockCuratorFramework implements CuratorFramework  {
                 }
             } else if (c > '\u0000' && c < '\u001f' || c > '\u007f' && c < '\u009F'
                        || c > '\ud800' && c < '\uf8ff' || c > '\ufff0' && c < '\uffff') {
-                reason = "invalid charater @" + i;
+                reason = "invalid character @" + i;
                 break;
             }
         }
@@ -706,74 +767,117 @@ public class MockCuratorFramework implements CuratorFramework  {
 
     }
 
+
     // ----- The rest of this file is adapting the Curator (non-recipe) API to the  -----
     // ----- file system methods above.                                             -----
     // ----- There's nothing to see unless you are interested in an illustration of -----
     // ----- the folly of fluent API's or, more generally, mankind.                 -----
+    private abstract static class MockProtectACLCreateModeStatPathAndBytesable<String>
+            implements ProtectACLCreateModeStatPathAndBytesable<String> {
 
-    private abstract static class MockBackgroundACLPathAndBytesableBuilder<T> implements PathAndBytesable<T>, ProtectACLCreateModePathAndBytesable<T> {
-
-        public BackgroundPathAndBytesable<T> withACL(List<ACL> list) {
+        public BackgroundPathAndBytesable<String> withACL(List<ACL> list) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
-        public ACLBackgroundPathAndBytesable<T> withMode(CreateMode createMode) {
+        public BackgroundPathAndBytesable<String> withACL(List<ACL> list, boolean b) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        public ProtectACLCreateModeStatPathAndBytesable<String> withMode(CreateMode createMode) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
         @Override
-        public ACLCreateModeBackgroundPathAndBytesable<String> withProtection() {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        public ACLCreateModeBackgroundPathAndBytesable<java.lang.String> withProtection() {
+            return null;
         }
 
-        public T forPath(String s, byte[] bytes) throws Exception {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        @Override
+        public ErrorListenerPathAndBytesable<String> inBackground() {
+            return null;
         }
 
-        public T forPath(String s) throws Exception {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        @Override
+        public ErrorListenerPathAndBytesable<String> inBackground(Object o) {
+            return null;
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback) {
+            return null;
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback, Object o) {
+            return null;
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback, Executor executor) {
+            return null;
+        }
+
+        @Override
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
+            return null;
+        }
+
+        @Override
+        public ACLBackgroundPathAndBytesable<String> storingStatIn(Stat stat) {
+            return null;
         }
 
     }
 
-    private class MockCreateBuilder extends MockBackgroundACLPathAndBytesableBuilder<String> implements CreateBuilder {
+    private class MockCreateBuilder implements CreateBuilder {
 
         private boolean createParents = false;
         private CreateMode createMode = CreateMode.PERSISTENT;
 
         @Override
-        public ProtectACLCreateModePathAndBytesable<String> creatingParentsIfNeeded() {
+        public ProtectACLCreateModeStatPathAndBytesable<String> creatingParentsIfNeeded() {
             createParents = true;
-            return this;
+            return new MockProtectACLCreateModeStatPathAndBytesable<>() {
+
+                @Override
+                public String forPath(String s, byte[] bytes) throws Exception {
+                    return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners);
+                }
+
+                @Override
+                public String forPath(String s) throws Exception {
+                    return createNode(s, new byte[0], createParents, createMode, fileSystem.root(), listeners);
+                }
+
+            };
         }
 
         @Override
-        public ACLCreateModeBackgroundPathAndBytesable<String> withProtection() {
-            // Protection against the server crashing after creating the file but before returning to the client.
-            // Not relevant for an in-memory mock, obviously
-            return this;
-        }
+        public ProtectACLCreateModeStatPathAndBytesable<String> creatingParentContainersIfNeeded() {
+            return new MockProtectACLCreateModeStatPathAndBytesable<>() {
 
-        public ACLBackgroundPathAndBytesable<String> withMode(CreateMode createMode) {
-            this.createMode = createMode;
-            return this;
-        }
+                @Override
+                public String forPath(String s, byte[] bytes) throws Exception {
+                    return createNode(s, bytes, createParents, createMode, fileSystem.root(), listeners);
+                }
 
-        @Override
-        public CreateBackgroundModeACLable compressed() {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
+                @Override
+                public String forPath(String s) throws Exception {
+                    return createNode(s, new byte[0], createParents, createMode, fileSystem.root(), listeners);
+                }
 
-        @Override
-        public ProtectACLCreateModePathAndBytesable<String> creatingParentContainersIfNeeded() {
-            // TODO: Add proper support for container nodes, see https://issues.apache.org/jira/browse/ZOOKEEPER-2163.
-            return creatingParentsIfNeeded();
+            };
         }
 
         @Override
         @Deprecated
         public ACLPathAndBytesable<String> withProtectedEphemeralSequential() {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public ACLCreateModeStatBackgroundPathAndBytesable<String> withProtection() {
+            return null;
         }
 
         public String forPath(String s) throws Exception {
@@ -812,6 +916,47 @@ public class MockCuratorFramework implements CuratorFramework  {
         @Override
         public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public CreateBuilderMain withTtl(long l) {
+            return null;
+        }
+
+        @Override
+        public CreateBuilder2 orSetData() {
+            return null;
+        }
+
+        @Override
+        public CreateBuilder2 orSetData(int i) {
+            return null;
+        }
+
+        @Override
+        public CreateBackgroundModeStatACLable compressed() {
+            return null;
+        }
+
+        @Override
+        public CreateProtectACLCreateModePathAndBytesable<String> storingStatIn(Stat stat) {
+            return null;
+        }
+
+        @Override
+        public BackgroundPathAndBytesable<String> withACL(List<ACL> list) {
+            return null;
+        }
+
+        @Override
+        public ACLBackgroundPathAndBytesable<String> withMode(CreateMode createMode) {
+            this.createMode = createMode;
+            return this;
+        }
+
+        @Override
+        public BackgroundPathAndBytesable<String> withACL(List<ACL> list, boolean b) {
+            return null;
         }
     }
 
@@ -885,7 +1030,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     private class MockExistsBuilder extends MockBackgroundPathableBuilder<Stat> implements ExistsBuilder {
 
         @Override
-        public Stat forPath(String path) {
+        public Stat forPath(String path) throws Exception {
             try {
                 MemoryFileSystem.Node node = getNode(path, fileSystem.root());
                 Stat stat = new Stat();
@@ -898,7 +1043,12 @@ public class MockCuratorFramework implements CuratorFramework  {
         }
 
         @Override
-        public ExistsBuilderMain creatingParentContainersIfNeeded() {
+        public ACLableExistBuilderMain creatingParentsIfNeeded() {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public ACLableExistBuilderMain creatingParentContainersIfNeeded() {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
     }
@@ -928,6 +1078,10 @@ public class MockCuratorFramework implements CuratorFramework  {
             return null;
         }
 
+        @Override
+        public DeleteBuilderMain quietly() {
+            return this;
+        }
     }
 
     private class MockGetDataBuilder extends MockBackgroundPathableBuilder<byte[]> implements GetDataBuilder {
@@ -937,18 +1091,48 @@ public class MockCuratorFramework implements CuratorFramework  {
             throw new UnsupportedOperationException("Not implemented in MockCurator");
         }
 
-        @Override
-        public WatchPathable<byte[]> storingStatIn(Stat stat) {
-            throw new UnsupportedOperationException("Not implemented in MockCurator");
-        }
-
         public byte[] forPath(String path) throws Exception {
             return getData(path, fileSystem.root());
         }
 
+        @Override
+        public ErrorListenerPathable<byte[]> inBackground() {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public ErrorListenerPathable<byte[]> inBackground(Object o) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback backgroundCallback) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback backgroundCallback, Object o) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback backgroundCallback, Executor executor) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback backgroundCallback, Object o, Executor executor) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
+
+        @Override
+        public WatchPathable<byte[]> storingStatIn(Stat stat) {
+            throw new UnsupportedOperationException("Not implemented in MockCurator");
+        }
     }
 
-    private class MockSetDataBuilder extends MockBackgroundACLPathAndBytesableBuilder<Stat> implements SetDataBuilder {
+    // extends MockBackgroundACLPathAndBytesableBuilder<Stat>
+    private class MockSetDataBuilder implements SetDataBuilder {
 
         @Override
         public SetDataBackgroundVersionable compressed() {
@@ -963,6 +1147,11 @@ public class MockCuratorFramework implements CuratorFramework  {
         @Override
         public Stat forPath(String path, byte[] bytes) throws Exception {
             setData(path, bytes, fileSystem.root(), listeners);
+            return null;
+        }
+
+        @Override
+        public Stat forPath(String s) throws Exception {
             return null;
         }
 
@@ -1017,18 +1206,18 @@ public class MockCuratorFramework implements CuratorFramework  {
     private class MockCuratorTransactionFinal implements CuratorTransactionFinal {
 
         /** The new directory root in which the transactional changes are made */
-        private final MemoryFileSystem.Node newRoot;
+        private MemoryFileSystem.Node newRoot;
 
         private boolean committed = false;
 
-        private final MockCuratorTransactionFinal.DelayedListener delayedListener = new MockCuratorTransactionFinal.DelayedListener();
+        private final DelayedListener delayedListener = new DelayedListener();
 
         public MockCuratorTransactionFinal() {
             newRoot = fileSystem.root().clone();
         }
 
         @Override
-        public Collection<CuratorTransactionResult> commit() {
+        public Collection<CuratorTransactionResult> commit() throws Exception {
             fileSystem.replaceRoot(newRoot);
             committed = true;
             delayedListener.commit();
@@ -1038,19 +1227,19 @@ public class MockCuratorFramework implements CuratorFramework  {
         @Override
         public TransactionCreateBuilder create() {
             ensureNotCommitted();
-            return new MockCuratorTransactionFinal.MockTransactionCreateBuilder();
+            return new MockTransactionCreateBuilder();
         }
 
         @Override
         public TransactionDeleteBuilder delete() {
             ensureNotCommitted();
-            return new MockCuratorTransactionFinal.MockTransactionDeleteBuilder();
+            return new MockTransactionDeleteBuilder();
         }
 
         @Override
         public TransactionSetDataBuilder setData() {
             ensureNotCommitted();
-            return new MockCuratorTransactionFinal.MockTransactionSetDataBuilder();
+            return new MockTransactionSetDataBuilder();
         }
 
         @Override
@@ -1068,11 +1257,6 @@ public class MockCuratorFramework implements CuratorFramework  {
             private CreateMode createMode = CreateMode.PERSISTENT;
 
             @Override
-            public PathAndBytesable<CuratorTransactionBridge> withACL(List<ACL> list) {
-                throw new UnsupportedOperationException("Not implemented in MockCurator");
-            }
-
-            @Override
             public ACLCreateModePathAndBytesable<CuratorTransactionBridge> compressed() {
                 throw new UnsupportedOperationException("Not implemented in MockCurator");
             }
@@ -1086,15 +1270,29 @@ public class MockCuratorFramework implements CuratorFramework  {
             @Override
             public CuratorTransactionBridge forPath(String s, byte[] bytes) throws Exception {
                 createNode(s, bytes, false, createMode, newRoot, delayedListener);
-                return new MockCuratorTransactionFinal.MockCuratorTransactionBridge();
+                return new MockCuratorTransactionBridge();
             }
 
             @Override
             public CuratorTransactionBridge forPath(String s) throws Exception {
                 createNode(s, new byte[0], false, createMode, newRoot, delayedListener);
-                return new MockCuratorTransactionFinal.MockCuratorTransactionBridge();
+                return new MockCuratorTransactionBridge();
             }
 
+            @Override
+            public TransactionCreateBuilder2 withTtl(long l) {
+                return this;
+            }
+
+            @Override
+            public Object withACL(List list, boolean b) {
+                return this;
+            }
+
+            @Override
+            public Object withACL(List list) {
+                return this;
+            }
         }
 
         private class MockTransactionDeleteBuilder implements TransactionDeleteBuilder {
@@ -1107,7 +1305,7 @@ public class MockCuratorFramework implements CuratorFramework  {
             @Override
             public CuratorTransactionBridge forPath(String path) throws Exception {
                 deleteNode(path, false, newRoot, delayedListener);
-                return new MockCuratorTransactionFinal.MockCuratorTransactionBridge();
+                return new MockCuratorTransactionBridge();
             }
 
         }
@@ -1127,13 +1325,13 @@ public class MockCuratorFramework implements CuratorFramework  {
             @Override
             public CuratorTransactionBridge forPath(String s, byte[] bytes) throws Exception {
                 MockCuratorFramework.this.setData(s, bytes, newRoot, delayedListener);
-                return new MockCuratorTransactionFinal.MockCuratorTransactionBridge();
+                return new MockCuratorTransactionBridge();
             }
 
             @Override
             public CuratorTransactionBridge forPath(String s) throws Exception {
                 MockCuratorFramework.this.setData(s, new byte[0], newRoot, delayedListener);
-                return new MockCuratorTransactionFinal.MockCuratorTransactionBridge();
+                return new MockCuratorTransactionBridge();
             }
 
         }
