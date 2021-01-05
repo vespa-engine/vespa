@@ -45,7 +45,7 @@ class ReindexerTest {
     final DocumentmanagerConfig musicConfig = Deriver.getDocumentManagerConfig("src/test/resources/schemas/music.sd").build();
     final DocumentTypeManager manager = new DocumentTypeManager(musicConfig);
     final DocumentType music = manager.getDocumentType("music");
-    final Cluster cluster = new Cluster("cluster", "id", Map.of(music, "default"));
+    final Cluster cluster = new Cluster("cluster", Map.of(music, "default"));
     final MockMetric metric = new MockMetric();
     final ManualClock clock = new ManualClock(Instant.EPOCH);
 
@@ -59,7 +59,7 @@ class ReindexerTest {
     @Test
     void throwsWhenUnknownBuckets() {
         assertThrows(NullPointerException.class,
-                     () -> new Reindexer(new Cluster("cluster", "id", Map.of()), Map.of(music, Instant.EPOCH), database, failIfCalled, metric, clock, 0.2));
+                     () -> new Reindexer(new Cluster("cluster", Map.of()), Map.of(music, Instant.EPOCH), database, failIfCalled, metric, clock, 0.2));
     }
 
     @Test
@@ -84,7 +84,7 @@ class ReindexerTest {
         assertEquals("music:[document]", parameters.getFieldSet());
         assertSame(token, parameters.getResumeToken());
         assertEquals("default", parameters.getBucketSpace());
-        assertEquals("[Storage:cluster=cluster;clusterconfigid=id]", parameters.getRoute().toString());
+        assertEquals("cluster-direct", parameters.getRoute().toString());
         assertEquals("cluster", parameters.getRemoteDataHandler());
         assertEquals("music", parameters.getDocumentSelection());
         assertEquals(DocumentProtocol.Priority.NORMAL_3, parameters.getPriority());

@@ -43,7 +43,7 @@ class ReindexingMaintainerTest {
                                               .build(),
                                       manager));
 
-        assertEquals(new Cluster("cluster", "configId", Map.of(manager.getDocumentType("music"), "default")),
+        assertEquals(new Cluster("cluster", Map.of(manager.getDocumentType("music"), "default")),
                      parseCluster("cluster",
                                   new ClusterListConfig.Builder()
                                           .storage(new ClusterListConfig.Storage.Builder()
