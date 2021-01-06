@@ -10,9 +10,9 @@ The following needs to happen to trigger the bug:
 * The replica placement for a given data bucket is non-ideal on at least 2 nodes.
   This can happen during mass node retirement or if several nodes come back up after being down.
   In this scenario the system must move all data away from a subset of replicas. This triggers
-  a special internal optimization that tries to handle many such moves in one go to
-  minimize the required number of message roundtrips. These are known internally as "source-only" replicas.
-* The stored document sets on the source-only bucket replicas are disjoint.
+  a special internal optimization that tries to handle such moves separately to
+  minimize unnecessary data transfer. These are known internally as "source-only" replicas.
+* The stored document sets on the source-only bucket replicas are (possibly partially) disjoint.
 * The total size of document data contained in a source-only bucket replica exceeds the configured
   data merge transfer chunk size (default 4 MiB)
 
