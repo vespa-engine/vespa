@@ -157,7 +157,7 @@ public:
 private:
     // With 100ms resend timeout, this requires a particular node to have failed
     // for _at least_ threshold/10 seconds before a log warning is emitted.
-    constexpr static size_t RequestFailureWarningEdgeTriggerThreshold = 20;
+    constexpr static size_t RequestFailureWarningEdgeTriggerThreshold = 200;
 
     /**
      * Creates a pending cluster state that represents
