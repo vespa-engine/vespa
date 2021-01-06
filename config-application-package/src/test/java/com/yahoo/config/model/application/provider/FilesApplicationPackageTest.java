@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.application.TestBase;
@@ -9,24 +9,29 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.25
  */
 public class FilesApplicationPackageTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testPreprocessing() throws IOException {
@@ -99,6 +104,17 @@ public class FilesApplicationPackageTest {
         assertTrue(app.getMajorVersion().isPresent());
         assertEquals(6, (int)app.getMajorVersion().get());
         assertEquals(IOUtils.readAll(app.getDeployment().get()), IOUtils.readAll(new FileReader(deployment)));
+    }
+
+    @Test
+    public void failOnEmptyServicesXml() throws IOException {
+        File appDir = temporaryFolder.newFolder();
+        IOUtils.copyDirectory(new File("src/test/resources/multienvapp"), appDir);
+        Files.delete(new File(appDir, "services.xml").toPath());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(containsString("services.xml in application package is empty"));
+        app.preprocess(new Zone(Environment.dev, RegionName.defaultName()), new BaseDeployLogger());
     }
 
 }
