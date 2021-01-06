@@ -616,11 +616,19 @@ public class FilesApplicationPackage implements ApplicationPackage {
                                                                                          ! name.equals(SERVICES) &&
                                                                                          ! name.equals(HOSTS) &&
                                                                                          ! name.equals(CONFIG_DEFINITIONS_DIR));
-        preprocessXML(new File(preprocessedDir, SERVICES), getServicesFile(), zone);
+        File servicesFile = validateServicesFile();
+        preprocessXML(new File(preprocessedDir, SERVICES), servicesFile, zone);
         preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
         FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
+    }
+
+    private File validateServicesFile() throws IOException {
+        File servicesFile = getServicesFile();
+        if ( ! servicesFile.exists() || IOUtils.readFile(servicesFile).isEmpty())
+            throw new IllegalArgumentException(SERVICES + " in application package is empty");
+        return servicesFile;
     }
 
     private void copyUserDefsIntoApplication() {
