@@ -50,7 +50,7 @@ public class EndpointCertificateManagerTest {
     private final EndpointCertificateManager endpointCertificateManager =
             new EndpointCertificateManager(zoneRegistryMock, mockCuratorDb, secretStore, endpointCertificateMock, clock, inMemoryFlagSource);
 
-    private static List<String> expectedSans = List.of(
+    private static final List<String> expectedSans = List.of(
             "vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa.oath.cloud",
             "default.default.global.vespa.oath.cloud",
             "*.default.default.global.vespa.oath.cloud",
@@ -62,17 +62,17 @@ public class EndpointCertificateManagerTest {
             "*.default.default.us-east-3.staging.vespa.oath.cloud"
     );
 
-    private static List<String> expectedAdditionalSans = List.of(
+    private static final List<String> expectedAdditionalSans = List.of(
             "default.default.ap-northeast-1.vespa.oath.cloud",
             "*.default.default.ap-northeast-1.vespa.oath.cloud"
     );
 
-    private static List<String> expectedCombinedSans = new ArrayList<>() {{
+    private static final List<String> expectedCombinedSans = new ArrayList<>() {{
         addAll(expectedSans);
         addAll(expectedAdditionalSans);
     }};
 
-    private static List<String> expectedDevSans = List.of(
+    private static final List<String> expectedDevSans = List.of(
             "vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa.oath.cloud",
             "default.default.us-east-1.dev.vespa.oath.cloud",
             "*.default.default.us-east-1.dev.vespa.oath.cloud"
