@@ -74,9 +74,9 @@ public class BucketId implements Comparable<BucketId> {
 
     public int compareTo(BucketId other) {
         if (id >>> 32 == other.id >>> 32) {
-            if ((id & 0xFFFFFFFFl) > (other.id & 0xFFFFFFFFl)) {
+            if ((id & 0xFFFFFFFFL) > (other.id & 0xFFFFFFFFL)) {
                 return 1;
-            } else if ((id & 0xFFFFFFFFl) < (other.id & 0xFFFFFFFFl)) {
+            } else if ((id & 0xFFFFFFFFL) < (other.id & 0xFFFFFFFFL)) {
                 return -1;
             }
             return 0;
@@ -97,8 +97,8 @@ public class BucketId implements Comparable<BucketId> {
 
     public long getId() {
         int notUsed = 64 - getUsedBits();
-        long usedMask = (0xFFFFFFFFFFFFFFFFl << notUsed) >>> notUsed;
-        long countMask = (0xFFFFFFFFFFFFFFFFl >>> (64 - COUNT_BITS)) << (64 - COUNT_BITS);
+        long usedMask  = (0xFFFFFFFFFFFFFFFFL << notUsed) >>> notUsed;
+        long countMask = (0xFFFFFFFFFFFFFFFFL >>> (64 - COUNT_BITS)) << (64 - COUNT_BITS);
         return id & (usedMask | countMask);
     }
 
