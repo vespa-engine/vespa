@@ -39,7 +39,7 @@ public class ContainerOperationsImplTest {
     private final TestTerminal terminal = new TestTerminal();
     private final IPAddresses ipAddresses = new IPAddressesMock();
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final ContainerOperationsImpl dockerOperations = new ContainerOperationsImpl(
+    private final ContainerOperationsImpl containerOperations = new ContainerOperationsImpl(
             containerEngine, terminal, ipAddresses, fileSystem);
 
     @Test
@@ -50,7 +50,7 @@ public class ContainerOperationsImplTest {
         when(containerEngine.executeInContainerAsUser(any(), any(), any(), any()))
                 .thenReturn(actualResult); // output from node program
 
-        ProcessResult result = dockerOperations.executeNodeCtlInContainer(context, "start");
+        ProcessResult result = containerOperations.executeNodeCtlInContainer(context, "start");
 
         final InOrder inOrder = inOrder(containerEngine);
         inOrder.verify(containerEngine, times(1)).executeInContainerAsUser(
@@ -71,7 +71,7 @@ public class ContainerOperationsImplTest {
         when(containerEngine.executeInContainerAsUser(any(), any(), any(), any()))
                 .thenReturn(actualResult); // output from node program
 
-        dockerOperations.executeNodeCtlInContainer(context, "start");
+        containerOperations.executeNodeCtlInContainer(context, "start");
     }
 
     @Test
@@ -81,7 +81,7 @@ public class ContainerOperationsImplTest {
 
         terminal.expectCommand("nsenter --net=/proc/42/ns/net -- iptables -nvL 2>&1");
 
-        dockerOperations.executeCommandInNetworkNamespace(context, "iptables", "-nvL");
+        containerOperations.executeCommandInNetworkNamespace(context, "iptables", "-nvL");
     }
 
     private Container makeContainer(String name, Container.State state, int pid) {
@@ -98,7 +98,7 @@ public class ContainerOperationsImplTest {
         InetAddress ipV6Local = InetAddresses.forString("::1");
         InetAddress ipV4Local = InetAddresses.forString("127.0.0.1");
 
-        dockerOperations.addEtcHosts(containerData, hostname, Optional.empty(), Optional.of(ipV6Local));
+        containerOperations.addEtcHosts(containerData, hostname, Optional.empty(), Optional.of(ipV6Local));
 
         verify(containerData, times(1)).addFile(
                 fileSystem.getPath("/etc/hosts"),
@@ -111,7 +111,7 @@ public class ContainerOperationsImplTest {
                         "ff02::2	ip6-allrouters\n" +
                         "0:0:0:0:0:0:0:1	hostname\n");
 
-        dockerOperations.addEtcHosts(containerData, hostname, Optional.of(ipV4Local), Optional.of(ipV6Local));
+        containerOperations.addEtcHosts(containerData, hostname, Optional.of(ipV4Local), Optional.of(ipV6Local));
 
         verify(containerData, times(1)).addFile(
                 fileSystem.getPath("/etc/hosts"),
@@ -130,7 +130,7 @@ public class ContainerOperationsImplTest {
     public void retainContainersTest() {
         when(containerEngine.listManagedContainers(ContainerOperationsImpl.MANAGER_NAME))
                 .thenReturn(List.of(new ContainerName("cnt1"), new ContainerName("cnt2"), new ContainerName("cnt3")));
-        dockerOperations.retainManagedContainers(Set.of(new ContainerName("cnt2"), new ContainerName("cnt4")));
+        containerOperations.retainManagedContainers(Set.of(new ContainerName("cnt2"), new ContainerName("cnt4")));
 
         verify(containerEngine).stopContainer(eq(new ContainerName("cnt1")));
         verify(containerEngine).deleteContainer(eq(new ContainerName("cnt1")));
