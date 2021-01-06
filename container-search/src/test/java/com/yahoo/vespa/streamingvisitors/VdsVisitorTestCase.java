@@ -247,7 +247,7 @@ public class VdsVisitorTestCase {
         if (qa.maxBucketsPerVisitor != 0) {
             assertEquals(qa.maxBucketsPerVisitor, params.getMaxBucketsPerVisitor());
         } else {
-            assertEquals(Integer.MAX_VALUE, params.getMaxBucketsPerVisitor());
+            assertEquals(VdsVisitor.MAX_BUCKETS_PER_VISITOR, params.getMaxBucketsPerVisitor());
         }
         assertEquals(false, params.getDynamicallyIncreaseMaxBucketsPerVisitor());
 

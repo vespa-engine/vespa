@@ -64,6 +64,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private static final CompoundName streamingPriority=new CompoundName("streaming.priority");
     private static final CompoundName streamingMaxbucketspervisitor=new CompoundName("streaming.maxbucketspervisitor");
 
+    protected static final int MAX_BUCKETS_PER_VISITOR = 1024;
+
     private static final Logger log = Logger.getLogger(VdsVisitor.class.getName());
     private final VisitorParameters params = new VisitorParameters("");
     private List<SearchResult.Hit> hits = new ArrayList<>();
@@ -199,7 +201,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
 
         params.setMaxPending(Integer.MAX_VALUE);
-        params.setMaxBucketsPerVisitor(Integer.MAX_VALUE);
+        params.setMaxBucketsPerVisitor(MAX_BUCKETS_PER_VISITOR);
         params.setTraceLevel(inferSessionTraceLevel(query));
 
 
