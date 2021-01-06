@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -83,8 +82,8 @@ public class NodeRepositoryNode {
     private Integer cost;
     @JsonProperty("history")
     private List<NodeHistory> history;
-    @JsonProperty("orchestratorStatus")
-    private String orchestratorStatus;
+    @JsonProperty("allowedToBeDown")
+    private Boolean allowedToBeDown;
     @JsonProperty("suspendedSinceMillis")
     private Long suspendedSinceMillis;
     @JsonProperty("reports")
@@ -328,15 +327,8 @@ public class NodeRepositoryNode {
         this.history = history;
     }
 
-    public OrchestratorStatus getOrchestratorStatus() {
-        if (orchestratorStatus == null) {
-            return OrchestratorStatus.NO_REMARKS;
-        }
-
-        return Stream.of(OrchestratorStatus.values())
-                .filter(status -> status.name().equalsIgnoreCase(orchestratorStatus))
-                .findAny()
-                .orElse(OrchestratorStatus.OTHER);
+    public Boolean getAllowedToBeDown() {
+        return allowedToBeDown;
     }
 
     public Long suspendedSinceMillis() {
@@ -449,7 +441,7 @@ public class NodeRepositoryNode {
                ", wantToDeprovision=" + wantToDeprovision +
                ", cost=" + cost +
                ", history=" + history +
-               ", orchestratorStatus=" + orchestratorStatus +
+               ", allowedToBeDown=" + allowedToBeDown +
                ", reports=" + reports +
                ", modelName=" + modelName +
                ", reservedTo=" + reservedTo +

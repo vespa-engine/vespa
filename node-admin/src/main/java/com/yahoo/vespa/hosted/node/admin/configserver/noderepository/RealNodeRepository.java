@@ -161,7 +161,7 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.vespaVersion).map(Version::fromString),
                 Optional.ofNullable(node.wantedOsVersion).map(Version::fromString),
                 Optional.ofNullable(node.currentOsVersion).map(Version::fromString),
-                Optional.ofNullable(node.orchestratorStatus).map(OrchestratorStatus::fromString).orElse(OrchestratorStatus.NO_REMARKS),
+                Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(node.owner).map(o -> ApplicationId.from(o.tenant, o.application, o.instance)),
                 membership,
                 Optional.ofNullable(node.restartGeneration),
