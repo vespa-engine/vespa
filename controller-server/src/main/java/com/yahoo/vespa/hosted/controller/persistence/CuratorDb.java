@@ -104,7 +104,7 @@ public class CuratorDb {
     private final Curator curator;
     private final Duration tryLockTimeout;
 
-    // For each job id (path), store the ZK node version and its deserialised data — update when version changes. 
+    // For each job id (path), store the ZK node version and its deserialised data - update when version changes.
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
     @Inject
@@ -531,8 +531,8 @@ public class CuratorDb {
 
     public long readMeteringRefreshTime() {
         return curator.getData(meteringRefreshPath())
-                .map(String::new).map(Long::parseLong)
-                .orElse(0l);
+                      .map(String::new).map(Long::parseLong)
+                      .orElse(0L);
     }
 
     // -------------- Paths ---------------------------------------------------
@@ -572,10 +572,6 @@ public class CuratorDb {
         return lockRoot
                 .append(provisionStatePath())
                 .append(provisionId);
-    }
-
-    private static Path inactiveJobsPath() {
-        return root.append("inactiveJobs");
     }
 
     private static Path upgradesPerMinutePath() {

@@ -8,13 +8,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationData;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DeploymentQuotaCalculatorTest {
 
@@ -55,7 +54,7 @@ public class DeploymentQuotaCalculatorTest {
     }
 
     @Test
-    public void using_highest_resource_use() throws IOException, URISyntaxException {
+    public void using_highest_resource_use() throws Exception {
         var content = new String(Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/application/response/application.json")));
         var mapper = new ObjectMapper();
         var application = mapper.readValue(content, ApplicationData.class).toApplication();

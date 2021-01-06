@@ -13,7 +13,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -89,13 +88,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
     private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
+    private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private List<ProtonMetrics> protonMetrics;
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
     private ConfigChangeActions configChangeActions = null;
     private String log = "INFO - All good";
-    private Map<DeploymentId, TestReport> testReport = new HashMap<>();
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {

@@ -6,12 +6,10 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
@@ -31,12 +29,14 @@ import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationA
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+/**
+ * @author oyving
+ */
 public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/";
 
     private ContainerTester tester;
-    private DeploymentTester deploymentTester;
 
     private static final TenantName tenantName = TenantName.from("scoober");
     private static final ApplicationName applicationName = ApplicationName.from("albums");
@@ -46,8 +46,6 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester = new ContainerTester(container, responseFiles);
         ((InMemoryFlagSource) tester.controller().flagSource())
                 .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
-        deploymentTester = new DeploymentTester(new ControllerTester(tester));
-        deploymentTester.controllerTester().computeVersionStatus();
         setupTenantAndApplication();
     }
 

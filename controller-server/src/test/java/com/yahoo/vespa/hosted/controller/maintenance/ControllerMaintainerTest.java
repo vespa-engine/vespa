@@ -44,7 +44,7 @@ public class ControllerMaintainerTest {
         maintainer.run();
         assertEquals(2L, consecutiveFailuresMetric());
         maintainer.success = true;
-        maintainer.run();;
+        maintainer.run();
         assertEquals(0, consecutiveFailuresMetric());
     }
 

@@ -87,9 +87,10 @@ public class Upgrader extends ControllerMaintainer {
 
         // Schedule the right upgrades
         InstanceList instances = instances();
-        upgrade(instances.with(UpgradePolicy.canary), canaryTarget, instances.size());
-        defaultTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.defaultPolicy), target, numberOfApplicationsToUpgrade()));
-        conservativeTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.conservative), target, numberOfApplicationsToUpgrade()));
+        Optional<Integer> targetMajorVersion = targetMajorVersion();
+        upgrade(instances.with(UpgradePolicy.canary), canaryTarget, targetMajorVersion, instances.size());
+        defaultTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.defaultPolicy), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
+        conservativeTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.conservative), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
         return true;
     }
 
@@ -113,9 +114,9 @@ public class Upgrader extends ControllerMaintainer {
                            .unpinned();
     }
 
-    private void upgrade(InstanceList instances, Version version, int numberToUpgrade) {
+    private void upgrade(InstanceList instances, Version version, Optional<Integer> targetMajorVersion, int numberToUpgrade) {
         instances.not().failingOn(version)
-                 .allowMajorVersion(version.getMajor(), targetMajorVersion().orElse(version.getMajor()))
+                 .allowMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
                  .not().deploying()
                  .onLowerVersionThan(version)
                  .canUpgradeAt(version, controller().clock().instant())
