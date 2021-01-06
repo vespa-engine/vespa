@@ -13,6 +13,7 @@
 using namespace vespalib;
 using make_string_short::fmt;
 using Handle = SharedStringRepo::Handle;
+using Handles = SharedStringRepo::Handles;
 
 bool verbose = false;
 double budget = 0.10;
@@ -30,12 +31,7 @@ std::vector<vespalib::string> make_strings(size_t cnt) {
 }
 
 std::vector<vespalib::string> copy_strings(const std::vector<vespalib::string> &strings) {
-    std::vector<vespalib::string> result;
-    result.reserve(strings.size());
-    for (const auto &str: strings) {
-        result.push_back(str);
-    }
-    return result;
+    return strings;
 }
 
 std::vector<std::pair<vespalib::string, uint64_t>> copy_and_hash(const std::vector<vespalib::string> &strings) {
@@ -75,20 +71,27 @@ std::vector<vespalib::string> get_strings(const std::vector<Handle> &handles) {
     return strings;
 }
 
-std::unique_ptr<SharedStringRepo::StrongHandles> make_strong_handles(const std::vector<vespalib::string> &strings) {
-    auto result = std::make_unique<SharedStringRepo::StrongHandles>(strings.size());
+std::unique_ptr<SharedStringRepo::Handles> make_strong_handles(const std::vector<vespalib::string> &strings) {
+    auto result = std::make_unique<SharedStringRepo::Handles>();
+    result->reserve(strings.size());
     for (const auto &str: strings) {
         result->add(str);
     }
     return result;
 }
 
-std::unique_ptr<SharedStringRepo::WeakHandles> make_weak_handles(const SharedStringRepo::HandleView &view) {
-    auto result = std::make_unique<SharedStringRepo::WeakHandles>(view.handles().size());
-    for (uint32_t handle: view.handles()) {
-        result->add(handle);
+std::unique_ptr<SharedStringRepo::Handles> copy_strong_handles(const SharedStringRepo::Handles &handles) {
+    const auto &view = handles.view();
+    auto result = std::make_unique<SharedStringRepo::Handles>();
+    result->reserve(view.size());
+    for (const auto &handle: view) {
+        result->push_back(handle);
     }
-    return result;    
+    return result;
+}
+
+std::unique_ptr<std::vector<string_id>> make_weak_handles(const SharedStringRepo::Handles &handles) {
+    return std::make_unique<std::vector<string_id>>(handles.view());
 }
 
 //-----------------------------------------------------------------------------
@@ -183,8 +186,9 @@ struct Fixture {
             std::vector<Handle> copy_handles_result;
             std::vector<Handle> resolve_again_result;
             std::vector<vespalib::string> get_result;
-            std::unique_ptr<SharedStringRepo::StrongHandles> strong;
-            std::unique_ptr<SharedStringRepo::WeakHandles> weak;
+            std::unique_ptr<SharedStringRepo::Handles> strong;
+            std::unique_ptr<SharedStringRepo::Handles> strong_copy;
+            std::unique_ptr<std::vector<string_id>> weak;
             auto copy_strings_task = [&](){ copy_strings_result = copy_strings(work); };
             auto copy_and_hash_task = [&](){ copy_and_hash_result = copy_and_hash(work); };
             auto local_enum_task = [&](){ local_enum_result = local_enum(work); };
@@ -195,8 +199,10 @@ struct Fixture {
             auto reclaim_task = [&]() { resolve_again_result.clear(); };
             auto reclaim_last_task = [&]() { resolve_result.clear(); };
             auto make_strong_task = [&]() { strong = make_strong_handles(work); };
-            auto make_weak_task = [&]() { weak = make_weak_handles(strong->view()); };
+            auto copy_strong_task = [&]() { strong_copy = copy_strong_handles(*strong); };
+            auto make_weak_task = [&]() { weak = make_weak_handles(*strong); };
             auto free_weak_task = [&]() { weak.reset(); };
+            auto free_strong_copy_task = [&]() { strong_copy.reset(); };
             auto free_strong_task = [&]() { strong.reset(); };
             measure_task("[01] copy strings", is_master, copy_strings_task);
             measure_task("[02] copy and hash", is_master, copy_and_hash_task);
@@ -211,34 +217,115 @@ struct Fixture {
             copy_handles_result.clear();
             measure_task("[09] reclaim last", is_master, reclaim_last_task);
             measure_task("[10] make strong handles", is_master, make_strong_task);
-            measure_task("[11] make weak handles", is_master, make_weak_task);
-            measure_task("[12] free weak handles", is_master, free_weak_task);
-            measure_task("[13] free strong handles", is_master, free_strong_task);
+            measure_task("[11] copy strong handles", is_master, copy_strong_task);
+            measure_task("[12] make weak handles", is_master, make_weak_task);
+            measure_task("[13] free weak handles", is_master, free_weak_task);
+            measure_task("[14] free strong handles copy", is_master, free_strong_copy_task);
+            measure_task("[15] free strong handles", is_master, free_strong_task);
         }
     }
 };
 
 //-----------------------------------------------------------------------------
 
-TEST("require that basic usage works") {
+void verify_eq(const Handle &a, const Handle &b) {
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(a.id() == b.id());
+    EXPECT_FALSE(a != b);
+    EXPECT_FALSE(a.id() != b.id());
+    EXPECT_FALSE(a < b);
+    EXPECT_FALSE(a.id() < b.id());
+    EXPECT_FALSE(b < a);
+    EXPECT_FALSE(b.id() < a.id());
+}
+
+void verify_not_eq(const Handle &a, const Handle &b) {
+    EXPECT_FALSE(a == b);
+    EXPECT_FALSE(a.id() == b.id());
+    EXPECT_TRUE(a != b);
+    EXPECT_TRUE(a.id() != b.id());
+    EXPECT_NOT_EQUAL((a < b), (b < a));
+    EXPECT_NOT_EQUAL((a.id() < b.id()), (b.id() < a.id()));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that basic handle usage works") {
     Handle empty;
     Handle foo("foo");
     Handle bar("bar");
     Handle empty2;
     Handle foo2("foo");
-    Handle bar2(bar);
-    EXPECT_EQUAL(empty.id(), 0u);
-    EXPECT_TRUE(empty.id() != foo.id());
-    EXPECT_TRUE(empty.id() != bar.id());
-    EXPECT_TRUE(foo.id() != bar.id());
-    EXPECT_EQUAL(empty.id(), empty2.id());
-    EXPECT_EQUAL(foo.id(), foo2.id());
-    EXPECT_EQUAL(bar.id(), bar2.id());
+    Handle bar2("bar");
+
+    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 2u);
+
+    TEST_DO(verify_eq(empty, empty2));
+    TEST_DO(verify_eq(foo, foo2));
+    TEST_DO(verify_eq(bar, bar2));
+
+    TEST_DO(verify_not_eq(empty, foo));
+    TEST_DO(verify_not_eq(empty, bar));
+    TEST_DO(verify_not_eq(foo, bar));
+
+    EXPECT_TRUE(empty.id() == string_id());
+    EXPECT_TRUE(empty2.id() == string_id());
     EXPECT_EQUAL(empty.as_string(), vespalib::string(""));
+    EXPECT_EQUAL(empty2.as_string(), vespalib::string(""));
     EXPECT_EQUAL(foo.as_string(), vespalib::string("foo"));
     EXPECT_EQUAL(bar.as_string(), vespalib::string("bar"));
     EXPECT_EQUAL(foo2.as_string(), vespalib::string("foo"));
     EXPECT_EQUAL(bar2.as_string(), vespalib::string("bar"));
+}
+
+TEST("require that handles can be copied") {
+    Handle a("foo");
+    Handle b(a);
+    Handle c;
+    c = b;
+    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 1u);
+    EXPECT_TRUE(a.id() == b.id());
+    EXPECT_TRUE(b.id() == c.id());
+    EXPECT_EQUAL(c.as_string(), vespalib::string("foo"));
+}
+
+TEST("require that handles can be moved") {
+    Handle a("foo");
+    Handle b(std::move(a));
+    Handle c;
+    c = std::move(b);
+    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 1u);
+    EXPECT_TRUE(a.id() == string_id());
+    EXPECT_TRUE(b.id() == string_id());
+    EXPECT_EQUAL(c.as_string(), vespalib::string("foo"));
+}
+
+TEST("require that handle/string can be obtained from string_id") {
+    Handle a("str");
+    Handle b = Handle::handle_from_id(a.id());
+    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 1u);
+    EXPECT_EQUAL(Handle::string_from_id(b.id()), vespalib::string("str"));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that basic multi-handle usage works") {
+    Handles a;
+    a.reserve(4);
+    Handle foo("foo");
+    Handle bar("bar");
+    EXPECT_TRUE(a.add("foo") == foo.id());
+    EXPECT_TRUE(a.add("bar") == bar.id());
+    a.push_back(foo.id());
+    a.push_back(bar.id());
+    Handles b(std::move(a));
+    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 2u);
+    EXPECT_EQUAL(a.view().size(), 0u);
+    EXPECT_EQUAL(b.view().size(), 4u);
+    EXPECT_TRUE(b.view()[0] == foo.id());
+    EXPECT_TRUE(b.view()[1] == bar.id());
+    EXPECT_TRUE(b.view()[2] == foo.id());
+    EXPECT_TRUE(b.view()[3] == bar.id());
 }
 
 //-----------------------------------------------------------------------------
@@ -269,6 +356,22 @@ TEST_MT_F("test shared string repo operations with 32 threads", 32, Fixture(num_
 
 TEST_MT_F("test shared string repo operations with 64 threads", 64, Fixture(num_threads)) {
     f1.benchmark(thread_id == 0);
+}
+
+//-----------------------------------------------------------------------------
+
+#if 0
+// verify leak-detection and reporting
+
+TEST("leak some handles on purpose") {
+    new Handle("leaked string");
+    new Handle("also leaked");
+    new Handle("even more leak");
+}
+#endif
+
+TEST("require that no handles have leaked during testing") {
+    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 0u);
 }
 
 //-----------------------------------------------------------------------------

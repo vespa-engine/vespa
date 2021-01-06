@@ -65,7 +65,7 @@ struct DimSpec {
         assert(dim_type == DimType::CHILD_IDX);
         return idx;
     }
-    label_t get_label_name() const {
+    string_id get_label_name() const {
         assert(dim_type == DimType::LABEL_STR);
         return str.id();
     }
@@ -204,12 +204,12 @@ struct DensePlan {
 
 struct SparseState {
     std::vector<Handle> handles;
-    std::vector<label_t> view_addr;
-    std::vector<const label_t *> lookup_refs;
-    std::vector<label_t> output_addr;
-    std::vector<label_t *> fetch_addr;
+    std::vector<string_id> view_addr;
+    std::vector<const string_id *> lookup_refs;
+    std::vector<string_id> output_addr;
+    std::vector<string_id *> fetch_addr;
 
-    SparseState(std::vector<Handle> handles_in, std::vector<label_t> view_addr_in, size_t out_dims)
+    SparseState(std::vector<Handle> handles_in, std::vector<string_id> view_addr_in, size_t out_dims)
         : handles(std::move(handles_in)),
           view_addr(std::move(view_addr_in)),
           lookup_refs(view_addr.size()),
@@ -258,7 +258,7 @@ struct SparsePlan {
     template <typename Getter>
     SparseState make_state(const Getter &get_child_value) const {
         std::vector<Handle> handles;
-        std::vector<label_t> view_addr;
+        std::vector<string_id> view_addr;
         for (const auto & dim : lookup_specs) {
             if (dim.has_child()) {
                 int64_t child_value = get_child_value(dim.get_child_idx());

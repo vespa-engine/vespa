@@ -5,6 +5,7 @@
 #include "inline_operation.h"
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/vespalib/util/shared_string_repo.h>
 
 namespace vespalib::eval {
 
@@ -23,11 +24,11 @@ struct FastLookupView : public Value::Index::View {
     FastLookupView(const FastAddrMap &map_in)
         : map(map_in), subspace(FastAddrMap::npos()) {}
 
-    void lookup(ConstArrayRef<const label_t*> addr) override {
+    void lookup(ConstArrayRef<const string_id*> addr) override {
         subspace = map.lookup(addr);
     }
 
-    bool next_result(ConstArrayRef<label_t*>, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<string_id*>, size_t &idx_out) override {
         if (subspace == FastAddrMap::npos()) {
             return false;
         }
@@ -45,10 +46,10 @@ struct FastFilterView : public Value::Index::View {
     const FastAddrMap        &map;
     std::vector<size_t>       match_dims;
     std::vector<size_t>       extract_dims;
-    std::vector<label_t>      query;
+    std::vector<string_id>      query;
     size_t                    pos;
 
-    bool is_match(ConstArrayRef<label_t> addr) const {
+    bool is_match(ConstArrayRef<string_id> addr) const {
         for (size_t i = 0; i < query.size(); ++i) {
             if (query[i] != addr[match_dims[i]]) {
                 return false;
@@ -73,7 +74,7 @@ struct FastFilterView : public Value::Index::View {
         assert((match_dims.size() + extract_dims.size()) == map.addr_size());
     }
 
-    void lookup(ConstArrayRef<const label_t*> addr) override {
+    void lookup(ConstArrayRef<const string_id*> addr) override {
         assert(addr.size() == query.size());
         for (size_t i = 0; i < addr.size(); ++i) {
             query[i] = *addr[i];
@@ -81,7 +82,7 @@ struct FastFilterView : public Value::Index::View {
         pos = 0;
     }
 
-    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
         while (pos < map.size()) {
             auto addr = map.get_addr(pos);            
             if (is_match(addr)) {
@@ -109,11 +110,11 @@ struct FastIterateView : public Value::Index::View {
     FastIterateView(const FastAddrMap &map_in)
         : map(map_in), pos(FastAddrMap::npos()) {}
 
-    void lookup(ConstArrayRef<const label_t*>) override {
+    void lookup(ConstArrayRef<const string_id*>) override {
         pos = 0;
     }
 
-    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
         if (pos >= map.size()) {
             return false;
         }
@@ -139,8 +140,8 @@ using JoinAddrSource = instruction::SparseJoinPlan::Source;
 
 struct FastValueIndex final : Value::Index {
     FastAddrMap map;
-    FastValueIndex(size_t num_mapped_dims_in, SharedStringRepo::HandleView handle_view, size_t expected_subspaces_in)
-        : map(num_mapped_dims_in, handle_view, expected_subspaces_in) {}
+    FastValueIndex(size_t num_mapped_dims_in, const std::vector<string_id> &labels, size_t expected_subspaces_in)
+        : map(num_mapped_dims_in, labels, expected_subspaces_in) {}
 
     template <typename LCT, typename RCT, typename OCT, typename Fun>
         static const Value &sparse_full_overlap_join(const ValueType &res_type, const Fun &fun,
@@ -217,8 +218,11 @@ template <typename T, bool transient>
 struct FastValue final : Value, ValueBuilder<T> {
 
     using Handles = std::conditional<transient,
-                                     SharedStringRepo::WeakHandles,
-                                     SharedStringRepo::StrongHandles>::type;
+                                     std::vector<string_id>,
+                                     SharedStringRepo::Handles>::type;
+
+    static const std::vector<string_id> &get_view(const std::vector<string_id> &handles) { return handles; }
+    static const std::vector<string_id> &get_view(const SharedStringRepo::Handles &handles) { return handles.view(); }
 
     ValueType my_type;
     size_t my_subspace_size;
@@ -228,9 +232,12 @@ struct FastValue final : Value, ValueBuilder<T> {
 
     FastValue(const ValueType &type_in, size_t num_mapped_dims_in, size_t subspace_size_in, size_t expected_subspaces_in)
         : my_type(type_in), my_subspace_size(subspace_size_in),
-          my_handles(expected_subspaces_in * num_mapped_dims_in),
-          my_index(num_mapped_dims_in, my_handles.view(), expected_subspaces_in),
-          my_cells(subspace_size_in * expected_subspaces_in) {}
+          my_handles(),
+          my_index(num_mapped_dims_in, get_view(my_handles), expected_subspaces_in),
+          my_cells(subspace_size_in * expected_subspaces_in)
+    {
+        my_handles.reserve(expected_subspaces_in * num_mapped_dims_in);
+    }
     ~FastValue() override;
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return my_index; }
@@ -247,17 +254,17 @@ struct FastValue final : Value, ValueBuilder<T> {
             my_index.map.add_mapping(hash);
         }
     }
-    void add_mapping(ConstArrayRef<label_t> addr) {
+    void add_mapping(ConstArrayRef<string_id> addr) {
         uint32_t hash = 0;
-        for (label_t label: addr) {
+        for (string_id label: addr) {
             hash = FastAddrMap::combine_label_hash(hash, FastAddrMap::hash_label(label));
-            my_handles.add(label);
+            my_handles.push_back(label);
         }
         my_index.map.add_mapping(hash);
     }
-    void add_mapping(ConstArrayRef<label_t> addr, uint32_t hash) {
-        for (label_t label: addr) {
-            my_handles.add(label);
+    void add_mapping(ConstArrayRef<string_id> addr, uint32_t hash) {
+        for (string_id label: addr) {
+            my_handles.push_back(label);
         }
         my_index.map.add_mapping(hash);
     }
@@ -265,7 +272,7 @@ struct FastValue final : Value, ValueBuilder<T> {
         add_mapping(addr);
         return my_cells.add_cells(my_subspace_size);
     }
-    ArrayRef<T> add_subspace(ConstArrayRef<label_t> addr) override {
+    ArrayRef<T> add_subspace(ConstArrayRef<string_id> addr) override {
         add_mapping(addr);
         return my_cells.add_cells(my_subspace_size);        
     }
@@ -281,7 +288,7 @@ struct FastValue final : Value, ValueBuilder<T> {
     }
     MemoryUsage get_memory_usage() const override {
         MemoryUsage usage = self_memory_usage<FastValue<T,transient>>();
-        usage.merge(vector_extra_memory_usage(my_handles.view().handles()));
+        usage.merge(vector_extra_memory_usage(get_view(my_handles)));
         usage.merge(my_index.map.estimate_extra_memory_usage());
         usage.merge(my_cells.estimate_extra_memory_usage());
         return usage;
@@ -309,7 +316,7 @@ struct FastDenseValue final : Value, ValueBuilder<T> {
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) override {
         return ArrayRef<T>(my_cells.get(0), my_cells.size);
     }
-    ArrayRef<T> add_subspace(ConstArrayRef<label_t>) override {
+    ArrayRef<T> add_subspace(ConstArrayRef<string_id>) override {
         return ArrayRef<T>(my_cells.get(0), my_cells.size);
     }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
@@ -332,7 +339,7 @@ template <typename T>
 struct FastScalarBuilder final : ValueBuilder<T> {
     T _value;
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) final override { return ArrayRef<T>(&_value, 1); }
-    ArrayRef<T> add_subspace(ConstArrayRef<label_t>) final override { return ArrayRef<T>(&_value, 1); };
+    ArrayRef<T> add_subspace(ConstArrayRef<string_id>) final override { return ArrayRef<T>(&_value, 1); };
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>>) final override { return std::make_unique<ScalarValue<T>>(_value); }
 };
 
@@ -368,7 +375,7 @@ FastValueIndex::sparse_no_overlap_join(const ValueType &res_type, const Fun &fun
 {
     size_t num_mapped_dims = addr_sources.size();
     auto &result = stash.create<FastValue<OCT,true>>(res_type, num_mapped_dims, 1, lhs.map.size()*rhs.map.size());
-    std::vector<label_t> output_addr(num_mapped_dims);
+    std::vector<string_id> output_addr(num_mapped_dims);
     std::vector<size_t> store_lhs_idx;
     std::vector<size_t> store_rhs_idx;
     size_t out_idx = 0;

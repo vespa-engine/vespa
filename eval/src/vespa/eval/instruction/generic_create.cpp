@@ -82,7 +82,7 @@ void my_generic_create_op(State &state, uint64_t param_in) {
                                                                    param.num_mapped_dims,
                                                                    param.dense_subspace_size,
                                                                    param.my_spec.size());
-    std::vector<label_t> sparse_addr;
+    std::vector<string_id> sparse_addr;
     param.my_spec.each_entry([&](const auto &key, const auto &values)
         {
             sparse_addr.clear();

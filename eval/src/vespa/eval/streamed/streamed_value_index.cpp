@@ -18,7 +18,7 @@ struct StreamedFilterView : Value::Index::View
 {
     LabelBlockStream label_blocks;
     std::vector<size_t> view_dims;
-    std::vector<label_t> to_match;
+    std::vector<string_id> to_match;
 
     StreamedFilterView(LabelBlockStream labels, std::vector<size_t> view_dims_in)
       : label_blocks(std::move(labels)),
@@ -28,7 +28,7 @@ struct StreamedFilterView : Value::Index::View
         to_match.reserve(view_dims.size());
     }
 
-    void lookup(ConstArrayRef<const label_t*> addr) override {
+    void lookup(ConstArrayRef<const string_id*> addr) override {
         label_blocks.reset();
         to_match.clear();
         for (auto ptr : addr) {
@@ -37,7 +37,7 @@ struct StreamedFilterView : Value::Index::View
         assert(view_dims.size() == to_match.size());
     }
 
-    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
         while (const auto block = label_blocks.next_block()) {
             idx_out = block.subspace_index;
             bool matches = true;
@@ -66,12 +66,12 @@ struct StreamedIterationView : Value::Index::View
       : label_blocks(std::move(labels))
     {}
 
-    void lookup(ConstArrayRef<const label_t*> addr) override {
+    void lookup(ConstArrayRef<const string_id*> addr) override {
         label_blocks.reset();
         assert(addr.size() == 0);
     }
 
-    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
         if (auto block = label_blocks.next_block()) {
             idx_out = block.subspace_index;
             size_t i = 0;

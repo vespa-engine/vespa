@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "string_id.h"
 #include "spin_lock.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/identity.h>
@@ -23,6 +24,14 @@ namespace vespalib {
  * repo. Handle objects are used to track which strings are in use.
  **/
 class SharedStringRepo {
+public:
+    struct Stats {
+        size_t active_entries;
+        size_t total_entries;
+        Stats();
+        void merge(const Stats &s);
+    };
+
 private:
     static constexpr int NUM_PARTS = 64;
     static constexpr int PART_BITS = 6;
@@ -58,8 +67,7 @@ private:
             void fini(uint32_t next) {
                 _hash = next;
                 _ref_cnt = npos;
-                // to reset or not to reset...
-                // _str.reset();
+                _str.reset();
             }
             vespalib::string as_string() const {
                 assert(!is_free());
@@ -92,7 +100,7 @@ private:
         using HashType = hashtable<Key,Key,Hash,Equal,Identity,hashtable_base::and_modulator>;
 
     private:
-        SpinLock              _lock;
+        mutable SpinLock      _lock;
         std::vector<Entry>    _entries;
         uint32_t              _free;
         HashType              _hash;
@@ -116,6 +124,7 @@ private:
         }
         ~Partition();
         void find_leaked_entries(size_t my_idx) const;
+        Stats stats() const;
 
         uint32_t resolve(const AltKey &alt_key) {
             std::lock_guard guard(_lock);
@@ -130,7 +139,7 @@ private:
             }
         }
 
-        vespalib::string as_string(uint32_t idx) {
+        vespalib::string as_string(uint32_t idx) const {
             std::lock_guard guard(_lock);
             return _entries[idx].as_string();
         }
@@ -156,125 +165,107 @@ private:
     SharedStringRepo();
     ~SharedStringRepo();
 
-    uint32_t resolve(vespalib::stringref str) {
+    string_id resolve(vespalib::stringref str) {
         if (!str.empty()) {
             uint64_t full_hash = XXH3_64bits(str.data(), str.size());
             uint32_t part = full_hash & PART_MASK;
             uint32_t local_hash = full_hash >> PART_BITS;
             uint32_t local_idx = _partitions[part].resolve(AltKey{str, local_hash});
-            return (((local_idx << PART_BITS) | part) + 1);
+            return string_id(((local_idx << PART_BITS) | part) + 1);
         } else {
-            return 0;
+            return {};
         }
     }
 
-    vespalib::string as_string(uint32_t id) {
-        if (id != 0) {
-            uint32_t part = (id - 1) & PART_MASK;
-            uint32_t local_idx = (id - 1) >> PART_BITS;
+    vespalib::string as_string(string_id id) {
+        if (id._id != 0) {
+            uint32_t part = (id._id - 1) & PART_MASK;
+            uint32_t local_idx = (id._id - 1) >> PART_BITS;
             return _partitions[part].as_string(local_idx);
         } else {
             return {};
         }
     }
 
-    uint32_t copy(uint32_t id) {
-        if (id != 0) {
-            uint32_t part = (id - 1) & PART_MASK;
-            uint32_t local_idx = (id - 1) >> PART_BITS;
+    string_id copy(string_id id) {
+        if (id._id != 0) {
+            uint32_t part = (id._id - 1) & PART_MASK;
+            uint32_t local_idx = (id._id - 1) >> PART_BITS;
             _partitions[part].copy(local_idx);
         }
         return id;
     }
 
-    void reclaim(uint32_t id) {
-        if (id != 0) {
-            uint32_t part = (id - 1) & PART_MASK;
-            uint32_t local_idx = (id - 1) >> PART_BITS;
+    void reclaim(string_id id) {
+        if (id._id != 0) {
+            uint32_t part = (id._id - 1) & PART_MASK;
+            uint32_t local_idx = (id._id - 1) >> PART_BITS;
             _partitions[part].reclaim(local_idx);
         }
     }
 
+    static SharedStringRepo _repo;
+
 public:
-    static SharedStringRepo &get();
+    static Stats stats();
 
     // A single stand-alone string handle with ownership
     class Handle {
     private:
-        uint32_t _id;
-        Handle(uint32_t weak_id) : _id(get().copy(weak_id)) {}
+        string_id _id;
+        Handle(string_id weak_id) : _id(_repo.copy(weak_id)) {}
     public:
-        Handle() noexcept : _id(0) {}
-        Handle(vespalib::stringref str) : _id(get().resolve(str)) {}
-        Handle(const Handle &rhs) : _id(get().copy(rhs._id)) {}
+        Handle() noexcept : _id() {}
+        Handle(vespalib::stringref str) : _id(_repo.resolve(str)) {}
+        Handle(const Handle &rhs) : _id(_repo.copy(rhs._id)) {}
         Handle &operator=(const Handle &rhs) {
-            get().reclaim(_id);
-            _id = get().copy(rhs._id);
-            return *this;            
+            _repo.reclaim(_id);
+            _id = _repo.copy(rhs._id);
+            return *this;
         }
         Handle(Handle &&rhs) noexcept : _id(rhs._id) {
-            rhs._id = 0;
+            rhs._id = string_id();
         }
         Handle &operator=(Handle &&rhs) {
-            get().reclaim(_id);
+            _repo.reclaim(_id);
             _id = rhs._id;
-            rhs._id = 0;
+            rhs._id = string_id();
             return *this;
         }
         // NB: not lexical sorting order, but can be used in maps
         bool operator<(const Handle &rhs) const noexcept { return (_id < rhs._id); }
         bool operator==(const Handle &rhs) const noexcept { return (_id == rhs._id); }
         bool operator!=(const Handle &rhs) const noexcept { return (_id != rhs._id); }
-        uint32_t id() const noexcept { return _id; }
-        uint32_t hash() const noexcept { return _id; }
-        vespalib::string as_string() const { return get().as_string(_id); }
-        static Handle handle_from_id(uint32_t weak_id) { return Handle(weak_id); }
-        static vespalib::string string_from_id(uint32_t weak_id) { return get().as_string(weak_id); }
-        ~Handle() { get().reclaim(_id); }
-    };
-
-    // Read-only access to a collection of string handles
-    class HandleView {
-    private:
-        const std::vector<uint32_t> &_handles;
-    public:
-        HandleView(const std::vector<uint32_t> &handles_in) : _handles(handles_in) {}
-        const std::vector<uint32_t> &handles() const { return _handles; }
-    };
-
-    // A collection of string handles without ownership
-    class WeakHandles {
-    private:
-        std::vector<uint32_t> _handles;
-    public:
-        WeakHandles(size_t expect_size);
-        ~WeakHandles();
-        void add(uint32_t handle) { _handles.push_back(handle); }
-        HandleView view() const { return HandleView(_handles); }
+        string_id id() const noexcept { return _id; }
+        uint32_t hash() const noexcept { return _id.hash(); }
+        vespalib::string as_string() const { return _repo.as_string(_id); }
+        static Handle handle_from_id(string_id weak_id) { return Handle(weak_id); }
+        static vespalib::string string_from_id(string_id weak_id) { return _repo.as_string(weak_id); }
+        ~Handle() { _repo.reclaim(_id); }
     };
 
     // A collection of string handles with ownership
-    class StrongHandles {
+    class Handles {
     private:
-        SharedStringRepo &_repo;
-        std::vector<uint32_t> _handles;        
+        std::vector<string_id> _handles;
     public:
-        StrongHandles(size_t expect_size);
-        StrongHandles(StrongHandles &&rhs);
-        StrongHandles(const StrongHandles &) = delete;
-        StrongHandles &operator=(const StrongHandles &) = delete;
-        StrongHandles &operator=(StrongHandles &&) = delete;
-        ~StrongHandles();
-        uint32_t add(vespalib::stringref str) {
-            uint32_t id = _repo.resolve(str);
+        Handles();
+        Handles(Handles &&rhs);
+        Handles(const Handles &) = delete;
+        Handles &operator=(const Handles &) = delete;
+        Handles &operator=(Handles &&) = delete;
+        ~Handles();
+        string_id add(vespalib::stringref str) {
+            string_id id = _repo.resolve(str);
             _handles.push_back(id);
             return id;
         }
-        void add(uint32_t handle) {
-            uint32_t id = _repo.copy(handle);
+        void reserve(size_t value) { _handles.reserve(value); }
+        void push_back(string_id handle) {
+            string_id id = _repo.copy(handle);
             _handles.push_back(id);
         }
-        HandleView view() const { return HandleView(_handles); }
+        const std::vector<string_id> &view() const { return _handles; }
     };
 };
 

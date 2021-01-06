@@ -45,9 +45,9 @@ ReduceParam::~ReduceParam() = default;
 //-----------------------------------------------------------------------------
 
 struct SparseReduceState {
-    std::vector<label_t>  full_address;
-    std::vector<label_t*> fetch_address;
-    std::vector<label_t*> keep_address;
+    std::vector<string_id>  full_address;
+    std::vector<string_id*> fetch_address;
+    std::vector<string_id*> keep_address;
     size_t                subspace;
 
     SparseReduceState(const SparseReducePlan &plan)
@@ -71,13 +71,13 @@ template <typename ICT, typename OCT, typename AGGR>
 Value::UP
 generic_reduce(const Value &value, const ReduceParam &param) {
     auto cells = value.cells().typify<ICT>();
-    ArrayArrayMap<label_t,AGGR> map(param.sparse_plan.keep_dims.size(),
+    ArrayArrayMap<string_id,AGGR> map(param.sparse_plan.keep_dims.size(),
                                     param.dense_plan.out_size,
                                     value.index().size());
     SparseReduceState sparse(param.sparse_plan);
     auto full_view = value.index().create_view({});
     full_view->lookup({});
-    ConstArrayRef<label_t*> keep_addr(sparse.keep_address);
+    ConstArrayRef<string_id*> keep_addr(sparse.keep_address);
     while (full_view->next_result(sparse.fetch_address, sparse.subspace)) {
         auto [tag, ignore] = map.lookup_or_add_entry(keep_addr);
         AGGR *dst = map.get_values(tag).begin();

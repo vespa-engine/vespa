@@ -18,7 +18,7 @@ class StreamedValueStore : public TensorStore {
 public:
     using Value = vespalib::eval::Value;
     using ValueType = vespalib::eval::ValueType;
-    using Handles = vespalib::SharedStringRepo::StrongHandles;
+    using Handles = vespalib::SharedStringRepo::Handles;
     using MemoryUsage = vespalib::MemoryUsage;
 
     // interface for tensor entries

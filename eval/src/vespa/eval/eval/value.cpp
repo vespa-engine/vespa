@@ -12,8 +12,8 @@ namespace {
 
 struct TrivialView : Value::Index::View {
     bool first = false;
-    void lookup(ConstArrayRef<const label_t*> ) override { first = true; }
-    bool next_result(ConstArrayRef<label_t*> , size_t &idx_out) override {
+    void lookup(ConstArrayRef<const string_id*> ) override { first = true; }
+    bool next_result(ConstArrayRef<string_id*> , size_t &idx_out) override {
         if (first) {
             idx_out = 0;
             first = false;

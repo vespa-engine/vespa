@@ -41,7 +41,7 @@ struct SimpleLookupView : public Value::Index::View {
     SimpleLookupView(const Map &map_in, size_t num_dims)
         : map(map_in), my_addr(num_dims), pos(map.end()) {}
 
-    void lookup(ConstArrayRef<const label_t*> addr) override {
+    void lookup(ConstArrayRef<const string_id*> addr) override {
         assert(addr.size() == my_addr.size());
         for (size_t i = 0; i < my_addr.size(); ++i) {
             my_addr[i] = Handle::handle_from_id(*addr[i]);
@@ -49,7 +49,7 @@ struct SimpleLookupView : public Value::Index::View {
         pos = map.find(my_addr);
     }
 
-    bool next_result(ConstArrayRef<label_t*>, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<string_id*>, size_t &idx_out) override {
         if (pos == map.end()) {
             return false;
         }
@@ -98,7 +98,7 @@ struct SimpleFilterView : public Value::Index::View {
         assert((match_dims.size() + extract_dims.size()) == num_dims);
     }
 
-    void lookup(ConstArrayRef<const label_t*> addr) override {
+    void lookup(ConstArrayRef<const string_id*> addr) override {
         assert(addr.size() == query.size());
         for (size_t i = 0; i < addr.size(); ++i) {
             query[i] = Handle::handle_from_id(*addr[i]);
@@ -106,7 +106,7 @@ struct SimpleFilterView : public Value::Index::View {
         pos = map.begin();
     }
 
-    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
         while (pos != map.end()) {
             if (is_match()) {
                 assert(addr_out.size() == extract_dims.size());
@@ -138,11 +138,11 @@ struct SimpleIterateView : public Value::Index::View {
     SimpleIterateView(const Map &map_in)
         : map(map_in), pos(map.end()) {}
 
-    void lookup(ConstArrayRef<const label_t*>) override {
+    void lookup(ConstArrayRef<const string_id*>) override {
         pos = map.begin();
     }
 
-    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
         if (pos == map.end()) {
             return false;
         }
@@ -186,10 +186,10 @@ SimpleValue::add_mapping(ConstArrayRef<vespalib::stringref> addr)
 }
 
 void
-SimpleValue::add_mapping(ConstArrayRef<label_t> addr)
+SimpleValue::add_mapping(ConstArrayRef<string_id> addr)
 {
     Labels my_addr;
-    for(label_t label: addr) {
+    for(string_id label: addr) {
         my_addr.emplace_back(Handle::handle_from_id(label));
     }
     auto [ignore, was_inserted] = _index.emplace(my_addr, _index.size());
@@ -262,7 +262,7 @@ SimpleValueT<T>::add_subspace(ConstArrayRef<vespalib::stringref> addr)
 
 template <typename T>
 ArrayRef<T>
-SimpleValueT<T>::add_subspace(ConstArrayRef<label_t> addr)
+SimpleValueT<T>::add_subspace(ConstArrayRef<string_id> addr)
 {
     size_t old_size = _cells.size();
     add_mapping(addr);

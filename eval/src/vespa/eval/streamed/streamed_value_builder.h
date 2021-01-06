@@ -14,14 +14,14 @@ template <typename T>
 class StreamedValueBuilder : public ValueBuilder<T>
 {
 private:
-    using StrongHandles = SharedStringRepo::StrongHandles;
+    using Handles = SharedStringRepo::Handles;
 
     ValueType _type;
     size_t _num_mapped_dimensions;
     size_t _dense_subspace_size;
     std::vector<T> _cells;
     size_t _num_subspaces;
-    StrongHandles _labels;
+    Handles _labels;
 public:
     StreamedValueBuilder(const ValueType &type,
                          size_t num_mapped_in,
@@ -32,9 +32,10 @@ public:
         _dense_subspace_size(subspace_size_in),
         _cells(),
         _num_subspaces(0),
-        _labels(num_mapped_in * expected_subspaces)
+        _labels()
     {
         _cells.reserve(subspace_size_in * expected_subspaces);
+        _labels.reserve(num_mapped_in * expected_subspaces);
     };
 
     ~StreamedValueBuilder();
@@ -49,9 +50,9 @@ public:
         return ArrayRef<T>(&_cells[old_sz], _dense_subspace_size);
     }
 
-    ArrayRef<T> add_subspace(ConstArrayRef<label_t> addr) override {
+    ArrayRef<T> add_subspace(ConstArrayRef<string_id> addr) override {
         for (auto label : addr) {
-            _labels.add(label);
+            _labels.push_back(label);
         }
         size_t old_sz = _cells.size();
         _cells.resize(old_sz + _dense_subspace_size);
