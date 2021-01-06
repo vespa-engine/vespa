@@ -48,7 +48,7 @@ public class NodeSpec {
 
     private final Optional<String> modelName;
 
-    private final Optional<Boolean> allowedToBeDown;
+    private final OrchestratorStatus orchestratorStatus;
     private final Optional<ApplicationId> owner;
     private final Optional<NodeMembership> membership;
 
@@ -71,7 +71,7 @@ public class NodeSpec {
             Optional<Version> currentVespaVersion,
             Optional<Version> wantedOsVersion,
             Optional<Version> currentOsVersion,
-            Optional<Boolean> allowedToBeDown,
+            OrchestratorStatus orchestratorStatus,
             Optional<ApplicationId> owner,
             Optional<NodeMembership> membership,
             Optional<Long> wantedRestartGeneration,
@@ -106,7 +106,7 @@ public class NodeSpec {
         this.currentVespaVersion = Objects.requireNonNull(currentVespaVersion);
         this.wantedOsVersion = Objects.requireNonNull(wantedOsVersion);
         this.currentOsVersion = Objects.requireNonNull(currentOsVersion);
-        this.allowedToBeDown = Objects.requireNonNull(allowedToBeDown);
+        this.orchestratorStatus = Objects.requireNonNull(orchestratorStatus);
         this.owner = Objects.requireNonNull(owner);
         this.membership = Objects.requireNonNull(membership);
         this.wantedRestartGeneration = wantedRestartGeneration;
@@ -190,8 +190,8 @@ public class NodeSpec {
         return modelName;
     }
 
-    public Optional<Boolean> allowedToBeDown() {
-        return allowedToBeDown;
+    public OrchestratorStatus orchestratorStatus() {
+        return orchestratorStatus;
     }
 
     public Optional<ApplicationId> owner() {
@@ -261,7 +261,7 @@ public class NodeSpec {
                 Objects.equals(currentVespaVersion, that.currentVespaVersion) &&
                 Objects.equals(wantedOsVersion, that.wantedOsVersion) &&
                 Objects.equals(currentOsVersion, that.currentOsVersion) &&
-                Objects.equals(allowedToBeDown, that.allowedToBeDown) &&
+                Objects.equals(orchestratorStatus, that.orchestratorStatus) &&
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(membership, that.membership) &&
                 Objects.equals(wantedRestartGeneration, that.wantedRestartGeneration) &&
@@ -290,7 +290,7 @@ public class NodeSpec {
                 currentVespaVersion,
                 wantedOsVersion,
                 currentOsVersion,
-                allowedToBeDown,
+                orchestratorStatus,
                 owner,
                 membership,
                 wantedRestartGeneration,
@@ -319,7 +319,7 @@ public class NodeSpec {
                 + " currentVespaVersion=" + currentVespaVersion
                 + " wantedOsVersion=" + wantedOsVersion
                 + " currentOsVersion=" + currentOsVersion
-                + " allowedToBeDown=" + allowedToBeDown
+                + " allowedToBeDown=" + orchestratorStatus
                 + " owner=" + owner
                 + " membership=" + membership
                 + " wantedRestartGeneration=" + wantedRestartGeneration
@@ -347,7 +347,7 @@ public class NodeSpec {
         private Optional<Version> currentVespaVersion = Optional.empty();
         private Optional<Version> wantedOsVersion = Optional.empty();
         private Optional<Version> currentOsVersion = Optional.empty();
-        private Optional<Boolean> allowedToBeDown = Optional.empty();
+        private OrchestratorStatus orchestratorStatus = OrchestratorStatus.NO_REMARKS;
         private Optional<ApplicationId> owner = Optional.empty();
         private Optional<NodeMembership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
@@ -375,6 +375,7 @@ public class NodeSpec {
             additionalIpAddresses(node.additionalIpAddresses);
             wantedRebootGeneration(node.wantedRebootGeneration);
             currentRebootGeneration(node.currentRebootGeneration);
+            orchestratorStatus(node.orchestratorStatus);
             reports(new NodeReports(node.reports));
             node.wantedDockerImage.ifPresent(this::wantedDockerImage);
             node.currentDockerImage.ifPresent(this::currentDockerImage);
@@ -382,7 +383,6 @@ public class NodeSpec {
             node.currentVespaVersion.ifPresent(this::currentVespaVersion);
             node.wantedOsVersion.ifPresent(this::wantedOsVersion);
             node.currentOsVersion.ifPresent(this::currentOsVersion);
-            node.allowedToBeDown.ifPresent(this::allowedToBeDown);
             node.owner.ifPresent(this::owner);
             node.membership.ifPresent(this::membership);
             node.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
@@ -442,8 +442,8 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder allowedToBeDown(boolean allowedToBeDown) {
-            this.allowedToBeDown = Optional.of(allowedToBeDown);
+        public Builder orchestratorStatus(OrchestratorStatus orchestratorStatus) {
+            this.orchestratorStatus = orchestratorStatus;
             return this;
         }
 
@@ -592,8 +592,8 @@ public class NodeSpec {
             return currentOsVersion;
         }
 
-        public Optional<Boolean> allowedToBeDown() {
-            return allowedToBeDown;
+        public OrchestratorStatus orchestratorStatus() {
+            return orchestratorStatus;
         }
 
         public Optional<ApplicationId> owner() {
@@ -642,7 +642,7 @@ public class NodeSpec {
 
         public NodeSpec build() {
             return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type, flavor,
-                    wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, allowedToBeDown,
+                    wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, orchestratorStatus,
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,
