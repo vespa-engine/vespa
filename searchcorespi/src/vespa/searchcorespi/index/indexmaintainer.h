@@ -292,8 +292,8 @@ public:
     /**
      * Runs fusion for any available specs and return the output fusion directory.
      */
-    vespalib::string doFusion(SerialNum serialNum);
-    uint32_t runFusion(const FusionSpec &fusion_spec);
+    vespalib::string doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token);
+    uint32_t runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search::IFlushToken> flush_token);
     void removeOldDiskIndexes();
 
     struct FlushStats {

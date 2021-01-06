@@ -211,7 +211,7 @@ DocumentMetaStoreFlushTarget::getLastFlushTime() const
 
 
 IFlushTarget::Task::UP
-DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial)
+DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
     // Called by document db executor
     _dms->removeAllOldGenerations();

@@ -15,15 +15,17 @@ private:
     IndexMaintainer &_indexMaintainer;
     FlushStats      &_stats;
     SerialNum        _serialNum;
+    std::shared_ptr<search::IFlushToken> _flush_token;
 public:
-    Fusioner(IndexMaintainer &indexMaintainer, FlushStats &stats, SerialNum serialNum) :
+    Fusioner(IndexMaintainer &indexMaintainer, FlushStats &stats, SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token) :
         _indexMaintainer(indexMaintainer),
         _stats(stats),
-        _serialNum(serialNum)
+        _serialNum(serialNum),
+        _flush_token(std::move(flush_token))
     {}
 
     void run() override {
-        vespalib::string outputFusionDir = _indexMaintainer.doFusion(_serialNum);
+        vespalib::string outputFusionDir = _indexMaintainer.doFusion(_serialNum, _flush_token);
         // the target must live until this task is done (handled by flush engine).
         _stats.setPath(outputFusionDir);
     }
@@ -86,9 +88,9 @@ IndexFusionTarget::getFlushedSerialNum() const
 }
 
 IFlushTarget::Task::UP
-IndexFusionTarget::initFlush(SerialNum serialNum)
+IndexFusionTarget::initFlush(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token)
 {
-    return std::make_unique<Fusioner>(_indexMaintainer, _lastStats, serialNum);
+    return std::make_unique<Fusioner>(_indexMaintainer, _lastStats, serialNum, std::move(flush_token));
 }
 
 uint64_t

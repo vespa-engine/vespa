@@ -62,7 +62,7 @@ public:
     needUrgentFlush() const override;
 
     virtual Task::UP
-    initFlush(SerialNum currentSerial) override;
+    initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 
     virtual searchcorespi::FlushStats
     getLastFlushStats() const override;

@@ -8,6 +8,7 @@
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchcorespi/index/indexfusiontarget.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -278,7 +279,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         IndexFlushTarget target(_index_manager->getMaintainer());
         EXPECT_EQ(vespalib::system_time(), target.getLastFlushTime());
         vespalib::Executor::Task::UP flushTask;
-        runAsMaster([&]() { flushTask = target.initFlush(1); });
+        runAsMaster([&]() { flushTask = target.initFlush(1, std::make_shared<search::FlushToken>()); });
         flushTask->run();
         EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
         EXPECT_EQ(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
@@ -305,7 +306,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         std::this_thread::sleep_for(8s);
         std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
         vespalib::Executor::Task::UP task;
-        runAsMaster([&]() { task = target.initFlush(2); });
+        runAsMaster([&]() { task = target.initFlush(2, std::make_shared<search::FlushToken>()); });
         EXPECT_FALSE(task);
         EXPECT_EQ(2u, target.getFlushedSerialNum());
         EXPECT_LT(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
@@ -480,7 +481,7 @@ TEST_F(IndexManagerTest, require_that_fusion_updates_indexes)
 
     FusionSpec fusion_spec;
     fusion_spec.flush_ids.assign(ids, ids + 4);
-    _index_manager->getMaintainer().runFusion(fusion_spec);
+    _index_manager->getMaintainer().runFusion(fusion_spec, std::make_shared<search::FlushToken>());
 
     set<uint32_t> fusion_ids = readDiskIds(index_dir, "fusion");
     EXPECT_EQ(1u, fusion_ids.size());
@@ -502,7 +503,7 @@ TEST_F(IndexManagerTest, require_that_flush_triggers_fusion)
         flushIndexManager();
     }
     IFlushTarget::SP target(new IndexFusionTarget(_index_manager->getMaintainer()));
-    target->initFlush(0)->run();
+    target->initFlush(0, std::make_shared<search::FlushToken>())->run();
     addDocument(docid);
     flushIndexManager();
     set<uint32_t> fusion_ids = readDiskIds(index_dir, "fusion");
@@ -549,7 +550,7 @@ TEST_F(IndexManagerTest, require_that_fusion_cleans_up_old_indexes)
     FusionSpec fusion_spec;
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
-    _index_manager->getMaintainer().runFusion(fusion_spec);
+    _index_manager->getMaintainer().runFusion(fusion_spec, std::make_shared<search::FlushToken>());
 
     flush_ids = readDiskIds(index_dir, "flush");
     EXPECT_EQ(1u, flush_ids.size());
@@ -597,7 +598,7 @@ TEST_F(IndexManagerTest, require_that_disk_indexes_are_loaded_on_startup)
     FusionSpec fusion_spec;
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
-    _index_manager->getMaintainer().runFusion(fusion_spec);
+    _index_manager->getMaintainer().runFusion(fusion_spec, std::make_shared<search::FlushToken>());
     _index_manager.reset(0);
 
     ASSERT_TRUE(!indexExists("flush", 1));
@@ -644,7 +645,7 @@ TEST_F(IndexManagerTest, require_that_existing_indexes_are_to_be_fusioned_on_sta
     resetIndexManager();
 
     IFlushTarget::SP target(new IndexFusionTarget(_index_manager->getMaintainer()));
-    target->initFlush(0)->run();
+    target->initFlush(0, std::make_shared<search::FlushToken>())->run();
     addDocument(docid);
     flushIndexManager();
 
@@ -670,7 +671,7 @@ TEST_F(IndexManagerTest, require_that_serial_number_is_copied_on_fusion)
     FusionSpec fusion_spec;
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
-    _index_manager->getMaintainer().runFusion(fusion_spec);
+    _index_manager->getMaintainer().runFusion(fusion_spec, std::make_shared<search::FlushToken>());
     FastOS_File file((index_dir + "/index.fusion.2/serial.dat").c_str());
     EXPECT_TRUE(file.OpenReadOnly());
 }
@@ -711,7 +712,7 @@ TEST_F(IndexManagerTest, require_that_failed_fusion_is_retried)
     crippleFusion(2);
 
     IndexFusionTarget target(_index_manager->getMaintainer());
-    vespalib::Executor::Task::UP fusionTask = target.initFlush(1);
+    vespalib::Executor::Task::UP fusionTask = target.initFlush(1, std::make_shared<search::FlushToken>());
     fusionTask->run();
 
     FusionSpec spec = _index_manager->getMaintainer().getFusionSpec();

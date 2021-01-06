@@ -7,6 +7,7 @@
 #include "tls_stats_map.h"
 #include "tls_stats_factory.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <thread>
 
@@ -276,7 +277,7 @@ FlushEngine::initNextFlush(const FlushContext::List &lst)
         if (LOG_WOULD_LOG(event)) {
             EventLogger::flushInit(it->getName());
         }
-        if (it->initFlush()) {
+        if (it->initFlush(std::make_shared<search::FlushToken>())) {
             ctx = it;
             break;
         }
@@ -293,7 +294,7 @@ FlushEngine::flushAll(const FlushContext::List &lst)
     LOG(debug, "%ld targets to flush.", lst.size());
     for (const FlushContext::SP & ctx : lst) {
         if (wait(0)) {
-            if (ctx->initFlush()) {
+            if (ctx->initFlush(std::make_shared<search::FlushToken>())) {
                 logTarget("initiated", *ctx);
                 _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx), *this, ctx));
             } else {

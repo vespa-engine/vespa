@@ -962,7 +962,7 @@ IndexMaintainer::getFusionSpec()
 }
 
 string
-IndexMaintainer::doFusion(SerialNum serialNum)
+IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token)
 {
     // Called by a flush engine worker thread
 
@@ -984,7 +984,7 @@ IndexMaintainer::doFusion(SerialNum serialNum)
         _fusion_spec.flush_ids.clear();
     }
 
-    uint32_t new_fusion_id = runFusion(spec);
+    uint32_t new_fusion_id = runFusion(spec, std::move(flush_token));
 
     LockGuard lock(_fusion_lock);
     if (new_fusion_id == spec.last_fusion_id) {  // Error running fusion.
@@ -1000,7 +1000,7 @@ IndexMaintainer::doFusion(SerialNum serialNum)
 
 
 uint32_t
-IndexMaintainer::runFusion(const FusionSpec &fusion_spec)
+IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search::IFlushToken> flush_token)
 {
     // Called by a flush engine worker thread
     FusionArgs args;
@@ -1020,7 +1020,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec)
         serialNum = IndexReadUtilities::readSerialNum(lastFlushDir);
     }
     FusionRunner fusion_runner(_base_dir, args._schema, tuneFileAttributes, _ctx.getFileHeaderContext());
-    uint32_t new_fusion_id = fusion_runner.fuse(fusion_spec, serialNum, _operations);
+    uint32_t new_fusion_id = fusion_runner.fuse(fusion_spec, serialNum, _operations, std::move(flush_token));
     bool ok = (new_fusion_id != 0);
     if (ok) {
         ok = IndexWriteUtilities::copySerialNumFile(getFlushDir(fusion_spec.flush_ids.back()),

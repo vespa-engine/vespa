@@ -13,6 +13,7 @@
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
@@ -326,7 +327,7 @@ AttributeManager::flushAll(SerialNum currentSerial)
     auto flushTargets = getFlushTargets();
     for (const auto &ft : flushTargets) {
         vespalib::Executor::Task::UP task;
-        task = ft->initFlush(currentSerial);
+        task = ft->initFlush(currentSerial, std::make_shared<search::FlushToken>());
         if (task.get() != NULL) {
             task->run();
         }

@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/server/igetserialnum.h>
 #include <vespa/searchcore/proton/test/dummy_flush_handler.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -101,9 +102,9 @@ public:
     {
     }
 
-    Task::UP initFlush(SerialNum currentSerial) override
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override
     {
-        Task::UP task(_target->initFlush(currentSerial));
+        Task::UP task(_target->initFlush(currentSerial, std::move(flush_token)));
         if (task) {
             return std::make_unique<WrappedFlushTask>(std::move(task),
                                                       _handler);
@@ -287,7 +288,7 @@ public:
         return _flushedSerial;
     }
 
-    Task::UP initFlush(SerialNum currentSerial) override {
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) override {
         LOG(info, "SimpleTarget(%s)::initFlush(%" PRIu64 ")", getName().c_str(), currentSerial);
         _currentSerial = currentSerial;
         _initDone.countDown();
@@ -639,7 +640,7 @@ TEST("require that threaded target works")
     auto target = std::make_shared<ThreadedFlushTarget>(executor, getSerialNum, std::make_shared<SimpleTarget>());
 
     EXPECT_FALSE(executor._done.await(SHORT_TIMEOUT));
-    EXPECT_TRUE(target->initFlush(0).get() != NULL);
+    EXPECT_TRUE(target->initFlush(0, std::make_shared<search::FlushToken>()).get() != NULL);
     EXPECT_TRUE(executor._done.await(LONG_TIMEOUT));
 }
 
