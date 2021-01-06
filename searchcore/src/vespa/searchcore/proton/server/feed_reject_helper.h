@@ -13,6 +13,10 @@ namespace proton {
 class FeedOperation;
 class UpdateOperation;
 
+/**
+ * Tells wether an operation should be blocked when resourcelimits have been reached.
+ * It looks at the operation type and also the content if it is an 'update' operation.
+ */
 class FeedRejectHelper {
 public:
     static bool isRejectableFeedOperation(const FeedOperation & op);
