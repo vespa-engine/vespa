@@ -363,9 +363,7 @@ public class Tuning extends AbstractConfigProducer<Tuning> implements ProtonConf
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (concurrency != null) {
-                    // We divide by 2 as this number is used for 2 different thread pools.
-                    // Not perfect, but the best way to split the resources evenly.
-                    builder.feeding.concurrency(concurrency/2);
+                    builder.feeding.concurrency(concurrency);
                 }
             }
         }
