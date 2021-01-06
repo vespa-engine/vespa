@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -328,15 +327,19 @@ public class NodeRepositoryNode {
         this.history = history;
     }
 
+
+    @JsonGetter("orchestratorStatus")
+    public String getOrchestratorStatusOrNull() {
+        return orchestratorStatus;
+    }
+
+    @JsonIgnore
     public OrchestratorStatus getOrchestratorStatus() {
         if (orchestratorStatus == null) {
             return OrchestratorStatus.NO_REMARKS;
         }
 
-        return Stream.of(OrchestratorStatus.values())
-                .filter(status -> status.name().equalsIgnoreCase(orchestratorStatus))
-                .findAny()
-                .orElse(OrchestratorStatus.OTHER);
+        return OrchestratorStatus.fromString(orchestratorStatus);
     }
 
     public Long suspendedSinceMillis() {

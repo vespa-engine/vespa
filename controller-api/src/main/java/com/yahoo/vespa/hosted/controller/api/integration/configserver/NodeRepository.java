@@ -210,7 +210,6 @@ public interface NodeRepository {
             case ALLOWED_TO_BE_DOWN: return Node.ServiceState.allowedDown;
             case PERMANENTLY_DOWN: return Node.ServiceState.permanentlyDown;
             case NO_REMARKS: return Node.ServiceState.expectedUp;
-            case OTHER: return Node.ServiceState.unknown;
         }
 
         return Node.ServiceState.unknown;

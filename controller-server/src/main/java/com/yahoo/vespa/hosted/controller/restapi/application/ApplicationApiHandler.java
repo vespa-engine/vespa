@@ -723,13 +723,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private static String valueOf(Node.ServiceState state) {
+    static String valueOf(Node.ServiceState state) {
         switch (state) {
             case expectedUp: return "expectedUp";
             case allowedDown: return "allowedDown";
+            case permanentlyDown: return "permanentlyDown";
             case unorchestrated: return "unorchestrated";
-            default: throw new IllegalArgumentException("Unexpected node state '" + state + "'.");
+            case unknown: break;
         }
+
+        return "unknown";
     }
 
     private static String valueOf(Node.ClusterType type) {
