@@ -10,6 +10,7 @@
 #include "indexwriteutilities.h"
 #include <vespa/fastos/file.h>
 #include <vespa/searchcorespi/flush/closureflushtask.h>
+#include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
@@ -984,11 +985,15 @@ IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushTok
         _fusion_spec.flush_ids.clear();
     }
 
-    uint32_t new_fusion_id = runFusion(spec, std::move(flush_token));
+    uint32_t new_fusion_id = runFusion(spec, flush_token);
 
     LockGuard lock(_fusion_lock);
     if (new_fusion_id == spec.last_fusion_id) {  // Error running fusion.
-        LOG(warning, "Fusion failed for id %u.", spec.flush_ids.back());
+        if (flush_token->stop_requested()) {
+            LOG(info, "Fusion stopped for id %u.", spec.flush_ids.back());
+        } else {
+            LOG(warning, "Fusion failed for id %u.", spec.flush_ids.back());
+        }
         // Restore fusion spec.
         copy(_fusion_spec.flush_ids.begin(), _fusion_spec.flush_ids.end(), back_inserter(spec.flush_ids));
         _fusion_spec.flush_ids.swap(spec.flush_ids);
@@ -1020,14 +1025,18 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
         serialNum = IndexReadUtilities::readSerialNum(lastFlushDir);
     }
     FusionRunner fusion_runner(_base_dir, args._schema, tuneFileAttributes, _ctx.getFileHeaderContext());
-    uint32_t new_fusion_id = fusion_runner.fuse(fusion_spec, serialNum, _operations, std::move(flush_token));
+    uint32_t new_fusion_id = fusion_runner.fuse(fusion_spec, serialNum, _operations, flush_token);
     bool ok = (new_fusion_id != 0);
     if (ok) {
         ok = IndexWriteUtilities::copySerialNumFile(getFlushDir(fusion_spec.flush_ids.back()),
                                                     getFusionDir(new_fusion_id));
     }
     if (!ok) {
-        LOG(error, "Fusion failed.");
+        if (flush_token->stop_requested()) {
+            LOG(info, "Fusion stopped.");
+        } else {
+            LOG(error, "Fusion failed.");
+        }
         string fail_dir = getFusionDir(fusion_spec.flush_ids.back());
         FastOS_FileInterface::EmptyAndRemoveDirectory(fail_dir.c_str());
         {

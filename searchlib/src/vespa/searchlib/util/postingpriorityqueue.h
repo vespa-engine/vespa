@@ -221,7 +221,7 @@ PostingPriorityQueue<IN>::merge(OUT &out, uint32_t heapLimit, const IFlushToken&
         (this->*mergeHeapFunc)(out, flush_token);
         return;
     }
-    for (;;) {
+    while (!flush_token.stop_requested()) {
         if (_vec.size() == 1) {
             void (*mergeOneFunc)(OUT &out, IN &in, const IFlushToken& flush_token) =
                 &PostingPriorityQueue<IN>::mergeOne;

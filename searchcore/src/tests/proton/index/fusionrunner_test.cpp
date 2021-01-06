@@ -80,6 +80,7 @@ class Test : public vespalib::TestApp {
     void requireThatFusionCanRunOnMultipleDiskIndexes();
     void requireThatOldFusionIndexCanBePartOfNewFusion();
     void requireThatSelectorsCanBeRebased();
+    void requireThatFusionCanBeStopped();
 
 public:
     Test()
@@ -111,6 +112,7 @@ Test::Main()
     TEST_CALL(requireThatFusionCanRunOnMultipleDiskIndexes());
     TEST_CALL(requireThatOldFusionIndexCanBePartOfNewFusion());
     TEST_CALL(requireThatSelectorsCanBeRebased());
+    TEST_CALL(requireThatFusionCanBeStopped());
 
     TEST_DONE();
 }
@@ -322,6 +324,17 @@ void Test::requireThatSelectorsCanBeRebased() {
     fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
 
     checkResults(fusion_id, disk_id, 3);
+}
+
+void
+Test::requireThatFusionCanBeStopped()
+{
+    createIndex(base_dir, disk_id[0]);
+    createIndex(base_dir, disk_id[1]);
+    auto flush_token = std::make_shared<search::FlushToken>();
+    flush_token->request_stop();
+    uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, flush_token);
+    EXPECT_EQUAL(0u, fusion_id);
 }
 
 }  // namespace
