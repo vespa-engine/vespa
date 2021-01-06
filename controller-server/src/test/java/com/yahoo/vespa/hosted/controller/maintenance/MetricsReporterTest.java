@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -303,7 +302,6 @@ public class MetricsReporterTest {
 
         var targets = List.of(Version.fromString("7.1"), Version.fromString("7.2"));
         for (int i = 0; i < targets.size(); i++) {
-            var currentVersion = i == 0 ? version0 : targets.get(i - 1);
             var version = targets.get(i);
             // System starts upgrading to next version
             tester.upgradeController(version);
