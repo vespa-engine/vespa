@@ -31,7 +31,7 @@ public abstract class Maintainer implements Runnable {
     private final JobMetrics jobMetrics;
     private final Duration interval;
     private final ScheduledExecutorService service;
-    private AtomicBoolean shutDown = new AtomicBoolean();
+    private final AtomicBoolean shutDown = new AtomicBoolean();
 
     public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl, JobMetrics jobMetrics, List<String> clusterHostnames) {
         this(name, interval, staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames), jobControl, jobMetrics);
