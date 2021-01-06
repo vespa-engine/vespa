@@ -5,6 +5,7 @@
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
@@ -29,6 +30,7 @@ using document::DataType;
 using document::Document;
 using document::FieldValue;
 using search::DocumentIdT;
+using search::FlushToken;
 using search::TuneFileIndexing;
 using search::TuneFileSearch;
 using search::diskindex::DiskIndex;
@@ -194,7 +196,8 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
                               false /* dynamicKPosOccFormat */,
                               tuneFileIndexing,
                               fileHeaderContext,
-                              sharedExecutor);
+                              sharedExecutor,
+                              std::make_shared<FlushToken>());
     ASSERT_TRUE(fret2);
 
     // Fusion test with all docs removed in output (doesn't affect word list)
@@ -212,7 +215,8 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
                               false /* dynamicKPosOccFormat */,
                               tuneFileIndexing,
                               fileHeaderContext,
-                              sharedExecutor);
+                              sharedExecutor,
+                              std::make_shared<FlushToken>());
     ASSERT_TRUE(fret4);
 
     // Fusion test with all docs removed in input (affects word list)
@@ -230,7 +234,8 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
                               false /* dynamicKPosOccFormat */,
                               tuneFileIndexing,
                               fileHeaderContext,
-                              sharedExecutor);
+                              sharedExecutor,
+                              std::make_shared<FlushToken>());
     ASSERT_TRUE(fret6);
 
     DiskIndex disk_index(index_dir);
