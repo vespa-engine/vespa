@@ -286,7 +286,7 @@ public class DockerEngine implements ContainerEngine {
                         response.getConfig().getHostName(),
                         DockerImage.fromString(response.getConfig().getImage()),
                         containerResourcesFromHostConfig(response.getHostConfig()),
-                        new ContainerName(decode(response.getName())),
+                        toContainerName(response.getName()),
                         Container.State.valueOf(response.getState().getStatus().toUpperCase()),
                         response.getState().getPid()
                 ))
@@ -309,8 +309,8 @@ public class DockerEngine implements ContainerEngine {
         return labels != null && manager.equals(labels.get(LABEL_NAME_MANAGEDBY));
     }
 
-    private String decode(String encodedContainerName) {
-        return encodedContainerName.substring(FRAMEWORK_CONTAINER_PREFIX.length());
+    private ContainerName toContainerName(String encodedContainerName) {
+        return new ContainerName(encodedContainerName.substring(FRAMEWORK_CONTAINER_PREFIX.length()));
     }
 
     @Override
@@ -318,6 +318,14 @@ public class DockerEngine implements ContainerEngine {
         return listAllContainers().stream()
                 .filter(container -> isManagedBy(container, manager))
                 .noneMatch(container -> "running".equalsIgnoreCase(container.getState()));
+    }
+
+    @Override
+    public List<ContainerName> listManagedContainers(String manager) {
+        return listAllContainers().stream()
+                .filter(container -> isManagedBy(container, manager))
+                .map(container -> toContainerName(container.getNames()[0]))
+                .collect(Collectors.toList());
     }
 
     List<com.github.dockerjava.api.model.Container> listAllContainers() {

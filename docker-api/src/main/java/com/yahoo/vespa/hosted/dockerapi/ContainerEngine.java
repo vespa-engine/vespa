@@ -83,6 +83,8 @@ public interface ContainerEngine {
 
     boolean noManagedContainersRunning(String manager);
 
+    List<ContainerName> listManagedContainers(String manager);
+
     boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 
     /**

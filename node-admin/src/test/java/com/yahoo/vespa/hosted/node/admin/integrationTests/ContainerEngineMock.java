@@ -97,6 +97,11 @@ public class ContainerEngineMock implements ContainerEngine {
         return false;
     }
 
+    @Override
+    public List<ContainerName> listManagedContainers(String manager) {
+        return List.copyOf(containersByContainerName.keySet());
+    }
+
     public class StartContainerCommandMock implements CreateContainerCommand {
 
         private final DockerImage dockerImage;

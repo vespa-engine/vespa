@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
@@ -43,7 +44,7 @@ public class ContainerOperationsImpl implements ContainerOperations {
 
     private static final Logger logger = Logger.getLogger(ContainerOperationsImpl.class.getName());
 
-    private static final String MANAGER_NAME = "node-admin";
+    static final String MANAGER_NAME = "node-admin";
 
     private static final InetAddress IPV6_NPT_PREFIX = InetAddresses.forString("fd00::");
     private static final InetAddress IPV4_NPT_PREFIX = InetAddresses.forString("172.17.0.0");
@@ -322,6 +323,16 @@ public class ContainerOperationsImpl implements ContainerOperations {
     @Override
     public boolean noManagedContainersRunning() {
         return containerEngine.noManagedContainersRunning(MANAGER_NAME);
+    }
+
+    @Override
+    public boolean retainManagedContainers(Set<ContainerName> containerNames) {
+        return containerEngine.listManagedContainers(MANAGER_NAME).stream()
+                .filter(containerName -> ! containerNames.contains(containerName))
+                .peek(containerName -> {
+                    containerEngine.stopContainer(containerName);
+                    containerEngine.deleteContainer(containerName);
+                }).count() > 0;
     }
 
     @Override
