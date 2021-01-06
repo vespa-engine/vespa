@@ -74,8 +74,8 @@ public class NodeRepositoryNode {
     public Boolean wantToRetire;
     @JsonProperty("wantToDeprovision")
     public Boolean wantToDeprovision;
-    @JsonProperty("orchestratorStatus")
-    public String orchestratorStatus;
+    @JsonProperty("allowedToBeDown")
+    public Boolean allowedToBeDown;
 
     @JsonProperty("reports")
     public Map<String, JsonNode> reports = null;
@@ -112,7 +112,7 @@ public class NodeRepositoryNode {
                 ", parentHostname='" + parentHostname + '\'' +
                 ", wantToRetire=" + wantToRetire +
                 ", wantToDeprovision=" + wantToDeprovision +
-                ", orchestratorStatus=" + orchestratorStatus +
+                ", allowedToBeDown=" + allowedToBeDown +
                 ", reports=" + reports +
                 '}';
     }

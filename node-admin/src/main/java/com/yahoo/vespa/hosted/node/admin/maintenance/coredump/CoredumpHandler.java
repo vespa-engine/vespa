@@ -244,7 +244,8 @@ public class CoredumpHandler {
         );
 
         node.parentHostname().ifPresent(parent -> dimensionsBuilder.add("parentHostname", parent));
-        dimensionsBuilder.add("orchestratorState", node.orchestratorStatus().asString());
+        node.allowedToBeDown().ifPresent(allowed ->
+                dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
         node.currentVespaVersion().ifPresent(vespaVersion -> dimensionsBuilder.add("vespaVersion", vespaVersion.toFullString()));
 
         return dimensionsBuilder.build();

@@ -493,7 +493,7 @@ public class NodeAgentImpl implements NodeAgent {
                 //  - Slobrok and internal orchestrator state is used to determine whether
                 //    to allow upgrade (suspend).
                 updateNodeRepoWithCurrentAttributes(context);
-                if (suspendedInOrchestrator || node.orchestratorStatus().isSuspended()) {
+                if (suspendedInOrchestrator || node.allowedToBeDown().orElse(false)) {
                     context.log(logger, "Call resume against Orchestrator");
                     orchestrator.resume(context.hostname().value());
                     suspendedInOrchestrator = false;

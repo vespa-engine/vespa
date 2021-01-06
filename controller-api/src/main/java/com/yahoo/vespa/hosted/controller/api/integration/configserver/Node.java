@@ -263,9 +263,7 @@ public class Node {
     public enum ServiceState {
         expectedUp,
         allowedDown,
-        permanentlyDown,
-        unorchestrated,
-        unknown
+        unorchestrated
     }
 
     /** Known cluster types. */
