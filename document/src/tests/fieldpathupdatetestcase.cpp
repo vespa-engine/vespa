@@ -1045,7 +1045,7 @@ DocumentUpdate::UP
 FieldPathUpdateTestCase::createDocumentUpdateForSerialization(const DocumentTypeRepo& repo)
 {
     const DocumentType *docType(repo.getDocumentType("serializetest"));
-    DocumentUpdate::UP docUp(new DocumentUpdate(repo, *docType, DocumentId("id:ns:serializetest::xlanguage")));
+    auto docUp = std::make_unique<DocumentUpdate>(repo, *docType, DocumentId("id:ns:serializetest::xlanguage"));
 
     FieldPathUpdate::CP assign(new AssignFieldPathUpdate("intfield", "", "3"));
     static_cast<AssignFieldPathUpdate&>(*assign).setRemoveIfZero(true);

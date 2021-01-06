@@ -618,7 +618,7 @@ DocBuilder::DocumentHandle::DocumentHandle(document::Document &doc,
 DocBuilder::DocBuilder(const Schema &schema)
     : _schema(schema),
       _doctypes_config(DocTypeBuilder(schema).makeConfig()),
-      _repo(new DocumentTypeRepo(_doctypes_config)),
+      _repo(std::make_shared<DocumentTypeRepo>(_doctypes_config)),
       _docType(*_repo->getDocumentType("searchdocument")),
       _doc(),
       _handleDoc(),
@@ -626,14 +626,14 @@ DocBuilder::DocBuilder(const Schema &schema)
 {
 }
 
-DocBuilder::~DocBuilder() {}
+DocBuilder::~DocBuilder() = default;
 
 DocBuilder &
 DocBuilder::startDocument(const vespalib::string & docId)
 {
-    _doc.reset(new Document(_docType, DocumentId(docId)));
+    _doc = std::make_unique<Document>(_docType, DocumentId(docId));
     _doc->setRepo(*_repo);
-    _handleDoc.reset(new DocumentHandle(*_doc, docId));
+    _handleDoc = std::make_shared<DocumentHandle>(*_doc, docId);
     return *this;
 }
 
