@@ -19,8 +19,10 @@ import org.mockito.InOrder;
 
 import java.net.InetAddress;
 import java.nio.file.FileSystem;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -122,5 +124,17 @@ public class ContainerOperationsImplTest {
                         "ff02::2	ip6-allrouters\n" +
                         "0:0:0:0:0:0:0:1	hostname\n" +
                         "127.0.0.1	hostname\n");
+    }
+
+    @Test
+    public void retainContainersTest() {
+        when(containerEngine.listManagedContainers(ContainerOperationsImpl.MANAGER_NAME))
+                .thenReturn(List.of(new ContainerName("cnt1"), new ContainerName("cnt2"), new ContainerName("cnt3")));
+        dockerOperations.retainManagedContainers(Set.of(new ContainerName("cnt2"), new ContainerName("cnt4")));
+
+        verify(containerEngine).stopContainer(eq(new ContainerName("cnt1")));
+        verify(containerEngine).deleteContainer(eq(new ContainerName("cnt1")));
+        verify(containerEngine).stopContainer(eq(new ContainerName("cnt3")));
+        verify(containerEngine).deleteContainer(eq(new ContainerName("cnt3")));
     }
 }
