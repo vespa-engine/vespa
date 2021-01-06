@@ -6,6 +6,8 @@
 #include <vespa/vespalib/util/time.h>
 #include <vector>
 
+namespace search { class IFlushToken; }
+
 namespace searchcorespi {
 
 /**
@@ -172,7 +174,7 @@ public:
      * @param currentSerial The current transaction serial number.
      * @return The task used to complete the flush.
      */
-    virtual Task::UP initFlush(SerialNum currentSerial) = 0;
+    virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) = 0;
 
     /**
      * Returns the stats for the last completed flush operation

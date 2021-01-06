@@ -53,7 +53,7 @@ public:
                                      searchcorespi::index::IThreadService & summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget() override;
-    Task::UP initFlush(SerialNum currentSerial) override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 };
 
 ShrinkSummaryLidSpaceFlushTarget::
@@ -69,11 +69,11 @@ ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Compon
 ShrinkSummaryLidSpaceFlushTarget::~ShrinkSummaryLidSpaceFlushTarget() = default;
 
 IFlushTarget::Task::UP
-ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
+ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token)
 {
     std::promise<Task::UP> promise;
     std::future<Task::UP> future = promise.get_future();
-    _summaryService.execute(makeLambdaTask([&]() { promise.set_value(ShrinkLidSpaceFlushTarget::initFlush(currentSerial)); }));
+    _summaryService.execute(makeLambdaTask([&]() { promise.set_value(ShrinkLidSpaceFlushTarget::initFlush(currentSerial, flush_token)); }));
     return future.get();
 }
 

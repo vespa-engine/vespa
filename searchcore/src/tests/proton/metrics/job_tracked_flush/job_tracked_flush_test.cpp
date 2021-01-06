@@ -6,6 +6,7 @@ LOG_SETUP("job_tracked_flush_test");
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_task.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/searchcore/proton/test/simple_job_tracker.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -46,7 +47,7 @@ struct MyFlushTarget : public test::DummyFlushTarget
     {}
 
     // Implements searchcorespi::IFlushTarget
-    virtual FlushTask::UP initFlush(SerialNum currentSerial) override {
+    virtual FlushTask::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) override {
         if (currentSerial > 0) {
             _initFlushSerial = currentSerial;
             _initGate.await(5000);
@@ -74,7 +75,7 @@ struct Fixture
     {
     }
     void initFlush(SerialNum currentSerial) {
-        _task = _trackedFlush.initFlush(currentSerial);
+        _task = _trackedFlush.initFlush(currentSerial, std::make_shared<search::FlushToken>());
         _taskGate.countDown();
     }
 };
@@ -130,7 +131,7 @@ TEST_F("require that flush task execution is tracked", Fixture(2))
 
 TEST_F("require that nullptr flush task is not tracked", Fixture)
 {
-    FlushTask::UP task = f._trackedFlush.initFlush(0);
+    FlushTask::UP task = f._trackedFlush.initFlush(0, std::make_shared<search::FlushToken>());
     EXPECT_TRUE(task.get() == nullptr);
 }
 

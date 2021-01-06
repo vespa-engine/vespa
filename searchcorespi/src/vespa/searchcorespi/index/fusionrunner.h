@@ -56,7 +56,8 @@ public:
      **/
     uint32_t fuse(const FusionSpec &fusion_spec,
                   search::SerialNum lastSerialNum,
-                  IIndexMaintainerOperations &operations);
+                  IIndexMaintainerOperations &operations,
+                  std::shared_ptr<search::IFlushToken> flush_token);
 };
 
 }  // namespace index

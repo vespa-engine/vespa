@@ -3,6 +3,7 @@
 
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
+#include <vespa/searchlib/common/flush_token.h>
 
 using namespace proton;
 using search::SerialNum;
@@ -84,7 +85,7 @@ TEST_F("require that flush target returns no estimated memory gain when not able
 
 TEST_F("require that flush target returns no estimated memory gain right after shrink", Fixture)
 {
-    auto task = f._ft->initFlush(20);
+    auto task = f._ft->initFlush(20, std::make_shared<search::FlushToken>());
     EXPECT_TRUE(validTask(task));
     task->run();
     auto memoryGain = f._ft->getApproxMemoryGain();
@@ -96,7 +97,7 @@ TEST_F("require that flush target returns no estimated memory gain right after s
 TEST_F("require that flush target returns no task when not able to flush", Fixture)
 {
     f._lidSpace->setCanShrink(false);
-    auto task = f._ft->initFlush(20);
+    auto task = f._ft->initFlush(20, std::make_shared<search::FlushToken>());
     EXPECT_FALSE(validTask(task));
     EXPECT_EQUAL(20u, f._ft->getFlushedSerialNum());
     EXPECT_NOT_EQUAL(IFlushTarget::Time(), f._ft->getLastFlushTime());
@@ -105,14 +106,14 @@ TEST_F("require that flush target returns no task when not able to flush", Fixtu
 TEST_F("require that flush target returns valid task when able to flush again", Fixture)
 {
     f._lidSpace->setCanShrink(false);
-    auto task = f._ft->initFlush(20);
+    auto task = f._ft->initFlush(20, std::make_shared<search::FlushToken>());
     EXPECT_FALSE(validTask(task));
     EXPECT_EQUAL(20u, f._ft->getFlushedSerialNum());
     EXPECT_NOT_EQUAL(IFlushTarget::Time(), f._ft->getLastFlushTime());
     f._lidSpace->setCanShrink(true);
     auto memoryGain = f._ft->getApproxMemoryGain();
     EXPECT_EQUAL(16, memoryGain.gain());
-    task = f._ft->initFlush(20);
+    task = f._ft->initFlush(20, std::make_shared<search::FlushToken>());
     EXPECT_TRUE(validTask(task));
     task->run();
     EXPECT_EQUAL(20u, f._ft->getFlushedSerialNum());

@@ -8,6 +8,8 @@
 #include <vespa/searchlib/diskindex/docidmapper.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 
+namespace search { class IFlushToken; }
+
 namespace searchcorespi::index {
 
 /**
@@ -52,7 +54,8 @@ struct IIndexMaintainerOperations {
                            const vespalib::string &outputDir,
                            const std::vector<vespalib::string> &sources,
                            const SelectorArray &selectorArray,
-                           search::SerialNum lastSerialNum) = 0;
+                           search::SerialNum lastSerialNum,
+                           std::shared_ptr<search::IFlushToken> flush_token) = 0;
 };
 
 }

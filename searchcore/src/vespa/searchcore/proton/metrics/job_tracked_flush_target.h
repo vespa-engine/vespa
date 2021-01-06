@@ -40,7 +40,7 @@ public:
     virtual bool needUrgentFlush() const override {
         return _target->needUrgentFlush();
     }
-    virtual searchcorespi::FlushTask::UP initFlush(SerialNum currentSerial) override;
+    virtual searchcorespi::FlushTask::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     virtual searchcorespi::FlushStats getLastFlushStats() const override {
         return _target->getLastFlushStats();
     }

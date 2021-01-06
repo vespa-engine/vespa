@@ -225,7 +225,7 @@ FlushableAttribute::internalInitFlush(SerialNum currentSerial)
 
 
 IFlushTarget::Task::UP
-FlushableAttribute::initFlush(SerialNum currentSerial)
+FlushableAttribute::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
     // Called by document db executor
     std::promise<IFlushTarget::Task::UP> promise;

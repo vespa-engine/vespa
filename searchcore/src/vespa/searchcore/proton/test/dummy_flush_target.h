@@ -20,7 +20,7 @@ struct DummyFlushTarget : public searchcorespi::IFlushTarget
     SerialNum getFlushedSerialNum() const override { return 0; }
     Time getLastFlushTime() const override { return Time(); }
     bool needUrgentFlush() const override { return false; }
-    searchcorespi::FlushTask::UP initFlush(SerialNum) override {
+    searchcorespi::FlushTask::UP initFlush(SerialNum, std::shared_ptr<search::IFlushToken>) override {
         return searchcorespi::FlushTask::UP();
     }
     searchcorespi::FlushStats getLastFlushStats() const override {

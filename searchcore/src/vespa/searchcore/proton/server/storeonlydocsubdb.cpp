@@ -19,6 +19,7 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/attribute/configconverter.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -482,7 +483,7 @@ StoreOnlyDocSubDB::close()
     assert(_writeService.master().isCurrentThread());
     search::IDocumentStore & store(_rSummaryMgr->getBackingStore());
     auto summaryFlush = std::make_shared<SummaryFlushTarget>(store, _writeService.summary());
-    auto summaryFlushTask = summaryFlush->initFlush(store.tentativeLastSyncToken());
+    auto summaryFlushTask = summaryFlush->initFlush(store.tentativeLastSyncToken(), std::make_shared<search::FlushToken>());
     if (summaryFlushTask) {
         SerialNum syncToken = summaryFlushTask->getFlushSerial();
         _tlSyncer.sync(syncToken);

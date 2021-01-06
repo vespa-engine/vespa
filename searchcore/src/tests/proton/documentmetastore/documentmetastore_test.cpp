@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
+#include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -1900,7 +1901,7 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works)
                 ft->getApproxMemoryGain().getAfter());
 
     vespalib::ThreadStackExecutor exec(1, 128 * 1024);
-    vespalib::Executor::Task::UP task = ft->initFlush(11);
+    vespalib::Executor::Task::UP task = ft->initFlush(11, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();
     exec.shutdown();

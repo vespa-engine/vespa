@@ -85,7 +85,7 @@ SummaryFlushTarget::internalInitFlush(SerialNum currentSerial) {
     return std::make_unique<Flusher>(_docStore, _lastStats, currentSerial);
 }
 IFlushTarget::Task::UP
-SummaryFlushTarget::initFlush(SerialNum currentSerial)
+SummaryFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
     // Called by document db executor
     std::promise<Task::UP> promise;

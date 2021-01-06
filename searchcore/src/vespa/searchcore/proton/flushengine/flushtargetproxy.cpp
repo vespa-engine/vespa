@@ -59,9 +59,9 @@ FlushTargetProxy::needUrgentFlush() const
 
 
 IFlushTarget::Task::UP
-FlushTargetProxy::initFlush(SerialNum currentSerial)
+FlushTargetProxy::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token)
 {
-    return _target->initFlush(currentSerial);
+    return _target->initFlush(currentSerial, std::move(flush_token));
 }
 
 

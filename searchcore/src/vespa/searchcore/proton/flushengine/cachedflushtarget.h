@@ -48,7 +48,7 @@ public:
     virtual       Time    getLastFlushTime() const override { return _lastFlushTime; }
     virtual       bool     needUrgentFlush() const override { return _needUrgentFlush; }
 
-    virtual Task::UP initFlush(SerialNum currentSerial) override { return _target->initFlush(currentSerial); }
+    virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override { return _target->initFlush(currentSerial, std::move(flush_token)); }
     virtual FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 
     virtual uint64_t getApproxBytesToWriteToDisk() const override;

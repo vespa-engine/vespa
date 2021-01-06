@@ -50,7 +50,7 @@ public:
 
     // Implements IFlushTarget.
     virtual Task::UP
-    initFlush(SerialNum currentSerial) override;
+    initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 };
 
 } // namespace proton

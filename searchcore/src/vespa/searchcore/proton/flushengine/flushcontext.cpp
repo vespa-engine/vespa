@@ -34,10 +34,10 @@ FlushContext::~FlushContext()
 }
 
 bool
-FlushContext::initFlush()
+FlushContext::initFlush(std::shared_ptr<search::IFlushToken> flush_token)
 {
     LOG(debug, "Attempting to flush '%s'.", _name.c_str());
-    _task = _target->initFlush(std::max(_handler->getCurrentSerialNumber(), _lastSerial));
+    _task = _target->initFlush(std::max(_handler->getCurrentSerialNumber(), _lastSerial), std::move(flush_token));
     if (_task.get() == NULL) {
         LOG(debug, "Target refused to init flush.");
         return false;
