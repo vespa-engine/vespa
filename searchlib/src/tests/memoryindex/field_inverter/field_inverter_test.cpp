@@ -7,6 +7,7 @@
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace search {
@@ -101,6 +102,31 @@ makeDoc17(DocBuilder &b)
     b.startIndexField("f2").startElement(1).addStr("foo").addStr("bar").endElement().startElement(1).addStr("bar").endElement().endField();
     b.startIndexField("f3").startElement(3).addStr("foo2").addStr("bar2").endElement().startElement(4).addStr("bar2").endElement().endField();
     return b.endDocument();
+}
+
+vespalib::string corruptWord = "corruptWord";
+
+Document::UP
+makeCorruptDocument(DocBuilder &b, size_t wordOffset)
+{
+    b.startDocument("id:ns:searchdocument::18");
+    b.startIndexField("f0").addStr("before").addStr(corruptWord).addStr("after").addStr("z").endField();
+    auto doc = b.endDocument();
+    vespalib::nbostream stream;
+    doc->serialize(stream);
+    std::vector<char> raw;
+    raw.resize(stream.size());
+    stream.read(&raw[0], stream.size());
+    assert(wordOffset < corruptWord.size());
+    for (size_t i = 0; i + corruptWord.size() <= raw.size(); ++i) {
+        if (memcmp(&raw[i], corruptWord.c_str(), corruptWord.size()) == 0) {
+            raw[i + wordOffset] = '\0';
+            break;
+        }
+    }
+    vespalib::nbostream badstream;
+    badstream.write(&raw[0], raw.size());
+    return std::make_unique<Document>(*b.getDocumentTypeRepo(), badstream);
 }
 
 }
@@ -360,6 +386,29 @@ TEST_F(FieldInverterTest, require_that_average_field_length_is_calculated)
     pushDocuments();
     assert_calculator(0, (4.0 + 4.0 + 2.0)/3, 3);
     assert_calculator(1, 2.0, 1);
+}
+
+TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_truncated)
+{
+    invertDocument(1, *makeCorruptDocument(_b, 7));
+    pushDocuments();
+    EXPECT_EQ("f=0,"
+              "w=after,a=1,"
+              "w=before,a=1,"
+              "w=corrupt,a=1,"
+              "w=z,a=1",
+              _inserter.toStr());
+}
+
+TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_dropped_when_truncated_to_zero_length)
+{
+    invertDocument(1, *makeCorruptDocument(_b, 0));
+    pushDocuments();
+    EXPECT_EQ("f=0,"
+              "w=after,a=1,"
+              "w=before,a=1,"
+              "w=z,a=1",
+              _inserter.toStr());
 }
 
 }
