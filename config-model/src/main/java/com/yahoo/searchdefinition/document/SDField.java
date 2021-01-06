@@ -117,6 +117,8 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     private boolean isExtraField = false;
 
+    private boolean wasConfiguredToDoAttributing = false;
+
     /**
      * Creates a new field. This method is only used to create reserved fields.
      *
@@ -414,6 +416,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return (dt != null);
     }
 
+    @Override
+    public boolean wasConfiguredToDoAttributing() {
+        return wasConfiguredToDoAttributing;
+    }
+
     /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
     public void parseIndexingScript(String script) {
         parseIndexingScript(script, new SimpleLinguistics());
@@ -437,6 +444,9 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         indexingScript = exp;
         if (indexingScript.isEmpty()) {
             return; // TODO: This causes empty expressions not to be propagate to struct fields!! BAD BAD BAD!!
+        }
+        if (!wasConfiguredToDoAttributing()) {
+            wasConfiguredToDoAttributing = doesAttributing();
         }
         if (!usesStructOrMap()) {
             new ExpressionVisitor() {
