@@ -66,18 +66,26 @@ public class ComplexAttributeFieldsValidator extends Validator {
     }
 
     private static String toString(ImmutableSDField field) {
-        return field.getName() + " (" + String.join(", ", getStructFieldAttributes(field.getStructFields())) + ")";
+        return field.getName() + " (" + String.join(", ", getStructFieldAttributes(field.getStructFields(), false)) + ")";
     }
 
     private static boolean hasStructFieldAttributes(Collection<? extends ImmutableSDField> structFields) {
-        return !getStructFieldAttributes(structFields).isEmpty();
+        return !getStructFieldAttributes(structFields, true).isEmpty();
     }
 
-    private static List<String> getStructFieldAttributes(Collection<? extends ImmutableSDField> structFields) {
-        List<String> result = new ArrayList<>();
-        for (ImmutableSDField structField : structFields) {
-            structField.getAttributes().values().forEach(attr -> result.add(attr.getName()));
-            result.addAll(getStructFieldAttributes(structField.getStructFields()));
+    private static List<String> getStructFieldAttributes(Collection<? extends ImmutableSDField> structFields,
+                                                         boolean returnAllTypes) {
+        var result = new ArrayList<String>();
+        for (var structField : structFields) {
+            for (var attr : structField.getAttributes().values()) {
+                if (returnAllTypes || !ComplexAttributeFieldUtils.isPrimitiveType(attr)) {
+                    result.add(attr.getName());
+                }
+            }
+            if (structField.usesStructOrMap() && structField.wasConfiguredToDoAttributing()) {
+                result.add(structField.getName());
+            }
+            result.addAll(getStructFieldAttributes(structField.getStructFields(), returnAllTypes));
         }
         return result;
     }

@@ -67,6 +67,10 @@ public class ComplexAttributeFieldUtils {
                     if (!isPrimitiveType(attribute)) {
                         return false;
                     }
+                } else if (structField.wasConfiguredToDoAttributing()) {
+                    if (!isPrimitiveType(structField.getDataType())) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -75,7 +79,7 @@ public class ComplexAttributeFieldUtils {
         }
     }
 
-    private static boolean isPrimitiveType(Attribute attribute) {
+    public static boolean isPrimitiveType(Attribute attribute) {
         return attribute.getCollectionType().equals(Attribute.CollectionType.SINGLE) &&
                 isPrimitiveType(attribute.getDataType());
     }

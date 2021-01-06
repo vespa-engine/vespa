@@ -29,11 +29,7 @@ public class ComplexAttributeFieldsValidatorTestCase {
     @Test
     public void throws_exception_when_unsupported_complex_fields_have_struct_field_attributes() throws IOException, SAXException {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For cluster 'mycluster', search 'test': " +
-                "The following complex fields do not support using struct field attributes: " +
-                "struct_array (struct_array.f1), struct_map (struct_map.key, struct_map.value.f1). " +
-                "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types");
-
+        exceptionRule.expectMessage(getExpectedMessage("struct_array (struct_array.f1), struct_map (struct_map.value.f1)"));
         createModelAndValidate(joinLines("search test {",
                 "  document test {",
                 "    struct s { field f1 type array<int> {} }",
@@ -46,6 +42,37 @@ public class ComplexAttributeFieldsValidatorTestCase {
                 "    }",
                 "  }",
                 "}"));
+    }
+
+    @Test
+    public void throws_exception_when_nested_struct_array_is_specified_as_struct_field_attribute() throws IOException, SAXException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(getExpectedMessage("docTopics (docTopics.topics)"));
+        createModelAndValidate(joinLines(
+                "schema test {",
+                "document test {",
+                "struct topic {",
+                "  field id type string {}",
+                "  field label type string {}",
+                "}",
+                "struct docTopic {",
+                "  field id type string {}",
+                "  field topics type array<topic> {}",
+                "}",
+                "field docTopics type array<docTopic> {",
+                "  indexing: summary",
+                "  struct-field id { indexing: attribute }",
+                "  struct-field topics { indexing: attribute }",
+                "}",
+                "}",
+                "}"));
+    }
+
+    private String getExpectedMessage(String unsupportedFields) {
+        return "For cluster 'mycluster', search 'test': " +
+                "The following complex fields do not support using struct field attributes: " +
+                unsupportedFields + ". " +
+                "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types";
     }
 
     @Test
