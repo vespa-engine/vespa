@@ -989,10 +989,11 @@ IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushTok
 
     LockGuard lock(_fusion_lock);
     if (new_fusion_id == spec.last_fusion_id) {  // Error running fusion.
+        string fail_dir = getFusionDir(spec.flush_ids.back());
         if (flush_token->stop_requested()) {
-            LOG(info, "Fusion stopped for id %u.", spec.flush_ids.back());
+            LOG(info, "Fusion stopped for id %u, fusion dir \"%s\".", spec.flush_ids.back(), fail_dir.c_str());
         } else {
-            LOG(warning, "Fusion failed for id %u.", spec.flush_ids.back());
+            LOG(warning, "Fusion failed for id %u, fusion dir \"%s\".", spec.flush_ids.back(), fail_dir.c_str());
         }
         // Restore fusion spec.
         copy(_fusion_spec.flush_ids.begin(), _fusion_spec.flush_ids.end(), back_inserter(spec.flush_ids));
@@ -1032,12 +1033,12 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
                                                     getFusionDir(new_fusion_id));
     }
     if (!ok) {
-        if (flush_token->stop_requested()) {
-            LOG(info, "Fusion stopped.");
-        } else {
-            LOG(error, "Fusion failed.");
-        }
         string fail_dir = getFusionDir(fusion_spec.flush_ids.back());
+        if (flush_token->stop_requested()) {
+            LOG(info, "Fusion stopped, fusion dir \"%s\".", fail_dir.c_str());
+        } else {
+            LOG(error, "Fusion failed, fusion dir \"%s\".", fail_dir.c_str());
+        }
         FastOS_FileInterface::EmptyAndRemoveDirectory(fail_dir.c_str());
         {
             LockGuard slock(_state_lock);
