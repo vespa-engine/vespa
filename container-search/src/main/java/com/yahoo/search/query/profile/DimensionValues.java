@@ -77,6 +77,7 @@ public class DimensionValues implements Comparable<DimensionValues> {
     }
 
     @Override
+    // TODO jonmv: this is an asymmetrical equals — find usages and rename
     public boolean equals(Object o) {
         if (this == o) return true;
         if ( ! (o instanceof DimensionValues)) return false;

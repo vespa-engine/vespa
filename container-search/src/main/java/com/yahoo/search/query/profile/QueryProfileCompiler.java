@@ -96,8 +96,8 @@ public class QueryProfileCompiler {
      * I.e if we have the variants [-,b=b1], [a=a1,-], [a=a2,-],
      * this returns the variants [a=a1,b=b1], [a=a2,b=b1]
      *
-     * This is necessary because left-specified values takes precedence, such that resolving [a=a1,b=b1] would
-     * lead us to the compiled profile [a=a1,-], which may contain default values for properties where
+     * This is necessary because left-specified values takes precedence, and resolving [a=a1,b=b1] would
+     * otherwise lead us to the compiled profile [a=a1,-], which may contain default values for properties where
      * we should have preferred variant values in [-,b=b1].
      */
     private static Set<DimensionBindingForPath> wildcardExpanded(Set<DimensionBindingForPath> variants) {
