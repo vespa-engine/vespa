@@ -50,6 +50,9 @@ class Thread_Stats_Test : public ThreadTestBase
 
       job[0].ownThread->Join();
       job[1].ownThread->Join();
+      while (pool.GetNumInactiveThreads() != 2) {
+          std::this_thread::sleep_for(1ms);
+      }
 
       inactiveThreads = pool.GetNumInactiveThreads();
       Progress(inactiveThreads == 2, "Inactive threads = %d", inactiveThreads);
@@ -57,7 +60,6 @@ class Thread_Stats_Test : public ThreadTestBase
       Progress(activeThreads == 0, "Active threads = %d", activeThreads);
       startedThreads = pool.GetNumStartedThreads();
       Progress(startedThreads == 2, "Started threads = %d", startedThreads);
-
 
       Progress(true, "Repeating process in the same pool...");
 
@@ -87,7 +89,9 @@ class Thread_Stats_Test : public ThreadTestBase
 
       job[0].ownThread->Join();
       job[1].ownThread->Join();
-      std::this_thread::sleep_for(1s);
+      while (pool.GetNumInactiveThreads() != 2) {
+          std::this_thread::sleep_for(1ms);
+      }
 
       inactiveThreads = pool.GetNumInactiveThreads();
       Progress(inactiveThreads == 2, "Inactive threads = %d", inactiveThreads);
