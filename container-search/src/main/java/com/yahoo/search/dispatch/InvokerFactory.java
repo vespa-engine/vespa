@@ -46,12 +46,12 @@ public abstract class InvokerFactory {
      * @return the invoker or empty if some node in the
      *         list is invalid and the remaining coverage is not sufficient
      */
-    public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
-                                                       Query query,
-                                                       OptionalInt groupId,
-                                                       List<Node> nodes,
-                                                       boolean acceptIncompleteCoverage,
-                                                       int maxHits) {
+    Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
+                                                Query query,
+                                                OptionalInt groupId,
+                                                List<Node> nodes,
+                                                boolean acceptIncompleteCoverage,
+                                                int maxHits) {
         List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {
@@ -90,7 +90,7 @@ public abstract class InvokerFactory {
         if (invokers.size() == 1 && failed == null) {
             return Optional.of(invokers.get(0));
         } else {
-            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster, failed));
+            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster.isGroupWellBalanced(groupId), searchCluster, failed));
         }
     }
 
