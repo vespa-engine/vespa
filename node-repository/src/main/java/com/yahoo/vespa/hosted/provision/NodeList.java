@@ -12,8 +12,10 @@ import com.yahoo.config.provision.NodeType;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -211,6 +213,28 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                                                  .distinct()
                                                  .count(),
                                     first().get().resources());
+    }
+
+    /** Returns the nodes that are allocated on an exclusive network switch within its cluster */
+    public NodeList onExclusiveSwitch(NodeList clusterHosts) {
+        ensureSingleCluster();
+        Map<String, Long> switchCount = clusterHosts.stream()
+                                                    .flatMap(host -> host.switchHostname().stream())
+                                                    .collect(Collectors.groupingBy(Function.identity(),
+                                                                                   Collectors.counting()));
+        return matching(node -> {
+            Optional<Node> nodeOnSwitch = clusterHosts.parentOf(node);
+            if (node.parentHostname().isPresent()) {
+                if (nodeOnSwitch.isEmpty()) {
+                    throw new IllegalArgumentException("Parent of " + node + ", " + node.parentHostname().get() +
+                                                       ", not found in given cluster hosts");
+                }
+            } else {
+                nodeOnSwitch = Optional.of(node);
+            }
+            Optional<String> allocatedSwitch = nodeOnSwitch.flatMap(Node::switchHostname);
+            return allocatedSwitch.isEmpty() || switchCount.get(allocatedSwitch.get()) == 1;
+        });
     }
 
     private void ensureSingleCluster() {
