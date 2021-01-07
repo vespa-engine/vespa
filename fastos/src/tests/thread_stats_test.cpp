@@ -18,18 +18,14 @@ class Thread_Stats_Test : public ThreadTestBase
       Job job[2];
 
       inactiveThreads = pool.GetNumInactiveThreads();
-      Progress(inactiveThreads == 0, "Initial inactive threads = %d",
-               inactiveThreads);
+      Progress(inactiveThreads == 0, "Initial inactive threads = %d", inactiveThreads);
       activeThreads = pool.GetNumActiveThreads();
-      Progress(activeThreads == 0, "Initial active threads = %d",
-               activeThreads);
+      Progress(activeThreads == 0, "Initial active threads = %d", activeThreads);
       startedThreads = pool.GetNumStartedThreads();
-      Progress(startedThreads == 0, "Initial started threads = %d",
-               startedThreads);
+      Progress(startedThreads == 0, "Initial started threads = %d", startedThreads);
 
       job[0].code = WAIT_FOR_BREAK_FLAG;
-      job[0].ownThread = pool.NewThread(this,
-                                        static_cast<void *>(&job[0]));
+      job[0].ownThread = pool.NewThread(this, static_cast<void *>(&job[0]));
 
       inactiveThreads = pool.GetNumInactiveThreads();
       Progress(inactiveThreads == 0, "Inactive threads = %d", inactiveThreads);
@@ -39,8 +35,7 @@ class Thread_Stats_Test : public ThreadTestBase
       Progress(startedThreads == 1, "Started threads = %d", startedThreads);
 
       job[1].code = WAIT_FOR_BREAK_FLAG;
-      job[1].ownThread = pool.NewThread(this,
-                                        static_cast<void *>(&job[1]));
+      job[1].ownThread = pool.NewThread(this, static_cast<void *>(&job[1]));
 
       inactiveThreads = pool.GetNumInactiveThreads();
       Progress(inactiveThreads == 0, "Inactive threads = %d", inactiveThreads);
@@ -53,7 +48,8 @@ class Thread_Stats_Test : public ThreadTestBase
       job[0].ownThread->SetBreakFlag();
       job[1].ownThread->SetBreakFlag();
 
-      std::this_thread::sleep_for(3s);
+      job[0].ownThread->Join();
+      job[1].ownThread->Join();
 
       inactiveThreads = pool.GetNumInactiveThreads();
       Progress(inactiveThreads == 2, "Inactive threads = %d", inactiveThreads);
@@ -68,8 +64,6 @@ class Thread_Stats_Test : public ThreadTestBase
       job[0].code = WAIT_FOR_BREAK_FLAG;
       job[0].ownThread = pool.NewThread(this, static_cast<void *>(&job[0]));
 
-      std::this_thread::sleep_for(1s);
-
       inactiveThreads = pool.GetNumInactiveThreads();
       Progress(inactiveThreads == 1, "Inactive threads = %d", inactiveThreads);
       activeThreads = pool.GetNumActiveThreads();
@@ -79,8 +73,6 @@ class Thread_Stats_Test : public ThreadTestBase
 
       job[1].code = WAIT_FOR_BREAK_FLAG;
       job[1].ownThread = pool.NewThread(this, static_cast<void *>(&job[1]));
-
-      std::this_thread::sleep_for(1s);
 
       inactiveThreads = pool.GetNumInactiveThreads();
       Progress(inactiveThreads == 0, "Inactive threads = %d", inactiveThreads);
@@ -93,7 +85,9 @@ class Thread_Stats_Test : public ThreadTestBase
       job[0].ownThread->SetBreakFlag();
       job[1].ownThread->SetBreakFlag();
 
-      std::this_thread::sleep_for(3s);
+      job[0].ownThread->Join();
+      job[1].ownThread->Join();
+      std::this_thread::sleep_for(1s);
 
       inactiveThreads = pool.GetNumInactiveThreads();
       Progress(inactiveThreads == 2, "Inactive threads = %d", inactiveThreads);
@@ -101,7 +95,6 @@ class Thread_Stats_Test : public ThreadTestBase
       Progress(activeThreads == 0, "Active threads = %d", activeThreads);
       startedThreads = pool.GetNumStartedThreads();
       Progress(startedThreads == 4, "Started threads = %d", startedThreads);
-
 
       pool.Close();
       Progress(true, "Pool closed.");

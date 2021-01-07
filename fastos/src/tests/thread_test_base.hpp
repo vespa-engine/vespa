@@ -20,7 +20,7 @@ public:
      : printMutex()
    {
    }
-   virtual ~ThreadTestBase() {};
+   virtual ~ThreadTestBase() {}
 
    void PrintProgress (char *string) override
    {
@@ -48,7 +48,7 @@ public:
             }
          }
 
-         std::this_thread::sleep_for(500ms);
+         std::this_thread::sleep_for(1us);
 
          if(threadsFinished)
             break;
@@ -110,7 +110,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
             number = number + 2;
 
             if(i == sleepOn)
-                std::this_thread::sleep_for(1s);
+                std::this_thread::sleep_for(1ms);
          }
 
          guard = std::unique_lock<std::mutex>();
@@ -124,10 +124,9 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
       {
          for(;;)
          {
-             std::this_thread::sleep_for(1s);
+             std::this_thread::sleep_for(1us);
 
-            if(thread->GetBreakFlag())
-            {
+            if (thread->GetBreakFlag()) {
                Progress(true, "Thread %p got breakflag", thread);
                break;
             }
