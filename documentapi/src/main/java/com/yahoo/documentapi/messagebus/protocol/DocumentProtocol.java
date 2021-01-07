@@ -429,7 +429,7 @@ public class DocumentProtocol implements Protocol {
      * @param ctx the context whose children to merge
      */
     public static void merge(RoutingContext ctx) {
-        merge(ctx, new HashSet<>(0));
+        merge(ctx, new HashSet<Integer>(0));
     }
 
     /**
@@ -475,7 +475,7 @@ public class DocumentProtocol implements Protocol {
      * @return the merged Reply
      */
     public static Reply merge(List<Reply> replies) {
-        return merge(replies, new HashSet<>(0)).second;
+        return merge(replies, new HashSet<Integer>(0)).second;
     }
 
     /**
