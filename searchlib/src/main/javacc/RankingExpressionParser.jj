@@ -328,8 +328,28 @@ List<ExpressionNode> args() :
     ExpressionNode argument;
 }
 {
-    ( ( argument = expression() { arguments.add(argument); } ( <COMMA> argument = expression() { arguments.add(argument); } )* )? )
+    ( ( argument = arg() { arguments.add(argument); } ( <COMMA> argument = arg() { arguments.add(argument); } )* )? )
     { return arguments; }
+}
+
+// TODO: Replace use of this for function arguments with value()
+// For that to work with the current search execution framework
+// we need to generate another function for the argument such that we can replace
+// instances of the argument with the reference to that function in the same way
+// as we replace by constants/names today (this can make for some fun combinatorial explosion).
+// We should also stop doing function expansion in the toString of a function.
+// - Jon 2014-05-02
+ExpressionNode arg() :
+{
+    ExpressionNode ret;
+    String name;
+    Function fnc;
+}
+{
+    ( ret = constantPrimitive()                                          |
+      LOOKAHEAD(2) ret = feature()                                       |
+      name = identifier()              { ret = new NameNode(name);       } )
+    { return ret; }
 }
 
 ExpressionNode function() :
