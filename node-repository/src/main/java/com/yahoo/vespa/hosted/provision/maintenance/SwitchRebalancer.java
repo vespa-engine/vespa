@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 
 import java.time.Duration;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -67,17 +67,12 @@ public class SwitchRebalancer extends NodeMover<Move> {
     }
 
     /** Returns whether allocatedNode is on an exclusive switch */
-    private boolean onExclusiveSwitch(Node allocatedNode, NodeList clusterHosts) {
-        Optional<String> allocatedSwitch = clusterHosts.parentOf(allocatedNode).flatMap(Node::switchHostname);
-        if (allocatedSwitch.isEmpty()) return true;
-        return clusterHosts.stream()
-                           .flatMap(host -> host.switchHostname().stream())
-                           .filter(switchHostname -> switchHostname.equals(allocatedSwitch.get()))
-                           .count() == 1;
+    private static boolean onExclusiveSwitch(Node allocatedNode, NodeList clusterHosts) {
+        return !NodeList.copyOf(List.of(allocatedNode)).onExclusiveSwitch(clusterHosts).isEmpty();
     }
 
     /** Returns whether allocating a node on toHost would increase the number of exclusive switches */
-    private boolean increasesExclusiveSwitches(NodeList clusterNodes, NodeList clusterHosts, Node toHost) {
+    private static boolean increasesExclusiveSwitches(NodeList clusterNodes, NodeList clusterHosts, Node toHost) {
         if (toHost.switchHostname().isEmpty()) return false;
         Set<String> activeSwitches = new HashSet<>();
         int unknownSwitches = 0;

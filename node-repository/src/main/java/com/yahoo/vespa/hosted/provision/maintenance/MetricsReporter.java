@@ -79,6 +79,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         updateTenantUsageMetrics(nodes);
         updateRepairTicketMetrics(nodes);
         updateAllocationMetrics(nodes);
+        updateExclusiveSwitchMetrics(nodes);
         return true;
     }
 
@@ -102,11 +103,24 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             } else {
                 nonActiveFraction = (double) nonActiveNodes / (double) activeNodes;
             }
-            Map<String, String> dimensions = new HashMap<>(dimensions(clusterKey.application));
-            dimensions.put("clusterId", clusterKey.cluster.value());
-            metric.set("nodes.active", activeNodes, getContext(dimensions));
-            metric.set("nodes.nonActive", nonActiveNodes, getContext(dimensions));
-            metric.set("nodes.nonActiveFraction", nonActiveFraction, getContext(dimensions));
+            Metric.Context context = getContext(dimensions(clusterKey.application, clusterKey.cluster));
+            metric.set("nodes.active", activeNodes, context);
+            metric.set("nodes.nonActive", nonActiveNodes, context);
+            metric.set("nodes.nonActiveFraction", nonActiveFraction, context);
+        });
+    }
+
+    private void updateExclusiveSwitchMetrics(NodeList nodes) {
+        Map<ClusterKey, List<Node>> byCluster = nodes.stream()
+                                                     .filter(node -> node.type() == NodeType.tenant)
+                                                     .filter(node -> node.state() == State.active)
+                                                     .filter(node -> node.allocation().isPresent())
+                                                     .collect(Collectors.groupingBy(node -> new ClusterKey(node.allocation().get().owner(), node.allocation().get().membership().cluster().id())));
+        byCluster.forEach((clusterKey, clusterNodes) -> {
+            NodeList clusterHosts = nodes.parentsOf(NodeList.copyOf(clusterNodes));
+            long nodesOnExclusiveSwitch = NodeList.copyOf(clusterNodes).onExclusiveSwitch(clusterHosts).size();
+            double exclusiveSwitchRatio = nodesOnExclusiveSwitch / (double) clusterNodes.size();
+            metric.set("nodes.exclusiveSwitchFraction", exclusiveSwitchRatio, getContext(dimensions(clusterKey.application, clusterKey.cluster)));
         });
     }
 
@@ -338,6 +352,12 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
              .map(report -> report.getInspector().field("status").asString())
              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
              .forEach((status, number) -> metric.set("hostedVespa.breakfixedHosts", number, getContext(Map.of("status", status))));
+    }
+
+    static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Id cluster) {
+        Map<String, String> dimensions = new HashMap<>(dimensions(application));
+        dimensions.put("clusterId", cluster.value());
+        return dimensions;
     }
 
     private static Map<String, String> dimensions(ApplicationId application) {
