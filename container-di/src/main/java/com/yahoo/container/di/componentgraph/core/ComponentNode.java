@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core;
 
 import com.google.inject.Inject;
@@ -16,6 +16,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -30,6 +32,7 @@ import static com.yahoo.container.di.componentgraph.core.Exceptions.cutStackTrac
 import static com.yahoo.container.di.componentgraph.core.Exceptions.removeStackTrace;
 import static com.yahoo.container.di.componentgraph.core.Keys.createKey;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * @author Tony Vaagenes
@@ -148,12 +151,14 @@ public class ComponentNode extends Node {
 
         Object instance;
         try {
-            log.log(FINE, "Constructing " + idAndType());
+            log.log(FINE, () -> "Constructing " + idAndType());
+            Instant start = Instant.now();
             instance = constructor.newInstance(actualArguments.toArray());
-            log.log(FINE, "Finished constructing " + idAndType());
+            Duration duration = Duration.between(start, Instant.now());
+            log.log(duration.compareTo(Duration.ofMinutes(1)) > 0 ? INFO : FINE,
+                    () -> "Finished constructing " + idAndType() + " in " + duration);
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
             StackTraceElement dependencyInjectorMarker = new StackTraceElement("============= Dependency Injection =============", "newInstance", null, -1);
-
             throw removeStackTrace(new ComponentConstructorException("Error constructing " + idAndType() + ": " + e.getMessage(), cutStackTraceAtConstructor(e.getCause(), dependencyInjectorMarker)));
         }
 
