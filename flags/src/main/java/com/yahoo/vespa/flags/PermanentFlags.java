@@ -131,6 +131,12 @@ public class PermanentFlags {
             "takes effect on browser reload of api/user/v1/user",
             CONSOLE_USER_EMAIL);
 
+    public static final UnboundLongFlag INVALIDATE_CONSOLE_SESSIONS = defineLongFlag(
+            "invalidate-console-sessions", 0,
+            "Invalidate console sessions (cookies) issued before this unix timestamp",
+            "Takes effect on next api request"
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
