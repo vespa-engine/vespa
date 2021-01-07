@@ -12,6 +12,8 @@
 #include <mutex>
 #include <condition_variable>
 
+namespace search { class FlushToken; }
+
 namespace proton {
 
 namespace flushengine { class ITlsStatsFactory; }
@@ -63,9 +65,12 @@ private:
     std::condition_variable        _strategyCond;
     std::shared_ptr<flushengine::ITlsStatsFactory> _tlsStatsFactory;
     std::set<IFlushHandler::SP>    _pendingPrune;
+    std::shared_ptr<search::FlushToken> _normal_flush_token;
+    std::shared_ptr<search::FlushToken> _gc_flush_token;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
     std::pair<FlushContext::List,bool> getSortedTargetList();
+    std::shared_ptr<search::IFlushToken> get_flush_token(const FlushContext& ctx);
     FlushContext::SP initNextFlush(const FlushContext::List &lst);
     vespalib::string flushNextTarget(const vespalib::string & name);
     void flushAll(const FlushContext::List &lst);

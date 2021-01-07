@@ -830,6 +830,30 @@ TEST_F(IndexManagerTest, field_length_info_is_loaded_from_disk_index_during_star
     expect_field_length_info(1, 2, *as_memory_index(*sources, 1));
 }
 
+TEST_F(IndexManagerTest, fusion_can_be_stopped)
+{
+    resetIndexManager();
+
+    addDocument(docid);
+    flushIndexManager();
+    addDocument(docid);
+    flushIndexManager();
+
+    IndexFusionTarget target(_index_manager->getMaintainer());
+    auto flush_token = std::make_shared<search::FlushToken>();
+    flush_token->request_stop();
+    vespalib::Executor::Task::UP fusionTask = target.initFlush(1, flush_token);
+    fusionTask->run();
+
+    FusionSpec spec = _index_manager->getMaintainer().getFusionSpec();
+    set<uint32_t> fusion_ids = readDiskIds(index_dir, "fusion");
+    EXPECT_TRUE(fusion_ids.empty());
+    EXPECT_EQ(0u, spec.last_fusion_id);
+    EXPECT_EQ(2u, spec.flush_ids.size());
+    EXPECT_EQ(1u, spec.flush_ids[0]);
+    EXPECT_EQ(2u, spec.flush_ids[1]);
+}
+
 }  // namespace
 
 int

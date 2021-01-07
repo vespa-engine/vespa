@@ -602,15 +602,15 @@ TEST_F(FusionTest, require_that_fusion_can_be_stopped)
     auto flush_token = std::make_shared<MyFlushToken>(10000);
     make_simple_index("stopdump2", MockFieldLengthInspector());
     ASSERT_TRUE(try_merge_simple_indexes("stopdump3", {"stopdump2"}, flush_token));
-    EXPECT_EQ(40, flush_token->get_checks());
+    EXPECT_EQ(48, flush_token->get_checks());
     vespalib::rmdir("stopdump3", true);
     flush_token = std::make_shared<MyFlushToken>(1);
     ASSERT_FALSE(try_merge_simple_indexes("stopdump3", {"stopdump2"}, flush_token));
     EXPECT_EQ(12, flush_token->get_checks());
     vespalib::rmdir("stopdump3", true);
-    flush_token = std::make_shared<MyFlushToken>(39);
+    flush_token = std::make_shared<MyFlushToken>(47);
     ASSERT_FALSE(try_merge_simple_indexes("stopdump3", {"stopdump2"}, flush_token));
-    EXPECT_EQ(41, flush_token->get_checks());
+    EXPECT_EQ(49, flush_token->get_checks());
     clean_stopped_fusion_testdirs();
 }
 

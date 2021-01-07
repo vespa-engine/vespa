@@ -94,7 +94,9 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _strategyLock(),
       _strategyCond(),
       _tlsStatsFactory(std::move(tlsStatsFactory)),
-      _pendingPrune()
+      _pendingPrune(),
+      _normal_flush_token(std::make_shared<search::FlushToken>()),
+      _gc_flush_token(std::make_shared<search::FlushToken>())
 { }
 
 FlushEngine::~FlushEngine()
@@ -117,6 +119,7 @@ FlushEngine::close()
     {
         std::lock_guard<std::mutex> strategyGuard(_strategyLock);
         std::lock_guard<std::mutex> guard(_lock);
+        _gc_flush_token->request_stop();
         _closed = true;
         _cond.notify_all();
     }
@@ -269,6 +272,16 @@ FlushEngine::getSortedTargetList()
     return ret;
 }
 
+std::shared_ptr<search::IFlushToken>
+FlushEngine::get_flush_token(const FlushContext& ctx)
+{
+    if (ctx.getTarget()->getType() == IFlushTarget::Type::GC) {
+        return _gc_flush_token;
+    } else {
+        return _normal_flush_token;
+    }
+}
+
 FlushContext::SP
 FlushEngine::initNextFlush(const FlushContext::List &lst)
 {
@@ -277,7 +290,7 @@ FlushEngine::initNextFlush(const FlushContext::List &lst)
         if (LOG_WOULD_LOG(event)) {
             EventLogger::flushInit(it->getName());
         }
-        if (it->initFlush(std::make_shared<search::FlushToken>())) {
+        if (it->initFlush(get_flush_token(*it))) {
             ctx = it;
             break;
         }
@@ -294,7 +307,7 @@ FlushEngine::flushAll(const FlushContext::List &lst)
     LOG(debug, "%ld targets to flush.", lst.size());
     for (const FlushContext::SP & ctx : lst) {
         if (wait(0)) {
-            if (ctx->initFlush(std::make_shared<search::FlushToken>())) {
+            if (ctx->initFlush(get_flush_token(*ctx))) {
                 logTarget("initiated", *ctx);
                 _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx), *this, ctx));
             } else {
