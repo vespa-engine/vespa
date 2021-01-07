@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttribu
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.OrchestratorStatus;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
@@ -73,7 +74,7 @@ public class NodeAgentImplTest {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
-                .allowedToBeDown(false)
+                .orchestratorStatus(OrchestratorStatus.NO_REMARKS)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -203,7 +204,7 @@ public class NodeAgentImplTest {
         NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
-                .allowedToBeDown(false);
+                .orchestratorStatus(OrchestratorStatus.NO_REMARKS);
 
         NodeAgentContext firstContext = createContext(specBuilder.build());
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -501,7 +502,7 @@ public class NodeAgentImplTest {
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .currentVespaVersion(vespaVersion)
                 .wantedRestartGeneration(1).currentRestartGeneration(1)
-                .allowedToBeDown(true)
+                .orchestratorStatus(OrchestratorStatus.ALLOWED_TO_BE_DOWN)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -572,7 +573,7 @@ public class NodeAgentImplTest {
                 .type(NodeType.config)
                 .wantedDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion)
-                .allowedToBeDown(true)
+                .orchestratorStatus(OrchestratorStatus.ALLOWED_TO_BE_DOWN)
                 .build();
 
         NodeAgentContext context = createContext(node);

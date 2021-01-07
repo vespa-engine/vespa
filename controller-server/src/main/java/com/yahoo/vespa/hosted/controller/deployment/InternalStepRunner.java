@@ -540,6 +540,7 @@ public class InternalStepRunner implements StepRunner {
         switch (state) {
             case allowedDown: return "allowed to be DOWN";
             case expectedUp: return "expected to be UP";
+            case permanentlyDown: return "permanently DOWN";
             case unorchestrated: return "unorchestrated";
             default: return state.name();
         }

@@ -82,8 +82,8 @@ public class NodeRepositoryNode {
     private Integer cost;
     @JsonProperty("history")
     private List<NodeHistory> history;
-    @JsonProperty("allowedToBeDown")
-    private Boolean allowedToBeDown;
+    @JsonProperty("orchestratorStatus")
+    private String orchestratorStatus;
     @JsonProperty("suspendedSinceMillis")
     private Long suspendedSinceMillis;
     @JsonProperty("reports")
@@ -327,8 +327,19 @@ public class NodeRepositoryNode {
         this.history = history;
     }
 
-    public Boolean getAllowedToBeDown() {
-        return allowedToBeDown;
+
+    @JsonGetter("orchestratorStatus")
+    public String getOrchestratorStatusOrNull() {
+        return orchestratorStatus;
+    }
+
+    @JsonIgnore
+    public OrchestratorStatus getOrchestratorStatus() {
+        if (orchestratorStatus == null) {
+            return OrchestratorStatus.NO_REMARKS;
+        }
+
+        return OrchestratorStatus.fromString(orchestratorStatus);
     }
 
     public Long suspendedSinceMillis() {
@@ -441,7 +452,7 @@ public class NodeRepositoryNode {
                ", wantToDeprovision=" + wantToDeprovision +
                ", cost=" + cost +
                ", history=" + history +
-               ", allowedToBeDown=" + allowedToBeDown +
+               ", orchestratorStatus=" + orchestratorStatus +
                ", reports=" + reports +
                ", modelName=" + modelName +
                ", reservedTo=" + reservedTo +

@@ -166,7 +166,7 @@ class NodesResponse extends HttpResponse {
             orchestrator.apply(new HostName(node.hostname()))
                         .ifPresent(info -> {
                             object.setBool("allowedToBeDown", info.status().isSuspended());
-                            // TODO: Remove allowedToBeDown as a special-case of orchestratorHostStatus
+                            // TODO: Remove allowedToBeDown as a special-case of orchestratorStatus
                             if (info.status() != HostStatus.NO_REMARKS) {
                                 object.setString("orchestratorStatus", info.status().asString());
                             }
