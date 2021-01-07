@@ -19,13 +19,6 @@ vespa_add_executable(fastos_thread_stats_test_app TEST
     fastos
 )
 vespa_add_test(NAME fastos_thread_stats_test_app NO_VALGRIND COMMAND fastos_thread_stats_test_app)
-vespa_add_executable(fastos_thread_sleep_test_app TEST
-    SOURCES
-    thread_sleep_test.cpp
-    DEPENDS
-    fastos
-)
-vespa_add_test(NAME fastos_thread_sleep_test_app NO_VALGRIND COMMAND fastos_thread_sleep_test_app)
 vespa_add_executable(fastos_thread_joinwait_test_app TEST
     SOURCES
     thread_joinwait_test.cpp
