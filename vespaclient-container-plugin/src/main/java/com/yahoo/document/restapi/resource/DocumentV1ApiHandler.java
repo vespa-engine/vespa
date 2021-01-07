@@ -652,7 +652,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 return true;
 
             if ( ! lock.tryLock())
-                throw new IllegalStateException("Concurrent attempts at dispatch — this is a bug");
+                throw new IllegalStateException("Concurrent attempts at dispatch — this is a bug");
 
             try {
                 if (operation == null)
