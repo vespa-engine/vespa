@@ -51,14 +51,7 @@ public abstract class Maintainer implements Runnable {
 
     @Override
     public void run() {
-        try {
-            if (jobControl.isActive(name())) {
-                lockAndMaintain();
-            }
-        } catch (Throwable e) {
-            log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
-        }
-        log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
+        lockAndMaintain(false);
     }
 
     /** Starts shutdown of this, typically by shutting down executors. {@link #awaitShutdown()} waits for shutdown to complete. */
@@ -91,8 +84,8 @@ public abstract class Maintainer implements Runnable {
     protected Duration interval() { return interval; }
 
     /** Run this while holding the job lock */
-    @SuppressWarnings("unused")
-    public final void lockAndMaintain() {
+    public final void lockAndMaintain(boolean force) {
+        if (!force && !jobControl.isActive(name())) return;
         log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
         jobMetrics.recordRunOf(name());
         try (var lock = jobControl.lockJob(name())) {
@@ -102,9 +95,12 @@ public abstract class Maintainer implements Runnable {
                 // This is fine as we're colliding with a run on another node
                 jobMetrics.recordSuccessOf(name());
             }
+        } catch (Throwable e) {
+            log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
         } finally {
             jobMetrics.forward(name());
         }
+        log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }
 
     /** Returns the simple name of this job */

@@ -51,7 +51,7 @@ public class JobControl {
     public void run(String jobSimpleClassName) {
         var job = startedJobs.get(jobSimpleClassName);
         if (job == null) throw new IllegalArgumentException("No such job '" + jobSimpleClassName + "'");
-        job.lockAndMaintain();
+        job.lockAndMaintain(true);
     }
 
     /** Acquire lock for running given job */
