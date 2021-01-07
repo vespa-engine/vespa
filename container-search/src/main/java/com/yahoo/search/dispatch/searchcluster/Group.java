@@ -73,7 +73,7 @@ public class Group {
 
     }
 
-    /** Returns the active documents on this groip. If unknown, 0 is returned. */
+    /** Returns the active documents on this group. If unknown, 0 is returned. */
     long getActiveDocuments() { return activeDocuments.get(); }
 
     /** Returns whether any node in this group is currently blocking write operations */
