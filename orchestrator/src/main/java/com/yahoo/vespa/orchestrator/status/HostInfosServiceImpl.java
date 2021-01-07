@@ -105,6 +105,10 @@ public class HostInfosServiceImpl implements HostInfosService {
     @Override
     public void removeHosts(ApplicationInstanceReference reference, Set<HostName> hostnames) {
         ApplicationId application = OrchestratorUtil.toApplicationId(reference);
+
+        // Needed for VESPA-18864:
+        log.info("Removing host status for " + application + ": " + hostnames);
+
         // Remove /vespa/host-status/APPLICATION_ID/hosts/HOSTNAME
         hostnames.forEach(hostname -> curator.delete(Path.fromString(hostPath(application, hostname))));
     }
