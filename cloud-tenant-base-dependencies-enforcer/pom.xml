@@ -235,6 +235,7 @@
                                         <include>commons-beanutils:commons-beanutils:1.7.0:jar:test</include>
                                         <include>commons-codec:commons-codec:1.11:jar:test</include>
                                         <include>commons-digester:commons-digester:1.8:jar:test</include>
+                                        <include>io.airlift:aircompressor:0.17:jar:test</include>
                                         <include>io.airlift:airline:0.7:jar:test</include>
                                         <include>io.jsonwebtoken:jjwt:0.9.1:jar:test</include>
                                         <include>io.prometheus:simpleclient:0.6.0:jar:test</include>
