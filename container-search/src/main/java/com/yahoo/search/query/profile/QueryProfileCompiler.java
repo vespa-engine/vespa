@@ -8,11 +8,15 @@ import com.yahoo.search.query.profile.compiled.DimensionalMap;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Compile a set of query profiles into compiled profiles.
@@ -103,9 +107,18 @@ public class QueryProfileCompiler {
     private static Set<DimensionBindingForPath> wildcardExpanded(Set<DimensionBindingForPath> variants) {
         Set<DimensionBindingForPath> expanded = new HashSet<>();
 
+        PathTree trie = new PathTree();
+        for (var variant : variants)
+            trie.add(variant);
+
         for (var variant : variants) {
-            if (hasWildcardBeforeEnd(variant.binding()))
-                expanded.addAll(wildcardExpanded(variant, variants));
+            if ( ! variant.binding.isNull())
+                trie.forEachPrefix(variant, prefixVariant -> {
+                    if ( ! hasWildcardBeforeEnd(prefixVariant.binding)) return;
+                    DimensionBinding combined = prefixVariant.binding().combineWith(variant.binding());
+                    if ( ! combined.isInvalid() )
+                        expanded.add(new DimensionBindingForPath(combined, prefixVariant.path()));
+                });
         }
         return expanded;
     }
@@ -117,20 +130,6 @@ public class QueryProfileCompiler {
         }
         return false;
     }
-
-    private static Set<DimensionBindingForPath> wildcardExpanded(DimensionBindingForPath variantToExpand,
-                                                                 Set<DimensionBindingForPath> variants) {
-        Set<DimensionBindingForPath> expanded = new HashSet<>();
-        for (var variant : variants) {
-            if (variant.binding().isNull()) continue;
-            if ( ! variant.path().hasPrefix(variantToExpand.path())) continue;
-            DimensionBinding combined = variantToExpand.binding().combineWith(variant.binding());
-            if ( ! combined.isInvalid() )
-                expanded.add(new DimensionBindingForPath(combined, variantToExpand.path()));
-        }
-        return expanded;
-    }
-
 
     /** Generates a set of all the (legal) combinations of the variants in the given sets */
     private static Set<DimensionBindingForPath> combined(Set<DimensionBindingForPath> v1s,
@@ -213,5 +212,52 @@ public class QueryProfileCompiler {
         }
 
     }
+
+
+    /**
+     * Simple trie for CompoundName paths.
+     *
+     * @author jonmv
+     */
+    static class PathTree {
+
+        private final Node root = new Node(0);
+
+        void add(DimensionBindingForPath entry) {
+            root.add(entry);
+        }
+
+         void forEachPrefix(DimensionBindingForPath entry, Consumer<DimensionBindingForPath> action) {
+            root.visit(entry, action);
+         }
+
+        private static class Node {
+
+            private final int depth;
+            private final SortedMap<String, Node> children = new TreeMap<>();
+            private final List<DimensionBindingForPath> elements = new ArrayList<>();
+
+            private Node(int depth) {
+                this.depth = depth;
+            }
+
+            void visit(DimensionBindingForPath entry, Consumer<DimensionBindingForPath> action) {
+                elements.forEach(action);
+                if (depth < entry.path().size() && children.containsKey(entry.path().get(depth)))
+                    children.get(entry.path().get(depth)).visit(entry, action);
+            }
+
+            void add(DimensionBindingForPath entry) {
+                if (depth == entry.path().size())
+                    elements.add(entry);
+                else
+                    children.computeIfAbsent(entry.path().get(depth),
+                                             __ -> new Node(depth + 1)).add(entry);
+            }
+
+        }
+
+    }
+
 
 }
