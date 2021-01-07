@@ -120,8 +120,10 @@ private:
             Weight weight = queryStack.GetWeight();
             bool allow_approximate = queryStack.getAllowApproximate();
             uint32_t explore_additional_hits = queryStack.getExploreAdditionalHits();
+            double distance_threshold = queryStack.getDistanceThreshold();
             builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight,
-                                              target_num_hits, allow_approximate, explore_additional_hits);
+                                              target_num_hits, allow_approximate, explore_additional_hits,
+                                              distance_threshold);
         } else {
             vespalib::stringref term = queryStack.getTerm();
             vespalib::stringref view = queryStack.getIndexName();

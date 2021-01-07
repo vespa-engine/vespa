@@ -119,6 +119,7 @@ public:
 
     uint32_t getNearDistance() const { return _extraIntArg1; }
     uint32_t getTargetNumHits() const { return _extraIntArg1; }
+    double getDistanceThreshold() const { return _extraDoubleArg4; }
     double getScoreThreshold() const { return _extraDoubleArg4; }
     double getThresholdBoostFactor() const { return _extraDoubleArg5; }
     bool getAllowApproximate() const { return (_extraIntArg2 != 0); }

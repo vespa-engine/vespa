@@ -144,10 +144,19 @@ public:
         if (exp_hits.size() == k) {
             std::vector<uint32_t> expected_by_docid = exp_hits;
             std::sort(expected_by_docid.begin(), expected_by_docid.end());
-            auto got_by_docid = index->find_top_k(k, qv, k);
+            auto got_by_docid = index->find_top_k(k, qv, k, 100100.25);
             for (idx = 0; idx < k; ++idx) {
                 EXPECT_EQ(expected_by_docid[idx], got_by_docid[idx].docid);
             }
+        }
+        if ((rv.size() > 1) && (rv[0].distance < rv[1].distance)) {
+            double thr = (rv[0].distance + rv[1].distance) * 0.5;
+            auto got_by_docid = index->find_top_k_with_filter(k, qv, *global_filter, k, thr);
+            for (const auto & hit : got_by_docid) {
+                printf("hit docid=%u dist=%g (thr %g)\n", hit.docid, hit.distance, thr);
+            }
+            EXPECT_EQ(got_by_docid.size(), 1);
+            EXPECT_EQ(got_by_docid[0].docid, rv[0].docid);
         }
     }
 };

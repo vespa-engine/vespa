@@ -52,13 +52,15 @@ struct ConvertCellsSelector
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                                                    const tensor::DenseTensorAttribute& attr_tensor,
                                                    std::unique_ptr<Value> query_tensor,
-                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits, double brute_force_limit)
+                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits,
+                                                   double distance_threshold, double brute_force_limit)
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
       _query_tensor(std::move(query_tensor)),
       _target_num_hits(target_num_hits),
       _approximate(approximate),
       _explore_additional_hits(explore_additional_hits),
+      _distance_threshold(std::numeric_limits<double>::max()),
       _brute_force_limit(brute_force_limit),
       _fallback_dist_fun(),
       _distance_heap(target_num_hits),
@@ -72,9 +74,15 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
     fixup_fun(_query_tensor, _attr_tensor.getTensorType());
     _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.getConfig().distance_metric(), rct);
     _dist_fun = _fallback_dist_fun.get();
+    assert(_dist_fun);
     auto nns_index = _attr_tensor.nearest_neighbor_index();
     if (nns_index) {
         _dist_fun = nns_index->distance_function();
+        assert(_dist_fun);
+    }
+    if (distance_threshold < std::numeric_limits<double>::max()) {
+        _distance_threshold = _dist_fun->convert_threshold(distance_threshold);
+        _distance_heap.set_distance_threshold(_distance_threshold);
     }
     uint32_t est_hits = _attr_tensor.getNumDocs();
     setEstimate(HitEstimate(est_hits, false));
@@ -127,9 +135,9 @@ NearestNeighborBlueprint::perform_top_k()
             uint32_t k = _target_num_hits;
             if (_global_filter->has_filter()) {
                 auto filter = _global_filter->filter();
-                _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits);
+                _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits, _distance_threshold);
             } else {
-                _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits);
+                _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits, _distance_threshold);
             }
         }
     }

@@ -138,6 +138,7 @@ public class ValidateNearestNeighborTestCase {
         r.append("field=").append(field);
         r.append(",queryTensorName=").append(qt);
         r.append(",hnsw.exploreAdditionalHits=0");
+        r.append(",distanceThreshold=Infinity");
         r.append(",approximate=true");
         r.append(",targetHits=").append(th);
         r.append("} ").append(errmsg);

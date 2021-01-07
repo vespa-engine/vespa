@@ -206,10 +206,12 @@ template <class NodeTypes>
 typename NodeTypes::NearestNeighborTerm *
 create_nearest_neighbor_term(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
                              int32_t id, Weight weight, uint32_t target_num_hits,
-                             bool allow_approximate, uint32_t explore_additional_hits)
+                             bool allow_approximate, uint32_t explore_additional_hits,
+                             double distance_threshold)
 {
     return new typename NodeTypes::NearestNeighborTerm(query_tensor_name, field_name, id, weight,
-                                                       target_num_hits, allow_approximate, explore_additional_hits);
+                                                       target_num_hits, allow_approximate, explore_additional_hits,
+                                                       distance_threshold);
 }
 
 template <class NodeTypes>
@@ -321,9 +323,11 @@ public:
     }
     typename NodeTypes::NearestNeighborTerm &add_nearest_neighbor_term(stringref query_tensor_name, stringref field_name,
                                                                        int32_t id, Weight weight, uint32_t target_num_hits,
-                                                                       bool allow_approximate, uint32_t explore_additional_hits) {
+                                                                       bool allow_approximate, uint32_t explore_additional_hits,
+                                                                       double distance_threshold)
+    {
         adjustWeight(weight);
-        return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, explore_additional_hits));
+        return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, explore_additional_hits, distance_threshold));
     }
 };
 

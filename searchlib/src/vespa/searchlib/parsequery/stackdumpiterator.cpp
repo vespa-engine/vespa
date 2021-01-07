@@ -273,6 +273,7 @@ SimpleQueryStackDumpIterator::next()
             _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
             _extraIntArg2 = readCompressedPositiveInt(p); // allow_approximate
             _extraIntArg3 = readCompressedPositiveInt(p); // explore_additional_hits
+            _extraDoubleArg4 = read_double(p); // distance threshold
             _currArity = 0;
         } catch (...) {
             return false;

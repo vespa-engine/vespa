@@ -99,7 +99,7 @@ void Test::requireThatAllNodesCanBeVisited() {
     checkVisit<SuffixTerm>(new SimpleSuffixTerm("t", "field", 0, Weight(0)));
     checkVisit<PredicateQuery>(new SimplePredicateQuery(PredicateQueryTerm::UP(), "field", 0, Weight(0)));
     checkVisit<RegExpTerm>(new SimpleRegExpTerm("t", "field", 0, Weight(0)));
-    checkVisit<NearestNeighborTerm>(new SimpleNearestNeighborTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, true, 321));
+    checkVisit<NearestNeighborTerm>(new SimpleNearestNeighborTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, true, 321, 100100.25));
 }
 
 }  // namespace

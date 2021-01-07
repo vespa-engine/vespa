@@ -736,6 +736,7 @@ public:
                                                                         n.get_target_num_hits(),
                                                                         n.get_allow_approximate(),
                                                                         n.get_explore_additional_hits(),
+                                                                        n.get_distance_threshold(),
                                                                         getRequestContext().get_attribute_blueprint_params().nearest_neighbor_brute_force_limit));
     }
 };
