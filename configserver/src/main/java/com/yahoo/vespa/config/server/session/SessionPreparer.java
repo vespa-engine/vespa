@@ -47,10 +47,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
@@ -174,11 +171,11 @@ public class SessionPreparer {
 
         Preparation(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
-                    File serverDbSessionDir, ApplicationPackage preprocessedApplicationPackage,
+                    File serverDbSessionDir, ApplicationPackage applicationPackage,
                     SessionZooKeeperClient sessionZooKeeperClient) {
             this.logger = logger;
             this.params = params;
-            this.applicationPackage = preprocessedApplicationPackage;
+            this.applicationPackage = applicationPackage;
             this.sessionZooKeeperClient = sessionZooKeeperClient;
             this.applicationId = params.getApplicationId();
             this.dockerImageRepository = params.dockerImageRepository();
@@ -402,6 +399,7 @@ public class SessionPreparer {
      * This class ensures these constraints and returns a reconciliated set of nodes which should be activated,
      * given a set of model activation results.
      */
+    @SuppressWarnings("unused")
     private static final class ReconciliatedHostAllocations {
         
         public ReconciliatedHostAllocations(List<PreparedModelsBuilder.PreparedModelResult> results) {
