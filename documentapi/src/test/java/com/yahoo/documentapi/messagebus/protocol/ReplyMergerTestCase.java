@@ -38,7 +38,7 @@ public class ReplyMergerTestCase {
     }
 
     @Test
-    public void mergingSingleReplyWithOneErrorReturnsEmptyReplyWithError() {
+    public void mergingSingleReplyWithOneErrorReturnsSameReplyWithError() {
         Reply r1 = new EmptyReply();
         Error error = new Error(1234, "oh no!");
         r1.addError(error);
@@ -46,12 +46,12 @@ public class ReplyMergerTestCase {
         Tuple2<Integer, Reply> ret = merger.mergedReply();
 
         assertNull(ret.first);
-        assertNotSame(r1, ret.second);
+        assertSame(r1, ret.second);
         assertThatErrorsMatch(new Error[] { error }, ret);
     }
 
     @Test
-    public void mergingSingleReplyWithMultipleErrorsReturnsEmptyReplyWithAllErrors() {
+    public void mergingSingleReplyWithMultipleErrorsReturnsSameReplyWithAllErrors() {
         Reply r1 = new EmptyReply();
         Error errors[] = new Error[] {
                 new Error(1234, "oh no!"), new Error(4567, "oh dear!"),
@@ -62,12 +62,12 @@ public class ReplyMergerTestCase {
         Tuple2<Integer, Reply> ret = merger.mergedReply();
 
         assertNull(ret.first);
-        assertNotSame(r1, ret.second);
+        assertSame(r1, ret.second);
         assertThatErrorsMatch(errors, ret);
     }
 
     @Test
-    public void mergingMultipleRepliesWithMultipleErrorsReturnsEmptyReplyWithAllErrors() {
+    public void mergingMultipleRepliesWithMultipleErrorsReturnsMostSevereReplyWithAllErrors() {
         Reply r1 = new EmptyReply();
         Reply r2 = new EmptyReply();
         Error errors[] = new Error[] {
@@ -81,7 +81,7 @@ public class ReplyMergerTestCase {
         Tuple2<Integer, Reply> ret = merger.mergedReply();
 
         assertNull(ret.first);
-        assertNotSame(r1, ret.second);
+        assertSame(r1, ret.second);
         assertNotSame(r2, ret.second);
         assertThatErrorsMatch(errors, ret);
     }
@@ -143,7 +143,7 @@ public class ReplyMergerTestCase {
         merger.merge(1, r2);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
         assertNull(ret.first);
-        assertNotSame(r1, ret.second);
+        assertSame(r1, ret.second);
         assertNotSame(r2, ret.second);
         // All errors from replies with errors are included, not those that
         // are fully ignored.
@@ -182,7 +182,7 @@ public class ReplyMergerTestCase {
     }
 
     @Test
-    // TODO: This seems wrong, and is probably a consequence of TAS being added later than this logic was written.
+    // TODO jonmv: This seems wrong, and is probably a consequence of TAS being implemented after reply merging.
     public void returnErrorDocumentReplyWhereDocWasFoundWhichIsProbablyWrong() {
         Error e1 = new Error(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED, "fail");
         UpdateDocumentReply r1 = new UpdateDocumentReply();
@@ -197,7 +197,7 @@ public class ReplyMergerTestCase {
         merger.merge(2, r3);
         Tuple2<Integer, Reply> ret = merger.mergedReply();
         assertNull(ret.first);
-        assertNotSame(r1, ret.second);
+        assertSame(r1, ret.second);
         assertThatErrorsMatch(new Error[] { e1 }, ret);
     }
 
