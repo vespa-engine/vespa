@@ -875,6 +875,7 @@
       "public final java.lang.String outs()",
       "public final java.lang.String out()",
       "public final java.util.List args()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode arg()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode function()",
       "public final com.yahoo.searchlib.rankingexpression.rule.FunctionNode scalarOrTensorFunction()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorFunction()",
