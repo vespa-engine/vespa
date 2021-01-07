@@ -101,7 +101,7 @@ public class SchemaValidator {
         }
 
         private String message(SAXParseException e) {
-            return "XML error in " + fileName + ": " +
+            return "Invalid XML according to XML schema, error in " + fileName + ": " +
                     Exceptions.toMessageString(e)
                     + " [" + e.getLineNumber() + ":" + e.getColumnNumber() + "]" +
                     ", input:\n" + getErrorContext(e.getLineNumber());

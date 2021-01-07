@@ -123,7 +123,7 @@ public class ContainerIncludeTest {
             creator.create(true);
             fail("Expected exception due to xml schema violation ('zearcer')");
          } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), containsString("XML error"));
+            assertThat(e.getMessage(), containsString("Invalid XML according to XML schema"));
             assertThat(e.getMessage(), containsString("zearcer"));
         }
     }

@@ -203,7 +203,7 @@ public class ApplicationDeployTest {
             ApplicationPackageTester.create(tmpDir.getAbsolutePath());
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("XML error in deployment.xml: element \"instance\" not allowed here; expected the element end-tag or element \"delay\", \"region\", \"steps\" or \"test\" [7:30], input:\n", e.getMessage());
+            assertEquals("Invalid XML according to XML schema, error in deployment.xml: element \"instance\" not allowed here; expected the element end-tag or element \"delay\", \"region\", \"steps\" or \"test\" [7:30], input:\n", e.getMessage());
         }
     }
 

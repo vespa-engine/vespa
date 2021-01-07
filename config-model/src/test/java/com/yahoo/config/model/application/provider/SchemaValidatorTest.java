@@ -77,7 +77,7 @@ public class SchemaValidatorTest {
     }
 
     private String expectedErrorMessage(String input) {
-        return "XML error in " + input + ": The element type \"config\" must be terminated by the matching end-tag \"</config>\". [7:5], input:\n" +
+        return "Invalid XML according to XML schema, error in " + input + ": The element type \"config\" must be terminated by the matching end-tag \"</config>\". [7:5], input:\n" +
                 "4:    <basicStruct>\n" +
                 "5:      <stringVal>default</stringVal>\n" +
                 "6:    </basicStruct>\n" +
