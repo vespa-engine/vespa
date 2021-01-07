@@ -52,9 +52,12 @@ public final class NGramExpression extends Expression {
             // This expression is already executed for this input instance
             return;
         }
-        SpanList spanList = input.setSpanTree(new SpanTree(SpanTrees.LINGUISTICS)).spanList();
+        StringFieldValue output = input.clone();
+        ctx.setValue(output);
+
+        SpanList spanList = output.setSpanTree(new SpanTree(SpanTrees.LINGUISTICS)).spanList();
         int lastPosition = 0;
-        for (Iterator<GramSplitter.Gram> it = linguistics.getGramSplitter().split(input.getString(), gramSize); it.hasNext();) {
+        for (Iterator<GramSplitter.Gram> it = linguistics.getGramSplitter().split(output.getString(), gramSize); it.hasNext();) {
             GramSplitter.Gram gram = it.next();
             // if there is a gap before this gram, then annotate the gram as punctuation
             // (technically it may be of various types, but it does not matter - we just
@@ -64,15 +67,15 @@ public final class NGramExpression extends Expression {
             }
 
             // annotate gram as a word term
-            String gramString = gram.extractFrom(input.getString());
+            String gramString = gram.extractFrom(output.getString());
             typedSpan(gram.getStart(), gram.getCodePointCount(), TokenType.ALPHABETIC, spanList).
                     annotate(LinguisticsAnnotator.lowerCaseTermAnnotation(gramString, gramString));
 
             lastPosition = gram.getStart() + gram.getCodePointCount();
         }
         // handle punctuation at the end
-        if (lastPosition < input.toString().length()) {
-            typedSpan(lastPosition, input.toString().length() - lastPosition, TokenType.PUNCTUATION, spanList);
+        if (lastPosition < output.toString().length()) {
+            typedSpan(lastPosition, output.toString().length() - lastPosition, TokenType.PUNCTUATION, spanList);
         }
     }
 
