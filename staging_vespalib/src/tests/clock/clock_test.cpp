@@ -15,10 +15,10 @@ TEST("Test that clock is ticking forward") {
     FastOS_ThreadPool pool(0x10000);
     ASSERT_TRUE(pool.NewThread(clock.getRunnable(), nullptr) != nullptr);
     steady_time start = clock.getTimeNS();
-    std::this_thread::sleep_for(5s);
+    std::this_thread::sleep_for(1s);
     steady_time stop = clock.getTimeNS();
     EXPECT_TRUE(stop > start);
-    std::this_thread::sleep_for(6s);
+    std::this_thread::sleep_for(1s);
     clock.stop();
     steady_time stop2 = clock.getTimeNS();
     EXPECT_TRUE(stop2 > stop);
