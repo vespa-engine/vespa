@@ -34,16 +34,16 @@ public abstract class Maintainer implements Runnable {
     private final ScheduledExecutorService service;
     private final AtomicBoolean shutDown = new AtomicBoolean();
 
-    public Maintainer(String name, Mode mode, Duration interval, Instant startedAt, JobControl jobControl, JobMetrics jobMetrics, List<String> clusterHostnames) {
-        this(name, mode, interval, staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames), jobControl, jobMetrics);
-    }
-
-    public Maintainer(String name, Mode mode, Duration interval, Duration initialDelay, JobControl jobControl, JobMetrics jobMetrics) {
+    public Maintainer(String name, Mode mode, Duration interval, Instant startedAt, JobControl jobControl,
+                      JobMetrics jobMetrics, List<String> clusterHostnames) {
         this.name = name;
         this.mode = Objects.requireNonNull(mode);
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
         this.jobMetrics = Objects.requireNonNull(jobMetrics);
+        Objects.requireNonNull(startedAt);
+        Objects.requireNonNull(clusterHostnames);
+        Duration initialDelay = staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames);
         service = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, name() + "-worker"));
         service.scheduleAtFixedRate(this, initialDelay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name(), this);

@@ -2,6 +2,8 @@
 package com.yahoo.concurrent.maintenance;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 
 /**
  * @author mpolden
@@ -13,7 +15,7 @@ class TestMaintainer extends Maintainer {
     private RuntimeException exceptionToThrow = null;
 
     public TestMaintainer(String name, Mode mode, JobControl jobControl, JobMetrics jobMetrics) {
-        super(name, mode, Duration.ofDays(1), Duration.ofDays(1), jobControl, jobMetrics);
+        super(name, mode, Duration.ofDays(1), Instant.now(), jobControl, jobMetrics, List.of());
     }
 
     public int totalRuns() {
