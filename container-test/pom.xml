@@ -65,6 +65,10 @@
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>aircompressor</artifactId>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>
