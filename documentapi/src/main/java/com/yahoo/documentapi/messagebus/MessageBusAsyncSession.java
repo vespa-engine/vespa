@@ -277,13 +277,13 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     private static Response.Outcome toOutcome(Reply reply) {
-        if (   reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
-            || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound())
-            return NOT_FOUND;
         if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_NO_SPACE))
             return INSUFFICIENT_STORAGE;
         if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED))
             return CONDITION_FAILED;
+        if (   reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
+            || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound())
+            return NOT_FOUND;
         return ERROR;
     }
 
