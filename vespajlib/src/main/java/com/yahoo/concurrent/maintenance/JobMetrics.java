@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent.maintenance;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
@@ -14,7 +13,7 @@ public class JobMetrics {
 
     private final BiConsumer<String, Long> metricConsumer;
 
-    private final Map<String, Long> incompleteRuns = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> incompleteRuns = new ConcurrentHashMap<>();
 
     public JobMetrics(BiConsumer<String, Long> metricConsumer) {
         this.metricConsumer = metricConsumer;

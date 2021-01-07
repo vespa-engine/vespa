@@ -34,7 +34,7 @@ public abstract class ConfigServerMaintainer extends Maintainer {
     /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                            Instant now, Duration interval) {
-        super(null, interval, now, new JobControl(new JobControlFlags(curator, flagSource)),
+        super(null, Mode.exclusive, interval, now, new JobControl(new JobControlFlags(curator, flagSource)),
               jobMetrics(applicationRepository.metric()), cluster(curator));
         this.applicationRepository = applicationRepository;
     }

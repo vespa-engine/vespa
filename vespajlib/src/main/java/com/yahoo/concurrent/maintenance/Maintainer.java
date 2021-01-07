@@ -27,18 +27,20 @@ public abstract class Maintainer implements Runnable {
     protected final Logger log = Logger.getLogger(this.getClass().getName());
 
     private final String name;
+    private final Mode mode;
     private final JobControl jobControl;
     private final JobMetrics jobMetrics;
     private final Duration interval;
     private final ScheduledExecutorService service;
     private final AtomicBoolean shutDown = new AtomicBoolean();
 
-    public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl, JobMetrics jobMetrics, List<String> clusterHostnames) {
-        this(name, interval, staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames), jobControl, jobMetrics);
+    public Maintainer(String name, Mode mode, Duration interval, Instant startedAt, JobControl jobControl, JobMetrics jobMetrics, List<String> clusterHostnames) {
+        this(name, mode, interval, staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames), jobControl, jobMetrics);
     }
 
-    public Maintainer(String name, Duration interval, Duration initialDelay, JobControl jobControl, JobMetrics jobMetrics) {
+    public Maintainer(String name, Mode mode, Duration interval, Duration initialDelay, JobControl jobControl, JobMetrics jobMetrics) {
         this.name = name;
+        this.mode = Objects.requireNonNull(mode);
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
         this.jobMetrics = Objects.requireNonNull(jobMetrics);
@@ -49,13 +51,10 @@ public abstract class Maintainer implements Runnable {
 
     @Override
     public void run() {
-        log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
         try {
             if (jobControl.isActive(name())) {
                 lockAndMaintain();
             }
-        } catch (UncheckedTimeoutException ignored) {
-            // Another actor is running this job
         } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
         }
@@ -94,14 +93,17 @@ public abstract class Maintainer implements Runnable {
     /** Run this while holding the job lock */
     @SuppressWarnings("unused")
     public final void lockAndMaintain() {
+        log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
+        jobMetrics.recordRunOf(name());
         try (var lock = jobControl.lockJob(name())) {
-            try {
-                jobMetrics.recordRunOf(name());
-                if (maintain()) jobMetrics.recordSuccessOf(name());
-            } finally {
-                // Always forward metrics
-                jobMetrics.forward(name());
+            if (maintain()) jobMetrics.recordSuccessOf(name());
+        } catch (UncheckedTimeoutException ignored) {
+            if (mode == Mode.shared) {
+                // This is fine as we're colliding with a run on another node
+                jobMetrics.recordSuccessOf(name());
             }
+        } finally {
+            jobMetrics.forward(name());
         }
     }
 
@@ -125,6 +127,16 @@ public abstract class Maintainer implements Runnable {
         if (interval.isNegative() || interval.isZero())
             throw new IllegalArgumentException("Interval must be positive, but was " + interval);
         return interval;
+    }
+
+    public enum Mode {
+
+        /** Completing a scheduled run on any node is sufficient */
+        shared,
+
+        /** Completing a scheduled run is always required */
+        exclusive,
+
     }
 
 }
