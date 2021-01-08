@@ -58,6 +58,7 @@ skip_thread bool default=false
 
 ## Whether to use direct P2P RPC protocol for all StorageAPI communication
 ## instead of going via MessageBus.
+## Deprecated, and will soon be gone as it is default on.
 use_direct_storageapi_rpc bool default=true
 
 ## The number of network (FNET) threads used by the shared rpc resource.

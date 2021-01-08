@@ -270,8 +270,7 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
       _closed(false),
       _docApiConverter(configUri, std::make_shared<PlaceHolderBucketResolver>()),
       _thread(),
-      _skip_thread(false),
-      _use_direct_storageapi_rpc(false)
+      _skip_thread(false)
 {
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
     _component.registerMetric(_metrics);
@@ -375,7 +374,6 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
 {
     // Only allow dynamic (live) reconfiguration of message bus limits.
     _skip_thread = config->skipThread;
-    _use_direct_storageapi_rpc = config->useDirectStorageapiRpc;
     if (_mbus) {
         configureMessageBusLimits(*config);
         if (_mbus->getRPCNetwork().getPort() != config->mbusport) {
@@ -574,9 +572,7 @@ CommunicationManager::sendCommand(
         case api::StorageMessageAddress::Protocol::STORAGE:
     {
         LOG(debug, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
-        if (_use_direct_storageapi_rpc.load(std::memory_order_relaxed) &&
-            _storage_api_rpc_service->target_supports_direct_rpc(address))
-        {
+        if (_storage_api_rpc_service->target_supports_direct_rpc(address)) {
             _storage_api_rpc_service->send_rpc_v1_request(msg);
         } else {
             auto cmd = std::make_unique<mbusprot::StorageCommand>(msg);
