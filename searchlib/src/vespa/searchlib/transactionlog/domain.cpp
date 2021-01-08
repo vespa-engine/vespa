@@ -45,6 +45,7 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
       _sessionId(1),
       _syncMonitor(),
       _pendingSync(false),
+      _done_sync_tasks(),
       _name(domainName),
       _parts(),
       _lock(),
@@ -206,13 +207,16 @@ Domain::getSynced() const
 
 
 void
-Domain::triggerSyncNow()
+Domain::triggerSyncNow(std::unique_ptr<vespalib::Executor::Task> done_sync_task)
 {
     {
         std::unique_lock guard(_currentChunkMonitor);
         commitAndTransferResponses(guard);
     }
     std::unique_lock guard(_syncMonitor);
+    if (done_sync_task) {
+        _done_sync_tasks.push_back(std::move(done_sync_task));
+    }
     if (!_pendingSync) {
         _pendingSync = true;
         _executor.execute(makeLambdaTask([this, domainPart= getActivePart()]() {
@@ -220,6 +224,11 @@ Domain::triggerSyncNow()
             std::lock_guard monitorGuard(_syncMonitor);
             _pendingSync = false;
             _syncCond.notify_all();
+            for (auto &task : _done_sync_tasks) {
+                auto failed_task = _executor.execute(std::move(task));
+                assert(!failed_task);
+            }
+            _done_sync_tasks.clear();
         }));
     }
 }
@@ -316,7 +325,7 @@ Domain::optionallyRotateFile(SerialNum serialNum) {
     DomainPart::SP dp = getActivePart();
     if (dp->byteSize() > _config.getPartSizeLimit()) {
         waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
-        triggerSyncNow();
+        triggerSyncNow({});
         waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
         dp->close();
         dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _config.getEncoding(),

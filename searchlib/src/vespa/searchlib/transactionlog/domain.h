@@ -36,7 +36,7 @@ public:
     SerialNum begin() const;
     SerialNum end() const;
     SerialNum getSynced() const;
-    void triggerSyncNow();
+    void triggerSyncNow(std::unique_ptr<vespalib::Executor::Task> done_sync_task);
     bool getMarkedDeleted() const { return _markedDeleted; }
     void markDeleted() { _markedDeleted = true; }
 
@@ -92,6 +92,7 @@ private:
     std::mutex                   _syncMonitor;
     std::condition_variable      _syncCond;
     bool                         _pendingSync;
+    std::vector<std::unique_ptr<vespalib::Executor::Task>> _done_sync_tasks;
     vespalib::string             _name;
     DomainPartList               _parts;
     mutable std::mutex           _lock;
