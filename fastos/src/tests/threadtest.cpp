@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <chrono>
 
-#define MUTEX_TEST_THREADS 6
 #define MAX_THREADS 7
 
 using namespace std::chrono;
@@ -62,7 +61,7 @@ class ThreadTest : public ThreadTestBase
 
          for(i=0; i<MAX_THREADS; i++)
          {
-            jobs[i].code = PRINT_MESSAGE_AND_WAIT3SEC;
+            jobs[i].code = PRINT_MESSAGE_AND_WAIT3MSEC;
             jobs[i].message = static_cast<char *>(malloc(100));
             sprintf(jobs[i].message, "Thread %d invocation", i+1);
          }
@@ -87,62 +86,6 @@ class ThreadTest : public ThreadTestBase
 
          Progress(true, "Verifying result codes...");
          for(i=0; i<MAX_THREADS; i++)
-         {
-            Progress(jobs[i].result ==
-                     static_cast<int>(strlen(jobs[i].message)),
-                     "Checking result code from thread (%d==%d)",
-                     jobs[i].result, strlen(jobs[i].message));
-         }
-
-         Progress(true, "Closing threadpool...");
-         pool->Close();
-
-         Progress(true, "Deleting threadpool...");
-         delete(pool);
-      }
-      PrintSeparator();
-   }
-
-
-   void HowManyThreadsTest ()
-   {
-      #define HOW_MAX_THREADS (1024)
-      TestHeader("How Many Threads Test");
-
-      FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024, HOW_MAX_THREADS);
-
-      if(Progress(pool != nullptr, "Allocating ThreadPool"))
-      {
-         int i;
-         Job jobs[HOW_MAX_THREADS];
-
-         for(i=0; i<HOW_MAX_THREADS; i++)
-         {
-            jobs[i].code = PRINT_MESSAGE_AND_WAIT3SEC;
-            jobs[i].message = static_cast<char *>(malloc(100));
-            sprintf(jobs[i].message, "Thread %d invocation", i+1);
-         }
-
-         for(i=0; i<HOW_MAX_THREADS; i++)
-         {
-            if(i==HOW_MAX_THREADS)
-            {
-               bool rc = (nullptr == pool->NewThread(this,
-                                  static_cast<void *>(&jobs[0])));
-               Progress(rc, "Creating too many threads should fail.");
-            }
-            else
-            {
-               bool rc = (nullptr != pool->NewThread(this,
-                                  static_cast<void *>(&jobs[i])));
-               Progress(rc, "Creating Thread");
-            }
-         };
-
-         WaitForThreadsToFinish(jobs, HOW_MAX_THREADS);
-
-         Progress(true, "Verifying result codes...");
-         for(i=0; i<HOW_MAX_THREADS; i++)
          {
             Progress(jobs[i].result ==
                      static_cast<int>(strlen(jobs[i].message)),
