@@ -12,6 +12,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
