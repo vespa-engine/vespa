@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent.maintenance;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -15,8 +14,6 @@ import static org.junit.Assert.assertEquals;
  * @author freva
  */
 public class MaintainerTest {
-
-    private final JobControl jobControl = new JobControl(new JobControlStateMock());
 
     @Test
     public void staggering() {
@@ -44,7 +41,7 @@ public class MaintainerTest {
     public void success_metric() {
         AtomicLong consecutiveFailures = new AtomicLong();
         JobMetrics jobMetrics = new JobMetrics((job, count) -> consecutiveFailures.set(count));
-        TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics);
+        TestMaintainer maintainer = new TestMaintainer(jobMetrics);
 
         // Maintainer fails twice in a row
         maintainer.successOnNextRun(false).run();
@@ -61,16 +58,12 @@ public class MaintainerTest {
         assertEquals(0, consecutiveFailures.get());
 
         // Maintainer throws
-        maintainer.throwOnNextRun(new RuntimeException()).run();
+        maintainer.throwOnNextRun(true).run();
         assertEquals(1, consecutiveFailures.get());
 
         // Maintainer recovers
-        maintainer.throwOnNextRun(null).run();
+        maintainer.throwOnNextRun(false).run();
         assertEquals(0, consecutiveFailures.get());
-
-        // Lock exception is treated as a failure
-        maintainer.throwOnNextRun(new UncheckedTimeoutException()).run();
-        assertEquals(1, consecutiveFailures.get());
     }
 
 }
