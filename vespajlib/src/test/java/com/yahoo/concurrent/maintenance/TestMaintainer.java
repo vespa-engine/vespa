@@ -14,8 +14,8 @@ class TestMaintainer extends Maintainer {
     private boolean success = true;
     private RuntimeException exceptionToThrow = null;
 
-    public TestMaintainer(String name, Mode mode, JobControl jobControl, JobMetrics jobMetrics) {
-        super(name, mode, Duration.ofDays(1), Instant.now(), jobControl, jobMetrics, List.of());
+    public TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics) {
+        super(name, Duration.ofDays(1), Instant.now(), jobControl, jobMetrics, List.of());
     }
 
     public int totalRuns() {

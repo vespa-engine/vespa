@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent.maintenance;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.net.HostName;
 
 import java.time.Duration;
@@ -27,17 +26,15 @@ public abstract class Maintainer implements Runnable {
     protected final Logger log = Logger.getLogger(this.getClass().getName());
 
     private final String name;
-    private final Mode mode;
     private final JobControl jobControl;
     private final JobMetrics jobMetrics;
     private final Duration interval;
     private final ScheduledExecutorService service;
     private final AtomicBoolean shutDown = new AtomicBoolean();
 
-    public Maintainer(String name, Mode mode, Duration interval, Instant startedAt, JobControl jobControl,
+    public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl,
                       JobMetrics jobMetrics, List<String> clusterHostnames) {
         this.name = name;
-        this.mode = Objects.requireNonNull(mode);
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
         this.jobMetrics = Objects.requireNonNull(jobMetrics);
@@ -90,11 +87,6 @@ public abstract class Maintainer implements Runnable {
         jobMetrics.recordRunOf(name());
         try (var lock = jobControl.lockJob(name())) {
             if (maintain()) jobMetrics.recordSuccessOf(name());
-        } catch (UncheckedTimeoutException ignored) {
-            if (mode == Mode.shared) {
-                // This is fine as we're colliding with a run on another node
-                jobMetrics.recordSuccessOf(name());
-            }
         } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
         } finally {
@@ -123,16 +115,6 @@ public abstract class Maintainer implements Runnable {
         if (interval.isNegative() || interval.isZero())
             throw new IllegalArgumentException("Interval must be positive, but was " + interval);
         return interval;
-    }
-
-    public enum Mode {
-
-        /** Completing a scheduled run on any node is sufficient */
-        shared,
-
-        /** Completing a scheduled run is always required */
-        exclusive,
-
     }
 
 }
