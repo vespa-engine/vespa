@@ -1970,6 +1970,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         object.setString("url", withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
+        tenantMetaDataToSlime(tenant, metaData);
+    }
+
+    private void tenantMetaDataToSlime(Tenant tenant, Cursor object) {
+        List<com.yahoo.vespa.hosted.controller.Application> applications = controller.applications().asList(tenant.name());
+        Optional<Instant> lastDev = applications.stream()
+                .flatMap(application -> application.instances().values().stream())
+                .flatMap(instance -> controller.jobController().jobs(instance.id()).stream()
+                        .filter(jobType -> jobType.environment() == Environment.dev)
+                        .flatMap(jobType -> controller.jobController().last(instance.id(), jobType).stream()))
+                .map(Run::start)
+                .max(Comparator.naturalOrder());
+        Optional<Instant> lastSubmission = applications.stream()
+                .flatMap(app -> app.latestVersion().flatMap(ApplicationVersion::buildTime).stream())
+                .max(Comparator.naturalOrder());
+        lastDev.ifPresent(instant -> object.setLong("lastDeploymentToDev", instant.toEpochMilli()));
+        lastSubmission.ifPresent(instant -> object.setLong("lastSubmissionToProd", instant.toEpochMilli()));
     }
 
     /** Returns a copy of the given URI with the host and port from the given URI, the path set to the given path and the query set to given query*/
