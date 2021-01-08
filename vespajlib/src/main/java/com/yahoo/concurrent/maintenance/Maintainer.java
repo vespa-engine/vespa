@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent.maintenance;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.net.HostName;
 
 import java.time.Duration;
@@ -32,15 +33,15 @@ public abstract class Maintainer implements Runnable {
     private final ScheduledExecutorService service;
     private final AtomicBoolean shutDown = new AtomicBoolean();
 
-    public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl,
-                      JobMetrics jobMetrics, List<String> clusterHostnames) {
+    public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl, JobMetrics jobMetrics, List<String> clusterHostnames) {
+        this(name, interval, staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames), jobControl, jobMetrics);
+    }
+
+    public Maintainer(String name, Duration interval, Duration initialDelay, JobControl jobControl, JobMetrics jobMetrics) {
         this.name = name;
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
         this.jobMetrics = Objects.requireNonNull(jobMetrics);
-        Objects.requireNonNull(startedAt);
-        Objects.requireNonNull(clusterHostnames);
-        Duration initialDelay = staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames);
         service = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, name() + "-worker"));
         service.scheduleAtFixedRate(this, initialDelay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name(), this);
@@ -48,7 +49,17 @@ public abstract class Maintainer implements Runnable {
 
     @Override
     public void run() {
-        lockAndMaintain(false);
+        log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
+        try {
+            if (jobControl.isActive(name())) {
+                lockAndMaintain();
+            }
+        } catch (UncheckedTimeoutException ignored) {
+            // Another actor is running this job
+        } catch (Throwable e) {
+            log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
+        }
+        log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }
 
     /** Starts shutdown of this, typically by shutting down executors. {@link #awaitShutdown()} waits for shutdown to complete. */
@@ -81,18 +92,17 @@ public abstract class Maintainer implements Runnable {
     protected Duration interval() { return interval; }
 
     /** Run this while holding the job lock */
-    public final void lockAndMaintain(boolean force) {
-        if (!force && !jobControl.isActive(name())) return;
-        log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
-        jobMetrics.recordRunOf(name());
+    @SuppressWarnings("unused")
+    public final void lockAndMaintain() {
         try (var lock = jobControl.lockJob(name())) {
-            if (maintain()) jobMetrics.recordSuccessOf(name());
-        } catch (Throwable e) {
-            log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
-        } finally {
-            jobMetrics.forward(name());
+            try {
+                jobMetrics.recordRunOf(name());
+                if (maintain()) jobMetrics.recordSuccessOf(name());
+            } finally {
+                // Always forward metrics
+                jobMetrics.forward(name());
+            }
         }
-        log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }
 
     /** Returns the simple name of this job */

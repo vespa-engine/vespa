@@ -19,9 +19,8 @@ public class JobControlTest {
 
         String job1 = "Job1";
         String job2 = "Job2";
-        JobMetrics metrics = new JobMetrics((job, instant) -> {});
-        TestMaintainer maintainer1 = new TestMaintainer(job1, jobControl, metrics);
-        TestMaintainer maintainer2 = new TestMaintainer(job2, jobControl, metrics);
+        TestMaintainer maintainer1 = new TestMaintainer(job1, jobControl);
+        TestMaintainer maintainer2 = new TestMaintainer(job2, jobControl);
         assertEquals(2, jobControl.jobs().size());
         assertTrue(jobControl.jobs().contains(job1));
         assertTrue(jobControl.jobs().contains(job2));
@@ -62,7 +61,7 @@ public class JobControlTest {
     public void testJobControlMayDeactivateJobs() {
         JobControlStateMock state = new JobControlStateMock();
         JobControl jobControl = new JobControl(state);
-        TestMaintainer mockMaintainer = new TestMaintainer(null, jobControl, new JobMetrics((job, instant) -> {}));
+        TestMaintainer mockMaintainer = new TestMaintainer(null, jobControl);
 
         assertTrue(jobControl.jobs().contains("TestMaintainer"));
 

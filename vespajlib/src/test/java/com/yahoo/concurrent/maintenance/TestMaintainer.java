@@ -2,8 +2,6 @@
 package com.yahoo.concurrent.maintenance;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
 
 /**
  * @author mpolden
@@ -12,10 +10,18 @@ class TestMaintainer extends Maintainer {
 
     private int totalRuns = 0;
     private boolean success = true;
-    private RuntimeException exceptionToThrow = null;
+    private boolean throwing = false;
 
     public TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics) {
-        super(name, Duration.ofDays(1), Instant.now(), jobControl, jobMetrics, List.of());
+        super(name, Duration.ofDays(1), Duration.ofDays(1), jobControl, jobMetrics);
+    }
+
+    public TestMaintainer(JobMetrics jobMetrics) {
+        this(null, new JobControl(new JobControlStateMock()), jobMetrics);
+    }
+
+    public TestMaintainer(String name, JobControl jobControl) {
+        this(name, jobControl, new JobMetrics((job, instant) -> {}));
     }
 
     public int totalRuns() {
@@ -27,14 +33,14 @@ class TestMaintainer extends Maintainer {
         return this;
     }
 
-    public TestMaintainer throwOnNextRun(RuntimeException e) {
-        this.exceptionToThrow = e;
+    public TestMaintainer throwOnNextRun(boolean throwing) {
+        this.throwing = throwing;
         return this;
     }
 
     @Override
     protected boolean maintain() {
-        if (exceptionToThrow != null) throw exceptionToThrow;
+        if (throwing) throw new RuntimeException("Maintenance run failed");
         totalRuns++;
         return success;
     }
