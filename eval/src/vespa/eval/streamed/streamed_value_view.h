@@ -24,10 +24,10 @@ private:
 public:
     StreamedValueView(const ValueType &type, size_t num_mapped_dimensions,
                       TypedCells cells, size_t num_subspaces,
-                      ConstArrayRef<char> labels_buf)
+                      const std::vector<label_t> &labels)
       : _type(type),
         _cells_ref(cells),
-        _my_index(num_mapped_dimensions, num_subspaces, labels_buf)
+        _my_index(num_mapped_dimensions, num_subspaces, labels)
     {
         assert(num_subspaces * _type.dense_subspace_size() == _cells_ref.size);
     }
@@ -39,7 +39,6 @@ public:
     MemoryUsage get_memory_usage() const final override {
         return self_memory_usage<StreamedValueView>();
     }
-    auto get_data_reference() const { return _my_index.get_data_reference(); }
 };
 
 } // namespace

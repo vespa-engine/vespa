@@ -19,7 +19,6 @@ namespace search::tensor {
 class SerializedFastValueAttribute : public TensorAttribute {
     vespalib::eval::ValueType _tensor_type;
     StreamedValueStore _streamedValueStore; // data store for serialized tensors
-    const StreamedValueStore::DataFromType _data_from_type;
 public:
     SerializedFastValueAttribute(vespalib::stringref baseFileName, const Config &cfg);
     virtual ~SerializedFastValueAttribute();

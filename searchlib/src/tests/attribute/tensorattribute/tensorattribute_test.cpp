@@ -563,7 +563,7 @@ void
 Fixture::testCompaction()
 {
     if ((_traits.use_dense_tensor_attribute && _denseTensors) ||
-            _traits.use_direct_tensor_attribute)
+         ! _traits.use_dense_tensor_attribute)
     {
         LOG(info, "Skipping compaction test for tensor '%s' which is using free-lists", _cfg.tensorType().to_spec().c_str());
         return;

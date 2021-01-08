@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 #include <cassert>
 
 using namespace vespalib::eval::tensor_function;
@@ -15,6 +16,8 @@ namespace vespalib::eval::instruction {
 
 using State = InterpretedFunction::State;
 using Instruction = InterpretedFunction::Instruction;
+
+using Handle = SharedStringRepo::Handle;
 
 namespace {
 
@@ -35,28 +38,43 @@ size_t count_children(const Spec &spec)
 }
 
 struct DimSpec {
-    vespalib::stringref name;
-    GenericPeek::SpecMap::mapped_type child_or_label;
+    enum class DimType { CHILD_IDX, LABEL_IDX, LABEL_STR };
+    vespalib::string name;
+    DimType dim_type;
+    size_t idx;
+    Handle str;
+    static DimSpec from_child(const vespalib::string &name_in, size_t child_idx) {
+        return {name_in, DimType::CHILD_IDX, child_idx, Handle()};
+    }
+    static DimSpec from_label(const vespalib::string &name_in, const TensorSpec::Label &label) {
+        if (label.is_mapped()) {
+            return {name_in, DimType::LABEL_STR, 0, Handle(label.name)};
+        } else {
+            assert(label.is_indexed());
+            return {name_in, DimType::LABEL_IDX, label.index, Handle()};
+        }
+    }
+    ~DimSpec();
     bool has_child() const {
-        return std::holds_alternative<size_t>(child_or_label);
+        return (dim_type == DimType::CHILD_IDX);
     }
     bool has_label() const {
-        return std::holds_alternative<TensorSpec::Label>(child_or_label);
+        return (dim_type != DimType::CHILD_IDX);
     }
     size_t get_child_idx() const {
-        return std::get<size_t>(child_or_label);
+        assert(dim_type == DimType::CHILD_IDX);
+        return idx;
     }
-    vespalib::stringref get_label_name() const {
-        auto & label = std::get<TensorSpec::Label>(child_or_label);
-        assert(label.is_mapped());
-        return label.name;
+    label_t get_label_name() const {
+        assert(dim_type == DimType::LABEL_STR);
+        return str.id();
     }
     size_t get_label_index() const {
-        auto & label = std::get<TensorSpec::Label>(child_or_label);
-        assert(label.is_indexed());
-        return label.index;
+        assert(dim_type == DimType::LABEL_IDX);
+        return idx;
     }
 };
+DimSpec::~DimSpec() = default;
 
 struct ExtractedSpecs {
     using Dimension = ValueType::Dimension;
@@ -85,7 +103,11 @@ struct ExtractedSpecs {
                     dimensions.push_back(a);
                     const auto & [spec_dim_name, child_or_label] = b;
                     assert(a.name == spec_dim_name);
-                    specs.emplace_back(DimSpec{a.name, child_or_label});
+                    if (std::holds_alternative<size_t>(child_or_label)) {
+                        specs.push_back(DimSpec::from_child(a.name, std::get<size_t>(child_or_label)));
+                    } else {
+                        specs.push_back(DimSpec::from_label(a.name, std::get<TensorSpec::Label>(child_or_label)));
+                    }
                 }
             }
         };
@@ -181,22 +203,21 @@ struct DensePlan {
 };
 
 struct SparseState {
-    std::vector<vespalib::string> view_addr;
-    std::vector<vespalib::stringref> view_refs;
-    std::vector<const vespalib::stringref *> lookup_refs;
-    std::vector<vespalib::stringref> output_addr;
-    std::vector<vespalib::stringref *> fetch_addr;
+    std::vector<Handle> handles;
+    std::vector<label_t> view_addr;
+    std::vector<const label_t *> lookup_refs;
+    std::vector<label_t> output_addr;
+    std::vector<label_t *> fetch_addr;
 
-    SparseState(std::vector<vespalib::string> view_addr_in, size_t out_dims)
-        : view_addr(std::move(view_addr_in)),
-          view_refs(view_addr.size()),
+    SparseState(std::vector<Handle> handles_in, std::vector<label_t> view_addr_in, size_t out_dims)
+        : handles(std::move(handles_in)),
+          view_addr(std::move(view_addr_in)),
           lookup_refs(view_addr.size()),
           output_addr(out_dims),
           fetch_addr(out_dims)
     {
         for (size_t i = 0; i < view_addr.size(); ++i) {
-            view_refs[i] = view_addr[i];
-            lookup_refs[i] = &view_refs[i];
+            lookup_refs[i] = &view_addr[i];
         }
         for (size_t i = 0; i < out_dims; ++i) {
             fetch_addr[i] = &output_addr[i];
@@ -236,17 +257,19 @@ struct SparsePlan {
 
     template <typename Getter>
     SparseState make_state(const Getter &get_child_value) const {
-        std::vector<vespalib::string> view_addr;
+        std::vector<Handle> handles;
+        std::vector<label_t> view_addr;
         for (const auto & dim : lookup_specs) {
             if (dim.has_child()) {
                 int64_t child_value = get_child_value(dim.get_child_idx());
-                view_addr.push_back(vespalib::make_string("%" PRId64, child_value));
+                handles.emplace_back(vespalib::make_string("%" PRId64, child_value));
+                view_addr.push_back(handles.back().id());
             } else {
                 view_addr.push_back(dim.get_label_name());
             }
         }
         assert(view_addr.size() == view_dims.size());
-        return SparseState(std::move(view_addr), out_mapped_dims);
+        return SparseState(std::move(handles), std::move(view_addr), out_mapped_dims);
     }
 };
 SparsePlan::~SparsePlan() = default;
@@ -284,10 +307,10 @@ generic_mixed_peek(const ValueType &res_type,
 {
     auto input_cells = input_value.cells().typify<ICT>();
     size_t bad_guess = 1;
-    auto builder = factory.create_value_builder<OCT>(res_type,
-                                                     sparse_plan.out_mapped_dims,
-                                                     dense_plan.out_dense_size,
-                                                     bad_guess);
+    auto builder = factory.create_transient_value_builder<OCT>(res_type,
+                                                               sparse_plan.out_mapped_dims,
+                                                               dense_plan.out_dense_size,
+                                                               bad_guess);
     size_t filled_subspaces = 0;
     size_t dense_offset = dense_plan.get_offset(get_child_value);
     if (dense_offset != npos) {
@@ -304,7 +327,7 @@ generic_mixed_peek(const ValueType &res_type,
         }
     }
     if ((sparse_plan.out_mapped_dims == 0) && (filled_subspaces == 0)) {
-        for (auto & v : builder->add_subspace({})) {
+        for (auto & v : builder->add_subspace()) {
             v = OCT{};
         }
     }

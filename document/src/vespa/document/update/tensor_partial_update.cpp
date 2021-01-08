@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 #include <cassert>
 #include <set>
 
@@ -43,7 +44,8 @@ struct DenseCoords {
     }
     ~DenseCoords();
     void clear() { offset = 0; current = 0; }
-    void convert_label(vespalib::stringref label) {
+    void convert_label(label_t label_id) {
+        vespalib::string label = SharedStringRepo::Handle::string_from_id(label_id);
         uint32_t coord = 0;
         for (char c : label) {
             if (c < '0' || c > '9') { // bad char
@@ -71,9 +73,9 @@ struct DenseCoords {
 DenseCoords::~DenseCoords() = default;
 
 struct SparseCoords {
-    std::vector<vespalib::stringref> addr;
-    std::vector<vespalib::stringref *> next_result_refs;
-    std::vector<const vespalib::stringref *> lookup_refs;
+    std::vector<label_t> addr;
+    std::vector<label_t *> next_result_refs;
+    std::vector<const label_t *> lookup_refs;
     std::vector<size_t> lookup_view_dims;
     SparseCoords(size_t sz)
         : addr(sz), next_result_refs(sz), lookup_refs(sz), lookup_view_dims(sz)
@@ -327,7 +329,7 @@ calc_mapped_dimension_indexes(const ValueType& input_type,
 
 struct ModifierCoords {
 
-    std::vector<const vespalib::stringref *> lookup_refs;
+    std::vector<const label_t *> lookup_refs;
     std::vector<size_t> lookup_view_dims;
 
     ModifierCoords(const SparseCoords& input_coords,

@@ -18,7 +18,7 @@ struct StreamedFilterView : Value::Index::View
 {
     LabelBlockStream label_blocks;
     std::vector<size_t> view_dims;
-    std::vector<vespalib::stringref> to_match;
+    std::vector<label_t> to_match;
 
     StreamedFilterView(LabelBlockStream labels, std::vector<size_t> view_dims_in)
       : label_blocks(std::move(labels)),
@@ -28,7 +28,7 @@ struct StreamedFilterView : Value::Index::View
         to_match.reserve(view_dims.size());
     }
 
-    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
+    void lookup(ConstArrayRef<const label_t*> addr) override {
         label_blocks.reset();
         to_match.clear();
         for (auto ptr : addr) {
@@ -37,7 +37,7 @@ struct StreamedFilterView : Value::Index::View
         assert(view_dims.size() == to_match.size());
     }
 
-    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
         while (const auto block = label_blocks.next_block()) {
             idx_out = block.subspace_index;
             bool matches = true;
@@ -66,12 +66,12 @@ struct StreamedIterationView : Value::Index::View
       : label_blocks(std::move(labels))
     {}
 
-    void lookup(ConstArrayRef<const vespalib::stringref*> addr) override {
+    void lookup(ConstArrayRef<const label_t*> addr) override {
         label_blocks.reset();
         assert(addr.size() == 0);
     }
 
-    bool next_result(ConstArrayRef<vespalib::stringref*> addr_out, size_t &idx_out) override {
+    bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) override {
         if (auto block = label_blocks.next_block()) {
             idx_out = block.subspace_index;
             size_t i = 0;
@@ -90,7 +90,7 @@ struct StreamedIterationView : Value::Index::View
 std::unique_ptr<Value::Index::View>
 StreamedValueIndex::create_view(const std::vector<size_t> &dims) const
 {
-    LabelBlockStream label_stream(_data.num_subspaces, _data.labels_buffer, _data.num_mapped_dims);
+    LabelBlockStream label_stream(_num_subspaces, _labels_ref, _num_mapped_dims);
     if (dims.empty()) {
         return std::make_unique<StreamedIterationView>(std::move(label_stream));
     }

@@ -5,87 +5,71 @@
 #include "tensor_store.h"
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/streamed/streamed_value.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 
 namespace search::tensor {
 
 /**
- * Class for storing tensors in memory, with a special serialization
- * format that can be used directly to make a StreamedValueView.
- *
- * The tensor type is owned by the store itself and will not be
- * serialized at all.
- *
- * The parameters for serialization (see DataFromType) are:
- * - number of mapped dimensions [MD]
- * - dense subspace size [DS]
- * - size of each cell [CS] - currently 4 (float) or 8 (double)
- * - alignment for cells - currently 4 (float) or 8 (double)
- * While the tensor value to be serialized has:
- * - number of dense subspaces [ND]
- * - labels for dense subspaces, ND * MD strings
- * - cell values, ND * DS cells (each either float or double)
- * The serialization format looks like:
- *
- *   [bytes]     : [format]                : [description]
- *      4        :  n.b.o. uint32_ t       : num cells = ND * DS
- *  CS * ND * DS :  native float or double : cells
- *   (depends)   :  n.b.o. strings         : ND * MD label strings
- *
- * Here, n.b.o. means network byte order, or more precisely
- * it's the format vespalib::nbostream uses for the given data type,
- * including strings (where exact format depends on the string length).
- * Note that the only unpredictably-sized data (the labels) are kept
- * last.
- * If we ever make a "hbostream" which uses host byte order, we
- * could switch to that instead since these data are only kept in
- * memory.
+ * Class for StreamedValue tensors in memory.
  */
 class StreamedValueStore : public TensorStore {
 public:
-    using RefType = vespalib::datastore::AlignedEntryRefT<22, 3>;
-    using DataStoreType = vespalib::datastore::DataStoreT<RefType>;
+    using Value = vespalib::eval::Value;
+    using ValueType = vespalib::eval::ValueType;
+    using Handles = vespalib::SharedStringRepo::StrongHandles;
+    using MemoryUsage = vespalib::MemoryUsage;
 
-    struct StreamedValueData {
-        bool valid;
-        vespalib::eval::TypedCells cells_ref;
-        size_t num_subspaces;
-        vespalib::ConstArrayRef<char> labels_buffer;
-        operator bool() const { return valid; }
+    // interface for tensor entries
+    struct TensorEntry {
+        using SP = std::shared_ptr<TensorEntry>;
+        virtual Value::UP create_fast_value_view(const ValueType &type_ref) const = 0;
+        virtual void encode_value(const ValueType &type, vespalib::nbostream &target) const = 0;
+        virtual MemoryUsage get_memory_usage() const = 0;
+        virtual ~TensorEntry();
+        static TensorEntry::SP create_shared_entry(const Value &value);
     };
 
-    struct DataFromType {
-        uint32_t num_mapped_dimensions;
-        uint32_t dense_subspace_size;
-        vespalib::eval::CellType cell_type;
-
-        DataFromType(const vespalib::eval::ValueType& type)
-          : num_mapped_dimensions(type.count_mapped_dimensions()),
-            dense_subspace_size(type.dense_subspace_size()),
-            cell_type(type.cell_type())
-        {}
+    // implementation of tensor entries
+    template <typename CT>
+    struct TensorEntryImpl : public TensorEntry {
+        Handles handles;
+        std::vector<CT> cells;
+        TensorEntryImpl(const Value &value, size_t num_mapped, size_t dense_size);
+        Value::UP create_fast_value_view(const ValueType &type_ref) const override;
+        void encode_value(const ValueType &type, vespalib::nbostream &target) const override;
+        MemoryUsage get_memory_usage() const override;
+        ~TensorEntryImpl() override;
     };
 
 private:
-    DataStoreType _concreteStore;
-    vespalib::datastore::BufferType<char> _bufferType;
-    vespalib::eval::ValueType _tensor_type;
-    DataFromType _data_from_type;
-    
-    void serialize_labels(const vespalib::eval::Value::Index &index,
-                          vespalib::nbostream &target) const;
+    // Note: Must use SP (instead of UP) because of fallbackCopy() and initializeReservedElements() in BufferType,
+    //       and implementation of move().
+    using TensorStoreType = vespalib::datastore::DataStore<TensorEntry::SP>;
 
-    std::pair<const char *, uint32_t> getRawBuffer(RefType ref) const;
-    vespalib::datastore::Handle<char> allocRawBuffer(uint32_t size);
+    class TensorBufferType : public vespalib::datastore::BufferType<TensorEntry::SP> {
+    private:
+        using ParentType = BufferType<TensorEntry::SP>;
+        using ParentType::_emptyEntry;
+        using CleanContext = typename ParentType::CleanContext;
+    public:
+        TensorBufferType();
+        virtual void cleanHold(void* buffer, size_t offset, size_t num_elems, CleanContext clean_ctx) override;
+    };
+    TensorStoreType _concrete_store;
+    const vespalib::eval::ValueType _tensor_type;
+    EntryRef add_entry(TensorEntry::SP tensor);
 public:
     StreamedValueStore(const vespalib::eval::ValueType &tensor_type);
-    virtual ~StreamedValueStore();
+    ~StreamedValueStore() override;
 
-    virtual void holdTensor(EntryRef ref) override;
-    virtual EntryRef move(EntryRef ref) override;
+    using RefType = TensorStoreType::RefType;
 
-    StreamedValueData get_tensor_data(EntryRef ref) const;
+    void holdTensor(EntryRef ref) override;
+    EntryRef move(EntryRef ref) override;
+
+    const TensorEntry * get_tensor_entry(EntryRef ref) const;
     bool encode_tensor(EntryRef ref, vespalib::nbostream &target) const;
 
     EntryRef store_tensor(const vespalib::eval::Value &tensor);

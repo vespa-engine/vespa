@@ -1,99 +1,204 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "streamed_value_store.h"
-#include "tensor_deserialize.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/eval/streamed/streamed_value_builder_factory.h>
 #include <vespa/eval/streamed/streamed_value_view.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.tensor.streamed_value_store");
 
 using vespalib::datastore::Handle;
+using vespalib::datastore::EntryRef;
 using namespace vespalib::eval;
+using vespalib::ConstArrayRef;
+using vespalib::MemoryUsage;
 
 namespace search::tensor {
 
+//-----------------------------------------------------------------------------
+
 namespace {
 
-constexpr size_t MIN_BUFFER_ARRAYS = 1024;
+template <typename CT, typename F>
+void each_subspace(const Value &value, size_t num_mapped, size_t dense_size, F f) {
+    size_t subspace;
+    std::vector<label_t> addr(num_mapped);
+    std::vector<label_t*> refs;
+    refs.reserve(addr.size());
+    for (label_t &label: addr) {
+        refs.push_back(&label);
+    }
+    auto cells = value.cells().typify<CT>();
+    auto view = value.index().create_view({});
+    view->lookup({});
+    while (view->next_result(refs, subspace)) {
+        size_t offset = subspace * dense_size;
+        f(ConstArrayRef<label_t>(addr), ConstArrayRef<CT>(cells.begin() + offset, dense_size));
+    }
+}
 
-struct CellsMemBlock {
-    uint32_t num;
-    uint32_t total_sz;
-    const char *ptr;
-    CellsMemBlock(TypedCells cells)
-      : num(cells.size),
-        total_sz(CellTypeUtils::mem_size(cells.type, num)),
-        ptr((const char *)cells.data)
-    {}
+using TensorEntry = StreamedValueStore::TensorEntry;
+
+struct CreateTensorEntry {
+    template <typename CT>
+    static TensorEntry::SP invoke(const Value &value, size_t num_mapped, size_t dense_size) {
+        using EntryImpl = StreamedValueStore::TensorEntryImpl<CT>;
+        return std::make_shared<EntryImpl>(value, num_mapped, dense_size);
+    }
 };
 
-template<typename T>
-void check_alignment(T *ptr, size_t align)
+using HandleView = vespalib::SharedStringRepo::HandleView;
+
+struct MyFastValueView final : Value {
+    const ValueType &my_type;
+    FastValueIndex my_index;
+    TypedCells my_cells;
+    MyFastValueView(const ValueType &type_ref, HandleView handle_view, TypedCells cells, size_t num_mapped, size_t num_spaces)
+        : my_type(type_ref),
+          my_index(num_mapped, handle_view, num_spaces),
+          my_cells(cells)
+    {
+        const std::vector<label_t> &labels = handle_view.handles();
+        for (size_t i = 0; i < num_spaces; ++i) {
+            ConstArrayRef<label_t> addr(&labels[i * num_mapped], num_mapped);
+            my_index.map.add_mapping(FastAddrMap::hash_labels(addr));
+        }
+        assert(my_index.map.size() == num_spaces);
+    }
+    const ValueType &type() const override { return my_type; }
+    const Value::Index &index() const override { return my_index; }
+    TypedCells cells() const override { return my_cells; }
+    MemoryUsage get_memory_usage() const override {
+        MemoryUsage usage = self_memory_usage<MyFastValueView>();
+        usage.merge(my_index.map.estimate_extra_memory_usage());
+        return usage;
+    }
+};
+
+} // <unnamed>
+
+//-----------------------------------------------------------------------------
+
+StreamedValueStore::TensorEntry::~TensorEntry() = default;
+
+StreamedValueStore::TensorEntry::SP
+StreamedValueStore::TensorEntry::create_shared_entry(const Value &value)
 {
-    static_assert(sizeof(T) == 1);
-    size_t ptr_val = (size_t)ptr;
-    size_t unalign = ptr_val & (align - 1);
-    assert(unalign == 0);
+    size_t num_mapped = value.type().count_mapped_dimensions();
+    size_t dense_size = value.type().dense_subspace_size();
+    return vespalib::typify_invoke<1,TypifyCellType,CreateTensorEntry>(value.type().cell_type(), value, num_mapped, dense_size);
 }
 
-} // namespace <unnamed>
+template <typename CT>
+StreamedValueStore::TensorEntryImpl<CT>::TensorEntryImpl(const Value &value, size_t num_mapped, size_t dense_size)
+    : handles(num_mapped * value.index().size()),
+      cells()
+{
+    cells.reserve(dense_size * value.index().size());
+    auto store_subspace = [&](auto addr, auto data) {
+        for (label_t label: addr) {
+            handles.add(label);
+        }
+        for (CT entry: data) {
+            cells.push_back(entry);
+        }
+    };
+    each_subspace<CT>(value, num_mapped, dense_size, store_subspace);
+}
+
+template <typename CT>
+Value::UP
+StreamedValueStore::TensorEntryImpl<CT>::create_fast_value_view(const ValueType &type_ref) const
+{
+    size_t num_mapped = type_ref.count_mapped_dimensions();
+    size_t dense_size = type_ref.dense_subspace_size();
+    size_t num_spaces = cells.size() / dense_size;
+    assert(dense_size * num_spaces == cells.size());
+    assert(num_mapped * num_spaces == handles.view().handles().size());
+    return std::make_unique<MyFastValueView>(type_ref, handles.view(), TypedCells(cells), num_mapped, num_spaces);
+}
+
+template <typename CT>
+void
+StreamedValueStore::TensorEntryImpl<CT>::encode_value(const ValueType &type, vespalib::nbostream &target) const
+{
+    size_t num_mapped = type.count_mapped_dimensions();
+    size_t dense_size = type.dense_subspace_size();
+    size_t num_spaces = cells.size() / dense_size;
+    assert(dense_size * num_spaces == cells.size());
+    assert(num_mapped * num_spaces == handles.view().handles().size());
+    StreamedValueView my_value(type, num_mapped, TypedCells(cells), num_spaces, handles.view().handles());
+    ::vespalib::eval::encode_value(my_value, target);
+}
+
+template <typename CT>
+MemoryUsage
+StreamedValueStore::TensorEntryImpl<CT>::get_memory_usage() const
+{
+    MemoryUsage usage = self_memory_usage<TensorEntryImpl<CT>>();
+    usage.merge(vector_extra_memory_usage(handles.view().handles()));
+    usage.merge(vector_extra_memory_usage(cells));
+    return usage;
+}
+
+template <typename CT>
+StreamedValueStore::TensorEntryImpl<CT>::~TensorEntryImpl() = default;
+
+//-----------------------------------------------------------------------------
+
+constexpr size_t MIN_BUFFER_ARRAYS = 8192;
+
+StreamedValueStore::TensorBufferType::TensorBufferType()
+    : ParentType(1, MIN_BUFFER_ARRAYS, TensorStoreType::RefType::offsetSize())
+{
+}
+
+void
+StreamedValueStore::TensorBufferType::cleanHold(void* buffer, size_t offset, size_t num_elems, CleanContext clean_ctx)
+{
+    TensorEntry::SP* elem = static_cast<TensorEntry::SP*>(buffer) + offset;
+    for (size_t i = 0; i < num_elems; ++i) {
+        clean_ctx.extraBytesCleaned((*elem)->get_memory_usage().allocatedBytes());
+        *elem = _emptyEntry;
+        ++elem;
+    }
+}
 
 StreamedValueStore::StreamedValueStore(const ValueType &tensor_type)
-  : TensorStore(_concreteStore),
-    _concreteStore(),
-    _bufferType(RefType::align(1),
-                MIN_BUFFER_ARRAYS,
-                RefType::offsetSize() / RefType::align(1)),
-    _tensor_type(tensor_type),
-    _data_from_type(_tensor_type)
+  : TensorStore(_concrete_store),
+    _concrete_store(),
+    _tensor_type(tensor_type)
 {
-    _store.addType(&_bufferType);
-    _store.initActiveBuffers();
-    size_t align = CellTypeUtils::alignment(_data_from_type.cell_type);
-    // max alignment we can handle is 8:
-    assert(align <= 8);
-    // alignment must be a power of two:
-    assert((align & (align-1)) == 0);
+    _concrete_store.enableFreeLists();
 }
 
-StreamedValueStore::~StreamedValueStore()
+StreamedValueStore::~StreamedValueStore() = default;
+
+EntryRef
+StreamedValueStore::add_entry(TensorEntry::SP tensor)
 {
-    _store.dropBuffers();
+    auto ref = _concrete_store.addEntry(tensor);
+    auto& state = _concrete_store.getBufferState(RefType(ref).bufferId());
+    state.incExtraUsedBytes(tensor->get_memory_usage().allocatedBytes());
+    return ref;
 }
 
-std::pair<const char *, uint32_t>
-StreamedValueStore::getRawBuffer(RefType ref) const
+const StreamedValueStore::TensorEntry *
+StreamedValueStore::get_tensor_entry(EntryRef ref) const
 {
     if (!ref.valid()) {
-        return std::make_pair(nullptr, 0u);
+        return nullptr;
     }
-    const char *buf = _store.getEntry<char>(ref);
-    uint32_t len = *reinterpret_cast<const uint32_t *>(buf);
-    return std::make_pair(buf + sizeof(uint32_t), len);
-}
-
-Handle<char>
-StreamedValueStore::allocRawBuffer(uint32_t size)
-{
-    if (size == 0) {
-        return Handle<char>();
-    }
-    size_t extSize = size + sizeof(uint32_t);
-    size_t bufSize = RefType::align(extSize);
-    auto result = _concreteStore.rawAllocator<char>(_typeId).alloc(bufSize);
-    *reinterpret_cast<uint32_t *>(result.data) = size;
-    char *padWritePtr = result.data + extSize;
-    for (size_t i = extSize; i < bufSize; ++i) {
-        *padWritePtr++ = 0;
-    }
-    // Hide length of buffer (first 4 bytes) from users of the buffer.
-    return Handle<char>(result.ref, result.data + sizeof(uint32_t));
+    const auto& entry = _concrete_store.getEntry(ref);
+    assert(entry);
+    return entry.get();
 }
 
 void
@@ -102,87 +207,32 @@ StreamedValueStore::holdTensor(EntryRef ref)
     if (!ref.valid()) {
         return;
     }
-    RefType iRef(ref);
-    const char *buf = _store.getEntry<char>(iRef);
-    uint32_t len = *reinterpret_cast<const uint32_t *>(buf);
-    _concreteStore.holdElem(ref, len + sizeof(uint32_t));
+    const auto& tensor = _concrete_store.getEntry(ref);
+    assert(tensor);
+    _concrete_store.holdElem(ref, 1, tensor->get_memory_usage().allocatedBytes());
 }
 
 TensorStore::EntryRef
 StreamedValueStore::move(EntryRef ref)
 {
     if (!ref.valid()) {
-        return RefType();
+        return EntryRef();
     }
-    auto oldraw = getRawBuffer(ref);
-    auto newraw = allocRawBuffer(oldraw.second);
-    memcpy(newraw.data, oldraw.first, oldraw.second);
-    _concreteStore.holdElem(ref, oldraw.second + sizeof(uint32_t));
-    return newraw.ref;
-}
-
-StreamedValueStore::StreamedValueData
-StreamedValueStore::get_tensor_data(EntryRef ref) const
-{
-    StreamedValueData retval;
-    retval.valid = false;
-    auto raw = getRawBuffer(ref);
-    if (raw.second == 0u) {
-        return retval;
-    }
-    vespalib::nbostream source(raw.first, raw.second);
-    uint32_t num_cells = source.readValue<uint32_t>();
-    check_alignment(source.peek(), CellTypeUtils::alignment(_data_from_type.cell_type));
-    retval.cells_ref = TypedCells(source.peek(), _data_from_type.cell_type, num_cells);
-    source.adjustReadPos(CellTypeUtils::mem_size(_data_from_type.cell_type, num_cells));
-    assert((num_cells % _data_from_type.dense_subspace_size) == 0);
-    retval.num_subspaces = num_cells / _data_from_type.dense_subspace_size;
-    retval.labels_buffer = vespalib::ConstArrayRef<char>(source.peek(), source.size());
-    retval.valid = true;
-    return retval;
+    const auto& old_tensor = _concrete_store.getEntry(ref);
+    assert(old_tensor);
+    auto new_ref = add_entry(old_tensor);
+    _concrete_store.holdElem(ref, 1, old_tensor->get_memory_usage().allocatedBytes());
+    return new_ref;
 }
 
 bool
 StreamedValueStore::encode_tensor(EntryRef ref, vespalib::nbostream &target) const
 {
-    if (auto data = get_tensor_data(ref)) {
-        StreamedValueView value(
-            _tensor_type, _data_from_type.num_mapped_dimensions,
-            data.cells_ref, data.num_subspaces, data.labels_buffer);
-        vespalib::eval::encode_value(value, target);
+    if (const auto * entry = get_tensor_entry(ref)) {
+        entry->encode_value(_tensor_type, target);
         return true;
     } else {
         return false;
-    }
-}
-
-void
-StreamedValueStore::serialize_labels(const Value::Index &index,
-                                     vespalib::nbostream &target) const
-{
-    uint32_t num_subspaces = index.size();
-    uint32_t num_mapped_dims = _data_from_type.num_mapped_dimensions;
-    std::vector<vespalib::stringref> labels(num_mapped_dims * num_subspaces);
-    auto view = index.create_view({});
-    view->lookup({});
-    std::vector<vespalib::stringref> addr(num_mapped_dims);
-    std::vector<vespalib::stringref *> addr_refs;
-    for (auto & label : addr) {
-        addr_refs.push_back(&label);
-    }
-    size_t subspace;
-    for (size_t ss = 0; ss < num_subspaces; ++ss) {
-        bool ok = view->next_result(addr_refs, subspace);
-        assert(ok);
-        size_t idx = subspace * num_mapped_dims;
-        for (auto label : addr) {
-            labels[idx++] = label;
-        }
-    }
-    bool ok = view->next_result(addr_refs, subspace);
-    assert(!ok);
-    for (auto label : labels) {
-        target.writeSmallString(label);
     }
 }
 
@@ -190,23 +240,7 @@ TensorStore::EntryRef
 StreamedValueStore::store_tensor(const Value &tensor)
 {
     assert(tensor.type() == _tensor_type);
-    CellsMemBlock cells_mem(tensor.cells());
-    vespalib::nbostream stream;
-    stream << uint32_t(cells_mem.num);
-    serialize_labels(tensor.index(), stream);
-    size_t mem_size = stream.size() + cells_mem.total_sz;
-    auto raw = allocRawBuffer(mem_size);
-    char *target = raw.data;
-    memcpy(target, stream.peek(), sizeof(uint32_t));
-    stream.adjustReadPos(sizeof(uint32_t));
-    target += sizeof(uint32_t);
-    check_alignment(target, CellTypeUtils::alignment(_data_from_type.cell_type));
-    memcpy(target, cells_mem.ptr, cells_mem.total_sz);
-    target += cells_mem.total_sz;
-    memcpy(target, stream.peek(), stream.size());
-    target += stream.size();
-    assert(target <= raw.data + mem_size);
-    return raw.ref;
+    return add_entry(TensorEntry::create_shared_entry(tensor));
 }
 
 TensorStore::EntryRef

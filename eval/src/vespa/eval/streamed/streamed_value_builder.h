@@ -3,7 +3,7 @@
 #pragma once
 
 #include "streamed_value.h"
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 
 namespace vespalib::eval {
 
@@ -14,12 +14,14 @@ template <typename T>
 class StreamedValueBuilder : public ValueBuilder<T>
 {
 private:
+    using StrongHandles = SharedStringRepo::StrongHandles;
+
     ValueType _type;
     size_t _num_mapped_dimensions;
     size_t _dense_subspace_size;
     std::vector<T> _cells;
     size_t _num_subspaces;
-    nbostream _labels;
+    StrongHandles _labels;
 public:
     StreamedValueBuilder(const ValueType &type,
                          size_t num_mapped_in,
@@ -30,18 +32,26 @@ public:
         _dense_subspace_size(subspace_size_in),
         _cells(),
         _num_subspaces(0),
-        _labels()
+        _labels(num_mapped_in * expected_subspaces)
     {
         _cells.reserve(subspace_size_in * expected_subspaces);
-        // assume small sized label strings:
-        _labels.reserve(num_mapped_in * expected_subspaces * 3);
     };
 
     ~StreamedValueBuilder();
 
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override {
         for (auto label : addr) {
-            _labels.writeSmallString(label);
+            _labels.add(label);
+        }
+        size_t old_sz = _cells.size();
+        _cells.resize(old_sz + _dense_subspace_size);
+        _num_subspaces++;
+        return ArrayRef<T>(&_cells[old_sz], _dense_subspace_size);
+    }
+
+    ArrayRef<T> add_subspace(ConstArrayRef<label_t> addr) override {
+        for (auto label : addr) {
+            _labels.add(label);
         }
         size_t old_sz = _cells.size();
         _cells.resize(old_sz + _dense_subspace_size);
@@ -58,7 +68,7 @@ public:
                                                   _num_mapped_dimensions,
                                                   std::move(_cells),
                                                   _num_subspaces,
-                                                  _labels.extract_buffer());
+                                                  std::move(_labels));
     }
 
 };
