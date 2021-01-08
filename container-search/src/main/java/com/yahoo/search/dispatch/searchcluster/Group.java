@@ -69,8 +69,10 @@ public class Group {
             long average = activeDocs / numWorkingNodes;
             long deviation = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
             boolean isDeviationSmall = deviation <= (activeDocs * MAX_UNBALANCE);
-            if (isDeviationSmall != isContentWellBalanced.get()) {
-                log.info("Content is well balanced has changed to" + isDeviationSmall);
+            if ((!isContentWellBalanced.get() || isDeviationSmall != isContentWellBalanced.get()) && (activeDocs > 0)) {
+                log.info("Content is " + (isDeviationSmall ? "" : "not") + " well balanced has changed to " + isDeviationSmall +
+                         ". Current deviation = " + deviation*100/activeDocs + " %" +
+                         ". activeDocs = " + activeDocs + ", deviation = " + deviation + ", average = " + average);
                 isContentWellBalanced.set(isDeviationSmall);
             }
         } else {

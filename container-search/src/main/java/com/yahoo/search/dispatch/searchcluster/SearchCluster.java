@@ -370,7 +370,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     public boolean isGroupWellBalanced(OptionalInt groupId) {
         if (groupId.isEmpty()) return false;
-        Group group = groups().get(groupId);
+        Group group = groups().get(groupId.getAsInt());
         return (group != null) && group.isContentWellBalanced();
     }
 
