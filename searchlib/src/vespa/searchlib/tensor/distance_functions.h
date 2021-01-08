@@ -145,6 +145,11 @@ public:
 template <typename FloatType>
 class GeoDegreesDistance : public DistanceFunction {
 public:
+    // in km, as defined by IUGG, see:
+    // https://en.wikipedia.org/wiki/Earth_radius#Mean_radius
+    static constexpr double earth_mean_radius = 6371.0088;
+    static constexpr double degrees_to_radians = M_PI / 180.0;
+
     GeoDegreesDistance() {}
     // haversine function:
     static double hav(double angle) {
@@ -157,10 +162,10 @@ public:
         assert(2 == lhs_vector.size());
         assert(2 == rhs_vector.size());
         // convert to radians:
-        double lat_A = lhs_vector[0] * M_PI / 180.0;
-        double lat_B = rhs_vector[0] * M_PI / 180.0;
-        double lon_A = lhs_vector[1] * M_PI / 180.0;
-        double lon_B = rhs_vector[1] * M_PI / 180.0;
+        double lat_A = lhs_vector[0] * degrees_to_radians;
+        double lat_B = rhs_vector[0] * degrees_to_radians;
+        double lon_A = lhs_vector[1] * degrees_to_radians;
+        double lon_B = rhs_vector[1] * degrees_to_radians;
 
         double lat_diff = lat_A - lat_B;
         double lon_diff = lon_A - lon_B;
@@ -174,14 +179,15 @@ public:
         return hav_central_angle;
     }
     double convert_threshold(double threshold) const override {
-        double half_angle = threshold / (2 * 6371.0088);
+        double half_angle = threshold / (2 * earth_mean_radius);
         double rt_hav = sin(half_angle);
         return rt_hav * rt_hav;
     }
     double to_rawscore(double distance) const override {
         double hav_diff = sqrt(distance);
         // distance in kilometers:
-        double d = 2 * asin(hav_diff) * 6371.0088; // Earth mean radius
+        double d = 2 * asin(hav_diff) * earth_mean_radius;
+        // km to rawscore:
         return 1.0 / (1.0 + d);
     }
     double calc_with_limit(const vespalib::eval::TypedCells& lhs,
