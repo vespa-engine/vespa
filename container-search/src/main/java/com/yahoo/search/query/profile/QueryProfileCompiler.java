@@ -115,15 +115,17 @@ public class QueryProfileCompiler {
         for (var variant : variants)
             trie.add(variant);
 
-        trie.forEachPrefixAndChildren((prefixes, children) -> {
-            for (var prefix : prefixes)
-                if (hasWildcardBeforeEnd(prefix.binding))
-                    for (var variant : children)
-                        if ( ! variant.binding.isNull() && variant != prefix) {
-                            DimensionBinding combined = prefix.binding().combineWith(variant.binding());
-                            if ( ! combined.isInvalid() )
-                                expanded.add(new DimensionBindingForPath(combined, prefix.path()));
-                        }
+        trie.forEachPrefixAndChildren((prefixes, childBindings) -> {
+            Set<DimensionBinding> processed = new HashSet<>();
+            for (DimensionBindingForPath prefix : prefixes)
+                if (processed.add(prefix.binding()))
+                    if (hasWildcardBeforeEnd(prefix.binding()))
+                        for (DimensionBinding childBinding : childBindings)
+                            if (childBinding != prefix.binding()) {
+                                DimensionBinding combined = prefix.binding().combineWith(childBinding);
+                                if ( ! combined.isInvalid())
+                                    expanded.add(new DimensionBindingForPath(combined, prefix.path()));
+                            }
         });
 
         return expanded;
@@ -234,7 +236,7 @@ public class QueryProfileCompiler {
         }
 
         /** Performs action on sets of path prefixes against all their (common) children. */
-        void forEachPrefixAndChildren(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBindingForPath>> action) {
+        void forEachPrefixAndChildren(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBinding>> action) {
             root.visit(action);
         }
 
@@ -248,12 +250,18 @@ public class QueryProfileCompiler {
                 this.depth = depth;
             }
 
-            /** Performs action on the elements of this against all child elements, then returns the union of these two sets. */
-            List<DimensionBindingForPath> visit(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBindingForPath>> action) {
-                List<DimensionBindingForPath> allChildren = new ArrayList<>(elements);
+            /** Performs action on the elements of this against all child element bindings, then returns the union of these two sets. */
+            Set<DimensionBinding> visit(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBinding>> action) {
+                Set<DimensionBinding> allChildren = new HashSet<>();
                 for (Node child : children.values())
                     allChildren.addAll(child.visit(action));
+
+                for (DimensionBindingForPath element : elements)
+                    if ( ! element.binding().isNull())
+                        allChildren.add(element.binding());
+
                 action.accept(elements, allChildren);
+
                 return allChildren;
             }
 
