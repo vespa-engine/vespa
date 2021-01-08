@@ -79,10 +79,18 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         super.encodeThis(buffer);
         putString(field, buffer);
         putString(queryTensorName, buffer);
+        int approxNum = (approximate ? 1 : 0);
+        // should become always-true later:
+        boolean sendDistanceThreshold = (distanceThreshold < Double.POSITIVE_INFINITY);
+        if (sendDistanceThreshold) {
+            approxNum |= 0x40; // temporary flag bit
+        }
         IntegerCompressor.putCompressedPositiveNumber(targetNumHits, buffer);
-        IntegerCompressor.putCompressedPositiveNumber((approximate ? 1 : 0), buffer);
+        IntegerCompressor.putCompressedPositiveNumber(approxNum, buffer);
         IntegerCompressor.putCompressedPositiveNumber(hnswExploreAdditionalHits, buffer);
-        buffer.putDouble(distanceThreshold);
+        if (sendDistanceThreshold) {
+            buffer.putDouble(distanceThreshold);
+        }
         return 1;  // number of encoded stack dump items
     }
 
