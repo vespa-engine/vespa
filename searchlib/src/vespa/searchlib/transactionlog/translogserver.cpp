@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
 #include <fstream>
 #include <thread>
@@ -64,7 +63,8 @@ SyncHandler::poll()
     if (_session->getDown() ||
         _domain->getMarkedDeleted() ||
         _closed.load(std::memory_order_acquire) ||
-        synced >= _syncTo) {
+        synced >= _syncTo)
+    {
         FRT_Values &rvals = *_req.GetReturn();
         rvals.AddInt32(0);
         rvals.AddInt64(synced);
