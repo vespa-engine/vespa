@@ -7,6 +7,7 @@
 #include <vespa/document/util/queue.h>
 #include <vespa/fnet/frt/invokable.h>
 #include <shared_mutex>
+#include <atomic>
 
 class FRT_Supervisor;
 class FNET_Transport;
@@ -92,6 +93,7 @@ private:
     std::mutex                          _fileLock;      // Protects the creating and deleting domains including file system operations.
     document::Queue<FRT_RPCRequest *>   _reqQ;
     const common::FileHeaderContext    &_fileHeaderContext;
+    std::atomic<bool>                   _closed;
 };
 
 }
