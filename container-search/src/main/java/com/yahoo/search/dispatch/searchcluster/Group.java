@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
 /**
  * A group in a search cluster. This class is multithread safe.
@@ -24,6 +25,7 @@ public class Group {
     private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
     private final AtomicBoolean isContentWellBalanced = new AtomicBoolean(true);
     private final static double MAX_UNBALANCE = 0.10; // If documents on a node is more than 10% off from the average the group is unbalanced
+    private static final Logger log = Logger.getLogger(Group.class.getName());
 
     public Group(int id, List<Node> nodes) {
         this.id = id;
@@ -66,11 +68,14 @@ public class Group {
         if (numWorkingNodes > 0) {
             long average = activeDocs / numWorkingNodes;
             long deviation = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
-            isContentWellBalanced.set(deviation <= (activeDocs * MAX_UNBALANCE));
+            boolean isDeviationSmall = deviation <= (activeDocs * MAX_UNBALANCE);
+            if (isDeviationSmall != isContentWellBalanced.get()) {
+                log.info("Content is well balanced has changed to" + isDeviationSmall);
+                isContentWellBalanced.set(isDeviationSmall);
+            }
         } else {
             isContentWellBalanced.set(true);
         }
-
     }
 
     /** Returns the active documents on this group. If unknown, 0 is returned. */
