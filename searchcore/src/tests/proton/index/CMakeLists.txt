@@ -9,6 +9,10 @@ vespa_add_executable(searchcore_indexmanager_test_app TEST
     searchcore_pcommon
     GTest::GTest
 )
+
+vespa_add_test(NAME searchcore_indexmanager_test_app
+    COMMAND searchcore_indexmanager_test_app)
+
 vespa_add_executable(searchcore_fusionrunner_test_app TEST
     SOURCES
     fusionrunner_test.cpp
@@ -17,12 +21,20 @@ vespa_add_executable(searchcore_fusionrunner_test_app TEST
     searchcore_index
     searchcore_pcommon
 )
+
+vespa_add_test(NAME searchcore_fusionrunner_test_app
+    COMMAND searchcore_fusionrunner_test_app)
+
 vespa_add_executable(searchcore_diskindexcleaner_test_app TEST
     SOURCES
     diskindexcleaner_test.cpp
     DEPENDS
     searchcore_index
 )
+
+vespa_add_test(NAME searchcore_diskindexcleaner_test_app
+    COMMAND searchcore_diskindexcleaner_test_app)
+
 vespa_add_executable(searchcore_indexcollection_test_app TEST
     SOURCES
     indexcollection_test.cpp
@@ -30,5 +42,6 @@ vespa_add_executable(searchcore_indexcollection_test_app TEST
     searchcore_index
     GTest::GTest
 )
-vespa_add_test(NAME searchcore_index_test COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/index_test.sh 
-               DEPENDS searchcore_indexmanager_test_app searchcore_fusionrunner_test_app searchcore_diskindexcleaner_test_app searchcore_indexcollection_test_app)
+
+vespa_add_test(NAME searchcore_indexcollection_test_app
+    COMMAND searchcore_indexcollection_test_app)

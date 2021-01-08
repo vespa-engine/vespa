@@ -27,7 +27,7 @@ public:
     int Main() override;
 };
 
-const string index_dir = "test_data";
+const string index_dir = "diskindexcleaner_test_data";
 
 void removeTestData() {
     FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());

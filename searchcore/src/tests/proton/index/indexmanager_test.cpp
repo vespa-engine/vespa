@@ -303,14 +303,14 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         EXPECT_EQ(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
 
         // updated serial number & flush time when nothing to flush
-        std::this_thread::sleep_for(8s);
+        std::this_thread::sleep_for(2s);
         std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
         vespalib::Executor::Task::UP task;
         runAsMaster([&]() { task = target.initFlush(2, std::make_shared<search::FlushToken>()); });
         EXPECT_FALSE(task);
         EXPECT_EQ(2u, target.getFlushedSerialNum());
         EXPECT_LT(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
-        EXPECT_NEAR(now.count(), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()).count(), 8);
+        EXPECT_NEAR(now.count(), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()).count(), 2);
     }
 }
 
