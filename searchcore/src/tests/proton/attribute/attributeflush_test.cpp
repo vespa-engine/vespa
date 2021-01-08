@@ -532,12 +532,12 @@ Test::requireThatLastFlushTimeIsReported()
         IFlushTarget::SP ft = am.getFlushable("a9");
         EXPECT_EQUAL(seconds(stat._modifiedTime), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()));
         { // updated flush time after nothing to flush
-            std::this_thread::sleep_for(8000ms);
+            std::this_thread::sleep_for(1100ms);
             std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
             Executor::Task::UP task = ft->initFlush(200, std::make_shared<search::FlushToken>());
             EXPECT_FALSE(task);
             EXPECT_LESS(seconds(stat._modifiedTime), ft->getLastFlushTime().time_since_epoch());
-            EXPECT_APPROX(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 8);
+            EXPECT_APPROX(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 3);
         }
     }
 }
