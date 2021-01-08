@@ -9,10 +9,8 @@ import com.yahoo.search.query.profile.compiled.DimensionalMap;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +18,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
@@ -53,15 +50,17 @@ public class QueryProfileCompiler {
 
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
+                // TODO jonmv: consider visiting with sets of bindings for each path
                 for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
                     CompoundName fullName = variant.path().append(entry.getKey());
-                    values.put(fullName, variant.binding(), entry.getValue());
+                    Binding variantBinding = Binding.createFrom(variant.binding());
+                    values.put(fullName, variantBinding, entry.getValue());
                     if (entry.getValue().isUnoverridable())
-                        unoverridables.put(fullName, variant.binding(), Boolean.TRUE);
+                        unoverridables.put(fullName, variantBinding, Boolean.TRUE);
                     if (entry.getValue().isQueryProfile())
-                        references.put(fullName, variant.binding(), Boolean.TRUE);
+                        references.put(fullName, variantBinding, Boolean.TRUE);
                     if (entry.getValue().queryProfileType() != null)
-                        types.put(fullName, variant.binding(), entry.getValue().queryProfileType());
+                        types.put(fullName, variantBinding, entry.getValue().queryProfileType());
                 }
             }
 
@@ -116,10 +115,10 @@ public class QueryProfileCompiler {
         for (var variant : variants)
             trie.add(variant);
 
-        trie.forEachPrefix((prefixes, variantz) -> {
+        trie.forEachPrefixAndChildren((prefixes, children) -> {
             for (var prefix : prefixes)
                 if (hasWildcardBeforeEnd(prefix.binding))
-                    for (var variant : variantz)
+                    for (var variant : children)
                         if ( ! variant.binding.isNull() && variant != prefix) {
                             DimensionBinding combined = prefix.binding().combineWith(variant.binding());
                             if ( ! combined.isInvalid() )
@@ -234,12 +233,9 @@ public class QueryProfileCompiler {
             root.add(entry);
         }
 
-         void forEachPrefix(DimensionBindingForPath entry, Consumer<DimensionBindingForPath> action) {
-            root.visit(entry, action);
-         }
-
-        void forEachPrefix(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBindingForPath>> action) {
-            root.visit(new ArrayDeque<>(), action);
+        /** Performs action on sets of path prefixes against all their (common) children. */
+        void forEachPrefixAndChildren(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBindingForPath>> action) {
+            root.visit(action);
         }
 
         private static class Node {
@@ -252,19 +248,13 @@ public class QueryProfileCompiler {
                 this.depth = depth;
             }
 
-            void visit(Deque<DimensionBindingForPath> prefixes, BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBindingForPath>> action) {
-                prefixes.addAll(elements);
-                action.accept(prefixes, elements);
+            /** Performs action on the elements of this against all child elements, then returns the union of these two sets. */
+            List<DimensionBindingForPath> visit(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBindingForPath>> action) {
+                List<DimensionBindingForPath> allChildren = new ArrayList<>(elements);
                 for (Node child : children.values())
-                    child.visit(prefixes, action);
-                for (int i = 0; i < elements.size(); i++)
-                    prefixes.removeLast();
-            }
-
-            void visit(DimensionBindingForPath entry, Consumer<DimensionBindingForPath> action) {
-                elements.forEach(action);
-                if (depth < entry.path().size() && children.containsKey(entry.path().get(depth)))
-                    children.get(entry.path().get(depth)).visit(entry, action);
+                    allChildren.addAll(child.visit(action));
+                action.accept(elements, allChildren);
+                return allChildren;
             }
 
             void add(DimensionBindingForPath entry) {
