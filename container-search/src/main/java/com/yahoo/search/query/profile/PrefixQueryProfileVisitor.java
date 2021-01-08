@@ -50,15 +50,17 @@ abstract class PrefixQueryProfileVisitor extends QueryProfileVisitor {
     @Override
     public final boolean enter(String name) {
         if (prefixComponentIndex++ < prefix.size()) return true; // we're in the given prefix, which should not be included in the name
-        currentPrefixes.push(currentPrefix);
-        currentPrefix = cache.computeIfAbsent(currentPrefix, __ -> new HashMap<>()).computeIfAbsent(name, currentPrefix::append);
+        if ( ! name.isEmpty()) {
+            currentPrefixes.push(currentPrefix);
+            currentPrefix = cache.computeIfAbsent(currentPrefix, __ -> new HashMap<>()).computeIfAbsent(name, currentPrefix::append);
+        }
         return true;
     }
 
     @Override
     public final void leave(String name) {
         if (--prefixComponentIndex < prefix.size()) return; // we're in the given prefix, which should not be included in the name
-        if ( ! name.isEmpty() && ! currentPrefix.isEmpty())
+        if ( ! name.isEmpty())
             currentPrefix = currentPrefixes.pop();
     }
 
