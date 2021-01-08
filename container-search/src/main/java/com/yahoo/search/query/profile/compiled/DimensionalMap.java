@@ -46,14 +46,9 @@ public class DimensionalMap<VALUE> {
 
         private final Map<CompoundName, DimensionalValue.Builder<VALUE>> entries = new HashMap<>();
 
-        // TODO: DimensionBinding -> Binding?
-        public void put(CompoundName key, DimensionBinding binding, VALUE value) {
-            DimensionalValue.Builder<VALUE> entry = entries.get(key);
-            if (entry == null) {
-                entry = new DimensionalValue.Builder<>();
-                entries.put(key, entry);
-            }
-            entry.add(value, binding);
+        public void put(CompoundName key, Binding binding, VALUE value) {
+            entries.computeIfAbsent(key, __ -> new DimensionalValue.Builder<>())
+                   .add(value, binding);
         }
 
         public DimensionalMap<VALUE> build() {

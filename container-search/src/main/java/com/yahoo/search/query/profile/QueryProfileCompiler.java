@@ -2,19 +2,23 @@
 package com.yahoo.search.query.profile;
 
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.compiled.Binding;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.DimensionalMap;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -111,15 +115,17 @@ public class QueryProfileCompiler {
         for (var variant : variants)
             trie.add(variant);
 
-        for (var variant : variants) {
-            if ( ! variant.binding.isNull())
-                trie.forEachPrefix(variant, prefixVariant -> {
-                    if ( ! hasWildcardBeforeEnd(prefixVariant.binding)) return;
-                    DimensionBinding combined = prefixVariant.binding().combineWith(variant.binding());
-                    if ( ! combined.isInvalid() )
-                        expanded.add(new DimensionBindingForPath(combined, prefixVariant.path()));
-                });
-        }
+        trie.forEachPrefix((prefixes, variantz) -> {
+            for (var prefix : prefixes)
+                if (hasWildcardBeforeEnd(prefix.binding))
+                    for (var variant : variantz)
+                        if ( ! variant.binding.isNull() && variant != prefix) {
+                            DimensionBinding combined = prefix.binding().combineWith(variant.binding());
+                            if ( ! combined.isInvalid() )
+                                expanded.add(new DimensionBindingForPath(combined, prefix.path()));
+                        }
+        });
+
         return expanded;
     }
 
@@ -231,6 +237,10 @@ public class QueryProfileCompiler {
             root.visit(entry, action);
          }
 
+        void forEachPrefix(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBindingForPath>> action) {
+            root.visit(new ArrayDeque<>(), action);
+        }
+
         private static class Node {
 
             private final int depth;
@@ -239,6 +249,15 @@ public class QueryProfileCompiler {
 
             private Node(int depth) {
                 this.depth = depth;
+            }
+
+            void visit(Deque<DimensionBindingForPath> prefixes, BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBindingForPath>> action) {
+                prefixes.addAll(elements);
+                action.accept(prefixes, elements);
+                for (Node child : children.values())
+                    child.visit(prefixes, action);
+                for (int i = 0; i < elements.size(); i++)
+                    prefixes.removeLast();
             }
 
             void visit(DimensionBindingForPath entry, Consumer<DimensionBindingForPath> action) {
