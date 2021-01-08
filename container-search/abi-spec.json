@@ -6129,7 +6129,7 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void put(com.yahoo.processing.request.CompoundName, com.yahoo.search.query.profile.DimensionBinding, java.lang.Object)",
+      "public void put(com.yahoo.processing.request.CompoundName, com.yahoo.search.query.profile.compiled.Binding, java.lang.Object)",
       "public com.yahoo.search.query.profile.compiled.DimensionalMap build()"
     ],
     "fields": []
@@ -6156,7 +6156,7 @@
     "methods": [
       "public void <init>()",
       "public java.lang.Object valueFor(com.yahoo.search.query.profile.compiled.Binding)",
-      "public void add(java.lang.Object, com.yahoo.search.query.profile.DimensionBinding)",
+      "public void add(java.lang.Object, com.yahoo.search.query.profile.compiled.Binding)",
       "public com.yahoo.search.query.profile.compiled.DimensionalValue build(java.util.Map)"
     ],
     "fields": []
