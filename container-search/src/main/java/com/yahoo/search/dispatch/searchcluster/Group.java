@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
 /**
  * A group in a search cluster. This class is multithread safe.
@@ -22,6 +23,9 @@ public class Group {
     private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
     private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
+    private final AtomicBoolean isContentWellBalanced = new AtomicBoolean(true);
+    private final static double MAX_UNBALANCE = 0.10; // If documents on a node is more than 10% off from the average the group is unbalanced
+    private static final Logger log = Logger.getLogger(Group.class.getName());
 
     public Group(int id, List<Node> nodes) {
         this.id = id;
@@ -53,25 +57,34 @@ public class Group {
     }
 
     public int workingNodes() {
-        int nodesUp = 0;
-        for (Node node : nodes) {
-            if (node.isWorking() == Boolean.TRUE) {
-                nodesUp++;
-            }
-        }
-        return nodesUp;
+        return (int) nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).count();
     }
 
     void aggregateNodeValues() {
-        activeDocuments.set(nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum());
-        isBlockingWrites.set(nodes.stream().anyMatch(node -> node.isBlockingWrites()));
+        long activeDocs = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum();
+        activeDocuments.set(activeDocs);
+        isBlockingWrites.set(nodes.stream().anyMatch(Node::isBlockingWrites));
+        int numWorkingNodes = workingNodes();
+        if (numWorkingNodes > 0) {
+            long average = activeDocs / numWorkingNodes;
+            long deviation = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
+            boolean isDeviationSmall = deviation <= (activeDocs * MAX_UNBALANCE);
+            if ((!isContentWellBalanced.get() || isDeviationSmall != isContentWellBalanced.get()) && (activeDocs > 0)) {
+                log.info("Content is " + (isDeviationSmall ? "" : "not ") + "well balanced. Current deviation = " + deviation*100/activeDocs + " %" +
+                         ". activeDocs = " + activeDocs + ", deviation = " + deviation + ", average = " + average);
+                isContentWellBalanced.set(isDeviationSmall);
+            }
+        } else {
+            isContentWellBalanced.set(true);
+        }
     }
 
-    /** Returns the active documents on this node. If unknown, 0 is returned. */
+    /** Returns the active documents on this group. If unknown, 0 is returned. */
     long getActiveDocuments() { return activeDocuments.get(); }
 
     /** Returns whether any node in this group is currently blocking write operations */
     public boolean isBlockingWrites() { return isBlockingWrites.get(); }
+    public boolean isContentWellBalanced() { return isContentWellBalanced.get(); }
 
     public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
         boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
