@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -17,6 +17,7 @@ import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
@@ -28,7 +29,6 @@ import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
 
@@ -101,7 +101,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 configDefinitionRepo,
                 fileDistributionProvider.getFileRegistry(),
                 new ApplicationCuratorDatabase(applicationId.tenant(), curator).readReindexingStatus(applicationId),
-                createHostProvisioner(allocatedHosts, provisioned),
+                createHostProvisioner(applicationPackage, provisioned),
                 provisioned,
                 properties,
                 getAppDir(applicationPackage),
@@ -119,7 +119,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         log.log(Level.FINE, "Done building model " + modelVersion + " for " + applicationId);
         params.getTimeoutBudget().assertNotTimedOut(() -> "prepare timed out after building model " + modelVersion +
                 " (timeout " + params.getTimeoutBudget().timeout() + "): " + applicationId);
-        return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
+        return new PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
     }
 
     private Optional<Model> modelOf(Version version) {
@@ -127,22 +127,19 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         return currentActiveApplicationSet.get().get(version).map(Application::getModel);
     }
 
-    // This method is an excellent demonstration of what happens when one is too liberal with Optional   
-    // -bratseth, who had to write the below  :-\
-    private Optional<HostProvisioner> createHostProvisioner(Optional<AllocatedHosts> allocatedHosts,
-                                                            Provisioned provisioned) {
-        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties.applicationId(),
-                                                                                              provisioned);
-        if (allocatedHosts.isEmpty()) return nodeRepositoryProvisioner;
-        
-        Optional<HostProvisioner> staticProvisioner = createStaticProvisioner(allocatedHosts,
-                                                                              properties.applicationId(),
-                                                                              provisioned);
-        if (staticProvisioner.isEmpty()) return Optional.empty(); // Since we have hosts allocated this means we are on non-hosted
-            
+    private HostProvisioner createHostProvisioner(ApplicationPackage applicationPackage, Provisioned provisioned) {
+        HostProvisioner defaultHostProvisioner = DeployState.getDefaultModelHostProvisioner(applicationPackage);
+        // Note: nodeRepositoryProvisioner will always be present when hosted is true
+        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties.applicationId(), provisioned);
+        Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
+
+        if (allocatedHosts.isEmpty()) return nodeRepositoryProvisioner.orElse(defaultHostProvisioner);
+
         // Nodes are already allocated by a model and we should use them unless this model requests hosts from a
         // previously unallocated cluster. This allows future models to stop allocate certain clusters.
-        return Optional.of(new StaticProvisioner(allocatedHosts.get(), nodeRepositoryProvisioner.get()));
+        if (hosted) return createStaticProvisionerForHosted(allocatedHosts.get(), nodeRepositoryProvisioner.get());
+
+        return defaultHostProvisioner;
     }
 
     private Optional<File> getAppDir(ApplicationPackage applicationPackage) {
@@ -166,11 +163,13 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
         public final Version version;
         public final Model model;
-        public final com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider fileDistributionProvider;
+        public final FileDistributionProvider fileDistributionProvider;
         public final List<ConfigChangeAction> actions;
 
-        public PreparedModelResult(Version version, Model model,
-                                   com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider fileDistributionProvider, List<ConfigChangeAction> actions) {
+        public PreparedModelResult(Version version,
+                                   Model model,
+                                   FileDistributionProvider fileDistributionProvider,
+                                   List<ConfigChangeAction> actions) {
             this.version = version;
             this.model = model;
             this.fileDistributionProvider = fileDistributionProvider;
