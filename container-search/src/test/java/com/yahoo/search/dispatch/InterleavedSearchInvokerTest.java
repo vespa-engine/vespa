@@ -204,8 +204,8 @@ public class InterleavedSearchInvokerTest {
     private static final List<Double> A5Aux = Arrays.asList(-1.0,11.0,8.5,7.5,-7.0,3.0,2.0);
     private static final List<Double> B5Aux = Arrays.asList(9.0,8.0,-3.0,7.0,6.0,1.0, -1.0);
 
-    private void validateThatTopKProbabilityOverrideTakesEffect(Double topKProbability, int expectedK) throws IOException {
-        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5);
+    private void validateThatTopKProbabilityOverrideTakesEffect(Double topKProbability, int expectedK, boolean isContentWellBalanced) throws IOException {
+        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5, isContentWellBalanced);
         query.setHits(8);
         query.properties().set(Dispatcher.topKProbability, topKProbability);
         SearchInvoker [] invokers = invoker.invokers().toArray(new SearchInvoker[0]);
@@ -227,13 +227,17 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     public void requireThatTopKProbabilityOverrideTakesEffect() throws IOException {
-        validateThatTopKProbabilityOverrideTakesEffect(null, 8);
-        validateThatTopKProbabilityOverrideTakesEffect(0.8, 7);
+        validateThatTopKProbabilityOverrideTakesEffect(null, 8, true);
+        validateThatTopKProbabilityOverrideTakesEffect(0.8, 7, true);
+    }
+    @Test
+    public void requireThatTopKProbabilityOverrideIsDisabledOnContentSkew() throws IOException {
+        validateThatTopKProbabilityOverrideTakesEffect(0.8, 8, false);
     }
 
     @Test
     public void requireThatMergeOfConcreteHitsObeySorting() throws IOException {
-        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5);
+        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5, true);
         query.setHits(12);
         Result result = invoker.search(query, null);
         assertEquals(10, result.hits().size());
@@ -242,7 +246,7 @@ public class InterleavedSearchInvokerTest {
         assertEquals(0, result.getQuery().getOffset());
         assertEquals(12, result.getQuery().getHits());
 
-        invoker = createInterLeavedTestInvoker(B5, A5);
+        invoker = createInterLeavedTestInvoker(B5, A5, true);
         result = invoker.search(query, null);
         assertEquals(10, result.hits().size());
         assertEquals(11.0, result.hits().get(0).getRelevance().getScore(), DELTA);
@@ -253,7 +257,7 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     public void requireThatMergeOfConcreteHitsObeyOffset() throws IOException {
-        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5);
+        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5, true);
         query.setHits(3);
         query.setOffset(5);
         Result result = invoker.search(query, null);
@@ -263,7 +267,7 @@ public class InterleavedSearchInvokerTest {
         assertEquals(0, result.getQuery().getOffset());
         assertEquals(3, result.getQuery().getHits());
 
-        invoker = createInterLeavedTestInvoker(B5, A5);
+        invoker = createInterLeavedTestInvoker(B5, A5, true);
         query.setOffset(5);
         result = invoker.search(query, null);
         assertEquals(3, result.hits().size());
@@ -275,7 +279,7 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     public void requireThatMergeOfConcreteHitsObeyOffsetWithAuxilliaryStuff() throws IOException {
-        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5Aux, B5Aux);
+        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5Aux, B5Aux, true);
         query.setHits(3);
         query.setOffset(5);
         Result result = invoker.search(query, null);
@@ -286,7 +290,7 @@ public class InterleavedSearchInvokerTest {
         assertEquals(0, result.getQuery().getOffset());
         assertEquals(3, result.getQuery().getHits());
 
-        invoker = createInterLeavedTestInvoker(B5Aux, A5Aux);
+        invoker = createInterLeavedTestInvoker(B5Aux, A5Aux, true);
         query.setOffset(5);
         result = invoker.search(query, null);
         assertEquals(7, result.hits().size());
@@ -297,12 +301,13 @@ public class InterleavedSearchInvokerTest {
         assertEquals(3, result.getQuery().getHits());
     }
 
-    private static InterleavedSearchInvoker createInterLeavedTestInvoker(List<Double> a, List<Double> b) {
+    private static InterleavedSearchInvoker createInterLeavedTestInvoker(List<Double> a, List<Double> b,
+                                                                         boolean isContentWellBalanced) {
         SearchCluster cluster = new MockSearchCluster("!", 1, 2);
         List<SearchInvoker> invokers = new ArrayList<>();
         invokers.add(createInvoker(a, 0));
         invokers.add(createInvoker(b, 1));
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(invokers, cluster, Collections.emptySet());
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(invokers, isContentWellBalanced, cluster, Collections.emptySet());
         invoker.responseAvailable(invokers.get(0));
         invoker.responseAvailable(invokers.get(1));
         return invoker;
@@ -353,7 +358,7 @@ public class InterleavedSearchInvokerTest {
             invokers.add(new MockInvoker(i));
         }
 
-        return new InterleavedSearchInvoker(invokers, searchCluster, null) {
+        return new InterleavedSearchInvoker(invokers, false, searchCluster, null) {
             @Override
             protected long currentTime() {
                 return clock.millis();
