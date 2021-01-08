@@ -659,7 +659,7 @@ public class NodeRepository extends AbstractComponent {
             illegal("Could not set " + node + " active. It has no allocation.");
 
         // TODO: Work out a safe lock acquisition strategy for moves, e.g. migrate to lockNode.
-        try (Mutex lock = lockOnly(node)) {
+        try (Mutex lock = lock(node)) {
             if (toState == State.active) {
                 for (Node currentActive : getNodes(node.allocation().get().owner(), State.active)) {
                     if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
@@ -925,11 +925,11 @@ public class NodeRepository extends AbstractComponent {
     public Mutex lockUnallocated() { return db.lockInactive(); }
 
     /** Returns a lock, and an up to date node fetched under an appropriate lock, if it exists. */
-    public Optional<NodeMutex> lockNode(Node node) {
+    public Optional<NodeMutex> lockAndGet(Node node) {
         Node staleNode = node;
 
         for (int i = 0; i < 4; ++i) {
-            Mutex lock = lockOnly(staleNode);
+            Mutex lock = lock(staleNode);
             Optional<Mutex> lockToClose = Optional.of(lock);
             try {
                 Optional<Node> freshNode = getNode(staleNode.hostname(), staleNode.state());
@@ -956,21 +956,21 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Returns a lock, and an up to date node fetched under an appropriate lock, if it exists. */
-    public Optional<NodeMutex> lockNode(String hostname) {
-        return getNode(hostname).flatMap(this::lockNode);
+    public Optional<NodeMutex> lockAndGet(String hostname) {
+        return getNode(hostname).flatMap(this::lockAndGet);
     }
 
     /** Returns a lock, and an up to date node fetched under an appropriate lock. */
-    public NodeMutex lockRequiredNode(Node node) {
-        return lockNode(node).orElseThrow(() -> new IllegalArgumentException("No such node: " + node.hostname()));
+    public NodeMutex lockAndGetRequired(Node node) {
+        return lockAndGet(node).orElseThrow(() -> new IllegalArgumentException("No such node: " + node.hostname()));
     }
 
     /** Returns a lock, and an up to date node fetched under an appropriate lock. */
-    public NodeMutex lockRequiredNode(String hostname) {
-        return lockNode(hostname).orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
+    public NodeMutex lockAndGetRequired(String hostname) {
+        return lockAndGet(hostname).orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
     }
 
-    private Mutex lockOnly(Node node) {
+    private Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
     }
 

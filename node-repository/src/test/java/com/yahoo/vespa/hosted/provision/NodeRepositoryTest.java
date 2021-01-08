@@ -182,7 +182,7 @@ public class NodeRepositoryTest {
         assertFalse(tester.nodeRepository().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
         // Set host 1 properties and deprovision it
-        try (var lock = tester.nodeRepository().lockRequiredNode("host1")) {
+        try (var lock = tester.nodeRepository().lockAndGetRequired("host1")) {
             Node host1 = lock.node().withWantToRetire(true, true, Agent.system, tester.nodeRepository().clock().instant());
             host1 = host1.withFirmwareVerifiedAt(tester.clock().instant());
             host1 = host1.with(host1.status().withIncreasedFailCount());

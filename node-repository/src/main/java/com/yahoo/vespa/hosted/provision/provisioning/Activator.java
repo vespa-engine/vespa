@@ -131,7 +131,7 @@ class Activator {
             if (parentNode.get().reservedTo().isEmpty()) continue;
 
             // Above is an optimization to avoid unnecessary locking - now repeat all conditions under lock
-            Optional<NodeMutex> parent = nodeRepository.lockNode(node.parentHostname().get());
+            Optional<NodeMutex> parent = nodeRepository.lockAndGet(node.parentHostname().get());
             if (parent.isEmpty()) continue;
             try (var lock = parent.get()) {
                 if (lock.node().reservedTo().isEmpty()) continue;

@@ -206,7 +206,7 @@ public class InPlaceResizeProvisionTest {
 
         // ... same with setting a node to want to retire
         Node nodeToWantoToRetire = listCluster(content1).not().retired().asList().get(0);
-        try (NodeMutex lock = tester.nodeRepository().lockRequiredNode(nodeToWantoToRetire)) {
+        try (NodeMutex lock = tester.nodeRepository().lockAndGetRequired(nodeToWantoToRetire)) {
             tester.nodeRepository().write(lock.node().withWantToRetire(true, Agent.system,
                     tester.clock().instant()), lock);
         }

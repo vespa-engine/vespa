@@ -160,7 +160,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePATCH(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
-            try (NodeMutex lock = nodeRepository.lockRequiredNode(nodeFromRequest(request))) {
+            try (NodeMutex lock = nodeRepository.lockAndGetRequired(nodeFromRequest(request))) {
                 var patchedNodes = new NodePatcher(nodeFlavors, request.getData(), lock.node(), () -> nodeRepository.list(lock),
                         nodeRepository.clock()).apply();
                 nodeRepository.write(patchedNodes, lock);
@@ -209,7 +209,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deleteNode(String hostname) {
-        Optional<NodeMutex> nodeMutex = nodeRepository.lockNode(hostname);
+        Optional<NodeMutex> nodeMutex = nodeRepository.lockAndGet(hostname);
         if (nodeMutex.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
         try (var lock = nodeMutex.get()) {
             if (lock.node().state() == Node.State.deprovisioned) {

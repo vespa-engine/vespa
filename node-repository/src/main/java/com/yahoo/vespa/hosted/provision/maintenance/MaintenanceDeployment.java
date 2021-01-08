@@ -193,7 +193,7 @@ class MaintenanceDeployment implements Closeable {
 
         /** Returns true only if this operation changes the state of the wantToRetire flag */
         private boolean markWantToRetire(Node node, boolean wantToRetire, Agent agent, NodeRepository nodeRepository) {
-            Optional<NodeMutex> nodeMutex = nodeRepository.lockNode(node);
+            Optional<NodeMutex> nodeMutex = nodeRepository.lockAndGet(node);
             if (nodeMutex.isEmpty()) return false;
 
             try (var nodeLock = nodeMutex.get()) {

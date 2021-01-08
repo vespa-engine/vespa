@@ -152,7 +152,7 @@ public class ProvisioningTester {
     public List<Node> patchNodes(List<Node> nodes, UnaryOperator<Node> patcher) {
         List<Node> updated = new ArrayList<>();
         for (var node : nodes) {
-            try (var lock = nodeRepository.lockRequiredNode(node)) {
+            try (var lock = nodeRepository.lockAndGetRequired(node)) {
                 node = patcher.apply(lock.node());
                 nodeRepository.write(node, lock);
                 updated.add(node);
@@ -186,7 +186,7 @@ public class ProvisioningTester {
 
         // Add ip addresses and activate parent host if necessary
         for (HostSpec prepared : preparedNodes) {
-            try (var lock = nodeRepository.lockRequiredNode(prepared.hostname())) {
+            try (var lock = nodeRepository.lockAndGetRequired(prepared.hostname())) {
                 Node node = lock.node();
                 if (node.ipConfig().primary().isEmpty()) {
                     node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));

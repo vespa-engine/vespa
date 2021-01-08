@@ -62,7 +62,7 @@ public class RetiringUpgrader implements Upgrader {
     /** Retire and deprovision given host and its children */
     private void retire(Node host, Version target, Instant now, NodeList allNodes) {
         if (!host.type().isHost()) throw new IllegalArgumentException("Cannot retire non-host " + host);
-        Optional<NodeMutex> nodeMutex = nodeRepository.lockNode(host);
+        Optional<NodeMutex> nodeMutex = nodeRepository.lockAndGet(host);
         if (nodeMutex.isEmpty()) return;
         try (var lock = nodeMutex.get()) {
             host = lock.node();
