@@ -43,7 +43,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private final SearchCluster searchCluster;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
-    private final boolean isContentWellBalanced;
     private Query query;
 
     private boolean adaptiveTimeoutCalculated = false;
@@ -60,14 +59,13 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private boolean timedOut = false;
     private boolean degradedByMatchPhase = false;
 
-    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, boolean isContentWellBalanced, SearchCluster searchCluster, Set<Integer> alreadyFailedNodes) {
+    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, SearchCluster searchCluster, Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
         this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
         this.invokers.addAll(invokers);
         this.searchCluster = searchCluster;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
-        this.isContentWellBalanced = isContentWellBalanced;
     }
 
     /**
@@ -84,13 +82,10 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         int originalHits = query.getHits();
         int originalOffset = query.getOffset();
         int neededHits = originalHits + originalOffset;
-        int q = neededHits;
-        if (isContentWellBalanced) {
-            Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
-            q = (topkProbabilityOverrride != null)
-                    ? searchCluster.estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
-                    : searchCluster.estimateHitsToFetch(neededHits, invokers.size());
-        }
+        Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
+        int q = (topkProbabilityOverrride != null)
+                ? searchCluster.estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
+                : searchCluster.estimateHitsToFetch(neededHits, invokers.size());
         query.setHits(q);
         query.setOffset(0);
 

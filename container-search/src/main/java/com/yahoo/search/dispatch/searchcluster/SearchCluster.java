@@ -368,12 +368,6 @@ public class SearchCluster implements NodeManager<Node> {
         return workingNodes + nodesAllowedDown >= nodesInGroup;
     }
 
-    public boolean isGroupWellBalanced(OptionalInt groupId) {
-        if (groupId.isEmpty()) return false;
-        Group group = groups().get(groupId);
-        return (group != null) && group.isContentWellBalanced();
-    }
-
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
