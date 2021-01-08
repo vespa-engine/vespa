@@ -4,6 +4,7 @@ package com.yahoo.search.query.profile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An immutable, binding of a list of dimensions to dimension values
@@ -203,7 +204,7 @@ public class DimensionBinding {
 
     @Override
     public int hashCode() {
-        return dimensions.hashCode() + 17 * values.hashCode();
+        return Objects.hash(dimensions, values);
     }
 
 }

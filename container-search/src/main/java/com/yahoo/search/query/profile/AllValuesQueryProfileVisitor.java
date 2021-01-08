@@ -16,8 +16,8 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
     private final Map<String, ValueWithSource> values = new HashMap<>();
 
     /* Lists all values starting at prefix */
-    public AllValuesQueryProfileVisitor(CompoundName prefix) {
-        super(prefix);
+    public AllValuesQueryProfileVisitor(CompoundName prefix, Map<CompoundName, Map<String, CompoundName>> pathCache) {
+        super(prefix, pathCache);
     }
 
     @Override
@@ -43,7 +43,7 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
                           QueryProfile owner,
                           DimensionValues variant,
                           DimensionBinding binding) {
-        CompoundName fullName = currentPrefix.append(key);
+        CompoundName fullName = cache.computeIfAbsent(currentPrefix, __ -> new HashMap<>()).computeIfAbsent(key, currentPrefix::append);
 
         ValueWithSource existing = values.get(fullName.toString());
 

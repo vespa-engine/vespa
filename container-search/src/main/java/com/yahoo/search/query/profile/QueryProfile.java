@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -266,10 +265,13 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     }
 
     AllValuesQueryProfileVisitor visitValues(CompoundName prefix, Map<String, String> context) {
-        DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(), context);
+        return visitValues(prefix, context, new HashMap<>());
+    }
 
-        AllValuesQueryProfileVisitor visitor = new AllValuesQueryProfileVisitor(prefix);
-        accept(visitor, dimensionBinding, null);
+    AllValuesQueryProfileVisitor visitValues(CompoundName prefix, Map<String, String> context,
+                                             Map<CompoundName, Map<String, CompoundName>> pathCache) {
+        AllValuesQueryProfileVisitor visitor = new AllValuesQueryProfileVisitor(prefix, pathCache);
+        accept(visitor, DimensionBinding.createFrom(getDimensions(), context), null);
         return visitor;
     }
 

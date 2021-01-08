@@ -50,13 +50,13 @@ public class QueryProfileCompiler {
             log.fine(() -> "Compiling " + in + " having " + variants.size() + " variants");
 
             Map<CompoundName, Map<String, CompoundName>> pathCache = new HashMap<>();
-            for (DimensionBindingForPath variant : variants) {
-                log.finer(() -> "  Compiling variant " + variant);
-                // TODO jonmv: consider visiting with sets of bindings for each path
-                for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
-                    CompoundName fullName = pathCache.computeIfAbsent(variant.path, path -> new HashMap<>())
-                                                     .computeIfAbsent(entry.getKey(), variant.path::append);
-                    Binding variantBinding = Binding.createFrom(variant.binding());
+            Map<DimensionBinding, Binding> bindingCache = new HashMap<>();
+            for (var variant : variants) {
+                log.finer(() -> "Compiling variant " + variant);
+                Binding variantBinding = bindingCache.computeIfAbsent(variant.binding(), Binding::createFrom);
+                for (var entry : in.visitValues(variant.path(), variant.binding().getContext(), pathCache).valuesWithSource().entrySet()) {
+                    CompoundName fullName = pathCache.computeIfAbsent(variant.path(), __ -> new HashMap<>())
+                                                     .computeIfAbsent(entry.getKey(), variant.path()::append);
                     values.put(fullName, variantBinding, entry.getValue());
                     if (entry.getValue().isUnoverridable())
                         unoverridables.put(fullName, variantBinding, Boolean.TRUE);
