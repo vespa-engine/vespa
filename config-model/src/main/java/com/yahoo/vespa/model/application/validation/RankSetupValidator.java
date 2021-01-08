@@ -149,6 +149,7 @@ public class RankSetupValidator extends Validator {
 
     private void writeExtraVerifyRanksetupConfig(String dir, DocumentDatabase db) throws IOException {
         String configName = "verify-ranksetup.cfg";
+        String configContent = "";
 
         // Assist verify-ranksetup in finding the actual ONNX model files
         Map<String, OnnxModel> models = db.getDerivedConfiguration().getSearch().onnxModels().asMap();
@@ -159,8 +160,9 @@ public class RankSetupValidator extends Validator {
                 config.add(String.format("file[%d].ref \"%s\"", config.size() / 2, model.getFileReference()));
                 config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));
             }
-            IOUtils.writeFile(dir + configName, StringUtilities.implodeMultiline(config), false);
+            configContent = StringUtilities.implodeMultiline(config);
         }
+        IOUtils.writeFile(dir + configName, configContent, false);
     }
 
     public static String getFileRepositoryPath(Path path, String fileReference) {
