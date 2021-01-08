@@ -31,7 +31,9 @@ public interface ModelContext {
     ApplicationPackage applicationPackage();
     Optional<Model> previousModel();
     Optional<ApplicationPackage> permanentApplicationPackage();
-    Optional<HostProvisioner> hostProvisioner();
+    // TODO: Remove after 7.338 has been released
+    default Optional<HostProvisioner> hostProvisioner() { return Optional.of(getHostProvisioner()); }
+    HostProvisioner getHostProvisioner();
     Provisioned provisioned();
     DeployLogger deployLogger();
     ConfigDefinitionRepo configDefinitionRepo();

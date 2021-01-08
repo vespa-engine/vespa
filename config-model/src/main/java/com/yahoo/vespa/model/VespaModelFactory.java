@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
@@ -11,7 +11,6 @@ import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigModelPlugin;
-import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -22,10 +21,8 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -147,7 +144,7 @@ public class VespaModelFactory implements ModelFactory {
             .permanentApplicationPackage(modelContext.permanentApplicationPackage())
             .properties(modelContext.properties())
             .vespaVersion(version())
-            .modelHostProvisioner(createHostProvisioner(modelContext))
+            .modelHostProvisioner(modelContext.getHostProvisioner())
             .provisioned(modelContext.provisioned())
             .endpoints(modelContext.properties().endpoints())
             .modelImporters(modelImporters)
@@ -158,11 +155,6 @@ public class VespaModelFactory implements ModelFactory {
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);
-    }
-
-    private static HostProvisioner createHostProvisioner(ModelContext modelContext) {
-        return modelContext.hostProvisioner().orElse(
-                DeployState.getDefaultModelHostProvisioner(modelContext.applicationPackage()));
     }
 
     private void validateXML(ApplicationPackage applicationPackage, boolean ignoreValidationErrors) {

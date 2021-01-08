@@ -146,6 +146,9 @@ public class VespaModelFactoryTest {
             }
 
             @Override
+            public HostProvisioner getHostProvisioner() { return provisionerToOverride; }
+
+            @Override
             public Properties properties() {
                 return new TestProperties();
             }

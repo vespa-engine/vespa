@@ -49,7 +49,7 @@ public class ModelContextImpl implements ModelContext {
     private final DeployLogger deployLogger;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final FileRegistry fileRegistry;
-    private final Optional<HostProvisioner> hostProvisioner;
+    private final HostProvisioner hostProvisioner;
     private final Provisioned provisioned;
     private final Optional<? extends Reindexing> reindexing;
     private final ModelContext.Properties properties;
@@ -76,7 +76,7 @@ public class ModelContextImpl implements ModelContext {
                             ConfigDefinitionRepo configDefinitionRepo,
                             FileRegistry fileRegistry,
                             Optional<? extends Reindexing> reindexing,
-                            Optional<HostProvisioner> hostProvisioner,
+                            HostProvisioner hostProvisioner,
                             Provisioned provisioned,
                             ModelContext.Properties properties,
                             Optional<File> appDir,
@@ -112,9 +112,8 @@ public class ModelContextImpl implements ModelContext {
      * Returns the host provisioner to use, or empty to use the default provisioner,
      * creating hosts from the application package defined hosts
      */
-    // TODO: Don't allow empty here but create the right provisioner when this is set up instead
     @Override
-    public Optional<HostProvisioner> hostProvisioner() { return hostProvisioner; }
+    public HostProvisioner getHostProvisioner() { return hostProvisioner; }
 
     @Override
     public Provisioned provisioned() { return provisioned; }
