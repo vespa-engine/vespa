@@ -11,9 +11,9 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 
@@ -196,8 +196,8 @@ public class MockDeployer implements Deployer {
             lastDeployTimes.put(applicationId, clock.instant());
 
             for (Node node : nodeRepository.list().owner(applicationId).state(Node.State.active).wantToRetire().asList()) {
-                try (Mutex lock = nodeRepository.lock(node)) {
-                    nodeRepository.write(node.retire(nodeRepository.clock().instant()), lock);
+                try (NodeMutex lock = nodeRepository.lockRequiredNode(node)) {
+                    nodeRepository.write(lock.node().retire(nodeRepository.clock().instant()), lock);
                 }
             }
             return redeployments++;

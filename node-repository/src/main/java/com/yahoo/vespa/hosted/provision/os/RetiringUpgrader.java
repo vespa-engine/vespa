@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -61,10 +62,10 @@ public class RetiringUpgrader implements Upgrader {
     /** Retire and deprovision given host and its children */
     private void retire(Node host, Version target, Instant now, NodeList allNodes) {
         if (!host.type().isHost()) throw new IllegalArgumentException("Cannot retire non-host " + host);
-        try (var lock = nodeRepository.lock(host)) {
-            Optional<Node> currentNode = nodeRepository.getNode(host.hostname());
-            if (currentNode.isEmpty()) return;
-            host = currentNode.get();
+        Optional<NodeMutex> nodeMutex = nodeRepository.lockNode(host);
+        if (nodeMutex.isEmpty()) return;
+        try (var lock = nodeMutex.get()) {
+            host = lock.node();
             NodeType nodeType = host.type();
 
             LOG.info("Retiring and deprovisioning " + host + ": On stale OS version " +

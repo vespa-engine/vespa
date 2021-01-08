@@ -86,8 +86,9 @@ public class NodePatcher {
             }
 
             if (RECURSIVE_FIELDS.contains(name)) {
-                for (Node child: patchedNodes.children())
+                for (Node child: patchedNodes.children()) {
                     patchedNodes.update(applyField(child, name, value, inspector, true));
+                }
             }
         } );
 

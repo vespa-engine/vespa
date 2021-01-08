@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -53,6 +54,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -656,7 +658,8 @@ public class NodeRepository extends AbstractComponent {
         if (toState == Node.State.active && node.allocation().isEmpty())
             illegal("Could not set " + node + " active. It has no allocation.");
 
-        try (Mutex lock = lock(node)) {
+        // TODO: Work out a safe lock acquisition strategy for moves, e.g. migrate to lockNode.
+        try (Mutex lock = lockOnly(node)) {
             if (toState == State.active) {
                 for (Node currentActive : getNodes(node.allocation().get().owner(), State.active)) {
                     if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
@@ -921,13 +924,57 @@ public class NodeRepository extends AbstractComponent {
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }
 
-    /** Acquires the appropriate lock for this node */
-    public Mutex lock(Node node) {
+    /** Returns a lock, and an up to date node fetched under an appropriate lock, if it exists. */
+    public Optional<NodeMutex> lockNode(Node node) {
+        Node staleNode = node;
+
+        for (int i = 0; i < 4; ++i) {
+            Mutex lock = lockOnly(staleNode);
+            Optional<Mutex> lockToClose = Optional.of(lock);
+            try {
+                Optional<Node> freshNode = getNode(staleNode.hostname(), staleNode.state());
+                if (freshNode.isEmpty()) {
+                    freshNode = getNode(staleNode.hostname());
+                    if (freshNode.isEmpty()) {
+                        return Optional.empty();
+                    }
+                }
+
+                if (Objects.equals(freshNode.get().allocation().map(Allocation::owner),
+                                   staleNode.allocation().map(Allocation::owner))) {
+                    lockToClose = Optional.empty();
+                    return Optional.of(new NodeMutex(freshNode.get(), lock));
+                }
+
+                staleNode = freshNode.get();
+            } finally {
+                lockToClose.ifPresent(Mutex::close);
+            }
+        }
+
+        throw new IllegalStateException("Giving up trying to fetch an up to date node under lock: " + node.hostname());
+    }
+
+    /** Returns a lock, and an up to date node fetched under an appropriate lock, if it exists. */
+    public Optional<NodeMutex> lockNode(String hostname) {
+        return getNode(hostname).flatMap(this::lockNode);
+    }
+
+    /** Returns a lock, and an up to date node fetched under an appropriate lock. */
+    public NodeMutex lockRequiredNode(Node node) {
+        return lockNode(node).orElseThrow(() -> new IllegalArgumentException("No such node: " + node.hostname()));
+    }
+
+    /** Returns a lock, and an up to date node fetched under an appropriate lock. */
+    public NodeMutex lockRequiredNode(String hostname) {
+        return lockNode(hostname).orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
+    }
+
+    private Mutex lockOnly(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
     }
 
     private void illegal(String message) {
         throw new IllegalArgumentException(message);
     }
-
 }

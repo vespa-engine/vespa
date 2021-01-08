@@ -9,6 +9,7 @@ import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.yolean.Exceptions;
@@ -192,14 +193,15 @@ class MaintenanceDeployment implements Closeable {
 
         /** Returns true only if this operation changes the state of the wantToRetire flag */
         private boolean markWantToRetire(Node node, boolean wantToRetire, Agent agent, NodeRepository nodeRepository) {
-            try (Mutex lock = nodeRepository.lock(node)) {
-                Optional<Node> nodeToMove = nodeRepository.getNode(node.hostname());
-                if (nodeToMove.isEmpty()) return false;
-                if (nodeToMove.get().state() != Node.State.active) return false;
+            Optional<NodeMutex> nodeMutex = nodeRepository.lockNode(node);
+            if (nodeMutex.isEmpty()) return false;
 
-                if (nodeToMove.get().status().wantToRetire() == wantToRetire) return false;
+            try (var nodeLock = nodeMutex.get()) {
+                if (nodeLock.node().state() != Node.State.active) return false;
 
-                nodeRepository.write(nodeToMove.get().withWantToRetire(wantToRetire, agent, nodeRepository.clock().instant()), lock);
+                if (nodeLock.node().status().wantToRetire() == wantToRetire) return false;
+
+                nodeRepository.write(nodeLock.node().withWantToRetire(wantToRetire, agent, nodeRepository.clock().instant()), nodeLock);
                 return true;
             }
         }

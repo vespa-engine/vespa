@@ -182,18 +182,17 @@ public class NodeRepositoryTest {
         assertFalse(tester.nodeRepository().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
         // Set host 1 properties and deprovision it
-        Node host1 = tester.nodeRepository().getNode("host1").get();
-        host1 = host1.withWantToRetire(true, true, Agent.system, tester.nodeRepository().clock().instant());
-        host1 = host1.withFirmwareVerifiedAt(tester.clock().instant());
-        host1 = host1.with(host1.status().withIncreasedFailCount());
-        host1 = host1.with(host1.reports().withReport(Report.basicReport("id", Report.Type.HARD_FAIL, tester.clock().instant(), "Test report")));
-        try (var lock = tester.nodeRepository().lock(host1)) {
+        try (var lock = tester.nodeRepository().lockRequiredNode("host1")) {
+            Node host1 = lock.node().withWantToRetire(true, true, Agent.system, tester.nodeRepository().clock().instant());
+            host1 = host1.withFirmwareVerifiedAt(tester.clock().instant());
+            host1 = host1.with(host1.status().withIncreasedFailCount());
+            host1 = host1.with(host1.reports().withReport(Report.basicReport("id", Report.Type.HARD_FAIL, tester.clock().instant(), "Test report")));
             tester.nodeRepository().write(host1, lock);
         }
         tester.nodeRepository().removeRecursively("host1");
 
         // Host 1 is deprovisioned and unwanted properties are cleared
-        host1 = tester.nodeRepository().getNode("host1").get();
+        Node host1 = tester.nodeRepository().getNode("host1").get();
         assertEquals(Node.State.deprovisioned, host1.state());
         assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 

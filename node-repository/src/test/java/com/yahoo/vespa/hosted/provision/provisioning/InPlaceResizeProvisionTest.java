@@ -10,10 +10,10 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
@@ -206,8 +206,8 @@ public class InPlaceResizeProvisionTest {
 
         // ... same with setting a node to want to retire
         Node nodeToWantoToRetire = listCluster(content1).not().retired().asList().get(0);
-        try (Mutex lock = tester.nodeRepository().lock(nodeToWantoToRetire)) {
-            tester.nodeRepository().write(nodeToWantoToRetire.withWantToRetire(true, Agent.system,
+        try (NodeMutex lock = tester.nodeRepository().lockRequiredNode(nodeToWantoToRetire)) {
+            tester.nodeRepository().write(lock.node().withWantToRetire(true, Agent.system,
                     tester.clock().instant()), lock);
         }
         new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();

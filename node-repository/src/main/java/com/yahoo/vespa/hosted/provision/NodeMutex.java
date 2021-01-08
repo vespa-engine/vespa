@@ -1,0 +1,22 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.provision;
+
+import com.yahoo.transaction.Mutex;
+
+/**
+ * Holds a node and mutex pair, with the mutex closed by {@link #close()}.
+ *
+ * @author hakon
+ */
+public class NodeMutex implements Mutex {
+    private final Node node;
+    private final Mutex mutex;
+
+    public NodeMutex(Node node, Mutex mutex) {
+        this.node = node;
+        this.mutex = mutex;
+    }
+
+    public Node node() { return node; }
+    @Override public void close() { mutex.close(); }
+}
