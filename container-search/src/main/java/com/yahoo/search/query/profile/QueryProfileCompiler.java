@@ -11,6 +11,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +49,13 @@ public class QueryProfileCompiler {
             variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
             log.fine(() -> "Compiling " + in + " having " + variants.size() + " variants");
 
+            Map<CompoundName, Map<String, CompoundName>> pathCache = new HashMap<>();
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
                 // TODO jonmv: consider visiting with sets of bindings for each path
                 for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
-                    CompoundName fullName = variant.path().append(entry.getKey());
+                    CompoundName fullName = pathCache.computeIfAbsent(variant.path, path -> new HashMap<>())
+                                                     .computeIfAbsent(entry.getKey(), variant.path::append);
                     Binding variantBinding = Binding.createFrom(variant.binding());
                     values.put(fullName, variantBinding, entry.getValue());
                     if (entry.getValue().isUnoverridable())
@@ -115,10 +118,11 @@ public class QueryProfileCompiler {
         for (var variant : variants)
             trie.add(variant);
 
+        // Visit all variant prefixes, grouped on path, and all their unique child bindings.
         trie.forEachPrefixAndChildren((prefixes, childBindings) -> {
             Set<DimensionBinding> processed = new HashSet<>();
             for (DimensionBindingForPath prefix : prefixes)
-                if (processed.add(prefix.binding()))
+                if (processed.add(prefix.binding())) // Only compute once for similar bindings, since path is equals.
                     if (hasWildcardBeforeEnd(prefix.binding()))
                         for (DimensionBinding childBinding : childBindings)
                             if (childBinding != prefix.binding()) {

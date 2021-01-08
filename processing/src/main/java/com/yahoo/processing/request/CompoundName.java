@@ -141,7 +141,7 @@ public final class CompoundName {
         if (nameParts.length == 0) return this;
         if (isEmpty()) return fromComponents(nameParts);
 
-        List<String> newCompounds = new ArrayList<>(nameParts.length+compounds.size());
+        List<String> newCompounds = new ArrayList<>(nameParts.length + compounds.size());
         newCompounds.addAll(Arrays.asList(nameParts));
         newCompounds.addAll(this.compounds);
         return new CompoundName(newCompounds);
@@ -193,7 +193,7 @@ public final class CompoundName {
                                                this + "' only have " + compounds.size() + " components.");
         if (n == 1) return rest();
         if (compounds.size() == n) return empty;
-        return rest.rest(n-1);
+        return rest.rest(n - 1);
     }
 
     /**
