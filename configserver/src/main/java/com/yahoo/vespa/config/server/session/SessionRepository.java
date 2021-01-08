@@ -73,6 +73,7 @@ public class SessionRepository {
     private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final long nonExistingActiveSessionId = 0;
 
+    private final Object monitor = new Object();
     private final Map<Long, LocalSession> localSessionCache = new ConcurrentHashMap<>();
     private final Map<Long, RemoteSession> remoteSessionCache = new ConcurrentHashMap<>();
     private final Map<Long, SessionStateWatcher> sessionStateWatchers = new HashMap<>();
@@ -202,8 +203,8 @@ public class SessionRepository {
     }
 
     /**
-     * This method is used when creating a session based on a remote session and the distributed application package
-     * It does not wait for session being created on other servers
+     * Creates a local session based on a remote session and the distributed application package.
+     * Does not wait for session being created on other servers.
      */
     private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
@@ -548,19 +549,25 @@ public class SessionRepository {
         }
     }
 
-    private ApplicationPackage createApplicationPackage(File applicationFile, ApplicationId applicationId,
-                                                        long sessionId, boolean internalRedeploy) throws IOException {
-        Optional<Long> activeSessionId = getActiveSessionId(applicationId);
-        File userApplicationDir = getSessionAppDir(sessionId);
-        copyApp(applicationFile, userApplicationDir);
-        ApplicationPackage applicationPackage = createApplication(applicationFile,
-                                                                  userApplicationDir,
-                                                                  applicationId,
-                                                                  sessionId,
-                                                                  activeSessionId,
-                                                                  internalRedeploy);
-        applicationPackage.writeMetaData();
-        return applicationPackage;
+    private ApplicationPackage createApplicationPackage(File applicationFile,
+                                                        ApplicationId applicationId,
+                                                        long sessionId,
+                                                        boolean internalRedeploy) throws IOException {
+        // Synchronize to avoid threads trying to create an application package concurrently
+        // (e.g. a maintainer and an external deployment)
+        synchronized (monitor) {
+            Optional<Long> activeSessionId = getActiveSessionId(applicationId);
+            File userApplicationDir = getSessionAppDir(sessionId);
+            copyApp(applicationFile, userApplicationDir);
+            ApplicationPackage applicationPackage = createApplication(applicationFile,
+                                                                      userApplicationDir,
+                                                                      applicationId,
+                                                                      sessionId,
+                                                                      activeSessionId,
+                                                                      internalRedeploy);
+            applicationPackage.writeMetaData();
+            return applicationPackage;
+        }
     }
 
     public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
