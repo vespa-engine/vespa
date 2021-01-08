@@ -37,7 +37,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useThreePhaseUpdates = false;
-    private boolean useDirectStorageApiRpc = false;
     private boolean useFastValueTensorImplementation = true;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
@@ -74,7 +73,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
-    @Override public boolean useDirectStorageApiRpc() { return useDirectStorageApiRpc; }
+    @Override public boolean useDirectStorageApiRpc() { return true; }
     @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
@@ -134,11 +133,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseThreePhaseUpdates(boolean useThreePhaseUpdates) {
         this.useThreePhaseUpdates = useThreePhaseUpdates;
-        return this;
-    }
-
-    public TestProperties setUseDirectStorageApiRpc(boolean useDirectStorageApiRpc) {
-        this.useDirectStorageApiRpc = useDirectStorageApiRpc;
         return this;
     }
 

@@ -70,7 +70,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}) default double reindexerWindowSizeIncrement() { return 0.2; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2020") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"geirst"}, comment = "Remove on 7.XXX when this is default on") default boolean useDirectStorageApiRpc() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"geirst"}, comment = "Remove when 7.336 is no longer in use") default boolean useDirectStorageApiRpc() { return true; }
         @ModelFeatureFlag(owners = {"geirst"}, comment = "Remove when 7.328 is no longer in use") default boolean useFastValueTensorImplementation() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
@@ -129,7 +129,7 @@ public interface ModelContext {
         @Deprecated int mergeChunkSize();
         @Deprecated double feedConcurrency();
         @Deprecated boolean useThreePhaseUpdates();
-        @Deprecated boolean useDirectStorageApiRpc();
+        @Deprecated default boolean useDirectStorageApiRpc() { return true; }
         @Deprecated default boolean useFastValueTensorImplementation() { return true; }
         @Deprecated default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
     }
