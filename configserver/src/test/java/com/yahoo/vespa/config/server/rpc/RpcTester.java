@@ -24,7 +24,7 @@ import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
-import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -61,7 +61,6 @@ public class RpcTester implements AutoCloseable {
     private RpcServer rpcServer;
     private Thread t;
     private Supervisor sup;
-    private final ApplicationId applicationId;
     private final TenantName tenantName;
     private final TenantRepository tenantRepository;
 
@@ -76,7 +75,6 @@ public class RpcTester implements AutoCloseable {
 
     RpcTester(ApplicationId applicationId, TemporaryFolder temporaryFolder, ConfigserverConfig.Builder configBuilder) throws InterruptedException, IOException {
         this.temporaryFolder = temporaryFolder;
-        this.applicationId = applicationId;
         this.tenantName = applicationId.tenant();
         int port = allocatePort();
         spec = createSpec(port);
@@ -114,9 +112,8 @@ public class RpcTester implements AutoCloseable {
     }
 
     void createAndStartRpcServer() throws IOException {
-        HostRegistries hostRegistries = new HostRegistries();
-        hostRegistries.createApplicationHostRegistry(tenantName).update(applicationId, List.of("localhost"));
-        hostRegistries.getTenantHostRegistry().update(tenantName, List.of("localhost"));
+        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
+        hostRegistry.update(tenantName, List.of("localhost"));
         rpcServer = new RpcServer(configserverConfig,
                                   new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                                configserverConfig,
@@ -126,7 +123,7 @@ public class RpcTester implements AutoCloseable {
                                                                        generationCounter,
                                                                        new InMemoryFlagSource())),
                                   Metrics.createTestMetrics(),
-                                  hostRegistries,
+                                  hostRegistry,
                                   hostLivenessTracker,
                                   new FileServer(temporaryFolder.newFolder()),
                                   new NoopRpcAuthorizer(),
