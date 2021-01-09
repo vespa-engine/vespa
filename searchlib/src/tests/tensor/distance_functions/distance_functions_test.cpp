@@ -24,10 +24,12 @@ void verify_geo_miles(const DistanceFunction *dist_fun,
     TypedCells t2(p2);
     double abstract_distance = dist_fun->calc(t1, t2);
     double raw_score = dist_fun->to_rawscore(abstract_distance);
-    double m = ((1.0/raw_score)-1.0);
-    double d_miles = m / 1.609344;
+    double km = ((1.0/raw_score)-1.0);
+    double d_miles = km / 1.609344;
     EXPECT_GE(d_miles, exp_miles*0.99);
     EXPECT_LE(d_miles, exp_miles*1.01);
+    double threshold = dist_fun->convert_threshold(km);
+    EXPECT_DOUBLE_EQ(threshold, abstract_distance);
 }
 
 
@@ -50,6 +52,10 @@ TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
     double d12 = euclid->calc(t(p1), t(p2));
     EXPECT_EQ(d12, 2.0);
     EXPECT_DOUBLE_EQ(euclid->to_rawscore(d12), 1.0/(1.0 + sqrt(2.0)));
+    double threshold = euclid->convert_threshold(8.0);
+    EXPECT_EQ(threshold, 64.0);
+    threshold = euclid->convert_threshold(0.5);
+    EXPECT_EQ(threshold, 0.25);
 }
 
 TEST(DistanceFunctionsTest, angular_gives_expected_score)
@@ -75,19 +81,28 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     EXPECT_DOUBLE_EQ(a23, 1.0);
     EXPECT_FLOAT_EQ(angular->to_rawscore(a12), 1.0/(1.0 + pi/2));
 
+    double threshold = angular->convert_threshold(pi/2);
+    EXPECT_DOUBLE_EQ(threshold, 1.0);
+
     double a14 = angular->calc(t(p1), t(p4));
     double a24 = angular->calc(t(p2), t(p4));
     EXPECT_FLOAT_EQ(a14, 0.5);
     EXPECT_FLOAT_EQ(a24, 0.5);
     EXPECT_FLOAT_EQ(angular->to_rawscore(a14), 1.0/(1.0 + pi/3));
+    threshold = angular->convert_threshold(pi/3);
+    EXPECT_DOUBLE_EQ(threshold, 0.5);
 
     double a34 = angular->calc(t(p3), t(p4));
     EXPECT_FLOAT_EQ(a34, (1.0 - 0.707107));
     EXPECT_FLOAT_EQ(angular->to_rawscore(a34), 1.0/(1.0 + pi/4));
+    threshold = angular->convert_threshold(pi/4);
+    EXPECT_FLOAT_EQ(threshold, a34);
 
     double a25 = angular->calc(t(p2), t(p5));
     EXPECT_DOUBLE_EQ(a25, 2.0);
     EXPECT_FLOAT_EQ(angular->to_rawscore(a25), 1.0/(1.0 + pi));
+    threshold = angular->convert_threshold(pi);
+    EXPECT_FLOAT_EQ(threshold, 2.0);
 
     double a44 = angular->calc(t(p4), t(p4));
     EXPECT_GE(a44, 0.0);
@@ -98,6 +113,8 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     EXPECT_GE(a66, 0.0);
     EXPECT_LT(a66, 0.000001);
     EXPECT_FLOAT_EQ(angular->to_rawscore(a66), 1.0);
+    threshold = angular->convert_threshold(0.0);
+    EXPECT_FLOAT_EQ(threshold, 0.0);
 
     double a16 = angular->calc(t(p1), t(p6));
     double a26 = angular->calc(t(p2), t(p6));
@@ -127,6 +144,7 @@ TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
     EXPECT_DOUBLE_EQ(i12, 1.0);
     EXPECT_DOUBLE_EQ(i13, 1.0);
     EXPECT_DOUBLE_EQ(i23, 1.0);
+    
     double i14 = innerproduct->calc(t(p1), t(p4));
     double i24 = innerproduct->calc(t(p2), t(p4));
     EXPECT_DOUBLE_EQ(i14, 0.5);
@@ -140,6 +158,13 @@ TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
     double i44 = innerproduct->calc(t(p4), t(p4));
     EXPECT_GE(i44, 0.0);
     EXPECT_LT(i44, 0.000001);
+
+    double threshold = innerproduct->convert_threshold(0.25);
+    EXPECT_DOUBLE_EQ(threshold, 0.25);
+    threshold = innerproduct->convert_threshold(0.5);
+    EXPECT_DOUBLE_EQ(threshold, 0.5);
+    threshold = innerproduct->convert_threshold(1.0);
+    EXPECT_DOUBLE_EQ(threshold, 1.0);
 }
 
 TEST(DistanceFunctionsTest, hamming_gives_expected_score)
@@ -180,6 +205,13 @@ TEST(DistanceFunctionsTest, hamming_gives_expected_score)
     double d25 = hamming->calc(t(points[2]), t(points[5]));
     EXPECT_EQ(d25, 1.0);
     EXPECT_DOUBLE_EQ(hamming->to_rawscore(d25), 1.0/(1.0 + 1.0));
+ 
+    double threshold = hamming->convert_threshold(0.25);
+    EXPECT_DOUBLE_EQ(threshold, 0.25);
+    threshold = hamming->convert_threshold(0.5);
+    EXPECT_DOUBLE_EQ(threshold, 0.5);
+    threshold = hamming->convert_threshold(1.0);
+    EXPECT_DOUBLE_EQ(threshold, 1.0);
 }
 
 TEST(GeoDegreesTest, gives_expected_score)

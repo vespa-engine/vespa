@@ -73,13 +73,15 @@ public:
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              vespalib::eval::TypedCells vector,
-                                             uint32_t explore_k) const = 0;
+                                             uint32_t explore_k,
+                                             double distance_threshold) const = 0;
 
     // only return neighbors where the corresponding filter bit is set
     virtual std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
                                                          vespalib::eval::TypedCells vector,
                                                          const BitVector &filter,
-                                                         uint32_t explore_k) const = 0;
+                                                         uint32_t explore_k,
+                                                         double distance_threshold) const = 0;
 
     virtual const DistanceFunction *distance_function() const = 0;
 };

@@ -723,7 +723,13 @@ public class VespaSerializer {
             destination.append(leafAnnotations(item));
             comma(destination, initLen);
             int targetNumHits = item.getTargetNumHits();
-            annotationKey(destination, "targetNumHits").append(targetNumHits);
+            annotationKey(destination, YqlParser.TARGET_NUM_HITS).append(targetNumHits);
+            double distanceThreshold = item.getDistanceThreshold();
+            if (distanceThreshold < Double.POSITIVE_INFINITY) {
+                comma(destination, initLen);
+                String key = YqlParser.DISTANCE_THRESHOLD;
+                annotationKey(destination, key).append(distanceThreshold);
+            }
             int explore = item.getHnswExploreAdditionalHits();
             if (explore != 0) {
                 comma(destination, initLen);

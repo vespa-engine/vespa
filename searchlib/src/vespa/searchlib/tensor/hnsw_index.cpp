@@ -281,6 +281,7 @@ HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distan
       _level_generator(std::move(level_generator)),
       _cfg(cfg)
 {
+    assert(_distance_func);
 }
 
 HnswIndex::~HnswIndex() = default;
@@ -534,7 +535,8 @@ struct NeighborsByDocId {
 
 std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex::top_k_by_docid(uint32_t k, TypedCells vector,
-                          const BitVector *filter, uint32_t explore_k) const
+                          const BitVector *filter, uint32_t explore_k,
+                          double distance_threshold) const
 {
     std::vector<Neighbor> result;
     FurthestPriQ candidates = top_k_candidates(vector, std::max(k, explore_k), filter);
@@ -543,6 +545,7 @@ HnswIndex::top_k_by_docid(uint32_t k, TypedCells vector,
     }
     result.reserve(candidates.size());
     for (const HnswCandidate & hit : candidates.peek()) {
+        if (hit.distance > distance_threshold) continue;
         result.emplace_back(hit.docid, hit.distance);
     }
     std::sort(result.begin(), result.end(), NeighborsByDocId());
@@ -550,16 +553,18 @@ HnswIndex::top_k_by_docid(uint32_t k, TypedCells vector,
 }
 
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const
+HnswIndex::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k,
+                      double distance_threshold) const
 {
-    return top_k_by_docid(k, vector, nullptr, explore_k);
+    return top_k_by_docid(k, vector, nullptr, explore_k, distance_threshold);
 }
 
 std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex::find_top_k_with_filter(uint32_t k, TypedCells vector,
-                                  const BitVector &filter, uint32_t explore_k) const
+                                  const BitVector &filter, uint32_t explore_k,
+                                  double distance_threshold) const
 {
-    return top_k_by_docid(k, vector, &filter, explore_k);
+    return top_k_by_docid(k, vector, &filter, explore_k, distance_threshold);
 }
 
 FurthestPriQ

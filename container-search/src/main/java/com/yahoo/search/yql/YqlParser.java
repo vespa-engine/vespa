@@ -156,6 +156,7 @@ public class YqlParser implements Parser {
     public static final String FILTER = "filter";
     public static final String GEO_LOCATION = "geoLocation";
     public static final String HIT_LIMIT = "hitLimit";
+    public static final String DISTANCE_THRESHOLD = "distanceThreshold";
     public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
     public static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
     public static final String LABEL = "label";
@@ -458,6 +459,11 @@ public class YqlParser implements Parser {
         }
         if (targetNumHits != null) {
             item.setTargetNumHits(targetNumHits);
+        }
+        Double distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD,
+                Double.class, null, "maximum distance allowed from query point");
+        if (distanceThreshold != null) {
+            item.setDistanceThreshold(distanceThreshold);
         }
         Integer hnswExploreAdditionalHits = getAnnotation(ast, HNSW_EXPLORE_ADDITIONAL_HITS,
                 Integer.class, null, "number of extra hits to explore for HNSW algorithm");

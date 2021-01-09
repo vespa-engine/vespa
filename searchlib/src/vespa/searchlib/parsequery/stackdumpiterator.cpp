@@ -273,6 +273,13 @@ SimpleQueryStackDumpIterator::next()
             _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
             _extraIntArg2 = readCompressedPositiveInt(p); // allow_approximate
             _extraIntArg3 = readCompressedPositiveInt(p); // explore_additional_hits
+            if ((_extraIntArg2 & 0x40) != 0) {
+                _extraIntArg2 &= ~0x40;
+                // in some later release, do this always:
+                _extraDoubleArg4 = read_double(p); // distance threshold
+            } else {
+                _extraDoubleArg4 = std::numeric_limits<double>::max();
+            }
             _currArity = 0;
         } catch (...) {
             return false;

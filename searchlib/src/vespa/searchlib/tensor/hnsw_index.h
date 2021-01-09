@@ -123,7 +123,8 @@ protected:
     void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
                       uint32_t level, const search::BitVector *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
-                                         const BitVector *filter, uint32_t explore_k) const;
+                                         const BitVector *filter, uint32_t explore_k,
+                                         double distance_threshold) const;
 
     struct PreparedAddDoc : public PrepareResult {
         using ReadGuard = vespalib::GenerationHandler::Guard;
@@ -166,9 +167,11 @@ public:
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override;
     bool load(const fileutil::LoadedBuffer& buf) override;
 
-    std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k) const override;
+    std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k,
+                                     double distance_threshold) const override;
     std::vector<Neighbor> find_top_k_with_filter(uint32_t k, TypedCells vector,
-                                                 const BitVector &filter, uint32_t explore_k) const override;
+                                                 const BitVector &filter, uint32_t explore_k,
+                                                 double distance_threshold) const override;
     const DistanceFunction *distance_function() const override { return _distance_func.get(); }
 
     FurthestPriQ top_k_candidates(const TypedCells &vector, uint32_t k, const BitVector *filter) const;
