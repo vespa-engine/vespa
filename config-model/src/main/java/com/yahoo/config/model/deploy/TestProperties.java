@@ -37,12 +37,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
     private boolean useThreePhaseUpdates = false;
-    private boolean useFastValueTensorImplementation = true;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
     private String responseSequencerType = "ADAPTIVE";
-    private int reponseNumThreads = 2;
+    private int responseNumThreads = 2;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
@@ -74,11 +73,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
     @Override public boolean useDirectStorageApiRpc() { return true; }
-    @Override public boolean useFastValueTensorImplementation() { return useFastValueTensorImplementation; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
     @Override public String responseSequencerType() { return responseSequencerType; }
-    @Override public int defaultNumResponseThreads() { return reponseNumThreads; }
+    @Override public int defaultNumResponseThreads() { return responseNumThreads; }
     @Override public boolean skipCommunicationManagerThread() { return false; }
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
@@ -123,7 +121,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
     public TestProperties setResponseNumThreads(int numThreads) {
-        reponseNumThreads = numThreads;
+        responseNumThreads = numThreads;
         return this;
     }
     public TestProperties setDefaultTermwiseLimit(double limit) {
