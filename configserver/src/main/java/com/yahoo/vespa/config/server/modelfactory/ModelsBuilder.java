@@ -157,7 +157,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                  Instant now,
                                                  boolean buildLatestModelForThisMajor,
                                                  int majorVersion) {
-        List<MODELRESULT> allApplicationVersions = new ArrayList<>();
+        List<MODELRESULT> builtModelVersions = new ArrayList<>();
         Optional<Version> latest = Optional.empty();
         if (buildLatestModelForThisMajor) {
             latest = Optional.of(findLatest(versions));
@@ -169,7 +169,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                wantedNodeVespaVersion,
                                                                allocatedHosts.asOptional());
             allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
-            allApplicationVersions.add(latestModelVersion);
+            builtModelVersions.add(latestModelVersion);
         }
 
         // load old model versions
@@ -182,20 +182,19 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         for (Version version : versions) {
             if (latest.isPresent() && version.equals(latest.get())) continue; // already loaded
 
-            MODELRESULT modelVersion;
             try {
-                modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
-                                                 applicationPackage,
-                                                 applicationId,
-                                                 wantedDockerImageRepository,
-                                                 wantedNodeVespaVersion,
-                                                 allocatedHosts.asOptional());
+                MODELRESULT modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
+                                                             applicationPackage,
+                                                             applicationId,
+                                                             wantedDockerImageRepository,
+                                                             wantedNodeVespaVersion,
+                                                             allocatedHosts.asOptional());
                 allocatedHosts.set(modelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
-                allApplicationVersions.add(modelVersion);
+                builtModelVersions.add(modelVersion);
             } catch (RuntimeException e) {
                 // allow failure to create old config models if there is a validation override that allow skipping old
                 // config models (which is always true for manually deployed zones)
-                if (allApplicationVersions.size() > 0 && allApplicationVersions.get(0).getModel().skipOldConfigModels(now))
+                if (builtModelVersions.size() > 0 && builtModelVersions.get(0).getModel().skipOldConfigModels(now))
                     log.log(Level.INFO, applicationId + ": Failed to build version " + version +
                                         ", but allow failure due to validation override ´skipOldConfigModels´");
                 else {
@@ -204,7 +203,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 }
             }
         }
-        return allApplicationVersions;
+        return builtModelVersions;
     }
 
     private Set<Version> versionsToBuild(Set<Version> versions, Version wantedVersion, int majorVersion, AllocatedHosts allocatedHosts) {
