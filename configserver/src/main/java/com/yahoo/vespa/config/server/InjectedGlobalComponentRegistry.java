@@ -60,7 +60,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            SessionPreparer sessionPreparer,
                                            RpcServer rpcServer,
                                            ConfigserverConfig configserverConfig,
-                                           SuperModelGenerationCounter superModelGenerationCounter,
                                            ConfigDefinitionRepo staticConfigDefinitionRepo,
                                            PermanentApplicationPackage permanentApplicationPackage,
                                            HostProvisionerProvider hostProvisionerProvider,

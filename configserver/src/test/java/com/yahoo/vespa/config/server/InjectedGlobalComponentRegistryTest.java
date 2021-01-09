@@ -68,14 +68,13 @@ public class InjectedGlobalComponentRegistryTest {
                                   new HostRegistry<>(), new ConfigRequestHostLivenessTracker(),
                                   new FileServer(temporaryFolder.newFolder("filereferences")),
                                   new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
-        SuperModelGenerationCounter generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,
-                                                    generationCounter, defRepo, permanentApplicationPackage, hostProvisionerProvider, zone,
+                                                    defRepo, permanentApplicationPackage, hostProvisionerProvider, zone,
                                                     new ConfigServerDB(configserverConfig), new InMemoryFlagSource(), new MockSecretStore());
     }
 
