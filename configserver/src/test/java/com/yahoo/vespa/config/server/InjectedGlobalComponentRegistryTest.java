@@ -8,12 +8,12 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
-import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.rpc.RpcRequestHandlerProvider;
+import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionTest;
@@ -46,7 +46,6 @@ public class InjectedGlobalComponentRegistryTest {
     private RpcServer rpcServer;
     private ConfigDefinitionRepo defRepo;
     private PermanentApplicationPackage permanentApplicationPackage;
-    private HostRegistries hostRegistries;
     private GlobalComponentRegistry globalComponentRegistry;
     private ModelFactoryRegistry modelFactoryRegistry;
     private Zone zone;
@@ -66,18 +65,16 @@ public class InjectedGlobalComponentRegistryTest {
                         .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
         sessionPreparer = new SessionTest.MockSessionPreparer();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(),
-                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(),
+                                  new HostRegistry<>(), new ConfigRequestHostLivenessTracker(),
                                   new FileServer(temporaryFolder.newFolder("filereferences")),
                                   new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
-        SuperModelGenerationCounter generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
-        hostRegistries = new HostRegistries();
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,
-                                                    generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone,
+                                                    defRepo, permanentApplicationPackage, hostProvisionerProvider, zone,
                                                     new ConfigServerDB(configserverConfig), new InMemoryFlagSource(), new MockSecretStore());
     }
 
@@ -92,7 +89,6 @@ public class InjectedGlobalComponentRegistryTest {
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getStaticConfigDefinitionRepo(), is(defRepo));
         assertThat(globalComponentRegistry.getPermanentApplicationPackage(), is(permanentApplicationPackage));
-        assertThat(globalComponentRegistry.getHostRegistries(), is(hostRegistries));
         assertThat(globalComponentRegistry.getZone(), is (zone));
         assertTrue(globalComponentRegistry.getHostProvisioner().isPresent());
     }
