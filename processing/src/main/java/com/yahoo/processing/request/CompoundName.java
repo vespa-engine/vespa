@@ -62,7 +62,6 @@ public final class CompoundName {
      * @param name the string representation of the compounds
      * @param compounds the compounds of this name
      */
-    // TODO jonmv: add constructor which reuses rests? Also, keep children in a weak-map for reuse? Avoid unneeded lower-casing?
     private CompoundName(String name, List<String> compounds) {
         if (name == null) throw new NullPointerException("Name can not be null");
 

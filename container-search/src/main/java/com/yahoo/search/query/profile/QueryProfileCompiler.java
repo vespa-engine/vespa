@@ -49,14 +49,13 @@ public class QueryProfileCompiler {
             variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
             log.fine(() -> "Compiling " + in + " having " + variants.size() + " variants");
 
-            Map<CompoundName, Map<String, CompoundName>> pathCache = new HashMap<>();
+            CompoundNameChildCache pathCache = new CompoundNameChildCache();
             Map<DimensionBinding, Binding> bindingCache = new HashMap<>();
             for (var variant : variants) {
                 log.finer(() -> "Compiling variant " + variant);
                 Binding variantBinding = bindingCache.computeIfAbsent(variant.binding(), Binding::createFrom);
                 for (var entry : in.visitValues(variant.path(), variant.binding().getContext(), pathCache).valuesWithSource().entrySet()) {
-                    CompoundName fullName = pathCache.computeIfAbsent(variant.path(), __ -> new HashMap<>())
-                                                     .computeIfAbsent(entry.getKey(), variant.path()::append);
+                    CompoundName fullName = pathCache.append(variant.path, entry.getKey());
                     values.put(fullName, variantBinding, entry.getValue());
                     if (entry.getValue().isUnoverridable())
                         unoverridables.put(fullName, variantBinding, Boolean.TRUE);
@@ -122,7 +121,7 @@ public class QueryProfileCompiler {
         trie.forEachPrefixAndChildren((prefixes, childBindings) -> {
             Set<DimensionBinding> processed = new HashSet<>();
             for (DimensionBindingForPath prefix : prefixes)
-                if (processed.add(prefix.binding())) // Only compute once for similar bindings, since path is equals.
+                if (processed.add(prefix.binding())) // Only compute once for similar bindings, since path is equal.
                     if (hasWildcardBeforeEnd(prefix.binding()))
                         for (DimensionBinding childBinding : childBindings)
                             if (childBinding != prefix.binding()) {

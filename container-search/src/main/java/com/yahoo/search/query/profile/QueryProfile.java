@@ -265,11 +265,11 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     }
 
     AllValuesQueryProfileVisitor visitValues(CompoundName prefix, Map<String, String> context) {
-        return visitValues(prefix, context, new HashMap<>());
+        return visitValues(prefix, context, new CompoundNameChildCache());
     }
 
     AllValuesQueryProfileVisitor visitValues(CompoundName prefix, Map<String, String> context,
-                                             Map<CompoundName, Map<String, CompoundName>> pathCache) {
+                                             CompoundNameChildCache pathCache) {
         AllValuesQueryProfileVisitor visitor = new AllValuesQueryProfileVisitor(prefix, pathCache);
         accept(visitor, DimensionBinding.createFrom(getDimensions(), context), null);
         return visitor;

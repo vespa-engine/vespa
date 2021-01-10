@@ -15,7 +15,7 @@ import java.util.Map;
  */
 abstract class PrefixQueryProfileVisitor extends QueryProfileVisitor {
 
-    protected final Map<CompoundName, Map<String, CompoundName>> cache;
+    protected final CompoundNameChildCache cache;
 
     /** Only call onValue/onQueryProfile for nodes having this prefix */
     private final CompoundName prefix;
@@ -26,7 +26,7 @@ abstract class PrefixQueryProfileVisitor extends QueryProfileVisitor {
 
     private int prefixComponentIndex = -1;
 
-    public PrefixQueryProfileVisitor(CompoundName prefix, Map<CompoundName, Map<String, CompoundName>> cache) {
+    public PrefixQueryProfileVisitor(CompoundName prefix, CompoundNameChildCache cache) {
         if (prefix == null)
             prefix = CompoundName.empty;
         this.prefix = prefix;
@@ -52,7 +52,7 @@ abstract class PrefixQueryProfileVisitor extends QueryProfileVisitor {
         if (prefixComponentIndex++ < prefix.size()) return true; // we're in the given prefix, which should not be included in the name
         if ( ! name.isEmpty()) {
             currentPrefixes.push(currentPrefix);
-            currentPrefix = cache.computeIfAbsent(currentPrefix, __ -> new HashMap<>()).computeIfAbsent(name, currentPrefix::append);
+            currentPrefix = cache.append(currentPrefix, name);
         }
         return true;
     }
