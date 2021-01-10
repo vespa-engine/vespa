@@ -7,7 +7,7 @@
 
 namespace vespalib::datastore {
 
-using ElemCount = uint32_t;
+using ElemCount = uint64_t;
 /**
  * Abstract class used to manage allocation and de-allocation of a specific data type in underlying memory buffers in a data store.
  * Each buffer is owned by an instance of BufferState.
