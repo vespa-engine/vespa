@@ -76,15 +76,11 @@ public class DimensionalValue<VALUE> {
             return null;
         }
 
-        public void add(VALUE value, DimensionBinding variantBinding) {
+        public void add(VALUE value, Binding variantBinding) {
             // Note: We know we can index by the value because its possible types are constrained
             // to what query profiles allow: String, primitives and query profiles (wrapped as a ValueWithSource)
-            Value.Builder<VALUE> variant = buildableVariants.get(value);
-            if (variant == null) {
-                variant = new Value.Builder<>(value);
-                buildableVariants.put(value, variant);
-            }
-            variant.addVariant(variantBinding, value);
+            buildableVariants.computeIfAbsent(value, Value.Builder::new)
+                             .addVariant(variantBinding, value);
         }
 
         public DimensionalValue<VALUE> build(Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
@@ -156,8 +152,8 @@ public class DimensionalValue<VALUE> {
 
             /** Add a binding this holds for */
             @SuppressWarnings("unchecked")
-            public void addVariant(DimensionBinding binding, VALUE newValue) {
-                variants.add(Binding.createFrom(binding));
+            public void addVariant(Binding binding, VALUE newValue) {
+                variants.add(binding);
 
                 // We're combining values for efficiency, so remove incorrect provenance info
                 if (value instanceof ValueWithSource) {

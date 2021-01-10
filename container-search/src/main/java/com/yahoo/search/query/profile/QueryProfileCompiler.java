@@ -2,17 +2,24 @@
 package com.yahoo.search.query.profile;
 
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.compiled.Binding;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.DimensionalMap;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Compile a set of query profiles into compiled profiles.
@@ -42,17 +49,20 @@ public class QueryProfileCompiler {
             variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
             log.fine(() -> "Compiling " + in + " having " + variants.size() + " variants");
 
-            for (DimensionBindingForPath variant : variants) {
-                log.finer(() -> "  Compiling variant " + variant);
-                for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
-                    CompoundName fullName = variant.path().append(entry.getKey());
-                    values.put(fullName, variant.binding(), entry.getValue());
+            CompoundNameChildCache pathCache = new CompoundNameChildCache();
+            Map<DimensionBinding, Binding> bindingCache = new HashMap<>();
+            for (var variant : variants) {
+                log.finer(() -> "Compiling variant " + variant);
+                Binding variantBinding = bindingCache.computeIfAbsent(variant.binding(), Binding::createFrom);
+                for (var entry : in.visitValues(variant.path(), variant.binding().getContext(), pathCache).valuesWithSource().entrySet()) {
+                    CompoundName fullName = pathCache.append(variant.path, entry.getKey());
+                    values.put(fullName, variantBinding, entry.getValue());
                     if (entry.getValue().isUnoverridable())
-                        unoverridables.put(fullName, variant.binding(), Boolean.TRUE);
+                        unoverridables.put(fullName, variantBinding, Boolean.TRUE);
                     if (entry.getValue().isQueryProfile())
-                        references.put(fullName, variant.binding(), Boolean.TRUE);
+                        references.put(fullName, variantBinding, Boolean.TRUE);
                     if (entry.getValue().queryProfileType() != null)
-                        types.put(fullName, variant.binding(), entry.getValue().queryProfileType());
+                        types.put(fullName, variantBinding, entry.getValue().queryProfileType());
                 }
             }
 
@@ -96,17 +106,31 @@ public class QueryProfileCompiler {
      * I.e if we have the variants [-,b=b1], [a=a1,-], [a=a2,-],
      * this returns the variants [a=a1,b=b1], [a=a2,b=b1]
      *
-     * This is necessary because left-specified values takes precedence, such that resolving [a=a1,b=b1] would
-     * lead us to the compiled profile [a=a1,-], which may contain default values for properties where
+     * This is necessary because left-specified values takes precedence, and resolving [a=a1,b=b1] would
+     * otherwise lead us to the compiled profile [a=a1,-], which may contain default values for properties where
      * we should have preferred variant values in [-,b=b1].
      */
     private static Set<DimensionBindingForPath> wildcardExpanded(Set<DimensionBindingForPath> variants) {
         Set<DimensionBindingForPath> expanded = new HashSet<>();
 
-        for (var variant : variants) {
-            if (hasWildcardBeforeEnd(variant.binding()))
-                expanded.addAll(wildcardExpanded(variant, variants));
-        }
+        PathTree trie = new PathTree();
+        for (var variant : variants)
+            trie.add(variant);
+
+        // Visit all variant prefixes, grouped on path, and all their unique child bindings.
+        trie.forEachPrefixAndChildren((prefixes, childBindings) -> {
+            Set<DimensionBinding> processed = new HashSet<>();
+            for (DimensionBindingForPath prefix : prefixes)
+                if (processed.add(prefix.binding())) // Only compute once for similar bindings, since path is equal.
+                    if (hasWildcardBeforeEnd(prefix.binding()))
+                        for (DimensionBinding childBinding : childBindings)
+                            if (childBinding != prefix.binding()) {
+                                DimensionBinding combined = prefix.binding().combineWith(childBinding);
+                                if ( ! combined.isInvalid())
+                                    expanded.add(new DimensionBindingForPath(combined, prefix.path()));
+                            }
+        });
+
         return expanded;
     }
 
@@ -117,20 +141,6 @@ public class QueryProfileCompiler {
         }
         return false;
     }
-
-    private static Set<DimensionBindingForPath> wildcardExpanded(DimensionBindingForPath variantToExpand,
-                                                                 Set<DimensionBindingForPath> variants) {
-        Set<DimensionBindingForPath> expanded = new HashSet<>();
-        for (var variant : variants) {
-            if (variant.binding().isNull()) continue;
-            if ( ! variant.path().hasPrefix(variantToExpand.path())) continue;
-            DimensionBinding combined = variantToExpand.binding().combineWith(variant.binding());
-            if ( ! combined.isInvalid() )
-                expanded.add(new DimensionBindingForPath(combined, variantToExpand.path()));
-        }
-        return expanded;
-    }
-
 
     /** Generates a set of all the (legal) combinations of the variants in the given sets */
     private static Set<DimensionBindingForPath> combined(Set<DimensionBindingForPath> v1s,
@@ -213,5 +223,62 @@ public class QueryProfileCompiler {
         }
 
     }
+
+
+    /**
+     * Simple trie for CompoundName paths.
+     *
+     * @author jonmv
+     */
+    static class PathTree {
+
+        private final Node root = new Node(0);
+
+        void add(DimensionBindingForPath entry) {
+            root.add(entry);
+        }
+
+        /** Performs action on sets of path prefixes against all their (common) children. */
+        void forEachPrefixAndChildren(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBinding>> action) {
+            root.visit(action);
+        }
+
+        private static class Node {
+
+            private final int depth;
+            private final SortedMap<String, Node> children = new TreeMap<>();
+            private final List<DimensionBindingForPath> elements = new ArrayList<>();
+
+            private Node(int depth) {
+                this.depth = depth;
+            }
+
+            /** Performs action on the elements of this against all child element bindings, then returns the union of these two sets. */
+            Set<DimensionBinding> visit(BiConsumer<Collection<DimensionBindingForPath>, Collection<DimensionBinding>> action) {
+                Set<DimensionBinding> allChildren = new HashSet<>();
+                for (Node child : children.values())
+                    allChildren.addAll(child.visit(action));
+
+                for (DimensionBindingForPath element : elements)
+                    if ( ! element.binding().isNull())
+                        allChildren.add(element.binding());
+
+                action.accept(elements, allChildren);
+
+                return allChildren;
+            }
+
+            void add(DimensionBindingForPath entry) {
+                if (depth == entry.path().size())
+                    elements.add(entry);
+                else
+                    children.computeIfAbsent(entry.path().get(depth),
+                                             __ -> new Node(depth + 1)).add(entry);
+            }
+
+        }
+
+    }
+
 
 }

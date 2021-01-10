@@ -2,10 +2,9 @@
 package com.yahoo.search.query.profile;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An immutable, binding of a list of dimensions to dimension values
@@ -24,13 +23,13 @@ public class DimensionBinding {
     private Map<String, String> context;
 
     public static final DimensionBinding nullBinding =
-        new DimensionBinding(Collections.unmodifiableList(Collections.emptyList()), DimensionValues.empty, null);
+        new DimensionBinding(List.of(), DimensionValues.empty, null);
 
     public static final DimensionBinding invalidBinding =
-        new DimensionBinding(Collections.unmodifiableList(Collections.emptyList()), DimensionValues.empty, null);
+        new DimensionBinding(List.of(), DimensionValues.empty, null);
 
     /** Whether the value array contains only nulls */
-    private boolean containsAllNulls;
+    private final boolean containsAllNulls;
 
     // NOTE: Map must be ordered
     public static DimensionBinding createFrom(Map<String, String> values) {
@@ -125,72 +124,54 @@ public class DimensionBinding {
      *
      * @return the combined binding, or the special invalidBinding if these two bindings are incompatible
      */
-    public DimensionBinding combineWith(DimensionBinding binding) {
-        List<String> combinedDimensions = combineDimensions(getDimensions(), binding.getDimensions());
-        if (combinedDimensions == null) return invalidBinding;
+    public DimensionBinding combineWith(DimensionBinding other) {
+        List<String> d1 = getDimensions();
+        List<String> d2 = other.getDimensions();
+        DimensionValues v1 = getValues();
+        DimensionValues v2 = other.getValues();
+        List<String> dimensions = new ArrayList<>();
+        List<String> values = new ArrayList<>();
+        int i1 = 0, i2 = 0;
+        while (i1 < d1.size() && i2 < d2.size()) {
+            if (d1.get(i1).equals(d2.get(i2))) { // agreement on next dimension
+                String s1 = v1.get(i1), s2 = v2.get(i2);
+                if (s1 == null)
+                    values.add(s2);
+                else if (s2 == null || s1.equals(s2))
+                    values.add(s1);
+                else
+                    return invalidBinding; // disagreement on next value
 
-        // not runtime, so assume we don't need to preserve values outside the dimensions
-        Map<String, String> combinedValues = combineValues(getContext(), binding.getContext());
-        if (combinedValues == null) return invalidBinding;
-
-        return DimensionBinding.createFrom(combinedDimensions, combinedValues);
-    }
-
-    /**
-     * Returns a combined list of dimensions from two separate lists,
-     * or null if they are incompatible.
-     * This is to combine two lists to one such that the partial order in both is preserved
-     * (or return null if impossible).
-     */
-    private List<String> combineDimensions(List<String> d1, List<String> d2) {
-        if (d1.equals(d2)) return d1;
-        if (d1.isEmpty()) return d2;
-        if (d2.isEmpty()) return d1;
-
-        List<String> combined = new ArrayList<>();
-        int d1Index = 0, d2Index = 0;
-        while (d1Index < d1.size() && d2Index < d2.size()) {
-            if (d1.get(d1Index).equals(d2.get(d2Index))) { // agreement on next element
-                combined.add(d1.get(d1Index));
-                d1Index++;
-                d2Index++;
+                dimensions.add(d1.get(i1));
+                i1++;
+                i2++;
             }
-            else if ( ! d2.contains(d1.get(d1Index))) { // next in d1 is independent from d2
-                combined.add(d1.get(d1Index++));
+            else if ( ! d2.contains(d1.get(i1))) { // next dimension in d1 is independent from d2
+                dimensions.add(d1.get(i1));
+                values.add(v1.get(i1));
+                i1++;
             }
-            else if ( ! d1.contains(d2.get(d2Index))) { // next in d2 is independent from d1
-                combined.add(d2.get(d2Index++));
+            else if ( ! d1.contains(d2.get(i2))) { // next dimension in d2 is independent from d1
+                dimensions.add(d2.get(i2));
+                values.add(v2.get(i2));
+                i2++;
             }
             else {
-                return null; // not independent and no agreement
+                return invalidBinding; // not independent and no agreement
             }
         }
-        if (d1Index < d1.size())
-            combined.addAll(d1.subList(d1Index, d1.size()));
-        else if (d2Index < d2.size())
-            combined.addAll(d2.subList(d2Index, d2.size()));
-
-        return combined;
-    }
-
-    /**
-     * Returns a combined map of dimension values from two separate maps,
-     * or null if they are incompatible.
-     */
-    private Map<String, String> combineValues(Map<String, String> m1, Map<String, String> m2) {
-        if (m1.isEmpty()) return m2;
-        if (m2.isEmpty()) return m1;
-        Map<String, String> combinedValues = null;
-        for (Map.Entry<String, String> m2Entry : m2.entrySet()) {
-            if (m2Entry.getValue() == null) continue;
-            String m1Value = m1.get(m2Entry.getKey());
-            if (m1Value != null && ! m1Value.equals(m2Entry.getValue()))
-                return null; // conflicting values of a key
-            if (combinedValues == null)
-                combinedValues = new LinkedHashMap<>(m1);
-            combinedValues.put(m2Entry.getKey(), m2Entry.getValue());
+        while (i1 < d1.size()) {
+            dimensions.add(d1.get(i1));
+            values.add(v1.get(i1));
+            i1++;
         }
-        return combinedValues == null ? m1 : combinedValues;
+        while (i2 < d2.size()) {
+            dimensions.add(d2.get(i2));
+            values.add(v2.get(i2));
+            i2++;
+        }
+
+        return DimensionBinding.createFrom(dimensions, DimensionValues.createFrom(values.toArray(new String[0])));
     }
 
     /** Returns true if this == invalidBinding */
@@ -223,7 +204,7 @@ public class DimensionBinding {
 
     @Override
     public int hashCode() {
-        return dimensions.hashCode() + 17 * values.hashCode();
+        return Objects.hash(dimensions, values);
     }
 
 }

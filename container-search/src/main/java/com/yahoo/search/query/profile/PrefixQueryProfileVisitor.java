@@ -3,6 +3,11 @@ package com.yahoo.search.query.profile;
 
 import com.yahoo.processing.request.CompoundName;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A query profile visitor which keeps track of name prefixes and can skip values outside a given prefix
  *
@@ -10,18 +15,22 @@ import com.yahoo.processing.request.CompoundName;
  */
 abstract class PrefixQueryProfileVisitor extends QueryProfileVisitor {
 
+    protected final CompoundNameChildCache cache;
+
     /** Only call onValue/onQueryProfile for nodes having this prefix */
     private final CompoundName prefix;
 
     /** The current prefix, relative to prefix. */
     protected CompoundName currentPrefix = CompoundName.empty;
+    private final Deque<CompoundName> currentPrefixes = new ArrayDeque<>();
 
     private int prefixComponentIndex = -1;
 
-    public PrefixQueryProfileVisitor(CompoundName prefix) {
+    public PrefixQueryProfileVisitor(CompoundName prefix, CompoundNameChildCache cache) {
         if (prefix == null)
             prefix = CompoundName.empty;
         this.prefix = prefix;
+        this.cache = cache;
     }
 
     @Override
@@ -40,18 +49,19 @@ abstract class PrefixQueryProfileVisitor extends QueryProfileVisitor {
 
     @Override
     public final boolean enter(String name) {
-        prefixComponentIndex++;
-        if (prefixComponentIndex-1 < prefix.size()) return true; // we're in the given prefix, which should not be included in the name
-        currentPrefix = currentPrefix.append(name);
+        if (prefixComponentIndex++ < prefix.size()) return true; // we're in the given prefix, which should not be included in the name
+        if ( ! name.isEmpty()) {
+            currentPrefixes.push(currentPrefix);
+            currentPrefix = cache.append(currentPrefix, name);
+        }
         return true;
     }
 
     @Override
     public final void leave(String name) {
-        prefixComponentIndex--;
-        if (prefixComponentIndex < prefix.size()) return; // we're in the given prefix, which should not be included in the name
-        if ( ! name.isEmpty() && ! currentPrefix.isEmpty())
-            currentPrefix = currentPrefix.first(currentPrefix.size() - 1);
+        if (--prefixComponentIndex < prefix.size()) return; // we're in the given prefix, which should not be included in the name
+        if ( ! name.isEmpty())
+            currentPrefix = currentPrefixes.pop();
     }
 
     /**

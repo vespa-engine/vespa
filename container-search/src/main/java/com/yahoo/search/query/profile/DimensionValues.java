@@ -80,7 +80,7 @@ public class DimensionValues implements Comparable<DimensionValues> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if ( ! (o instanceof DimensionValues)) return false;
-        DimensionValues other = (DimensionValues)o;
+        DimensionValues other = (DimensionValues) o;
         for (int i = 0; i < this.size() || i < other.size(); i++) {
             if (get(i) == null) {
                 if (other.get(i) != null) return false;
