@@ -8,6 +8,8 @@ import java.util.Map;
 
 /**
  * Cache for compound names created through {@link CompoundName#append(String)}.
+ * Creating new {@link CompoundName}s can be expensive, and since they are immutable, they
+ * are safe to cache and reuse. Use this if you will create <em>a lot</em> of them, by appending suffixes.
  *
  * @author jonmv
  */

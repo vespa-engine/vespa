@@ -5619,6 +5619,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.query.profile.CompoundNameChildCache": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.processing.request.CompoundName append(com.yahoo.processing.request.CompoundName, java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.query.profile.CopyOnWriteContent": {
     "superClass": "com.yahoo.component.provider.FreezableClass",
     "interfaces": [
