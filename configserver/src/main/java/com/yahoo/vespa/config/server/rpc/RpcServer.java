@@ -34,7 +34,6 @@ import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
-import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
@@ -122,7 +121,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      */
     @Inject
     public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler,
-                     MetricUpdaterFactory metrics, HostRegistries hostRegistries,
+                     MetricUpdaterFactory metrics, HostRegistry<TenantName> hostRegistry,
                      HostLivenessTracker hostLivenessTracker, FileServer fileServer, RpcAuthorizer rpcAuthorizer,
                      RpcRequestHandlerProvider handlerProvider) {
         this.superModelRequestHandler = superModelRequestHandler;
@@ -136,7 +135,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                 0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getDaemonThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
         spec = new Spec(null, config.rpcport());
-        hostRegistry = hostRegistries.getTenantHostRegistry();
+        this.hostRegistry = hostRegistry;
         this.useRequestVersion = config.useVespaVersionInRequest();
         this.hostedVespa = config.hostedVespa();
         this.canReturnEmptySentinelConfig = config.canReturnEmptySentinelConfig();

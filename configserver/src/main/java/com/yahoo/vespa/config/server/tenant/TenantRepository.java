@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
 import com.google.common.collect.ImmutableSet;
@@ -14,6 +14,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
@@ -228,7 +229,7 @@ public class TenantRepository {
                                        componentRegistry.getMetrics(),
                                        componentRegistry.getReloadListener(),
                                        componentRegistry.getConfigserverConfig(),
-                                       componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
+                                       new HostRegistry<>(),
                                        new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                        componentRegistry.getClock());
         SessionRepository sessionRepository = new SessionRepository(tenantName,
