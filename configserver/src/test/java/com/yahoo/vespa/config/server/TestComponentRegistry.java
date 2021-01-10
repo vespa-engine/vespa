@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -12,11 +12,12 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
-import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
@@ -49,6 +50,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
     private final PermanentApplicationPackage permanentApplicationPackage;
+    private final HostRegistries hostRegistries;
     private final FileDistributionFactory fileDistributionFactory;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final Optional<Provisioner> hostProvisioner;
@@ -64,6 +66,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   ModelFactoryRegistry modelFactoryRegistry,
                                   PermanentApplicationPackage permanentApplicationPackage,
                                   FileDistributionFactory fileDistributionFactory,
+                                  HostRegistries hostRegistries,
                                   ConfigserverConfig configserverConfig,
                                   SessionPreparer sessionPreparer,
                                   Optional<Provisioner> hostProvisioner,
@@ -82,6 +85,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.tenantListener = tenantListener;
         this.defRepo = defRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
+        this.hostRegistries = hostRegistries;
         this.fileDistributionFactory = fileDistributionFactory;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.hostProvisioner = hostProvisioner;
@@ -108,6 +112,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         private final MockTenantListener tenantListener = new MockTenantListener();
         private Optional<PermanentApplicationPackage> permanentApplicationPackage = Optional.empty();
+        private final HostRegistries hostRegistries = new HostRegistries();
         private final Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         private Optional<Provisioner> hostProvisioner = Optional.empty();
@@ -183,7 +188,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                                                   configserverConfig, defRepo, curator,
                                                                   zone, flagSource, secretStore);
             return new TestComponentRegistry(curator, ConfigCurator.create(curator), metrics, modelFactoryRegistry,
-                                             permApp, fileDistributionProvider, configserverConfig,
+                                             permApp, fileDistributionProvider, hostRegistries, configserverConfig,
                                              sessionPreparer, hostProvisioner, defRepo, reloadListener, tenantListener,
                                              zone, clock, secretStore, flagSource);
         }
@@ -207,6 +212,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return defRepo; }
     @Override
     public PermanentApplicationPackage getPermanentApplicationPackage() { return permanentApplicationPackage; }
+    @Override
+    public HostRegistries getHostRegistries() { return hostRegistries;}
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
     @Override

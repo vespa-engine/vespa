@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc.security;
 
 import com.yahoo.cloud.config.SentinelConfig;
@@ -16,6 +16,7 @@ import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.server.RequestHandler;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
 
@@ -33,6 +34,7 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.config.server.rpc.security.AuthorizationException.Type;
 import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
+
 /**
  * A {@link RpcAuthorizer} that perform access control for configserver RPC methods when TLS and multi-tenant mode are enabled.
  *
@@ -48,11 +50,11 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     private final Executor executor;
 
     public MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
-                                    HostRegistry<TenantName> hostRegistry,
+                                    HostRegistries hostRegistries,
                                     RequestHandlerProvider handlerProvider,
                                     int threadPoolSize) {
         this(nodeIdentifier,
-             hostRegistry,
+             hostRegistries.getTenantHostRegistry(),
              handlerProvider,
              Executors.newFixedThreadPool(threadPoolSize, new DaemonThreadFactory("multi-tenant-rpc-authorizer-")));
     }

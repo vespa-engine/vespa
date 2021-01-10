@@ -27,6 +27,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
 import java.nio.file.Files;
@@ -95,7 +96,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       componentRegistry.getMetrics(),
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),
-                                      new HostRegistry<>(),
+                                      componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
                                       new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                       componentRegistry.getClock());
     }
