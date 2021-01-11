@@ -2,6 +2,7 @@
 package com.yahoo.document;
 
 import com.yahoo.document.idstring.IdIdString;
+import com.yahoo.document.idstring.IdString;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Before;
 import org.junit.Rule;
@@ -254,6 +255,22 @@ public class DocumentIdTestCase {
         } catch (IllegalArgumentException ex) {
             assertTrue(ex.getMessage().contains("illegal zero byte code point"));
         }
+    }
+
+    @Test
+    public void testTooLongDocId() {
+        StringBuilder sb = new StringBuilder("id:ns:type::");
+        for(int i=0; i < 0x10000; i++) {
+            sb.append('x');
+        }
+        try {
+            new DocumentId(sb.toString());
+            fail("Expected an IllegalArgumentException to be thrown");
+        } catch (IllegalArgumentException ex) {
+            assertTrue(ex.getMessage().contains("However if you have already fed a document earlier on and want to remove it, " +
+                    "you can do so by calling new DocumentId(IdString.createIdStringLessStrict()) that will bypass this restriction."));
+        }
+        assertEquals(65548, new DocumentId(IdString.createIdStringLessStrict(sb.toString())).toString().length());
     }
 
 }

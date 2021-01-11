@@ -67,9 +67,25 @@ public class IdIdStringTest {
     }
 
     @Test
+    public void requireTooLongIdThrowsWhileParsing() throws Exception {
+        StringBuilder builder = new StringBuilder("id:ns:type::namespacespecificpart_01");
+        for (int i = 0; i < 0x10000; i++) {
+            builder.append('n');
+        }
+        try {
+            IdString.createIdString(builder.toString());
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Document id length 65572 is longer than max length of 65536", e.getMessage());
+        }
+        // But there is a backdor
+        assertEquals(65572, IdString.createIdStringLessStrict(builder.toString()).toString().length());
+    }
+
+    @Test
     public void requireThatTooLongPreNamespaceSpecificThrowsWhileParsing() throws Exception {
         StringBuilder builder = new StringBuilder("id:");
-        for (int i = 0; i < 0x10000; i++) {
+        for (int i = 0; i < 0xff00; i++) {
             builder.append('n');
         }
         builder.append(":type::namespacespecificpart_01");
@@ -77,20 +93,20 @@ public class IdIdStringTest {
             IdString.createIdString(builder.toString());
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Document id prior to the namespace specific part, 65545, is longer than 65534", e.getMessage().substring(0, 77));
+            assertEquals("Document id prior to the namespace specific part, 65289, is longer than 65280", e.getMessage().substring(0, 77));
         }
     }
     @Test
     public void requireThatTooLongPreNamespaceSpecificThrowsOnConstruction() {
         StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < 0x10000; i++) {
+        for (int i = 0; i < 0xff00; i++) {
             builder.append('n');
         }
         try {
             new IdIdString(builder.toString(), "type", "", "namespacespecificpart_01");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Length of namespace(65536) + doctype(4) + key/values(0), is longer than 65529", e.getMessage());
+            assertEquals("Length of namespace(65280) + doctype(4) + key/values(0), is longer than 65275", e.getMessage());
         }
     }
 
