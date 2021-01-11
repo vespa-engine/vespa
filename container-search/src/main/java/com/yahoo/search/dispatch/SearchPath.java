@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.google.common.collect.ImmutableCollection;
 import com.yahoo.collections.Pair;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -12,7 +13,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -68,13 +68,12 @@ public class SearchPath {
         }
     }
 
-    private final List<Selection> nodes;
-    private final List<Selection> groups;
-    private static final Random random = new Random();
+    private final List<NodeSelection> nodes;
+    private final Integer group;
 
-    private SearchPath(List<Selection> nodes, List<Selection> groups) {
+    private SearchPath(List<NodeSelection> nodes, Integer group) {
         this.nodes = nodes;
-        this.groups = groups;
+        this.group = group;
     }
 
     private List<Node> mapToNodes(SearchCluster cluster) {
@@ -90,7 +89,7 @@ public class SearchPath {
         List<Node> groupNodes = selectedGroup.nodes();
         Set<Integer> wanted = new HashSet<>();
         int max = groupNodes.size();
-        for (Selection node : nodes) {
+        for (NodeSelection node : nodes) {
             wanted.addAll(node.matches(max));
         }
         List<Node> ret = new ArrayList<>();
@@ -101,52 +100,41 @@ public class SearchPath {
     }
 
     private boolean isEmpty() {
-        return nodes.isEmpty() && groups.isEmpty();
-    }
-
-    private Group selectRandomGroupWithSufficientCoverage(SearchCluster cluster, List<Integer> groupIds) {
-        while ( ! groupIds.isEmpty()) {
-            int index = random.nextInt(groupIds.size());
-            int groupId = groupIds.get(index);
-            Optional<Group> group = cluster.group(groupId);
-            if (group.isPresent()) {
-                if (group.get().hasSufficientCoverage()) {
-                    return group.get();
-                } else {
-                    groupIds.remove(index);
-                }
-            } else {
-                throw new InvalidSearchPathException("Invalid searchPath, cluster does not have " + (groupId + 1) + " groups");
-            }
-        }
-        return cluster.groups().values().iterator().next();
+        return nodes.isEmpty() && group == null;
     }
 
     private Group selectGroup(SearchCluster cluster) {
-        if ( ! groups.isEmpty()) {
-            List<Integer> potentialGroups = new ArrayList<>();
-            for (Selection groupSelection : groups) {
-                for (int group = groupSelection.from; group < groupSelection.to; group++) {
-                    potentialGroups.add(group);
-                }
+        if (group != null) {
+            Optional<Group> specificGroup = cluster.group(group);
+            if (specificGroup.isPresent()) {
+                return specificGroup.get();
+            } else {
+                throw new InvalidSearchPathException("Invalid searchPath, cluster does not have " + (group + 1) + " groups");
             }
-            return selectRandomGroupWithSufficientCoverage(cluster, potentialGroups);
         }
 
-        // pick any working group
-        return selectRandomGroupWithSufficientCoverage(cluster, new ArrayList<>(cluster.groups().keySet()));
+        // pick "anything": try to find the first working
+        ImmutableCollection<Group> groups = cluster.groups().values();
+        for (Group g : groups) {
+            if (g.hasSufficientCoverage()) {
+                return g;
+            }
+        }
+
+        // fallback: first
+        return groups.iterator().next();
     }
 
     private static SearchPath parseElement(String element) {
-        Pair<String, String> nodesAndGroups = halveAt('/', element);
-        List<Selection> nodes = parseSelection(nodesAndGroups.getFirst());
-        List<Selection> groups = parseSelection(nodesAndGroups.getSecond());
+        Pair<String, String> nodesAndGroup = halveAt('/', element);
+        List<NodeSelection> nodes = parseNodes(nodesAndGroup.getFirst());
+        Integer group = parseGroup(nodesAndGroup.getSecond());
 
-        return new SearchPath(nodes, groups);
+        return new SearchPath(nodes, group);
     }
 
-    private static List<Selection> parseSelection(String nodes) {
-        List<Selection> ret = new ArrayList<>();
+    private static List<NodeSelection> parseNodes(String nodes) {
+        List<NodeSelection> ret = new ArrayList<>();
         while (nodes.length() > 0) {
             if (nodes.startsWith("[")) {
                 nodes = parseNodeRange(nodes, ret);
@@ -160,8 +148,8 @@ public class SearchPath {
         return ret;
     }
 
-    // An asterisk or forward slash or an empty string followed by a comma or the end of the string
-    private static final Pattern NODE_WILDCARD = Pattern.compile("^\\*?(?:,|$|/$)");
+    // an asterisk or an empty string followed by a comma or the end of the string
+    private static final Pattern NODE_WILDCARD = Pattern.compile("^\\*?(?:,|$)");
 
     private static boolean isWildcard(String node) {
         return NODE_WILDCARD.matcher(node).lookingAt();
@@ -169,28 +157,38 @@ public class SearchPath {
 
     private static final Pattern NODE_RANGE = Pattern.compile("^\\[(\\d+),(\\d+)>(?:,|$)");
 
-    private static String parseNodeRange(String nodes, List<Selection> into) {
+    private static String parseNodeRange(String nodes, List<NodeSelection> into) {
         Matcher m = NODE_RANGE.matcher(nodes);
         if (m.find()) {
             String ret = nodes.substring(m.end());
-            int start = Integer.parseInt(m.group(1));
-            int end = Integer.parseInt(m.group(2));
+            Integer start = Integer.parseInt(m.group(1));
+            Integer end = Integer.parseInt(m.group(2));
             if (start > end) {
                 throw new InvalidSearchPathException("Invalid range");
             }
-            into.add(new Selection(start, end));
+            into.add(new NodeSelection(start, end));
             return ret;
         } else {
             throw new InvalidSearchPathException("Invalid range expression");
         }
     }
 
-    private static String parseNodeNum(String nodes, List<Selection> into) {
+    private static String parseNodeNum(String nodes, List<NodeSelection> into) {
         Pair<String, String> numAndRest = halveAt(',', nodes);
         int nodeNum = Integer.parseInt(numAndRest.getFirst());
-        into.add(new Selection(nodeNum, nodeNum + 1));
+        into.add(new NodeSelection(nodeNum, nodeNum + 1));
 
         return numAndRest.getSecond();
+    }
+
+    private static Integer parseGroup(String group) {
+        if (group.isEmpty()) {
+            return null;
+        }
+        if ("/".equals(group) || "*".equals(group)) { // anything goes
+            return null;
+        }
+        return Integer.parseInt(group);
     }
 
     private static Pair<String, String> halveAt(char divider, String string) {
@@ -201,9 +199,11 @@ public class SearchPath {
         return new Pair<>(string, "");
     }
 
-    private static void selectionToString(StringBuilder sb, List<Selection> nodes) {
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
         boolean first = true;
-        for (Selection p : nodes) {
+        for (NodeSelection p : nodes) {
             if (first) {
                 first = false;
             } else {
@@ -211,24 +211,17 @@ public class SearchPath {
             }
             sb.append(p.toString());
         }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        selectionToString(sb, nodes);
-        if ( ! groups.isEmpty()) {
-            sb.append('/');
-            selectionToString(sb, groups);
+        if (group != null) {
+            sb.append('/').append(group);
         }
         return sb.toString();
     }
 
-    private static class Selection {
+    private static class NodeSelection {
         private final int from;
         private final int to;
 
-        Selection(int from, int to) {
+        NodeSelection(int from, int to) {
             this.from = from;
             this.to = to;
         }
@@ -237,7 +230,7 @@ public class SearchPath {
             if (from >= max) {
                 return Collections.emptyList();
             }
-            int end = Math.min(to, max);
+            int end = (to > max) ? max : to;
             return IntStream.range(from, end).boxed().collect(Collectors.toList());
         }
 
