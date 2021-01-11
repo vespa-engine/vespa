@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/eval/streamed/streamed_value_builder_factory.h>
 #include <vespa/eval/streamed/streamed_value_view.h>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/typify.h>

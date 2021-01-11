@@ -12,11 +12,6 @@ namespace vespalib::datastore {
 
 using vespalib::alloc::MemoryAllocator;
 
-struct IntReclaimer
-{
-    static void reclaim(int *) {}
-};
-
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
     using ParentType = DataStore<int, EntryRefT<3, 2> >;
@@ -594,7 +589,7 @@ TEST(DataStoreTest, control_static_sizes) {
     EXPECT_EQ(64, sizeof(BufferTypeBase));
     EXPECT_EQ(32, sizeof(BufferState::FreeList));
     EXPECT_EQ(1, sizeof(BufferState::State));
-    EXPECT_EQ(128, sizeof(BufferState));
+    EXPECT_EQ(144, sizeof(BufferState));
     BufferState bs;
     EXPECT_EQ(0, bs.size());
 }

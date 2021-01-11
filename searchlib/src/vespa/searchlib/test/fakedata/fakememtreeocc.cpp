@@ -6,6 +6,7 @@
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/util/postingpriorityqueue.h>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
