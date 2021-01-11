@@ -4,8 +4,8 @@
     "type": "ATHENS",
     "athensDomain": "domain1000",
     "property": "Property1000",
-    "lastDeploymentToDev": 1578480421000,
-    "lastSubmissionToProd": 1000
+    "lastDeploymentToDevMillis": 1578480421000,
+    "lastSubmissionToProdMillis": 1000
   },
   "url": "http://localhost:8080/application/v4/tenant/tenant"
 }, {

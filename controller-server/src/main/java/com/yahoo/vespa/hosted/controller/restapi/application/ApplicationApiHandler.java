@@ -1985,8 +1985,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<Instant> lastSubmission = applications.stream()
                 .flatMap(app -> app.latestVersion().flatMap(ApplicationVersion::buildTime).stream())
                 .max(Comparator.naturalOrder());
-        lastDev.ifPresent(instant -> object.setLong("lastDeploymentToDev", instant.toEpochMilli()));
-        lastSubmission.ifPresent(instant -> object.setLong("lastSubmissionToProd", instant.toEpochMilli()));
+        lastDev.ifPresent(instant -> object.setLong("lastDeploymentToDevMillis", instant.toEpochMilli()));
+        lastSubmission.ifPresent(instant -> object.setLong("lastSubmissionToProdMillis", instant.toEpochMilli()));
     }
 
     /** Returns a copy of the given URI with the host and port from the given URI, the path set to the given path and the query set to given query*/
