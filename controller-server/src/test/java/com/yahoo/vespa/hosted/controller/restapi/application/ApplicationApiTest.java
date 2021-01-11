@@ -1339,7 +1339,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property1\"}")
                                       .userIdentity(authorizedUser)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"tenant\":\"tenant1\",\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[]}",
+                              "{\"tenant\":\"tenant1\",\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[],\"metaData\":{}}",
                               200);
 
         // Deleting a tenant for an Athens domain the user is not admin for is disallowed
@@ -1530,19 +1530,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/instance1", GET)
                                       .userIdentity(USER_ID),
                               new File("deployment-without-shared-endpoints.json"));
-    }
-
-    @Test
-    public void testTenantMetaData() {
-        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
-        deploymentTester.clock().setInstant(Instant.parse("2020-01-08T10:47:01Z"));
-        deploymentTester.controllerTester().createTenant("tenant1", "domain1", 1L);
-        deploymentTester.controllerTester().createApplication("tenant1", "application1", "instance1");
-        var app = deploymentTester.newDeploymentContext();
-        app.submit(applicationPackageDefault).deploy();
-        deploymentTester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
-        tester.assertResponse(request("/application/v4/tenant", GET).userIdentity(USER_ID),
-                new File("tenant-with-metadata.json"));
     }
 
     private MultiPartStreamer createApplicationDeployData(ApplicationPackage applicationPackage, boolean deployDirectly) {

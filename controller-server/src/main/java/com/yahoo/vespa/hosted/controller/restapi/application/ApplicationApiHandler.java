@@ -1929,6 +1929,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 else
                     toSlime(instance.id(), applicationArray.addObject(), request);
         }
+        tenantMetaDataToSlime(tenant, object.setObject("metaData"));
     }
 
     private void toSlime(Quota quota, QuotaUsage usage, Cursor object) {
@@ -1983,7 +1984,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         object.setString("url", withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
-        tenantMetaDataToSlime(tenant, metaData);
     }
 
     private void tenantMetaDataToSlime(Tenant tenant, Cursor object) {
