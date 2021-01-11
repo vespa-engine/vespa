@@ -1,7 +1,8 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 
 import java.util.Collection;
@@ -16,21 +17,21 @@ import java.util.Collection;
 public interface ReloadListener {
 
     /**
-     * Signals the listener that hosts used by a particular tenant.
+     * Signal the listener that hosts used by by a particular tenant.
      *
-     * @param applicationId application id
+     * @param tenant Name of tenant.
      * @param newHosts a {@link Collection} of hosts used by tenant.
      */
-    void hostsUpdated(ApplicationId applicationId, Collection<String> newHosts);
+    void hostsUpdated(TenantName tenant, Collection<String> newHosts);
 
     /**
-     * Verifies that given hosts are available for use by tenant.
+     * Verify that given hosts are available for use by tenant.
      *
-     * @param applicationId application id
+     * @param tenant tenant that wants to allocate hosts.
      * @param newHosts a {@link java.util.Collection} of hosts that tenant wants to allocate.
      * @throws java.lang.IllegalArgumentException if one or more of the hosts are in use by another tenant.
      */
-    void verifyHostsAreAvailable(ApplicationId applicationId, Collection<String> newHosts);
+    void verifyHostsAreAvailable(TenantName tenant, Collection<String> newHosts);
 
     /**
      * Configs has been activated for an application: Either an application

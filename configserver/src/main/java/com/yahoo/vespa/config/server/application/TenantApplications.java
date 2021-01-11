@@ -27,6 +27,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 
 import java.nio.file.Files;
@@ -61,7 +62,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     private final TenantName tenant;
     private final ReloadListener reloadListener;
     private final ConfigResponseFactory responseFactory;
-    private final HostRegistry hostRegistry;
+    private final HostRegistry<ApplicationId> hostRegistry;
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
     private final Clock clock;
@@ -69,7 +70,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
-                              ConfigserverConfig configserverConfig, HostRegistry hostRegistry,
+                              ConfigserverConfig configserverConfig, HostRegistry<ApplicationId> hostRegistry,
                               TenantFileSystemDirs tenantFileSystemDirs, Clock clock) {
         this.database = new ApplicationCuratorDatabase(tenant, curator);
         this.tenant = tenant;
@@ -95,7 +96,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       componentRegistry.getMetrics(),
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),
-                                      new HostRegistry(),
+                                      componentRegistry.getHostRegistries().createApplicationHostRegistry(tenantName),
                                       new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                       componentRegistry.getClock());
     }
@@ -221,10 +222,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     private void notifyReloadListeners(ApplicationSet applicationSet) {
-        if (applicationSet.getAllApplications().isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
-
-        reloadListener.hostsUpdated(applicationSet.getAllApplications().get(0).toApplicationInfo().getApplicationId(),
-                                    hostRegistry.getAllHosts());
+        reloadListener.hostsUpdated(tenant, hostRegistry.getAllHosts());
         reloadListener.configActivated(applicationSet);
     }
 
@@ -273,7 +271,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     private void reloadListenersOnRemove(ApplicationId applicationId) {
-        reloadListener.hostsUpdated(applicationId, hostRegistry.getAllHosts());
+        reloadListener.hostsUpdated(tenant, hostRegistry.getAllHosts());
         reloadListener.applicationRemoved(applicationId);
     }
 
@@ -384,9 +382,9 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     @Override
-    public void verifyHosts(ApplicationId applicationId, Collection<String> newHosts) {
-        hostRegistry.verifyHosts(applicationId, newHosts);
-        reloadListener.verifyHostsAreAvailable(applicationId, newHosts);
+    public void verifyHosts(ApplicationId key, Collection<String> newHosts) {
+        hostRegistry.verifyHosts(key, newHosts);
+        reloadListener.verifyHostsAreAvailable(tenant, newHosts);
     }
 
     public HostValidator<ApplicationId> getHostValidator() {

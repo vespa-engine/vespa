@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.host;
 
 import java.util.*;
@@ -7,9 +7,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Collections2;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
-
 import java.util.logging.Level;
 
 /**
@@ -18,20 +15,20 @@ import java.util.logging.Level;
  *
  * @author Ulf Lilleengen
  */
-public class HostRegistry implements HostValidator<ApplicationId> {
+public class HostRegistry<T> implements HostValidator<T> {
 
     private static final Logger log = Logger.getLogger(HostRegistry.class.getName());
 
-    private final Map<String, ApplicationId> host2KeyMap = new ConcurrentHashMap<>();
+    private final Map<String, T> host2KeyMap = new ConcurrentHashMap<>();
 
-    public ApplicationId getKeyForHost(String hostName) {
+    public T getKeyForHost(String hostName) {
         return host2KeyMap.get(hostName);
     }
 
-    public synchronized void update(ApplicationId key, Collection<String> newHosts) {
+    public synchronized void update(T key, Collection<String> newHosts) {
         verifyHosts(key, newHosts);
         Collection<String> currentHosts = getHostsForKey(key);
-        log.log(Level.INFO, () -> "Setting hosts for key '" + key + "', " +
+        log.log(Level.FINE, () -> "Setting hosts for key '" + key + "', " +
                 "newHosts: " + newHosts + ", " +
                 "currentHosts: " + currentHosts);
         Collection<String> removedHosts = getRemovedHosts(newHosts, currentHosts);
@@ -40,7 +37,7 @@ public class HostRegistry implements HostValidator<ApplicationId> {
     }
 
     @Override
-    public synchronized void verifyHosts(ApplicationId key, Collection<String> newHosts) {
+    public synchronized void verifyHosts(T key, Collection<String> newHosts) {
         for (String host : newHosts) {
             if (hostAlreadyTaken(host, key)) {
                 throw new IllegalArgumentException("'" + key + "' tried to allocate host '" + host + 
@@ -49,26 +46,22 @@ public class HostRegistry implements HostValidator<ApplicationId> {
         }
     }
 
-    public synchronized void removeHostsForKey(ApplicationId key) {
+    public synchronized void removeHostsForKey(T key) {
         host2KeyMap.entrySet().removeIf(entry -> entry.getValue().equals(key));
-    }
-
-    public synchronized void removeHostsForKey(TenantName key) {
-        host2KeyMap.entrySet().removeIf(entry -> entry.getValue().tenant().equals(key));
     }
 
     public synchronized Collection<String> getAllHosts() {
         return Collections.unmodifiableCollection(new ArrayList<>(host2KeyMap.keySet()));
     }
 
-    synchronized Collection<String> getHostsForKey(ApplicationId key) {
+    synchronized Collection<String> getHostsForKey(T key) {
         return host2KeyMap.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(key))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
 
-    private boolean hostAlreadyTaken(String host, ApplicationId key) {
+    private boolean hostAlreadyTaken(String host, T key) {
         return host2KeyMap.containsKey(host) && !key.equals(host2KeyMap.get(host));
     }
 
@@ -83,7 +76,7 @@ public class HostRegistry implements HostValidator<ApplicationId> {
         }
     }
 
-    private void addHosts(ApplicationId key, Collection<String> newHosts) {
+    private void addHosts(T key, Collection<String> newHosts) {
         for (String host : newHosts) {
             log.log(Level.FINE, () -> "Adding " + host);
             host2KeyMap.put(host, key);
