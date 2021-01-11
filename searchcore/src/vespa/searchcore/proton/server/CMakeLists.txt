@@ -46,7 +46,6 @@ vespa_add_library(searchcore_server STATIC
     feedhandler.cpp
     feedstate.cpp
     feedstates.cpp
-    feed_reject_helper.cpp
     fileconfigmanager.cpp
     flushhandlerproxy.cpp
     forcecommitcontext.cpp

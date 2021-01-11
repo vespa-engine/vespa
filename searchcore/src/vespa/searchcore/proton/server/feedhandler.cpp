@@ -6,7 +6,7 @@
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
 #include "configstore.h"
-#include "feed_reject_helper.h"
+#include <vespa/document/util/feed_reject_helper.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -610,6 +610,36 @@ notifyFeedOperationRejected(FeedToken & token, const FeedOperation &op,
     } else {
         feedOperationRejected<Result>(token, "Feed", "", docTypeName, rejectMessage);
     }
+}
+
+/**
+ * Tells wether an operation should be blocked when resourcelimits have been reached.
+ * It looks at the operation type and also the content if it is an 'update' operation.
+ */
+class FeedRejectHelper {
+public:
+    static bool isRejectableFeedOperation(const FeedOperation & op);
+    static bool mustReject(const UpdateOperation & updateOperation);
+};
+
+bool
+FeedRejectHelper::mustReject(const UpdateOperation & updateOperation) {
+    if (updateOperation.getUpdate()) {
+        return document::FeedRejectHelper::mustReject(*updateOperation.getUpdate());
+    }
+    return false;
+}
+
+bool
+FeedRejectHelper::isRejectableFeedOperation(const FeedOperation & op)
+{
+    FeedOperation::Type type = op.getType();
+    if (type == FeedOperation::PUT) {
+        return true;
+    } else if (type == FeedOperation::UPDATE_42 || type == FeedOperation::UPDATE) {
+        return mustReject(dynamic_cast<const UpdateOperation &>(op));
+    }
+    return false;
 }
 
 }

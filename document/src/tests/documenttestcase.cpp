@@ -10,10 +10,24 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/document/update/removefieldpathupdate.h>
+#include <vespa/document/update/clearvalueupdate.h>
+#include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/addvalueupdate.h>
+#include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+
+#include <vespa/document/update/tensor_remove_update.h>
+#include <vespa/document/update/tensor_modify_update.h>
+#include <vespa/document/update/tensor_add_update.h>
+#include <vespa/document/update/tensor_partial_update.h>
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/util/feed_reject_helper.h>
 #include <fcntl.h>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -1249,6 +1263,44 @@ TEST(DocumentTest, testDeserializeMultiple)
     correct.setValue(correct.getField("key"), IntFieldValue(1234));
     correct.setValue(correct.getField("value"), StringFieldValue("badger"));
     EXPECT_EQ(correct, sv3);
+}
+
+TEST(DocumentRejectTest, requireThatFixedSizeFieldValuesAreDetected) {
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::BoolFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::ByteFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::ShortFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::IntFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::LongFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::FloatFieldValue()));
+    EXPECT_TRUE(FeedRejectHelper::isFixedSizeSingleValue(document::DoubleFieldValue()));
+
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::StringFieldValue()));
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::RawFieldValue()));
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::PredicateFieldValue()));
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::ReferenceFieldValue()));
+
+    document::ArrayDataType intArrayType(*document::DataType::INT);
+    EXPECT_FALSE(FeedRejectHelper::isFixedSizeSingleValue(document::ArrayFieldValue(intArrayType)));
+}
+
+TEST(DocumentRejectTest, requireThatClearRemoveTensorRemoveAndArtithmeticUpdatesIgnoreFeedRejection) {
+    EXPECT_FALSE(FeedRejectHelper::mustReject(ClearValueUpdate()));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(RemoveValueUpdate(StringFieldValue())));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 5.0)));
+    EXPECT_FALSE(FeedRejectHelper::mustReject(TensorRemoveUpdate(std::make_unique<TensorFieldValue>())));
+}
+
+TEST(DocumentRejectTest, requireThatAddMapTensorModifyAndTensorAddUpdatesWillBeRejected) {
+    EXPECT_TRUE(FeedRejectHelper::mustReject(AddValueUpdate(IntFieldValue())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(MapValueUpdate(IntFieldValue(), ClearValueUpdate())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE,
+                                                                std::make_unique<TensorFieldValue>())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(TensorAddUpdate(std::make_unique<TensorFieldValue>())));
+}
+
+TEST(DocumentRejectTest, requireThatAssignUpdatesWillBeRejectedBasedOnTheirContent) {
+    EXPECT_FALSE(FeedRejectHelper::mustReject(AssignValueUpdate(IntFieldValue())));
+    EXPECT_TRUE(FeedRejectHelper::mustReject(AssignValueUpdate(StringFieldValue())));
 }
 
 }
