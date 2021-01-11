@@ -2,6 +2,7 @@
 
 #include "predicate_index.h"
 #include "predicate_hash.h"
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>

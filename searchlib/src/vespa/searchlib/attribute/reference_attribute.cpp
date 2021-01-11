@@ -11,9 +11,10 @@
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/datastore/unique_store_builder.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/unique_store.hpp>
-#include <vespa/vespalib/datastore/unique_store_builder.h>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.reference_attribute");

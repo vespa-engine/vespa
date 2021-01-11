@@ -28,8 +28,7 @@ public:
     typedef DataStoreType::RefType RefType;
     typedef BTreeKeyData<KeyT, DataT> KeyDataType;
 
-    typedef BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT,
-                      AggrCalcT> BTreeType;
+    typedef BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT> BTreeType;
     typedef BTreeInternalNode<KeyT, AggrT,
                               TraitsT::INTERNAL_SLOTS> InternalNodeType;
     typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>
@@ -506,4 +505,12 @@ extern template class BTreeStore<uint32_t, int32_t,
 
 }
 
+namespace vespalib::datastore {
 
+using namespace btree;
+
+extern template class BufferType<BTreeRoot<uint32_t, uint32_t, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>>;
+extern template class BufferType<BTreeRoot<uint32_t, BTreeNoLeafData, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>>;
+extern template class BufferType<BTreeRoot<uint32_t, int32_t, MinMaxAggregated, std::less<uint32_t>, BTreeDefaultTraits, MinMaxAggrCalc>>;
+
+}

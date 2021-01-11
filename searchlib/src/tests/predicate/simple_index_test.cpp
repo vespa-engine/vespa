@@ -9,6 +9,7 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <map>
 
 #include <vespa/log/log.h>

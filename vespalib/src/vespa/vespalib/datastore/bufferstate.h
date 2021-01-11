@@ -30,25 +30,23 @@ public:
     public:
         BufferState *_head;
 
-        FreeListList() : _head(NULL) { }
+        FreeListList() : _head(nullptr) { }
         ~FreeListList();
     };
 
-    typedef vespalib::Array<EntryRef> FreeList;
+    using FreeList = vespalib::Array<EntryRef>;
 
-    enum State {
+    enum State : uint8_t {
         FREE,
         ACTIVE,
         HOLD
     };
 
 private:
-    size_t        _usedElems;
-    size_t        _allocElems;
-    size_t        _deadElems;
-    State         _state;
-    bool          _disableElemHoldList;
-    size_t        _holdElems;
+    ElemCount     _usedElems;
+    ElemCount     _allocElems;
+    ElemCount     _deadElems;
+    ElemCount     _holdElems;
     // Number of bytes that are heap allocated by elements that are stored in this buffer.
     // For simple types this is 0.
     size_t        _extraUsedBytes;
@@ -56,18 +54,19 @@ private:
     // For simple types this is 0.
     size_t        _extraHoldBytes;
     FreeList      _freeList;
-    FreeListList *_freeListList;    // non-NULL if free lists are enabled
+    FreeListList *_freeListList;    // non-nullptr if free lists are enabled
 
-    // NULL pointers if not on circular list of buffer states with free elems
+    // nullptr if not on circular list of buffer states with free elems
     BufferState    *_nextHasFree;
     BufferState    *_prevHasFree;
 
     BufferTypeBase *_typeHandler;
-    uint32_t        _typeId;
-    uint32_t        _arraySize;
-    bool            _compacting;
     Alloc           _buffer;
-
+    uint32_t        _arraySize;
+    uint16_t        _typeId;
+    State           _state : 2;
+    bool            _disableElemHoldList : 1;
+    bool            _compacting : 1;
 public:
     /*
      * TODO: Check if per-buffer free lists are useful, or if
@@ -75,6 +74,8 @@ public:
      */
 
     BufferState();
+    BufferState(const BufferState &) = delete;
+    BufferState & operator=(const BufferState &) = delete;
     ~BufferState();
 
     /**
@@ -102,7 +103,7 @@ public:
     /**
      * Set list of buffer states with nonempty free lists.
      *
-     * @param freeListList  List of buffer states.  If NULL then free lists
+     * @param freeListList  List of buffer states.  If nullptr then free lists
      *              are disabled.
      */
     void setFreeListList(FreeListList *freeListList);
@@ -132,7 +133,7 @@ public:
     EntryRef popFreeList() {
         EntryRef ret = _freeList.back();
         _freeList.pop_back();
-        if (_freeList.empty()) {
+        if (isFreeListEmpty()) {
             removeFromFreeListList();
         }
         _deadElems -= _arraySize;
@@ -146,7 +147,7 @@ public:
         _usedElems += numElems;
         _extraUsedBytes += extraBytes;
     }
-    void cleanHold(void *buffer, size_t offset, size_t numElems) {
+    void cleanHold(void *buffer, size_t offset, ElemCount numElems) {
         _typeHandler->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraUsedBytes, _extraHoldBytes));
     }
     void dropBuffer(void *&buffer);
@@ -182,7 +183,7 @@ public:
     }
 
     bool hasDisabledElemHoldList() const { return _disableElemHoldList; }
-    const FreeList &freeList() const { return _freeList; }
+    bool isFreeListEmpty() const { return _freeList.empty();}
     FreeList &freeList() { return _freeList; }
     const FreeListList *freeListList() const { return _freeListList; }
     FreeListList *freeListList() { return _freeListList; }

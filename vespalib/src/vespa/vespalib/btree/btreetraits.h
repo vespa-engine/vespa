@@ -14,6 +14,6 @@ struct BTreeTraits {
     static const bool BINARY_SEEK = BS;
 };
 
-typedef BTreeTraits<16, 16, 10, true> BTreeDefaultTraits;
+using BTreeDefaultTraits = BTreeTraits<16, 16, 10, true>;
 
 }

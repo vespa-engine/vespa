@@ -53,7 +53,7 @@ typename Allocator<EntryT, RefT>::HandleType
 FreeListAllocator<EntryT, RefT, ReclaimerT>::alloc(Args && ... args)
 {
     BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
-    if (freeListList._head == NULL) {
+    if (freeListList._head == nullptr) {
         return ParentType::alloc(std::forward<Args>(args)...);
     }
     BufferState &state = *freeListList._head;
@@ -70,7 +70,7 @@ typename Allocator<EntryT, RefT>::HandleType
 FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array)
 {
     BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
-    if (freeListList._head == NULL) {
+    if (freeListList._head == nullptr) {
         return ParentType::allocArray(array);
     }
     BufferState &state = *freeListList._head;
@@ -89,7 +89,7 @@ typename Allocator<EntryT, RefT>::HandleType
 FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(size_t size)
 {
     BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
-    if (freeListList._head == NULL) {
+    if (freeListList._head == nullptr) {
         return ParentType::allocArray(size);
     }
     BufferState &state = *freeListList._head;

@@ -5,6 +5,7 @@
 #include "btreeroot.h"
 #include "btreenodeallocator.h"
 #include <vespa/vespalib/datastore/datastore.h>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 namespace vespalib::btree {
 
@@ -17,5 +18,39 @@ template class BTreeNodeStore<uint32_t, BTreeNoLeafData, NoAggregated,
 template class BTreeNodeStore<uint32_t, int32_t, MinMaxAggregated,
                               BTreeDefaultTraits::INTERNAL_SLOTS,
                               BTreeDefaultTraits::LEAF_SLOTS>;
+
+template class BTreeNodeBufferType<BTreeInternalNode<uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>>;
+template class BTreeNodeBufferType<BTreeInternalNode<uint32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>>;
+
+template class BTreeNodeBufferType<BTreeLeafNode<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>>;
+template class BTreeNodeBufferType<BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>>;
+template class BTreeNodeBufferType<BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS>>;
+
+}
+
+namespace vespalib::datastore {
+
+using namespace btree;
+
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(uint32_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(uint64_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(uint64_t, MinMaxAggregated, BTreeDefaultTraits::INTERNAL_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_INTERNALNODE(EntryRef, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS);
+
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint32_t, int32_t , MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint64_t, uint64_t , MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(EntryRef, uint32_t, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(EntryRef, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(EntryRef, EntryRef, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint32_t, EntryRef, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint64_t, EntryRef, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
+
+template class BufferType<BTreeKeyData<uint32_t, uint32_t>>;
+template class BufferType<BTreeKeyData<uint32_t, int32_t>>;
+template class BufferType<BTreeKeyData<uint32_t, BTreeNoLeafData>>;
+template class BufferType<BTreeKeyData<uint32_t, EntryRef>>;
 
 }

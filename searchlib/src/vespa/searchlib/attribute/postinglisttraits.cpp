@@ -6,6 +6,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 namespace vespalib::btree {
 

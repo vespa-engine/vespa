@@ -4,6 +4,7 @@
 #include "documentmetastoresaver.h"
 #include "operation_listener.h"
 #include "search_context.h"
+#include "document_meta_store_versions.h"
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
@@ -21,7 +22,7 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
-#include "document_meta_store_versions.h"
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore");
@@ -70,15 +71,15 @@ private:
 
 public:
     Reader(std::unique_ptr<FastOS_FileInterface> datFile)
-            : _datFile(std::move(datFile)),
-              _lidReader(*_datFile),
-              _gidReader(*_datFile),
-              _bucketUsedBitsReader(*_datFile),
-              _timestampReader(*_datFile),
-              _header(),
-              _headerLen(0u),
-              _docIdLimit(0),
-              _datFileSize(0u)
+        : _datFile(std::move(datFile)),
+          _lidReader(*_datFile),
+          _gidReader(*_datFile),
+          _bucketUsedBitsReader(*_datFile),
+          _timestampReader(*_datFile),
+          _header(),
+          _headerLen(0u),
+          _docIdLimit(0),
+          _datFileSize(0u)
     {
         _headerLen = _header.readFile(*_datFile);
         _datFile->SetPosition(_headerLen);
