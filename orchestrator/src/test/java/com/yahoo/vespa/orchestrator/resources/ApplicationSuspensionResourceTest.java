@@ -91,7 +91,6 @@ public class ApplicationSuspensionResourceTest {
     @Test
     public void delete_works_on_suspended_and_not_suspended_applications() {
         // Delete an application that is not suspended
-        var v = webTarget.path(RESOURCE_1).request();
         Response reply = webTarget.path(RESOURCE_1).request().delete();
         assertEquals(204, reply.getStatus());
 
@@ -115,7 +114,6 @@ public class ApplicationSuspensionResourceTest {
     @Test
     public void list_applications_returns_the_correct_list_of_suspended_applications() {
         // Test that initially we have the empty set
-        var v = webTarget.request(MediaType.APPLICATION_JSON);
         Response reply = webTarget.request(MediaType.APPLICATION_JSON).get();
         assertEquals(200, reply.getStatus());
         assertEquals("[]", reply.readEntity(String.class));
