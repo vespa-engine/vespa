@@ -84,6 +84,12 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-core-config</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
 
 
     <!-- TEST SCOPE -->

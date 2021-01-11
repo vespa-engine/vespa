@@ -146,6 +146,7 @@
                                         <include>com.yahoo.vespa:configdefinitions:*:jar:provided</include>
                                         <include>com.yahoo.vespa:configgen:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-core:*:jar:provided</include>
+                                        <include>com.yahoo.vespa:container-core-config:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-dev:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-di:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-disc:*:jar:provided</include>
