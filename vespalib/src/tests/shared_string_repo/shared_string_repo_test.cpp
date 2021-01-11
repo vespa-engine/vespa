@@ -309,7 +309,14 @@ TEST("require that handle/string can be obtained from string_id") {
 
 TEST("require that handle can be self-assigned") {
     Handle a("foo");
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
     a = a;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
     EXPECT_EQUAL(a.as_string(), vespalib::string("foo"));
 }
 
