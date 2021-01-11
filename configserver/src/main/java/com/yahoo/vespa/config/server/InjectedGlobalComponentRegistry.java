@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
@@ -11,7 +11,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
-import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -44,7 +44,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
     private final PermanentApplicationPackage permanentApplicationPackage;
-    private final HostRegistries hostRegistries;
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final ConfigServerDB configServerDB;
@@ -52,6 +51,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final SecretStore secretStore;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService zkCacheExecutor;
+    private final HostRegistry hostRegistry;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
@@ -62,15 +62,14 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            SessionPreparer sessionPreparer,
                                            RpcServer rpcServer,
                                            ConfigserverConfig configserverConfig,
-                                           SuperModelGenerationCounter superModelGenerationCounter,
                                            ConfigDefinitionRepo staticConfigDefinitionRepo,
                                            PermanentApplicationPackage permanentApplicationPackage,
-                                           HostRegistries hostRegistries,
                                            HostProvisionerProvider hostProvisionerProvider,
                                            Zone zone,
                                            ConfigServerDB configServerDB,
                                            FlagSource flagSource,
-                                           SecretStore secretStore) {
+                                           SecretStore secretStore,
+                                           HostRegistry hostRegistry) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -80,7 +79,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.configserverConfig = configserverConfig;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
-        this.hostRegistries = hostRegistries;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.configServerDB = configServerDB;
@@ -88,6 +86,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.secretStore = secretStore;
         this.zkWatcherExecutor = new StripedExecutor<>();
         this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
+        this.hostRegistry = hostRegistry;
     }
 
     @Override
@@ -108,8 +107,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return staticConfigDefinitionRepo; }
     @Override
     public PermanentApplicationPackage getPermanentApplicationPackage() { return permanentApplicationPackage; }
-    @Override
-    public HostRegistries getHostRegistries() { return hostRegistries; }
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
 
@@ -146,4 +143,8 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public SecretStore getSecretStore() {
         return secretStore;
     }
+
+    @Override
+    public HostRegistry hostRegistry() { return hostRegistry; }
+
 }
