@@ -73,7 +73,7 @@ public class SearchPath {
     private final List<NodeSelection> groups;
     private static final Random random = new Random();
 
-    private SearchPath(List<NodeSelection> nodes, List<NodeSelection> group) {
+    private SearchPath(List<NodeSelection> nodes, List<NodeSelection> groups) {
         this.nodes = nodes;
         this.groups = group;
     }
