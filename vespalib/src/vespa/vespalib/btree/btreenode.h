@@ -287,7 +287,7 @@ public:
     friend class BTreeNodeStore;
     template <typename, uint32_t>
     friend class BTreeNodeDataWrap;
-    template <typename>
+    template <typename, typename>
     friend class datastore::BufferType;
     template <typename, typename>
     friend class datastore::Allocator;
@@ -416,7 +416,7 @@ public:
     friend class BTreeNodeAllocator;
     template <typename, typename, typename, size_t, size_t>
     friend class BTreeNodeStore;
-    template <typename>
+    template <typename, typename>
     friend class datastore::BufferType;
     template <typename, typename>
     friend class datastore::Allocator;
