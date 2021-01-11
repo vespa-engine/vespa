@@ -13,7 +13,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 public class SuspendMojo extends AbstractVespaDeploymentMojo {
 
     @Parameter(property = "suspend", required = true)
-    protected boolean suspend;
+    private boolean suspend;
 
     @Override
     protected void doExecute() {
@@ -21,4 +21,3 @@ public class SuspendMojo extends AbstractVespaDeploymentMojo {
     }
 
 }
-
