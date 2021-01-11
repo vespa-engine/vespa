@@ -61,7 +61,7 @@ public class HostRegistry implements HostValidator<ApplicationId> {
         return Collections.unmodifiableCollection(new ArrayList<>(host2KeyMap.keySet()));
     }
 
-    synchronized Collection<String> getHostsForKey(ApplicationId key) {
+    public synchronized Collection<String> getHostsForKey(ApplicationId key) {
         return host2KeyMap.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(key))
                 .map(Map.Entry::getKey)

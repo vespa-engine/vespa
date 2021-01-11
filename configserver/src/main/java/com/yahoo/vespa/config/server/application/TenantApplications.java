@@ -224,7 +224,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         if (applicationSet.getAllApplications().isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
 
         reloadListener.hostsUpdated(applicationSet.getAllApplications().get(0).toApplicationInfo().getApplicationId(),
-                                    hostRegistry.getAllHosts());
+                                    applicationSet.getAllHosts());
         reloadListener.configActivated(applicationSet);
     }
 
@@ -273,7 +273,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     private void reloadListenersOnRemove(ApplicationId applicationId) {
-        reloadListener.hostsUpdated(applicationId, hostRegistry.getAllHosts());
+        reloadListener.hostsUpdated(applicationId, hostRegistry.getHostsForKey(applicationId));
         reloadListener.applicationRemoved(applicationId);
     }
 
