@@ -83,6 +83,16 @@ TEST(SimpleValueTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     }
 }
 
+TEST(SimpleValueTest, simple_values_can_be_copied) {
+    for (const auto &layout: layouts) {
+        TensorSpec expect = spec(layout, N());
+        std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
+        std::unique_ptr<Value> copy = SimpleValueBuilderFactory::get().copy(*value);
+        TensorSpec actual = spec_from_value(*copy);
+        EXPECT_EQ(actual, expect);
+    }
+}
+
 TEST(SimpleValueTest, simple_value_can_be_built_and_inspected) {
     ValueType type = ValueType::from_spec("tensor<float>(x{},y[2],z{})");
     const auto &factory = SimpleValueBuilderFactory::get();
