@@ -115,21 +115,6 @@ public interface ModelContext {
         // TODO(somebody): Only needed for LbServicesProducerTest
         default boolean useDedicatedNodeForLogserver() { return true; }
 
-        // NOTE: Use FeatureFlags interface above instead of non-permanent flags
-        @Deprecated double defaultTermwiseLimit();
-        @Deprecated default int defaultNumResponseThreads() { return 2; }
-        @Deprecated String feedSequencerType();
-        @Deprecated String responseSequencerType();
-        @Deprecated boolean skipCommunicationManagerThread();
-        @Deprecated boolean skipMbusRequestThread();
-        @Deprecated boolean skipMbusReplyThread();
-        @Deprecated boolean useAsyncMessageHandlingOnSchedule();
-        @Deprecated int contentNodeBucketDBStripeBits();
-        @Deprecated int mergeChunkSize();
-        @Deprecated double feedConcurrency();
-        @Deprecated boolean useThreePhaseUpdates();
-        @Deprecated default boolean useDirectStorageApiRpc() { return true; }
-        @Deprecated default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
     }
 
     @Retention(RetentionPolicy.RUNTIME)

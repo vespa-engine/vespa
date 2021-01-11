@@ -208,7 +208,6 @@ public class ModelContextImpl implements ModelContext {
 
     }
 
-    @SuppressWarnings("deprecation") // for old feature flag methods in ModelContext.Properties
     public static class Properties implements ModelContext.Properties {
 
         private final ModelContext.FeatureFlags featureFlags;
@@ -229,21 +228,6 @@ public class ModelContextImpl implements ModelContext {
         private final Quota quota;
 
         private final String jvmGCOPtions;
-
-        // Old non-permanent feature flags. Use ModelContext.FeatureFlag instead
-        private final double defaultTermwiseLimit;
-        private final boolean useThreePhaseUpdates;
-        private final String feedSequencer;
-        private final String responseSequencer;
-        private final int numResponseThreads;
-        private final boolean skipCommunicationManagerThread;
-        private final boolean skipMbusRequestThread;
-        private final boolean skipMbusReplyThread;
-        private final boolean useAccessControlTlsHandshakeClientAuth;
-        private final boolean useAsyncMessageHandlingOnSchedule;
-        private final int contentNodeBucketDBStripeBits;
-        private final int mergeChunkSize;
-        private final double feedConcurrency;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -274,21 +258,6 @@ public class ModelContextImpl implements ModelContext {
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
 
             jvmGCOPtions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
-
-            // Old non-permanent feature flags. Use ModelContext.FeatureFlag instead
-            defaultTermwiseLimit = flagValue(flagSource, applicationId, Flags.DEFAULT_TERM_WISE_LIMIT);
-            useThreePhaseUpdates = flagValue(flagSource, applicationId, Flags.USE_THREE_PHASE_UPDATES);
-            feedSequencer = flagValue(flagSource, applicationId, Flags.FEED_SEQUENCER_TYPE);
-            responseSequencer = flagValue(flagSource, applicationId, Flags.RESPONSE_SEQUENCER_TYPE);
-            numResponseThreads = flagValue(flagSource, applicationId, Flags.RESPONSE_NUM_THREADS);
-            skipCommunicationManagerThread = flagValue(flagSource, applicationId, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
-            skipMbusRequestThread = flagValue(flagSource, applicationId, Flags.SKIP_MBUS_REQUEST_THREAD);
-            skipMbusReplyThread = flagValue(flagSource, applicationId, Flags.SKIP_MBUS_REPLY_THREAD);
-            this.useAccessControlTlsHandshakeClientAuth = flagValue(flagSource, applicationId, Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION);
-            useAsyncMessageHandlingOnSchedule = flagValue(flagSource, applicationId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
-            contentNodeBucketDBStripeBits = flagValue(flagSource, applicationId, Flags.CONTENT_NODE_BUCKET_DB_STRIPE_BITS);
-            mergeChunkSize = flagValue(flagSource, applicationId, Flags.MERGE_CHUNK_SIZE);
-            feedConcurrency = flagValue(flagSource, applicationId, Flags.FEED_CONCURRENCY);
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -344,21 +313,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public Quota quota() { return quota; }
 
         @Override public String jvmGCOptions() { return jvmGCOPtions; }
-
-        // Old non-permanent feature flags. Use ModelContext.FeatureFlag instead
-        @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-        @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
-        @Override public String feedSequencerType() { return feedSequencer; }
-        @Override public String responseSequencerType() { return responseSequencer; }
-        @Override public int defaultNumResponseThreads() { return numResponseThreads; }
-        @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
-        @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
-        @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
-        @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
-        @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
-        @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
-        @Override public int mergeChunkSize() { return mergeChunkSize; }
-        @Override public double feedConcurrency() { return feedConcurrency; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
