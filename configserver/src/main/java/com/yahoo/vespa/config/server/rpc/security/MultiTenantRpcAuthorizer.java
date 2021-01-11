@@ -43,12 +43,12 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     private static final Logger log = Logger.getLogger(MultiTenantRpcAuthorizer.class.getName());
 
     private final NodeIdentifier nodeIdentifier;
-    private final HostRegistry<TenantName> hostRegistry;
+    private final HostRegistry hostRegistry;
     private final RequestHandlerProvider handlerProvider;
     private final Executor executor;
 
     public MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
-                                    HostRegistry<TenantName> hostRegistry,
+                                    HostRegistry hostRegistry,
                                     RequestHandlerProvider handlerProvider,
                                     int threadPoolSize) {
         this(nodeIdentifier,
@@ -58,7 +58,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     }
 
     MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
-                             HostRegistry<TenantName> hostRegistry,
+                             HostRegistry hostRegistry,
                              RequestHandlerProvider handlerProvider,
                              Executor executor) {
         this.nodeIdentifier = nodeIdentifier;
@@ -106,14 +106,14 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     return; // global config access ok
                 } else {
                     String hostname = configRequest.getClientHostName();
-                    Optional<TenantName> tenantName = Optional.ofNullable(hostRegistry.getKeyForHost(hostname));
-                    if (tenantName.isEmpty()) {
+                    ApplicationId applicationId = hostRegistry.getKeyForHost(hostname);
+                    if (applicationId == null) {
                         if (isConfigKeyForSentinelConfig(configKey)) {
                             return; // config processor will return empty sentinel config for unknown nodes
                         }
                         throw new AuthorizationException(Type.SILENT, String.format("Host '%s' not found in host registry for [%s]", hostname, configKey));
                     }
-                    RequestHandler tenantHandler = getTenantHandler(tenantName.get());
+                    RequestHandler tenantHandler = getTenantHandler(applicationId.tenant());
                     ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
                     ApplicationId peerOwner = applicationId(peerIdentity);
                     if (peerOwner.equals(resolvedApplication)) {

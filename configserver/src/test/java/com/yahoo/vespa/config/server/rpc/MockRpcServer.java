@@ -37,7 +37,7 @@ public class MockRpcServer extends RpcServer {
         super(createConfig(port),
               null,
               Metrics.createTestMetrics(),
-              new HostRegistry<>(),
+              new HostRegistry(),
               new ConfigRequestHostLivenessTracker(),
               new FileServer(tempDir),
               new NoopRpcAuthorizer(),

@@ -151,12 +151,12 @@ public class TenantApplicationsTest {
         }
 
         @Override
-        public void hostsUpdated(TenantName tenant, Collection<String> newHosts) {
-            tenantHosts.put(tenant.value(), newHosts);
+        public void hostsUpdated(ApplicationId applicationId, Collection<String> newHosts) {
+            tenantHosts.put(applicationId.tenant().value(), newHosts);
         }
 
         @Override
-        public void verifyHostsAreAvailable(TenantName tenant, Collection<String> newHosts) {
+        public void verifyHostsAreAvailable(ApplicationId applicationId, Collection<String> newHosts) {
         }
 
         @Override

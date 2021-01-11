@@ -64,8 +64,9 @@ public class InjectedGlobalComponentRegistryTest {
                         .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                         .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
         sessionPreparer = new SessionTest.MockSessionPreparer();
+        HostRegistry hostRegistry = new HostRegistry();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(),
-                                  new HostRegistry<>(), new ConfigRequestHostLivenessTracker(),
+                                  hostRegistry, new ConfigRequestHostLivenessTracker(),
                                   new FileServer(temporaryFolder.newFolder("filereferences")),
                                   new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
         defRepo = new StaticConfigDefinitionRepo();
@@ -73,9 +74,11 @@ public class InjectedGlobalComponentRegistryTest {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
-                new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer, rpcServer, configserverConfig,
-                                                    defRepo, permanentApplicationPackage, hostProvisionerProvider, zone,
-                                                    new ConfigServerDB(configserverConfig), new InMemoryFlagSource(), new MockSecretStore());
+                new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer,
+                                                    rpcServer, configserverConfig, defRepo, permanentApplicationPackage,
+                                                    hostProvisionerProvider, zone,
+                                                    new ConfigServerDB(configserverConfig), new InMemoryFlagSource(),
+                                                    new MockSecretStore(), hostRegistry);
     }
 
     @Test

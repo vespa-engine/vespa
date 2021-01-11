@@ -9,6 +9,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
@@ -46,4 +47,5 @@ public interface GlobalComponentRegistry {
     FlagSource getFlagSource();
     ExecutorService getZkCacheExecutor();
     SecretStore getSecretStore();
+    HostRegistry hostRegistry();
 }

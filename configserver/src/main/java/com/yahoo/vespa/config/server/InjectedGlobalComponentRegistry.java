@@ -11,6 +11,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -50,6 +51,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final SecretStore secretStore;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService zkCacheExecutor;
+    private final HostRegistry hostRegistry;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
@@ -66,7 +68,8 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            Zone zone,
                                            ConfigServerDB configServerDB,
                                            FlagSource flagSource,
-                                           SecretStore secretStore) {
+                                           SecretStore secretStore,
+                                           HostRegistry hostRegistry) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -83,6 +86,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.secretStore = secretStore;
         this.zkWatcherExecutor = new StripedExecutor<>();
         this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
+        this.hostRegistry = hostRegistry;
     }
 
     @Override
@@ -139,4 +143,8 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public SecretStore getSecretStore() {
         return secretStore;
     }
+
+    @Override
+    public HostRegistry hostRegistry() { return hostRegistry; }
+
 }

@@ -91,7 +91,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     private final DelayedConfigResponses delayedConfigResponses;
 
-    private final HostRegistry<TenantName> hostRegistry;
+    private final HostRegistry hostRegistry;
     private final Map<TenantName, Tenant> tenants = new ConcurrentHashMap<>();
     private final Map<ApplicationId, ApplicationState> applicationStateMap = new ConcurrentHashMap<>();
     private final SuperModelRequestHandler superModelRequestHandler;
@@ -121,7 +121,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      */
     @Inject
     public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler,
-                     MetricUpdaterFactory metrics, HostRegistry<TenantName> hostRegistry,
+                     MetricUpdaterFactory metrics, HostRegistry hostRegistry,
                      HostLivenessTracker hostLivenessTracker, FileServer fileServer, RpcAuthorizer rpcAuthorizer,
                      RpcRequestHandlerProvider handlerProvider) {
         this.superModelRequestHandler = superModelRequestHandler;
@@ -302,14 +302,14 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     @Override
-    public void hostsUpdated(TenantName tenant, Collection<String> newHosts) {
+    public void hostsUpdated(ApplicationId applicationId, Collection<String> newHosts) {
         log.log(Level.FINE, "Updating hosts in tenant host registry '" + hostRegistry + "' with " + newHosts);
-        hostRegistry.update(tenant, newHosts);
+        hostRegistry.update(applicationId, newHosts);
     }
 
     @Override
-    public void verifyHostsAreAvailable(TenantName tenant, Collection<String> newHosts) {
-        hostRegistry.verifyHosts(tenant, newHosts);
+    public void verifyHostsAreAvailable(ApplicationId applicationId, Collection<String> newHosts) {
+        hostRegistry.verifyHosts(applicationId, newHosts);
     }
 
     @Override
@@ -333,8 +333,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     Optional<TenantName> resolveTenant(JRTServerConfigRequest request, Trace trace) {
         if ("*".equals(request.getConfigKey().getConfigId())) return Optional.of(ApplicationId.global().tenant());
         String hostname = request.getClientHostName();
-        TenantName tenant = hostRegistry.getKeyForHost(hostname);
-        if (tenant == null) {
+        ApplicationId applicationId = hostRegistry.getKeyForHost(hostname);
+        if (applicationId == null) {
             if (GetConfigProcessor.logDebug(trace)) {
                 String message = "Did not find tenant for host '" + hostname + "', using " + TenantName.defaultName();
                 log.log(Level.FINE, message);
@@ -343,7 +343,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             }
             return Optional.empty();
         }
-        return Optional.of(tenant);
+        return Optional.of(applicationId.tenant());
     }
 
     public ConfigResponse resolveConfig(JRTServerConfigRequest request, GetConfigContext context, Optional<Version> vespaVersion) {
@@ -424,7 +424,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void onTenantDelete(TenantName tenant) {
-        log.log(Level.FINE, TenantRepository.logPre(tenant)+"Tenant deleted, removing request handler and cleaning host registry");
+        log.log(Level.FINE, TenantRepository.logPre(tenant) +
+                            "Tenant deleted, removing request handler and cleaning host registry");
         tenants.remove(tenant);
         hostRegistry.removeHostsForKey(tenant);
     }

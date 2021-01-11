@@ -229,7 +229,7 @@ public class TenantRepository {
                                        componentRegistry.getMetrics(),
                                        componentRegistry.getReloadListener(),
                                        componentRegistry.getConfigserverConfig(),
-                                       new HostRegistry<>(),
+                                       componentRegistry.hostRegistry(),
                                        new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                        componentRegistry.getClock());
         SessionRepository sessionRepository = new SessionRepository(tenantName,
