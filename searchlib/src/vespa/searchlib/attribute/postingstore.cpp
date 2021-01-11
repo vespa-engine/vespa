@@ -629,10 +629,3 @@ template class PostingStore<BTreeNoLeafData>;
 template class PostingStore<int32_t>;
 
 }
-
-namespace vespalib::datastore {
-    using namespace btree;
-
-
-
-}
