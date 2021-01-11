@@ -75,7 +75,7 @@ public class SearchPath {
 
     private SearchPath(List<NodeSelection> nodes, List<NodeSelection> groups) {
         this.nodes = nodes;
-        this.groups = group;
+        this.groups = groups;
     }
 
     private List<Node> mapToNodes(SearchCluster cluster) {
