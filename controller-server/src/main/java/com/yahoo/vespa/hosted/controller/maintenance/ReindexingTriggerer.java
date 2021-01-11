@@ -11,6 +11,8 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,7 +47,7 @@ public class ReindexingTriggerer extends ControllerMaintainer {
                 application.productionDeployments().forEach((name, deployments) -> {
                     ApplicationId id = application.id().instance(name);
                     for (Deployment deployment : deployments)
-                        if (   inWindowOfOpportunity(now, interval(), id, deployment.zone())
+                        if (   inWindowOfOpportunity(now, id, deployment.zone())
                             && reindexingIsReady(controller().applications().applicationReindexing(id, deployment.zone()), now))
                             controller().applications().reindex(id, deployment.zone(), List.of(), List.of());
                 });
@@ -57,15 +59,18 @@ public class ReindexingTriggerer extends ControllerMaintainer {
         }
     }
 
-    static boolean inWindowOfOpportunity(Instant now, Duration interval, ApplicationId id, ZoneId zone) {
-        long lastPeriodStartMillis = now.toEpochMilli() - (now.toEpochMilli() % reindexingPeriod.toMillis());
-        Instant windowCenter = Instant.ofEpochMilli(lastPeriodStartMillis).plus(offset(id, zone));
-        return windowCenter.minus(interval).isBefore(now) && now.isBefore(windowCenter.plus(interval));
-    }
+    static boolean inWindowOfOpportunity(Instant now, ApplicationId id, ZoneId zone) {
+        long dayOfPeriodToTrigger = Math.floorMod((id.serializedForm() + zone.value()).hashCode(), 65); // 13 weeks a 5 week days.
+        long weekOfPeriodToTrigger = dayOfPeriodToTrigger / 5;
+        long dayOfWeekToTrigger = dayOfPeriodToTrigger % 5;
+        long daysSinceFirstMondayAfterEpoch = Instant.EPOCH.plus(Duration.ofDays(4)).until(now, ChronoUnit.DAYS); // EPOCH was a Thursday.
+        long weekOfPeriod = (daysSinceFirstMondayAfterEpoch / 7) % 13; // 7 days to a calendar week, 13 weeks to the period.
+        long dayOfWeek = daysSinceFirstMondayAfterEpoch % 7;
+        long hourOfTrondheimTime = ZonedDateTime.ofInstant(now, java.time.ZoneId.of("Europe/Oslo")).getHour();
 
-    static Duration offset(ApplicationId id, ZoneId zone) {
-        double relativeOffset = ((id.serializedForm() + zone.value()).hashCode() & (-1 >>> 1)) / (double) (-1 >>> 1);
-        return Duration.ofMillis((long) (reindexingPeriod.toMillis() * relativeOffset));
+        return    weekOfPeriod == weekOfPeriodToTrigger
+               && dayOfWeek == dayOfWeekToTrigger
+               && 8 <= hourOfTrondheimTime && hourOfTrondheimTime < 12;
     }
 
     static boolean reindexingIsReady(ApplicationReindexing reindexing, Instant now) {

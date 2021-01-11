@@ -10,11 +10,18 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.vespa.hosted.controller.maintenance.ReindexingTriggerer.inWindowOfOpportunity;
 import static com.yahoo.vespa.hosted.controller.maintenance.ReindexingTriggerer.reindexingIsReady;
 import static com.yahoo.vespa.hosted.controller.maintenance.ReindexingTriggerer.reindexingPeriod;
+import static java.time.DayOfWeek.FRIDAY;
+import static java.time.DayOfWeek.MONDAY;
+import static java.time.DayOfWeek.THURSDAY;
+import static java.time.DayOfWeek.TUESDAY;
+import static java.time.DayOfWeek.WEDNESDAY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -28,11 +35,15 @@ public class ReindexingTriggererTest {
         Instant doom = now.plus(ReindexingTriggerer.reindexingPeriod);
         int triggered = 0;
         while (now.isBefore(doom)) {
-            if (inWindowOfOpportunity(now, interval, ApplicationId.defaultId(), ZoneId.defaultId()))
+            if (inWindowOfOpportunity(now, ApplicationId.defaultId(), ZoneId.defaultId())) {
                 triggered++;
+                ZonedDateTime time = ZonedDateTime.ofInstant(now, java.time.ZoneId.of("Europe/Oslo"));
+                assertTrue(List.of(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY).contains(time.getDayOfWeek()));
+                assertTrue(List.of(8, 9, 10, 11).contains(time.getHour()));
+            }
             now = now.plus(interval);
         }
-        assertEquals("Should be in window of opportunity exactly twice each period", 2, triggered);
+        assertEquals("Should be in window of opportunity exactly four times each period", 4, triggered);
     }
 
     @Test
