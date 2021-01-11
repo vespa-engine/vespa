@@ -217,7 +217,7 @@ struct FastCells {
 template <typename T, bool transient>
 struct FastValue final : Value, ValueBuilder<T> {
 
-    using Handles = std::conditional<transient,
+    using Handles = typename std::conditional<transient,
                                      std::vector<string_id>,
                                      SharedStringRepo::Handles>::type;
 
