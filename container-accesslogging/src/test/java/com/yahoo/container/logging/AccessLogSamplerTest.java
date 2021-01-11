@@ -3,6 +3,7 @@ package com.yahoo.container.logging;
 
 import org.junit.Test;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
