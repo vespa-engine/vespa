@@ -64,7 +64,7 @@ private:
     Alloc           _buffer;
     uint32_t        _arraySize;
     uint16_t        _typeId;
-    State           _state : 2;
+    State           _state : 8;
     bool            _disableElemHoldList : 1;
     bool            _compacting : 1;
 public:
