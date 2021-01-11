@@ -16,7 +16,7 @@ class SharedStringRepo;
  * least one SharedStringRepo::Handle or SharedStringRepo::Handles
  * object. This is similar to how std::enable_shared_from_this works;
  * the string_id acts like a reference to a mapping from a string to a
- * numberical value (without ownership) and Handle/Handles act like
+ * numerical value (without ownership) and Handle/Handles act like
  * shared pointers to the same mapping (with shared ownership).
  **/
 class string_id {

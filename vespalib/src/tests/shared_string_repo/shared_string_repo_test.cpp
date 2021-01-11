@@ -307,6 +307,12 @@ TEST("require that handle/string can be obtained from string_id") {
     EXPECT_EQUAL(Handle::string_from_id(b.id()), vespalib::string("str"));
 }
 
+TEST("require that handle can be self-assigned") {
+    Handle a("foo");
+    a = a;
+    EXPECT_EQUAL(a.as_string(), vespalib::string("foo"));
+}
+
 //-----------------------------------------------------------------------------
 
 TEST("require that basic multi-handle usage works") {

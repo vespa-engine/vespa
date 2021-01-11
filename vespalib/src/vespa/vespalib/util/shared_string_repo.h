@@ -5,6 +5,7 @@
 #include "string_id.h"
 #include "spin_lock.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <xxhash.h>
@@ -219,8 +220,9 @@ public:
         Handle(vespalib::stringref str) : _id(_repo.resolve(str)) {}
         Handle(const Handle &rhs) : _id(_repo.copy(rhs._id)) {}
         Handle &operator=(const Handle &rhs) {
+            string_id copy = _repo.copy(rhs._id);
             _repo.reclaim(_id);
-            _id = _repo.copy(rhs._id);
+            _id = copy;
             return *this;
         }
         Handle(Handle &&rhs) noexcept : _id(rhs._id) {
