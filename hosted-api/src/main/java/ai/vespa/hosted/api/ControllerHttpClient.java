@@ -121,6 +121,13 @@ public abstract class ControllerHttpClient {
                                       DELETE)));
     }
 
+    /** Sets suspension status of the given application in the given zone. */
+    public String suspend(ApplicationId id, ZoneId zone, boolean suspend) {
+        return toMessage(send(request(HttpRequest.newBuilder(suspendPath(id, zone))
+                                                 .timeout(Duration.ofSeconds(10)),
+                                      suspend ? POST : DELETE)));
+    }
+
     /** Returns the default {@link ZoneId} for the given environment, if any. */
     public ZoneId defaultZone(Environment environment) {
         Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath(environment))
@@ -223,6 +230,10 @@ public abstract class ControllerHttpClient {
         return concatenated(instancePath(id),
                             "environment", zone.environment().value(),
                             "region", zone.region().value());
+    }
+
+    private URI suspendPath(ApplicationId id, ZoneId zone) {
+        return concatenated(deploymentPath(id, zone), "suspend");
     }
 
     private URI deploymentJobPath(ApplicationId id, ZoneId zone) {

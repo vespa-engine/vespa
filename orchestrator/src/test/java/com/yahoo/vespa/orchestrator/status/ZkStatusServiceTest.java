@@ -225,6 +225,7 @@ public class ZkStatusServiceTest {
         };
     }
 
+    @SuppressWarnings("deprecation")
     private static void killSession(CuratorFramework curatorFramework, TestingServer testingServer) {
         try {
             KillSession.kill(curatorFramework.getZookeeperClient().getZooKeeper(), testingServer.getConnectString());

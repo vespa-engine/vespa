@@ -18,6 +18,7 @@ import java.util.Set;
  *
  * @author smorgrav
  */
+@Path("/orchestrator" + ApplicationSuspensionApi.PATH_PREFIX)
 public interface ApplicationSuspensionApi {
     /**
      * Path prefix for this api. Resources implementing this API should use this with a @Path annotation.

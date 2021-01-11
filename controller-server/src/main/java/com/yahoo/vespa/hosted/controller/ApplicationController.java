@@ -985,4 +985,9 @@ public class ApplicationController {
         return Map.copyOf(warnings);
     }
 
+    /** Sets suspension status of the given deployment in its zone. */
+    public void setSuspension(DeploymentId deploymentId, boolean suspend) {
+        configServer.setSuspension(deploymentId, suspend);
+    }
+
 }

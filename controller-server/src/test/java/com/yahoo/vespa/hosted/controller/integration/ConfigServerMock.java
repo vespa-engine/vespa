@@ -244,7 +244,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return Optional.ofNullable(applications.get(new DeploymentId(id, zone)));
     }
 
-    public void setSuspended(DeploymentId deployment, boolean suspend) {
+    @Override
+    public void setSuspension(DeploymentId deployment, boolean suspend) {
         if (suspend)
             suspendedApplications.add(deployment);
         else
