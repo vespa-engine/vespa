@@ -160,12 +160,11 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePATCH(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
-            try (NodeMutex lock = nodeRepository.lockAndGetRequired(nodeFromRequest(request))) {
-                var patchedNodes = new NodePatcher(nodeFlavors, request.getData(), lock.node(), () -> nodeRepository.list(lock),
-                        nodeRepository.clock()).apply();
-                nodeRepository.write(patchedNodes, lock);
+            try (NodePatcher patcher = new NodePatcher(nodeFlavors, request.getData(), nodeFromRequest(request), nodeRepository)) {
+                var patchedNodes = patcher.apply();
+                nodeRepository.write(patchedNodes, patcher.nodeMutexOfHost());
 
-                return new MessageResponse("Updated " + lock.node().hostname());
+                return new MessageResponse("Updated " + patcher.nodeMutexOfHost().node().hostname());
             }
         }
         else if (path.startsWith("/nodes/v2/upgrade/")) {

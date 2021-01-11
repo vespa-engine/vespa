@@ -19,4 +19,9 @@ public class NodeMutex implements Mutex {
 
     public Node node() { return node; }
     @Override public void close() { mutex.close(); }
+
+    /** Returns a node mutex with the same mutex as this, but the given node.  Be sure to close only one. */
+    public NodeMutex with(Node newNode) {
+        return new NodeMutex(newNode, mutex);
+    }
 }

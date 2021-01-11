@@ -924,13 +924,12 @@ public class NodeRepository extends AbstractComponent {
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }
 
-    /** Returns a lock, and an up to date node fetched under an appropriate lock, if it exists. */
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public Optional<NodeMutex> lockAndGet(Node node) {
         Node staleNode = node;
 
         for (int i = 0; i < 4; ++i) {
-            Mutex lock = lock(staleNode);
-            Optional<Mutex> lockToClose = Optional.of(lock);
+            Mutex lockToClose = lock(staleNode);
             try {
                 Optional<Node> freshNode = getNode(staleNode.hostname(), staleNode.state());
                 if (freshNode.isEmpty()) {
@@ -942,30 +941,32 @@ public class NodeRepository extends AbstractComponent {
 
                 if (Objects.equals(freshNode.get().allocation().map(Allocation::owner),
                                    staleNode.allocation().map(Allocation::owner))) {
-                    lockToClose = Optional.empty();
-                    return Optional.of(new NodeMutex(freshNode.get(), lock));
+                    NodeMutex nodeMutex = new NodeMutex(freshNode.get(), lockToClose);
+                    lockToClose = null;
+                    return Optional.of(nodeMutex);
                 }
 
+                // The wrong lock was held when the fresh node was fetched, so try again
                 staleNode = freshNode.get();
             } finally {
-                lockToClose.ifPresent(Mutex::close);
+                if (lockToClose != null) lockToClose.close();
             }
         }
 
         throw new IllegalStateException("Giving up trying to fetch an up to date node under lock: " + node.hostname());
     }
 
-    /** Returns a lock, and an up to date node fetched under an appropriate lock, if it exists. */
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public Optional<NodeMutex> lockAndGet(String hostname) {
         return getNode(hostname).flatMap(this::lockAndGet);
     }
 
-    /** Returns a lock, and an up to date node fetched under an appropriate lock. */
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public NodeMutex lockAndGetRequired(Node node) {
         return lockAndGet(node).orElseThrow(() -> new IllegalArgumentException("No such node: " + node.hostname()));
     }
 
-    /** Returns a lock, and an up to date node fetched under an appropriate lock. */
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public NodeMutex lockAndGetRequired(String hostname) {
         return lockAndGet(hostname).orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
     }
