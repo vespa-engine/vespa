@@ -8,11 +8,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ollivir
@@ -21,21 +22,25 @@ public class SearchPathTest {
 
     @Test
     public void requreThatSearchPathsAreParsedCorrectly() {
-        assertThat(SearchPath.fromString("0/0").get().toString(), equalTo("0/0"));
-        assertThat(SearchPath.fromString("1/0").get().toString(), equalTo("1/0"));
-        assertThat(SearchPath.fromString("0/1").get().toString(), equalTo("0/1"));
+        assertEquals(SearchPath.fromString("0/0").get().toString(), "0/0");
+        assertEquals(SearchPath.fromString("1/0").get().toString(), "1/0");
+        assertEquals(SearchPath.fromString("0/1").get().toString(), "0/1");
 
-        assertThat(SearchPath.fromString("0,1/2").get().toString(), equalTo("0,1/2"));
-        assertThat(SearchPath.fromString("[0,1>/2").get().toString(), equalTo("0/2"));
-        assertThat(SearchPath.fromString("[0,2>/2").get().toString(), equalTo("[0,2>/2"));
-        assertThat(SearchPath.fromString("[0,1>,1/2").get().toString(), equalTo("0,1/2"));
+        assertEquals(SearchPath.fromString("0,1/2").get().toString(), "0,1/2");
+        assertEquals(SearchPath.fromString("0,1/1,2").get().toString(), "0,1/1,2");
+        assertEquals(SearchPath.fromString("[0,1>/2").get().toString(), "0/2");
+        assertEquals(SearchPath.fromString("[0,1>/[2,3>").get().toString(), "0/2");
+        assertEquals(SearchPath.fromString("[0,2>/2").get().toString(), "[0,2>/2");
+        assertEquals(SearchPath.fromString("[0,2>/[0,2>").get().toString(), "[0,2>/[0,2>");
+        assertEquals(SearchPath.fromString("[0,1>,1/2").get().toString(), "0,1/2");
+        assertEquals(SearchPath.fromString("[0,1>,1/[0,1>,1").get().toString(), "0,1/0,1");
 
-        assertThat(SearchPath.fromString("*/2").get().toString(), equalTo("/2"));
-        assertThat(SearchPath.fromString("1,*/2").get().toString(), equalTo("/2"));
+        assertEquals(SearchPath.fromString("*/2").get().toString(), "/2");
+        assertEquals(SearchPath.fromString("1,*/2").get().toString(), "/2");
 
-        assertThat(SearchPath.fromString("1").get().toString(), equalTo("1"));
-        assertThat(SearchPath.fromString("1/").get().toString(), equalTo("1"));
-        assertThat(SearchPath.fromString("1/*").get().toString(), equalTo("1"));
+        assertEquals(SearchPath.fromString("1").get().toString(), "1");
+        assertEquals(SearchPath.fromString("1/").get().toString(), "1");
+        assertEquals(SearchPath.fromString("1/*").get().toString(), "1");
     }
 
     @Test
@@ -68,15 +73,27 @@ public class SearchPathTest {
         SearchPath.fromString("1,2,3/r");
     }
 
+    private void verifyRandomGroup(MockSearchCluster cluster, String searchPath, Set possibleSolutions) {
+        for (int i=0; i < 100; i++) {
+            String nodes = distKeysAsString(SearchPath.selectNodes(searchPath, cluster));
+            assertTrue(possibleSolutions.contains(nodes));
+        }
+    }
+
     @Test
     public void searchPathMustFilterNodesBasedOnDefinition() {
         MockSearchCluster cluster = new MockSearchCluster("a",3, 3);
 
-        assertThat(distKeysAsString(SearchPath.selectNodes("1/1", cluster)), equalTo("4"));
-        assertThat(distKeysAsString(SearchPath.selectNodes("/1", cluster)), equalTo("3,4,5"));
-        assertThat(distKeysAsString(SearchPath.selectNodes("0,1/2", cluster)), equalTo("6,7"));
-        assertThat(distKeysAsString(SearchPath.selectNodes("[1,3>/1", cluster)), equalTo("4,5"));
-        assertThat(distKeysAsString(SearchPath.selectNodes("[1,88>/1", cluster)), equalTo("4,5"));
+        assertEquals(distKeysAsString(SearchPath.selectNodes("1/1", cluster)), "4");
+        assertEquals(distKeysAsString(SearchPath.selectNodes("/1", cluster)), "3,4,5");
+        assertEquals(distKeysAsString(SearchPath.selectNodes("0,1/2", cluster)), "6,7");
+        assertEquals(distKeysAsString(SearchPath.selectNodes("[1,3>/1", cluster)), "4,5");
+        assertEquals(distKeysAsString(SearchPath.selectNodes("[1,88>/1", cluster)), "4,5");
+
+        verifyRandomGroup(cluster, "[1,88>/", Set.of("1,2", "4,5", "7,8"));
+        verifyRandomGroup(cluster, "[1,88>/0", Set.of("1,2"));
+        verifyRandomGroup(cluster, "[1,88>/2", Set.of("7,8"));
+        verifyRandomGroup(cluster, "[1,88>/0,2", Set.of("1,2", "7,8"));
     }
 
     private static String distKeysAsString(Collection<Node> nodes) {
