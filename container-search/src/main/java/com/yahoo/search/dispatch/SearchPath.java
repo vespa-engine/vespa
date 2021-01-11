@@ -105,7 +105,7 @@ public class SearchPath {
     }
 
     private Group selectRandomGroupWithSufficientCoverage(SearchCluster cluster, List<Integer> groupIds) {
-        while ( ! groupIds.isEmpty()) {
+        while ( groupIds.size() > 1 ) {
             int index = random.nextInt(groupIds.size());
             int groupId = groupIds.get(index);
             Optional<Group> group = cluster.group(groupId);
@@ -119,7 +119,7 @@ public class SearchPath {
                 throw new InvalidSearchPathException("Invalid searchPath, cluster does not have " + (groupId + 1) + " groups");
             }
         }
-        return cluster.groups().values().iterator().next();
+        return cluster.group(groupIds.get(0)).get();
     }
 
     private Group selectGroup(SearchCluster cluster) {
