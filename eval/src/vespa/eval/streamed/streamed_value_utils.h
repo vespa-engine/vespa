@@ -13,10 +13,10 @@ namespace vespalib::eval {
  *  Reading more labels than available will trigger an assert.
  **/
 struct LabelStream {
-    const std::vector<label_t> &source;
+    const std::vector<string_id> &source;
     size_t pos;
-    LabelStream(const std::vector<label_t> &data) : source(data), pos(0) {}
-    label_t next_label() {
+    LabelStream(const std::vector<string_id> &data) : source(data), pos(0) {}
+    string_id next_label() {
         assert(pos < source.size());
         return source[pos++];
     }
@@ -29,7 +29,7 @@ struct LabelStream {
 struct LabelBlock {
     static constexpr size_t npos = -1;
     size_t subspace_index;
-    ConstArrayRef<label_t> address;
+    ConstArrayRef<string_id> address;
     operator bool() const { return subspace_index != npos; }
 };
 
@@ -42,7 +42,7 @@ private:
     size_t _num_subspaces;
     LabelStream _labels;
     size_t _subspace_index;
-    std::vector<label_t> _current_address;
+    std::vector<string_id> _current_address;
 public:
     LabelBlock next_block() {
         if (_subspace_index < _num_subspaces) {
@@ -61,7 +61,7 @@ public:
     }
 
     LabelBlockStream(uint32_t num_subspaces,
-                     const std::vector<label_t> &labels,
+                     const std::vector<string_id> &labels,
                      uint32_t num_mapped_dims)
       : _num_subspaces(num_subspaces),
         _labels(labels),

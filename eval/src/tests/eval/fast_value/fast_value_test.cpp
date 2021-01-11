@@ -113,8 +113,8 @@ TEST(FastValueBuilderTest, mixed_add_subspace_robustness) {
     EXPECT_EQ(value->index().size(), 3);
     Handle foo("foo");
     Handle bar("bar");
-    label_t label;
-    label_t *label_ptr = &label;
+    string_id label;
+    string_id *label_ptr = &label;
     size_t subspace_idx;
     auto get_subspace = [&]() {
         auto cells = value->cells().typify<double>();

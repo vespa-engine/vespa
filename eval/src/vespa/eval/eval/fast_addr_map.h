@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "label.h"
 #include "memory_usage_stuff.h"
 #include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/string_id.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/stllike/hashtable.h>
-#include <vespa/vespalib/util/shared_string_repo.h>
 #include <vector>
 
 namespace vespalib::eval {
@@ -22,8 +21,8 @@ class FastAddrMap
 {
 public:
     // label hasing functions
-    static constexpr uint32_t hash_label(label_t label) { return label; }
-    static constexpr uint32_t hash_label(const label_t *label) { return *label; }
+    static constexpr uint32_t hash_label(string_id label) { return label.hash(); }
+    static constexpr uint32_t hash_label(const string_id *label) { return label->hash(); }
     static constexpr uint32_t combine_label_hash(uint32_t full_hash, uint32_t next_hash) {
         return ((full_hash * 31) + next_hash);
     }
@@ -59,10 +58,10 @@ public:
     // view able to convert tags into sparse addresses
     struct LabelView {
         size_t addr_size;
-        const std::vector<label_t> &labels;
-        LabelView(size_t num_mapped_dims, SharedStringRepo::HandleView handle_view)
-            : addr_size(num_mapped_dims), labels(handle_view.handles()) {}
-        ConstArrayRef<label_t> get_addr(size_t idx) const {
+        const std::vector<string_id> &labels;
+        LabelView(size_t num_mapped_dims, const std::vector<string_id> &labels_in)
+            : addr_size(num_mapped_dims), labels(labels_in) {}
+        ConstArrayRef<string_id> get_addr(size_t idx) const {
             return {&labels[idx * addr_size], addr_size};
         }
     };
@@ -78,8 +77,8 @@ public:
     struct Equal {
         const LabelView &label_view;
         Equal(const LabelView &label_view_in) : label_view(label_view_in) {}
-        static constexpr bool eq_labels(label_t a, label_t b) { return (a == b); }
-        static constexpr bool eq_labels(label_t a, const label_t *b) { return (a == *b); }
+        static constexpr bool eq_labels(string_id a, string_id b) { return (a == b); }
+        static constexpr bool eq_labels(string_id a, const string_id *b) { return (a == *b); }
         template <typename T>
         bool operator()(const Entry &a, const AltKey<T> &b) const {
             if ((a.hash != b.hash) || (b.key.size() != label_view.addr_size)) {
@@ -102,8 +101,8 @@ private:
     HashType _map;
 
 public:
-    FastAddrMap(size_t num_mapped_dims, SharedStringRepo::HandleView handle_view, size_t expected_subspaces)
-        : _labels(num_mapped_dims, handle_view),
+    FastAddrMap(size_t num_mapped_dims, const std::vector<string_id> &labels, size_t expected_subspaces)
+        : _labels(num_mapped_dims, labels),
           _map(expected_subspaces * 2, Hash(), Equal(_labels)) {}
     ~FastAddrMap();
     FastAddrMap(const FastAddrMap &) = delete;
@@ -111,7 +110,7 @@ public:
     FastAddrMap(FastAddrMap &&) = delete;
     FastAddrMap &operator=(FastAddrMap &&) = delete;
     static constexpr size_t npos() { return -1; }
-    ConstArrayRef<label_t> get_addr(size_t idx) const { return _labels.get_addr(idx); }
+    ConstArrayRef<string_id> get_addr(size_t idx) const { return _labels.get_addr(idx); }
     size_t size() const { return _map.size(); }
     constexpr size_t addr_size() const { return _labels.addr_size; }
     template <typename T>

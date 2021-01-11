@@ -20,22 +20,22 @@ template <typename T>
 class StreamedValue : public Value
 {
 private:
-    using StrongHandles = SharedStringRepo::StrongHandles;
+    using Handles = SharedStringRepo::Handles;
 
     ValueType _type;
     std::vector<T> _my_cells;
-    StrongHandles _my_labels;
+    Handles _my_labels;
     StreamedValueIndex _my_index;
 
 public:
     StreamedValue(ValueType type, size_t num_mapped_dimensions,
-                  std::vector<T> cells, size_t num_subspaces, StrongHandles && handles)
+                  std::vector<T> cells, size_t num_subspaces, Handles && handles)
       : _type(std::move(type)),
         _my_cells(std::move(cells)),
         _my_labels(std::move(handles)),
         _my_index(num_mapped_dimensions,
                   num_subspaces,
-                  _my_labels.view().handles())
+                  _my_labels.view())
     {
         assert(num_subspaces * _type.dense_subspace_size() == _my_cells.size());
     }

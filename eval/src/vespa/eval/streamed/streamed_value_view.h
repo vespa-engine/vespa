@@ -24,7 +24,7 @@ private:
 public:
     StreamedValueView(const ValueType &type, size_t num_mapped_dimensions,
                       TypedCells cells, size_t num_subspaces,
-                      const std::vector<label_t> &labels)
+                      const std::vector<string_id> &labels)
       : _type(type),
         _cells_ref(cells),
         _my_index(num_mapped_dimensions, num_subspaces, labels)

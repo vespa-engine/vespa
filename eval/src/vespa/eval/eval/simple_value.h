@@ -37,7 +37,7 @@ protected:
     size_t num_mapped_dims() const { return _num_mapped_dims; }
     size_t subspace_size() const { return _subspace_size; }
     void add_mapping(ConstArrayRef<vespalib::stringref> addr);
-    void add_mapping(ConstArrayRef<label_t> addr);
+    void add_mapping(ConstArrayRef<string_id> addr);
     MemoryUsage estimate_extra_memory_usage() const;
 public:
     SimpleValue(const ValueType &type, size_t num_mapped_dims_in, size_t subspace_size_in);
@@ -64,7 +64,7 @@ public:
     ~SimpleValueT() override;
     TypedCells cells() const override { return TypedCells(ConstArrayRef<T>(_cells)); }
     ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref> addr) override;
-    ArrayRef<T> add_subspace(ConstArrayRef<label_t> addr) override;
+    ArrayRef<T> add_subspace(ConstArrayRef<string_id> addr) override;
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         if (num_mapped_dims() == 0) {
             assert(size() == 1);

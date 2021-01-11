@@ -16,12 +16,12 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-using PA = std::vector<label_t *>;
-using CPA = std::vector<const label_t *>;
+using PA = std::vector<string_id *>;
+using CPA = std::vector<const string_id *>;
 
 using Handle = SharedStringRepo::Handle;
 
-vespalib::string as_str(label_t label) { return Handle::string_from_id(label); }
+vespalib::string as_str(string_id label) { return Handle::string_from_id(label); }
 
 std::vector<Layout> layouts = {
     {},
@@ -103,8 +103,8 @@ TEST(StreamedValueTest, streamed_value_can_be_built_and_inspected) {
     EXPECT_EQ(value->index().size(), 6);
     auto view = value->index().create_view({0});
     Handle query_handle("b");
-    label_t query = query_handle.id();
-    label_t label;
+    string_id query = query_handle.id();
+    string_id label;
     size_t subspace;
     std::map<vespalib::string,size_t> result;
     view->lookup(CPA{&query});

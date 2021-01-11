@@ -2,7 +2,23 @@
 
 #include "shared_string_repo.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.shared_string_repo");
+
 namespace vespalib {
+
+SharedStringRepo::Stats::Stats()
+    : active_entries(0),
+      total_entries(0)
+{
+}
+
+void
+SharedStringRepo::Stats::merge(const Stats &s)
+{
+    active_entries += s.active_entries;
+    total_entries += s.total_entries;
+}
 
 SharedStringRepo::Partition::~Partition() = default;
 
@@ -12,10 +28,20 @@ SharedStringRepo::Partition::find_leaked_entries(size_t my_idx) const
     for (size_t i = 0; i < _entries.size(); ++i) {
         if (!_entries[i].is_free()) {
             size_t id = (((i << PART_BITS) | my_idx) + 1);
-            fprintf(stderr, "WARNING: shared_string_repo: leaked string id: %zu ('%s')\n",
-                    id, _entries[i].str().c_str());
+            LOG(warning, "leaked string id: %zu (part: %zu/%d, string: '%s')\n",
+                id, my_idx, NUM_PARTS, _entries[i].str().c_str());
         }
     }
+}
+
+SharedStringRepo::Stats
+SharedStringRepo::Partition::stats() const
+{
+    Stats stats;
+    std::lock_guard guard(_lock);
+    stats.active_entries = _hash.size();
+    stats.total_entries = _entries.size();
+    return stats;
 }
 
 void
@@ -31,6 +57,8 @@ SharedStringRepo::Partition::make_entries(size_t hint)
     }
 }
 
+SharedStringRepo SharedStringRepo::_repo;
+
 SharedStringRepo::SharedStringRepo() = default;
 SharedStringRepo::~SharedStringRepo()
 {
@@ -39,38 +67,30 @@ SharedStringRepo::~SharedStringRepo()
     }
 }
 
-SharedStringRepo &
-SharedStringRepo::get()
+SharedStringRepo::Stats
+SharedStringRepo::stats()
 {
-    static SharedStringRepo repo;
-    return repo;
+    Stats stats;
+    for (const auto &part: _repo._partitions) {
+        stats.merge(part.stats());
+    }
+    return stats;
 }
 
-SharedStringRepo::WeakHandles::WeakHandles(size_t expect_size)
+SharedStringRepo::Handles::Handles()
     : _handles()
 {
-    _handles.reserve(expect_size);
 }
 
-SharedStringRepo::WeakHandles::~WeakHandles() = default;
-
-SharedStringRepo::StrongHandles::StrongHandles(size_t expect_size)
-    : _repo(SharedStringRepo::get()),
-      _handles()
-{
-    _handles.reserve(expect_size);
-}
-
-SharedStringRepo::StrongHandles::StrongHandles(StrongHandles &&rhs)
-    : _repo(rhs._repo),
-      _handles(std::move(rhs._handles))
+SharedStringRepo::Handles::Handles(Handles &&rhs)
+    : _handles(std::move(rhs._handles))
 {
     assert(rhs._handles.empty());
 }
 
-SharedStringRepo::StrongHandles::~StrongHandles()
+SharedStringRepo::Handles::~Handles()
 {
-    for (uint32_t handle: _handles) {
+    for (string_id handle: _handles) {
         _repo.reclaim(handle);
     }
 }

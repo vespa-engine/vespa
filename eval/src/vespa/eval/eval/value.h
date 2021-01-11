@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "label.h"
 #include "memory_usage_stuff.h"
 #include "value_type.h"
 #include "typed_cells.h"
+#include <vespa/vespalib/util/string_id.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
@@ -37,13 +37,13 @@ struct Value {
             // partial address for the dimensions given to
             // create_view. Results from the lookup is extracted using
             // the next_result function.
-            virtual void lookup(ConstArrayRef<const label_t*> addr) = 0;
+            virtual void lookup(ConstArrayRef<const string_id*> addr) = 0;
 
             // Extract the next result (if any) from the previous
             // lookup into the given partial address and index. Only
             // the labels for the dimensions NOT specified in
             // create_view will be extracted here.
-            virtual bool next_result(ConstArrayRef<label_t*> addr_out, size_t &idx_out) = 0;
+            virtual bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) = 0;
 
             virtual ~View() {}
         };
@@ -167,10 +167,10 @@ struct ValueBuilder : ValueBuilderBase {
     // add a dense subspace for the given address where labels are
     // specified by shared string repo ids. Note that the caller is
     // responsible for making sure the ids are valid 'long enough'.
-    virtual ArrayRef<T> add_subspace(ConstArrayRef<label_t> addr) = 0;
+    virtual ArrayRef<T> add_subspace(ConstArrayRef<string_id> addr) = 0;
 
     // convenience function to add a subspace with an empty address
-    ArrayRef<T> add_subspace() { return add_subspace(ConstArrayRef<label_t>()); }
+    ArrayRef<T> add_subspace() { return add_subspace(ConstArrayRef<string_id>()); }
 
     // Given the ownership of the builder itself, produce the newly
     // created value. This means that builders can only be used once,

@@ -129,7 +129,7 @@ size_t maybe_decode_num_blocks(nbostream &input, bool has_mapped_dims, const For
     return 1;
 }
 
-void encode_mapped_labels(nbostream &output, size_t num_mapped_dims, const std::vector<label_t> &addr) {
+void encode_mapped_labels(nbostream &output, size_t num_mapped_dims, const std::vector<string_id> &addr) {
     for (size_t i = 0; i < num_mapped_dims; ++i) {
         vespalib::string str = SharedStringRepo::Handle::string_from_id(addr[i]);
         output.writeSmallString(str);
@@ -231,8 +231,8 @@ struct CreateTensorSpecFromValue {
         TensorSpec spec(value.type().to_spec());
         size_t subspace_id = 0;
         size_t subspace_size = value.type().dense_subspace_size();
-        std::vector<label_t> labels(value.type().count_mapped_dimensions());
-        std::vector<label_t*> label_refs;
+        std::vector<string_id> labels(value.type().count_mapped_dimensions());
+        std::vector<string_id*> label_refs;
         for (auto &label: labels) {
             label_refs.push_back(&label);
         }
@@ -272,8 +272,8 @@ struct EncodeState {
 struct ContentEncoder {
     template<typename T>
     static void invoke(const Value &value, const EncodeState &state, nbostream &output) {
-        std::vector<label_t> address(state.num_mapped_dims);
-        std::vector<label_t*> a_refs(state.num_mapped_dims);;
+        std::vector<string_id> address(state.num_mapped_dims);
+        std::vector<string_id*> a_refs(state.num_mapped_dims);;
         for (size_t i = 0; i < state.num_mapped_dims; ++i) {
             a_refs[i] = &address[i];
         }

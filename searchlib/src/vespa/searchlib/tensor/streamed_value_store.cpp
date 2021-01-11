@@ -20,6 +20,7 @@ using vespalib::datastore::EntryRef;
 using namespace vespalib::eval;
 using vespalib::ConstArrayRef;
 using vespalib::MemoryUsage;
+using vespalib::string_id;
 
 namespace search::tensor {
 
@@ -30,10 +31,10 @@ namespace {
 template <typename CT, typename F>
 void each_subspace(const Value &value, size_t num_mapped, size_t dense_size, F f) {
     size_t subspace;
-    std::vector<label_t> addr(num_mapped);
-    std::vector<label_t*> refs;
+    std::vector<string_id> addr(num_mapped);
+    std::vector<string_id*> refs;
     refs.reserve(addr.size());
-    for (label_t &label: addr) {
+    for (string_id &label: addr) {
         refs.push_back(&label);
     }
     auto cells = value.cells().typify<CT>();
@@ -41,7 +42,7 @@ void each_subspace(const Value &value, size_t num_mapped, size_t dense_size, F f
     view->lookup({});
     while (view->next_result(refs, subspace)) {
         size_t offset = subspace * dense_size;
-        f(ConstArrayRef<label_t>(addr), ConstArrayRef<CT>(cells.begin() + offset, dense_size));
+        f(ConstArrayRef<string_id>(addr), ConstArrayRef<CT>(cells.begin() + offset, dense_size));
     }
 }
 
@@ -55,20 +56,18 @@ struct CreateTensorEntry {
     }
 };
 
-using HandleView = vespalib::SharedStringRepo::HandleView;
-
 struct MyFastValueView final : Value {
     const ValueType &my_type;
     FastValueIndex my_index;
     TypedCells my_cells;
-    MyFastValueView(const ValueType &type_ref, HandleView handle_view, TypedCells cells, size_t num_mapped, size_t num_spaces)
+    MyFastValueView(const ValueType &type_ref, const std::vector<string_id> &handle_view, TypedCells cells, size_t num_mapped, size_t num_spaces)
         : my_type(type_ref),
           my_index(num_mapped, handle_view, num_spaces),
           my_cells(cells)
     {
-        const std::vector<label_t> &labels = handle_view.handles();
+        const std::vector<string_id> &labels = handle_view;
         for (size_t i = 0; i < num_spaces; ++i) {
-            ConstArrayRef<label_t> addr(&labels[i * num_mapped], num_mapped);
+            ConstArrayRef<string_id> addr(&labels[i * num_mapped], num_mapped);
             my_index.map.add_mapping(FastAddrMap::hash_labels(addr));
         }
         assert(my_index.map.size() == num_spaces);
@@ -99,13 +98,14 @@ StreamedValueStore::TensorEntry::create_shared_entry(const Value &value)
 
 template <typename CT>
 StreamedValueStore::TensorEntryImpl<CT>::TensorEntryImpl(const Value &value, size_t num_mapped, size_t dense_size)
-    : handles(num_mapped * value.index().size()),
+    : handles(),
       cells()
 {
+    handles.reserve(num_mapped * value.index().size());
     cells.reserve(dense_size * value.index().size());
     auto store_subspace = [&](auto addr, auto data) {
-        for (label_t label: addr) {
-            handles.add(label);
+        for (string_id label: addr) {
+            handles.push_back(label);
         }
         for (CT entry: data) {
             cells.push_back(entry);
@@ -122,7 +122,7 @@ StreamedValueStore::TensorEntryImpl<CT>::create_fast_value_view(const ValueType 
     size_t dense_size = type_ref.dense_subspace_size();
     size_t num_spaces = cells.size() / dense_size;
     assert(dense_size * num_spaces == cells.size());
-    assert(num_mapped * num_spaces == handles.view().handles().size());
+    assert(num_mapped * num_spaces == handles.view().size());
     return std::make_unique<MyFastValueView>(type_ref, handles.view(), TypedCells(cells), num_mapped, num_spaces);
 }
 
@@ -134,8 +134,8 @@ StreamedValueStore::TensorEntryImpl<CT>::encode_value(const ValueType &type, ves
     size_t dense_size = type.dense_subspace_size();
     size_t num_spaces = cells.size() / dense_size;
     assert(dense_size * num_spaces == cells.size());
-    assert(num_mapped * num_spaces == handles.view().handles().size());
-    StreamedValueView my_value(type, num_mapped, TypedCells(cells), num_spaces, handles.view().handles());
+    assert(num_mapped * num_spaces == handles.view().size());
+    StreamedValueView my_value(type, num_mapped, TypedCells(cells), num_spaces, handles.view());
     ::vespalib::eval::encode_value(my_value, target);
 }
 
@@ -144,7 +144,7 @@ MemoryUsage
 StreamedValueStore::TensorEntryImpl<CT>::get_memory_usage() const
 {
     MemoryUsage usage = self_memory_usage<TensorEntryImpl<CT>>();
-    usage.merge(vector_extra_memory_usage(handles.view().handles()));
+    usage.merge(vector_extra_memory_usage(handles.view()));
     usage.merge(vector_extra_memory_usage(cells));
     return usage;
 }

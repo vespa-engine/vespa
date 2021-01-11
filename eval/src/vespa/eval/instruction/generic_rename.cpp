@@ -69,8 +69,8 @@ generic_rename(const Value &a,
                const ValueType &res_type, const ValueBuilderFactory &factory)
 {
     auto cells = a.cells().typify<CT>();
-    std::vector<label_t> output_address(sparse_plan.mapped_dims);
-    std::vector<label_t*> input_address;
+    std::vector<string_id> output_address(sparse_plan.mapped_dims);
+    std::vector<string_id*> input_address;
     for (size_t maps_to : sparse_plan.output_dimensions) {
         input_address.push_back(&output_address[maps_to]);
     }

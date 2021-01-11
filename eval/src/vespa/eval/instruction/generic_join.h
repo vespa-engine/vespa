@@ -68,10 +68,10 @@ struct SparseJoinState {
     const Value::Index                     &first_index;
     const Value::Index                     &second_index;
     const std::vector<size_t>              &second_view_dims;
-    std::vector<label_t>                    full_address;
-    std::vector<label_t*>                   first_address;
-    std::vector<const label_t*>             address_overlap;
-    std::vector<label_t*>                   second_only_address;
+    std::vector<string_id>                    full_address;
+    std::vector<string_id*>                   first_address;
+    std::vector<const string_id*>             address_overlap;
+    std::vector<string_id*>                   second_only_address;
     size_t                                  lhs_subspace;
     size_t                                  rhs_subspace;
     size_t                                 &first_subspace;

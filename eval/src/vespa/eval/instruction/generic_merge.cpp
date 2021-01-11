@@ -64,9 +64,9 @@ generic_mixed_merge(const Value &a, const Value &b,
     const size_t subspace_size = params.dense_subspace_size;
     size_t guess_subspaces = std::max(a.index().size(), b.index().size());
     auto builder = params.factory.create_transient_value_builder<OCT>(params.res_type, num_mapped, subspace_size, guess_subspaces);
-    std::vector<label_t> address(num_mapped);
-    std::vector<const label_t *> addr_cref;
-    std::vector<label_t *> addr_ref;
+    std::vector<string_id> address(num_mapped);
+    std::vector<const string_id *> addr_cref;
+    std::vector<string_id *> addr_ref;
     for (auto & ref : address) {
         addr_cref.push_back(&ref);
         addr_ref.push_back(&ref);
