@@ -253,7 +253,7 @@ public class DeploymentTriggerTest {
         var application = tester.newDeploymentContext().submit().deploy();
 
         // The first production zone is suspended:
-        tester.configServer().setSuspended(application.deploymentIdIn(ZoneId.from("prod", "us-central-1")), true);
+        tester.configServer().setSuspension(application.deploymentIdIn(ZoneId.from("prod", "us-central-1")), true);
 
         // A new change needs to be pushed out, but should not go beyond the suspended zone:
         application.submit()
@@ -265,7 +265,7 @@ public class DeploymentTriggerTest {
         application.assertNotRunning(productionUsWest1);
 
         // The zone is unsuspended so jobs start:
-        tester.configServer().setSuspended(application.deploymentIdIn(ZoneId.from("prod", "us-central-1")), false);
+        tester.configServer().setSuspension(application.deploymentIdIn(ZoneId.from("prod", "us-central-1")), false);
         tester.triggerJobs();
         application.runJob(productionUsWest1).runJob(productionUsEast3);
         assertEquals(Change.empty(), application.instance().change());

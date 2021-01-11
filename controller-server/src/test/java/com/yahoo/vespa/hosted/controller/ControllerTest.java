@@ -667,7 +667,7 @@ public class ControllerTest {
         DeploymentId deployment2 = context.deploymentIdIn(ZoneId.from(Environment.prod, RegionName.from("us-east-3")));
         assertFalse(tester.configServer().isSuspended(deployment1));
         assertFalse(tester.configServer().isSuspended(deployment2));
-        tester.configServer().setSuspended(deployment1, true);
+        tester.configServer().setSuspension(deployment1, true);
         assertTrue(tester.configServer().isSuspended(deployment1));
         assertFalse(tester.configServer().isSuspended(deployment2));
     }

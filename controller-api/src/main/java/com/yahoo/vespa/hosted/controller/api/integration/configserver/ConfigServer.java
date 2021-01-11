@@ -144,4 +144,8 @@ public interface ConfigServer {
 
     /** Get maximum resources consumed */
     QuotaUsage getQuotaUsage(DeploymentId deploymentId);
+
+    /** Sets suspension status — whether application node operations are orchestrated — for the given deployment. */
+    void setSuspension(DeploymentId deploymentId, boolean suspend);
+
 }
