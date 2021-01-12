@@ -145,32 +145,32 @@ enum Policy {
     /** Read your own instrument information */
     paymentInstrumentRead(Privilege.grant(Action.read)
                                    .on(PathGroup.billingInstrument)
-                                   .in(SystemName.PublicCd)),
+                                   .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Ability to update tenant payment instrument */
     paymentInstrumentUpdate(Privilege.grant(Action.update)
                                      .on(PathGroup.billingInstrument)
-                                     .in(SystemName.PublicCd)),
+                                     .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Ability to remove your own payment instrument */
     paymentInstrumentDelete(Privilege.grant(Action.delete)
                                      .on(PathGroup.billingInstrument)
-                                     .in(SystemName.PublicCd)),
+                                     .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Get the token to view instrument form */
     paymentInstrumentCreate(Privilege.grant(Action.read)
                                     .on(PathGroup.billingToken)
-                                    .in(SystemName.PublicCd)),
+                                    .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Ability to update tenant payment instrument */
     planUpdate(Privilege.grant(Action.update)
             .on(PathGroup.billingPlan)
-            .in(SystemName.PublicCd)),
+            .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Ability to update tenant collection method */
     collectionMethodUpdate(Privilege.grant(Action.update)
             .on(PathGroup.billingCollection)
-            .in(SystemName.PublicCd)),
+            .in(SystemName.PublicCd, SystemName.Public)),
 
 
     /** Read the generated bills */
@@ -181,7 +181,7 @@ enum Policy {
     /** Invoice management */
     hostedAccountant(Privilege.grant(Action.all())
                                     .on(PathGroup.hostedAccountant)
-                                    .in(SystemName.PublicCd)),
+                                    .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Listing endpoint certificate request info */
     endpointCertificateRequestInfo(Privilege.grant(Action.read)

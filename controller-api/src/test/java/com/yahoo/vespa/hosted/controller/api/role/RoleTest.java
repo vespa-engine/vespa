@@ -190,7 +190,7 @@ public class RoleTest {
 
     @Test
     public void billing_test() {
-        var tester = new EnforcerTester(publicCdEnforcer);
+        var tester = new EnforcerTester(publicEnforcer);
 
         var accountant = Role.hostedAccountant();
         var operator = Role.hostedOperator();
@@ -201,7 +201,7 @@ public class RoleTest {
 
         tester.on("/billing/v1/tenant/t1/token")
                 .assertAction(accountant)
-                .assertAction(operator, Action.read)
+                .assertAction(operator)
                 .assertAction(reader)
                 .assertAction(developer)
                 .assertAction(admin,    Action.read)
