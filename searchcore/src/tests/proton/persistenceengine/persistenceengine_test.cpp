@@ -6,7 +6,9 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/persistence/spi/documentselection.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
@@ -506,19 +508,36 @@ TEST_F("require that updates with bad ids are rejected", SimpleFixture)
                  f.engine.update(bucket1, tstamp1, bad_id_upd, context));
 }
 
-TEST_F("require that update is rejected if resource limit is reached", SimpleFixture)
+TEST_F("require that simple, cheap update is not rejected if resource limit is reached", SimpleFixture)
 {
     f._writeFilter._acceptWriteOperation = false;
     f._writeFilter._message = "Disk is full";
 
     Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
 
+    EXPECT_EQUAL(Result(Result::ErrorType::NONE, ""),
+                 f.engine.update(bucket1, tstamp1, upd1, context));
+}
+
+TEST_F("require that update is rejected if resource limit is reached", SimpleFixture)
+{
+    f._writeFilter._acceptWriteOperation = false;
+    f._writeFilter._message = "Disk is full";
+
+    Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+    DocumentType type(createDocType("type_with_one_string", 1));
+    document::Field field("string", 1, *document::DataType::STRING);
+    type.addField(field);
+    document::DocumentUpdate::SP upd = createUpd(type, docId1);
+    document::FieldUpdate fUpd(field);
+    fUpd.addUpdate(document::AssignValueUpdate(document::StringFieldValue("new value")));
+    upd->addUpdate(fUpd);
+
     EXPECT_EQUAL(
             Result(Result::ErrorType::RESOURCE_EXHAUSTED,
                    "Update operation rejected for document 'id:type1:type1::1': 'Disk is full'"),
-            f.engine.update(bucket1, tstamp1, upd1, context));
+            f.engine.update(bucket1, tstamp1, upd, context));
 }
-
 
 TEST_F("require that removes are routed to handlers", SimpleFixture)
 {
