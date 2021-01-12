@@ -62,3 +62,6 @@ accessLog.remoteAddressHeaders[]      string
 
 # HTTP request headers that contain remote port
 accessLog.remotePortHeaders[]         string
+
+# Whether to enable jdisc connection log
+connectionLog.enabled                 bool default=false
