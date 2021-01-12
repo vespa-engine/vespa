@@ -6,7 +6,6 @@ import com.yahoo.document.idstring.IdString;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -17,19 +16,19 @@ import static org.junit.Assert.fail;
  */
 public class IdIdStringTest {
     @Test
-    public void requireThatIdIdStringGeneratesProperString() throws Exception {
+    public void requireThatIdIdStringGeneratesProperString() {
         DocumentId docId = new DocumentId(new IdIdString("namespace", "type", "g=group", "foobar"));
         assertEquals("id:namespace:type:g=group:foobar", docId.toString());
     }
 
     @Test
-    public void requireThatEmptyKeyValuesAreOk() throws Exception {
+    public void requireThatEmptyKeyValuesAreOk() {
         DocumentId docId = new DocumentId(new IdIdString("namespace", "type", "", "foobar"));
         assertEquals("id:namespace:type::foobar", docId.toString());
     }
 
     @Test
-    public void requireThatIdIdStringCanBehaveLikeGroupDoc() throws Exception {
+    public void requireThatIdIdStringCanBehaveLikeGroupDoc() {
         DocumentId docId1 = new DocumentId(new IdIdString("namespace", "type", "g=foo", "foo"));
         DocumentId docId2 = new DocumentId(new IdIdString("namespace", "type", "g=foo", "bar"));
         DocumentId docId3 = new DocumentId(new IdIdString("namespace", "type", "g=bar", "baz"));
@@ -38,7 +37,7 @@ public class IdIdStringTest {
     }
 
     @Test
-    public void requireThatIdIdStringCanBehaveLikeUserDoc() throws Exception {
+    public void requireThatIdIdStringCanBehaveLikeUserDoc() {
         DocumentId docId1 = new DocumentId(new IdIdString("namespace", "type", "n=10", "foo"));
         DocumentId docId2 = new DocumentId(new IdIdString("namespace", "type", "n=10", "bar"));
         DocumentId docId3 = new DocumentId(new IdIdString("namespace", "type", "n=20", "baz"));
@@ -47,7 +46,7 @@ public class IdIdStringTest {
     }
 
     @Test
-    public void requireThatIllegalKeyValuesThrow() throws Exception {
+    public void requireThatIllegalKeyValuesThrow() {
         try {
             new IdIdString("namespace", "type", "illegal=key", "foo");
             fail();
@@ -57,7 +56,7 @@ public class IdIdStringTest {
     }
 
     @Test
-    public void requireThatKeysWithoutValuesThrow() throws Exception {
+    public void requireThatKeysWithoutValuesThrow() {
         try {
             new IdIdString("namespace", "type", "illegal-pair", "foo");
             fail();
@@ -67,7 +66,7 @@ public class IdIdStringTest {
     }
 
     @Test
-    public void requireTooLongIdThrowsWhileParsing() throws Exception {
+    public void requireTooLongIdThrowsWhileParsing()  {
         StringBuilder builder = new StringBuilder("id:ns:type::namespacespecificpart_01");
         for (int i = 0; i < 0x10000; i++) {
             builder.append('n');
@@ -78,12 +77,12 @@ public class IdIdStringTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Document id length 65572 is longer than max length of 65536", e.getMessage());
         }
-        // But there is a backdor
+        // But there is a backdoor
         assertEquals(65572, IdString.createIdStringLessStrict(builder.toString()).toString().length());
     }
 
     @Test
-    public void requireThatTooLongPreNamespaceSpecificThrowsWhileParsing() throws Exception {
+    public void requireThatTooLongPreNamespaceSpecificThrowsWhileParsing() {
         StringBuilder builder = new StringBuilder("id:");
         for (int i = 0; i < 0xff00; i++) {
             builder.append('n');
@@ -111,7 +110,7 @@ public class IdIdStringTest {
     }
 
     @Test
-    public void requireThatIdIdStringCanReplaceType() throws Exception {
+    public void requireThatIdIdStringCanReplaceType() {
         String type = IdIdString.replaceType("id:namespace:type::foo", "newType");
         assertEquals("id:namespace:newType::foo", type);
     }

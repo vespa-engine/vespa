@@ -3522,6 +3522,7 @@
       "public long getNumber()",
       "public java.lang.String getGroup()",
       "public static com.yahoo.document.idstring.IdString createIdString(java.lang.String)",
+      "public static com.yahoo.document.idstring.IdString createIdStringLessStrict(java.lang.String)",
       "public static com.yahoo.document.idstring.IdString createFromSerialized(java.lang.String)",
       "protected void <init>(com.yahoo.document.idstring.IdString$Scheme, java.lang.String, java.lang.String)",
       "public com.yahoo.document.idstring.IdString$Scheme getType()",
@@ -3535,7 +3536,9 @@
       "public java.lang.String toString()",
       "public com.yahoo.text.Utf8String toUtf8()"
     ],
-    "fields": []
+    "fields": [
+      "public static final int MAX_LENGTH"
+    ]
   },
   "com.yahoo.document.serialization.AnnotationReader": {
     "superClass": "java.lang.Object",

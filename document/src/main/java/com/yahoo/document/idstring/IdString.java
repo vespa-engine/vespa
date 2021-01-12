@@ -53,7 +53,7 @@ public abstract class IdString {
      * The document id string can only contain text characters.
      */
     public static IdString createIdString(String id) {
-        if (id.length() >= MAX_LENGTH) {
+        if (id.length() > MAX_LENGTH) {
             throw new IllegalArgumentException("Document id length " + id.length() + " is longer than max length of " + MAX_LENGTH);
         }
         validateTextString(id);
