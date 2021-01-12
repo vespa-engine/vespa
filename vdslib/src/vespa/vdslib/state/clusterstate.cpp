@@ -280,34 +280,40 @@ ClusterState::getNodeCount(const NodeType& type) const
     return _nodeCount[type];
 }
 
+namespace {
+    NodeState _G_defaultSDState(NodeType::STORAGE, State::DOWN);
+    NodeState _G_defaultDDState(NodeType::DISTRIBUTOR, State::DOWN);
+    NodeState _G_defaultSUState(NodeType::STORAGE, State::UP);
+    NodeState _G_defaultDUState(NodeType::DISTRIBUTOR, State::UP);
+    [[noreturn]] void throwUnknownType(const Node & node) __attribute__((noinline));
+    void throwUnknownType(const Node & node) {
+        throw vespalib::IllegalStateException("Unknown node type " + node.getType().toString(), VESPA_STRLOC);
+    }
+}
+
 const NodeState&
 ClusterState::getNodeState(const Node& node) const
 {
-        // If beyond node count, the node is down.
-    if (node.getIndex() >= _nodeCount[node.getType()]) {
-        if (node.getType() == NodeType::STORAGE) {
-            static NodeState defaultSDState(NodeType::STORAGE, State::DOWN);
-            return defaultSDState;
-        } else if (node.getType() == NodeType::DISTRIBUTOR) {
-            static NodeState defaultDDState(NodeType::DISTRIBUTOR, State::DOWN);
-            return defaultDDState;
-        }
-        throw vespalib::IllegalStateException(
-                "Unknown node type " + node.getType().toString(), VESPA_STRLOC);
-    }
-        // If it actually has an entry in map, return that
+    // If it actually has an entry in map, return that
     std::map<Node, NodeState>::const_iterator it = _nodeStates.find(node);
     if (it != _nodeStates.end()) return it->second;
+
+    // If beyond node count, the node is down.
+    if (__builtin_expect(node.getIndex() >= _nodeCount[node.getType()], false)) {
+        if (node.getType().getType() == NodeType::Type::STORAGE) {
+            return _G_defaultSDState;
+        } else if (node.getType().getType() == NodeType::Type::DISTRIBUTOR) {
+            return _G_defaultDDState;
+        }
+    } else {
         // If not mentioned in map but within node count, the node is up
-    if (node.getType() == NodeType::STORAGE) {
-        static NodeState defaultSUState(NodeType::STORAGE, State::UP);
-        return defaultSUState;
-    } else if (node.getType() == NodeType::DISTRIBUTOR) {
-        static NodeState defaultDUState(NodeType::DISTRIBUTOR, State::UP);
-        return defaultDUState;
+        if (node.getType().getType() == NodeType::Type::STORAGE) {
+            return _G_defaultSUState;
+        } else if (node.getType().getType() == NodeType::Type::DISTRIBUTOR) {
+            return _G_defaultDUState;
+        }
     }
-    throw vespalib::IllegalStateException(
-            "Unknown node type " + node.getType().toString(), VESPA_STRLOC);
+    throwUnknownType(node);
 }
 
 void

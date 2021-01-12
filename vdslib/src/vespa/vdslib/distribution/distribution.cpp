@@ -253,7 +253,8 @@ namespace {
      * decrease redundancy below total reliability. If redundancy !=
      * total reliability, see if non-last entries can be removed.
      */
-    void trimResult(std::vector<ScoredNode>& nodes, uint16_t redundancy) {
+    void
+    trimResult(std::vector<ScoredNode>& nodes, uint16_t redundancy) {
             // Initially record total reliability and use the first elements
             // until satisfied.
         uint32_t totalReliability = 0;
@@ -279,6 +280,19 @@ namespace {
                 }
             }
         }
+    }
+
+    void
+    insertOrdered(std::vector<ScoredNode> & tmpResults, ScoredNode && scoredNode) {
+        tmpResults.pop_back();
+        auto it = tmpResults.begin();
+        for (; it != tmpResults.end(); ++it) {
+            if (*it < scoredNode) {
+                tmpResults.insert(it, scoredNode);
+                return;
+            }
+        }
+        tmpResults.emplace_back(scoredNode);
     }
 }
 
@@ -339,21 +353,19 @@ Distribution::getIdealDistributorGroup(const document::BucketId& bucket,
     RandomGen random(seed);
     uint32_t currentIndex = 0;
     const std::map<uint16_t, Group*>& subGroups(parent.getSubGroups());
-    for (std::map<uint16_t, Group*>::const_iterator it = subGroups.begin();
-         it != subGroups.end(); ++it)
-    {
-        while (it->first < currentIndex++) random.nextDouble();
+    for (const auto & subGroup : subGroups) {
+        while (subGroup.first < currentIndex++) random.nextDouble();
         double score = random.nextDouble();
-        if (it->second->getCapacity() != 1) {
+        if (subGroup.second->getCapacity() != 1) {
             // Capacity shouldn't possibly be 0.
             // Verified in Group::setCapacity()
-            score = std::pow(score, 1.0 / it->second->getCapacity().getValue());
+            score = std::pow(score, 1.0 / subGroup.second->getCapacity().getValue());
         }
         if (score > result._score) {
             if (!_distributorAutoOwnershipTransferOnWholeGroupDown
-                || !allDistributorsDown(*it->second, clusterState))
+                || !allDistributorsDown(*subGroup.second, clusterState))
             {
-                result = ScoredGroup(score, it->second);
+                result = ScoredGroup(score, subGroup.second);
             }
         }
     }
@@ -372,9 +384,7 @@ Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
             if (ns.getState().oneOf("ui")) return false;
         }
     } else {
-        typedef std::map<uint16_t, Group*> GroupMap;
-        const GroupMap& subGroups(g.getSubGroups());
-        for (const auto & subGroup : subGroups) {
+        for (const auto & subGroup : g.getSubGroups()) {
             if (!allDistributorsDown(*subGroup.second, cs)) return false;
         }
     }
@@ -431,7 +441,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
         tmpResults.reserve(groupRedundancy);
         tmpResults.clear();
         tmpResults.resize(groupRedundancy);
-        for (uint32_t j=0, m=nodes.size(); j<m; ++j) {
+        for (uint32_t j=0; j < nodes.size(); ++j) {
             // Verify that the node is legal target before starting to grab
             // random number. Helps worst case of having to start new random
             // seed if the node that is out of order is illegal anyways.
@@ -456,17 +466,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
                 score = std::pow(score, 1.0 / nodeState.getCapacity().getValue());
             }
             if (score > tmpResults.back()._score) {
-                tmpResults.pop_back();
-                auto it = tmpResults.begin();
-                for (; it != tmpResults.end(); ++it) {
-                    if (score > it->_score) {
-                        tmpResults.insert(it, ScoredNode(score, nodes[j], nodeState.getReliability()));
-                        break;
-                    }
-                }
-                if (it == tmpResults.end()) {
-                    tmpResults.emplace_back(score, nodes[j], nodeState.getReliability());
-                }
+                insertOrdered(tmpResults, ScoredNode(score, nodes[j], nodeState.getReliability()));
             }
         }
         trimResult(tmpResults, groupRedundancy);

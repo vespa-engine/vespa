@@ -7,11 +7,8 @@
 
 namespace storage::lib {
 
-IdealNodeList::IdealNodeList() :
-    _idealNodes()
-{ }
-
-IdealNodeList::~IdealNodeList() { }
+IdealNodeList::IdealNodeList() = default;
+IdealNodeList::~IdealNodeList() = default;
 
 void
 IdealNodeList::print(std::ostream& out, bool , const std::string &) const
@@ -31,7 +28,7 @@ IdealNodeCalculatorImpl::IdealNodeCalculatorImpl()
     initUpStateMapping();
 }
 
-IdealNodeCalculatorImpl::~IdealNodeCalculatorImpl() { }
+IdealNodeCalculatorImpl::~IdealNodeCalculatorImpl() = default;
 
 void
 IdealNodeCalculatorImpl::setDistribution(const Distribution& d) {

@@ -11,8 +11,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/nodetype.h>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 /**
  * A list of ideal nodes, sorted in preferred order. Wraps a vector to hide
@@ -59,7 +58,7 @@ public:
         UP_STATE_COUNT
     };
 
-    virtual ~IdealNodeCalculator() {}
+    virtual ~IdealNodeCalculator() = default;
 
     virtual IdealNodeList getIdealNodes(const NodeType&,
                                         const document::BucketId&,
@@ -88,5 +87,4 @@ public:
     virtual void setClusterState(const ClusterState&) = 0;
 };
 
-} // lib
-} // storage
+}

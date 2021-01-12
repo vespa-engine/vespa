@@ -47,14 +47,13 @@ public:
     static const State& get(vespalib::stringref serialized);
     const vespalib::string& serialize() const { return _serialized; }
 
-    bool validReportedNodeState(const NodeType& node) const
-        { return _validReportedNodeState[node]; }
-    bool validWantedNodeState(const NodeType& node) const
-        { return _validWantedNodeState[node]; }
+    bool validReportedNodeState(const NodeType& node) const { return _validReportedNodeState[node]; }
+    bool validWantedNodeState(const NodeType& node) const { return _validWantedNodeState[node]; }
     bool validClusterState() const { return _validClusterState; }
 
-    bool maySetWantedStateForThisNodeState(const State& wantedState) const
-        { return (wantedState._rankValue <= _rankValue); }
+    bool maySetWantedStateForThisNodeState(const State& wantedState) const {
+        return (wantedState._rankValue <= _rankValue);
+    }
 
     /**
      * Get a string that represents a more human readable version of
@@ -76,7 +75,12 @@ public:
      * states, given as the single character they are serialized as.
      * For instance, "um" will check if this state is up or maintenance.
      */
-    bool oneOf(const char* states) const;
+    bool oneOf(const char* states) const {
+        for (const char* c = states; *c != '\0'; ++c) {
+            if (*c == _serialized[0]) return true;
+        }
+        return false;
+    }
 };
 
 }
