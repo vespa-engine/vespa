@@ -110,7 +110,8 @@ public class ReindexingMaintainer extends AbstractComponent {
             log.log(WARNING, "Interrupted while waiting for reindexing to shut down");
             Thread.currentThread().interrupt();
         }
-
+        if ( ! executor.isShutdown())
+            executor.shutdownNow();
     }
 
     static Map<DocumentType, Instant> parseReady(ReindexingConfig.Clusters cluster, DocumentTypeManager manager) {
