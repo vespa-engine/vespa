@@ -928,9 +928,11 @@ public class NodeRepository extends AbstractComponent {
     public Optional<NodeMutex> lockAndGet(Node node) {
         Node staleNode = node;
 
-        for (int i = 0; i < 4; ++i) {
+        final int maxRetries = 4;
+        for (int i = 0; i < maxRetries; ++i) {
             Mutex lockToClose = lock(staleNode);
             try {
+                // As an optimization we first try finding the node in the same state
                 Optional<Node> freshNode = getNode(staleNode.hostname(), staleNode.state());
                 if (freshNode.isEmpty()) {
                     freshNode = getNode(staleNode.hostname());
@@ -953,7 +955,8 @@ public class NodeRepository extends AbstractComponent {
             }
         }
 
-        throw new IllegalStateException("Giving up trying to fetch an up to date node under lock: " + node.hostname());
+        throw new IllegalStateException("Giving up (after " + maxRetries + " attempts) " +
+                "fetching an up to date node under lock: " + node.hostname());
     }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */

@@ -332,7 +332,7 @@ public class NodePatcher implements AutoCloseable {
         }
 
         public List<Node> nodes() {
-            return List.copyOf(nodes.values().stream().map(NodeMutex::node).collect(Collectors.toList()));
+            return nodes.values().stream().map(NodeMutex::node).collect(Collectors.toList());
         }
 
         @Override

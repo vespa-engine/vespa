@@ -21,7 +21,11 @@ public class NodeMutex implements Mutex {
     @Override public void close() { mutex.close(); }
 
     /** Returns a node mutex with the same mutex as this, but the given node.  Be sure to close only one. */
-    public NodeMutex with(Node newNode) {
-        return new NodeMutex(newNode, mutex);
+    public NodeMutex with(Node updatedNode) {
+        if (!node.equals(updatedNode)) {
+            throw new IllegalArgumentException("Updated node not equal to current");
+        }
+
+        return new NodeMutex(updatedNode, mutex);
     }
 }
