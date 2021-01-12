@@ -67,7 +67,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     // TODO These should match the requested expiration
     static final Duration UPDATE_PERIOD = Duration.ofDays(1);
     static final Duration AWAIT_TERMINTATION_TIMEOUT = Duration.ofSeconds(90);
-    private final static Duration ROLE_SSL_CONTEXT_EXPIRY = Duration.ofHours(24);
+    private final static Duration ROLE_SSL_CONTEXT_EXPIRY = Duration.ofHours(2);
     private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(30);
 
     // TODO Make path to trust store paths config
@@ -280,6 +280,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try (ZtsClient client = createZtsClient()) {
             X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
             updateRoleKeyManager(role, roleCertificate);
+            log.info(String.format("Requester role certificate for role %s, expires: %s", role.toResourceNameString(), roleCertificate.getNotAfter().toInstant().toString()));
             return roleCertificate;
         }
     }
