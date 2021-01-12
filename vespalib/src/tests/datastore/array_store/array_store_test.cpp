@@ -3,6 +3,7 @@
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/datastore/memstats.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/traits.h>
@@ -26,7 +27,7 @@ struct Fixture
     using ConstArrayRef = typename ArrayStoreType::ConstArrayRef;
     using EntryVector = std::vector<EntryT>;
     using value_type = EntryT;
-    using ReferenceStore = std::map<EntryRef, EntryVector>;
+    using ReferenceStore = vespalib::hash_map<EntryRef, EntryVector>;
 
     ArrayStoreType store;
     ReferenceStore refStore;

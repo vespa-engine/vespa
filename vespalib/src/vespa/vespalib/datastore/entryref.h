@@ -16,6 +16,7 @@ public:
     EntryRef() noexcept : _ref(0u) { }
     explicit EntryRef(uint32_t ref_) noexcept : _ref(ref_) { }
     uint32_t ref() const noexcept { return _ref; }
+    uint32_t hash() const noexcept { return _ref; }
     bool valid() const noexcept { return _ref != 0u; }
     bool operator==(const EntryRef &rhs) const noexcept { return _ref == rhs._ref; }
     bool operator!=(const EntryRef &rhs) const noexcept { return _ref != rhs._ref; }
@@ -32,17 +33,17 @@ public:
     EntryRefT() noexcept : EntryRef() {}
     EntryRefT(size_t offset_, uint32_t bufferId_) noexcept;
     EntryRefT(const EntryRef & ref_) noexcept : EntryRef(ref_.ref()) {}
-    size_t offset() const { return _ref & (offsetSize() - 1); }
-    uint32_t bufferId() const { return _ref >> OffsetBits; }
-    static size_t offsetSize() { return 1ul << OffsetBits; }
-    static uint32_t numBuffers() { return 1 << BufferBits; } 
-    static size_t align(size_t val) { return val; }
-    static size_t pad(size_t val) { (void) val; return 0ul; }
+    size_t offset() const noexcept { return _ref & (offsetSize() - 1); }
+    uint32_t bufferId() const noexcept { return _ref >> OffsetBits; }
+    static size_t offsetSize() noexcept { return 1ul << OffsetBits; }
+    static uint32_t numBuffers() noexcept { return 1 << BufferBits; }
+    static size_t align(size_t val) noexcept { return val; }
+    static size_t pad(size_t val) noexcept { (void) val; return 0ul; }
     static constexpr bool isAlignedType = false;
     // TODO: Remove following temporary methods when removing
     // AlignedEntryRefT
-    size_t unscaled_offset() const { return offset(); }
-    static size_t unscaled_offset_size() { return offsetSize(); }
+    size_t unscaled_offset() const noexcept { return offset(); }
+    static size_t unscaled_offset_size() noexcept { return offsetSize(); }
 };
 
 /**
