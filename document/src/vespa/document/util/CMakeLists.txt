@@ -2,6 +2,7 @@
 vespa_add_library(document_util OBJECT
     SOURCES
     bytebuffer.cpp
+    feed_reject_helper.cpp
     printable.cpp
     serializableexceptions.cpp
     stringutil.cpp

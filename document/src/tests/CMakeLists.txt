@@ -13,6 +13,7 @@ vespa_add_executable(document_gtest_runner_app TEST
     documenttestcase.cpp
     documenttypetestcase.cpp
     documentupdatetestcase.cpp
+    feed_reject_helper_test.cpp
     fieldpathupdatetestcase.cpp
     fieldsettest.cpp
     fixed_bucket_spaces_test.cpp
