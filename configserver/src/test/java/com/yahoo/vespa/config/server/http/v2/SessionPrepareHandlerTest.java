@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -81,7 +82,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .build();
         Clock clock = componentRegistry.getClock();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
-        tenantRepository = new TenantRepository(componentRegistry);
+        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
         tenantRepository.addTenant(tenant);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
