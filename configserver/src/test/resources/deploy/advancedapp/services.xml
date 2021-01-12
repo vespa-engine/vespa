@@ -22,7 +22,7 @@
         <documents>
             <document type="keyvalue" mode="index"/>
         </documents>
-        <nodes>>
+        <nodes>
             <node hostalias="node1" distribution-key="0"/>
         </nodes>
     </content>

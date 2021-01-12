@@ -187,7 +187,7 @@ public class SessionPreparerTest {
     @Test(expected = InvalidApplicationException.class)
     public void require_exception_for_overlapping_host() throws IOException {
         FilesApplicationPackage app = getApplicationPackage(testApp);
-        HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
+        HostRegistry hostValidator = new HostRegistry();
         hostValidator.update(applicationId("foo"), Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().applicationId(applicationId("default")).build(),
                          Optional.empty(), Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient());
@@ -200,7 +200,7 @@ public class SessionPreparerTest {
             if (level.equals(Level.WARNING) && message.contains("The host mytesthost is already in use")) logged.append("ok");
         };
         FilesApplicationPackage app = getApplicationPackage(testApp);
-        HostRegistry<ApplicationId> hostValidator = new HostRegistry<>();
+        HostRegistry hostValidator = new HostRegistry();
         ApplicationId applicationId = applicationId();
         hostValidator.update(applicationId, Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, logger, new PrepareParams.Builder().applicationId(applicationId).build(),
@@ -367,7 +367,7 @@ public class SessionPreparerTest {
 
     private PrepareResult prepare(File app, PrepareParams params, long sessionId) throws IOException {
         FilesApplicationPackage applicationPackage = getApplicationPackage(app);
-        return preparer.prepare(new HostRegistry<>(), getLogger(), params,
+        return preparer.prepare(new HostRegistry(), getLogger(), params,
                                 Optional.empty(), Instant.now(), applicationPackage.getAppDir(),
                                 applicationPackage, createSessionZooKeeperClient(sessionId));
     }

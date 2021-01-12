@@ -56,7 +56,8 @@ public class TenantsMaintainerTest {
         assertNotNull(tenantRepository.getTenant(TenantName.defaultName()));
         assertNotNull(tenantRepository.getTenant(TenantRepository.HOSTED_VESPA_TENANT));
 
-        // Add tenant again and deploy
+        // Delete app, add tenant again and deploy
+        tester.applicationRepository().delete(applicationId(shouldNotBeDeleted));
         tenantRepository.addTenant(shouldBeDeleted);
         tester.deployApp(applicationPackage, prepareParams(shouldBeDeleted));
     }
