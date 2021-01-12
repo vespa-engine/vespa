@@ -229,7 +229,7 @@ public class ContentPolicy extends SlobrokPolicy {
             clusterName = params.get("cluster");
             distributionConfigId = params.get("clusterconfigid"); // TODO jonmv: remove
             slobrokHostPatternGenerator = createPatternGenerator();
-            if (clusterName == null) throw new IllegalArgumentException("Required parameter cluster with clustername not set");
+            if (clusterName == null) throw new IllegalArgumentException("Required parameter 'cluster', the name of the content cluster, not set");
         }
 
         String getDistributionConfigId() {
