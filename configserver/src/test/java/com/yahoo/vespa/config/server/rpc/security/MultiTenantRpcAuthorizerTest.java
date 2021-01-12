@@ -7,7 +7,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.config.provision.security.NodeIdentifierException;
 import com.yahoo.config.provision.security.NodeIdentity;
@@ -66,7 +65,7 @@ public class MultiTenantRpcAuthorizerTest {
     @Test
     public void configserver_can_access_files_and_config() throws InterruptedException, ExecutionException {
         RpcAuthorizer authorizer = createAuthorizer(new NodeIdentity.Builder(NodeType.config).build(),
-                                                    new HostRegistry<>());
+                                                    new HostRegistry());
 
         Request configRequest = createConfigRequest(new ConfigKey<>("name", "configid", "namespace"), HOSTNAME);
         authorizer.authorizeConfigRequest(configRequest)
@@ -83,8 +82,8 @@ public class MultiTenantRpcAuthorizerTest {
                 .applicationId(APPLICATION_ID)
                 .build();
 
-        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
-        hostRegistry.update(APPLICATION_ID.tenant(), List.of(HOSTNAME.value()));
+        HostRegistry hostRegistry = new HostRegistry();
+        hostRegistry.update(APPLICATION_ID, List.of(HOSTNAME.value()));
 
         RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
 
@@ -99,7 +98,7 @@ public class MultiTenantRpcAuthorizerTest {
 
     @Test
     public void proxy_node_can_access_lbservice_config() throws ExecutionException, InterruptedException {
-        RpcAuthorizer authorizer = createAuthorizer(new NodeIdentity.Builder(NodeType.proxy).build(), new HostRegistry<>());
+        RpcAuthorizer authorizer = createAuthorizer(new NodeIdentity.Builder(NodeType.proxy).build(), new HostRegistry());
 
         Request configRequest = createConfigRequest(
                 new ConfigKey<>(LbServicesConfig.CONFIG_DEF_NAME, "*", LbServicesConfig.CONFIG_DEF_NAMESPACE),
@@ -110,7 +109,7 @@ public class MultiTenantRpcAuthorizerTest {
 
     @Test
     public void tenant_node_cannot_access_lbservice_config() throws ExecutionException, InterruptedException {
-        RpcAuthorizer authorizer = createAuthorizer(new NodeIdentity.Builder(NodeType.tenant).build(), new HostRegistry<>());
+        RpcAuthorizer authorizer = createAuthorizer(new NodeIdentity.Builder(NodeType.tenant).build(), new HostRegistry());
 
         Request configRequest = createConfigRequest(
                 new ConfigKey<>(LbServicesConfig.CONFIG_DEF_NAME, "*", LbServicesConfig.CONFIG_DEF_NAMESPACE),
@@ -129,8 +128,8 @@ public class MultiTenantRpcAuthorizerTest {
                 .applicationId(APPLICATION_ID)
                 .build();
 
-        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
-        hostRegistry.update(APPLICATION_ID.tenant(), List.of(HOSTNAME.value()));
+        HostRegistry hostRegistry = new HostRegistry();
+        hostRegistry.update(APPLICATION_ID, List.of(HOSTNAME.value()));
 
         RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
 
@@ -149,8 +148,8 @@ public class MultiTenantRpcAuthorizerTest {
                 .applicationId(EVIL_APP_ID)
                 .build();
 
-        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
-        hostRegistry.update(APPLICATION_ID.tenant(), List.of(HOSTNAME.value()));
+        HostRegistry hostRegistry = new HostRegistry();
+        hostRegistry.update(APPLICATION_ID, List.of(HOSTNAME.value()));
 
         RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
 
@@ -169,7 +168,7 @@ public class MultiTenantRpcAuthorizerTest {
                 .applicationId(EVIL_APP_ID)
                 .build();
 
-        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
+        HostRegistry hostRegistry = new HostRegistry();
 
         RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
 
@@ -188,8 +187,8 @@ public class MultiTenantRpcAuthorizerTest {
                 .applicationId(EVIL_APP_ID)
                 .build();
 
-        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
-        hostRegistry.update(EVIL_APP_ID.tenant(), List.of(HOSTNAME.value()));
+        HostRegistry hostRegistry = new HostRegistry();
+        hostRegistry.update(EVIL_APP_ID, List.of(HOSTNAME.value()));
 
         RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
 
@@ -208,7 +207,7 @@ public class MultiTenantRpcAuthorizerTest {
                 .applicationId(APPLICATION_ID)
                 .build();
 
-        HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
+        HostRegistry hostRegistry = new HostRegistry();
 
         RpcAuthorizer authorizer = createAuthorizer(identity, hostRegistry);
 
@@ -219,7 +218,7 @@ public class MultiTenantRpcAuthorizerTest {
     }
 
 
-    private static RpcAuthorizer createAuthorizer(NodeIdentity identity, HostRegistry<TenantName> hostRegistry) {
+    private static RpcAuthorizer createAuthorizer(NodeIdentity identity, HostRegistry hostRegistry) {
         return new MultiTenantRpcAuthorizer(
                 new StaticNodeIdentifier(identity),
                 hostRegistry,
