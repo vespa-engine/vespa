@@ -8,5 +8,6 @@
     "budgetUsed": 0.0,
     "clusterSize": 5
   },
-  "applications": []
+  "applications": [],
+  "metaData":{}
 }
