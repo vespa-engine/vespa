@@ -30,7 +30,7 @@ public class CoreCollector {
     private static final Pattern FROM_PATH_PATTERN = Pattern.compile("^.* from '(?<path>.*?)'");
     static final String GDB_PATH = "/opt/rh/devtoolset-9/root/bin/gdb";
     static final Map<String, Object> JAVA_HEAP_DUMP_METADATA =
-            Map.of("bin_path", "java", "backtrace", "Heap dump, no backtrace available");
+            Map.of("bin_path", "java", "backtrace", List.of("Heap dump, no backtrace available"));
 
     private final ContainerOperations docker;
 
