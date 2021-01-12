@@ -3,12 +3,10 @@ package com.yahoo.vespa.config.server.rpc.security;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
 
 /**
@@ -23,13 +21,13 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
     @Inject
     public DefaultRpcAuthorizerProvider(ConfigserverConfig config,
                                         NodeIdentifier nodeIdentifier,
-                                        HostRegistry hostRegistry,
+                                        GlobalComponentRegistry componentRegistry,
                                         RequestHandlerProvider handlerProvider) {
         boolean useMultiTenantAuthorizer =
                 TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant() && config.hostedVespa();
         this.rpcAuthorizer =
                 useMultiTenantAuthorizer
-                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistry, handlerProvider, getThreadPoolSize(config))
+                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, componentRegistry.hostRegistry(), handlerProvider, getThreadPoolSize(config))
                         : new NoopRpcAuthorizer();
     }
 
