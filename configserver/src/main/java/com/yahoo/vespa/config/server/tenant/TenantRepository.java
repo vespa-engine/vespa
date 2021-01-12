@@ -79,6 +79,7 @@ public class TenantRepository {
 
     private final Map<TenantName, Tenant> tenants = Collections.synchronizedMap(new LinkedHashMap<>());
     private final GlobalComponentRegistry componentRegistry;
+    private final HostRegistry hostRegistry;
     private final List<TenantListener> tenantListeners = Collections.synchronizedList(new ArrayList<>());
     private final Curator curator;
 
@@ -96,8 +97,9 @@ public class TenantRepository {
      * @param componentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      */
     @Inject
-    public TenantRepository(GlobalComponentRegistry componentRegistry) {
+    public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry) {
         this.componentRegistry = componentRegistry;
+        this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                               new DaemonThreadFactory("bootstrap tenants"));
@@ -229,7 +231,7 @@ public class TenantRepository {
                                        componentRegistry.getMetrics(),
                                        componentRegistry.getReloadListener(),
                                        componentRegistry.getConfigserverConfig(),
-                                       componentRegistry.hostRegistry(),
+                                       hostRegistry,
                                        new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                        componentRegistry.getClock());
         SessionRepository sessionRepository = new SessionRepository(tenantName,

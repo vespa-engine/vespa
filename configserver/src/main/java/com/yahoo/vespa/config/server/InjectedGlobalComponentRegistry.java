@@ -144,7 +144,4 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         return secretStore;
     }
 
-    @Override
-    public HostRegistry hostRegistry() { return hostRegistry; }
-
 }

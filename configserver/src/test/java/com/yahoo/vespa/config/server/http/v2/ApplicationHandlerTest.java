@@ -26,6 +26,7 @@ import com.yahoo.vespa.config.server.application.ClusterReindexing.Status;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -109,7 +110,7 @@ public class ApplicationHandlerTest {
                 .configServerConfig(configserverConfig)
                 .clock(clock)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry);
+        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
         tenantRepository.addTenant(mytenantName);
         provisioner = new MockProvisioner();
         orchestrator = new OrchestratorMock();

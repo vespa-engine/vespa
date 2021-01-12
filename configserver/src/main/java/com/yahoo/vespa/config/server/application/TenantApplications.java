@@ -87,7 +87,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     // For testing only
-    public static TenantApplications create(GlobalComponentRegistry componentRegistry, TenantName tenantName) {
+    public static TenantApplications create(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry, TenantName tenantName) {
         return new TenantApplications(tenantName,
                                       componentRegistry.getCurator(),
                                       componentRegistry.getZkWatcherExecutor(),
@@ -95,7 +95,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       componentRegistry.getMetrics(),
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),
-                                      new HostRegistry(),
+                                      hostRegistry,
                                       new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                       componentRegistry.getClock());
     }

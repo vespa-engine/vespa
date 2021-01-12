@@ -47,5 +47,4 @@ public interface GlobalComponentRegistry {
     FlagSource getFlagSource();
     ExecutorService getZkCacheExecutor();
     SecretStore getSecretStore();
-    HostRegistry hostRegistry();
 }
