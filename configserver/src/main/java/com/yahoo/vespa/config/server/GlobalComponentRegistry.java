@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -9,7 +9,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
-import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
@@ -38,7 +38,6 @@ public interface GlobalComponentRegistry {
     ReloadListener getReloadListener();
     ConfigDefinitionRepo getStaticConfigDefinitionRepo();
     PermanentApplicationPackage getPermanentApplicationPackage();
-    HostRegistries getHostRegistries();
     ModelFactoryRegistry getModelFactoryRegistry();
     Optional<Provisioner> getHostProvisioner();
     Zone getZone();
