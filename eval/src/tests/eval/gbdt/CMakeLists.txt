@@ -5,7 +5,7 @@ vespa_add_executable(eval_gbdt_test_app TEST
     DEPENDS
     vespaeval
 )
-vespa_add_test(NAME eval_gbdt_test_app COMMAND eval_gbdt_test_app COST 600)
+vespa_add_test(NAME eval_gbdt_test_app NO_VALGRIND COMMAND eval_gbdt_test_app)
 vespa_add_executable(eval_gbdt_benchmark_app
     SOURCES
     gbdt_benchmark.cpp
