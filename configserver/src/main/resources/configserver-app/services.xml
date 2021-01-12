@@ -27,7 +27,7 @@
     <component id="com.yahoo.vespa.config.server.InjectedGlobalComponentRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.tenant.TenantRepository" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.application.PermanentApplicationPackage" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.host.HostRegistry" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.host.HostRegistries" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ApplicationRepository" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.version.VersionState" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.zookeeper.ConfigCurator" bundle="configserver" />
