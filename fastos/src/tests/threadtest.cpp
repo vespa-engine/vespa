@@ -23,34 +23,29 @@ class ThreadTest : public ThreadTestBase
 
       if (Progress(pool != nullptr, "Allocating ThreadPool")) {
          int i;
-         Job jobs[MAX_THREADS];
+         Job jobs[MAX_THREADS+1];
 
-         for (i=0; i<MAX_THREADS; i++) {
-            jobs[i].code = PRINT_MESSAGE_AND_WAIT3MSEC;
+         for (i=0; i<MAX_THREADS+1; i++) {
+            jobs[i].code = WAIT_FOR_BREAK_FLAG;
             jobs[i].message = static_cast<char *>(malloc(100));
             sprintf(jobs[i].message, "Thread %d invocation", i+1);
          }
 
          for (i=0; i<MAX_THREADS+1; i++) {
             if (i==MAX_THREADS) {
-               bool rc = (nullptr == pool->NewThread(this, static_cast<void *>(&jobs[0])));
+                while (pool->GetNumInactiveThreads() > 0);
+                jobs[MAX_THREADS].code = PRINT_MESSAGE_AND_WAIT3MSEC;
+               bool rc = (nullptr == pool->NewThread(this, static_cast<void *>(&jobs[MAX_THREADS])));
                Progress(rc, "Creating too many threads should fail.");
             } else {
-               bool rc = (nullptr != pool->NewThread(this, static_cast<void *>(&jobs[i])));
-               Progress(rc, "Creating Thread");
+               jobs[i].ownThread = pool->NewThread(this, static_cast<void *>(&jobs[i]));
+               Progress(jobs[i].ownThread != nullptr, "Creating Thread");
             }
-         };
-
-         WaitForThreadsToFinish(jobs, MAX_THREADS);
-
-         Progress(true, "Verifying result codes...");
-         for (i=0; i<MAX_THREADS; i++) {
-            Progress(jobs[i].result ==
-                     static_cast<int>(strlen(jobs[i].message)),
-                     "Checking result code from thread (%d==%d)",
-                     jobs[i].result, strlen(jobs[i].message));
          }
-
+          for (i=0; i<MAX_THREADS; i++) {
+              jobs[i].ownThread->SetBreakFlag();
+          }
+          
          Progress(true, "Closing threadpool...");
          pool->Close();
 
