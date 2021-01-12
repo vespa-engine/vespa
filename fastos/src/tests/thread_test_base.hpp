@@ -22,27 +22,22 @@ public:
    }
    virtual ~ThreadTestBase() {}
 
-   void PrintProgress (char *string) override
-   {
+   void PrintProgress (char *string) override {
       std::lock_guard<std::mutex> guard(printMutex);
       BaseTest::PrintProgress(string);
    }
 
    void Run (FastOS_ThreadInterface *thread, void *arg) override;
 
-   void WaitForThreadsToFinish (Job *jobs, int count)
-   {
+   void WaitForThreadsToFinish (Job *jobs, int count) {
       int i;
 
       Progress(true, "Waiting for threads to finish...");
-      for(;;)
-      {
+      for(;;) {
          bool threadsFinished=true;
 
-         for(i=0; i<count; i++)
-         {
-            if(jobs[i].result == -1)
-            {
+         for (i=0; i<count; i++) {
+            if (jobs[i].result == -1) {
                threadsFinished = false;
                break;
             }
@@ -105,11 +100,10 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
          result = static_cast<int>(number);
 
          int sleepOn = (INCREASE_NUMBER_AMOUNT/2) * 321/10000;
-         for(int i=0; i<(INCREASE_NUMBER_AMOUNT/2); i++)
-         {
+         for (int i=0; i<(INCREASE_NUMBER_AMOUNT/2); i++) {
             number = number + 2;
 
-            if(i == sleepOn)
+            if (i == sleepOn)
                 std::this_thread::sleep_for(1ms);
          }
 
@@ -122,8 +116,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
 
       case WAIT_FOR_BREAK_FLAG:
       {
-         for(;;)
-         {
+         for(;;) {
              std::this_thread::sleep_for(1us);
 
             if (thread->GetBreakFlag()) {
@@ -141,19 +134,8 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
               guard = std::unique_lock<std::mutex>(*job->mutex);
           }
 
-         if(job->otherThread != nullptr)
-            job->otherThread->Join();
-
-         break;
-      }
-
-      case WAIT_FOR_CONDITION:
-      {
-         std::unique_lock<std::mutex> guard(*job->mutex);
-         job->result = 1;
-         job->condition->wait(guard);
-         guard.unlock();
-         job->result = 0;
+         if (job->otherThread != nullptr)
+             job->otherThread->Join();
 
          break;
       }
@@ -169,14 +151,6 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
             job->result = 1;
          else
             job->result = -1;
-         break;
-      }
-
-      case WAIT2SEC_AND_SIGNALCOND:
-      {
-          std::this_thread::sleep_for(2s);
-         job->condition->notify_one();
-         job->result = 1;
          break;
       }
 
