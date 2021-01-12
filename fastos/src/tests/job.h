@@ -11,9 +11,7 @@ enum JobCode
    INCREASE_NUMBER,
    WAIT_FOR_BREAK_FLAG,
    WAIT_FOR_THREAD_TO_FINISH,
-   WAIT_FOR_CONDITION,
    TEST_ID,
-   WAIT2SEC_AND_SIGNALCOND,
    SILENTNOP,
    NOP
 };
@@ -30,12 +28,8 @@ public:
    std::mutex *mutex;
    std::condition_variable *condition;
    FastOS_ThreadInterface *otherThread, *ownThread;
-   double average;
    int result;
    FastOS_ThreadId _threadId;
-   Job *otherjob;
-   int bouncewakeupcnt;
-   bool bouncewakeup;
 
    Job()
      : code(NOP),
@@ -44,12 +38,8 @@ public:
        condition(nullptr),
        otherThread(nullptr),
        ownThread(nullptr),
-       average(0.0),
        result(-1),
-       _threadId(),
-       otherjob(nullptr),
-       bouncewakeupcnt(0),
-       bouncewakeup(false)
+       _threadId()
    {
    }
 

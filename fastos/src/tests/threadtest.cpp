@@ -15,69 +15,28 @@ class ThreadTest : public ThreadTestBase
 {
    int Main () override;
 
-   void WaitForXThreadsToHaveWait (Job *jobs,
-                                   int jobCount,
-                                   std::mutex &mutex,
-                                   int numWait)
-   {
-      Progress(true, "Waiting for %d threads to be in wait state", numWait);
-
-      int oldNumber=-10000;
-      for(;;)
-      {
-         int waitingThreads=0;
-
-         {
-             std::lock_guard<std::mutex> guard(mutex);
-             for(int i=0; i<jobCount; i++)
-             {
-                 if(jobs[i].result == 1)
-                     waitingThreads++;
-             }
-         }
-
-         if(waitingThreads != oldNumber)
-            Progress(true, "%d threads are waiting", waitingThreads);
-
-         oldNumber = waitingThreads;
-
-         if(waitingThreads == numWait)
-            break;
-
-         std::this_thread::sleep_for(100ms);
-      }
-   }
-
    void TooManyThreadsTest ()
    {
       TestHeader("Too Many Threads Test");
 
       FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024, MAX_THREADS);
 
-      if(Progress(pool != nullptr, "Allocating ThreadPool"))
-      {
+      if (Progress(pool != nullptr, "Allocating ThreadPool")) {
          int i;
          Job jobs[MAX_THREADS];
 
-         for(i=0; i<MAX_THREADS; i++)
-         {
+         for (i=0; i<MAX_THREADS; i++) {
             jobs[i].code = PRINT_MESSAGE_AND_WAIT3MSEC;
             jobs[i].message = static_cast<char *>(malloc(100));
             sprintf(jobs[i].message, "Thread %d invocation", i+1);
          }
 
-         for(i=0; i<MAX_THREADS+1; i++)
-         {
-            if(i==MAX_THREADS)
-            {
-               bool rc = (nullptr == pool->NewThread(this,
-                                  static_cast<void *>(&jobs[0])));
+         for (i=0; i<MAX_THREADS+1; i++) {
+            if (i==MAX_THREADS) {
+               bool rc = (nullptr == pool->NewThread(this, static_cast<void *>(&jobs[0])));
                Progress(rc, "Creating too many threads should fail.");
-            }
-            else
-            {
-               bool rc = (nullptr != pool->NewThread(this,
-                                  static_cast<void *>(&jobs[i])));
+            } else {
+               bool rc = (nullptr != pool->NewThread(this, static_cast<void *>(&jobs[i])));
                Progress(rc, "Creating Thread");
             }
          };
@@ -85,8 +44,7 @@ class ThreadTest : public ThreadTestBase
          WaitForThreadsToFinish(jobs, MAX_THREADS);
 
          Progress(true, "Verifying result codes...");
-         for(i=0; i<MAX_THREADS; i++)
-         {
+         for (i=0; i<MAX_THREADS; i++) {
             Progress(jobs[i].result ==
                      static_cast<int>(strlen(jobs[i].message)),
                      "Checking result code from thread (%d==%d)",
@@ -108,8 +66,7 @@ class ThreadTest : public ThreadTestBase
 
       FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024);
 
-      if(Progress(pool != nullptr, "Allocating ThreadPool"))
-      {
+      if (Progress(pool != nullptr, "Allocating ThreadPool")) {
          Job job;
 
          job.code = NOP;
@@ -129,8 +86,7 @@ class ThreadTest : public ThreadTestBase
       PrintSeparator();
    }
 
-  void ThreadCreatePerformance (bool silent, int count, int outercount)
-  {
+  void ThreadCreatePerformance (bool silent, int count, int outercount) {
     int i;
     int j;
     bool rc;
@@ -199,7 +155,7 @@ class ThreadTest : public ThreadTestBase
   void ClosePoolStability(void) {
     int i;
     TestHeader("ThreadPool close stability test");
-    for (i = 0; i < 8000; i++) {
+    for (i = 0; i < 1000; i++) {
       // Progress(true, "Creating pool iteration %d", i + 1);
       ThreadCreatePerformance(true, 2, 1);
     }
@@ -218,12 +174,10 @@ class ThreadTest : public ThreadTestBase
 
       number = 0;
 
-      for(int i=0; i<closePoolThreads; i++)
-      {
+      for(int i=0; i<closePoolThreads; i++) {
          jobs[i].code = INCREASE_NUMBER;
 
-         bool rc = (nullptr != pool.NewThread(this,
-                            static_cast<void *>(&jobs[i])));
+         bool rc = (nullptr != pool.NewThread(this, static_cast<void *>(&jobs[i])));
          Progress(rc, "Creating Thread %d", i+1);
       }
 
@@ -233,8 +187,7 @@ class ThreadTest : public ThreadTestBase
       PrintSeparator();
    }
 
-   void BreakFlagTest ()
-   {
+   void BreakFlagTest () {
       TestHeader("BreakFlag Test");
 
       FastOS_ThreadPool pool(128*1024);
@@ -243,12 +196,10 @@ class ThreadTest : public ThreadTestBase
 
       Job jobs[breakFlagThreads];
 
-      for(int i=0; i<breakFlagThreads; i++)
-      {
+      for (int i=0; i<breakFlagThreads; i++) {
          jobs[i].code = WAIT_FOR_BREAK_FLAG;
 
-         bool rc = (nullptr != pool.NewThread(this,
-                            static_cast<void *>(&jobs[i])));
+         bool rc = (nullptr != pool.NewThread(this, static_cast<void *>(&jobs[i])));
          Progress(rc, "Creating Thread %d", i+1);
       }
 
@@ -258,84 +209,8 @@ class ThreadTest : public ThreadTestBase
       PrintSeparator();
    }
 
-   void SharedSignalAndBroadcastTest (Job *jobs, int numThreads,
-                                      std::mutex *mutex,
-                                      std::condition_variable *condition,
-                                      FastOS_ThreadPool *pool)
-   {
-      for(int i=0; i<numThreads; i++)
-      {
-         jobs[i].code = WAIT_FOR_CONDITION;
-         jobs[i].mutex = mutex;
-         jobs[i].condition = condition;
-         jobs[i].ownThread = pool->NewThread(this,
-                 static_cast<void *>(&jobs[i]));
-
-         bool rc=(jobs[i].ownThread != nullptr);
-         Progress(rc, "CreatingThread %d", i+1);
-      }
-
-      WaitForXThreadsToHaveWait (jobs, numThreads,
-                                 *mutex, numThreads);
-
-      // Threads are not guaranteed to have entered sleep yet,
-      // as this test only tests for result code
-      // Wait another second to be sure.
-      std::this_thread::sleep_for(1s);
-   }
-
-   void SignalTest ()
-   {
-      const int numThreads = 5;
-
-      TestHeader("Signal Test");
-
-      FastOS_ThreadPool pool(128*1024);
-      Job jobs[numThreads];
-      std::mutex mutex;
-      std::condition_variable condition;
-
-      SharedSignalAndBroadcastTest(jobs, numThreads, &mutex, &condition, &pool);
-
-      for(int i=0; i<numThreads; i++)
-      {
-         condition.notify_one();
-         WaitForXThreadsToHaveWait(jobs, numThreads,
-                                   mutex, numThreads-1-i);
-      }
-
-      Progress(true, "Waiting for threads to finish using pool.Close()...");
-      pool.Close();
-      Progress(true, "Pool closed.");
-      PrintSeparator();
-   }
-
-   void BroadcastTest ()
-   {
-      TestHeader("Broadcast Test");
-
-      const int numThreads = 5;
-
-      FastOS_ThreadPool pool(128*1024);
-      Job jobs[numThreads];
-      std::mutex mutex;
-      std::condition_variable condition;
-
-      SharedSignalAndBroadcastTest(jobs, numThreads, &mutex, &condition, &pool);
-
-      condition.notify_all();
-      WaitForXThreadsToHaveWait(jobs, numThreads, mutex, 0);
-
-      Progress(true, "Waiting for threads to finish using pool.Close()...");
-      pool.Close();
-      Progress(true, "Pool closed.");
-      PrintSeparator();
-   }
-
-   void ThreadIdTest ()
-   {
-      const int numThreads = 5;
-      int i,j;
+   void ThreadIdTest () {
+      constexpr int numThreads = 5;
 
       TestHeader ("Thread Id Test");
 
@@ -345,24 +220,21 @@ class ThreadTest : public ThreadTestBase
 
       slowStartMutex.lock();    // Halt all threads until we want them to run
 
-      for(i=0; i<numThreads; i++) {
+      for (int i=0; i<numThreads; i++) {
          jobs[i].code = TEST_ID;
          jobs[i].result = -1;
          jobs[i]._threadId = 0;
          jobs[i].mutex = &slowStartMutex;
-         jobs[i].ownThread = pool.NewThread(this,
-                 static_cast<void *>(&jobs[i]));
+         jobs[i].ownThread = pool.NewThread(this, static_cast<void *>(&jobs[i]));
          bool rc=(jobs[i].ownThread != nullptr);
-         if(rc)
-            jobs[i]._threadId = jobs[i].ownThread->GetThreadId();
-         Progress(rc, "CreatingThread %d id:%lu", i+1,
-                  (unsigned long)(jobs[i]._threadId));
+         if (rc) {
+             jobs[i]._threadId = jobs[i].ownThread->GetThreadId();
+         }
+         Progress(rc, "CreatingThread %d id:%lu", i+1, (unsigned long)(jobs[i]._threadId));
 
-         for(j=0; j<i; j++) {
-            if(jobs[j]._threadId == jobs[i]._threadId) {
-               Progress(false,
-                        "Two different threads received the "
-                        "same thread id (%lu)",
+         for (int j=0; j<i; j++) {
+            if (jobs[j]._threadId == jobs[i]._threadId) {
+               Progress(false, "Two different threads received the same thread id (%lu)",
                         (unsigned long)(jobs[i]._threadId));
             }
          }
@@ -374,119 +246,11 @@ class ThreadTest : public ThreadTestBase
       pool.Close();
       Progress(true, "Pool closed.");
 
-      for(i=0; i<numThreads; i++) {
+      for (int i=0; i<numThreads; i++) {
          Progress(jobs[i].result == 1,
                   "Thread %lu: ID comparison (current vs stored)",
                   (unsigned long)(jobs[i]._threadId));
       }
-
-      PrintSeparator();
-   }
-
-   void TimedWaitTest ()
-   {
-      TestHeader("Cond Timed Wait Test");
-
-      FastOS_ThreadPool pool(128*1024);
-      Job job;
-      std::mutex mutex;
-      std::condition_variable condition;
-
-      job.code = WAIT2SEC_AND_SIGNALCOND;
-      job.result = -1;
-      job.mutex = &mutex;
-      job.condition = &condition;
-      job.ownThread = pool.NewThread(this,
-                                     static_cast<void *>(&job));
-
-      Progress(job.ownThread !=nullptr, "Creating thread");
-
-      if(job.ownThread != nullptr)
-      {
-         std::unique_lock<std::mutex> guard(mutex);
-         bool gotCond = condition.wait_for(guard, 500ms) == std::cv_status::no_timeout;
-         Progress(!gotCond, "We should not get the condition just yet (%s)",
-                  gotCond ? "got it" : "didn't get it");
-         gotCond = condition.wait_for(guard, 500ms) == std::cv_status::no_timeout;
-         Progress(!gotCond, "We should not get the condition just yet (%s)",
-                  gotCond ? "got it" : "didn't get it");
-         gotCond = condition.wait_for(guard, 5000ms) == std::cv_status::no_timeout;
-         Progress(gotCond, "We should have got the condition now (%s)",
-                  gotCond ? "got it" : "didn't get it");
-         }
-
-      Progress(true, "Waiting for threads to finish using pool.Close()...");
-      pool.Close();
-      Progress(true, "Pool closed.");
-
-      PrintSeparator();
-   }
-
-   void LeakTest ()
-   {
-      TestHeader("Leak Test");
-
-      int allocCount = 2 * 1024 * 1024;
-      int progressIndex= allocCount/8;
-      int i;
-
-      for(i=0; i<allocCount; i++)
-      {
-         std::mutex *mtx = new std::mutex;
-         mtx->lock();
-         mtx->unlock();
-         delete mtx;
-
-         if ((i % progressIndex) == (progressIndex - 1))
-            Progress(true, "Tested %d std::mutex instances", i + 1);
-      }
-
-      for(i=0; i<allocCount; i++)
-      {
-          std::condition_variable *cond = new std::condition_variable;
-         delete cond;
-
-         if((i % progressIndex) == (progressIndex - 1))
-            Progress(true, "Tested %d std::condition_variable instances", i+1);
-      }
-
-      PrintSeparator();
-   }
-
-   void SynchronizationStressTest ()
-   {
-      TestHeader("Synchronization Object Stress Test");
-
-      const int allocCount = 150000;
-      int i;
-
-      std::mutex **mutexes = new std::mutex*[allocCount];
-
-      steady_clock::time_point start = steady_clock::now();
-
-      for (i=0; i<allocCount; i++)
-          mutexes[i] = new std::mutex;
-
-      nanoseconds elapsed = steady_clock::now() - start;
-      Progress(true, "Allocated %d mutexes at time: %ld ms", allocCount, duration_cast<milliseconds>(elapsed).count());
-
-      for (int e=0; e<4; e++) {
-         for(i=0; i<allocCount; i++)
-            mutexes[i]->lock();
-
-         for(i=0; i<allocCount; i++)
-            mutexes[i]->unlock();
-
-         elapsed = steady_clock::now() - start;
-         Progress(true, "Tested %d mutexes at time: %d ms", allocCount, duration_cast<milliseconds>(elapsed).count());
-      }
-      for (i=0; i<allocCount; i++)
-         delete mutexes[i];
-
-      elapsed = steady_clock::now() - start;
-      Progress(true, "Deleted %d mutexes at time: %d ms", allocCount, duration_cast<milliseconds>(elapsed).count());
-
-      delete [] mutexes;
 
       PrintSeparator();
    }
@@ -498,21 +262,13 @@ int ThreadTest::Main ()
    printf("grep for the string '%s' to detect failures.\n\n", failString);
    time_t before = time(0);
 
-   //   HowManyThreadsTest();
-   SynchronizationStressTest();
-   LeakTest();
-   TimedWaitTest();
    ThreadIdTest();
-   SignalTest();
-   BroadcastTest();
    CreateSingleThreadAndJoin();
    TooManyThreadsTest();
    ClosePoolTest();
    BreakFlagTest();
    CreateSingleThreadAndJoin();
-   BroadcastTest();
-   SignalTest();
-   ThreadCreatePerformance(false, 500, 100);
+   ThreadCreatePerformance(false, 50, 10);
    ClosePoolStability();
    { time_t now = time(0); printf("[%ld seconds]\n", now-before); before = now; }
 
