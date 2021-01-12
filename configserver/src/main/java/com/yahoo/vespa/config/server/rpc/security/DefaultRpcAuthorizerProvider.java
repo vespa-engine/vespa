@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc.security;
 
 import com.google.inject.Inject;
@@ -6,7 +6,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.rpc.RequestHandlerProvider;
 
 /**
@@ -21,13 +21,13 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
     @Inject
     public DefaultRpcAuthorizerProvider(ConfigserverConfig config,
                                         NodeIdentifier nodeIdentifier,
-                                        HostRegistries hostRegistries,
+                                        HostRegistry hostRegistry,
                                         RequestHandlerProvider handlerProvider) {
         boolean useMultiTenantAuthorizer =
                 TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant() && config.hostedVespa();
         this.rpcAuthorizer =
                 useMultiTenantAuthorizer
-                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider, getThreadPoolSize(config))
+                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistry, handlerProvider, getThreadPoolSize(config))
                         : new NoopRpcAuthorizer();
     }
 
