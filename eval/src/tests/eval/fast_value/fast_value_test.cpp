@@ -3,10 +3,12 @@
 #include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;
+using namespace vespalib::eval::test;
 
 using Handle = SharedStringRepo::Handle;
 
@@ -137,6 +139,32 @@ TEST(FastValueBuilderTest, mixed_add_subspace_robustness) {
                 EXPECT_EQ(values[1], 15.0);
             }
         }
+    }
+}
+
+std::vector<Layout> layouts = {
+    {},
+    {x(3)},
+    {x(3),y(5)},
+    {x(3),y(5),z(7)},
+    float_cells({x(3),y(5),z(7)}),
+    {x({"a","b","c"})},
+    {x({"a","b","c"}),y({"foo","bar"})},
+    {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
+    float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
+    {x(3),y({"foo", "bar"}),z(7)},
+    {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
+    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
+};
+
+TEST(FastValueBuilderFactoryTest, fast_values_can_be_copied) {
+    auto factory = FastValueBuilderFactory::get();
+    for (const auto &layout: layouts) {
+        TensorSpec expect = spec(layout, N());
+        std::unique_ptr<Value> value = value_from_spec(expect, factory);
+        std::unique_ptr<Value> copy = factory.copy(*value);
+        TensorSpec actual = spec_from_value(*copy);
+        EXPECT_EQ(actual, expect);
     }
 }
 
