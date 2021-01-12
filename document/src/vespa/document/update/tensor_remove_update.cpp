@@ -107,10 +107,15 @@ TensorRemoveUpdate::checkCompatibility(const Field &field) const
 std::unique_ptr<vespalib::eval::Value>
 TensorRemoveUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
-    auto addressTensor = _tensor->getAsTensorPtr();
-    if (addressTensor) {
-        const auto &factory = FastValueBuilderFactory::get();
-        return TensorPartialUpdate::remove(tensor, *addressTensor, factory);
+    return apply_to(tensor, FastValueBuilderFactory::get());
+}
+
+std::unique_ptr<vespalib::eval::Value>
+TensorRemoveUpdate::apply_to(const Value &old_tensor,
+                             const ValueBuilderFactory &factory) const
+{
+    if (auto addressTensor = _tensor->getAsTensorPtr()) {
+        return TensorPartialUpdate::remove(old_tensor, *addressTensor, factory);
     }
     return {};
 }
