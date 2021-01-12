@@ -11,6 +11,7 @@ import ai.vespa.metricsproxy.rpc.RpcConnector;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServices;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
+import com.yahoo.config.model.api.ModelContext.FeatureFlags;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ClusterMembership;
@@ -39,8 +40,8 @@ public class MetricsProxyContainer extends Container implements
 
     final boolean isHostedVespa;
 
-    public MetricsProxyContainer(AbstractConfigProducer parent, String hostname, int index, boolean isHostedVespa) {
-        super(parent, hostname, index, isHostedVespa);
+    public MetricsProxyContainer(AbstractConfigProducer parent, FeatureFlags featureFlags, String hostname, int index, boolean isHostedVespa) {
+        super(parent, featureFlags, hostname, index, isHostedVespa);
         this.isHostedVespa = isHostedVespa;
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));

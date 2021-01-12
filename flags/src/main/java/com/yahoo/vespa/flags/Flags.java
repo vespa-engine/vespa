@@ -279,6 +279,12 @@ public class Flags {
             "Takes effect on (re)redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_JDISC_CONNECTION_LOG = defineFeatureFlag(
+            "enable-jdisc-connection-log", false,
+            List.of("bjorncs", "tokle"), "2021-01-12", "2021-04-01",
+            "Whether to enable jdisc connection log",
+            "Takes effect on (re)deployment");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

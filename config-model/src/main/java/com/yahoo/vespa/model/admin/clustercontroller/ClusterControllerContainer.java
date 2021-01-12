@@ -46,7 +46,7 @@ public class ClusterControllerContainer extends Container implements
             int index,
             boolean runStandaloneZooKeeper,
             DeployState deployState) {
-        super(parent, "" + index, index, deployState.isHosted());
+        super(parent, deployState.featureFlags(), "" + index, index, deployState.isHosted());
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
                    "/clustercontroller-status/*",

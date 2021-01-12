@@ -163,6 +163,7 @@ public class ModelContextImpl implements ModelContext {
         private final int mergeChunkSize;
         private final double feedConcurrency;
         private final boolean reconfigurableZookeeperServer;
+        private final boolean enableJdiscConnectionLog;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.enableAutomaticReindexing = flagValue(source, appId, Flags.ENABLE_AUTOMATIC_REINDEXING);
@@ -181,6 +182,7 @@ public class ModelContextImpl implements ModelContext {
             this.mergeChunkSize = flagValue(source, appId, Flags.MERGE_CHUNK_SIZE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
             this.reconfigurableZookeeperServer = flagValue(source, appId, Flags.RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER);
+            this.enableJdiscConnectionLog = flagValue(source, appId, Flags.ENABLE_JDISC_CONNECTION_LOG);
         }
 
         @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
@@ -199,6 +201,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int mergeChunkSize() { return mergeChunkSize; }
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
+        @Override public boolean enableJdiscConnectionLog() { return enableJdiscConnectionLog; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

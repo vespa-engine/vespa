@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -24,8 +25,9 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
     private final ContainerCluster<?> cluster;
     private final boolean isHostedVespa;
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
+    private final boolean enableJdiscConnectionLog;
 
-    public JettyHttpServer(ComponentId id, ContainerCluster<?> cluster, boolean isHostedVespa) {
+    public JettyHttpServer(ComponentId id, ContainerCluster<?> cluster, ModelContext.FeatureFlags featureFlags, boolean isHostedVespa) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(id,
                                                      fromString("com.yahoo.jdisc.http.server.jetty.JettyHttpServer"),
@@ -36,6 +38,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(id);
         addChild(filterBindingsProviderComponent);
         inject(filterBindingsProviderComponent);
+        this.enableJdiscConnectionLog = featureFlags.enableJdiscConnectionLog();
     }
 
     public void addConnector(ConnectorFactory connectorFactory) {
@@ -73,6 +76,8 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
                     .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
         }
         configureJettyThreadpool(builder);
+        builder.connectionLog(new ServerConfig.ConnectionLog.Builder()
+                .enabled(enableJdiscConnectionLog));
     }
 
     private void configureJettyThreadpool(ServerConfig.Builder builder) {

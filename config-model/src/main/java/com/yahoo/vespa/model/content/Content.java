@@ -298,7 +298,7 @@ public class Content extends ConfigModel {
                 HostResource host = searchNode.getHostResource();
                 if (!processedHosts.contains(host)) {
                     String containerName = String.valueOf(searchNode.getDistributionKey());
-                    ApplicationContainer docprocService = new ApplicationContainer(indexingCluster, containerName, index,
+                    ApplicationContainer docprocService = new ApplicationContainer(indexingCluster, modelContext.featureFlags(), containerName, index,
                                                                                    modelContext.getDeployState().isHosted());
                     index++;
                     docprocService.useDynamicPorts();

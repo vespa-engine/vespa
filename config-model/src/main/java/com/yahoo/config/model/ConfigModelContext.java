@@ -47,6 +47,7 @@ public final class ConfigModelContext {
     public ApplicationType getApplicationType() { return applicationType; }
     public VespaModel vespaModel() { return vespaModel; }
     public ModelContext.Properties properties() { return deployState.getProperties(); }
+    public ModelContext.FeatureFlags featureFlags() { return deployState.featureFlags(); }
 
     /** Returns write access to the config model repo, or null (only) if this is improperly initialized during testing */
     public ConfigModelRepoAdder getConfigModelRepoAdder() { return configModelRepoAdder; }
