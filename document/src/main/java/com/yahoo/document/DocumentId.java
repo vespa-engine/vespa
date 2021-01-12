@@ -2,7 +2,10 @@
 package com.yahoo.document;
 
 import com.yahoo.document.idstring.IdString;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.serialization.DeserializationException;
+import com.yahoo.document.serialization.DocumentReader;
+import com.yahoo.document.serialization.DocumentWriter;
+import com.yahoo.document.serialization.SerializationException;
 import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.Serializer;
@@ -33,6 +36,11 @@ public class DocumentId extends Identifiable implements Serializable {
         if (id == null) {
             throw new IllegalArgumentException("Cannot create DocumentId from null id.");
         }
+        if (id.length() > IdString.MAX_LENGTH) {
+            throw new IllegalArgumentException("The document id(" + id.length() + ") is too long(" + IdString.MAX_LENGTH + "). " +
+                    "However if you have already fed a document earlier on and want to remove it, you can do so by " +
+                    "calling new DocumentId(IdString.createIdStringLessStrict()) that will bypass this restriction.");
+        }
         this.id = IdString.createIdString(id);
         globalId = null;
     }
@@ -55,8 +63,7 @@ public class DocumentId extends Identifiable implements Serializable {
 
     @Override
     public DocumentId clone() {
-        DocumentId docId =  (DocumentId)super.clone();
-        return docId;
+        return  (DocumentId)super.clone();
     }
 
     public void setId(IdString id) {

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.idstring;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.text.Text;
 import com.yahoo.text.Utf8String;
 
@@ -43,7 +44,8 @@ public abstract class IdString {
     private final String namespaceSpecific;
     private Utf8String cache;
     // This max unsigned 16 bit integer - 1 as the offset will be length + 1
-    static final int MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC = 0xfffe;
+    static final int MAX_LENGTH_EXCEPT_NAMESPACE_SPECIFIC = 0xff00;
+    public static final int MAX_LENGTH = 0x10000;
 
     /**
      * Creates a IdString based on the given document id string.
@@ -51,6 +53,19 @@ public abstract class IdString {
      * The document id string can only contain text characters.
      */
     public static IdString createIdString(String id) {
+        if (id.length() > MAX_LENGTH) {
+            throw new IllegalArgumentException("Document id length " + id.length() + " is longer than max length of " + MAX_LENGTH);
+        }
+        validateTextString(id);
+        return parseAndCreate(id);
+    }
+
+    /**
+     * Creates a IdString based on the given document id string. This is a less strict variant
+     * for creating 'illegal' document ids for documents already fed. Only use when strictly needed.
+     */
+    @Beta
+    public static IdString createIdStringLessStrict(String id) {
         validateTextString(id);
         return parseAndCreate(id);
     }
