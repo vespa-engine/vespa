@@ -61,7 +61,7 @@ public class PermanentFlags {
             "Takes effect on next iteration of DynamicProvisioningMaintainer.");
 
     public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
-            "reboot-interval-in-days", 30,
+            "reboot-interval-in-days", 15,
             "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
                     "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
             "Takes effect on next run of NodeRebooter");
