@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -53,6 +54,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -656,6 +658,7 @@ public class NodeRepository extends AbstractComponent {
         if (toState == Node.State.active && node.allocation().isEmpty())
             illegal("Could not set " + node + " active. It has no allocation.");
 
+        // TODO: Work out a safe lock acquisition strategy for moves, e.g. migrate to lockNode.
         try (Mutex lock = lock(node)) {
             if (toState == State.active) {
                 for (Node currentActive : getNodes(node.allocation().get().owner(), State.active)) {
@@ -921,13 +924,61 @@ public class NodeRepository extends AbstractComponent {
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }
 
-    /** Acquires the appropriate lock for this node */
-    public Mutex lock(Node node) {
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public Optional<NodeMutex> lockAndGet(Node node) {
+        Node staleNode = node;
+
+        final int maxRetries = 4;
+        for (int i = 0; i < maxRetries; ++i) {
+            Mutex lockToClose = lock(staleNode);
+            try {
+                // As an optimization we first try finding the node in the same state
+                Optional<Node> freshNode = getNode(staleNode.hostname(), staleNode.state());
+                if (freshNode.isEmpty()) {
+                    freshNode = getNode(staleNode.hostname());
+                    if (freshNode.isEmpty()) {
+                        return Optional.empty();
+                    }
+                }
+
+                if (Objects.equals(freshNode.get().allocation().map(Allocation::owner),
+                                   staleNode.allocation().map(Allocation::owner))) {
+                    NodeMutex nodeMutex = new NodeMutex(freshNode.get(), lockToClose);
+                    lockToClose = null;
+                    return Optional.of(nodeMutex);
+                }
+
+                // The wrong lock was held when the fresh node was fetched, so try again
+                staleNode = freshNode.get();
+            } finally {
+                if (lockToClose != null) lockToClose.close();
+            }
+        }
+
+        throw new IllegalStateException("Giving up (after " + maxRetries + " attempts) " +
+                "fetching an up to date node under lock: " + node.hostname());
+    }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public Optional<NodeMutex> lockAndGet(String hostname) {
+        return getNode(hostname).flatMap(this::lockAndGet);
+    }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public NodeMutex lockAndGetRequired(Node node) {
+        return lockAndGet(node).orElseThrow(() -> new IllegalArgumentException("No such node: " + node.hostname()));
+    }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public NodeMutex lockAndGetRequired(String hostname) {
+        return lockAndGet(hostname).orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
+    }
+
+    private Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
     }
 
     private void illegal(String message) {
         throw new IllegalArgumentException(message);
     }
-
 }

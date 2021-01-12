@@ -25,7 +25,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -153,9 +152,8 @@ public class ProvisioningTester {
     public List<Node> patchNodes(List<Node> nodes, UnaryOperator<Node> patcher) {
         List<Node> updated = new ArrayList<>();
         for (var node : nodes) {
-            try (var lock = nodeRepository.lock(node)) {
-                node = nodeRepository.getNode(node.hostname()).get();
-                node = patcher.apply(node);
+            try (var lock = nodeRepository.lockAndGetRequired(node)) {
+                node = patcher.apply(lock.node());
                 nodeRepository.write(node, lock);
                 updated.add(node);
             }
@@ -188,21 +186,21 @@ public class ProvisioningTester {
 
         // Add ip addresses and activate parent host if necessary
         for (HostSpec prepared : preparedNodes) {
-            Node node = nodeRepository.getNode(prepared.hostname()).get();
-            if (node.ipConfig().primary().isEmpty()) {
-                node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));
-                try (Mutex lock = nodeRepository.lock(node)) {
+            try (var lock = nodeRepository.lockAndGetRequired(prepared.hostname())) {
+                Node node = lock.node();
+                if (node.ipConfig().primary().isEmpty()) {
+                    node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));
                     nodeRepository.write(node, lock);
                 }
+                if (node.parentHostname().isEmpty()) continue;
+                Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
+                if (parent.state() == Node.State.active) continue;
+                NestedTransaction t = new NestedTransaction();
+                if (parent.ipConfig().primary().isEmpty())
+                    parent = parent.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+                nodeRepository.activate(List.of(parent), t);
+                t.commit();
             }
-            if (node.parentHostname().isEmpty()) continue;
-            Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
-            if (parent.state() == Node.State.active) continue;
-            NestedTransaction t = new NestedTransaction();
-            if (parent.ipConfig().primary().isEmpty())
-                parent = parent.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
-            nodeRepository.activate(List.of(parent), t);
-            t.commit();
         }
 
         return activate(application, preparedNodes);

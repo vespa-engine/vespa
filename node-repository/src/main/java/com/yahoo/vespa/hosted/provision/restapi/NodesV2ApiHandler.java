@@ -24,9 +24,9 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.node.Address;
@@ -160,14 +160,12 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePATCH(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
-            // TODO: Node is fetched outside of lock, might change after getting lock
-            Node node = nodeFromRequest(request);
-            try (var lock = nodeRepository.lock(node)) {
-                var patchedNodes = new NodePatcher(nodeFlavors, request.getData(), node, () -> nodeRepository.list(lock),
-                                                   nodeRepository.clock()).apply();
-                nodeRepository.write(patchedNodes, lock);
+            try (NodePatcher patcher = new NodePatcher(nodeFlavors, request.getData(), nodeFromRequest(request), nodeRepository)) {
+                var patchedNodes = patcher.apply();
+                nodeRepository.write(patchedNodes, patcher.nodeMutexOfHost());
+
+                return new MessageResponse("Updated " + patcher.nodeMutexOfHost().node().hostname());
             }
-            return new MessageResponse("Updated " + node.hostname());
         }
         else if (path.startsWith("/nodes/v2/upgrade/")) {
             return setTargetVersions(request);
@@ -210,13 +208,11 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deleteNode(String hostname) {
-        Optional<Node> node = nodeRepository.getNode(hostname);
-        if (node.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
-        try (Mutex lock = nodeRepository.lock(node.get())) {
-            node = nodeRepository.getNode(hostname);
-            if (node.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
-            if (node.get().state() == Node.State.deprovisioned) {
-                nodeRepository.forget(node.get());
+        Optional<NodeMutex> nodeMutex = nodeRepository.lockAndGet(hostname);
+        if (nodeMutex.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
+        try (var lock = nodeMutex.get()) {
+            if (lock.node().state() == Node.State.deprovisioned) {
+                nodeRepository.forget(lock.node());
                 return new MessageResponse("Permanently removed " + hostname);
             } else {
                 List<Node> removedNodes = nodeRepository.removeRecursively(hostname);

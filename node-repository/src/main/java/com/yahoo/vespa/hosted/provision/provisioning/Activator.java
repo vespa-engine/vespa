@@ -8,9 +8,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
@@ -126,13 +126,16 @@ class Activator {
     private void unreserveParentsOf(List<Node> nodes) {
         for (Node node : nodes) {
             if ( node.parentHostname().isEmpty()) continue;
-            Optional<Node> parent = nodeRepository.getNode(node.parentHostname().get());
+            Optional<Node> parentNode = nodeRepository.getNode(node.parentHostname().get());
+            if (parentNode.isEmpty()) continue;
+            if (parentNode.get().reservedTo().isEmpty()) continue;
+
+            // Above is an optimization to avoid unnecessary locking - now repeat all conditions under lock
+            Optional<NodeMutex> parent = nodeRepository.lockAndGet(node.parentHostname().get());
             if (parent.isEmpty()) continue;
-            if (parent.get().reservedTo().isEmpty()) continue;
-            try (Mutex lock = nodeRepository.lock(parent.get())) {
-                Optional<Node> lockedParent = nodeRepository.getNode(parent.get().hostname());
-                if (lockedParent.isEmpty()) continue;
-                nodeRepository.write(lockedParent.get().withoutReservedTo(), lock);
+            try (var lock = parent.get()) {
+                if (lock.node().reservedTo().isEmpty()) continue;
+                nodeRepository.write(lock.node().withoutReservedTo(), lock);
             }
         }
     }
