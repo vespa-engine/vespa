@@ -54,7 +54,7 @@
         <module>config_test</module>
         <module>container</module>
         <module>container-core</module>
-        <module>container-accesslogging</module>
+        <module>container-core-config</module>
         <module>container-dependencies-enforcer</module>
         <module>container-dependency-versions</module>
         <module>container-dev</module>
