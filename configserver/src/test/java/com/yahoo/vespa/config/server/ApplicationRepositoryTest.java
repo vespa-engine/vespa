@@ -192,7 +192,7 @@ public class ApplicationRepositoryTest {
         PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
-        assertEquals(HostFilter.hostname("mytesthost2"), provisioner.lastRestartFilter());
+        assertEquals(HostFilter.hostname("mytesthost"), provisioner.lastRestartFilter());
     }
 
     @Test
@@ -345,7 +345,7 @@ public class ApplicationRepositoryTest {
             // Deploy another app (with id fooId)
             ApplicationId fooId = applicationId(tenant2);
             PrepareParams prepareParams2 = new PrepareParams.Builder().applicationId(fooId).build();
-            deployApp(testAppJdiscOnly, prepareParams2);
+            deployApp(testApp, prepareParams2);
             assertNotNull(applicationRepository.getActiveSession(fooId));
 
             // Delete app with id fooId, should not affect original app
@@ -530,14 +530,14 @@ public class ApplicationRepositoryTest {
         list.add(new NetworkPorts.Allocation(19081, "logserver", "admin/logserver", "unused/1"));
         list.add(new NetworkPorts.Allocation(19082, "logserver", "admin/logserver", "unused/2"));
         list.add(new NetworkPorts.Allocation(19083, "logserver", "admin/logserver", "unused/3"));
-        list.add(new NetworkPorts.Allocation(19089, "logd", "hosts/mytesthost2/logd", "http"));
-        list.add(new NetworkPorts.Allocation(19090, "configproxy", "hosts/mytesthost2/configproxy", "rpc"));
-        list.add(new NetworkPorts.Allocation(19092, "metricsproxy-container", "admin/metrics/mytesthost2", "http"));
-        list.add(new NetworkPorts.Allocation(19093, "metricsproxy-container", "admin/metrics/mytesthost2", "http/1"));
-        list.add(new NetworkPorts.Allocation(19094, "metricsproxy-container", "admin/metrics/mytesthost2", "rpc/admin"));
-        list.add(new NetworkPorts.Allocation(19095, "metricsproxy-container", "admin/metrics/mytesthost2", "rpc/metrics"));
-        list.add(new NetworkPorts.Allocation(19097, "config-sentinel", "hosts/mytesthost2/sentinel", "rpc"));
-        list.add(new NetworkPorts.Allocation(19098, "config-sentinel", "hosts/mytesthost2/sentinel", "http"));
+        list.add(new NetworkPorts.Allocation(19089, "logd", "hosts/mytesthost/logd", "http"));
+        list.add(new NetworkPorts.Allocation(19090, "configproxy", "hosts/mytesthost/configproxy", "rpc"));
+        list.add(new NetworkPorts.Allocation(19092, "metricsproxy-container", "admin/metrics/mytesthost", "http"));
+        list.add(new NetworkPorts.Allocation(19093, "metricsproxy-container", "admin/metrics/mytesthost", "http/1"));
+        list.add(new NetworkPorts.Allocation(19094, "metricsproxy-container", "admin/metrics/mytesthost", "rpc/admin"));
+        list.add(new NetworkPorts.Allocation(19095, "metricsproxy-container", "admin/metrics/mytesthost", "rpc/metrics"));
+        list.add(new NetworkPorts.Allocation(19097, "config-sentinel", "hosts/mytesthost/sentinel", "rpc"));
+        list.add(new NetworkPorts.Allocation(19098, "config-sentinel", "hosts/mytesthost/sentinel", "http"));
         list.add(new NetworkPorts.Allocation(19099, "slobrok", "admin/slobrok.0", "rpc"));
         list.add(new NetworkPorts.Allocation(19100, "container", "container/container.0", "http/1"));
         list.add(new NetworkPorts.Allocation(19101, "container", "container/container.0", "messaging"));
@@ -547,7 +547,7 @@ public class ApplicationRepositoryTest {
         AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
-        assertTrue(info.getHosts().contains(new HostSpec("mytesthost2",
+        assertTrue(info.getHosts().contains(new HostSpec("mytesthost",
                                                          Collections.emptyList(),
                                                          Optional.empty())));
         Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();

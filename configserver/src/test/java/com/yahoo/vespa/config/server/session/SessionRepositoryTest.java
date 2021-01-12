@@ -60,7 +60,6 @@ public class SessionRepositoryTest {
     private static final TenantName tenantName = TenantName.defaultName();
     private static final ApplicationId applicationId = ApplicationId.from(tenantName.value(), "testApp", "default");
     private static final File testApp = new File("src/test/apps/app");
-    private static final File appJdiscOnly = new File("src/test/apps/app-jdisc-only");
 
     private MockCurator curator;
     private TenantRepository tenantRepository;
@@ -136,7 +135,7 @@ public class SessionRepositoryTest {
         // tenant is "newTenant"
         TenantName newTenant = TenantName.from("newTenant");
         tenantRepository.addTenant(newTenant);
-        long sessionId = deploy(ApplicationId.from(newTenant.value(), "testapp", "default"), appJdiscOnly);
+        long sessionId = deploy(ApplicationId.from(newTenant.value(), "testapp", "default"));
         SessionRepository sessionRepository2 = tenantRepository.getTenant(newTenant).getSessionRepository();
         assertNotNull(sessionRepository2.getLocalSession(sessionId));
     }
