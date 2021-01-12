@@ -196,6 +196,9 @@ public class DeploymentStatus {
 
     /** The step status for all relevant steps in the deployment spec of this, in the same order as in the deployment spec. */
     public List<StepStatus> allSteps() {
+        if (allSteps.isEmpty())
+            return List.of();
+
         List<JobId> firstTestJobs = List.of(firstDeclaredOrElseImplicitTest(systemTest),
                                             firstDeclaredOrElseImplicitTest(stagingTest));
         return allSteps.stream()
