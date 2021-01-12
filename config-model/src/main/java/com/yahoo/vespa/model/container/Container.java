@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext.FeatureFlags;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.ComponentsConfig;
@@ -78,17 +79,17 @@ public abstract class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer;
 
-    protected Container(AbstractConfigProducer<?> parent, String name, int index, boolean isHostedVespa) {
-        this(parent, name, false, index, isHostedVespa);
+    protected Container(AbstractConfigProducer<?> parent, FeatureFlags featureFlags, String name, int index, boolean isHostedVespa) {
+        this(parent, featureFlags, name, false, index, isHostedVespa);
     }
 
-    protected Container(AbstractConfigProducer<?> parent, String name, boolean retired, int index, boolean isHostedVespa) {
+    protected Container(AbstractConfigProducer<?> parent, FeatureFlags featureFlags, String name, boolean retired, int index, boolean isHostedVespa) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
         this.retired = retired;
         this.index = index;
-        this.defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), containerClusterOrNull(parent), isHostedVespa);
+        this.defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), containerClusterOrNull(parent), featureFlags, isHostedVespa);
         if (getHttp() == null) {
             addChild(defaultHttpServer);
         }

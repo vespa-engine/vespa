@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.config.model.api.ModelContext.FeatureFlags;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.NodeResources;
@@ -24,12 +25,12 @@ public final class ApplicationContainer extends Container implements
 
     private final boolean isHostedVespa;
 
-    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, boolean isHostedVespa) {
-        this(parent, name, false, index, isHostedVespa);
+    public ApplicationContainer(AbstractConfigProducer<?> parent, FeatureFlags featureFlags, String name, int index, boolean isHostedVespa) {
+        this(parent, featureFlags, name, false, index, isHostedVespa);
     }
 
-    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, boolean retired, int index, boolean isHostedVespa) {
-        super(parent, name, retired, index, isHostedVespa);
+    public ApplicationContainer(AbstractConfigProducer<?> parent, FeatureFlags featureFlags, String name, boolean retired, int index, boolean isHostedVespa) {
+        super(parent, featureFlags, name, retired, index, isHostedVespa);
         this.isHostedVespa = isHostedVespa;
 
         addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone

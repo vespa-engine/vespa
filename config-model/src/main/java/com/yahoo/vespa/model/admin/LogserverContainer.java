@@ -1,9 +1,10 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.config.model.api.ModelContext.FeatureFlags;
+import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 
 /**
@@ -12,8 +13,8 @@ import com.yahoo.vespa.model.container.component.AccessLogComponent;
  */
 public class LogserverContainer extends Container {
 
-    public LogserverContainer(AbstractConfigProducer parent, boolean isHostedVespa) {
-        super(parent, "" + 0, 0, isHostedVespa);
+    public LogserverContainer(AbstractConfigProducer parent, FeatureFlags featureFlags, boolean isHostedVespa) {
+        super(parent, featureFlags, "" + 0, 0, isHostedVespa);
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, ((LogserverContainerCluster) parent).getName(), true));
     }
 
