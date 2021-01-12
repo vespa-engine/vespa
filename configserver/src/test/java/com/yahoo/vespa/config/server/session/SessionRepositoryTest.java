@@ -20,7 +20,6 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -61,7 +60,6 @@ public class SessionRepositoryTest {
     private static final TenantName tenantName = TenantName.defaultName();
     private static final ApplicationId applicationId = ApplicationId.from(tenantName.value(), "testApp", "default");
     private static final File testApp = new File("src/test/apps/app");
-    private static final File appJdiscOnly = new File("src/test/apps/app-jdisc-only");
 
     private MockCurator curator;
     private TenantRepository tenantRepository;
@@ -92,7 +90,7 @@ public class SessionRepositoryTest {
                                             .build())
                 .flagSource(flagSource)
                 .build();
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry());
+        tenantRepository = new TenantRepository(globalComponentRegistry);
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
@@ -137,7 +135,7 @@ public class SessionRepositoryTest {
         // tenant is "newTenant"
         TenantName newTenant = TenantName.from("newTenant");
         tenantRepository.addTenant(newTenant);
-        long sessionId = deploy(ApplicationId.from(newTenant.value(), "testapp", "default"), appJdiscOnly);
+        long sessionId = deploy(ApplicationId.from(newTenant.value(), "testapp", "default"));
         SessionRepository sessionRepository2 = tenantRepository.getTenant(newTenant).getSessionRepository();
         assertNotNull(sessionRepository2.getLocalSession(sessionId));
     }

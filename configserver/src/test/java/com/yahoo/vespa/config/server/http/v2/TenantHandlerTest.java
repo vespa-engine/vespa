@@ -19,7 +19,6 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -57,8 +56,7 @@ public class TenantHandlerTest {
         tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
                                                         .curator(new MockCurator())
                                                         .configServerConfig(configserverConfig)
-                                                        .build(),
-                                                new HostRegistry());
+                                                        .build());
 
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
