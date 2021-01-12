@@ -19,7 +19,6 @@ import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -67,7 +66,7 @@ public class TenantRepositoryTest {
         listener = (TenantApplicationsTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry());
+        tenantRepository = new TenantRepository(globalComponentRegistry);
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -202,7 +201,7 @@ public class TenantRepositoryTest {
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
         public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry) {
-            super(globalComponentRegistry, new HostRegistry());
+            super(globalComponentRegistry);
         }
 
         @Override

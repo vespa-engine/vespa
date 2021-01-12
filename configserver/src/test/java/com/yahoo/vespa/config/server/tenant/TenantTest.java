@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.tenant;
 import com.google.common.testing.EqualsTester;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +32,7 @@ public class TenantTest {
     }
 
     private Tenant createTenant(String name) {
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
         TenantName tenantName = TenantName.from(name);
         tenantRepository.addTenant(tenantName);
         return tenantRepository.getTenant(tenantName);

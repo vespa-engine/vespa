@@ -26,7 +26,6 @@ import com.yahoo.vespa.config.server.application.ClusterReindexing.Status;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -77,7 +76,6 @@ import static org.mockito.Mockito.when;
 public class ApplicationHandlerTest {
 
     private static final File testApp = new File("src/test/apps/app");
-    private static final File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
 
     private final static TenantName mytenantName = TenantName.from("mytenant");
     private final static ApplicationId myTenantApplicationId = ApplicationId.from(mytenantName, ApplicationName.defaultName(), InstanceName.defaultName());
@@ -110,7 +108,7 @@ public class ApplicationHandlerTest {
                 .configServerConfig(configserverConfig)
                 .clock(clock)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(mytenantName);
         provisioner = new MockProvisioner();
         orchestrator = new OrchestratorMock();
@@ -152,7 +150,7 @@ public class ApplicationHandlerTest {
                     .instanceName("quux")
                     .build();
             PrepareParams prepareParams2 = new PrepareParams.Builder().applicationId(fooId).build();
-            applicationRepository.deploy(testAppJdiscOnly, prepareParams2);
+            applicationRepository.deploy(testApp, prepareParams2);
 
             assertApplicationExists(fooId, Zone.defaultZone());
             deleteAndAssertOKResponseMocked(fooId, true);

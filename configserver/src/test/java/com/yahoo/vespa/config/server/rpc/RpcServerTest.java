@@ -64,19 +64,31 @@ public class RpcServerTest {
         try (RpcTester tester = new RpcTester(applicationId, temporaryFolder)) {
             ApplicationRepository applicationRepository = tester.applicationRepository();
             applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
+            TenantApplications applicationRepo = tester.tenant().getApplicationRepo();
+            RemoteSession activeSession = applicationRepository.getActiveRemoteSession(applicationId);
+            ApplicationSet applicationSet = tester.tenant().getSessionRepository().ensureApplicationLoaded(activeSession);
+            applicationRepo.activateApplication(applicationSet, activeSession.getSessionId());
             testPrintStatistics(tester);
             testGetConfig(tester);
             testEnabled(tester);
             testApplicationNotLoadedErrorWhenAppDeleted(tester);
+            testEmptySentinelConfigWhenAppDeletedOnHostedVespa();
         }
     }
 
-    private void testApplicationNotLoadedErrorWhenAppDeleted(RpcTester tester) {
-        tester.applicationRepository().delete(applicationId);
+    private void testApplicationNotLoadedErrorWhenAppDeleted(RpcTester tester) throws InterruptedException, IOException {
+        tester.rpcServer().onTenantDelete(tenantName);
+        tester.rpcServer().onTenantsLoaded();
         JRTClientConfigRequest clientReq = createSimpleRequest();
         tester.performRequest(clientReq.getRequest());
         assertFalse(clientReq.validateResponse());
         assertThat(clientReq.errorCode(), is(ErrorCode.APPLICATION_NOT_LOADED));
+        tester.stopRpc();
+        tester.createAndStartRpcServer();
+        tester.rpcServer().onTenantsLoaded();
+        clientReq = createSimpleRequest();
+        tester.performRequest(clientReq.getRequest());
+        assertTrue(clientReq.validateResponse());
     }
 
     @Test

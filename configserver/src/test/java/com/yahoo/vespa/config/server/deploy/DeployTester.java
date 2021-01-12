@@ -26,7 +26,6 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -290,7 +289,7 @@ public class DeployTester {
                     .zone(zone);
             if (configserverConfig.hostedVespa()) testComponentRegistryBuilder.provisioner(provisioner);
 
-            TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build(), new HostRegistry());
+            TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build());
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
