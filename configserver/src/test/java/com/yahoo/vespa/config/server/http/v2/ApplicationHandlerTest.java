@@ -76,7 +76,6 @@ import static org.mockito.Mockito.when;
 public class ApplicationHandlerTest {
 
     private static final File testApp = new File("src/test/apps/app");
-    private static final File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
 
     private final static TenantName mytenantName = TenantName.from("mytenant");
     private final static ApplicationId myTenantApplicationId = ApplicationId.from(mytenantName, ApplicationName.defaultName(), InstanceName.defaultName());
@@ -151,7 +150,7 @@ public class ApplicationHandlerTest {
                     .instanceName("quux")
                     .build();
             PrepareParams prepareParams2 = new PrepareParams.Builder().applicationId(fooId).build();
-            applicationRepository.deploy(testAppJdiscOnly, prepareParams2);
+            applicationRepository.deploy(testApp, prepareParams2);
 
             assertApplicationExists(fooId, Zone.defaultZone());
             deleteAndAssertOKResponseMocked(fooId, true);

@@ -36,12 +36,14 @@ import static org.junit.Assert.assertThat;
 public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
 
     private static final File testApp = new File("src/test/apps/content");
+    private static final File testApp2 = new File("src/test/apps/content2");
 
     private final TenantName tenantName1 = TenantName.from("mofet");
     private final TenantName tenantName2 = TenantName.from("bla");
     private final String baseServer = "http://foo:1337";
 
     private final ApplicationId appId1 = new ApplicationId.Builder().tenant(tenantName1).applicationName("foo").instanceName("quux").build();
+    private final ApplicationId appId2 = new ApplicationId.Builder().tenant(tenantName2).applicationName("foo").instanceName("quux").build();
 
     private ApplicationRepository applicationRepository;
     private ApplicationHandler handler;
@@ -75,6 +77,8 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .build();
 
         applicationRepository.deploy(testApp, prepareParams(appId1));
+        applicationRepository.deploy(testApp2, prepareParams(appId2));
+
         handler = new ApplicationHandler(ApplicationHandler.testOnlyContext(),
                                          Zone.defaultZone(),
                                          applicationRepository);
@@ -106,6 +110,14 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                                                                              .tenant("unknown")
                                                                              .applicationName("notexist").instanceName("baz").build(), Zone.defaultZone()),
                                                      com.yahoo.jdisc.http.HttpRequest.Method.GET));
+    }
+
+    @Test
+    public void require_that_multiple_tenants_are_handled() throws IOException {
+        assertContent("/test.txt", "foo\n");
+        pathPrefix = createPath(appId2, Zone.defaultZone());
+        baseUrl = baseServer + pathPrefix;
+        assertContent("/test.txt", "bar\n");
     }
 
     @Test
