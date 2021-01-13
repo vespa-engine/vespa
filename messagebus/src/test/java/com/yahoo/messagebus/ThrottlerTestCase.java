@@ -158,6 +158,7 @@ public class ThrottlerTestCase {
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
 
         policy.setWindowSizeIncrement(5)
+              .setMinWindowSize(1)
               .setResizeRate(1);
 
         double windowSize = getWindowSize(policy, timer, 100);
