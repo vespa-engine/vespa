@@ -176,8 +176,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         componentGroup = new ComponentGroup<>(this, "component");
 
         addComponent(new StatisticsComponent());
-        addSimpleComponent(AccessLog.class);
-        addSimpleComponent(SimpleConnectionLog.class);
+        addSimpleComponent(AccessLog.class.getName(), null, "jdisc_http_service");
+        addSimpleComponent(SimpleConnectionLog.class.getName(), null, "jdisc_http_service");
         addComponent(new DefaultThreadpoolProvider(this));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent(SecurityFilterInvoker.class);
