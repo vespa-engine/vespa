@@ -67,6 +67,11 @@ public class JSONFormatter {
             generator.writeStringField("scheme", accessLogEntry.getScheme());
             generator.writeNumberField("localport", accessLogEntry.getLocalPort());
 
+            String connectionId = accessLogEntry.getConnectionId().orElse(null);
+            if (connectionId != null) {
+                generator.writeStringField("connection", connectionId);
+            }
+
             Principal principal = accessLogEntry.getUserPrincipal();
             if (principal != null) {
                 generator.writeStringField("user-principal", principal.getName());
