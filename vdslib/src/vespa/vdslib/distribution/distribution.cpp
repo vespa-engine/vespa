@@ -70,6 +70,7 @@ Distribution::Distribution(const Distribution& d)
 Distribution::ConfigWrapper::ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) :
     _cfg(std::move(cfg))
 { }
+
 Distribution::ConfigWrapper::~ConfigWrapper() = default;
 
 Distribution::Distribution(const ConfigWrapper & config) :
@@ -220,40 +221,30 @@ namespace {
 
     /** Used to record scored groups during ideal groups calculation. */
     struct ScoredGroup {
+        double       _score;
         const Group* _group;
-        double _score;
 
-        ScoredGroup() : _group(nullptr), _score(0) {}
-        ScoredGroup(const Group* group, double score) noexcept
-            : _group(group), _score(score) {}
+        ScoredGroup() noexcept : _score(0), _group(nullptr) { }
+        ScoredGroup(double score, const Group* group) noexcept
+            : _score(score), _group(group) { }
 
-        bool operator<(const ScoredGroup& other) const {
+        bool operator<(const ScoredGroup& other) const noexcept {
             return (_score > other._score);
         }
     };
 
     /** Used to record scored nodes during ideal nodes calculation. */
     struct ScoredNode {
+        double _score;
         uint16_t _index;
         uint16_t _reliability;
-        double _score;
 
-        ScoredNode(uint16_t index, uint16_t reliability, double score)
-            : _index(index), _reliability(reliability), _score(score) {}
+        ScoredNode() noexcept : _score(0), _index(0), _reliability(0) {}
+        ScoredNode(double score, uint16_t index, uint16_t reliability) noexcept
+            : _score(score), _index(index), _reliability(reliability) {}
 
-        bool operator<(const ScoredNode& other) const {
+        bool operator<(const ScoredNode& other) const noexcept {
             return (_score < other._score);
-        }
-    };
-
-    struct IndexSorter {
-        const std::vector<ScoredGroup>& _groups;
-
-        IndexSorter(const std::vector<ScoredGroup>& groups) : _groups(groups) {}
-
-        bool operator()(uint16_t a, uint16_t b) {
-            return (_groups[a]._group->getIndex()
-                        < _groups[b]._group->getIndex());
         }
     };
 
@@ -262,13 +253,12 @@ namespace {
      * decrease redundancy below total reliability. If redundancy !=
      * total reliability, see if non-last entries can be removed.
      */
-    void trimResult(std::list<ScoredNode>& nodes, uint16_t redundancy) {
+    void
+    trimResult(std::vector<ScoredNode>& nodes, uint16_t redundancy) {
             // Initially record total reliability and use the first elements
             // until satisfied.
         uint32_t totalReliability = 0;
-        for (std::list<ScoredNode>::iterator it = nodes.begin();
-             it != nodes.end(); ++it)
-        {
+        for (auto it = nodes.begin(); it != nodes.end(); ++it) {
             if (totalReliability >= redundancy || it->_reliability == 0) {
                 nodes.erase(it, nodes.end());
                 break;
@@ -278,12 +268,10 @@ namespace {
             // If we have too high reliability, see if we can remove something
             // else
         if (totalReliability > redundancy) {
-            for (std::list<ScoredNode>::reverse_iterator it = nodes.rbegin();
-                    it != nodes.rend();)
-            {
+            for (auto it = nodes.rbegin(); it != nodes.rend();) {
                 if (it->_reliability <= (totalReliability - redundancy)) {
                     totalReliability -= it->_reliability;
-                    std::list<ScoredNode>::iterator deleteIt(it.base());
+                    auto deleteIt(it.base());
                     ++it;
                     nodes.erase(--deleteIt);
                     if (totalReliability == redundancy) break;
@@ -292,6 +280,19 @@ namespace {
                 }
             }
         }
+    }
+
+    void
+    insertOrdered(std::vector<ScoredNode> & tmpResults, ScoredNode && scoredNode) {
+        tmpResults.pop_back();
+        auto it = tmpResults.begin();
+        for (; it != tmpResults.end(); ++it) {
+            if (*it < scoredNode) {
+                tmpResults.insert(it, scoredNode);
+                return;
+            }
+        }
+        tmpResults.emplace_back(scoredNode);
     }
 }
 
@@ -323,7 +324,7 @@ Distribution::getIdealGroups(const document::BucketId& bucket,
             // Verified in Group::setCapacity()
             score = std::pow(score, 1.0 / g.second->getCapacity().getValue());
         }
-        tmpResults.emplace_back(g.second, score);
+        tmpResults.emplace_back(score, g.second);
     }
     std::sort(tmpResults.begin(), tmpResults.end());
     if (tmpResults.size() > redundancyArray.size()) {
@@ -347,26 +348,24 @@ Distribution::getIdealDistributorGroup(const document::BucketId& bucket,
     if (parent.isLeafGroup()) {
         return &parent;
     }
-    ScoredGroup result(0, 0);
+    ScoredGroup result;
     uint32_t seed(getGroupSeed(bucket, clusterState, parent));
     RandomGen random(seed);
     uint32_t currentIndex = 0;
     const std::map<uint16_t, Group*>& subGroups(parent.getSubGroups());
-    for (std::map<uint16_t, Group*>::const_iterator it = subGroups.begin();
-         it != subGroups.end(); ++it)
-    {
-        while (it->first < currentIndex++) random.nextDouble();
+    for (const auto & subGroup : subGroups) {
+        while (subGroup.first < currentIndex++) random.nextDouble();
         double score = random.nextDouble();
-        if (it->second->getCapacity() != 1) {
+        if (subGroup.second->getCapacity() != 1) {
             // Capacity shouldn't possibly be 0.
             // Verified in Group::setCapacity()
-            score = std::pow(score, 1.0 / it->second->getCapacity().getValue());
+            score = std::pow(score, 1.0 / subGroup.second->getCapacity().getValue());
         }
         if (score > result._score) {
             if (!_distributorAutoOwnershipTransferOnWholeGroupDown
-                || !allDistributorsDown(*it->second, clusterState))
+                || !allDistributorsDown(*subGroup.second, clusterState))
             {
-                result = ScoredGroup(it->second, score);
+                result = ScoredGroup(score, subGroup.second);
             }
         }
     }
@@ -381,17 +380,12 @@ Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
 {
     if (g.isLeafGroup()) {
         for (uint32_t i=0, n=g.getNodes().size(); i<n; ++i) {
-            const NodeState& ns(cs.getNodeState(
-                    Node(NodeType::DISTRIBUTOR, g.getNodes()[i])));
+            const NodeState& ns(cs.getNodeState(Node(NodeType::DISTRIBUTOR, g.getNodes()[i])));
             if (ns.getState().oneOf("ui")) return false;
         }
     } else {
-        typedef std::map<uint16_t, Group*> GroupMap;
-        const GroupMap& subGroups(g.getSubGroups());
-        for (GroupMap::const_iterator it = subGroups.begin();
-             it != subGroups.end(); ++it)
-        {
-            if (!allDistributorsDown(*it->second, cs)) return false;
+        for (const auto & subGroup : g.getSubGroups()) {
+            if (!allDistributorsDown(*subGroup.second, cs)) return false;
         }
     }
     return true;
@@ -437,14 +431,17 @@ Distribution::getIdealNodes(const NodeType& nodeType,
     }
     RandomGen random(seed);
     uint32_t randomIndex = 0;
+    std::vector<ScoredNode> tmpResults;
     for (uint32_t i=0, n=_groupDistribution.size(); i<n; ++i) {
         uint16_t groupRedundancy(_groupDistribution[i]._redundancy);
         const std::vector<uint16_t>& nodes(_groupDistribution[i]._group->getNodes());
-        // Create temporary place to hold results. Use double linked list
-        // for cheap access to back(). Stuff in redundancy fake entries to
+        // Create temporary place to hold results.
+        // Stuff in redundancy fake entries to
         // avoid needing to check size during iteration.
-        std::list<ScoredNode> tmpResults(groupRedundancy, ScoredNode(0, 0, 0));
-        for (uint32_t j=0, m=nodes.size(); j<m; ++j) {
+        tmpResults.reserve(groupRedundancy);
+        tmpResults.clear();
+        tmpResults.resize(groupRedundancy);
+        for (uint32_t j=0; j < nodes.size(); ++j) {
             // Verify that the node is legal target before starting to grab
             // random number. Helps worst case of having to start new random
             // seed if the node that is out of order is illegal anyways.
@@ -469,15 +466,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
                 score = std::pow(score, 1.0 / nodeState.getCapacity().getValue());
             }
             if (score > tmpResults.back()._score) {
-                for (std::list<ScoredNode>::iterator it = tmpResults.begin();
-                     it != tmpResults.end(); ++it)
-                {
-                    if (score > it->_score) {
-                        tmpResults.insert(it, ScoredNode(nodes[j], nodeState.getReliability(), score));
-                        break;
-                    }
-                }
-                tmpResults.pop_back();
+                insertOrdered(tmpResults, ScoredNode(score, nodes[j], nodeState.getReliability()));
             }
         }
         trimResult(tmpResults, groupRedundancy);
@@ -491,7 +480,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
 Distribution::ConfigWrapper
 Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount)
 {
-    std::unique_ptr<vespa::config::content::StorDistributionConfigBuilder> config(new vespa::config::content::StorDistributionConfigBuilder());
+    auto config = std::make_unique<vespa::config::content::StorDistributionConfigBuilder>();
     config->redundancy = redundancy;
     config->group.resize(1);
     config->group[0].index = "invalid";

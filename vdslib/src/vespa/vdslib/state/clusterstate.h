@@ -57,12 +57,10 @@ public:
     uint16_t getDistributionBitCount() const { return _distributionBits; }
     const State& getClusterState() const { return *_clusterState; }
     const NodeState& getNodeState(const Node& node) const;
-    const vespalib::string& getDescription() const { return _description; }
 
     void setVersion(uint32_t version) { _version = version; }
     void setClusterState(const State& state);
     void setNodeState(const Node& node, const NodeState& state);
-    void setDescription(vespalib::stringref s) { _description = s; }
     void setDistributionBitCount(uint16_t count) { _distributionBits = count; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
