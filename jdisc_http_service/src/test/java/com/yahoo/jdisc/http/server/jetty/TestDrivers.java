@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
+import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
@@ -80,6 +81,7 @@ public class TestDrivers {
                         bind(ServerConfig.class).toInstance(new ServerConfig(serverConfig));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(connectorConfigBuilder));
                         bind(FilterBindings.class).toInstance(new FilterBindings.Builder().build());
+                        bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                     }
                 },
                 new ConnectorFactoryRegistryModule(connectorConfigBuilder),
