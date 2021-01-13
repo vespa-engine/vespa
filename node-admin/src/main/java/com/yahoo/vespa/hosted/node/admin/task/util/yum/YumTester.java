@@ -77,7 +77,13 @@ public class YumTester extends Yum {
                 cmd.append(" --setopt skip_missing_names_on_install=False");
             if ("upgrade".equals(command) && packages.size() > 1)
                 cmd.append(" --setopt skip_missing_names_on_update=False");
-            packages.forEach(pkg -> cmd.append(" ").append(pkg.toName()));
+            packages.forEach(pkg -> {
+                String name = pkg.toName();
+                if (name.contains("(") || name.contains(")")) { // Ugly hack to handle implicit quoting done in com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine
+                    name = "\"" + name + "\"";
+                }
+                cmd.append(" ").append(name);
+            });
             cmd.append(" 2>&1");
 
             terminal.expectCommand(cmd.toString(), 0, output);

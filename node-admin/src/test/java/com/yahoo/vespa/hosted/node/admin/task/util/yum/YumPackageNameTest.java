@@ -37,6 +37,17 @@ public class YumPackageNameTest {
                 "docker-engine-selinux",
                 null);
 
+        // name with parenthesis
+        verifyPackageName(
+                "dnf-command(versionlock)",
+                null,
+                "dnf-command(versionlock)",
+                null,
+                null,
+                null,
+                "dnf-command(versionlock)",
+                null);
+
         // name.arch
         verifyPackageName(
                 "docker-engine-selinux.x86_64",
