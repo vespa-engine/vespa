@@ -175,8 +175,6 @@ public:
 
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 
-    Result revert(const Bucket&, Timestamp, Context&);
-
     /**
      * The following methods are used only for unit testing.
      * DummyPersistence is used many places to test the framework around it.
