@@ -852,59 +852,6 @@ DummyPersistence::join(const Bucket& source1, const Bucket& source2,
     return Result();
 }
 
-Result
-DummyPersistence::revert(const Bucket& b, Timestamp t, Context&)
-{
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
-    LOG(debug, "revert(%s, %" PRIu64 ")",
-        b.toString().c_str(),
-        uint64_t(t));
-    assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-
-    BucketContentGuard::UP bc(acquireBucketWithLock(b));
-    if (!bc.get()) {
-        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
-    }
-
-    BucketContent& content(**bc);
-    DocEntry::SP docEntry(content.getEntry(t));
-    if (!docEntry.get()) {
-        return Result();
-    }
-
-    GlobalId gid(docEntry->getDocumentId()->getGlobalId());
-    BucketContent::GidMapType::iterator gidIt(content._gidMap.find(gid));
-    assert(gidIt != content._gidMap.end());
-
-    std::vector<BucketEntry> newEntries;
-    newEntries.reserve(content._entries.size() - 1);
-    Timestamp timestampToRestore(0);
-    for (uint32_t i=0; i<content._entries.size(); ++i) {
-        BucketEntry e(content._entries[i]);
-        if (e.entry->getTimestamp() == t) continue;
-        if (e.gid == gid
-            && e.entry->getTimestamp() > timestampToRestore)
-        {
-            // Set GID map entry to newest non-reverted doc entry
-            assert(e.entry.get() != gidIt->second.get());
-            LOG(spam, "Remapping GID to point to %s",
-                e.entry->toString().c_str());
-            gidIt->second = e.entry;
-            timestampToRestore = e.entry->getTimestamp();
-        }
-        newEntries.push_back(e);
-    }
-    if (timestampToRestore == 0) {
-        LOG(spam, "Found no entry to revert to for %s; erasing from GID map",
-            docEntry->toString().c_str());
-        content._gidMap.erase(gidIt);
-    }
-    newEntries.swap(content._entries);
-    content.setOutdatedInfo(true);
-
-    return Result();
-}
-
 std::string
 DummyPersistence::dumpBucket(const Bucket& b) const
 {
