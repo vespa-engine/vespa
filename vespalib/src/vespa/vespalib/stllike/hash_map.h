@@ -52,6 +52,7 @@ public:
     void erase(iterator it)                     { return erase(it->first); }
     void erase(const_iterator it)               { return erase(it->first); }
     iterator find(const K & key)                { return _ht.find(key); }
+    size_t count(const K & key)           const { return _ht.find(key) != _ht.end() ? 1 : 0; }
     const_iterator find(const K & key)    const { return _ht.find(key); }
 
     template< typename AltKey >
