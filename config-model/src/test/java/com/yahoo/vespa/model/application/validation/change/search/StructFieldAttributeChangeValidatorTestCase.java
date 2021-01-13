@@ -35,7 +35,7 @@ public class StructFieldAttributeChangeValidatorTestCase {
         @Override
         public List<VespaConfigChangeAction> validate() {
             List<VespaConfigChangeAction> result = new ArrayList<>();
-            result.addAll(structFieldAttributeValidator.validate(ValidationOverrides.empty, Instant.now()));
+            result.addAll(structFieldAttributeValidator.validate());
             result.addAll(docTypeValidator.validate());
             return result;
         }

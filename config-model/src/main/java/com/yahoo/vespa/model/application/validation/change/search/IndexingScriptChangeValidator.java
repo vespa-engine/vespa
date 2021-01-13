@@ -35,7 +35,7 @@ public class IndexingScriptChangeValidator {
         this.nextSearch = nextSearch;
     }
 
-    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
+    public List<VespaConfigChangeAction> validate() {
         List<VespaConfigChangeAction> result = new ArrayList<>();
         for (ImmutableSDField nextField : nextSearch.allConcreteFields()) {
             String fieldName = nextField.getName();

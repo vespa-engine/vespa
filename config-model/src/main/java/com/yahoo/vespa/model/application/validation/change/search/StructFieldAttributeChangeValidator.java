@@ -52,20 +52,19 @@ public class StructFieldAttributeChangeValidator {
         this.nextAttributes = nextAttributes;
     }
 
-    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
+    public List<VespaConfigChangeAction> validate() {
         List<VespaConfigChangeAction> result = new ArrayList();
         for (Field currentField : currentDocType.getAllFields()) {
             Field nextField = nextDocType.getField(currentField.getName());
             if (nextField != null) {
                 result.addAll(validateAddAttributeAspect(new Context(currentField, currentAttributes),
-                        new Context(nextField, nextAttributes),
-                        overrides, now));
+                                                         new Context(nextField, nextAttributes)));
             }
         }
         return result;
     }
 
-    private List<VespaConfigChangeAction> validateAddAttributeAspect(Context current, Context next, ValidationOverrides overrides, Instant now) {
+    private List<VespaConfigChangeAction> validateAddAttributeAspect(Context current, Context next) {
         return next.structFieldAttributes.stream()
                 .filter(nextAttr -> current.hasFieldForStructFieldAttribute(nextAttr) &&
                                     !current.hasStructFieldAttribute(nextAttr))
