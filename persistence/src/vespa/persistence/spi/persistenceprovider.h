@@ -15,6 +15,8 @@ namespace document { class FieldSet; }
 
 namespace storage::spi {
 
+class IResourceUsageListener;
+
 /**
  * This interface is the basis for a persistence provider in Vespa.  A
  * persistence provider is used by Vespa Storage to provide an elastic stateful
@@ -374,6 +376,16 @@ struct PersistenceProvider
      * source1 and source2 should be stored in the target bucket.
      */
     virtual Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) = 0;
+
+    /*
+     * Register a listener for updates to resource usage.
+     */
+    virtual void register_resource_usage_listener(std::shared_ptr<IResourceUsageListener> listener) = 0;
+
+    /*
+     * Unregister a listener for updates to resource usage.
+     */
+    virtual void unregister_resource_usage_listener(std::shared_ptr<IResourceUsageListener> listener) = 0;
 };
 
 }

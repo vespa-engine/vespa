@@ -111,6 +111,8 @@ public:
     spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2,
                      const spi::Bucket& target, spi::Context&) override;
     spi::Result removeEntry(const spi::Bucket&, spi::Timestamp, spi::Context&) override;
+    void register_resource_usage_listener(std::shared_ptr<spi::IResourceUsageListener> listener) override;
+    void unregister_resource_usage_listener(std::shared_ptr<spi::IResourceUsageListener> listener) override;
 };
 
 } // storage

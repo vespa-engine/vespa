@@ -6,6 +6,8 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/persistence/spi/i_resource_usage_listener.h>
+#include <vespa/persistence/spi/resource_usage.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -850,6 +852,20 @@ DummyPersistence::join(const Bucket& source1, const Bucket& source2,
     (*targetGuard)->setActive(active);
 
     return Result();
+}
+
+void
+DummyPersistence::register_resource_usage_listener(std::shared_ptr<IResourceUsageListener> listener)
+{
+    ResourceUsage usage;
+    usage.set_disk_usage(0.5);
+    usage.set_memory_usage(0.4);
+    listener->update_resource_usage(usage);
+}
+
+void
+DummyPersistence::unregister_resource_usage_listener(std::shared_ptr<IResourceUsageListener>)
+{
 }
 
 std::string

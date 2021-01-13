@@ -175,6 +175,9 @@ public:
 
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 
+    void register_resource_usage_listener(std::shared_ptr<IResourceUsageListener> listener) override;
+    void unregister_resource_usage_listener(std::shared_ptr<IResourceUsageListener> listener) override;
+
     /**
      * The following methods are used only for unit testing.
      * DummyPersistence is used many places to test the framework around it.

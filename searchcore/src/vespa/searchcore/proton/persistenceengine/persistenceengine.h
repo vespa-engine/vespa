@@ -5,6 +5,7 @@
 #include "i_resource_write_filter.h"
 #include "persistence_handler_map.h"
 #include "ipersistencehandler.h"
+#include "resource_usage_tracker.h"
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <mutex>
 #include <shared_mutex>
@@ -12,6 +13,7 @@
 namespace proton {
 
 class IPersistenceEngineOwner;
+class IDiskMemUsageNotifier;
 
 class PersistenceEngine : public storage::spi::AbstractPersistenceProvider {
 private:
@@ -27,6 +29,7 @@ private:
     using CreateIteratorResult = storage::spi::CreateIteratorResult;
     using GetResult = storage::spi::GetResult;
     using IncludedVersions = storage::spi::IncludedVersions;
+    using IResourceUsageListener = storage::spi::IResourceUsageListener;
     using IterateResult = storage::spi::IterateResult;
     using IteratorId = storage::spi::IteratorId;
     using RemoveResult = storage::spi::RemoveResult;
@@ -68,7 +71,8 @@ private:
     const IResourceWriteFilter             &_writeFilter;
     std::unordered_map<BucketSpace, ClusterState::SP, BucketSpace::hash> _clusterStates;
     mutable ExtraModifiedBuckets            _extraModifiedBuckets;
-    mutable std::shared_mutex         _rwMutex;
+    mutable std::shared_mutex               _rwMutex;
+    ResourceUsageTracker                    _resource_usage_tracker;
 
     using ReadGuard = std::shared_lock<std::shared_mutex>;
     using WriteGuard = std::unique_lock<std::shared_mutex>;
@@ -84,7 +88,7 @@ private:
 public:
     typedef std::unique_ptr<PersistenceEngine> UP;
 
-    PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter,
+    PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter, IDiskMemUsageNotifier &disk_mem_usage_notifier,
                       ssize_t defaultSerializedSize, bool ignoreMaxBytes);
     ~PersistenceEngine() override;
 
@@ -111,12 +115,14 @@ public:
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
-
+    void register_resource_usage_listener(std::shared_ptr<IResourceUsageListener> listener) override;
+    void unregister_resource_usage_listener(std::shared_ptr<IResourceUsageListener> listener) override;
     void destroyIterators();
     void propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void populateInitialBucketDB(const WriteGuard & guard, BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
     WriteGuard getWLock() const;
+    ResourceUsageTracker &get_resource_usage_tracker() noexcept { return _resource_usage_tracker; }
 };
 
 }

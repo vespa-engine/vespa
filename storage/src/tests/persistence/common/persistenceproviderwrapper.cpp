@@ -202,6 +202,18 @@ PersistenceProviderWrapper::join(const spi::Bucket& source1,
     return _spi.join(source1, source2, target, context);
 }
 
+void
+PersistenceProviderWrapper::register_resource_usage_listener(std::shared_ptr<spi::IResourceUsageListener> listener)
+{
+    _spi.register_resource_usage_listener(std::move(listener));
+}
+
+void
+PersistenceProviderWrapper::unregister_resource_usage_listener(std::shared_ptr<spi::IResourceUsageListener> listener)
+{
+    _spi.unregister_resource_usage_listener(std::move(listener));
+}
+
 spi::Result
 PersistenceProviderWrapper::removeEntry(const spi::Bucket& bucket,
                                         spi::Timestamp timestamp,

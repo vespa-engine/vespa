@@ -3,6 +3,8 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/i_resource_usage_listener.h>
+#include <vespa/persistence/spi/resource_usage.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -2253,6 +2255,36 @@ TEST_F(ConformanceTest, testBucketSpaces)
     assertBucketInfo(*spi, bucket01, 2);
     assertBucketInfo(*spi, bucket11, 1);
     assertBucketInfo(*spi, bucket12, 1);
+}
+
+namespace {
+
+struct MyResourceUsageListener : public IResourceUsageListener
+{
+    ResourceUsage usage;
+    MyResourceUsageListener() noexcept
+      : IResourceUsageListener(),
+        usage()
+    {
+    }
+    void update_resource_usage(const ResourceUsage& resource_usage) override {
+        usage = resource_usage;
+    };
+};
+
+}
+
+TEST_F(ConformanceTest, resource_usage)
+{
+    auto listener = std::make_shared<MyResourceUsageListener>();
+    document::TestDocMan testDocMan;
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    EXPECT_EQ(0.0, listener->usage.get_disk_usage());
+    EXPECT_EQ(0.0, listener->usage.get_memory_usage());
+    spi->register_resource_usage_listener(listener);
+    EXPECT_EQ(0.5, listener->usage.get_disk_usage());
+    EXPECT_EQ(0.4, listener->usage.get_memory_usage());
+    spi->unregister_resource_usage_listener(listener);
 }
 
 TEST_F(ConformanceTest, detectAndTestOptionalBehavior)

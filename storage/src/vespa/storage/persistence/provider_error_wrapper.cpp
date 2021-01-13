@@ -155,6 +155,18 @@ ProviderErrorWrapper::join(const spi::Bucket& source1, const spi::Bucket& source
     return checkResult(_impl.join(source1, source2, target, context));
 }
 
+void
+ProviderErrorWrapper::register_resource_usage_listener(std::shared_ptr<spi::IResourceUsageListener> listener)
+{
+    return _impl.register_resource_usage_listener(std::move(listener));
+}
+
+void
+ProviderErrorWrapper::unregister_resource_usage_listener(std::shared_ptr<spi::IResourceUsageListener> listener)
+{
+    return _impl.unregister_resource_usage_listener(std::move(listener));
+}
+
 spi::Result
 ProviderErrorWrapper::removeEntry(const spi::Bucket& bucket, spi::Timestamp ts, spi::Context& context)
 {
