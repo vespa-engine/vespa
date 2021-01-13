@@ -71,6 +71,7 @@ public class AccessLogEntry {
     private String rawPath;
     private String rawQuery;
     private TraceNode traceNode;
+    private String connectionId;
 
     private ListMap<String,String> keyValues=null;
 
@@ -466,6 +467,19 @@ public class AccessLogEntry {
         }
     }
 
+    public void setConnectionId(String id) {
+        synchronized (monitor) {
+            requireNull(this.connectionId);
+            this.connectionId = id;
+        }
+    }
+
+    public Optional<String> getConnectionId() {
+        synchronized (monitor) {
+            return Optional.ofNullable(this.connectionId);
+        }
+    }
+
     @Override
     public String toString() {
         synchronized (monitor) {
@@ -495,7 +509,8 @@ public class AccessLogEntry {
                     ", sslPrincipal=" + sslPrincipal +
                     ", rawPath='" + rawPath + '\'' +
                     ", rawQuery='" + rawQuery + '\'' +
-                    ", trace='" + traceNode + '\'' +
+                    ", traceNode=" + traceNode +
+                    ", connectionId='" + connectionId + '\'' +
                     ", keyValues=" + keyValues +
                     '}';
         }
