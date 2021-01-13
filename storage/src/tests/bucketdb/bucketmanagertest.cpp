@@ -62,7 +62,6 @@ public:
     std::unique_ptr<DummyStorageLink> _top;
     BucketManager *_manager;
     DummyStorageLink* _bottom;
-    FileStorManager* _filestorManager;
     std::map<document::BucketId, TestBucketInfo> _bucketInfo;
     uint32_t _emptyBuckets;
     document::Document::SP _document;
@@ -166,7 +165,6 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
         auto bottom = std::make_unique<FileStorManager>(
                     config.getConfigId(),
                     _node->getPersistenceProvider(), _node->getComponentRegister(), *_node);
-        _filestorManager = bottom.get();
         _top->push_back(std::move(bottom));
     }
     // Generate a doc to use for testing..
