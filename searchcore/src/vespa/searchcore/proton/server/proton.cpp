@@ -310,6 +310,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         protonConfig.basedir.c_str(), getcwd(tmp, sizeof(tmp)));
 
     _persistenceEngine = std::make_unique<PersistenceEngine>(*this, _diskMemUsageSampler->writeFilter(),
+                                                             _diskMemUsageSampler->notifier(),
                                                              protonConfig.visit.defaultserializedsize,
                                                              protonConfig.visit.ignoremaxbytes);
 

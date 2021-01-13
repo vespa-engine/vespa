@@ -12,8 +12,11 @@
 #include "operationcomplete.h"
 
 namespace document { class FieldSet; }
+namespace vespalib { class IDestructorCallback; }
 
 namespace storage::spi {
+
+class IResourceUsageListener;
 
 /**
  * This interface is the basis for a persistence provider in Vespa.  A
@@ -374,6 +377,12 @@ struct PersistenceProvider
      * source1 and source2 should be stored in the target bucket.
      */
     virtual Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) = 0;
+
+    /*
+     * Register a listener for updates to resource usage.
+     */
+    virtual std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) = 0;
+
 };
 
 }

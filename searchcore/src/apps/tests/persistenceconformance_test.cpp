@@ -25,6 +25,7 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -295,10 +296,11 @@ class MyPersistenceEngine : public DocDBRepoHolder,
 public:
     MyPersistenceEngine(MyPersistenceEngineOwner &owner,
                         MyResourceWriteFilter &writeFilter,
+                        IDiskMemUsageNotifier& disk_mem_usage_notifier,
                         DocumentDBRepo::UP docDbRepo,
                         const vespalib::string &docType = "")
         : DocDBRepoHolder(std::move(docDbRepo)),
-          PersistenceEngine(owner, writeFilter, -1, false)
+          PersistenceEngine(owner, writeFilter, disk_mem_usage_notifier, -1, false)
     {
         addHandlers(docType);
     }
@@ -348,6 +350,7 @@ private:
     vespalib::string        _docType;
     MyPersistenceEngineOwner _engineOwner;
     MyResourceWriteFilter    _writeFilter;
+    test::DiskMemUsageNotifier   _disk_mem_usage_notifier;
 public:
     MyPersistenceFactory(const vespalib::string &baseDir, int tlsListenPort,
                          SchemaConfigFactory::SP schemaFactory,
@@ -358,7 +361,8 @@ public:
           _docDbRepo(),
           _docType(docType),
           _engineOwner(),
-          _writeFilter()
+          _writeFilter(),
+          _disk_mem_usage_notifier(DiskMemUsageState({ 0.8, 0.5 }, { 0.8, 0.4 }))
     {
         clear();
     }
@@ -369,7 +373,7 @@ public:
                                                          const DocumenttypesConfig &typesCfg) override {
         ConfigFactory cfgFactory(repo, std::make_shared<DocumenttypesConfig>(typesCfg), _schemaFactory);
         _docDbRepo = std::make_unique<DocumentDBRepo>(cfgFactory, _docDbFactory);
-        auto engine = std::make_unique<MyPersistenceEngine>(_engineOwner,_writeFilter,std::move(_docDbRepo), _docType);
+        auto engine = std::make_unique<MyPersistenceEngine>(_engineOwner,_writeFilter, _disk_mem_usage_notifier, std::move(_docDbRepo), _docType);
         assert( ! _docDbRepo); // Repo should be handed over
         return engine;
     }
