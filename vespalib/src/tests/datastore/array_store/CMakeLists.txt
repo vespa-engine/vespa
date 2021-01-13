@@ -5,4 +5,4 @@ vespa_add_executable(vespalib_array_store_test_app TEST
     DEPENDS
     vespalib
 )
-vespa_add_test(NAME vespalib_array_store_test_app COMMAND vespalib_array_store_test_app)
+vespa_add_test(NAME vespalib_array_store_test_app COMMAND vespalib_array_store_test_app COST 100)
