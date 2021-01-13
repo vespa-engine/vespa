@@ -105,11 +105,11 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
         long time = timer.milliTime();
         double elapsed = (time - timeOfLastMessage);
         if (elapsed > IDLE_TIME_MILLIS) {
-            windowSize = Math.min(windowSize, pendingCount + windowSizeIncrement);
+            windowSize = Math.max(minWindowSize, Math.min(windowSize, pendingCount + windowSizeIncrement));
         }
         timeOfLastMessage = time;
         int windowSizeFloored = (int) windowSize;
-        // Use floating point window sizes, so the algorithm sees the different in 1.1 and 1.9 window size.
+        // Use floating point window sizes, so the algorithm sees the difference between 1.1 and 1.9 window size.
         boolean carry = numSent < (windowSize * resizeRate) * (windowSize - windowSizeFloored);
         return pendingCount < windowSizeFloored + (carry ? 1 : 0);
     }
@@ -257,6 +257,9 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setMaxWindowSize(double max) {
+        if (max < 1)
+            throw new IllegalArgumentException("Maximum window size cannot be less than one");
+
         this.maxWindowSize = max;
         return this;
     }
@@ -279,6 +282,9 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
      * @return this, to allow chaining
      */
     public DynamicThrottlePolicy setMinWindowSize(double min) {
+        if (min < 1)
+            throw new IllegalArgumentException("Minimum window size cannot be less than one");
+
         this.minWindowSize = min;
         this.windowSize = Math.max(this.minWindowSize, this.windowSizeIncrement);
         return this;

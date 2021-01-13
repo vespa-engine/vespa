@@ -37,6 +37,7 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author Einar Rosenvinge
  */
+// TODO jonmv: Remove this? Only used sensibly by FeedHandlerV3, where only timeout varies.
 public final class SessionCache extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(SessionCache.class.getName());
