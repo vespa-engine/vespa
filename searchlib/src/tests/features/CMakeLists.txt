@@ -10,7 +10,7 @@ vespa_add_executable(searchlib_prod_features_test_app TEST
     searchlib
 )
 vespa_add_test(NAME searchlib_prod_features_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/prod_features_test.sh
-               DEPENDS searchlib_prod_features_test_app)
+               DEPENDS searchlib_prod_features_test_app COST 80)
 vespa_add_executable(searchlib_featurebenchmark_app
     SOURCES
     featurebenchmark.cpp
