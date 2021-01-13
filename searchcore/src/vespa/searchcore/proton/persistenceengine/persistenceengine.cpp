@@ -7,6 +7,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/util/feed_reject_helper.h>
 #include <vespa/document/base/exceptions.h>
 #include <thread>
 
@@ -359,7 +360,7 @@ PersistenceEngine::updateAsync(const Bucket& b, Timestamp t, DocumentUpdate::SP 
 {
     if (!_writeFilter.acceptWriteOperation()) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
-        if (!state.acceptWriteOperation()) {
+        if (!state.acceptWriteOperation() && document::FeedRejectHelper::mustReject(*upd)) {
             return onComplete->onComplete(std::make_unique<UpdateResult>(Result::ErrorType::RESOURCE_EXHAUSTED,
                                 make_string("Update operation rejected for document '%s': '%s'",
                                             upd->getId().toString().c_str(), state.message().c_str())));
