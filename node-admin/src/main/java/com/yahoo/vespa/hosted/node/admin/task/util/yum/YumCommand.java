@@ -148,9 +148,18 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             Version yumVersion = version(context);
             String targetVersionLockName = yumPackage.toVersionLockName(yumVersion);
 
+            List<String> command = new ArrayList<>(4);
+            command.add("yum");
+            // Using --quiet on Yum 4 always results in an empty list, even if locks exist...
+            if (yumVersion.getMajor() < 4) {
+                command.add("--quiet");
+            }
+            command.add("versionlock");
+            command.add("list");
+
             boolean alreadyLocked = terminal
                     .newCommandLine(context)
-                    .add("yum", "--quiet", "versionlock", "list")
+                    .add(command)
                     .executeSilently()
                     .getOutputLinesStream()
                     .map(YumPackageName::parseString)

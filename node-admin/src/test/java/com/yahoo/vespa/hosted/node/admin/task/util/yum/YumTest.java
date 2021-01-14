@@ -192,7 +192,7 @@ public class YumTest {
     @Test
     public void testWithVersionLockYum4() {
         mockYumVersion(YumVersion.rhel8);
-        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+        terminal.expectCommand("yum versionlock list 2>&1",
                                0,
                                "Last metadata expiration check: 0:51:26 ago on Thu 14 Jan 2021 09:39:24 AM UTC.\n");
         terminal.expectCommand("yum versionlock add --assumeyes \"openssh-0:8.0p1-4.el8_1.*\" 2>&1");
