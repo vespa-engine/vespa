@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
 /**
- * A list of special tokens - string that should be threated as word
+ * A list of special tokens - string that should be treated as word
  * no matter what they contain. Special tokens are case insensitive.
  *
  * @author bratseth
@@ -19,9 +19,9 @@ public class SpecialTokens {
 
     private static final Logger log = Logger.getLogger(SpecialTokens.class.getName());
 
-    private String name;
+    private final String name;
 
-    private List<SpecialToken> specialTokens = new ArrayList<>();
+    private final List<SpecialToken> specialTokens = new ArrayList<>();
 
     private boolean frozen = false;
 
@@ -45,8 +45,7 @@ public class SpecialTokens {
      * Adds a special token to this
      *
      * @param token the special token string to add
-     * @param replace the token to replace instances of the special token with,
-     *        or null to keep the token
+     * @param replace the token to replace instances of the special token with, or null to keep the token
      */
     public void addSpecialToken(String token, String replace) {
         ensureNotFrozen();

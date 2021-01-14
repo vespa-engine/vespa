@@ -46,14 +46,12 @@ public class SearchChainResolver {
 
     public static class Builder {
 
-        private SortedSet<Target> defaultTargets = new TreeSet<>();
+        private final SortedSet<Target> defaultTargets = new TreeSet<>();
 
-        private final ComponentRegistry<Target> targets = new ComponentRegistry<Target>() {
+        private final ComponentRegistry<Target> targets = new ComponentRegistry<>() {
             @Override
             public void freeze() {
-                for (Target target : allComponents()) {
-                    target.freeze();
-                }
+                allComponents().forEach(Target::freeze);
                 super.freeze();
             }
         };
@@ -70,10 +68,16 @@ public class SearchChainResolver {
             return addSearchChain(searchChainId, new FederationOptions(), documentTypes);
         }
 
-        public Builder addSearchChain(ComponentId searchChainId, FederationOptions federationOptions,
+        public Builder addSearchChain(ComponentId searchChainId,
+                                      FederationOptions federationOptions,
                                       List<String> documentTypes) {
             registerTarget(new SingleTarget(searchChainId,
-                                            new SearchChainInvocationSpec(searchChainId, null, null, federationOptions, documentTypes), false));
+                                            new SearchChainInvocationSpec(searchChainId,
+                                                                          null,
+                                                                          null,
+                                                                          federationOptions,
+                                                                          documentTypes),
+                                            false));
             return this;
         }
 
@@ -86,8 +90,8 @@ public class SearchChainResolver {
         }
 
         public Builder addSourceForProvider(ComponentId sourceId, ComponentId providerId, ComponentId searchChainId,
-                                         boolean isDefaultProviderForSource, FederationOptions federationOptions,
-                                         List<String> documentTypes) {
+                                            boolean isDefaultProviderForSource, FederationOptions federationOptions,
+                                            List<String> documentTypes) {
 
             SearchChainInvocationSpec searchChainInvocationSpec =
                     new SearchChainInvocationSpec(searchChainId, sourceId, providerId, federationOptions, documentTypes);
@@ -158,4 +162,5 @@ public class SearchChainResolver {
     public SortedSet<Target> defaultTargets() {
         return defaultTargets;
     }
+
 }

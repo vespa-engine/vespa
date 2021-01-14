@@ -12,10 +12,7 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
  */
 public class GenericProvider extends Provider implements ProviderConfig.Producer {
 
-    /*
-     * Config producer for the contained http searcher..
-     */
-    @SuppressWarnings("deprecation")
+    /** Config producer for the contained http searcher. */
     public GenericProvider(ChainSpecification specWithoutInnerSearchers, FederationOptions federationOptions) {
         super(specWithoutInnerSearchers, federationOptions);
     }

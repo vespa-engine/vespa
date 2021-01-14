@@ -7,7 +7,6 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Substring;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,7 +19,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.*;
  */
 public final class Tokenizer {
 
-    private List<Token> tokens = new java.util.ArrayList<>();
+    private final List<Token> tokens = new java.util.ArrayList<>();
 
     private String source;
 
@@ -38,7 +37,7 @@ public final class Tokenizer {
 
     /** Creates a tokenizer which initializes from a given Linguistics */
     public Tokenizer(Linguistics linguistics) {
-        this.characterClasses=linguistics.getCharacterClasses();
+        this.characterClasses = linguistics.getCharacterClasses();
     }
 
     /**
@@ -224,9 +223,7 @@ public final class Tokenizer {
     }
 
     private SpecialTokens.SpecialToken getSpecialToken(int start) {
-        if (specialTokens == null) {
-            return null;
-        }
+        if (specialTokens == null) return null;
         return specialTokens.tokenize(source.substring(start), substringSpecialTokens);
     }
 

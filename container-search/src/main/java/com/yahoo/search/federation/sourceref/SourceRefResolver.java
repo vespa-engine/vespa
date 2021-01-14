@@ -22,13 +22,12 @@ public class SourceRefResolver {
     public SourceRefResolver(SearchChainResolver searchChainResolver) {
         this.searchChainResolver = searchChainResolver;
     }
+
     public Set<SearchChainInvocationSpec> resolve(ComponentSpecification sourceRef,
                                                   Properties sourceToProviderMap,
-                                                  IndexFacts indexFacts)
-            throws UnresolvedSearchChainException {
-
+                                                  IndexFacts indexFacts) throws UnresolvedSearchChainException {
         try {
-            return new LinkedHashSet<>(Arrays.asList(searchChainResolver.resolve(sourceRef, sourceToProviderMap)));
+            return new LinkedHashSet<>(List.of(searchChainResolver.resolve(sourceRef, sourceToProviderMap)));
         } catch (UnresolvedSourceRefException e) {
             return resolveClustersWithDocument(sourceRef, sourceToProviderMap, indexFacts);
         }

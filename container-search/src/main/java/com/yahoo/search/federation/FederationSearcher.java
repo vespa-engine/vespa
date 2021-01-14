@@ -138,7 +138,7 @@ public class FederationSearcher extends ForkingSearcher {
                 }
             }
 
-            //Allow source groups to use by default.
+            // Allow source groups to use by default.
             if (target.useByDefault())
                 builder.useTargetByDefault(target.id());
         }
