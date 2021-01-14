@@ -520,13 +520,6 @@ private:
         return state;
     }
 
-    State waitState(State state) const override {
-        assert(state == State::COMPLETED);
-        _lidState.waitComplete();
-        _waitCompleteCount++;
-        return state;
-    }
-
 public:
     mutable size_t _waitCompleteCount;
 private:

@@ -27,9 +27,5 @@ void
 ILidCommitState::waitComplete(const LidList & lids) const {
     waitState(State::COMPLETED, lids);
 }
-void
-ILidCommitState::waitComplete() const {
-    waitState(State::COMPLETED);
-}
 
 }

@@ -49,16 +49,13 @@ public:
     enum class State {NEED_COMMIT, WAITING, COMPLETED};
     using LidList = std::vector<uint32_t>;
     virtual ~ILidCommitState() = default;
-    State getState() const { return waitState(State::NEED_COMMIT); }
     State getState(uint32_t lid) const { return waitState(State::NEED_COMMIT, lid); }
     State getState(const LidList & lids) const { return waitState(State::NEED_COMMIT, lids); }
     void waitComplete(uint32_t lid) const;
     void waitComplete(const LidList & lids) const;
-    void waitComplete() const;
 private:
     virtual State waitState(State state, uint32_t lid) const = 0;
     virtual State waitState(State state, const LidList & lids) const = 0;
-    virtual State waitState(State state) const = 0;
 };
 
 }
