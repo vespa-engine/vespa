@@ -32,7 +32,7 @@ struct MyResourceUsageListener : public storage::spi::IResourceUsageListener
 
 TEST(ResourceUsageTrackerTest, resource_usage_is_forwarded_to_listener)
 {
-    DiskMemUsageNotifier notifier;
+    DiskMemUsageNotifier notifier(DiskMemUsageState({ 0.8, 0.5 }, { 0.8, 0.4 }));
     auto listener = std::make_shared<MyResourceUsageListener>();
     ResourceUsageTracker tracker(notifier);
     EXPECT_EQ((std::vector<double>{ 0.0, 0.0 }), listener->get_usage_vector());
