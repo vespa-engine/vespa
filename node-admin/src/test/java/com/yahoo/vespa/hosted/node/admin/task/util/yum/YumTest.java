@@ -16,13 +16,17 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
+/**
+ * @author hakonhall
+ */
 public class YumTest {
+
     private final TaskContext taskContext = mock(TaskContext.class);
     private final TestTerminal terminal = new TestTerminal();
     private final Yum yum = new Yum(terminal);
 
     @After
-    public void tearDown() {
+    public void after() {
         terminal.verifyAllCommandsExecuted();
     }
 
@@ -74,6 +78,7 @@ public class YumTest {
 
     @Test
     public void testAlreadyInstalled() {
+        mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
@@ -85,6 +90,7 @@ public class YumTest {
                 .converge(taskContext));
 
         // RHEL 8
+        mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
@@ -96,6 +102,7 @@ public class YumTest {
 
     @Test
     public void testAlreadyUpgraded() {
+        mockYumVersion();
         terminal.expectCommand(
                 "yum upgrade --assumeyes --setopt skip_missing_names_on_update=False package-1 package-2 2>&1",
                 0,
@@ -106,6 +113,7 @@ public class YumTest {
                 .converge(taskContext));
 
         // RHEL 8
+        mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand(
                 "yum upgrade --assumeyes --setopt skip_missing_names_on_update=False package-1 package-2 2>&1",
                 0,
@@ -117,6 +125,7 @@ public class YumTest {
 
     @Test
     public void testAlreadyRemoved() {
+        mockYumVersion();
         terminal.expectCommand(
                 "yum remove --assumeyes package-1 package-2 2>&1",
                 0,
@@ -127,6 +136,7 @@ public class YumTest {
                 .converge(taskContext));
 
         // RHEL 8
+        mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand(
                 "yum remove --assumeyes package-1 package-2 2>&1",
                 0,
@@ -138,6 +148,7 @@ public class YumTest {
 
     @Test
     public void testInstall() {
+        mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
@@ -150,6 +161,7 @@ public class YumTest {
 
     @Test
     public void testInstallWithEnablerepo() {
+        mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
@@ -163,6 +175,7 @@ public class YumTest {
 
     @Test
     public void testWithVersionLock() {
+        mockYumVersion();
         terminal.expectCommand("yum --quiet versionlock list 2>&1",
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
@@ -177,7 +190,23 @@ public class YumTest {
     }
 
     @Test
+    public void testWithVersionLockYum4() {
+        mockYumVersion(YumVersion.rhel8);
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+                               0,
+                               "Last metadata expiration check: 0:51:26 ago on Thu 14 Jan 2021 09:39:24 AM UTC.\n");
+        terminal.expectCommand("yum versionlock add --assumeyes \"openssh-0:8.0p1-4.el8_1.*\" 2>&1");
+        terminal.expectCommand(
+                "yum install --assumeyes openssh-0:8.0p1-4.el8_1.x86_64 2>&1",
+                0,
+                "installing");
+
+        assertTrue(yum.installFixedVersion(YumPackageName.fromString("openssh-0:8.0p1-4.el8_1.x86_64")).converge(taskContext));
+    }
+
+    @Test
     public void testWithDifferentVersionLock() {
+        mockYumVersion();
         terminal.expectCommand("yum --quiet versionlock list 2>&1",
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
@@ -202,6 +231,7 @@ public class YumTest {
 
     @Test
     public void testWithExistingVersionLock() {
+        mockYumVersion();
         terminal.expectCommand("yum --quiet versionlock list 2>&1",
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
@@ -217,6 +247,7 @@ public class YumTest {
 
     @Test
     public void testWithDowngrade() {
+        mockYumVersion();
         terminal.expectCommand("yum --quiet versionlock list 2>&1",
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
@@ -236,6 +267,7 @@ public class YumTest {
 
     @Test(expected = ChildProcessFailureException.class)
     public void testFailedInstall() {
+        mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 1,
@@ -250,6 +282,7 @@ public class YumTest {
 
     @Test
     public void testUnknownPackages() {
+        mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --setopt skip_missing_names_on_install=False package-1 package-2 package-3 2>&1",
                 0,
@@ -276,9 +309,17 @@ public class YumTest {
 
     @Test
     public void allowToCallUpgradeWithNoPackages() {
+        mockYumVersion();
         terminal.expectCommand("yum upgrade --assumeyes 2>&1", 0, "OK");
-
         yum.upgrade().converge(taskContext);
+    }
+
+    private void mockYumVersion(YumVersion yumVersion) {
+        terminal.expectCommand("yum --version 2>&1", 0, yumVersion.asVersion().toFullString() + "\ntrailing garbage\n");
+    }
+
+    private void mockYumVersion() {
+        mockYumVersion(YumVersion.rhel7);
     }
 
 }

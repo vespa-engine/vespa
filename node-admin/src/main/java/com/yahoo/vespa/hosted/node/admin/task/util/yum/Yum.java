@@ -20,6 +20,7 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.yum.YumCommand.Install
  * @author hakonhall
  */
 public class Yum {
+
     // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
     private static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do\\.?$");
     private static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
@@ -110,4 +111,5 @@ public class Yum {
         }
         return array;
     }
+
 }
