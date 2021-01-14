@@ -7,4 +7,4 @@ vespa_add_executable(searchlib_searchcontext_test_app TEST
     searchlib_test
 )
 vespa_add_test(NAME searchlib_searchcontext_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/searchcontext_test.sh
-               DEPENDS searchlib_searchcontext_test_app)
+               DEPENDS searchlib_searchcontext_test_app COST 100)

@@ -19,7 +19,4 @@ vespa_add_executable(storage_filestorage_gtest_runner_app TEST
     GTest::GTest
 )
 
-vespa_add_test(
-    NAME storage_filestorage_gtest_runner_app
-    COMMAND storage_filestorage_gtest_runner_app
-)
+vespa_add_test( NAME storage_filestorage_gtest_runner_app COMMAND storage_filestorage_gtest_runner_app COST 50)
