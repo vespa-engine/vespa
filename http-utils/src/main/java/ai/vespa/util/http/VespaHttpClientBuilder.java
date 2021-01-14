@@ -78,7 +78,7 @@ public class VespaHttpClientBuilder {
     }
 
     private static void addSslSocketFactory(HttpClientBuilder builder, ConnectionManagerFactory connectionManagerFactory)  {
-        TransportSecurityUtils.createTlsContext()
+        TransportSecurityUtils.getSystemTlsContext()
                 .ifPresent(tlsContext -> {
                     log.log(Level.FINE, "Adding ssl socket factory to client");
                     SSLConnectionSocketFactory socketFactory = createSslSocketFactory(tlsContext);

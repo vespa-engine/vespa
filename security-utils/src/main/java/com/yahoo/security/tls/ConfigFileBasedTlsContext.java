@@ -14,7 +14,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.ref.WeakReference;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.time.Duration;
@@ -140,14 +139,12 @@ public class ConfigFileBasedTlsContext implements TlsContext {
         }
     }
 
-    // Note: no reference to outer class (directly or indirectly) to ensure trust/key managers are eventually GCed once
-    // there are no more use of the outer class and the underlying SSLContext
     private static class CryptoMaterialReloader implements Runnable {
 
         final Path tlsOptionsConfigFile;
         final ScheduledExecutorService scheduler;
-        final WeakReference<MutableX509TrustManager> trustManager;
-        final WeakReference<MutableX509KeyManager> keyManager;
+        final MutableX509TrustManager trustManager;
+        final MutableX509KeyManager keyManager;
 
         CryptoMaterialReloader(Path tlsOptionsConfigFile,
                                ScheduledExecutorService scheduler,
@@ -155,25 +152,23 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                                MutableX509KeyManager keyManager) {
             this.tlsOptionsConfigFile = tlsOptionsConfigFile;
             this.scheduler = scheduler;
-            this.trustManager = new WeakReference<>(trustManager);
-            this.keyManager = new WeakReference<>(keyManager);
+            this.trustManager = trustManager;
+            this.keyManager = keyManager;
         }
 
         @Override
         public void run() {
             try {
-                MutableX509TrustManager trustManager = this.trustManager.get();
-                MutableX509KeyManager keyManager = this.keyManager.get();
-                if (trustManager == null && keyManager == null) {
+                if (this.trustManager == null && this.keyManager == null) {
                     scheduler.shutdown();
                     return;
                 }
                 TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
-                if (trustManager != null) {
-                    reloadTrustManager(options, trustManager);
+                if (this.trustManager != null) {
+                    reloadTrustManager(options, this.trustManager);
                 }
-                if (keyManager != null) {
-                    reloadKeyManager(options, keyManager);
+                if (this.keyManager != null) {
+                    reloadKeyManager(options, this.keyManager);
                 }
             } catch (Throwable t) {
                 log.log(Level.SEVERE, String.format("Failed to reload crypto material (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
@@ -181,7 +176,6 @@ public class ConfigFileBasedTlsContext implements TlsContext {
         }
     }
 
-    // Static class to ensure no reference to outer class is contained
     private static class ReloaderThreadFactory implements ThreadFactory {
         @Override
         public Thread newThread(Runnable r) {
