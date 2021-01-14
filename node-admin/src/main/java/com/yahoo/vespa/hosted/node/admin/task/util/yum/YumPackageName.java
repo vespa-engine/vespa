@@ -231,23 +231,21 @@ public class YumPackageName {
     /** Return package name, omitting components that are not specified. */
     public String toName(Version yumVersion) {
         StringBuilder builder = new StringBuilder();
-        char delimiter;
+        boolean isBare = version.isEmpty() && release.isEmpty() && architecture.isEmpty();
+        char nextDelimiter;
         if (yumVersion.getMajor() < 4) {
             epoch.ifPresent(ep -> builder.append(ep).append(':'));
             builder.append(name);
-            delimiter = '-';
+            nextDelimiter = '-';
         } else {
             builder.append(name);
-            epoch.ifPresent(ep -> builder.append('-').append(ep));
-            delimiter = ':';
+            // Fully versioned package names must always include epoch in Yum 4
+            epoch.or(() -> Optional.of("0").filter(v -> !isBare))
+                 .ifPresent(ep -> builder.append('-').append(ep));
+            nextDelimiter = ':';
         }
-        if (version.isPresent()) {
-            builder.append(delimiter).append(version.get());
-            delimiter = '-';
-        }
-        if (release.isPresent()) {
-            builder.append(delimiter).append(release.get());
-        }
+        version.ifPresent(s -> builder.append(nextDelimiter).append(s));
+        release.ifPresent(s -> builder.append('-').append(s));
         architecture.ifPresent(arch -> builder.append('.').append(arch));
         return builder.toString();
     }
