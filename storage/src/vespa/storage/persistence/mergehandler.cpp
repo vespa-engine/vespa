@@ -5,6 +5,7 @@
 #include "apply_bucket_diff_entry_complete.h"
 #include "apply_bucket_diff_entry_result.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>

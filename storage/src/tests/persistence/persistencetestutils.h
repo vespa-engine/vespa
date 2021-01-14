@@ -9,19 +9,19 @@
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/common/storagecomponent.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/storage/storageserver/communicationmanager.h>
+#include <vespa/storage/common/storagelink.h>
+#include <vespa/storageapi/messageapi/storagecommand.h>
+#include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage {
 
 struct MessageKeeper : public MessageSender {
-    std::vector<api::StorageMessage::SP> _msgs;
+    std::vector<std::shared_ptr<api::StorageMessage>> _msgs;
 
-    void sendCommand(const api::StorageCommand::SP& m) override { _msgs.push_back(m); }
-    void sendReply(const api::StorageReply::SP& m) override { _msgs.push_back(m); }
+    void sendCommand(const std::shared_ptr<api::StorageCommand> & m) override { _msgs.push_back(m); }
+    void sendReply(const std::shared_ptr<api::StorageReply> & m) override { _msgs.push_back(m); }
 };
 
 struct PersistenceTestEnvironment {

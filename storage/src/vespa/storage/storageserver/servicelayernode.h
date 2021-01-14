@@ -13,10 +13,11 @@
 #include "storagenode.h"
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
 #include <vespa/storage/common/visitorfactory.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/config/config.h>
 
 namespace storage {
+
+namespace spi { class PersistenceProvider; }
 
 class FileStorManager;
 

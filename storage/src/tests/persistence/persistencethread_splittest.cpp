@@ -3,6 +3,7 @@
 #include <vespa/storage/persistence/persistencehandler.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
 

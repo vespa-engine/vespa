@@ -3,6 +3,7 @@
 #include "asynchandler.h"
 #include "persistenceutil.h"
 #include "testandsethelper.h"
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
