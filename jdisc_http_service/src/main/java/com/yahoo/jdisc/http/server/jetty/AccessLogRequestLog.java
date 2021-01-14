@@ -17,6 +17,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -119,6 +120,11 @@ class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog {
                     accessLogEntry.addKeyValue(header, value);
                 }
             });
+
+            UUID connectionId = (UUID) request.getAttribute(JettyConnectionLogger.CONNECTION_ID_REQUEST_ATTRIBUTE);
+            if (connectionId != null) {
+                accessLogEntry.setConnectionId(connectionId.toString());
+            }
 
             accessLog.log(accessLogEntry);
         } catch (Exception e) {

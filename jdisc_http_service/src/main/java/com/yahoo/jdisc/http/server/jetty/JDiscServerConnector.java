@@ -31,7 +31,7 @@ class JDiscServerConnector extends ServerConnector {
     private final String connectorName;
     private final int listenPort;
 
-    JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, ConnectionFactory... factories) {
+    JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, JettyConnectionLogger connectionLogger, ConnectionFactory... factories) {
         super(server, factories);
         this.config = config;
         this.tcpKeepAlive = config.tcpKeepAliveEnabled();
@@ -47,6 +47,7 @@ class JDiscServerConnector extends ServerConnector {
         if (throttlingConfig.enabled()) {
             new ConnectionThrottler(this, throttlingConfig).registerWithConnector();
         }
+        addBean(connectionLogger);
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ssl.impl.ConfiguredSslContextFactoryProvider;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -27,8 +28,11 @@ public class ConnectorFactoryTest {
         try {
             ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
             ConnectorFactory factory = createConnectorFactory(config);
+            JettyConnectionLogger connectionLogger = new JettyConnectionLogger(
+                    new ServerConfig.ConnectionLog.Builder().enabled(false).build(),
+                    new VoidConnectionLog());
             JDiscServerConnector connector =
-                    (JDiscServerConnector)factory.createConnector(new DummyMetric(), server);
+                    (JDiscServerConnector)factory.createConnector(new DummyMetric(), server, connectionLogger);
             server.addConnector(connector);
             server.setHandler(new HelloWorldHandler());
             server.start();
