@@ -6,7 +6,6 @@
 #include "mergehandler.h"
 #include "asynchandler.h"
 #include "persistenceutil.h"
-#include "provider_error_wrapper.h"
 #include "splitjoinhandler.h"
 #include "simplemessagehandler.h"
 #include <vespa/storage/common/storagecomponent.h>

@@ -10,6 +10,8 @@
 #include "selection.h"
 #include "clusterstate.h"
 #include "operationcomplete.h"
+#include "bucketexecutor.h"
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace document { class FieldSet; }
 
@@ -374,6 +376,12 @@ struct PersistenceProvider
      * source1 and source2 should be stored in the target bucket.
      */
     virtual Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) = 0;
+
+    /**
+     * Provides and IExecute interface that can be used by the provider to execute tasks while bucket guarantees are upheld.
+     * When the returned object goes out of scope the executor is deregistered.
+     */
+    virtual std::shared_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor> executor) = 0;
 };
 
 }

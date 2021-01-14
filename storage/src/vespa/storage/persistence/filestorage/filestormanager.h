@@ -21,7 +21,6 @@
 #include <vespa/config-stor-filestor.h>
 #include <vespa/storage/persistence/diskthread.h>
 
-#include <vespa/storage/persistence/provider_error_wrapper.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 
@@ -43,6 +42,7 @@ class AbortBucketOperationsCommand;
 struct DoneInitializeHandler;
 class PersistenceHandler;
 struct FileStorMetrics;
+class ProviderErrorWrapper;
 
 class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,
@@ -50,15 +50,15 @@ class FileStorManager : public StorageLinkQueued,
                         private config::IFetcherCallback<vespa::config::content::StorFilestorConfig>,
                         public MessageSender
 {
-    ServiceLayerComponentRegister   & _compReg;
-    ServiceLayerComponent             _component;
-    ProviderErrorWrapper              _provider;
-    DoneInitializeHandler&            _init_handler;
-    const document::BucketIdFactory & _bucketIdFactory;
+    ServiceLayerComponentRegister             & _compReg;
+    ServiceLayerComponent                       _component;
+    std::unique_ptr<spi::PersistenceProvider>   _provider;
+    DoneInitializeHandler                     & _init_handler;
+    const document::BucketIdFactory           & _bucketIdFactory;
 
     std::vector<std::unique_ptr<PersistenceHandler>> _persistenceHandlers;
     std::vector<std::unique_ptr<DiskThread>>         _threads;
-    std::unique_ptr<BucketOwnershipNotifier> _bucketOwnershipNotifier;
+    std::unique_ptr<BucketOwnershipNotifier>         _bucketOwnershipNotifier;
 
     std::unique_ptr<vespa::config::content::StorFilestorConfig> _config;
     config::ConfigFetcher _configFetcher;
@@ -79,16 +79,14 @@ public:
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    FileStorHandler& getFileStorHandler() {
+    FileStorHandler& getFileStorHandler() noexcept {
         return *_filestorHandler;
     };
 
-    spi::PersistenceProvider& getPersistenceProvider() {
-        return _provider;
+    spi::PersistenceProvider& getPersistenceProvider() noexcept {
+        return *_provider;
     }
-    ProviderErrorWrapper& error_wrapper() noexcept {
-        return _provider;
-    }
+    ProviderErrorWrapper& error_wrapper() noexcept;
 
     void handleNewState() override;
 
