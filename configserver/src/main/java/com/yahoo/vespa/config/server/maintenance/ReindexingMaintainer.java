@@ -11,8 +11,6 @@ import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
@@ -27,7 +25,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Watches pending reindexing, and sets these to ready when config convergence is observed.
@@ -101,7 +98,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     }
 
     static ApplicationReindexing withOnlyCurrentData(ApplicationReindexing reindexing, Application application) {
-        return withOnlyCurrentData(reindexing, clusterDocumentTypes(application));
+        return withOnlyCurrentData(reindexing, ApplicationReindexing.documentTypes(application));
     }
 
     static ApplicationReindexing withOnlyCurrentData(ApplicationReindexing reindexing, Map<String, ? extends Collection<String>> clusterDocumentTypes) {
@@ -120,13 +117,6 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
             }
         }
         return reindexing;
-    }
-
-    static Map<String, Collection<String>> clusterDocumentTypes(Application application) {
-        Map<String, ContentCluster> contentClusters = ((VespaModel) application.getModel()).getContentClusters();
-        return contentClusters.entrySet().stream()
-                .collect(Collectors.toMap(cluster -> cluster.getKey(),
-                                          cluster -> cluster.getValue().getDocumentDefinitions().keySet()));
     }
 
 }

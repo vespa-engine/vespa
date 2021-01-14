@@ -77,6 +77,7 @@ import static org.mockito.Mockito.when;
 public class ApplicationHandlerTest {
 
     private static final File testApp = new File("src/test/apps/app");
+    private static final File testAppMultipleClusters = new File("src/test/apps/app-with-multiple-clusters");
     private static final File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
 
     private final static TenantName mytenantName = TenantName.from("mytenant");
@@ -215,42 +216,55 @@ public class ApplicationHandlerTest {
         ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
         reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Reindexing status not found for default.default\"}", 404);
 
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.deploy(testAppMultipleClusters, prepareParams(applicationId));
         ApplicationReindexing expected = ApplicationReindexing.ready(clock.instant());
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "", "{\"message\":\"Reindexing application default.default\"}");
-        expected = expected.withReady(clock.instant());
-        assertEquals(expected,
-                     database.readReindexingStatus(applicationId).orElseThrow());
-
-        clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady(clock.instant());
-        reindex(applicationId, "?clusterId=", "{\"message\":\"Reindexing application default.default\"}");
-        assertEquals(expected,
-                     database.readReindexingStatus(applicationId).orElseThrow());
-
-        clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady(clock.instant());
-        reindex(applicationId, "?documentType=moo", "{\"message\":\"Reindexing application default.default\"}");
-        assertEquals(expected,
-                     database.readReindexingStatus(applicationId).orElseThrow());
-
-        clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo", "{\"message\":\"Reindexing clusters foo, boo of application default.default\"}");
-        expected = expected.withReady("foo", clock.instant())
-                           .withReady("boo", clock.instant());
-        assertEquals(expected,
-                     database.readReindexingStatus(applicationId).orElseThrow());
-
-        clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo&documentType=bar,baz", "{\"message\":\"Reindexing document types bar, baz in clusters foo, boo of application default.default\"}");
-        expected = expected.withReady("foo", "bar", clock.instant())
+        reindex(applicationId, "", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant())
+                           .withReady("foo", "bar", clock.instant())
                            .withReady("foo", "baz", clock.instant())
-                           .withReady("boo", "bar", clock.instant())
-                           .withReady("boo", "baz", clock.instant());
+                           .withReady("foo", "bax", clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "?indexedOnly=true", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        expected = expected.withReady("boo", "bar", clock.instant())
+                           .withReady("foo", "bar", clock.instant())
+                           .withReady("foo", "baz", clock.instant())
+                           .withReady("foo", "bax", clock.instant());
+        reindex(applicationId, "?clusterId=", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        expected = expected.withReady("boo", "bar", clock.instant())
+                           .withReady("foo", "bar", clock.instant());
+        reindex(applicationId, "?documentType=bar", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "?clusterId=foo,boo", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant())
+                           .withReady("foo", "bar", clock.instant())
+                           .withReady("foo", "baz", clock.instant())
+                           .withReady("foo", "bax", clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "?clusterId=foo&documentType=bar,baz", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant())
+                           .withReady("foo", "baz", clock.instant());
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
@@ -269,34 +283,25 @@ public class ApplicationHandlerTest {
         long now = clock.instant().toEpochMilli();
         reindexing(applicationId, GET, "{" +
                                        "  \"enabled\": true," +
-                                       "  \"status\": {" +
-                                       "    \"readyMillis\": " + (now - 2000) +
-                                       "  }," +
                                        "  \"clusters\": {" +
                                        "    \"boo\": {" +
-                                       "      \"status\": {" +
-                                       "        \"readyMillis\": " + (now - 1000) +
-                                       "      }," +
                                        "      \"pending\": {" +
                                        "        \"bar\": 123" +
                                        "      }," +
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
-                                       "          \"readyMillis\": " + now +
+                                       "          \"readyMillis\": " + (now - 1000) +
                                        "        }," +
-                                       "        \"baz\": {" +
-                                       "          \"readyMillis\": " + now +
-                                       "        }" +
                                        "      }" +
                                        "    }," +
                                        "    \"foo\": {" +
-                                       "      \"status\": {" +
-                                       "        \"readyMillis\": " + (now - 1000) +
-                                       "      }," +
                                        "      \"pending\": {}," +
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + now +
+                                       "        }," +
+                                       "        \"bax\": {" +
+                                       "          \"readyMillis\": " + (now - 1000) +
                                        "        }," +
                                        "        \"baz\": {" +
                                        "          \"readyMillis\": " + now +
