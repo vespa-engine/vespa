@@ -28,7 +28,6 @@ public:
     using Snapshot = std::unique_ptr<Payload>;
     virtual Snapshot produceSnapshot() = 0;
 
-    State waitState(State state) const override;
     State waitState(State state, uint32_t lid) const override;
     State waitState(State state, const LidList & lids) const override;
 protected:
