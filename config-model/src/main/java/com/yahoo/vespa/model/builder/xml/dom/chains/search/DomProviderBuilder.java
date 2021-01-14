@@ -49,13 +49,11 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         final Integer certificateTtl;
         final Integer certificateRetryWait;
         final Node certificateProxy;  // Just re-using the Node class, as it matches our needs
-        final Integer cacheSizeMB;
 
         ProviderReader(Element providerElement) {
             type = readType(providerElement);
             path = readPath(providerElement);
             cacheWeight = readCacheWeight(providerElement);
-            cacheSizeMB = readCacheSize(providerElement);
             clusterName = readCluster(providerElement);
             readTimeout = readReadTimeout(providerElement);
             connectionTimeout = readConnectionTimeout(providerElement);
@@ -67,7 +65,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             certificateRetryWait = readCertificateRetryWait(providerElement);
             certificateProxy = readCertificateProxy(providerElement);
         }
-
 
         private String getAttributeOrNull(Element element, String name) {
             String value = element.getAttribute(name);
@@ -85,11 +82,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         private Double readCacheWeight(Element providerElement) {
             String cacheWeightString = getAttributeOrNull(providerElement, "cacheweight");
             return (cacheWeightString == null)? null : Double.parseDouble(cacheWeightString);
-        }
-
-        private Integer readCacheSize(Element providerElement) {
-            String cacheSize = getAttributeOrNull(providerElement, "cachesize");
-            return (cacheSize == null)? null : (int)BinaryScaledAmountParser.parse(cacheSize).as(BinaryPrefix.mega);
         }
 
         private Integer readRetries(Element providerElement) {
@@ -205,8 +197,8 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
 
     @SuppressWarnings("deprecation")
     private Provider buildProvider(ChainSpecification specWithoutInnerSearchers,
-                                   ProviderReader providerReader, FederationOptions federationOptions) {
-
+                                   ProviderReader providerReader,
+                                   FederationOptions federationOptions) {
         if (providerReader.type == null) {
             return new GenericProvider(specWithoutInnerSearchers, federationOptions);
         } else if (LocalProviderSpec.includesType(providerReader.type)) {
@@ -216,16 +208,26 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         }
     }
 
-    private Provider buildLocalProvider(ChainSpecification specWithoutInnerSearchers, ProviderReader providerReader, FederationOptions federationOptions) {
+    private Provider buildLocalProvider(ChainSpecification specWithoutInnerSearchers,
+                                        ProviderReader providerReader,
+                                        FederationOptions federationOptions) {
         try {
-            ensureEmpty(specWithoutInnerSearchers.componentId, providerReader.cacheWeight, providerReader.path, providerReader.nodes,
-                        providerReader.readTimeout, providerReader.connectionTimeout, providerReader.connectionPoolTimeout,
-                        providerReader.retries, providerReader.certificateApplicationId, providerReader.certificateTtl,
-                        providerReader.certificateRetryWait, providerReader.certificateProxy);
+            ensureEmpty(specWithoutInnerSearchers.componentId,
+                        providerReader.cacheWeight,
+                        providerReader.path,
+                        providerReader.nodes,
+                        providerReader.readTimeout,
+                        providerReader.connectionTimeout,
+                        providerReader.connectionPoolTimeout,
+                        providerReader.retries,
+                        providerReader.certificateApplicationId,
+                        providerReader.certificateTtl,
+                        providerReader.certificateRetryWait,
+                        providerReader.certificateProxy);
 
             return new LocalProvider(specWithoutInnerSearchers,
-                    federationOptions,
-                    new LocalProviderSpec(providerReader.clusterName, providerReader.cacheSizeMB));
+                                     federationOptions,
+                                     new LocalProviderSpec(providerReader.clusterName));
         } catch (Exception e) {
             throw new RuntimeException("Failed creating local provider " + specWithoutInnerSearchers.componentId, e);
         }

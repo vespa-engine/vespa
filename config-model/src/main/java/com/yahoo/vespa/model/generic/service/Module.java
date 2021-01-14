@@ -10,9 +10,9 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
  *
  * @author Ulf Lilleengen
  */
-public class Module extends AbstractConfigProducer {
+public class Module extends AbstractConfigProducer<Module> {
 
-    public Module(AbstractConfigProducer parent, String subId) {
+    public Module(AbstractConfigProducer<?> parent, String subId) {
         super(parent, subId);
     }
 }

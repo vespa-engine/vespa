@@ -74,20 +74,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     // public for testing
     public void initializeSearchChains(Map<String, ? extends AbstractSearchCluster> searchClusters) {
         getChains().initialize(searchClusters);
-
-        QrsCache defaultCacheOptions = getOptions().cacheSettings.get("");
-        if (defaultCacheOptions != null) {
-            for (LocalProvider localProvider : getChains().localProviders()) {
-                localProvider.setCacheSize(defaultCacheOptions.size);
-            }
-        }
-
-        for (LocalProvider localProvider : getChains().localProviders()) {
-            QrsCache cacheOptions = getOptions().cacheSettings.get(localProvider.getClusterName());
-            if (cacheOptions != null) {
-                localProvider.setCacheSize(cacheOptions.size);
-            }
-        }
     }
 
     public void setQueryProfiles(QueryProfiles queryProfiles) {

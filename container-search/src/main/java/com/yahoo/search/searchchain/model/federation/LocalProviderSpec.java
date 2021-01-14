@@ -10,6 +10,7 @@ import com.yahoo.search.Searcher;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import net.jcip.annotations.Immutable;
 
@@ -49,15 +50,8 @@ public class LocalProviderSpec {
 
     public final String clusterName;
 
-    // TODO: make this final
-    public Integer cacheSize;
-
-    public LocalProviderSpec(String clusterName, Integer cacheSize) {
-        this.clusterName = clusterName;
-        this.cacheSize = cacheSize;
-
-        if (clusterName == null)
-            throw new IllegalArgumentException("Missing cluster name");
+    public LocalProviderSpec(String clusterName) {
+        this.clusterName = Objects.requireNonNull(clusterName, "Cluster name cannot be null");
     }
 
     public static boolean includesType(String type) {

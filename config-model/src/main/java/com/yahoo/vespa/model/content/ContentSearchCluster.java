@@ -42,7 +42,7 @@ import static java.util.stream.Collectors.toList;
  * Encapsulates the various options for search in a content model.
  * Wraps a search cluster from com.yahoo.vespa.model.search.
  */
-public class ContentSearchCluster extends AbstractConfigProducer implements ProtonConfig.Producer, DispatchConfig.Producer {
+public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements ProtonConfig.Producer, DispatchConfig.Producer {
 
     private final boolean flushOnShutdown;
 
@@ -88,7 +88,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
 
         @Override
-        protected ContentSearchCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected ContentSearchCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             ModelElement clusterElem = new ModelElement(producerSpec);
             String clusterName = ContentCluster.getClusterId(clusterElem);
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
