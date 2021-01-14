@@ -8,8 +8,9 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.security.SslContextBuilder;
 
 import javax.net.ssl.SSLContext;
-import java.io.IOException;
 import java.nio.file.Paths;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * This class is based on the class by the same name in the jdisc_http_service module.
@@ -49,6 +50,7 @@ public class TestDriver {
     public boolean close() {
         server.close();
         server.release();
+        uncheck(client::close);
         return driver.close();
     }
 
