@@ -30,8 +30,8 @@ case $SHOULD_BUILD in
   cpp)
     ./bootstrap.sh full
     cmake3 -DVESPA_UNPRIVILEGED=no .
-    make -j ${NUM_THREADS}
-    ctest3 --output-on-failure -j ${NUM_THREADS}
+    time make -j ${NUM_THREADS}
+    time ctest3 --output-on-failure -j ${NUM_THREADS}
     ccache --show-stats
     ;;
   java)
@@ -40,10 +40,10 @@ case $SHOULD_BUILD in
     ;;
   *)
     ./bootstrap.sh java
-    mvn -V $VESPA_MAVEN_EXTRA_OPTS install
+    time mvn -V $VESPA_MAVEN_EXTRA_OPTS install
     cmake3 -DVESPA_UNPRIVILEGED=no .
-    make -j ${NUM_THREADS}
-    ctest3 --output-on-failure -j ${NUM_THREADS}
+    time make -j ${NUM_THREADS}
+    time ctest3 --output-on-failure -j ${NUM_THREADS}
     ccache --show-stats
     make install
     ;;    
