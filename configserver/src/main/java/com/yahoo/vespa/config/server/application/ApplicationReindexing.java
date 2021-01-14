@@ -11,7 +11,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
@@ -79,9 +78,29 @@ public class ApplicationReindexing implements Reindexing {
     /** Returns a copy of this with no pending reindexing for the given document type. */
     public ApplicationReindexing withoutPending(String cluster, String documentType) {
         Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
+        if (current == null)
+            return this;
+
         Cluster modified = new Cluster(current.common,
                                        without(documentType, current.pending),
                                        current.ready);
+        return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
+    }
+
+    /** Returns a copy of this without the given cluster. */
+    public ApplicationReindexing without(String cluster) {
+        return new ApplicationReindexing(enabled, common, without(cluster, clusters));
+    }
+
+    /** Returns a copy of this without the given document type in the given cluster. */
+    public ApplicationReindexing without(String cluster, String documentType) {
+        Cluster current = clusters.get(cluster);
+        if (current == null)
+            return this;
+
+        Cluster modified = new Cluster(current.common,
+                                       current.pending,
+                                       without(documentType, current.ready));
         return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
     }
 
