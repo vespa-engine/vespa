@@ -5,10 +5,13 @@ using namespace rise;
 
 namespace {
 
+constexpr uint32_t NUM_CHILDREN=300;
+constexpr uint32_t LIMIT = 5000000;
+
 template <typename WeakAndType, typename RiseType>
 void checkWandHits(WandFactory &vespa, WandFactory &rise, uint32_t step, uint32_t filter) {
-    WandSetup vespaSetup(vespa, 500, 5000000);
-    WandSetup riseSetup(rise, 500, 5000000);
+    WandSetup vespaSetup(vespa, NUM_CHILDREN, LIMIT);
+    WandSetup riseSetup(rise, NUM_CHILDREN, LIMIT);
     SearchIterator::UP s1 = vespaSetup.create();
     s1->initFullRange();
     SearchIterator::UP s2 = riseSetup.create();
@@ -38,7 +41,7 @@ void checkWandHits(WandFactory &vespa, WandFactory &rise, uint32_t step, uint32_
 
 TEST("require that mod search works") {
     Stats stats;
-    SearchIterator::UP search(new ModSearch(stats, 3, 8, 3, NULL));
+    auto search = std::make_unique<ModSearch>(stats, 3, 8, 3, nullptr);
     SimpleResult hits;
     hits.search(*search);
     EXPECT_EQUAL(SimpleResult().addHit(3).addHit(6), hits);
@@ -47,25 +50,25 @@ TEST("require that mod search works") {
 //---- WeakAndSearch ------------------------------------------------------------------------------
 
 TEST_FF("require that (array) WAND and RISE WAND gives the same hits",
-        VespaArrayWandFactory(500), TermFrequencyRiseWandFactory(500))
+        VespaArrayWandFactory(NUM_CHILDREN), TermFrequencyRiseWandFactory(NUM_CHILDREN))
 {
     checkWandHits<WeakAndSearch, TermFrequencyRiseWand>(f1, f2, 1, 0);
 }
 
 TEST_FF("require that (heap) WAND and RISE WAND gives the same hits",
-        VespaHeapWandFactory(500), TermFrequencyRiseWandFactory(500))
+        VespaHeapWandFactory(NUM_CHILDREN), TermFrequencyRiseWandFactory(NUM_CHILDREN))
 {
     checkWandHits<WeakAndSearch, TermFrequencyRiseWand>(f1, f2, 1, 0);
 }
 
 TEST_FF("require that (array) WAND and RISE WAND gives the same hits with filtering and skipping",
-        VespaArrayWandFactory(500), TermFrequencyRiseWandFactory(500))
+        VespaArrayWandFactory(NUM_CHILDREN), TermFrequencyRiseWandFactory(NUM_CHILDREN))
 {
     checkWandHits<WeakAndSearch, TermFrequencyRiseWand>(f1, f2, 123, 5);
 }
 
 TEST_FF("require that (heap) WAND and RISE WAND gives the same hits with filtering and skipping",
-        VespaHeapWandFactory(500), TermFrequencyRiseWandFactory(500))
+        VespaHeapWandFactory(NUM_CHILDREN), TermFrequencyRiseWandFactory(NUM_CHILDREN))
 {
     checkWandHits<WeakAndSearch, TermFrequencyRiseWand>(f1, f2, 123, 5);
 }
@@ -74,25 +77,25 @@ TEST_FF("require that (heap) WAND and RISE WAND gives the same hits with filteri
 //---- ParallelWeakAndSearch ----------------------------------------------------------------------
 
 TEST_FF("require that (array) PWAND and RISE WAND gives the same hits",
-        VespaParallelArrayWandFactory(500), DotProductRiseWandFactory(500))
+        VespaParallelArrayWandFactory(NUM_CHILDREN), DotProductRiseWandFactory(NUM_CHILDREN))
 {
     checkWandHits<ParallelWeakAndSearch, DotProductRiseWand>(f1, f2, 1, 0);
 }
 
 TEST_FF("require that (heap) PWAND and RISE WAND gives the same hits",
-        VespaParallelHeapWandFactory(500), DotProductRiseWandFactory(500))
+        VespaParallelHeapWandFactory(NUM_CHILDREN), DotProductRiseWandFactory(NUM_CHILDREN))
 {
     checkWandHits<ParallelWeakAndSearch, DotProductRiseWand>(f1, f2, 1, 0);
 }
 
 TEST_FF("require that (array) PWAND and RISE WAND gives the same hits with filtering and skipping",
-        VespaParallelArrayWandFactory(500), DotProductRiseWandFactory(500))
+        VespaParallelArrayWandFactory(NUM_CHILDREN), DotProductRiseWandFactory(NUM_CHILDREN))
 {
     checkWandHits<ParallelWeakAndSearch, DotProductRiseWand>(f1, f2, 123, 5);
 }
 
 TEST_FF("require that (heap) PWAND and RISE WAND gives the same hits with filtering and skipping",
-        VespaParallelHeapWandFactory(500), DotProductRiseWandFactory(500))
+        VespaParallelHeapWandFactory(NUM_CHILDREN), DotProductRiseWandFactory(NUM_CHILDREN))
 {
     checkWandHits<ParallelWeakAndSearch, DotProductRiseWand>(f1, f2, 123, 5);
 }
