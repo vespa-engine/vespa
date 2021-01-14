@@ -27,14 +27,18 @@ import java.net.InetSocketAddress;
  */
 public class NetUtils {
 
+    // Note: Changed from original to use hostname from InetSocketAddress if there exists one
     public static String formatInetAddr(InetSocketAddress addr) {
         String hostName = addr.getHostName();
-
         if (hostName != null) {
             return String.format("%s:%s", hostName, addr.getPort());
         }
 
         InetAddress ia = addr.getAddress();
+
+        if (ia == null) {
+            return String.format("%s:%s", addr.getHostString(), addr.getPort());
+        }
         if (ia instanceof Inet6Address) {
             return String.format("[%s]:%s", ia.getHostAddress(), addr.getPort());
         } else {
