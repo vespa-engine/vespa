@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "memoryusage.h"
 #include "string_id.h"
 #include "spin_lock.h"
 #include <vespa/vespalib/stllike/string.h>
@@ -32,9 +33,11 @@ public:
     struct Stats {
         size_t active_entries;
         size_t total_entries;
-        size_t min_free;
+        size_t max_part_usage;
+        MemoryUsage memory_usage;
         Stats();
         void merge(const Stats &s);
+        static size_t part_limit();
         double id_space_usage() const;
     };
 

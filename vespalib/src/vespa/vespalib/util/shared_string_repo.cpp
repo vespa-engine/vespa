@@ -10,7 +10,8 @@ namespace vespalib {
 SharedStringRepo::Stats::Stats()
     : active_entries(0),
       total_entries(0),
-      min_free(PART_LIMIT)
+      max_part_usage(0),
+      memory_usage()
 {
 }
 
@@ -19,13 +20,20 @@ SharedStringRepo::Stats::merge(const Stats &s)
 {
     active_entries += s.active_entries;
     total_entries += s.total_entries;
-    min_free = std::min(min_free, s.min_free);
+    max_part_usage = std::max(max_part_usage, s.max_part_usage);
+    memory_usage.merge(s.memory_usage);
+}
+
+size_t
+SharedStringRepo::Stats::part_limit()
+{
+    return PART_LIMIT;
 }
 
 double
 SharedStringRepo::Stats::id_space_usage() const
 {
-    return (1.0 - (double(min_free) / double(PART_LIMIT)));
+    return (double(max_part_usage) / double(PART_LIMIT));
 }
 
 SharedStringRepo::Partition::~Partition() = default;
@@ -49,7 +57,12 @@ SharedStringRepo::Partition::stats() const
     std::lock_guard guard(_lock);
     stats.active_entries = _hash.size();
     stats.total_entries = _entries.size();
-    stats.min_free = (PART_LIMIT - _hash.size());
+    stats.max_part_usage = _hash.size();
+    // memory footprint of self is counted by SharedStringRepo::stats()
+    stats.memory_usage.incAllocatedBytes(sizeof(Entry) * _entries.capacity());
+    stats.memory_usage.incUsedBytes(sizeof(Entry) * _entries.size());
+    stats.memory_usage.incAllocatedBytes(_hash.getMemoryConsumption() - sizeof(HashType));
+    stats.memory_usage.incUsedBytes(_hash.getMemoryUsed() - sizeof(HashType));
     return stats;
 }
 
@@ -82,6 +95,8 @@ SharedStringRepo::Stats
 SharedStringRepo::stats()
 {
     Stats stats;
+    stats.memory_usage.incAllocatedBytes(sizeof(SharedStringRepo));
+    stats.memory_usage.incUsedBytes(sizeof(SharedStringRepo));
     for (const auto &part: _repo._partitions) {
         stats.merge(part.stats());
     }

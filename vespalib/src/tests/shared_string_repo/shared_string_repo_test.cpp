@@ -14,6 +14,7 @@ using namespace vespalib;
 using make_string_short::fmt;
 using Handle = SharedStringRepo::Handle;
 using Handles = SharedStringRepo::Handles;
+using Stats = SharedStringRepo::Stats;
 
 bool verbose = false;
 double budget = 0.10;
@@ -80,8 +81,8 @@ std::vector<vespalib::string> get_strings(const std::vector<Handle> &handles) {
     return strings;
 }
 
-std::unique_ptr<SharedStringRepo::Handles> make_strong_handles(const std::vector<vespalib::string> &strings) {
-    auto result = std::make_unique<SharedStringRepo::Handles>();
+std::unique_ptr<Handles> make_strong_handles(const std::vector<vespalib::string> &strings) {
+    auto result = std::make_unique<Handles>();
     result->reserve(strings.size());
     for (const auto &str: strings) {
         result->add(str);
@@ -89,9 +90,9 @@ std::unique_ptr<SharedStringRepo::Handles> make_strong_handles(const std::vector
     return result;
 }
 
-std::unique_ptr<SharedStringRepo::Handles> copy_strong_handles(const SharedStringRepo::Handles &handles) {
+std::unique_ptr<Handles> copy_strong_handles(const Handles &handles) {
     const auto &view = handles.view();
-    auto result = std::make_unique<SharedStringRepo::Handles>();
+    auto result = std::make_unique<Handles>();
     result->reserve(view.size());
     for (const auto &handle: view) {
         result->push_back(handle);
@@ -99,7 +100,7 @@ std::unique_ptr<SharedStringRepo::Handles> copy_strong_handles(const SharedStrin
     return result;
 }
 
-std::unique_ptr<std::vector<string_id>> make_weak_handles(const SharedStringRepo::Handles &handles) {
+std::unique_ptr<std::vector<string_id>> make_weak_handles(const Handles &handles) {
     return std::make_unique<std::vector<string_id>>(handles.view());
 }
 
@@ -198,8 +199,8 @@ struct Fixture {
             std::vector<Handle> resolve_again_result;
             std::vector<vespalib::string> get_result;
             std::vector<vespalib::string> get_direct_result;
-            std::unique_ptr<SharedStringRepo::Handles> strong;
-            std::unique_ptr<SharedStringRepo::Handles> strong_copy;
+            std::unique_ptr<Handles> strong;
+            std::unique_ptr<Handles> strong_copy;
             std::unique_ptr<std::vector<string_id>> weak;
             auto copy_strings_task = [&](){ copy_strings_result = copy_strings(work); };
             auto copy_and_hash_task = [&](){ copy_and_hash_result = copy_and_hash(work); };
@@ -267,43 +268,77 @@ void verify_not_eq(const Handle &a, const Handle &b) {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that empty stats object have expected values") {
-    size_t part_size = (uint32_t(-1) - 100001) / 64;
-    SharedStringRepo::Stats empty;
+TEST("require that empty stats object has expected values") {
+    Stats empty;
     EXPECT_EQUAL(empty.active_entries, 0u);
     EXPECT_EQUAL(empty.total_entries, 0u);
-    EXPECT_EQUAL(empty.min_free, part_size);
-    if (verbose) {
-        fprintf(stderr, "max entries per part: %zu\n", empty.min_free);
-    }
+    EXPECT_EQUAL(empty.max_part_usage, 0u);
+    EXPECT_EQUAL(empty.memory_usage.allocatedBytes(), 0u);
+    EXPECT_EQUAL(empty.memory_usage.usedBytes(), 0u);
+    EXPECT_EQUAL(empty.memory_usage.deadBytes(), 0u);
+    EXPECT_EQUAL(empty.memory_usage.allocatedBytesOnHold(), 0u);
 }
 
 TEST("require that stats can be merged") {
-    SharedStringRepo::Stats a;
-    SharedStringRepo::Stats b;
+    Stats a;
+    Stats b;
     a.active_entries = 1;
     a.total_entries = 10;
-    a.min_free = 100;
+    a.max_part_usage = 100;
+    a.memory_usage.incAllocatedBytes(10);
+    a.memory_usage.incUsedBytes(5);
     b.active_entries = 3;
     b.total_entries = 20;
-    b.min_free = 50;
+    b.max_part_usage = 50;
+    b.memory_usage.incAllocatedBytes(20);
+    b.memory_usage.incUsedBytes(10);
     a.merge(b);
     EXPECT_EQUAL(a.active_entries, 4u);
     EXPECT_EQUAL(a.total_entries, 30u);
-    EXPECT_EQUAL(a.min_free, 50u);
+    EXPECT_EQUAL(a.max_part_usage, 100u);
+    EXPECT_EQUAL(a.memory_usage.allocatedBytes(), 30u);
+    EXPECT_EQUAL(a.memory_usage.usedBytes(), 15u);
+    EXPECT_EQUAL(a.memory_usage.deadBytes(), 0u);
+    EXPECT_EQUAL(a.memory_usage.allocatedBytesOnHold(), 0u);
 }
 
 TEST("require that id_space_usage is sane") {
-    SharedStringRepo::Stats empty;
-    SharedStringRepo::Stats stats;
-    stats.min_free = empty.min_free;
+    Stats stats;
+    stats.max_part_usage = 0;
     EXPECT_EQUAL(stats.id_space_usage(), 0.0);
-    stats.min_free = empty.min_free / 2;
+    stats.max_part_usage = Stats::part_limit() / 4;
+    EXPECT_EQUAL(stats.id_space_usage(), 0.25);
+    stats.max_part_usage = Stats::part_limit() / 2;
     EXPECT_EQUAL(stats.id_space_usage(), 0.5);
-    stats.min_free = empty.min_free / 4;
-    EXPECT_EQUAL(stats.id_space_usage(), 0.75);
-    stats.min_free = 0;
+    stats.max_part_usage = Stats::part_limit();
     EXPECT_EQUAL(stats.id_space_usage(), 1.0);
+}
+
+TEST("require that initial stats are as expected") {
+    size_t num_parts = 64;
+    size_t part_size = 128;
+    size_t hash_node_size = 12;
+    size_t entry_size = 72;
+    size_t initial_entries = 113;
+    size_t initial_hash_used = 64;
+    size_t initial_hash_allocated = 128;
+    size_t part_limit = (uint32_t(-1) - 100001) / num_parts;
+    auto stats = SharedStringRepo::stats();
+    EXPECT_EQUAL(stats.active_entries, 0u);
+    EXPECT_EQUAL(stats.total_entries, num_parts * initial_entries);
+    EXPECT_EQUAL(stats.max_part_usage, 0u);
+    EXPECT_EQUAL(stats.id_space_usage(), 0.0);
+    EXPECT_EQUAL(stats.memory_usage.allocatedBytes(),
+                 num_parts * (part_size + hash_node_size * initial_hash_allocated + entry_size * initial_entries));
+    EXPECT_EQUAL(stats.memory_usage.usedBytes(),
+                 num_parts * (part_size + hash_node_size * initial_hash_used + entry_size * initial_entries));
+    EXPECT_EQUAL(stats.memory_usage.deadBytes(), 0u);
+    EXPECT_EQUAL(stats.memory_usage.allocatedBytesOnHold(), 0u);
+    EXPECT_EQUAL(Stats::part_limit(), part_limit);
+    if (verbose) {
+        fprintf(stderr, "max entries per part: %zu\n", Stats::part_limit());
+        fprintf(stderr, "initial memory usage: %zu\n", stats.memory_usage.allocatedBytes());
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -441,10 +476,11 @@ TEST("allocate handles until we run out") {
     std::vector<Handle> handles;
     for (;;) {
         auto stats = SharedStringRepo::stats();
+        size_t min_free = Stats::part_limit() - stats.max_part_usage;
         fprintf(stderr, "cnt: %zu, used: %zu/%zu, min free: %zu, usage: %g\n",
-                cnt, stats.active_entries, stats.total_entries, stats.min_free,
+                cnt, stats.active_entries, stats.total_entries, min_free,
                 stats.id_space_usage());
-        size_t n = std::max(size_t(1), stats.min_free);
+        size_t n = std::max(size_t(1), min_free);
         for (size_t i = 0; i < n; ++i) {
             handles.emplace_back(fmt("my_id_%zu", cnt++));
         }
