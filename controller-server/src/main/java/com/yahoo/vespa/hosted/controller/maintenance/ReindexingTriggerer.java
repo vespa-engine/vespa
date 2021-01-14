@@ -49,7 +49,7 @@ public class ReindexingTriggerer extends ControllerMaintainer {
                     for (Deployment deployment : deployments)
                         if (   inWindowOfOpportunity(now, id, deployment.zone())
                             && reindexingIsReady(controller().applications().applicationReindexing(id, deployment.zone()), now))
-                            controller().applications().reindex(id, deployment.zone(), List.of(), List.of());
+                            controller().applications().reindex(id, deployment.zone(), List.of(), List.of(), true);
                 });
             return true;
         }
@@ -74,11 +74,9 @@ public class ReindexingTriggerer extends ControllerMaintainer {
     }
 
     static boolean reindexingIsReady(ApplicationReindexing reindexing, Instant now) {
-        if (reindexing.clusters().values().stream().flatMap(cluster -> cluster.ready().values().stream())
-                      .anyMatch(status -> status.startedAt().isPresent() && status.endedAt().isEmpty()))
-            return false;
-
-        return reindexing.common().readyAt().orElse(Instant.EPOCH).isBefore(now.minus(reindexingPeriod.dividedBy(2)));
+        return reindexing.clusters().values().stream().flatMap(cluster -> cluster.ready().values().stream())
+                         .allMatch(status ->    status.readyAt().map(now.minus(reindexingPeriod.dividedBy(2))::isAfter).orElse(true)
+                                             && (status.startedAt().isEmpty() || status.endedAt().isPresent()));
     }
 
 }
