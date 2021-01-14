@@ -404,25 +404,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /**
      * Resolve config for a given key and config definition
      *
-     * @param configKey The key to resolve.
-     * @param targetDef The config definition to use for the schema
-     * @return The payload as a list of strings
-     */
-    @Deprecated // TODO: Remove after December 2020
-    @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
-        Objects.requireNonNull(targetDef, "config definition cannot be null");
-
-        ConfigInstance.Builder builder = resolveToBuilder(configKey);
-        log.log(Level.FINE, () -> "Found builder for " + configKey);
-        InnerCNode innerCNode = targetDef.getCNode();
-        ConfigPayload payload = getConfigFromBuilder(builder, innerCNode);
-        return (innerCNode != null) ? payload.applyDefaultsFromDef(innerCNode) : payload;
-    }
-
-    /**
-     * Resolve config for a given key and config definition
-     *
      * @param configKey the key to resolve.
      * @param targetDef the config definition to use for the schema
      * @return the resolved config instance

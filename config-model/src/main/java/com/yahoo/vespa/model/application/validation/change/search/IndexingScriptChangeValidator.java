@@ -68,8 +68,8 @@ public class IndexingScriptChangeValidator {
         return removeOutputExpressions(currentScript).equals(removeOutputExpressions(nextScript));
     }
 
-    private static ScriptExpression removeOutputExpressions(ScriptExpression script) {
-        return (ScriptExpression) new OutputExpressionRemover().convert(script);
+    private static Expression removeOutputExpressions(ScriptExpression script) {
+        return new OutputExpressionRemover().convert(script);
     }
 
     private static class OutputExpressionRemover extends ExpressionConverter {

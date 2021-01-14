@@ -27,18 +27,7 @@ public interface Model {
      * @param configKey the key to resolve
      * @param configDefinition the config definition to use for the schema
      */
-    @Deprecated // TODO: Return after December 2020
-    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition configDefinition);
-
-    /**
-     * Resolves config for a given key and config definition
-     *
-     * @param configKey the key to resolve
-     * @param configDefinition the config definition to use for the schema
-     */
-    default ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition) {
-        return null; // TODO: Remove this default implementation after December 2020
-    }
+    ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition);
 
     /** Produces a set of the valid config keys for this model. */
     Set<ConfigKey<?>> allConfigsProduced();

@@ -135,12 +135,7 @@ public class Application implements ModelResult {
         boolean applyOnRestart = false;
         try {
             builder = model.getConfigInstance(configKey, def);
-            if (builder == null) { // TODO: Remove this condition after December 2020
-                payload = model.getConfig(configKey, def);
-                if (def.getCNode() != null)
-                    payload.applyDefaultsFromDef(def.getCNode());
-            }
-            else if (builder instanceof GenericConfig.GenericConfigBuilder) {
+            if (builder instanceof GenericConfig.GenericConfigBuilder) {
                 payload = ((GenericConfig.GenericConfigBuilder) builder).getPayload();
                 applyOnRestart = builder.getApplyOnRestart();
             }

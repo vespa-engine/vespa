@@ -84,12 +84,6 @@ public class DeploymentMetricsRetrieverTest {
         }
 
         @Override
-        @SuppressWarnings("deprecation")
-        public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition targetDef) {
             throw new UnsupportedOperationException();
         }
