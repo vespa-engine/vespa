@@ -83,6 +83,15 @@ public class YumTest {
                 .install("package-1", "package-2")
                 .enableRepo("repo1", "repo2")
                 .converge(taskContext));
+
+        // RHEL 8
+        terminal.expectCommand(
+                "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
+                0,
+                "foobar\nNothing to do.\n"); // Note trailing dot
+        assertFalse(yum.install("package-1", "package-2")
+                       .enableRepo("repo1", "repo2")
+                       .converge(taskContext));
     }
 
     @Test
@@ -95,6 +104,15 @@ public class YumTest {
         assertFalse(yum
                 .upgrade("package-1", "package-2")
                 .converge(taskContext));
+
+        // RHEL 8
+        terminal.expectCommand(
+                "yum upgrade --assumeyes --setopt skip_missing_names_on_update=False package-1 package-2 2>&1",
+                0,
+                "foobar\nNothing to do.\n"); // Same message as yum install no-op
+
+        assertFalse(yum.upgrade("package-1", "package-2")
+                       .converge(taskContext));
     }
 
     @Test
@@ -107,6 +125,15 @@ public class YumTest {
         assertFalse(yum
                 .remove("package-1", "package-2")
                 .converge(taskContext));
+
+        // RHEL 8
+        terminal.expectCommand(
+                "yum remove --assumeyes package-1 package-2 2>&1",
+                0,
+                "foobar\nNo packages marked for removal.\n"); // Different output
+
+        assertFalse(yum.remove("package-1", "package-2")
+                       .converge(taskContext));
     }
 
     @Test
@@ -253,4 +280,5 @@ public class YumTest {
 
         yum.upgrade().converge(taskContext);
     }
+
 }

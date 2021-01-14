@@ -40,15 +40,15 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
         private final Terminal terminal;
         private final String yumCommand;
-        private final Pattern commandOutputNoopPattern;
+        private final List<Pattern> outputNoopPatterns;
         private final List<YumPackageName> packages;
         private final List<String> options = new ArrayList<>();
 
-        GenericYumCommand(Terminal terminal, String yumCommand, List<YumPackageName> packages, Pattern commandOutputNoopPattern) {
+        GenericYumCommand(Terminal terminal, String yumCommand, List<YumPackageName> packages, Pattern... outputNoopPatterns) {
             this.terminal = terminal;
             this.yumCommand = yumCommand;
             this.packages = packages;
-            this.commandOutputNoopPattern = commandOutputNoopPattern;
+            this.outputNoopPatterns = List.of(outputNoopPatterns);
 
             switch (yumCommand) {
                 case "install": {
@@ -89,7 +89,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             // Therefore, run the command and parse the output to decide.
             boolean modifiedSystem = commandLine
                     .executeSilently()
-                    .mapOutput(this::mapOutput);
+                    .mapOutput(this::packageChanged);
 
             if (modifiedSystem) {
                 commandLine.recordSilentExecutionAsSystemModification();
@@ -98,13 +98,13 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             return modifiedSystem;
         }
 
-        private boolean mapOutput(String output) {
+        private boolean packageChanged(String output) {
             Matcher unknownPackageMatcher = UNKNOWN_PACKAGE_PATTERN.matcher(output);
             if (unknownPackageMatcher.find()) {
                 throw new IllegalArgumentException("Unknown package: " + unknownPackageMatcher.group(1));
             }
 
-            return !commandOutputNoopPattern.matcher(output).find();
+            return outputNoopPatterns.stream().noneMatch(pattern -> pattern.matcher(output).find());
         }
 
         protected GenericYumCommand getThis() { return this; }
