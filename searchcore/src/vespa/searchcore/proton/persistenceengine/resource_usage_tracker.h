@@ -15,6 +15,9 @@ namespace proton {
 class DiskMemUsageState;
 class IDiskMemUsageNotifier;
 
+/*
+ * Class tracking resource usage for persistence provider.
+ */
 class ResourceUsageTracker : public IDiskMemUsageListener
 {
     using ListenerSP = std::shared_ptr<storage::spi::IResourceUsageListener>;
