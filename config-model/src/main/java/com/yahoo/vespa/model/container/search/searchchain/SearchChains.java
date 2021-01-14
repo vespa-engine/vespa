@@ -21,7 +21,7 @@ public class SearchChains extends Chains<SearchChain> {
 
     private final SourceGroupRegistry sourceGroups = new SourceGroupRegistry();
 
-    public SearchChains(AbstractConfigProducer parent, String subId) {
+    public SearchChains(AbstractConfigProducer<?> parent, String subId) {
         super(parent, subId);
     }
 
