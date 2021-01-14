@@ -17,7 +17,7 @@ public class AutoscalingMetrics {
     private static MetricSet create() {
         return new MetricSet("autoscaling",
                              metrics("cpu.util",
-                                     "mem_total.util",
+                                     "mem.util",
                                      "disk.util",
                                      "application_generation",
                                      "in_service"));
