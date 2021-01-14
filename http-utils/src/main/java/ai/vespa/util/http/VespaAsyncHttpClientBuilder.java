@@ -45,7 +45,7 @@ public class VespaAsyncHttpClientBuilder {
 
     public static HttpAsyncClientBuilder create(AsyncConnectionManagerFactory factory) {
         HttpAsyncClientBuilder clientBuilder = HttpAsyncClientBuilder.create();
-        TlsContext vespaTlsContext = TransportSecurityUtils.createTlsContext().orElse(null);
+        TlsContext vespaTlsContext = TransportSecurityUtils.getSystemTlsContext().orElse(null);
         TlsStrategy tlsStrategy;
         if (vespaTlsContext != null) {
             SSLParameters vespaTlsParameters = vespaTlsContext.parameters();
