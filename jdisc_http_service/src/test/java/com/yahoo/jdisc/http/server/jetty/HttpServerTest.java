@@ -5,12 +5,11 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
-import com.yahoo.jdisc.Metric;
+import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingSetSelector;
-import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -35,6 +34,7 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.content.StringBody;
+import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
@@ -104,7 +104,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -809,6 +808,19 @@ public class HttpServerTest {
 
         int clientPort = Integer.parseInt(response.getHeaders().get("Jdisc-Local-Port"));
         assertNotEquals(proxyLocalPort, clientPort);
+    }
+
+    @Test
+    public void requireThatConnectionIsTrackedInConnectionLog() throws Exception {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
+        Module overrideModule = binder -> binder.bind(ConnectionLog.class).toInstance(connectionLog);
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.NEED, overrideModule);
+        driver.client().get("/status.html");
+        assertTrue(driver.close());
+        Assertions.assertThat(connectionLog.logEntries()).hasSize(2); // For http connection upgraded to https
     }
 
     private ContentResponse sendJettyClientRequest(TestDriver testDriver, HttpClient client, Object tag)

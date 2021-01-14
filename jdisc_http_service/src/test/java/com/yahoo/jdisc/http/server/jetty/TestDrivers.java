@@ -52,22 +52,23 @@ public class TestDrivers {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
                 requestHandler,
-                newConfigModule(
-                        new ServerConfig.Builder(),
-                        new ConnectorConfig.Builder()
-                                .tlsClientAuthEnforcer(
-                                        new ConnectorConfig.TlsClientAuthEnforcer.Builder()
-                                                .enable(true)
-                                                .pathWhitelist("/status.html"))
-                                .ssl(new ConnectorConfig.Ssl.Builder()
-                                             .enabled(true)
-                                             .clientAuth(tlsClientAuth == TlsClientAuth.NEED
-                                                                 ? ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH
-                                                                 : ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH)
-                                             .privateKeyFile(privateKeyFile.toString())
-                                             .certificateFile(certificateFile.toString())
-                                             .caCertificateFile(certificateFile.toString())),
-                        Modules.combine(guiceModules)));
+                Modules.override(
+                        newConfigModule(
+                                new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
+                                new ConnectorConfig.Builder()
+                                        .tlsClientAuthEnforcer(
+                                                new ConnectorConfig.TlsClientAuthEnforcer.Builder()
+                                                        .enable(true)
+                                                        .pathWhitelist("/status.html"))
+                                        .ssl(new ConnectorConfig.Ssl.Builder()
+                                                .enabled(true)
+                                                .clientAuth(tlsClientAuth == TlsClientAuth.NEED
+                                                        ? ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH
+                                                        : ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH)
+                                                .privateKeyFile(privateKeyFile.toString())
+                                                .certificateFile(certificateFile.toString())
+                                                .caCertificateFile(certificateFile.toString()))))
+                        .with(guiceModules));
     }
 
     private static Module newConfigModule(ServerConfig.Builder serverConfig,
