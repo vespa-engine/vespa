@@ -23,6 +23,7 @@ import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
@@ -92,7 +93,7 @@ public class SessionRepositoryTest {
                                             .build())
                 .flagSource(flagSource)
                 .build();
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry(), curator);
+        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry(), curator, Metrics.createTestMetrics());
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

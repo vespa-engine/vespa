@@ -34,6 +34,7 @@ import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
@@ -128,7 +129,7 @@ public class ApplicationRepositoryTest {
                 .flagSource(flagSource)
                 .clock(clock)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry(), curator);
+        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry(), curator, Metrics.createTestMetrics());
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);

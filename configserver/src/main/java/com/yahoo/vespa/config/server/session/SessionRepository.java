@@ -82,7 +82,8 @@ public class SessionRepository {
     private final Curator curator;
     private final Executor zkWatcherExecutor;
     private final TenantFileSystemDirs tenantFileSystemDirs;
-    private final MetricUpdater metrics;
+    private final Metrics metrics;
+    private final MetricUpdater metricUpdater;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
     private final SessionPreparer sessionPreparer;
@@ -96,7 +97,8 @@ public class SessionRepository {
                              GlobalComponentRegistry componentRegistry,
                              TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
-                             Curator curator) {
+                             Curator curator,
+                             Metrics metrics) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -109,7 +111,8 @@ public class SessionRepository {
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
-        this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        this.metrics = metrics;
+        this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
@@ -351,7 +354,7 @@ public class SessionRepository {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
         remoteSessionCache.remove(sessionId);
-        metrics.incRemovedSessions();
+        metricUpdater.incRemovedSessions();
     }
 
     private void loadSessionIfActive(RemoteSession session) {
@@ -429,7 +432,8 @@ public class SessionRepository {
                                                                     sessionZooKeeperClient,
                                                                     previousApplicationSet,
                                                                     componentRegistry,
-                                                                    curator);
+                                                                    curator,
+                                                                    metrics);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
@@ -447,10 +451,10 @@ public class SessionRepository {
             for (Session session : remoteSessionCache.values()) {
                 sessionMetrics.add(session.getStatus());
             }
-            metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
-            metrics.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
-            metrics.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
-            metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
+            metricUpdater.setNewSessions(sessionMetrics.count(Session.Status.NEW));
+            metricUpdater.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
+            metricUpdater.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
+            metricUpdater.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
         });
     }
 
@@ -701,7 +705,7 @@ public class SessionRepository {
         if (sessionStateWatcher == null) {
             Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metrics, zkWatcherExecutor, this));
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metricUpdater, zkWatcherExecutor, this));
         } else {
             sessionStateWatcher.updateRemoteSession(remoteSession);
         }

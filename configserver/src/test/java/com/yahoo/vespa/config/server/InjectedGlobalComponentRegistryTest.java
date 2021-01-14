@@ -17,9 +17,6 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionTest;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
@@ -39,8 +36,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class InjectedGlobalComponentRegistryTest {
 
-    private Curator curator;
-    private Metrics metrics;
     private SessionPreparer sessionPreparer;
     private ConfigserverConfig configserverConfig;
     private RpcServer rpcServer;
@@ -55,8 +50,6 @@ public class InjectedGlobalComponentRegistryTest {
 
     @Before
     public void setupRegistry() throws IOException {
-        curator = new MockCurator();
-        metrics = Metrics.createTestMetrics();
         modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
@@ -73,7 +66,7 @@ public class InjectedGlobalComponentRegistryTest {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
-                new InjectedGlobalComponentRegistry(metrics, modelFactoryRegistry, sessionPreparer,
+                new InjectedGlobalComponentRegistry(modelFactoryRegistry, sessionPreparer,
                                                     rpcServer, configserverConfig, defRepo, permanentApplicationPackage,
                                                     hostProvisionerProvider, zone,
                                                     new ConfigServerDB(configserverConfig), new InMemoryFlagSource(),
@@ -84,7 +77,6 @@ public class InjectedGlobalComponentRegistryTest {
     public void testThatAllComponentsAreSetup() {
         assertThat(globalComponentRegistry.getModelFactoryRegistry(), is(modelFactoryRegistry));
         assertThat(globalComponentRegistry.getSessionPreparer(), is(sessionPreparer));
-        assertThat(globalComponentRegistry.getMetrics(), is(metrics));
         assertThat(globalComponentRegistry.getConfigserverConfig(), is(configserverConfig));
         assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));

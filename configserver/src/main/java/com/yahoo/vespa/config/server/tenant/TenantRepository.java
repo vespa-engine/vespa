@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -83,7 +84,7 @@ public class TenantRepository {
     private final HostRegistry hostRegistry;
     private final List<TenantListener> tenantListeners = Collections.synchronizedList(new ArrayList<>());
     private final Curator curator;
-
+    private final Metrics metrics;
     private final MetricUpdater metricUpdater;
     private final ExecutorService zkCacheExecutor;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
@@ -100,14 +101,16 @@ public class TenantRepository {
     @Inject
     public TenantRepository(GlobalComponentRegistry componentRegistry,
                             HostRegistry hostRegistry,
-                            Curator curator) {
+                            Curator curator,
+                            Metrics metrics) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                               new DaemonThreadFactory("bootstrap tenants"));
         this.curator = curator;
-        metricUpdater = componentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
+        this.metrics = metrics;
+        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(componentRegistry.getTenantListener());
         this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
         this.zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
@@ -132,12 +135,12 @@ public class TenantRepository {
 
     // For testing only
     public TenantRepository(GlobalComponentRegistry componentRegistry) {
-        this(componentRegistry, new HostRegistry(), new MockCurator());
+        this(componentRegistry, new HostRegistry());
     }
 
     // For testing only
     public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry) {
-        this(componentRegistry, hostRegistry, new MockCurator());
+        this(componentRegistry, hostRegistry, new MockCurator(), Metrics.createTestMetrics());
     }
 
     private void notifyTenantsLoaded() {
@@ -242,7 +245,7 @@ public class TenantRepository {
                                        curator,
                                        componentRegistry.getZkWatcherExecutor(),
                                        componentRegistry.getZkCacheExecutor(),
-                                       componentRegistry.getMetrics(),
+                                       metrics,
                                        componentRegistry.getReloadListener(),
                                        componentRegistry.getConfigserverConfig(),
                                        hostRegistry,
@@ -252,7 +255,8 @@ public class TenantRepository {
                                                                     componentRegistry,
                                                                     applicationRepo,
                                                                     componentRegistry.getSessionPreparer(),
-                                                                    curator);
+                                                                    curator,
+                                                                    metrics);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

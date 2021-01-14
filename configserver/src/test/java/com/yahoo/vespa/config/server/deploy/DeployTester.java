@@ -286,13 +286,13 @@ public class DeployTester {
                     .configServerConfig(configserverConfig)
                     .curator(Optional.ofNullable(curator).orElseGet(MockCurator::new))
                     .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-                    .metrics(Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics))
                     .zone(zone);
             if (configserverConfig.hostedVespa()) testComponentRegistryBuilder.provisioner(provisioner);
 
             TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build(),
                                                                      new HostRegistry(),
-                                                                     curator);
+                                                                     curator,
+                                                                     Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics));
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

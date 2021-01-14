@@ -12,7 +12,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
@@ -32,7 +31,6 @@ import java.util.concurrent.Executors;
  */
 public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry {
 
-    private final Metrics metrics;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final SessionPreparer sessionPreparer;
     private final RpcServer rpcServer;
@@ -49,8 +47,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @SuppressWarnings("WeakerAccess")
     @Inject
-    public InjectedGlobalComponentRegistry(Metrics metrics,
-                                           ModelFactoryRegistry modelFactoryRegistry,
+    public InjectedGlobalComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                            SessionPreparer sessionPreparer,
                                            RpcServer rpcServer,
                                            ConfigserverConfig configserverConfig,
@@ -61,7 +58,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            ConfigServerDB configServerDB,
                                            FlagSource flagSource,
                                            SecretStore secretStore) {
-        this.metrics = metrics;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.sessionPreparer = sessionPreparer;
         this.rpcServer = rpcServer;
@@ -77,8 +73,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     }
 
-    @Override
-    public Metrics getMetrics() { return metrics; }
     @Override
     public SessionPreparer getSessionPreparer() { return sessionPreparer; }
     @Override

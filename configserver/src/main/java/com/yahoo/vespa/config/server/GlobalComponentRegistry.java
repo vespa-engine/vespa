@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutorService;
  */
 public interface GlobalComponentRegistry {
 
-    Metrics getMetrics();
     SessionPreparer getSessionPreparer();
     ConfigserverConfig getConfigserverConfig();
     TenantListener getTenantListener();

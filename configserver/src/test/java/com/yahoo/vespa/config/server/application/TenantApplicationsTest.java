@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -78,7 +79,7 @@ public class TenantApplicationsTest {
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, hostRegistry, curator);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, hostRegistry, curator, Metrics.createTestMetrics());
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
         applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);

@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
@@ -39,7 +38,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class TestComponentRegistry implements GlobalComponentRegistry {
 
-    private final Metrics metrics;
     private final SessionPreparer sessionPreparer;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo defRepo;
@@ -57,8 +55,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final SecretStore secretStore;
     private final FlagSource flagSource;
 
-    private TestComponentRegistry(Metrics metrics,
-                                  ModelFactoryRegistry modelFactoryRegistry,
+    private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                   PermanentApplicationPackage permanentApplicationPackage,
                                   FileDistributionFactory fileDistributionFactory,
                                   ConfigserverConfig configserverConfig,
@@ -71,7 +68,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   Clock clock,
                                   SecretStore secretStore,
                                   FlagSource flagSource) {
-        this.metrics = metrics;
         this.configserverConfig = configserverConfig;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
@@ -93,7 +89,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public static class Builder {
 
         private Curator curator = new MockCurator();
-        private Metrics metrics = Metrics.createTestMetrics();
         private ConfigserverConfig configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
                         .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
@@ -117,11 +112,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
 
         public Builder curator(Curator curator) {
             this.curator = curator;
-            return this;
-        }
-
-        public Builder metrics(Metrics metrics) {
-            this.metrics = metrics;
             return this;
         }
 
@@ -177,8 +167,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
                                                                   zone, flagSource, secretStore);
-            return new TestComponentRegistry(metrics,
-                                             modelFactoryRegistry,
+            return new TestComponentRegistry(modelFactoryRegistry,
                                              permApp,
                                              fileDistributionProvider,
                                              configserverConfig,
@@ -194,8 +183,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         }
     }
 
-    @Override
-    public Metrics getMetrics() { return metrics; }
     @Override
     public SessionPreparer getSessionPreparer() { return sessionPreparer; }
     @Override

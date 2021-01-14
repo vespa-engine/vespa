@@ -95,7 +95,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       curator,
                                       componentRegistry.getZkWatcherExecutor(),
                                       componentRegistry.getZkCacheExecutor(),
-                                      componentRegistry.getMetrics(),
+                                      Metrics.createTestMetrics(),
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),
                                       hostRegistry,

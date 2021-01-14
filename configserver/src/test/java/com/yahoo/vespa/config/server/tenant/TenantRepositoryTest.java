@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
@@ -49,7 +50,6 @@ public class TenantRepositoryTest {
     private static final TenantName tenant3 = TenantName.from("tenant3");
 
     private TenantRepository tenantRepository;
-    private TestComponentRegistry globalComponentRegistry;
     private TenantApplicationsTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
@@ -63,11 +63,11 @@ public class TenantRepositoryTest {
     @Before
     public void setupSessions() {
         curator = new MockCurator();
-        globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        listener = (TenantApplicationsTest.MockReloadListener)globalComponentRegistry.getReloadListener();
-        tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
+        TestComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
+        listener = (TenantApplicationsTest.MockReloadListener) globalComponentRegistry.getReloadListener();
+        tenantListener = (MockTenantListener) globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry(), curator);
+        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry(), curator, Metrics.createTestMetrics());
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -201,7 +201,7 @@ public class TenantRepositoryTest {
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
         public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry, Curator curator) {
-            super(globalComponentRegistry, new HostRegistry(), curator);
+            super(globalComponentRegistry, new HostRegistry(), curator, Metrics.createTestMetrics());
         }
 
         @Override
