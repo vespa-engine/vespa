@@ -24,6 +24,7 @@ import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.container.logging.SimpleConnectionLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.http.filter.SecurityFilterInvoker;
@@ -175,7 +176,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         componentGroup = new ComponentGroup<>(this, "component");
 
         addComponent(new StatisticsComponent());
-        addSimpleComponent(AccessLog.class);
+        addSimpleComponent(AccessLog.class.getName(), null, "jdisc_http_service");
         addComponent(new DefaultThreadpoolProvider(this));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent(SecurityFilterInvoker.class);
