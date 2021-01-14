@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -292,7 +294,8 @@ public class DeployTester {
             TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build(),
                                                                      new HostRegistry(),
                                                                      curator,
-                                                                     Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics));
+                                                                     Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics),
+                                                                     new StripedExecutor<>(new InThreadExecutorService()));
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

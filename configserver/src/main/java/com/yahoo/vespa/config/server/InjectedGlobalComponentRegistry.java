@@ -3,11 +3,9 @@ package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -42,7 +40,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final ConfigServerDB configServerDB;
     private final FlagSource flagSource;
     private final SecretStore secretStore;
-    private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService zkCacheExecutor;
 
     @SuppressWarnings("WeakerAccess")
@@ -69,7 +66,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.configServerDB = configServerDB;
         this.flagSource = flagSource;
         this.secretStore = secretStore;
-        this.zkWatcherExecutor = new StripedExecutor<>();
         this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     }
 
@@ -103,11 +99,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB; }
-
-    @Override
-    public StripedExecutor<TenantName> getZkWatcherExecutor() {
-        return zkWatcherExecutor;
-    }
 
     @Override
     public FlagSource getFlagSource() { return flagSource; }

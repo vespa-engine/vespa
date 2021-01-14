@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -79,7 +81,11 @@ public class TenantApplicationsTest {
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, hostRegistry, curator, Metrics.createTestMetrics());
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry,
+                                                                 hostRegistry,
+                                                                 curator,
+                                                                 Metrics.createTestMetrics(),
+                                                                 new StripedExecutor<>(new InThreadExecutorService()));
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
         applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);

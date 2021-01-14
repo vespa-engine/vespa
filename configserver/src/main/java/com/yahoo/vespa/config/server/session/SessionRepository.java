@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -98,7 +99,8 @@ public class SessionRepository {
                              TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
                              Curator curator,
-                             Metrics metrics) {
+                             Metrics metrics,
+                             StripedExecutor<TenantName> zkWatcherExecutor) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -107,7 +109,7 @@ public class SessionRepository {
         this.clock = componentRegistry.getClock();
         this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
-        this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
+        this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;

@@ -3,11 +3,9 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -50,7 +48,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Zone zone;
     private final Clock clock;
     private final ConfigServerDB configServerDB;
-    private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService zkCacheExecutor;
     private final SecretStore secretStore;
     private final FlagSource flagSource;
@@ -80,7 +77,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.zone = zone;
         this.clock = clock;
         this.configServerDB = new ConfigServerDB(configserverConfig);
-        this.zkWatcherExecutor = new StripedExecutor<>(new InThreadExecutorService());
         this.zkCacheExecutor = new InThreadExecutorService();
         this.secretStore = secretStore;
         this.flagSource = flagSource;
@@ -97,7 +93,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
         private ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         private final MockTenantListener tenantListener = new MockTenantListener();
-        private Optional<PermanentApplicationPackage> permanentApplicationPackage = Optional.empty();
         private final Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         private Optional<Provisioner> hostProvisioner = Optional.empty();
@@ -117,11 +112,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
 
         public Builder modelFactoryRegistry(ModelFactoryRegistry modelFactoryRegistry) {
             this.modelFactoryRegistry = modelFactoryRegistry;
-            return this;
-        }
-
-        public Builder permanentApplicationPackage(PermanentApplicationPackage permanentApplicationPackage) {
-            this.permanentApplicationPackage = Optional.ofNullable(permanentApplicationPackage);
             return this;
         }
 
@@ -156,7 +146,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         }
 
         public TestComponentRegistry build() {
-            final PermanentApplicationPackage permApp = this.permanentApplicationPackage
+            final PermanentApplicationPackage permApp = Optional.<PermanentApplicationPackage>empty()
                     .orElse(new PermanentApplicationPackage(configserverConfig));
             FileDistributionFactory fileDistributionProvider = this.fileDistributionFactory
                     .orElse(new MockFileDistributionFactory(configserverConfig));
@@ -209,11 +199,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public Clock getClock() { return clock;}
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB;}
-
-    @Override
-    public StripedExecutor<TenantName> getZkWatcherExecutor() {
-        return zkWatcherExecutor;
-    }
 
     @Override
     public FlagSource getFlagSource() { return flagSource; }

@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -67,7 +69,11 @@ public class TenantRepositoryTest {
         listener = (TenantApplicationsTest.MockReloadListener) globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener) globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry(), curator, Metrics.createTestMetrics());
+        tenantRepository = new TenantRepository(globalComponentRegistry,
+                                                new HostRegistry(),
+                                                curator,
+                                                Metrics.createTestMetrics(),
+                                                new StripedExecutor<>(new InThreadExecutorService()));
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -201,7 +207,11 @@ public class TenantRepositoryTest {
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
         public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry, Curator curator) {
-            super(globalComponentRegistry, new HostRegistry(), curator, Metrics.createTestMetrics());
+            super(globalComponentRegistry,
+                  new HostRegistry(),
+                  curator,
+                  Metrics.createTestMetrics(),
+                  new StripedExecutor<>(new InThreadExecutorService()));
         }
 
         @Override

@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationName;
@@ -83,7 +85,11 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .build();
         Clock clock = componentRegistry.getClock();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry(), curator, Metrics.createTestMetrics());
+        tenantRepository = new TenantRepository(componentRegistry,
+                                                new HostRegistry(),
+                                                curator,
+                                                Metrics.createTestMetrics(),
+                                                new StripedExecutor<>(new InThreadExecutorService()));
         tenantRepository.addTenant(tenant);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

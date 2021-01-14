@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -102,7 +103,8 @@ public class TenantRepository {
     public TenantRepository(GlobalComponentRegistry componentRegistry,
                             HostRegistry hostRegistry,
                             Curator curator,
-                            Metrics metrics) {
+                            Metrics metrics,
+                            StripedExecutor<TenantName> zkWatcherExecutor) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
@@ -113,7 +115,7 @@ public class TenantRepository {
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(componentRegistry.getTenantListener());
         this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
-        this.zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
+        this.zkWatcherExecutor = zkWatcherExecutor;
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -140,7 +142,11 @@ public class TenantRepository {
 
     // For testing only
     public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry) {
-        this(componentRegistry, hostRegistry, new MockCurator(), Metrics.createTestMetrics());
+        this(componentRegistry,
+             hostRegistry,
+             new MockCurator(),
+             Metrics.createTestMetrics(),
+             new StripedExecutor<>(new InThreadExecutorService()));
     }
 
     private void notifyTenantsLoaded() {
@@ -243,7 +249,7 @@ public class TenantRepository {
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
                                        curator,
-                                       componentRegistry.getZkWatcherExecutor(),
+                                       zkWatcherExecutor,
                                        componentRegistry.getZkCacheExecutor(),
                                        metrics,
                                        componentRegistry.getReloadListener(),
@@ -256,7 +262,8 @@ public class TenantRepository {
                                                                     applicationRepo,
                                                                     componentRegistry.getSessionPreparer(),
                                                                     curator,
-                                                                    metrics);
+                                                                    metrics,
+                                                                    zkWatcherExecutor);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

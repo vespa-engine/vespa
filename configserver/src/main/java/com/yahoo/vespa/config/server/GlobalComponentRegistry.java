@@ -2,15 +2,12 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.flags.FlagSource;
@@ -37,7 +34,6 @@ public interface GlobalComponentRegistry {
     Zone getZone();
     Clock getClock();
     ConfigServerDB getConfigServerDB();
-    StripedExecutor<TenantName> getZkWatcherExecutor();
     FlagSource getFlagSource();
     ExecutorService getZkCacheExecutor();
     SecretStore getSecretStore();

@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
@@ -93,7 +95,11 @@ public class SessionRepositoryTest {
                                             .build())
                 .flagSource(flagSource)
                 .build();
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry(), curator, Metrics.createTestMetrics());
+        tenantRepository = new TenantRepository(globalComponentRegistry,
+                                                new HostRegistry(),
+                                                curator,
+                                                Metrics.createTestMetrics(),
+                                                new StripedExecutor<>(new InThreadExecutorService()));
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
