@@ -6,6 +6,8 @@
 #include <vespa/persistence/spi/i_resource_usage_listener.h>
 #include <cassert>
 
+using storage::spi::ResourceUsage;
+
 namespace proton {
 
 ResourceUsageTracker::ResourceUsageTracker(IDiskMemUsageNotifier& disk_mem_usage_notifier)
@@ -28,8 +30,7 @@ void
 ResourceUsageTracker::notifyDiskMemUsage(DiskMemUsageState state)
 {
     std::lock_guard guard(_lock);
-    _resource_usage.set_disk_usage(state.diskState().usage());
-    _resource_usage.set_memory_usage(state.memoryState().usage());
+    _resource_usage = ResourceUsage(state.diskState().usage(), state.memoryState().usage());
     for (auto& listener : _listeners) {
         listener->update_resource_usage(_resource_usage);
     }

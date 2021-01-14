@@ -12,14 +12,17 @@ class ResourceUsage
     double _memory_usage;
 public:
     
-    ResourceUsage()
-        : _disk_usage(0.0),
-          _memory_usage(0.0)
+    ResourceUsage(double disk_usage, double memory_usage)
+        : _disk_usage(disk_usage),
+          _memory_usage(memory_usage)
     {
     }
 
-    void set_disk_usage(double disk_usage) noexcept { _disk_usage = disk_usage; }
-    void set_memory_usage(double memory_usage) noexcept { _memory_usage = memory_usage; }
+    ResourceUsage()
+        : ResourceUsage(0.0, 0.0)
+    {
+    }
+
     double get_disk_usage() const noexcept { return _disk_usage; }
     double get_memory_usage() const noexcept { return _memory_usage; }
 };

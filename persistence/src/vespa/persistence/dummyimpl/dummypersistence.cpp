@@ -857,9 +857,7 @@ DummyPersistence::join(const Bucket& source1, const Bucket& source2,
 void
 DummyPersistence::register_resource_usage_listener(std::shared_ptr<IResourceUsageListener> listener)
 {
-    ResourceUsage usage;
-    usage.set_disk_usage(0.5);
-    usage.set_memory_usage(0.4);
+    ResourceUsage usage(0.5, 0.4);
     listener->update_resource_usage(usage);
 }
 
