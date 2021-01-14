@@ -11,7 +11,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -19,8 +18,6 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
@@ -35,8 +32,6 @@ import java.util.concurrent.Executors;
  */
 public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry {
 
-    private final Curator curator;
-    private final ConfigCurator configCurator;
     private final Metrics metrics;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final SessionPreparer sessionPreparer;
@@ -51,13 +46,10 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final SecretStore secretStore;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService zkCacheExecutor;
-    private final HostRegistry hostRegistry;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
-    public InjectedGlobalComponentRegistry(Curator curator,
-                                           ConfigCurator configCurator,
-                                           Metrics metrics,
+    public InjectedGlobalComponentRegistry(Metrics metrics,
                                            ModelFactoryRegistry modelFactoryRegistry,
                                            SessionPreparer sessionPreparer,
                                            RpcServer rpcServer,
@@ -68,10 +60,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            Zone zone,
                                            ConfigServerDB configServerDB,
                                            FlagSource flagSource,
-                                           SecretStore secretStore,
-                                           HostRegistry hostRegistry) {
-        this.curator = curator;
-        this.configCurator = configCurator;
+                                           SecretStore secretStore) {
         this.metrics = metrics;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.sessionPreparer = sessionPreparer;
@@ -86,13 +75,8 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.secretStore = secretStore;
         this.zkWatcherExecutor = new StripedExecutor<>();
         this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
-        this.hostRegistry = hostRegistry;
     }
 
-    @Override
-    public Curator getCurator() { return curator; }
-    @Override
-    public ConfigCurator getConfigCurator() { return configCurator; }
     @Override
     public Metrics getMetrics() { return metrics; }
     @Override

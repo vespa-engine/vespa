@@ -14,14 +14,12 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -41,8 +39,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class TestComponentRegistry implements GlobalComponentRegistry {
 
-    private final Curator curator;
-    private final ConfigCurator configCurator;
     private final Metrics metrics;
     private final SessionPreparer sessionPreparer;
     private final ConfigserverConfig configserverConfig;
@@ -61,7 +57,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final SecretStore secretStore;
     private final FlagSource flagSource;
 
-    private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
+    private TestComponentRegistry(Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
                                   PermanentApplicationPackage permanentApplicationPackage,
                                   FileDistributionFactory fileDistributionFactory,
@@ -75,8 +71,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   Clock clock,
                                   SecretStore secretStore,
                                   FlagSource flagSource) {
-        this.curator = curator;
-        this.configCurator = configCurator;
         this.metrics = metrics;
         this.configserverConfig = configserverConfig;
         this.reloadListener = reloadListener;
@@ -183,17 +177,23 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
                                                                   zone, flagSource, secretStore);
-            return new TestComponentRegistry(curator, ConfigCurator.create(curator), metrics, modelFactoryRegistry,
-                                             permApp, fileDistributionProvider, configserverConfig,
-                                             sessionPreparer, hostProvisioner, defRepo, reloadListener, tenantListener,
-                                             zone, clock, secretStore, flagSource);
+            return new TestComponentRegistry(metrics,
+                                             modelFactoryRegistry,
+                                             permApp,
+                                             fileDistributionProvider,
+                                             configserverConfig,
+                                             sessionPreparer,
+                                             hostProvisioner,
+                                             defRepo,
+                                             reloadListener,
+                                             tenantListener,
+                                             zone,
+                                             clock,
+                                             secretStore,
+                                             flagSource);
         }
     }
 
-    @Override
-    public Curator getCurator() { return curator; }
-    @Override
-    public ConfigCurator getConfigCurator() { return configCurator; }
     @Override
     public Metrics getMetrics() { return metrics; }
     @Override

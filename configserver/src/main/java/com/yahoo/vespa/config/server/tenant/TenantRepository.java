@@ -18,6 +18,7 @@ import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.curator.framework.CuratorFramework;
@@ -97,13 +98,15 @@ public class TenantRepository {
      * @param componentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      */
     @Inject
-    public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry) {
+    public TenantRepository(GlobalComponentRegistry componentRegistry,
+                            HostRegistry hostRegistry,
+                            Curator curator) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                               new DaemonThreadFactory("bootstrap tenants"));
-        this.curator = componentRegistry.getCurator();
+        this.curator = curator;
         metricUpdater = componentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(componentRegistry.getTenantListener());
         this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
@@ -124,6 +127,17 @@ public class TenantRepository {
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   TimeUnit.SECONDS);
+    }
+
+
+    // For testing only
+    public TenantRepository(GlobalComponentRegistry componentRegistry) {
+        this(componentRegistry, new HostRegistry(), new MockCurator());
+    }
+
+    // For testing only
+    public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry) {
+        this(componentRegistry, hostRegistry, new MockCurator());
     }
 
     private void notifyTenantsLoaded() {
@@ -237,7 +251,8 @@ public class TenantRepository {
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     componentRegistry,
                                                                     applicationRepo,
-                                                                    componentRegistry.getSessionPreparer());
+                                                                    componentRegistry.getSessionPreparer(),
+                                                                    curator);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

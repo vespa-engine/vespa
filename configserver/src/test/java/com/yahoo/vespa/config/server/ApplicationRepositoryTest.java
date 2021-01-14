@@ -128,7 +128,7 @@ public class ApplicationRepositoryTest {
                 .flagSource(flagSource)
                 .clock(clock)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry(), curator);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);

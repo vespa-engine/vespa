@@ -55,6 +55,7 @@ public class TenantApplicationsTest {
     private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
 
     private final MockReloadListener listener = new MockReloadListener();
+    private Curator curator;
     private CuratorFramework curatorFramework;
     private TestComponentRegistry componentRegistry;
     private TenantApplications applications;
@@ -64,7 +65,7 @@ public class TenantApplicationsTest {
 
     @Before
     public void setup() throws IOException {
-        Curator curator = new MockCurator();
+        curator = new MockCurator();
         curatorFramework = curator.framework();
         componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
@@ -77,10 +78,10 @@ public class TenantApplicationsTest {
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, hostRegistry);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, hostRegistry, curator);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
-        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName);
+        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);
     }
 
     @Test
@@ -173,7 +174,7 @@ public class TenantApplicationsTest {
 
     @Test
     public void testListConfigs() throws IOException, SAXException {
-        applications = TenantApplications.create(componentRegistry, new HostRegistry(), TenantName.defaultName());
+        applications = TenantApplications.create(componentRegistry, new HostRegistry(), TenantName.defaultName(), new MockCurator());
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -208,7 +209,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName);
+        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator);
     }
 
     private static ApplicationId createApplicationId(String name) {

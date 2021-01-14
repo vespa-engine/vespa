@@ -14,7 +14,6 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -61,7 +60,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .configServerConfig(configserverConfig)
                 .build();
 
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        tenantRepository = new TenantRepository(componentRegistry);
         tenantRepository.addTenant(tenantName);
 
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

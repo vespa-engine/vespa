@@ -82,7 +82,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .build();
         Clock clock = componentRegistry.getClock();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry(), curator);
         tenantRepository.addTenant(tenant);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

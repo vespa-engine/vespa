@@ -67,7 +67,7 @@ public class TenantRepositoryTest {
         listener = (TenantApplicationsTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry());
+        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry(), curator);
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -177,7 +177,7 @@ public class TenantRepositoryTest {
         // Should get exception if config is true
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry());
+        new FailingDuringBootstrapTenantRepository(createComponentRegistry(), new MockCurator());
     }
 
     private List<String> readZKChildren(String path) throws Exception {
@@ -185,8 +185,7 @@ public class TenantRepositoryTest {
     }
 
     private void assertZooKeeperTenantPathExists(TenantName tenantName) throws Exception {
-        assertNotNull(globalComponentRegistry.getCurator().framework()
-                              .checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
+        assertNotNull(curator.framework().checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
     }
 
     private GlobalComponentRegistry createComponentRegistry() throws IOException {
@@ -201,8 +200,8 @@ public class TenantRepositoryTest {
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
-        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry) {
-            super(globalComponentRegistry, new HostRegistry());
+        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry, Curator curator) {
+            super(globalComponentRegistry, new HostRegistry(), curator);
         }
 
         @Override

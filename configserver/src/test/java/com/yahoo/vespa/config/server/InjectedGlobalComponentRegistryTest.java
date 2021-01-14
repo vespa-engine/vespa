@@ -56,7 +56,6 @@ public class InjectedGlobalComponentRegistryTest {
     @Before
     public void setupRegistry() throws IOException {
         curator = new MockCurator();
-        ConfigCurator configCurator = ConfigCurator.create(curator);
         metrics = Metrics.createTestMetrics();
         modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         configserverConfig = new ConfigserverConfig(
@@ -74,11 +73,11 @@ public class InjectedGlobalComponentRegistryTest {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
-                new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, sessionPreparer,
+                new InjectedGlobalComponentRegistry(metrics, modelFactoryRegistry, sessionPreparer,
                                                     rpcServer, configserverConfig, defRepo, permanentApplicationPackage,
                                                     hostProvisionerProvider, zone,
                                                     new ConfigServerDB(configserverConfig), new InMemoryFlagSource(),
-                                                    new MockSecretStore(), hostRegistry);
+                                                    new MockSecretStore());
     }
 
     @Test
@@ -86,7 +85,6 @@ public class InjectedGlobalComponentRegistryTest {
         assertThat(globalComponentRegistry.getModelFactoryRegistry(), is(modelFactoryRegistry));
         assertThat(globalComponentRegistry.getSessionPreparer(), is(sessionPreparer));
         assertThat(globalComponentRegistry.getMetrics(), is(metrics));
-        assertThat(globalComponentRegistry.getCurator(), is(curator));
         assertThat(globalComponentRegistry.getConfigserverConfig(), is(configserverConfig));
         assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));

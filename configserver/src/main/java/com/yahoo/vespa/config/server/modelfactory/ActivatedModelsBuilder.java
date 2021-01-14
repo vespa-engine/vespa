@@ -65,7 +65,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   long applicationGeneration,
                                   SessionZooKeeperClient zkClient,
                                   Optional<ApplicationSet> currentActiveApplicationSet,
-                                  GlobalComponentRegistry globalComponentRegistry) {
+                                  GlobalComponentRegistry globalComponentRegistry,
+                                  Curator curator) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               globalComponentRegistry.getConfigserverConfig(),
               globalComponentRegistry.getZone(),
@@ -77,7 +78,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
         this.configDefinitionRepo = globalComponentRegistry.getStaticConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
-        this.curator = globalComponentRegistry.getCurator();
+        this.curator = curator;
         this.flagSource = globalComponentRegistry.getFlagSource();
         this.secretStore = globalComponentRegistry.getSecretStore();
     }

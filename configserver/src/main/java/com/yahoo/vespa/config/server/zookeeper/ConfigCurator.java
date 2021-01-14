@@ -239,11 +239,11 @@ public class ConfigCurator {
             curator.framework().checkExists().forPath("/dummy");
         }
         catch (Exception e) {
-            log.log(Level.SEVERE, "Unable to contact ZooKeeper on " + curator.connectionSpec() +
-                    ". Please verify for all configserver nodes that " +
-                    "VESPA_CONFIGSERVERS points to the correct configserver(s), " +
-                    "the same configserver(s) as in services.xml, and that they are started. " +
-                    "Check the log(s) for configserver errors. Aborting.", e);
+            log.log(Level.SEVERE, "Unable to connect to ZooKeeper on " + curator.connectionSpec() +
+                    ". Please verify that VESPA_CONFIGSERVERS points to the correct configserver(s) " +
+                    "on all config server nodes and are the same config server(s) as in services.xml, " +
+                    "and that they are started. " +
+                    "Check the log(s) for config server errors. Aborting.", e);
         }
     }
 

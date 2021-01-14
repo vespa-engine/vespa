@@ -89,18 +89,21 @@ public class SessionRepository {
     private final Path sessionsPath;
     private final TenantName tenantName;
     private final GlobalComponentRegistry componentRegistry;
+    private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
                              TenantApplications applicationRepo,
-                             SessionPreparer sessionPreparer) {
+                             SessionPreparer sessionPreparer,
+                             Curator curator) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
-        sessionCounter = new SessionCounter(componentRegistry.getConfigCurator(), tenantName);
+        this.configCurator = ConfigCurator.create(curator);
+        sessionCounter = new SessionCounter(configCurator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = componentRegistry.getClock();
-        this.curator = componentRegistry.getCurator();
+        this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
         this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
@@ -425,7 +428,8 @@ public class SessionRepository {
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
                                                                     previousApplicationSet,
-                                                                    componentRegistry);
+                                                                    componentRegistry,
+                                                                    curator);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
@@ -507,7 +511,7 @@ public class SessionRepository {
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
         Path sessionPath = getSessionPath(sessionId);
-        if (componentRegistry.getConfigCurator().exists(sessionPath.getAbsolute())) {
+        if (configCurator.exists(sessionPath.getAbsolute())) {
             throw new IllegalArgumentException("Path " + sessionPath.getAbsolute() + " already exists in ZooKeeper");
         }
     }
@@ -677,7 +681,7 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();
-        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), tenantName, sessionId, serverId);
+        return new SessionZooKeeperClient(curator, configCurator, tenantName, sessionId, serverId);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {

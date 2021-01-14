@@ -92,7 +92,7 @@ public class SessionRepositoryTest {
                                             .build())
                 .flagSource(flagSource)
                 .build();
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry());
+        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry(), curator);
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

@@ -263,7 +263,7 @@ public class DeployTester {
         private Provisioner provisioner;
         private ConfigserverConfig configserverConfig;
         private Zone zone;
-        private Curator curator;
+        private Curator curator = new MockCurator();
         private Metrics metrics;
         private List<ModelFactory> modelFactories;
         private Orchestrator orchestrator;
@@ -290,7 +290,9 @@ public class DeployTester {
                     .zone(zone);
             if (configserverConfig.hostedVespa()) testComponentRegistryBuilder.provisioner(provisioner);
 
-            TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build(), new HostRegistry());
+            TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build(),
+                                                                     new HostRegistry(),
+                                                                     curator);
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
