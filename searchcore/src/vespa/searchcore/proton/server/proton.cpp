@@ -313,8 +313,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                              _diskMemUsageSampler->notifier(),
                                                              protonConfig.visit.defaultserializedsize,
                                                              protonConfig.visit.ignoremaxbytes);
-    _diskMemUsageSampler->notifier().addDiskMemUsageListener(&_persistenceEngine->get_resource_usage_tracker());
-
 
     vespalib::string fileConfigId;
     _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128*1024, index_warmup_executor);
