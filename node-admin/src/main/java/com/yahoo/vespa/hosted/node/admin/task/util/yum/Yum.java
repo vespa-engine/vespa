@@ -20,11 +20,11 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.yum.YumCommand.Install
  * @author hakonhall
  */
 public class Yum {
-    // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
-    private static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do$");
-    private static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
-    private static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No Packages marked for removal$");
 
+    // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
+    public static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do\\.?$");
+    public static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
+    public static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No [pP]ackages marked for removal\\.?$");
 
     // WARNING: These must be in the same order as the supplier below
     private static final String RPM_QUERYFORMAT = Stream.of("NAME", "EPOCH", "VERSION", "RELEASE", "ARCH")
@@ -78,7 +78,7 @@ public class Yum {
 
 
     public GenericYumCommand upgrade(YumPackageName... packages) {
-        return new GenericYumCommand(terminal, "upgrade", List.of(packages), UPGRADE_NOOP_PATTERN);
+        return new GenericYumCommand(terminal, "upgrade", List.of(packages), INSTALL_NOOP_PATTERN, UPGRADE_NOOP_PATTERN);
     }
 
     public GenericYumCommand upgrade(String package1, String... packages) {
@@ -110,4 +110,5 @@ public class Yum {
         }
         return array;
     }
+
 }
