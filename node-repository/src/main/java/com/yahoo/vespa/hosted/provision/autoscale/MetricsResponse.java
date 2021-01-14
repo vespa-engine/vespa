@@ -91,7 +91,7 @@ public class MetricsResponse {
             double convertValue(double metricValue) { return (float)metricValue / 100; } // % to ratio
         },
         memory { // a node resource
-            public String metricResponseName() { return "mem_total.util"; }
+            public String metricResponseName() { return "mem.util"; }
             double convertValue(double metricValue) { return (float)metricValue / 100; } // % to ratio
         },
         disk { // a node resource
