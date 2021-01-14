@@ -43,9 +43,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       framework::HtmlStatusReporter("filestorman", "File store manager"),
       _compReg(compReg),
       _component(compReg, "filestormanager"),
-      _providerCore(provider),
-      _providerErrorWrapper(_providerCore),
-      _provider(&_providerErrorWrapper),
+      _provider(provider),
       _init_handler(init_handler),
       _bucketIdFactory(_component.getBucketIdFactory()),
       _persistenceHandlers(),
@@ -139,7 +137,7 @@ FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component
     assert(index < _metrics->disk->threads.size());
     _persistenceHandlers.push_back(
             std::make_unique<PersistenceHandler>(*_sequencedExecutor, component,
-                                                 *_config, *_provider, *_filestorHandler,
+                                                 *_config, _provider, *_filestorHandler,
                                                  *_bucketOwnershipNotifier, *_metrics->disk->threads[index]));
     return *_persistenceHandlers.back();
 }
@@ -674,7 +672,7 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     {
         spi::Context context(msg->getPriority(), msg->getTrace().getLevel());
         shared_ptr<DestroyIteratorCommand> cmd(std::static_pointer_cast<DestroyIteratorCommand>(msg));
-        _provider->destroyIterator(cmd->getIteratorId(), context);
+        _provider.destroyIterator(cmd->getIteratorId(), context);
         msg->getTrace().addChild(context.steal_trace());
         return true;
     }
@@ -873,7 +871,7 @@ FileStorManager::updateState()
         }
         contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(nodeUp);
         spi::ClusterState spiState(*derivedClusterState, _component.getIndex(), *contentBucketSpace.getDistribution());
-        _provider->setClusterState(bucketSpace, spiState);
+        _provider.setClusterState(bucketSpace, spiState);
     }
 }
 
@@ -913,7 +911,7 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
     size_t bucket_count = 0;
     for (const auto& elem : _component.getBucketSpaceRepo()) {
         const auto bucket_space = elem.first;
-        const auto bucket_result = _provider->listBuckets(bucket_space);
+        const auto bucket_result = _provider.listBuckets(bucket_space);
         assert(!bucket_result.hasError());
         const auto& buckets = bucket_result.getList();
         LOG(debug, "Fetching bucket info for %zu buckets in space '%s'",
@@ -927,7 +925,7 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
                                 StorBucketDatabase::CREATE_IF_NONEXISTING);
             assert(!entry.preExisted());
             auto spi_bucket = spi::Bucket(document::Bucket(bucket_space, bucket));
-            auto provider_result = _provider->getBucketInfo(spi_bucket);
+            auto provider_result = _provider.getBucketInfo(spi_bucket);
             assert(!provider_result.hasError());
             entry->setBucketInfo(PersistenceUtil::convertBucketInfo(provider_result.getBucketInfo()));
             entry.write();
