@@ -12,7 +12,6 @@ vespa_add_library(eval_eval OBJECT
     double_value_builder.cpp
     fast_addr_map.cpp
     fast_forest.cpp
-    fast_sparse_map.cpp
     fast_value.cpp
     function.cpp
     gbdt.cpp

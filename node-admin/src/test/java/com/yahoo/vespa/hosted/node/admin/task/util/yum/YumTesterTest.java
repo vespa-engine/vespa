@@ -37,7 +37,7 @@ public class YumTesterTest {
         assertYumMethod(yum -> yum.expectRemove(packages).withEnableRepo(repos),
                 yum -> yum.remove(List.of(packages)).enableRepo(repos).converge(context));
 
-        assertYumMethod(yum -> yum.expectInstallFixedVersion(minimalPackage.toName()).withEnableRepo(repos),
+        assertYumMethod(yum -> yum.expectInstallFixedVersion(minimalPackage.toName(yum.yumVersion())).withEnableRepo(repos),
                 yum -> yum.installFixedVersion(minimalPackage).enableRepo(repos).converge(context));
     }
 
@@ -58,4 +58,5 @@ public class YumTesterTest {
             terminal.verifyAllCommandsExecuted();
         });
     }
+
 }

@@ -60,7 +60,7 @@ public class VespaClientBuilderFactory implements AutoCloseable {
     }
 
 
-    private final TlsContext tlsContext = TransportSecurityUtils.createTlsContext().orElse(null);
+    private final TlsContext tlsContext = TransportSecurityUtils.getSystemTlsContext().orElse(null);
     private final MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
