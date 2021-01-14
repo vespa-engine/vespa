@@ -36,6 +36,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
      * Retrieves all possible provider specific parameters
      */
     private static class ProviderReader {
+
         final String type;
         final String path;
         final Double cacheWeight;
@@ -45,10 +46,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         final Double connectionPoolTimeout;
         final String clusterName;
         final List<Node> nodes;
-        final String certificateApplicationId;
-        final Integer certificateTtl;
-        final Integer certificateRetryWait;
-        final Node certificateProxy;  // Just re-using the Node class, as it matches our needs
         final Integer cacheSizeMB;
 
         ProviderReader(Element providerElement) {
@@ -62,10 +59,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             connectionPoolTimeout = readConnectionPoolTimeout(providerElement);
             retries = readRetries(providerElement);
             nodes = readNodes(providerElement);
-            certificateApplicationId = readCertificateApplicationId(providerElement);
-            certificateTtl = readCertificateTtl(providerElement);
-            certificateRetryWait = readCertificateRetryWait(providerElement);
-            certificateProxy = readCertificateProxy(providerElement);
         }
 
 
@@ -112,31 +105,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             return (timeoutString == null) ? null : TimeParser.seconds(timeoutString);
         }
 
-        private String readCertificateApplicationId(Element providerElement) {
-            return getAttributeOrNull(providerElement, "yca-application-id");
-        }
-
-        private Integer readCertificateTtl(Element providerElement) {
-            String x = getAttributeOrNull(providerElement, "yca-cache-ttl");
-            return (x == null) ? null : TimeParser.seconds(x).intValue();
-        }
-
-        private Integer readCertificateRetryWait(Element providerElement) {
-            String x = getAttributeOrNull(providerElement, "yca-cache-retry-wait");
-            return (x == null) ? null : TimeParser.seconds(x).intValue();
-        }
-
-        private Node readCertificateProxy(Element providerElement) {
-            Element certificateProxySpec = XML.getChild(providerElement, "yca-proxy");
-            if (certificateProxySpec == null) {
-                return null; // no proxy
-            }
-            if(getAttributeOrNull(certificateProxySpec, "host") == null) {
-                return new Node(null, 0); // default proxy
-            }
-            return readNode(certificateProxySpec);
-        }
-
         private List<Node> readNodes(Element providerElement) {
             Element nodesSpec = XML.getChild(providerElement, "nodes");
             if (nodesSpec == null) {
@@ -172,12 +140,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
                                   ChainSpecification specWithoutInnerComponents) {
 
         ProviderReader providerReader = new ProviderReader(providerElement);
-        if (providerReader.certificateApplicationId == null && providerReader.certificateProxy != null) {
-            throw new IllegalArgumentException(
-                    "Provider '" + specWithoutInnerComponents.componentId +
-                            "' must have a certificate application ID, since a certificate store proxy is given");
-        }
-
         FederationOptions federationOptions = readFederationOptions(providerElement);
 
         Provider provider = buildProvider(specWithoutInnerComponents, providerReader, federationOptions);
@@ -220,12 +182,11 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         try {
             ensureEmpty(specWithoutInnerSearchers.componentId, providerReader.cacheWeight, providerReader.path, providerReader.nodes,
                         providerReader.readTimeout, providerReader.connectionTimeout, providerReader.connectionPoolTimeout,
-                        providerReader.retries, providerReader.certificateApplicationId, providerReader.certificateTtl,
-                        providerReader.certificateRetryWait, providerReader.certificateProxy);
+                        providerReader.retries);
 
             return new LocalProvider(specWithoutInnerSearchers,
-                    federationOptions,
-                    new LocalProviderSpec(providerReader.clusterName, providerReader.cacheSizeMB));
+                                     federationOptions,
+                                     new LocalProviderSpec(providerReader.clusterName, providerReader.cacheSizeMB));
         } catch (Exception e) {
             throw new RuntimeException("Failed creating local provider " + specWithoutInnerSearchers.componentId, e);
         }
