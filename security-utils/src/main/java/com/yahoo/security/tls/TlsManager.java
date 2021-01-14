@@ -16,7 +16,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,12 +23,10 @@ class TlsManager {
     private static final Logger log = Logger.getLogger(TlsManager.class.getName());
     private static final Duration UPDATE_PERIOD = Duration.ofHours(1);
 
-    private final Path tlsConfigFile;
     private final MutableX509TrustManager trustManager;
     private final MutableX509KeyManager keyManager;
     private final ScheduledExecutorService scheduler;
     private TransportSecurityOptions options;
-    private final AtomicInteger references = new AtomicInteger(0);
 
     private static void reloadTrustManager(TransportSecurityOptions options, MutableX509TrustManager trustManager) {
         if (options.getCaCertificatesFile().isPresent()) {
@@ -89,13 +86,13 @@ class TlsManager {
             try {
                 TlsManager tlsManager = this.tlsManager.get();
                 if (tlsManager == null) {
-                    // If reference count is done correctly this should not be necessary.
                     scheduler.shutdown();
                     return;
                 }
                 TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
                 reloadTrustManager(options, tlsManager.getTrustManager());
-                reloadKeyManager(options, tlsManager.getKeyManager());
+                MutableX509KeyManager keyManager = tlsManager.getKeyManager();
+                reloadKeyManager(options, keyManager);
             } catch (Throwable t) {
                 log.log(Level.SEVERE, String.format("Failed to reload crypto material (path='%s'): %s", tlsOptionsConfigFile, t.getMessage()), t);
             }
@@ -117,7 +114,6 @@ class TlsManager {
     }
 
     TlsManager(Path tlsOptionsConfigFile) {
-        tlsConfigFile = tlsOptionsConfigFile;
         trustManager = new MutableX509TrustManager();
         keyManager = new MutableX509KeyManager();
         options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
@@ -137,18 +133,7 @@ class TlsManager {
         return keyManager;
     }
 
-    Path getTlsConfigFile() {
-        return tlsConfigFile;
-    }
-
     TransportSecurityOptions getOptions() {
         return options;
     }
-
-    void close() {
-        scheduler.shutdown();
-    }
-
-    int addRef() { return references.incrementAndGet(); }
-    int subRef() { return references.decrementAndGet(); }
 }

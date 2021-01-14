@@ -31,17 +31,13 @@ public class ConfigFileBasedTlsContext implements TlsContext {
 
     private static TlsManager getOrCreateTrustManager(Path tlsOptionsConfigFile) {
         synchronized (trustManagers) {
-            WeakReference<TlsManager> tlsRef = trustManagers.get(tlsOptionsConfigFile);
-            TlsManager tlsManager = null;
-            if (tlsRef != null) {
-                tlsManager = tlsRef.get();
+            WeakReference<TlsManager> tlsManager = trustManagers.get(tlsOptionsConfigFile);
+            if (tlsManager == null || tlsManager.get() == null) {
+                TlsManager manager = new TlsManager(tlsOptionsConfigFile);
+                trustManagers.put(tlsOptionsConfigFile, new WeakReference<>(manager));
+                return manager;
             }
-            if (tlsManager == null) {
-                tlsManager = new TlsManager(tlsOptionsConfigFile);
-                trustManagers.put(tlsOptionsConfigFile, new WeakReference<>(tlsManager));
-            }
-            tlsManager.addRef();
-            return tlsManager;
+            return tlsManager.get();
         }
     }
 
@@ -63,15 +59,6 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     @Override public SSLParameters parameters() { return tlsContext.parameters(); }
     @Override public SSLEngine createSslEngine() { return tlsContext.createSslEngine(); }
     @Override public SSLEngine createSslEngine(String peerHost, int peerPort) { return tlsContext.createSslEngine(peerHost, peerPort); }
-    @Override public void close() {
-        synchronized (trustManagers) {
-            int references = tlsManager.subRef();
-            if (references == 0) {
-                tlsManager.close();
-                trustManagers.remove(tlsManager.getTlsConfigFile());
-            }
-        }
-    }
 
     private static DefaultTlsContext createDefaultTlsContext(TransportSecurityOptions options,
                                                              AuthorizationMode mode,
