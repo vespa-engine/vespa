@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace search { class IDestructorCallback; }
+namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
@@ -12,7 +12,7 @@ namespace proton {
  */
 struct IMoveOperationLimiter {
     virtual ~IMoveOperationLimiter() {}
-    virtual std::shared_ptr<search::IDestructorCallback> beginOperation() = 0;
+    virtual std::shared_ptr<vespalib::IDestructorCallback> beginOperation() = 0;
 };
 
 }

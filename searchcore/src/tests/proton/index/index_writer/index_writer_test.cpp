@@ -1,16 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("index_writer_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/test/mock_index_manager.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/log/log.h>
+LOG_SETUP("index_writer_test");
 
 using namespace proton;
 using namespace search;
 using namespace search::index;
 using namespace searchcorespi;
+using vespalib::IDestructorCallback;
 
 using document::Document;
 

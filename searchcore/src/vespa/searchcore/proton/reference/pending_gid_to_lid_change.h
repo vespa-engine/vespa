@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/serialnum.h>
 
@@ -13,7 +13,7 @@ namespace proton {
  */
 class PendingGidToLidChange
 {
-    using Context = std::shared_ptr<search::IDestructorCallback>;
+    using Context = std::shared_ptr<vespalib::IDestructorCallback>;
     using GlobalId = document::GlobalId;
     using SerialNum = search::SerialNum;
 

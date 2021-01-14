@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace vespalib { class Executor; }
 
@@ -21,9 +21,9 @@ class IPendingGidToLidChanges;
  * a larger task before dropping the shared pointer, triggering the
  * callback when all worker threads have completed.
  */
-class ForceCommitContext : public search::IDestructorCallback
+class ForceCommitContext : public vespalib::IDestructorCallback
 {
-    using IDestructorCallback = search::IDestructorCallback;
+    using IDestructorCallback = vespalib::IDestructorCallback;
     vespalib::Executor                   &_executor;
     std::unique_ptr<ForceCommitDoneTask>  _task;
     uint32_t                              _committedDocIdLimit;

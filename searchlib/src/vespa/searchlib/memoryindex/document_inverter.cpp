@@ -176,7 +176,7 @@ DocumentInverter::removeDocument(uint32_t docId)
 }
 
 void
-DocumentInverter::pushDocuments(const std::shared_ptr<IDestructorCallback> &onWriteDone)
+DocumentInverter::pushDocuments(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone)
 {
     uint32_t fieldId = 0;
     for (auto &inverter : _inverters) {

@@ -7,7 +7,7 @@
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/common/serialnum.h>
 
-namespace search { class IDestructorCallback; }
+namespace vespalib { class IDestructorCallback; }
 namespace document {
     class DocumentUpdate;
     class Document;
@@ -31,7 +31,7 @@ public:
     typedef search::DocumentIdT DocumentIdT;
     typedef document::DocumentUpdate DocumentUpdate;
     typedef document::Document Document;
-    using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;
+    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
 
     virtual ~IAttributeWriter() = default;
 

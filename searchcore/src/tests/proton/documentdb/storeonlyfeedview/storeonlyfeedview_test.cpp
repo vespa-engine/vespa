@@ -27,7 +27,7 @@ using document::DocumentUpdate;
 using document::GlobalId;
 using namespace proton;
 using search::DocumentIdT;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using search::index::DocBuilder;
 using search::index::Schema;

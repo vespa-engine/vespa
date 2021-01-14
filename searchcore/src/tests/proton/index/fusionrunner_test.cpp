@@ -156,7 +156,7 @@ void addDocument(DocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &
                  uint8_t index_id, uint32_t docid, const string &word) {
     Document::UP doc = buildDocument(doc_builder, docid, word);
     index.insertDocument(docid, *doc);
-    index.commit(std::shared_ptr<search::IDestructorCallback>());
+    index.commit(std::shared_ptr<vespalib::IDestructorCallback>());
     selector.setSource(docid, index_id);
 }
 

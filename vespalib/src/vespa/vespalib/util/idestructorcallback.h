@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace search {
+namespace vespalib {
 
 /**
  * Interface for class that performs a callback when instance is

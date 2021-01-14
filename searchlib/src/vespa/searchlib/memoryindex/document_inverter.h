@@ -13,11 +13,8 @@ namespace document {
     class FieldValue;
 }
 
-namespace search {
-    class IDestructorCallback;
-}
-
 namespace vespalib {
+    class IDestructorCallback;
     class ISequencedTaskExecutor;
 }
 
@@ -87,7 +84,7 @@ public:
      * NOTE: The caller of this function should sync the 'invert threads' executor first,
      * to ensure that inverting is completed before pushing starts.
      */
-    void pushDocuments(const std::shared_ptr<IDestructorCallback> &onWriteDone);
+    void pushDocuments(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone);
 
     /**
      * Invert (add) the given document.

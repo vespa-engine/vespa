@@ -31,7 +31,7 @@ using document::test::makeBucketSpace;
 using proton::bucketdb::BucketCreateNotifier;
 using search::DocumentIdT;
 using search::DocumentMetaData;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::index::DocBuilder;
 using search::index::Schema;
 using storage::spi::BucketInfo;

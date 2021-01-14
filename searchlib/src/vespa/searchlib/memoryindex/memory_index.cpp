@@ -107,7 +107,7 @@ MemoryIndex::removeDocument(uint32_t docId)
 }
 
 void
-MemoryIndex::commit(const std::shared_ptr<IDestructorCallback> &onWriteDone)
+MemoryIndex::commit(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone)
 {
     _invertThreads.sync(); // drain inverting into this inverter
     _pushThreads.sync(); // drain use of other inverter

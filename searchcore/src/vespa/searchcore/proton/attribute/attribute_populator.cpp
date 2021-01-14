@@ -2,7 +2,7 @@
 
 #include "attribute_populator.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/vespalib/util/gate.h>
@@ -11,7 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_populator");
 
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 
 namespace proton {
 

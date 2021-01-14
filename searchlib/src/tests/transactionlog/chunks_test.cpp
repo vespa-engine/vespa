@@ -77,7 +77,7 @@ TEST("test empty commitchunk") {
     EXPECT_EQUAL(0u, cc.getNumCallBacks());
 }
 
-struct Counter : public search::IDestructorCallback {
+struct Counter : public vespalib::IDestructorCallback {
     std::atomic<uint32_t> & _counter;
     Counter(std::atomic<uint32_t> & counter) noexcept : _counter(counter) { _counter++; }
     ~Counter() override { _counter--; }
