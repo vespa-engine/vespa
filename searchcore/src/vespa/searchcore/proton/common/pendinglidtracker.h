@@ -33,7 +33,6 @@ public:
 protected:
     using MonitorGuard = std::unique_lock<std::mutex>;
     PendingLidTrackerBase();
-    virtual LidList pendingLids() const = 0;
     virtual State waitFor(MonitorGuard & guard, State state, uint32_t lid) const = 0;
     MonitorGuard getGuard() { return MonitorGuard(_mutex); }
     mutable std::mutex                     _mutex;
@@ -52,7 +51,6 @@ public:
     Token produce(uint32_t lid) override;
     Snapshot produceSnapshot() override;
 private:
-    LidList pendingLids() const override;
     void consume(uint32_t lid) override;
     State waitFor(MonitorGuard & guard, State state, uint32_t lid) const override;
 

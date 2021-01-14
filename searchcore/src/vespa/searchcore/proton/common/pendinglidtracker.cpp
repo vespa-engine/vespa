@@ -70,15 +70,4 @@ PendingLidTracker::produceSnapshot() {
     return Snapshot();
 }
 
-ILidCommitState::LidList
-PendingLidTracker::pendingLids() const {
-    MonitorGuard guard(_mutex);
-    LidList lids;
-    lids.reserve(_pending.size());
-    for (const auto & entry : _pending) {
-        lids.push_back(entry.first);
-    }
-    return lids;
-}
-
 }
