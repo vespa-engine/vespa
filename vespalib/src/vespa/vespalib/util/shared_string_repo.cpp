@@ -9,7 +9,8 @@ namespace vespalib {
 
 SharedStringRepo::Stats::Stats()
     : active_entries(0),
-      total_entries(0)
+      total_entries(0),
+      min_free(PART_LIMIT)
 {
 }
 
@@ -18,6 +19,13 @@ SharedStringRepo::Stats::merge(const Stats &s)
 {
     active_entries += s.active_entries;
     total_entries += s.total_entries;
+    min_free = std::min(min_free, s.min_free);
+}
+
+double
+SharedStringRepo::Stats::id_space_usage() const
+{
+    return (1.0 - (double(min_free) / double(PART_LIMIT)));
 }
 
 SharedStringRepo::Partition::~Partition() = default;
@@ -41,6 +49,7 @@ SharedStringRepo::Partition::stats() const
     std::lock_guard guard(_lock);
     stats.active_entries = _hash.size();
     stats.total_entries = _entries.size();
+    stats.min_free = (PART_LIMIT - _hash.size());
     return stats;
 }
 
@@ -49,7 +58,9 @@ SharedStringRepo::Partition::make_entries(size_t hint)
 {
     hint = std::max(hint, _entries.size() + 1);
     size_t want_mem = roundUp2inN(hint * sizeof(Entry));
-    size_t want_entries = want_mem / sizeof(Entry);   
+    size_t want_entries = want_mem / sizeof(Entry);
+    want_entries = std::min(want_entries, PART_LIMIT);
+    assert(want_entries > _entries.size());
     _entries.reserve(want_entries);
     while (_entries.size() < _entries.capacity()) {
         _entries.emplace_back(_free);

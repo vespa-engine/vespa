@@ -13,6 +13,9 @@
 #include <vector>
 #include <array>
 #include <cassert>
+#include <ctype.h>
+#include <limits>
+#include <charconv>
 
 namespace vespalib {
 
@@ -29,14 +32,20 @@ public:
     struct Stats {
         size_t active_entries;
         size_t total_entries;
+        size_t min_free;
         Stats();
         void merge(const Stats &s);
+        double id_space_usage() const;
     };
 
 private:
-    static constexpr int NUM_PARTS = 64;
-    static constexpr int PART_BITS = 6;
-    static constexpr int PART_MASK = 0x3f;
+    static constexpr uint32_t PART_BITS = 6;
+    static constexpr uint32_t NUM_PARTS = 1 << PART_BITS;
+    static constexpr uint32_t PART_MASK = NUM_PARTS - 1;
+    static constexpr uint32_t FAST_DIGITS = 5;
+    static constexpr uint32_t FAST_ID_MAX = 99999;
+    static constexpr uint32_t ID_BIAS = (FAST_ID_MAX + 2);
+    static constexpr size_t PART_LIMIT = (std::numeric_limits<uint32_t>::max() - ID_BIAS) / NUM_PARTS;
 
     struct AltKey {
         vespalib::stringref str;
@@ -166,41 +175,71 @@ private:
     SharedStringRepo();
     ~SharedStringRepo();
 
+    static uint32_t try_make_direct_id(vespalib::stringref str) noexcept {
+        if ((str.size() > FAST_DIGITS) || ((str.size() > 1) && (str[0] == '0'))) {
+            return ID_BIAS;
+        } else if (str.size() == 0) {
+            return 0;
+        } else {
+            uint32_t value = 0;
+            for (size_t i = 0; i < str.size(); ++i) {
+                char c = str[i];
+                if (!isdigit(c)) {
+                    return ID_BIAS;
+                } else {
+                    value = ((value * 10) + (c - '0'));
+                }
+            }
+            return (value + 1);
+        }
+    }
+
+    static vespalib::string string_from_direct_id(uint32_t id) {
+        if (id == 0) {
+            return {};
+        } else {
+            char tmp[16];
+            auto res = std::to_chars(tmp, tmp + sizeof(tmp), (id - 1), 10);
+            return vespalib::string(tmp, res.ptr - tmp);
+        }
+    }
+
     string_id resolve(vespalib::stringref str) {
-        if (!str.empty()) {
+        uint32_t direct_id = try_make_direct_id(str);
+        if (direct_id >= ID_BIAS) {
             uint64_t full_hash = XXH3_64bits(str.data(), str.size());
             uint32_t part = full_hash & PART_MASK;
             uint32_t local_hash = full_hash >> PART_BITS;
             uint32_t local_idx = _partitions[part].resolve(AltKey{str, local_hash});
-            return string_id(((local_idx << PART_BITS) | part) + 1);
+            return string_id(((local_idx << PART_BITS) | part) + ID_BIAS);
         } else {
-            return {};
+            return string_id(direct_id);
         }
     }
 
     vespalib::string as_string(string_id id) {
-        if (id._id != 0) {
-            uint32_t part = (id._id - 1) & PART_MASK;
-            uint32_t local_idx = (id._id - 1) >> PART_BITS;
+        if (id._id >= ID_BIAS) {
+            uint32_t part = (id._id - ID_BIAS) & PART_MASK;
+            uint32_t local_idx = (id._id - ID_BIAS) >> PART_BITS;
             return _partitions[part].as_string(local_idx);
         } else {
-            return {};
+            return string_from_direct_id(id._id);
         }
     }
 
     string_id copy(string_id id) {
-        if (id._id != 0) {
-            uint32_t part = (id._id - 1) & PART_MASK;
-            uint32_t local_idx = (id._id - 1) >> PART_BITS;
+        if (id._id >= ID_BIAS) {
+            uint32_t part = (id._id - ID_BIAS) & PART_MASK;
+            uint32_t local_idx = (id._id - ID_BIAS) >> PART_BITS;
             _partitions[part].copy(local_idx);
         }
         return id;
     }
 
     void reclaim(string_id id) {
-        if (id._id != 0) {
-            uint32_t part = (id._id - 1) & PART_MASK;
-            uint32_t local_idx = (id._id - 1) >> PART_BITS;
+        if (id._id >= ID_BIAS) {
+            uint32_t part = (id._id - ID_BIAS) & PART_MASK;
+            uint32_t local_idx = (id._id - ID_BIAS) >> PART_BITS;
             _partitions[part].reclaim(local_idx);
         }
     }
