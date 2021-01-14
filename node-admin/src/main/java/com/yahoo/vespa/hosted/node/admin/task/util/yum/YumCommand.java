@@ -132,7 +132,6 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
         private static final Pattern CHECKING_FOR_UPDATE_PATTERN =
                 Pattern.compile("(?dm)^Package matching [^ ]+ already installed\\. Checking for update\\.$");
-        private static final Pattern NOTHING_TO_DO_PATTERN = Pattern.compile("(?dm)^Nothing to do$");
 
         private final Terminal terminal;
         private final YumPackageName yumPackage;
@@ -212,7 +211,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
             String output = installCommand.executeSilently().getUntrimmedOutput();
 
-            if (NOTHING_TO_DO_PATTERN.matcher(output).find()) {
+            if (Yum.INSTALL_NOOP_PATTERN.matcher(output).find()) {
                 if (CHECKING_FOR_UPDATE_PATTERN.matcher(output).find()) {
                     // case 3.
                     var upgradeCommand = terminal.newCommandLine(context).add("yum", "downgrade");

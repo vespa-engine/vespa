@@ -22,10 +22,9 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.yum.YumCommand.Install
 public class Yum {
 
     // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
-    private static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do\\.?$");
-    private static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
-    private static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No [pP]ackages marked for removal\\.?$");
-
+    public static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do\\.?$");
+    public static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
+    public static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No [pP]ackages marked for removal\\.?$");
 
     // WARNING: These must be in the same order as the supplier below
     private static final String RPM_QUERYFORMAT = Stream.of("NAME", "EPOCH", "VERSION", "RELEASE", "ARCH")
