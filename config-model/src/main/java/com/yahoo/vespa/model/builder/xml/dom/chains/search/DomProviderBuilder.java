@@ -105,31 +105,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             return (timeoutString == null) ? null : TimeParser.seconds(timeoutString);
         }
 
-        private String readCertificateApplicationId(Element providerElement) {
-            return getAttributeOrNull(providerElement, "yca-application-id");
-        }
-
-        private Integer readCertificateTtl(Element providerElement) {
-            String x = getAttributeOrNull(providerElement, "yca-cache-ttl");
-            return (x == null) ? null : TimeParser.seconds(x).intValue();
-        }
-
-        private Integer readCertificateRetryWait(Element providerElement) {
-            String x = getAttributeOrNull(providerElement, "yca-cache-retry-wait");
-            return (x == null) ? null : TimeParser.seconds(x).intValue();
-        }
-
-        private Node readCertificateProxy(Element providerElement) {
-            Element certificateProxySpec = XML.getChild(providerElement, "yca-proxy");
-            if (certificateProxySpec == null) {
-                return null; // no proxy
-            }
-            if(getAttributeOrNull(certificateProxySpec, "host") == null) {
-                return new Node(null, 0); // default proxy
-            }
-            return readNode(certificateProxySpec);
-        }
-
         private List<Node> readNodes(Element providerElement) {
             Element nodesSpec = XML.getChild(providerElement, "nodes");
             if (nodesSpec == null) {
