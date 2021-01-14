@@ -43,7 +43,7 @@ public class YumPackageName {
     private static final Pattern NAME_VER_REL_PATTERN = Pattern.compile("^((.+)-)?" +
             "([a-z0-9._]*[0-9][a-z0-9._]*)-" + // ver contains at least one digit
             "([a-z0-9._]*[0-9][a-z0-9._]*)$"); // rel contains at least one digit
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[()a-zA-Z0-9._-]+$");
 
     private final Optional<String> epoch;
     private final String name;
