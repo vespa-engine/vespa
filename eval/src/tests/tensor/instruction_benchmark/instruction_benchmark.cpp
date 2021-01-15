@@ -768,6 +768,12 @@ TEST(SparseConcat, small_vectors) {
     benchmark_concat("small sparse concat", lhs, rhs, "y");
 }
 
+TEST(MixedConcat, mixed_vs_dense) {
+    auto lhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::map("c", 16, 1), 1.0);
+    auto rhs = make_matrix(D::idx("a", 16), D::idx("b", 16), 2.0);
+    benchmark_concat("mixed dense concat a", lhs, rhs, "a");
+}
+
 TEST(MixedConcat, large_mixed_a) {
     auto lhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::map("c", 16, 1), 1.0);
     auto rhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::map("c", 16, 2), 2.0);
