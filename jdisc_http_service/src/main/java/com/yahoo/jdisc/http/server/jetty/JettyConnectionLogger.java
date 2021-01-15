@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.ConnectionLogEntry;
+import com.yahoo.io.HexDump;
 import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EndPoint;
@@ -12,10 +13,12 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.StandardConstants;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -29,7 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Jetty integration for jdisc connection log (TODO link interface)
+ * Jetty integration for jdisc connection log ({@link ConnectionLog}).
  *
  * @author bjorncs
  */
@@ -54,13 +57,13 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     //
     @Override
     protected void doStop() {
-        if (!enabled) return;
+        handleListenerInvocation("AbstractLifeCycle", "doStop", "", List.of(), () -> {});
         log.log(Level.FINE, () -> "Jetty connection logger is stopped");
     }
 
     @Override
     protected void doStart() {
-        if (!enabled) return;
+        handleListenerInvocation("AbstractLifeCycle", "doStart", "", List.of(), () -> {});
         log.log(Level.FINE, () -> "Jetty connection logger is started");
     }
     //
@@ -72,37 +75,37 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     //
     @Override
     public void onOpened(Connection connection) {
-        if (!enabled) return;
-        onListenerInvoked("Connection.Listener", "onOpened", "%h", connection);
-        AggregatedConnectionInfo info = new AggregatedConnectionInfo(UUID.randomUUID());
-        synchronized (info.lock()) {
-            EndPoint endpoint = connection.getEndPoint();
-            info.setCreatedAt(endpoint.getCreatedTimeStamp())
-                    .setLocalAddress(endpoint.getLocalAddress())
-                    .setPeerAddress(endpoint.getRemoteAddress());
-            if (connection instanceof SslConnection) {
-                SslConnection sslConnection = (SslConnection) connection;
-                SSLEngine sslEngine = sslConnection.getSSLEngine();
-                SSLSession sslSession = sslEngine.getSession();
-                info.setSslSessionDetails(sslSession);
+        handleListenerInvocation("Connection.Listener", "onOpened", "%h", List.of(connection), () -> {
+            AggregatedConnectionInfo info = new AggregatedConnectionInfo(UUID.randomUUID());
+            synchronized (info.lock()) {
+                EndPoint endpoint = connection.getEndPoint();
+                info.setCreatedAt(endpoint.getCreatedTimeStamp())
+                        .setLocalAddress(endpoint.getLocalAddress())
+                        .setPeerAddress(endpoint.getRemoteAddress());
+                if (connection instanceof SslConnection) {
+                    SslConnection sslConnection = (SslConnection) connection;
+                    SSLEngine sslEngine = sslConnection.getSSLEngine();
+                    SSLSession sslSession = sslEngine.getSession();
+                    info.setSslSessionDetails(sslSession);
+                }
             }
-        }
-        connectionInfo.put(connection, info);
+            connectionInfo.put(connection, info);
+        });
     }
 
     @Override
     public void onClosed(Connection connection) {
-        if (!enabled) return;
-        onListenerInvoked("Connection.Listener", "onClosed", "%h", connection);
-        // TODO Decide on handling of connection upgrade where old connection object is closed and replaced by a new (e.g for proxy-protocol auto detection)
-        AggregatedConnectionInfo builder = Objects.requireNonNull(connectionInfo.remove(connection));
-        ConnectionLogEntry logEntry;
-        synchronized (builder.lock()) {
-            logEntry = builder.setBytesReceived(connection.getBytesIn())
-                    .setBytesSent(connection.getBytesOut())
-                    .toLogEntry();
-        }
-        connectionLog.log(logEntry);
+        handleListenerInvocation("Connection.Listener", "onClosed", "%h", List.of(connection), () -> {
+            // TODO Decide on handling of connection upgrade where old connection object is closed and replaced by a new (e.g for proxy-protocol auto detection)
+            AggregatedConnectionInfo builder = Objects.requireNonNull(connectionInfo.remove(connection));
+            ConnectionLogEntry logEntry;
+            synchronized (builder.lock()) {
+                logEntry = builder.setBytesReceived(connection.getBytesIn())
+                        .setBytesSent(connection.getBytesOut())
+                        .toLogEntry();
+            }
+            connectionLog.log(logEntry);
+        });
     }
     //
     // Connection.Listener methods end
@@ -113,35 +116,44 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     //
     @Override
     public void onRequestBegin(Request request) {
-        if (!enabled) return;
-        onListenerInvoked("HttpChannel.Listener", "onRequestBegin", "%h", request);
-        Connection connection = request.getHttpChannel().getConnection();
-        AggregatedConnectionInfo info = Objects.requireNonNull(connectionInfo.get(connection));
-        UUID uuid;
-        synchronized (info.lock()) {
-            info.incrementRequests();
-            uuid = info.uuid();
-        }
-        request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, uuid);
+        handleListenerInvocation("HttpChannel.Listener", "onRequestBegin", "%h", List.of(request), () -> {
+            Connection connection = request.getHttpChannel().getConnection();
+            AggregatedConnectionInfo info = Objects.requireNonNull(connectionInfo.get(connection));
+            UUID uuid;
+            synchronized (info.lock()) {
+                info.incrementRequests();
+                uuid = info.uuid();
+            }
+            request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, uuid);
+        });
     }
 
     @Override
     public void onResponseBegin(Request request) {
-        if (!enabled) return;
-        onListenerInvoked("HttpChannel.Listener", "onResponseBegin", "%h", request);
-        Connection connection = request.getHttpChannel().getConnection();
-        AggregatedConnectionInfo info = Objects.requireNonNull(connectionInfo.get(connection));
-        synchronized (info.lock()) {
-            info.incrementResponses();
-        }
+        handleListenerInvocation("HttpChannel.Listener", "onResponseBegin", "%h", List.of(request), () -> {
+            Connection connection = request.getHttpChannel().getConnection();
+            AggregatedConnectionInfo info = Objects.requireNonNull(connectionInfo.get(connection));
+            synchronized (info.lock()) {
+                info.incrementResponses();
+            }
+        });
     }
     //
     // HttpChannel.Listener methods end
     //
 
-    private void onListenerInvoked(String listenerType, String methodName, String methodArgumentsFormat, Object... methodArguments) {
-        log.log(Level.FINE, () -> String.format(listenerType + "." + methodName + "(" + methodArgumentsFormat + ")", methodArguments));
+    private void handleListenerInvocation(
+            String listenerType, String methodName, String methodArgumentsFormat, List<Object> methodArguments, ListenerHandler handler) {
+        if (!enabled) return;
+        try {
+            log.log(Level.FINE, () -> String.format(listenerType + "." + methodName + "(" + methodArgumentsFormat + ")", methodArguments.toArray()));
+            handler.run();
+        } catch (Exception e) {
+            log.log(Level.WARNING, String.format("Exception in %s.%s listener: %s", listenerType, methodName, e.getMessage()), e);
+        }
     }
+
+    @FunctionalInterface private interface ListenerHandler { void run() throws Exception; }
 
     private static class AggregatedConnectionInfo {
         private final Object monitor = new Object();
@@ -206,10 +218,37 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         }
 
         ConnectionLogEntry toLogEntry() {
-            return ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt))
-                    .withPeerAddress(peerAddress.getHostString())
-                    .withPeerPort(peerAddress.getPort())
-                    .build();
+            ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt))
+                    .withBytesReceived(bytesReceived)
+                    .withBytesSent(bytesSent)
+                    .withRequests(requests)
+                    .withResponses(responses);
+            if (peerAddress != null) {
+                builder.withPeerAddress(peerAddress.getHostString())
+                        .withPeerPort(peerAddress.getPort());
+            }
+            if (localAddress != null) {
+                builder.withLocalAddress(localAddress.getHostString())
+                        .withLocalPort(localAddress.getPort());
+            }
+            if (sslProtocol != null && sslCipherSuite != null && sslSessionId != null) {
+                builder.withSslProtocol(sslProtocol)
+                        .withSslCipherSuite(sslCipherSuite)
+                        .withSslSessionId(HexDump.toHexString(sslSessionId));
+            }
+            if (sslSniServerNames != null) {
+                sslSniServerNames.stream()
+                        .filter(name -> name instanceof SNIHostName && name.getType() == StandardConstants.SNI_HOST_NAME)
+                        .map(name -> ((SNIHostName) name).getAsciiName())
+                        .findAny()
+                        .ifPresent(builder::withSslSniServerName);
+            }
+            if (sslPeerSubject != null && sslPeerNotAfter != null && sslPeerNotBefore != null) {
+                builder.withSslPeerSubject(sslPeerSubject)
+                        .withSslPeerNotAfter(sslPeerNotAfter.toInstant())
+                        .withSslPeerNotBefore(sslPeerNotBefore.toInstant());
+            }
+            return builder.build();
         }
 
     }
