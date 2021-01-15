@@ -47,7 +47,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                                    Duration interval,
                                    Metric metric,
                                    MeteringClient meteringClient) {
-        super(controller, interval, null, SystemName.all());
+        super(controller, interval, null, SystemName.allOf(SystemName::isPublic));
         this.clock = controller.clock();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.metric = metric;
