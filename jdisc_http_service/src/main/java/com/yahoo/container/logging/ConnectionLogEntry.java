@@ -5,8 +5,8 @@ package com.yahoo.container.logging;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
@@ -54,7 +54,7 @@ public class ConnectionLogEntry {
         this.sslSniServerName = builder.sslSniServerName;
     }
 
-    public String toJson() throws IOException {
+    public String toJson() {
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
         cursor.setString("id", id.toString());
@@ -78,7 +78,7 @@ public class ConnectionLogEntry {
             setTimestamp(sslCursor, "peerNotAfter", sslPeerNotAfter);
             setString(sslCursor, "sniServerName", sslSniServerName);
         }
-        return new String(SlimeUtils.toJsonBytes(slime), StandardCharsets.UTF_8);
+        return new String(Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(slime)), StandardCharsets.UTF_8);
     }
 
     private void setString(Cursor cursor, String key, String value) {
