@@ -54,7 +54,7 @@ vespa_define_module(
     src/tests/instruction/index_lookup_table
     src/tests/instruction/join_with_number
     src/tests/instruction/dense_add_dimension_optimizer
-    src/tests/instruction/dense_fast_rename_optimizer
+    src/tests/instruction/fast_rename_optimizer
     src/tests/instruction/dense_inplace_join_function
     src/tests/instruction/dense_pow_as_map_optimizer
     src/tests/instruction/dense_remove_dimension_optimizer
