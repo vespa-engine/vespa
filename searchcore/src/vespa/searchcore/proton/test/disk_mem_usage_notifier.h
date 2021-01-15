@@ -19,7 +19,16 @@ class DiskMemUsageNotifier : public IDiskMemUsageNotifier
     std::vector<IDiskMemUsageListener *> _listeners;
     DiskMemUsageState _state;
 public:
-    DiskMemUsageNotifier() : IDiskMemUsageNotifier(), _listeners(), _state() { }
+    DiskMemUsageNotifier(DiskMemUsageState state)
+        : IDiskMemUsageNotifier(),
+          _listeners(),
+          _state(state)
+    {
+    }
+    DiskMemUsageNotifier()
+        : DiskMemUsageNotifier(DiskMemUsageState())
+    {
+    }
     virtual ~DiskMemUsageNotifier() { }
     virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override {
         _listeners.push_back(listener);

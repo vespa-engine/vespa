@@ -2,6 +2,7 @@
 
 #include "provider_error_wrapper.h"
 #include "persistenceutil.h"
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace storage {
 
@@ -153,6 +154,12 @@ ProviderErrorWrapper::join(const spi::Bucket& source1, const spi::Bucket& source
                            const spi::Bucket& target, spi::Context& context)
 {
     return checkResult(_impl.join(source1, source2, target, context));
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+ProviderErrorWrapper::register_resource_usage_listener(spi::IResourceUsageListener& listener)
+{
+    return _impl.register_resource_usage_listener(listener);
 }
 
 spi::Result

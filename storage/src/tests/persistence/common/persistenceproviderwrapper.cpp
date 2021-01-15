@@ -3,6 +3,7 @@
 #include "persistenceproviderwrapper.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <sstream>
 
 #define LOG_SPI(ops) \
@@ -200,6 +201,12 @@ PersistenceProviderWrapper::join(const spi::Bucket& source1,
     LOG_SPI("join(" << source1 << ", " << source2 << ", " << target << ")");
     CHECK_ERROR(spi::Result, FAIL_JOIN);
     return _spi.join(source1, source2, target, context);
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+PersistenceProviderWrapper::register_resource_usage_listener(spi::IResourceUsageListener& listener)
+{
+    return _spi.register_resource_usage_listener(listener);
 }
 
 spi::Result

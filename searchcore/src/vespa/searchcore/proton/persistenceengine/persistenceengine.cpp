@@ -180,7 +180,7 @@ PersistenceEngine::getHandlerSnapshot(const WriteGuard &, document::BucketSpace 
     return _handlers.getHandlerSnapshot(bucketSpace);
 }
 
-PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter,
+PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IResourceWriteFilter &writeFilter, IDiskMemUsageNotifier& disk_mem_usage_notifier,
                                      ssize_t defaultSerializedSize, bool ignoreMaxBytes)
     : AbstractPersistenceProvider(),
       _defaultSerializedSize(defaultSerializedSize),
@@ -193,7 +193,8 @@ PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner &owner, const IReso
       _writeFilter(writeFilter),
       _clusterStates(),
       _extraModifiedBuckets(),
-      _rwMutex()
+      _rwMutex(),
+      _resource_usage_tracker(std::make_shared<ResourceUsageTracker>(disk_mem_usage_notifier))
 {
 }
 
@@ -608,6 +609,11 @@ PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Buck
     return latch.getResult();
 }
 
+std::unique_ptr<vespalib::IDestructorCallback>
+PersistenceEngine::register_resource_usage_listener(IResourceUsageListener& listener)
+{
+    return _resource_usage_tracker->set_listener(listener);
+}
 
 void
 PersistenceEngine::destroyIterators()

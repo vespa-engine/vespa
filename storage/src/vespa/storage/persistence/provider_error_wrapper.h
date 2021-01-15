@@ -58,6 +58,7 @@ public:
     spi::BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     spi::Result split(const spi::Bucket& source, const spi::Bucket& target1, const spi::Bucket& target2, spi::Context&) override;
     spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2, const spi::Bucket& target, spi::Context&) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(spi::IResourceUsageListener& listener) override;
     spi::Result removeEntry(const spi::Bucket&, spi::Timestamp, spi::Context&) override;
 
     spi::PersistenceProvider& getProviderImplementation() {
