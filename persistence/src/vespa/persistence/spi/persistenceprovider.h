@@ -380,6 +380,7 @@ struct PersistenceProvider
 
     /*
      * Register a listener for updates to resource usage.
+     * The listener is deregistered when the returned object is destroyed.
      */
     virtual std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) = 0;
 
