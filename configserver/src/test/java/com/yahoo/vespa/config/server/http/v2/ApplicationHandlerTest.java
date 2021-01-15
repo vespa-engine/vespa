@@ -468,9 +468,6 @@ public class ApplicationHandlerTest {
                                                                          "moo", clusterReindexing))),
                          "{\n" +
                          "  \"enabled\": true,\n" +
-                         "  \"status\": {\n" +
-                         "    \"readyMillis\": 113456\n" +
-                         "  },\n" +
                          "  \"clusters\": {\n" +
                          "    \"boo\": {\n" +
                          "      \"pending\": {},\n" +
@@ -492,9 +489,6 @@ public class ApplicationHandlerTest {
                          "        \"bar\": 123\n" +
                          "      },\n" +
                          "      \"ready\": {},\n" +
-                         "      \"status\": {\n" +
-                         "        \"readyMillis\": 113456\n" +
-                         "      }\n" +
                          "    },\n" +
                          "    \"moo\": {\n" +
                          "      \"pending\": {},\n" +
@@ -510,9 +504,6 @@ public class ApplicationHandlerTest {
                          "        \"bax\": {\n" +
                          "          \"startedMillis\": 123456\n" +
                          "        }\n" +
-                         "      },\n" +
-                         "      \"status\": {\n" +
-                         "        \"readyMillis\": 122456\n" +
                          "      }\n" +
                          "    }\n" +
                          "  }\n" +
