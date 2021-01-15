@@ -105,18 +105,10 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             ConnectionInfo info = connectionInfo.get(endpoint);
             if (info == null) return; // Closed connection already handled
             if (connection instanceof HttpConnection) {
-                long bytesIn = connection.getBytesIn();
-                long bytesOut = connection.getBytesOut();
-                synchronized (info.lock()) {
-                    info.setBytesReceived(bytesIn).setBytesSent(bytesOut);
-                }
+                info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
             }
             if (!endpoint.isOpen()) {
-                ConnectionLogEntry logEntry;
-                synchronized (info.lock()) {
-                    logEntry = info.toLogEntry();
-                }
-                connectionLog.log(logEntry);
+                connectionLog.log(info.toLogEntry());
                 connectionInfo.remove(endpoint);
             }
         });
@@ -133,12 +125,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         handleListenerInvocation("HttpChannel.Listener", "onRequestBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
             ConnectionInfo info = Objects.requireNonNull(connectionInfo.get(endpoint));
-            UUID uuid;
-            synchronized (info.lock()) {
-                info.incrementRequests();
-                uuid = info.uuid();
-            }
-            request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, uuid);
+            info.incrementRequests();
+            request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, info.uuid());
         });
     }
 
@@ -147,9 +135,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         handleListenerInvocation("HttpChannel.Listener", "onResponseBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
             ConnectionInfo info = Objects.requireNonNull(connectionInfo.get(endpoint));
-            synchronized (info.lock()) {
-                info.incrementResponses();
-            }
+            info.incrementResponses();
         });
     }
     //
@@ -164,9 +150,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         handleListenerInvocation("SslHandshakeListener", "handshakeSucceeded", "", List.of(), () -> {
             SSLEngine sslEngine = event.getSSLEngine();
             ConnectionInfo info = sslToConnectionInfo.remove(sslEngine);
-            synchronized (info.lock()) {
-                info.setSslSessionDetails(sslEngine.getSession());
-            }
+            info.setSslSessionDetails(sslEngine.getSession());
         });
     }
 
@@ -215,8 +199,6 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
     // TODO Include connection duration or timestamp closed
     private static class ConnectionInfo {
-        private final Object monitor = new Object();
-
         private final UUID uuid;
         private final long createdAt;
         private final InetSocketAddress localAddress;
@@ -249,20 +231,19 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                     endpoint.getRemoteAddress());
         }
 
-        Object lock() { return monitor; }
+        synchronized UUID uuid() { return uuid; }
 
-        UUID uuid() { return uuid; }
+        synchronized ConnectionInfo setHttpBytes(long received, long sent) {
+            this.bytesReceived = received;
+            this.bytesSent = sent;
+            return this;
+        }
 
-        // TODO Consider renaming bytes methods to reflect that they are bytes written by HTTP layer, not underlying socket
-        ConnectionInfo setBytesReceived(long bytesReceived) { this.bytesReceived = bytesReceived; return this; }
+        synchronized ConnectionInfo incrementRequests() { ++this.requests; return this; }
 
-        ConnectionInfo setBytesSent(long bytesSent) { this.bytesSent = bytesSent; return this; }
+        synchronized ConnectionInfo incrementResponses() { ++this.responses; return this; }
 
-        ConnectionInfo incrementRequests() { ++this.requests; return this; }
-
-        ConnectionInfo incrementResponses() { ++this.responses; return this; }
-
-        ConnectionInfo setSslSessionDetails(SSLSession session) {
+        synchronized ConnectionInfo setSslSessionDetails(SSLSession session) {
             this.sslCipherSuite = session.getCipherSuite();
             this.sslProtocol = session.getProtocol();
             this.sslSessionId = session.getId();
@@ -282,7 +263,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             return this;
         }
 
-        ConnectionLogEntry toLogEntry() {
+        synchronized ConnectionLogEntry toLogEntry() {
             ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt))
                     .withBytesReceived(bytesReceived)
                     .withBytesSent(bytesSent)
