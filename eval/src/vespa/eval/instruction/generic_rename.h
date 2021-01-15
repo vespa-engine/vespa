@@ -29,6 +29,7 @@ struct DenseRenamePlan {
 struct SparseRenamePlan {
     size_t mapped_dims;
     std::vector<size_t> output_dimensions;
+    bool can_forward_index;
     SparseRenamePlan(const ValueType &input_type,
                      const ValueType &output_type,
                      const std::vector<vespalib::string> &from,
