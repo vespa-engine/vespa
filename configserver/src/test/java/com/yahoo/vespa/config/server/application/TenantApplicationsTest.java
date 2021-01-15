@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -12,10 +14,12 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -67,20 +71,23 @@ public class TenantApplicationsTest {
     public void setup() throws IOException {
         curator = new MockCurator();
         curatorFramework = curator.framework();
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
+                .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
+                .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
+                .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
-                .configServerConfig(new ConfigserverConfig.Builder()
-                                            .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
-                                            .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
-                                            .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
-                                            .build())
+                .configServerConfig(configserverConfig)
                 .modelFactoryRegistry(createRegistry())
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry,
                                                                  hostRegistry,
-                                                                 curator);
+                                                                 curator,
+                                                                 Metrics.createTestMetrics(),
+                                                                 new StripedExecutor<>(new InThreadExecutorService()),
+                                                                 new MockFileDistributionFactory(configserverConfig));
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
         applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);

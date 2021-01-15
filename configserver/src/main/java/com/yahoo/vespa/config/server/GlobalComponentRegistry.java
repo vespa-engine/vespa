@@ -8,7 +8,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -23,7 +22,6 @@ import java.util.concurrent.ExecutorService;
  */
 public interface GlobalComponentRegistry {
 
-    SessionPreparer getSessionPreparer();
     ConfigserverConfig getConfigserverConfig();
     TenantListener getTenantListener();
     ReloadListener getReloadListener();

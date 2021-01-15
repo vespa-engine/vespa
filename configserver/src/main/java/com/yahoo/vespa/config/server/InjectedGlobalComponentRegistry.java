@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
-import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.flags.FlagSource;
@@ -30,7 +29,6 @@ import java.util.concurrent.Executors;
 public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry {
 
     private final ModelFactoryRegistry modelFactoryRegistry;
-    private final SessionPreparer sessionPreparer;
     private final RpcServer rpcServer;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
@@ -45,7 +43,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     @SuppressWarnings("WeakerAccess")
     @Inject
     public InjectedGlobalComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
-                                           SessionPreparer sessionPreparer,
                                            RpcServer rpcServer,
                                            ConfigserverConfig configserverConfig,
                                            ConfigDefinitionRepo staticConfigDefinitionRepo,
@@ -56,7 +53,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            FlagSource flagSource,
                                            SecretStore secretStore) {
         this.modelFactoryRegistry = modelFactoryRegistry;
-        this.sessionPreparer = sessionPreparer;
         this.rpcServer = rpcServer;
         this.configserverConfig = configserverConfig;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
@@ -69,8 +65,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     }
 
-    @Override
-    public SessionPreparer getSessionPreparer() { return sessionPreparer; }
     @Override
     public ConfigserverConfig getConfigserverConfig() { return configserverConfig; }
     @Override

@@ -11,14 +11,9 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
-import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -36,13 +31,11 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class TestComponentRegistry implements GlobalComponentRegistry {
 
-    private final SessionPreparer sessionPreparer;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo defRepo;
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
     private final PermanentApplicationPackage permanentApplicationPackage;
-    private final FileDistributionFactory fileDistributionFactory;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
@@ -54,9 +47,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                   PermanentApplicationPackage permanentApplicationPackage,
-                                  FileDistributionFactory fileDistributionFactory,
                                   ConfigserverConfig configserverConfig,
-                                  SessionPreparer sessionPreparer,
                                   Optional<Provisioner> hostProvisioner,
                                   ConfigDefinitionRepo defRepo,
                                   ReloadListener reloadListener,
@@ -70,10 +61,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.tenantListener = tenantListener;
         this.defRepo = defRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
-        this.fileDistributionFactory = fileDistributionFactory;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.hostProvisioner = hostProvisioner;
-        this.sessionPreparer = sessionPreparer;
         this.zone = zone;
         this.clock = clock;
         this.configServerDB = new ConfigServerDB(configserverConfig);
@@ -83,8 +72,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     }
 
     public static class Builder {
-
-        private Curator curator = new MockCurator();
         private ConfigserverConfig configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
                         .configServerDBDir(uncheck(() -> Files.createTempDirectory("serverdb")).toString())
@@ -102,11 +89,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
 
         public Builder configServerConfig(ConfigserverConfig configserverConfig) {
             this.configserverConfig = configserverConfig;
-            return this;
-        }
-
-        public Builder curator(Curator curator) {
-            this.curator = curator;
             return this;
         }
 
@@ -148,20 +130,10 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         public TestComponentRegistry build() {
             final PermanentApplicationPackage permApp = Optional.<PermanentApplicationPackage>empty()
                     .orElse(new PermanentApplicationPackage(configserverConfig));
-            FileDistributionFactory fileDistributionProvider = this.fileDistributionFactory
-                    .orElse(new MockFileDistributionFactory(configserverConfig));
-            HostProvisionerProvider hostProvisionerProvider = hostProvisioner.
-                    map(HostProvisionerProvider::withProvisioner).orElseGet(HostProvisionerProvider::empty);
             SecretStore secretStore = new MockSecretStore();
-            SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionProvider,
-                                                                  hostProvisionerProvider, permApp,
-                                                                  configserverConfig, defRepo, curator,
-                                                                  zone, flagSource, secretStore);
             return new TestComponentRegistry(modelFactoryRegistry,
                                              permApp,
-                                             fileDistributionProvider,
                                              configserverConfig,
-                                             sessionPreparer,
                                              hostProvisioner,
                                              defRepo,
                                              reloadListener,
@@ -173,8 +145,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         }
     }
 
-    @Override
-    public SessionPreparer getSessionPreparer() { return sessionPreparer; }
     @Override
     public ConfigserverConfig getConfigserverConfig() { return configserverConfig; }
     @Override
@@ -212,7 +182,5 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public SecretStore getSecretStore() {
         return secretStore;
     }
-
-    public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
 
 }

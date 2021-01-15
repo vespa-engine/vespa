@@ -41,7 +41,6 @@ class MaintainerTester {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
                 .clock(clock)
                 .configServerConfig(configserverConfig)
                 .provisioner(provisioner)

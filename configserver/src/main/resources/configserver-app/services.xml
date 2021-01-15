@@ -18,7 +18,6 @@
     <component id="com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.SuperModelGenerationCounter" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.SuperModelManager" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.session.SessionPreparer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.SuperModelRequestHandler" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.StaticConfigDefinitionRepo" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.provision.HostProvisionerProvider" bundle="configserver" />

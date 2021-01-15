@@ -80,7 +80,6 @@ public class SessionPreparer {
     private final SecretStore secretStore;
     private final FlagSource flagSource;
 
-    @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
                            FileDistributionFactory fileDistributionFactory,
                            HostProvisionerProvider hostProvisionerProvider,

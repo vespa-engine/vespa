@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
@@ -27,6 +28,7 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -285,7 +287,6 @@ public class DeployTester {
             TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder()
                     .clock(clock)
                     .configServerConfig(configserverConfig)
-                    .curator(Optional.ofNullable(curator).orElseGet(MockCurator::new))
                     .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                     .zone(zone);
             if (configserverConfig.hostedVespa()) testComponentRegistryBuilder.provisioner(provisioner);
@@ -294,7 +295,8 @@ public class DeployTester {
                                                                      new HostRegistry(),
                                                                      curator,
                                                                      Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics),
-                                                                     new StripedExecutor<>());
+                                                                     new StripedExecutor<>(new InThreadExecutorService()),
+                                                                     new MockFileDistributionFactory(configserverConfig));
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

@@ -62,7 +62,7 @@ public class TenantRepositoryTest {
     @Before
     public void setupSessions() {
         curator = new MockCurator();
-        TestComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
+        TestComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().build();
         listener = (TenantApplicationsTest.MockReloadListener) globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener) globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
@@ -191,7 +191,6 @@ public class TenantRepositoryTest {
 
     private GlobalComponentRegistry createComponentRegistry() throws IOException {
         return new TestComponentRegistry.Builder()
-                .curator(new MockCurator())
                 .configServerConfig(new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                    .configDefinitionsDir(temporaryFolder.newFolder("configdefs").getAbsolutePath())
                                                                    .configServerDBDir(temporaryFolder.newFolder("configserverdb").getAbsolutePath())))

@@ -77,7 +77,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
                 .configServerConfig(configserverConfig)
                 .build();
         Clock clock = componentRegistry.getClock();

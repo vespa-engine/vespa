@@ -15,8 +15,6 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcRequestHandlerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
-import com.yahoo.vespa.config.server.session.SessionPreparer;
-import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
@@ -36,7 +34,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class InjectedGlobalComponentRegistryTest {
 
-    private SessionPreparer sessionPreparer;
     private ConfigserverConfig configserverConfig;
     private RpcServer rpcServer;
     private ConfigDefinitionRepo defRepo;
@@ -55,7 +52,6 @@ public class InjectedGlobalComponentRegistryTest {
                 new ConfigserverConfig.Builder()
                         .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                         .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
-        sessionPreparer = new SessionTest.MockSessionPreparer();
         HostRegistry hostRegistry = new HostRegistry();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(),
                                   hostRegistry, new ConfigRequestHostLivenessTracker(),
@@ -66,9 +62,8 @@ public class InjectedGlobalComponentRegistryTest {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
-                new InjectedGlobalComponentRegistry(modelFactoryRegistry, sessionPreparer,
-                                                    rpcServer, configserverConfig, defRepo, permanentApplicationPackage,
-                                                    hostProvisionerProvider, zone,
+                new InjectedGlobalComponentRegistry(modelFactoryRegistry, rpcServer, configserverConfig, defRepo,
+                                                    permanentApplicationPackage, hostProvisionerProvider, zone,
                                                     new ConfigServerDB(configserverConfig), new InMemoryFlagSource(),
                                                     new MockSecretStore());
     }
@@ -76,7 +71,6 @@ public class InjectedGlobalComponentRegistryTest {
     @Test
     public void testThatAllComponentsAreSetup() {
         assertThat(globalComponentRegistry.getModelFactoryRegistry(), is(modelFactoryRegistry));
-        assertThat(globalComponentRegistry.getSessionPreparer(), is(sessionPreparer));
         assertThat(globalComponentRegistry.getConfigserverConfig(), is(configserverConfig));
         assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));

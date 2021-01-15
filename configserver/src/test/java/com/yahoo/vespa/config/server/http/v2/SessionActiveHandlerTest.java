@@ -76,7 +76,6 @@ public class SessionActiveHandlerTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .curator(new MockCurator())
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
                 .configServerConfig(configserverConfig)
                 .build();

@@ -15,9 +15,12 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -89,6 +92,7 @@ public class TenantRepository {
     private final MetricUpdater metricUpdater;
     private final ExecutorService zkCacheExecutor;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
+    private final FileDistributionFactory fileDistributionFactory;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -104,14 +108,15 @@ public class TenantRepository {
                             HostRegistry hostRegistry,
                             Curator curator,
                             Metrics metrics) {
-        this(componentRegistry, hostRegistry, curator, metrics, new StripedExecutor<>());
+        this(componentRegistry, hostRegistry, curator, metrics, new StripedExecutor<>(), new FileDistributionFactory(componentRegistry.getConfigserverConfig()));
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
                             HostRegistry hostRegistry,
                             Curator curator,
                             Metrics metrics,
-                            StripedExecutor<TenantName> zkWatcherExecutor) {
+                            StripedExecutor<TenantName> zkWatcherExecutor,
+                            FileDistributionFactory fileDistributionFactory) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
@@ -123,6 +128,7 @@ public class TenantRepository {
         this.tenantListeners.add(componentRegistry.getTenantListener());
         this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
         this.zkWatcherExecutor = zkWatcherExecutor;
+        this.fileDistributionFactory = fileDistributionFactory;
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -153,8 +159,20 @@ public class TenantRepository {
         this(componentRegistry,
              hostRegistry,
              curator,
+             new FileDistributionFactory(componentRegistry.getConfigserverConfig()));
+    }
+
+    // For testing only
+    public TenantRepository(GlobalComponentRegistry componentRegistry,
+                            HostRegistry hostRegistry,
+                            Curator curator,
+                            FileDistributionFactory fileDistributionFactory) {
+        this(componentRegistry,
+             hostRegistry,
+             curator,
              Metrics.createTestMetrics(),
-             new StripedExecutor<>(new InThreadExecutorService()));
+             new StripedExecutor<>(new InThreadExecutorService()),
+             fileDistributionFactory);
     }
 
     private void notifyTenantsLoaded() {
@@ -265,10 +283,20 @@ public class TenantRepository {
                                        hostRegistry,
                                        new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                        componentRegistry.getClock());
+        SessionPreparer sessionPreparer = new SessionPreparer(componentRegistry.getModelFactoryRegistry(),
+                                                              fileDistributionFactory,
+                                                              HostProvisionerProvider.from(componentRegistry.getHostProvisioner()),
+                                                              componentRegistry.getPermanentApplicationPackage(),
+                                                              componentRegistry.getConfigserverConfig(),
+                                                              componentRegistry.getStaticConfigDefinitionRepo(),
+                                                              curator,
+                                                              componentRegistry.getZone(),
+                                                              componentRegistry.getFlagSource(),
+                                                              componentRegistry.getSecretStore());
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     componentRegistry,
                                                                     applicationRepo,
-                                                                    componentRegistry.getSessionPreparer(),
+                                                                    sessionPreparer,
                                                                     curator,
                                                                     metrics,
                                                                     zkWatcherExecutor);

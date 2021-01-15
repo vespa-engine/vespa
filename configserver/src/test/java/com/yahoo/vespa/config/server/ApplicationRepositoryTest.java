@@ -123,7 +123,6 @@ public class ApplicationRepositoryTest {
                 .build();
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
                 .configServerConfig(configserverConfig)
                 .flagSource(flagSource)
                 .clock(clock)

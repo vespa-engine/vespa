@@ -82,14 +82,14 @@ public class SessionRepositoryTest {
     private void setup(FlagSource flagSource, TestComponentRegistry.Builder componentRegistryBuilder) throws Exception {
         curator = new MockCurator();
         File configserverDbDir = temporaryFolder.newFolder().getAbsoluteFile();
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(configserverDbDir.getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .sessionLifetime(5)
+                .build();
         GlobalComponentRegistry globalComponentRegistry = componentRegistryBuilder
-                .curator(curator)
-                .configServerConfig(new ConfigserverConfig.Builder()
-                                            .configServerDBDir(configserverDbDir.getAbsolutePath())
-                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .sessionLifetime(5)
-                                            .build())
+                .configServerConfig(configserverConfig)
                 .flagSource(flagSource)
                 .build();
         tenantRepository = new TenantRepository(globalComponentRegistry,
