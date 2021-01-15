@@ -34,15 +34,14 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     public static final class Name {
 
-        // TODO: privatize
-        final String name;
-        final int id;
+        private final String name;
+        private final int id;
 
         public Name(String name) {
-            this(name.hashCode(),name);
+            this(name.hashCode(), name);
         }
 
-        public Name(int id,String name) {
+        public Name(int id, String name) {
             this.id = id;
             this.name = name;
         }

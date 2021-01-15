@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2020 Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+
+    <content id="foo" version="1.0">
+        <redundancy>2</redundancy>
+        <documents>
+            <document type="bar" mode="index"/>
+            <document type="baz" mode="streaming"/>
+            <document type="bax" mode="index"/>
+        </documents>
+        <nodes>
+            <node hostalias="node1" distribution-key="0"/>
+        </nodes>
+    </content>
+
+    <content id="boo" version="1.0">
+        <redundancy>2</redundancy>
+        <documents>
+            <document type="bar" mode="store-only"/>
+        </documents>
+        <nodes>
+            <node hostalias="node1" distribution-key="1"/>
+        </nodes>
+    </content>
+
+    <container version="1.0">
+        <nodes>
+            <node hostalias="node1" />
+        </nodes>
+    </container>
+
+</services>

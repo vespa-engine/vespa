@@ -36,12 +36,6 @@ public class HostsModel implements Model {
     }
 
     @Override
-    @SuppressWarnings("deprecation") // yes, this is needed
-    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition configDefinition) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition) {
         throw new UnsupportedOperationException();
     }

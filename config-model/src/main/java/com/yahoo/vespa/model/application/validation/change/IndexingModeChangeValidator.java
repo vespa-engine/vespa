@@ -35,13 +35,12 @@ public class IndexingModeChangeValidator implements ChangeValidator {
         for (Map.Entry<String, ContentCluster> currentEntry : currentModel.getContentClusters().entrySet()) {
             ContentCluster nextCluster = nextModel.getContentClusters().get(currentEntry.getKey());
             if (nextCluster == null) continue;
-            actions.addAll(validateContentCluster(currentEntry.getValue(), nextCluster, overrides, now));
+            actions.addAll(validateContentCluster(currentEntry.getValue(), nextCluster));
         }
         return actions;
     }
 
-    private static List<ConfigChangeAction> validateContentCluster(
-            ContentCluster currentCluster, ContentCluster nextCluster, ValidationOverrides overrides, Instant now) {
+    private static List<ConfigChangeAction> validateContentCluster(ContentCluster currentCluster, ContentCluster nextCluster) {
         List<ConfigChangeAction> actions = new ArrayList<>();
         ContentSearchCluster currentSearchCluster = currentCluster.getSearch();
         ContentSearchCluster nextSearchCluster = nextCluster.getSearch();

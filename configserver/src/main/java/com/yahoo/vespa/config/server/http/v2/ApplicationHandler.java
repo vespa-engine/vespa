@@ -18,6 +18,7 @@ import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.slime.Cursor;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.http.ContentHandler;
@@ -38,6 +39,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -227,29 +231,46 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse triggerReindexing(HttpRequest request, ApplicationId applicationId) {
+        Application application = applicationRepository.getActiveApplicationSet(applicationId)
+                .orElseThrow(() -> new NotFoundException(applicationId + " not found"))
+                .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant());
+        Map<String, Set<String>> documentTypes = ApplicationReindexing.documentTypes(application);
+        Map<String, Set<String>> indexedDocumentTypes = ApplicationReindexing.documentTypesWithIndex(application);
+
+        boolean indexedOnly = request.getBooleanProperty("indexedOnly");
         Set<String> clusters = StringUtilities.split(request.getProperty("clusterId"));
         Set<String> types = StringUtilities.split(request.getProperty("documentType"));
+
+        Map<String, Set<String>> reindexed = new TreeMap<>();
         Instant now = applicationRepository.clock().instant();
         applicationRepository.modifyReindexing(applicationId, reindexing -> {
-            if (clusters.isEmpty())
-                reindexing = reindexing.withReady(now);
-            else
-                for (String cluster : clusters)
-                    if (types.isEmpty())
-                        reindexing = reindexing.withReady(cluster, now);
-                    else
-                        for (String type : types)
-                            reindexing = reindexing.withReady(cluster, type, now);
+            for (String cluster : clusters.isEmpty() ? documentTypes.keySet() : clusters) {
+                if ( ! documentTypes.containsKey(cluster))
+                    throw new IllegalArgumentException("No content cluster '" + cluster + "' in application — only: " +
+                                                       String.join(", ", documentTypes.keySet()));
+
+                for (String type : types.isEmpty() ? documentTypes.get(cluster) : types) {
+                    if ( ! documentTypes.get(cluster).contains(type))
+                        throw new IllegalArgumentException("No document type '" + type + "' in cluster '" + cluster + "' — only: " +
+                                                           String.join(", ", documentTypes.get(cluster)));
+
+                    if ( ! indexedOnly || indexedDocumentTypes.get(cluster).contains(type)) {
+                        reindexing = reindexing.withReady(cluster, type, now);
+                        reindexed.computeIfAbsent(cluster, __ -> new TreeSet<>()).add(type);
+                    }
+                }
+            }
             return reindexing;
         });
 
-        String message = "Reindexing " +
-                         (clusters.isEmpty() ? ""
-                                             : (types.isEmpty() ? ""
-                                                                : "document types " + String.join(", ", types) + " in ") +
-                                               "clusters " + String.join(", ", clusters) + " of ") +
-                         "application " + applicationId;
-        return createMessageResponse(message);
+        return createMessageResponse(reindexed.entrySet().stream()
+                                              .filter(cluster -> ! cluster.getValue().isEmpty())
+                                              .map(cluster -> "[" + String.join(", ", cluster.getValue()) + "] in '" + cluster.getKey() + "'")
+                                              .reduce(new StringJoiner(", ", "Reindexing document types ", " of application " + applicationId)
+                                                              .setEmptyValue("Not reindexing any document types of application " + applicationId),
+                                                      StringJoiner::add,
+                                                      StringJoiner::merge)
+                                              .toString());
     }
 
     private HttpResponse getReindexingStatus(ApplicationId applicationId) {
@@ -452,8 +473,6 @@ public class ApplicationHandler extends HttpHandler {
         ReindexingResponse(ApplicationReindexing reindexing, Map<String, ClusterReindexing> clusters) {
             super(Response.Status.OK);
             object.setBool("enabled", reindexing.enabled());
-            setStatus(object.setObject("status"), reindexing.common());
-
             Cursor clustersObject = object.setObject("clusters");
             Stream<String> clusterNames = Stream.concat(clusters.keySet().stream(), reindexing.clusters().keySet().stream());
             clusterNames.sorted()
@@ -464,8 +483,6 @@ public class ApplicationHandler extends HttpHandler {
 
                             Map<String, Cursor> statuses = new HashMap<>();
                             if (reindexing.clusters().containsKey(clusterName)) {
-                                setStatus(clusterObject.setObject("status"), reindexing.clusters().get(clusterName).common());
-
                                 reindexing.clusters().get(clusterName).pending().entrySet().stream().sorted(comparingByKey())
                                           .forEach(pending -> pendingObject.setLong(pending.getKey(), pending.getValue()));
 

@@ -21,12 +21,6 @@ import java.util.Set;
 public class ModelStub implements Model {
 
     @Override
-    @SuppressWarnings("deprecation")
-    public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
-        return null;
-    }
-
-    @Override
     public ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition targetDef) {
         throw new UnsupportedOperationException();
     }

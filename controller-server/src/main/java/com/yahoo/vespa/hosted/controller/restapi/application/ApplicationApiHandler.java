@@ -1561,7 +1561,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                              .filter(type -> ! type.isBlank())
                                              .collect(toUnmodifiableList());
 
-        controller.applications().reindex(id, zone, clusterNames, documentTypes);
+        controller.applications().reindex(id, zone, clusterNames, documentTypes, request.getBooleanProperty("indexedOnly"));
         return new MessageResponse("Requested reindexing of " + id + " in " + zone +
                                    (clusterNames.isEmpty() ? "" : ", on clusters " + String.join(", ", clusterNames) +
                                                                   (documentTypes.isEmpty() ? "" : ", for types " + String.join(", ", documentTypes))));
@@ -1577,14 +1577,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor root = slime.setObject();
 
         root.setBool("enabled", reindexing.enabled());
-        setStatus(root.setObject("status"), reindexing.common());
 
         Cursor clustersArray = root.setArray("clusters");
         reindexing.clusters().entrySet().stream().sorted(comparingByKey())
                   .forEach(cluster -> {
                       Cursor clusterObject = clustersArray.addObject();
                       clusterObject.setString("name", cluster.getKey());
-                      cluster.getValue().common().ifPresent(common -> setStatus(clusterObject.setObject("status"), common));
 
                       Cursor pendingArray = clusterObject.setArray("pending");
                       cluster.getValue().pending().entrySet().stream().sorted(comparingByKey())

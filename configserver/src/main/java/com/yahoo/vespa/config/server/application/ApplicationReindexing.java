@@ -2,17 +2,28 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.model.api.Reindexing;
+import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
+import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.DocumentDatabase;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * Pending and ready reindexing per document type. Each document type can have either a pending or a ready reindexing.
@@ -37,6 +48,40 @@ public class ApplicationReindexing implements Reindexing {
     /** Reindexing for the whole application ready now. */
     public static ApplicationReindexing ready(Instant now) {
         return new ApplicationReindexing(true, new Status(now), Map.of());
+    }
+
+    /** Returns the set of document types in each content cluster, in the given application */
+    public static Map<String, Set<String>> documentTypes(Application application) {
+        Map<String, ContentCluster> contentClusters = ((VespaModel) application.getModel()).getContentClusters();
+        return contentClusters.entrySet().stream()
+                              .collect(toMap(cluster -> cluster.getKey(),
+                                             cluster -> cluster.getValue().getDocumentDefinitions().keySet()));
+    }
+
+    /** Returns the set of document types in each cluster, in the given application, that have an index for one of more fields. */
+    public static Map<String, Set<String>> documentTypesWithIndex(Application application) {
+        Map<String, ContentCluster> contentClusters = ((VespaModel) application.getModel()).getContentClusters();
+        return contentClusters.entrySet().stream()
+                              .collect(toUnmodifiableMap(cluster -> cluster.getKey(),
+                                                         cluster -> documentTypesWithIndex(cluster.getValue())));
+    }
+
+    private static Set<String> documentTypesWithIndex(ContentCluster content) {
+        Set<String> typesWithIndexMode = content.getSearch().getDocumentTypesWithIndexedCluster().stream()
+                                                .map(type -> type.getFullName().getName())
+                                                .collect(toSet());
+
+        Set<String> typesWithIndexedFields = content.getSearch().getIndexed() == null
+                                             ? Set.of()
+                                             : content.getSearch().getIndexed().getDocumentDbs().stream()
+                                                      .filter(database -> database.getDerivedConfiguration()
+                                                                                  .getSearch()
+                                                                                  .allConcreteFields()
+                                                                                  .stream().anyMatch(SDField::doesIndexing))
+                                                      .map(database -> database.getInputDocType())
+                                                      .collect(toSet());
+
+        return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains).collect(toUnmodifiableSet());
     }
 
     /** Returns a copy of this with reindexing for the whole application ready at the given instant. */
@@ -79,9 +124,29 @@ public class ApplicationReindexing implements Reindexing {
     /** Returns a copy of this with no pending reindexing for the given document type. */
     public ApplicationReindexing withoutPending(String cluster, String documentType) {
         Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
+        if (current == null)
+            return this;
+
         Cluster modified = new Cluster(current.common,
                                        without(documentType, current.pending),
                                        current.ready);
+        return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
+    }
+
+    /** Returns a copy of this without the given cluster. */
+    public ApplicationReindexing without(String cluster) {
+        return new ApplicationReindexing(enabled, common, without(cluster, clusters));
+    }
+
+    /** Returns a copy of this without the given document type in the given cluster. */
+    public ApplicationReindexing without(String cluster, String documentType) {
+        Cluster current = clusters.get(cluster);
+        if (current == null)
+            return this;
+
+        Cluster modified = new Cluster(current.common,
+                                       current.pending,
+                                       without(documentType, current.ready));
         return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
     }
 
