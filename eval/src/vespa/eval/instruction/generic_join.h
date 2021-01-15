@@ -55,6 +55,8 @@ struct SparseJoinPlan {
     std::vector<Source> sources;
     std::vector<size_t> lhs_overlap;
     std::vector<size_t> rhs_overlap;
+    bool should_forward_lhs_index() const;
+    bool should_forward_rhs_index() const;
     SparseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_type);
     ~SparseJoinPlan();
 };
