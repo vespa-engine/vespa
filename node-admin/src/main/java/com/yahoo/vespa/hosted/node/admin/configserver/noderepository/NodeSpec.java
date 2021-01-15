@@ -319,7 +319,7 @@ public class NodeSpec {
                 + " currentVespaVersion=" + currentVespaVersion
                 + " wantedOsVersion=" + wantedOsVersion
                 + " currentOsVersion=" + currentOsVersion
-                + " allowedToBeDown=" + orchestratorStatus
+                + " orchestratorStatus=" + orchestratorStatus
                 + " owner=" + owner
                 + " membership=" + membership
                 + " wantedRestartGeneration=" + wantedRestartGeneration
