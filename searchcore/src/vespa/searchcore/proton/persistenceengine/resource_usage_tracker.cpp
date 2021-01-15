@@ -46,7 +46,6 @@ ResourceUsageTracker::ResourceUsageTracker(IDiskMemUsageNotifier& disk_mem_usage
 ResourceUsageTracker::~ResourceUsageTracker()
 {
     _disk_mem_usage_notifier.removeDiskMemUsageListener(this);
-    std::lock_guard guard(_lock);
 }
 
 void
