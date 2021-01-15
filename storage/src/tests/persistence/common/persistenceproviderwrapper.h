@@ -17,8 +17,6 @@
 
 
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vector>
-#include <string>
 #include <mutex>
 
 namespace storage {

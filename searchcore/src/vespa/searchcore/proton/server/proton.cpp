@@ -25,6 +25,7 @@
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
+#include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
@@ -927,6 +928,12 @@ std::shared_ptr<IDocumentDBReferenceRegistry>
 Proton::getDocumentDBReferenceRegistry() const
 {
     return _documentDBReferenceRegistry;
+}
+
+storage::spi::PersistenceProvider &
+Proton::getPersistence()
+{
+    return *_persistenceEngine;
 }
 
 } // namespace proton

@@ -9,6 +9,7 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <functional>
 
 using std::unique_ptr;

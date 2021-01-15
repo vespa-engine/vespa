@@ -46,8 +46,6 @@ private:
     search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats);
     bool scanDocuments(const search::LidUsageStats &stats);
     void compactLidSpace(const search::LidUsageStats &stats);
-    void refreshRunnable();
-    void refreshAndConsiderRunnable();
     bool remove_batch_is_ongoing() const;
     bool remove_is_ongoing() const;
 

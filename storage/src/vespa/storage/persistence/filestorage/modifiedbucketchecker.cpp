@@ -2,6 +2,7 @@
 
 #include "modifiedbucketchecker.h"
 #include "filestormanager.h"
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/config/common/exceptions.h>
 #include <algorithm>
 

@@ -6,7 +6,12 @@
  */
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/bucket.h>
+#include <vespa/persistence/spi/docentry.h>
+#include <vespa/persistence/spi/context.h>
+
+namespace document { class FieldSet; }
+namespace storage::spi { class PersistenceProvider; }
 
 namespace storage {
 

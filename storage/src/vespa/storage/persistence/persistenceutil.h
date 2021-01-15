@@ -2,12 +2,13 @@
 #pragma once
 
 #include "types.h"
-#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/persistence/filestorage/filestorhandler.h>
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/messageapi/returncode.h>
+#include <vespa/persistence/spi/result.h>
+#include <vespa/persistence/spi/context.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/storageutil/utils.h>
 
@@ -15,8 +16,12 @@ namespace storage::api {
     class StorageMessage;
     class StorageReply;
 }
-namespace storage {
 
+namespace storage::spi {
+    class PersistenceProvider;
+}
+
+namespace storage {
 
 class PersistenceUtil;
 

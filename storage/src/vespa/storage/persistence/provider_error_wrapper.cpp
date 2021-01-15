@@ -200,4 +200,10 @@ ProviderErrorWrapper::updateAsync(const spi::Bucket &bucket, spi::Timestamp ts, 
     _impl.updateAsync(bucket, ts, std::move(upd), context, std::move(onComplete));
 }
 
+std::unique_ptr<vespalib::IDestructorCallback>
+ProviderErrorWrapper::register_executor(std::shared_ptr<spi::BucketExecutor> executor)
+{
+    return _impl.register_executor(std::move(executor));
+}
+
 } // ns storage

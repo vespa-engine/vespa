@@ -4,7 +4,6 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storageapi/message/persistence.h>

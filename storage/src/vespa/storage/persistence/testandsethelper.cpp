@@ -4,6 +4,7 @@
 #include "testandsethelper.h"
 #include "persistenceutil.h"
 #include "fieldvisitor.h"
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/stringfmt.h>

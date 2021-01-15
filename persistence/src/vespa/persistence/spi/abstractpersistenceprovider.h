@@ -48,6 +48,8 @@ public:
      * Default impl empty.
      */
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
+
+    std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor>) override;
 };
 
 }

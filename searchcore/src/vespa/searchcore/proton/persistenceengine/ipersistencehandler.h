@@ -4,13 +4,14 @@
 #include "bucket_guard.h"
 #include "i_document_retriever.h"
 #include "resulthandler.h"
-#include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 
 namespace document {
     class Document;
     class DocumentUpdate;
 }
+namespace storage::spi { class ClusterState; }
+
 namespace proton {
 
 /**
