@@ -204,10 +204,10 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private final InetSocketAddress localAddress;
         private final InetSocketAddress peerAddress;
 
-        private long bytesReceived;
-        private long bytesSent;
-        private long requests;
-        private long responses;
+        private long httpBytesReceived = -1;
+        private long httpBytesSent = -1;
+        private long requests = -1;
+        private long responses = -1;
         private byte[] sslSessionId;
         private String sslProtocol;
         private String sslCipherSuite;
@@ -234,8 +234,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         synchronized UUID uuid() { return uuid; }
 
         synchronized ConnectionInfo setHttpBytes(long received, long sent) {
-            this.bytesReceived = received;
-            this.bytesSent = sent;
+            this.httpBytesReceived = received;
+            this.httpBytesSent = sent;
             return this;
         }
 
@@ -264,11 +264,19 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         }
 
         synchronized ConnectionLogEntry toLogEntry() {
-            ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt))
-                    .withBytesReceived(bytesReceived)
-                    .withBytesSent(bytesSent)
-                    .withRequests(requests)
-                    .withResponses(responses);
+            ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt));
+            if (httpBytesReceived >= 0) {
+                builder.withHttpBytesReceived(httpBytesReceived);
+            }
+            if (httpBytesSent >= 0) {
+                builder.withHttpBytesSent(httpBytesSent);
+            }
+            if (requests >= 0) {
+                builder.withRequests(requests);
+            }
+            if (responses >= 0) {
+                builder.withResponses(responses);
+            }
             if (peerAddress != null) {
                 builder.withPeerAddress(peerAddress.getHostString())
                         .withPeerPort(peerAddress.getPort());

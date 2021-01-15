@@ -22,8 +22,8 @@ public class ConnectionLogEntry {
     private final Integer peerPort;
     private final String localAddress;
     private final Integer localPort;
-    private final Long bytesReceived;
-    private final Long bytesSent;
+    private final Long httpBytesReceived;
+    private final Long httpBytesSent;
     private final Long requests;
     private final Long responses;
     private final String sslSessionId;
@@ -41,8 +41,8 @@ public class ConnectionLogEntry {
         this.peerPort = builder.peerPort;
         this.localAddress = builder.localAddress;
         this.localPort = builder.localPort;
-        this.bytesReceived = builder.bytesReceived;
-        this.bytesSent = builder.bytesSent;
+        this.httpBytesReceived = builder.httpBytesReceived;
+        this.httpBytesSent = builder.httpBytesSent;
         this.requests = builder.requests;
         this.responses = builder.responses;
         this.sslSessionId = builder.sslSessionId;
@@ -64,8 +64,8 @@ public class ConnectionLogEntry {
         setInteger(cursor, "peerPort", peerPort);
         setString(cursor, "localAddress", localAddress);
         setInteger(cursor, "localPort", localPort);
-        setLong(cursor, "bytesReceived", bytesReceived);
-        setLong(cursor, "bytesSent", bytesSent);
+        setLong(cursor, "httpBytesReceived", httpBytesReceived);
+        setLong(cursor, "httpBytesSent", httpBytesSent);
         setLong(cursor, "requests", requests);
         setLong(cursor, "responses", responses);
         if (sslProtocol != null) {
@@ -120,8 +120,8 @@ public class ConnectionLogEntry {
         private Integer peerPort;
         private String localAddress;
         private Integer localPort;
-        private Long bytesReceived;
-        private Long bytesSent;
+        private Long httpBytesReceived;
+        private Long httpBytesSent;
         private Long requests;
         private Long responses;
         private String sslSessionId;
@@ -153,12 +153,12 @@ public class ConnectionLogEntry {
             this.localPort = localPort;
             return this;
         }
-        public Builder withBytesReceived(long bytesReceived) {
-            this.bytesReceived = bytesReceived;
+        public Builder withHttpBytesReceived(long bytesReceived) {
+            this.httpBytesReceived = bytesReceived;
             return this;
         }
-        public Builder withBytesSent(long bytesSent) {
-            this.bytesSent = bytesSent;
+        public Builder withHttpBytesSent(long bytesSent) {
+            this.httpBytesSent = bytesSent;
             return this;
         }
         public Builder withRequests(long requests) {
