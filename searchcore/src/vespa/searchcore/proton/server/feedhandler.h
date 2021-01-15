@@ -232,7 +232,7 @@ public:
     void performOperation(FeedToken token, FeedOperationUP op);
     void handleOperation(FeedToken token, FeedOperationUP op);
 
-    void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
+    void handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) override;
     void heartBeat() override;
 
     void sync();

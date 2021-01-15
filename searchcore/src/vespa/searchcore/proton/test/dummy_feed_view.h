@@ -27,7 +27,7 @@ struct DummyFeedView : public IFeedView
     void prepareDeleteBucket(DeleteBucketOperation &) override {}
     void handleDeleteBucket(const DeleteBucketOperation &) override {}
     void prepareMove(MoveOperation &) override {}
-    void handleMove(const MoveOperation &, std::shared_ptr<search::IDestructorCallback>) override {}
+    void handleMove(const MoveOperation &, std::shared_ptr<vespalib::IDestructorCallback>) override {}
     void heartBeat(search::SerialNum) override {}
     void sync() override {}
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}

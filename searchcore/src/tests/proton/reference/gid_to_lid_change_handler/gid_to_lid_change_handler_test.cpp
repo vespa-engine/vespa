@@ -150,7 +150,7 @@ struct Fixture
     }
 
     void notifyPut(GlobalId gid, uint32_t lid, SerialNum serial_num) {
-        _handler->notifyPut(std::shared_ptr<search::IDestructorCallback>(), gid, lid, serial_num);
+        _handler->notifyPut(std::shared_ptr<vespalib::IDestructorCallback>(), gid, lid, serial_num);
     }
 
     void notifyRemove(GlobalId gid, SerialNum serialNum) {

@@ -2,7 +2,7 @@
 #pragma once
 
 #include "i_move_operation_limiter.h"
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <memory>
 #include <mutex>
 
@@ -39,7 +39,7 @@ public:
     ~MoveOperationLimiter();
     void clearJob();
     bool isAboveLimit() const;
-    virtual std::shared_ptr<search::IDestructorCallback> beginOperation() override;
+    virtual std::shared_ptr<vespalib::IDestructorCallback> beginOperation() override;
 };
 
 }

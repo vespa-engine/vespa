@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "idestructorcallback.h"
+#include "vespa/vespalib/util/idestructorcallback.h"
 #include <vespa/vespalib/util/executor.h>
 
 namespace search {
@@ -13,7 +13,7 @@ namespace search {
  * shared pointer, triggering the callback when all worker threads
  * have completed.
  */
-class ScheduleTaskCallback : public IDestructorCallback
+class ScheduleTaskCallback : public vespalib::IDestructorCallback
 {
     vespalib::Executor &_executor;
     vespalib::Executor::Task::UP _task;

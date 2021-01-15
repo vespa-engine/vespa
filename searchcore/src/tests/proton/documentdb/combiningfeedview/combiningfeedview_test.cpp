@@ -4,7 +4,7 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -14,7 +14,7 @@ LOG_SETUP("combiningfeedview_test");
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::test::makeBucketSpace;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::Timestamp;
 using namespace proton;

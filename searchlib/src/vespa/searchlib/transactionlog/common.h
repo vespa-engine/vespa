@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/time.h>
@@ -88,7 +88,7 @@ int makeDirectory(const char * dir);
 
 class Writer {
 public:
-    using DoneCallback = std::shared_ptr<IDestructorCallback>;
+    using DoneCallback = std::shared_ptr<vespalib::IDestructorCallback>;
     using DoneCallbacksList = std::vector<DoneCallback>;
     using CommitPayload = std::shared_ptr<DoneCallbacksList>;
     class CommitResult {

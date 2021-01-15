@@ -55,7 +55,7 @@ using proton::matching::ISessionCachePruner;
 using search::AttributeGuard;
 using search::DocumentIdT;
 using search::DocumentMetaData;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;

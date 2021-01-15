@@ -4,14 +4,14 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.combiningfeedview");
 
 using document::DocumentTypeRepo;
 using document::DocumentId;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 
 namespace proton {
 

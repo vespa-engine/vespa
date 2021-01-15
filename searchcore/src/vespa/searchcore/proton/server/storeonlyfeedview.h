@@ -22,8 +22,7 @@
 #include <future>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 
-namespace search { class IDestructorCallback; }
-
+namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
@@ -54,7 +53,7 @@ public:
     using LidVector = LidVectorContext::LidVector;
     using Document = document::Document;
     using DocumentUpdate = document::DocumentUpdate;
-    using OnWriteDoneType =const std::shared_ptr<search::IDestructorCallback> &;
+    using OnWriteDoneType =const std::shared_ptr<vespalib::IDestructorCallback> &;
     using OnForceCommitDoneType =const std::shared_ptr<ForceCommitContext> &;
     using OnOperationDoneType = const std::shared_ptr<OperationDoneContext> &;
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
@@ -181,7 +180,7 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields);
 
     void internalRemove(FeedToken token, IPendingLidTracker::Token uncommitted, SerialNum serialNum,
-                        Lid lid, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
+                        Lid lid, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx);
 
     IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);
 
@@ -233,7 +232,7 @@ public:
     void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
     void handleDeleteBucket(const DeleteBucketOperation &delOp) override;
     void prepareMove(MoveOperation &putOp) override;
-    void handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
+    void handleMove(const MoveOperation &putOp, std::shared_ptr<vespalib::IDestructorCallback> doneCtx) override;
     void heartBeat(search::SerialNum serialNum) override;
     void sync() override;
     void forceCommit(SerialNum serialNum, DoneCallback onDone) override;

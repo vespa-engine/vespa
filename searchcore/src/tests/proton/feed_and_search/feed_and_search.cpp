@@ -163,7 +163,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
 
     doc = buildDocument(doc_builder, doc_id2, word2);
     memory_index.insertDocument(doc_id2, *doc.get());
-    memory_index.commit(std::shared_ptr<search::IDestructorCallback>());
+    memory_index.commit(std::shared_ptr<vespalib::IDestructorCallback>());
     indexFieldWriter->sync();
 
     testSearch(memory_index, word1, doc_id1);

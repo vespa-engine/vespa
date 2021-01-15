@@ -51,6 +51,7 @@ using namespace search::transactionlog;
 using namespace search;
 using namespace std::chrono_literals;
 
+using vespalib::IDestructorCallback;
 using document::DocumenttypesConfig;
 using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;

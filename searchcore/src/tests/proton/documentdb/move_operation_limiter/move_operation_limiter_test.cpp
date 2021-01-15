@@ -29,7 +29,7 @@ struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
 };
 
 struct Fixture {
-    using OpsQueue = std::queue<std::shared_ptr<search::IDestructorCallback>>;
+    using OpsQueue = std::queue<std::shared_ptr<vespalib::IDestructorCallback>>;
     using MoveOperationLimiterSP = std::shared_ptr<MoveOperationLimiter>;
 
     MyBlockableMaintenanceJob job;

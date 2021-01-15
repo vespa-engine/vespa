@@ -94,7 +94,7 @@ Document::UP buildDocument(DocBuilder &doc_builder, int id,
     return doc_builder.endDocument();
 }
 
-std::shared_ptr<search::IDestructorCallback> emptyDestructorCallback;
+std::shared_ptr<vespalib::IDestructorCallback> emptyDestructorCallback;
 
 struct IndexManagerTest : public ::testing::Test {
     SerialNum _serial_num;
@@ -398,7 +398,7 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
     Document::UP doc = addDocument(docid);
     inverter.invertDocument(docid, *doc);
     invertThreads->sync();
-    inverter.pushDocuments(std::shared_ptr<search::IDestructorCallback>());
+    inverter.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
     pushThreads->sync();
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
 
@@ -417,7 +417,7 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
     doc = addDocument(docid + 100);
     inverter.invertDocument(docid + 100, *doc);
     invertThreads->sync();
-    inverter.pushDocuments(std::shared_ptr<search::IDestructorCallback>());
+    inverter.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
     pushThreads->sync();
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.

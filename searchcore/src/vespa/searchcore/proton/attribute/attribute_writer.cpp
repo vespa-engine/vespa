@@ -10,7 +10,7 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/tensor/prepare_result.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -237,7 +237,7 @@ struct BatchUpdateTask : public vespalib::Executor::Task {
     SerialNum                        _serialNum;
     DocumentIdT                      _lid;
     AttrUpdates                      _updates;
-    search::IDestructorCallback::SP  _onWriteDone;
+    vespalib::IDestructorCallback::SP  _onWriteDone;
 };
 
 BatchUpdateTask::~BatchUpdateTask() = default;

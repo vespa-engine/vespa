@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/vespalib/stllike/hash_set.h>
@@ -125,7 +125,7 @@ public:
      *
      * Callers can call pushThreads.sync() to wait for push completion.
      */
-    void commit(const std::shared_ptr<IDestructorCallback> &onWriteDone);
+    void commit(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone);
 
     /**
      * Freeze this index.

@@ -8,7 +8,7 @@
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -20,7 +20,7 @@ using namespace proton;
 using namespace search::index;
 using namespace search;
 using namespace vespalib;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using storage::spi::Timestamp;
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 using TimePoint = LidUsageStats::TimePoint;

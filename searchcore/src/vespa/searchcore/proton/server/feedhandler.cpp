@@ -109,7 +109,7 @@ TlsMgrWriter::sync(SerialNum syncTo)
     throw IllegalStateException(make_string("Failed to sync TLS to token %" PRIu64 ".", syncTo));
 }
 
-class OnCommitDone : public search::IDestructorCallback {
+class OnCommitDone : public vespalib::IDestructorCallback {
 public:
     OnCommitDone(Executor & executor, std::unique_ptr<Executor::Task> task) noexcept
         : _executor(executor),
@@ -746,7 +746,7 @@ FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op)
 }
 
 void
-FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx)
+FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx)
 {
     assert(_writeService.master().isCurrentThread());
     op.set_prepare_serial_num(inc_prepare_serial_num());

@@ -23,7 +23,7 @@
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -46,7 +46,7 @@ using document::test::makeBucketSpace;
 using proton::bucketdb::BucketDBHandler;
 using proton::bucketdb::IBucketDBHandler;
 using proton::bucketdb::IBucketDBHandlerInitializer;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::test::DirectoryHandler;
 using searchcorespi::IFlushTarget;
 using searchcorespi::index::IThreadingService;

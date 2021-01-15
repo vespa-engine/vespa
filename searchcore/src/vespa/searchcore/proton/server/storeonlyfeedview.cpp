@@ -29,7 +29,7 @@ using document::DocumentId;
 using document::GlobalId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using search::index::Schema;
 using storage::spi::BucketInfoResult;
@@ -684,7 +684,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         _metaStore.commit(serialNum, serialNum);
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
     }
-    std::shared_ptr<search::IDestructorCallback> onWriteDone;
+    std::shared_ptr<vespalib::IDestructorCallback> onWriteDone;
     vespalib::Executor::Task::UP removeBatchDoneTask;
     if (explicitReuseLids) {
         removeBatchDoneTask = makeLambdaTask([this, lidsToRemove]() { _metaStore.removeBatchComplete(lidsToRemove); });

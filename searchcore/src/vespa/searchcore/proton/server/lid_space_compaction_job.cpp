@@ -59,7 +59,7 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
                 if ( ! op ) {
                     return false;
                 }
-                search::IDestructorCallback::SP context = _moveOpsLimiter->beginOperation();
+                vespalib::IDestructorCallback::SP context = _moveOpsLimiter->beginOperation();
                 _opStorer.appendOperation(*op, context);
                 _handler.handleMove(*op, std::move(context));
                 if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
