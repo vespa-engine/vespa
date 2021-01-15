@@ -6,11 +6,13 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -134,6 +136,7 @@ public class AllocatableClusterResources {
     public static Optional<AllocatableClusterResources> from(ClusterResources wantedResources,
                                                              ClusterSpec clusterSpec,
                                                              Limits applicationLimits,
+                                                             NodeList hosts,
                                                              NodeRepository nodeRepository) {
         var systemLimits = new NodeResourceLimits(nodeRepository);
         boolean exclusive = clusterSpec.isExclusive();
@@ -144,7 +147,7 @@ public class AllocatableClusterResources {
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) return Optional.empty();
-            if (matchesAny(nodeRepository.flavors().getFlavors(), advertisedResources))
+            if (matchesAny(hosts, advertisedResources))
                     return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
                                                                        advertisedResources,
                                                                        wantedResources.nodeResources(),
@@ -183,12 +186,12 @@ public class AllocatableClusterResources {
         }
     }
 
-    /** Returns true if the given resources could be allocated on any of the given flavors */
-    private static boolean matchesAny(List<Flavor> flavors, NodeResources advertisedResources) {
+    /** Returns true if the given resources could be allocated on any of the given host flavors */
+    private static boolean matchesAny(NodeList hosts, NodeResources advertisedResources) {
         // Tenant nodes should not consume more than half the resources of the biggest hosts
         // to make it easier to shift them between hosts.
-        return flavors.stream().anyMatch(flavor -> flavor.resources().withVcpu(flavor.resources().vcpu() / 2)
-                                                         .satisfies(advertisedResources));
+        return hosts.stream().anyMatch(host -> host.resources().withVcpu(host.resources().vcpu() / 2)
+                                                   .satisfies(advertisedResources));
     }
 
     private static boolean between(NodeResources min, NodeResources max, NodeResources r) {

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Optional;
@@ -43,6 +44,7 @@ public class AllocationOptimizer {
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
+        NodeList hosts = nodeRepository.list().hosts();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
@@ -57,7 +59,7 @@ public class AllocationOptimizer {
                                                              groups,
                                                              nodeResourcesWith(nodesAdjustedForRedundancy, groupsAdjustedForRedundancy, limits, current, target));
 
-                var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits, nodeRepository);
+                var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits, hosts, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;
