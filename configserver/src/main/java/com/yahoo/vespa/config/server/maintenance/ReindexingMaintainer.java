@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
@@ -98,7 +99,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     }
 
     static ApplicationReindexing withOnlyCurrentData(ApplicationReindexing reindexing, Application application) {
-        return withOnlyCurrentData(reindexing, ApplicationReindexing.documentTypes(application));
+        return withOnlyCurrentData(reindexing, application.getModel().documentTypesByCluster());
     }
 
     static ApplicationReindexing withOnlyCurrentData(ApplicationReindexing reindexing, Map<String, ? extends Collection<String>> clusterDocumentTypes) {

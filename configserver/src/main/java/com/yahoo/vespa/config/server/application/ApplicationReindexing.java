@@ -50,40 +50,6 @@ public class ApplicationReindexing implements Reindexing {
         return new ApplicationReindexing(true, new Status(now), Map.of());
     }
 
-    /** Returns the set of document types in each content cluster, in the given application */
-    public static Map<String, Set<String>> documentTypes(Application application) {
-        Map<String, ContentCluster> contentClusters = ((VespaModel) application.getModel()).getContentClusters();
-        return contentClusters.entrySet().stream()
-                              .collect(toMap(cluster -> cluster.getKey(),
-                                             cluster -> cluster.getValue().getDocumentDefinitions().keySet()));
-    }
-
-    /** Returns the set of document types in each cluster, in the given application, that have an index for one of more fields. */
-    public static Map<String, Set<String>> documentTypesWithIndex(Application application) {
-        Map<String, ContentCluster> contentClusters = ((VespaModel) application.getModel()).getContentClusters();
-        return contentClusters.entrySet().stream()
-                              .collect(toUnmodifiableMap(cluster -> cluster.getKey(),
-                                                         cluster -> documentTypesWithIndex(cluster.getValue())));
-    }
-
-    private static Set<String> documentTypesWithIndex(ContentCluster content) {
-        Set<String> typesWithIndexMode = content.getSearch().getDocumentTypesWithIndexedCluster().stream()
-                                                .map(type -> type.getFullName().getName())
-                                                .collect(toSet());
-
-        Set<String> typesWithIndexedFields = content.getSearch().getIndexed() == null
-                                             ? Set.of()
-                                             : content.getSearch().getIndexed().getDocumentDbs().stream()
-                                                      .filter(database -> database.getDerivedConfiguration()
-                                                                                  .getSearch()
-                                                                                  .allConcreteFields()
-                                                                                  .stream().anyMatch(SDField::doesIndexing))
-                                                      .map(database -> database.getInputDocType())
-                                                      .collect(toSet());
-
-        return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains).collect(toUnmodifiableSet());
-    }
-
     /** Returns a copy of this with reindexing for the whole application ready at the given instant. */
     public ApplicationReindexing withReady(Instant readyAt) {
         return new ApplicationReindexing(enabled,

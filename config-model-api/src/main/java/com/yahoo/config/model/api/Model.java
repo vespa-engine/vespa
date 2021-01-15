@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
 
@@ -79,5 +80,11 @@ public interface Model {
 
     /** Returns the provisioned hosts of this. */
     default Provisioned provisioned() { return new Provisioned(); }
+
+    /** Returns the set of document types in each content cluster. */
+    default Map<String, Set<String>> documentTypesByCluster() { return Map.of(); }
+
+    /** Returns the set of document types in each cluster, that have an index for one of more fields. */
+    default Map<String, Set<String>> indexedDocumentTypesByCluster() { return Map.of(); }
 
 }

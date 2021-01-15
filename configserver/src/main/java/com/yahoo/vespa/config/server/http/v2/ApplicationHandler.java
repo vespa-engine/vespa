@@ -28,6 +28,7 @@ import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.model.VespaModel;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -232,10 +233,10 @@ public class ApplicationHandler extends HttpHandler {
 
     private HttpResponse triggerReindexing(HttpRequest request, ApplicationId applicationId) {
         Application application = applicationRepository.getActiveApplicationSet(applicationId)
-                .orElseThrow(() -> new NotFoundException(applicationId + " not found"))
-                .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant());
-        Map<String, Set<String>> documentTypes = ApplicationReindexing.documentTypes(application);
-        Map<String, Set<String>> indexedDocumentTypes = ApplicationReindexing.documentTypesWithIndex(application);
+                                                       .orElseThrow(() -> new NotFoundException(applicationId + " not found"))
+                                                       .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant());
+        Map<String, Set<String>> documentTypes = application.getModel().documentTypesByCluster();
+        Map<String, Set<String>> indexedDocumentTypes = application.getModel().indexedDocumentTypesByCluster();
 
         boolean indexedOnly = request.getBooleanProperty("indexedOnly");
         Set<String> clusters = StringUtilities.split(request.getProperty("clusterId"));
