@@ -3,8 +3,6 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.InThreadExecutorService;
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -23,7 +21,6 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
@@ -71,9 +68,7 @@ public class TenantRepositoryTest {
         assertFalse(tenantListener.tenantsLoaded);
         tenantRepository = new TenantRepository(globalComponentRegistry,
                                                 new HostRegistry(),
-                                                curator,
-                                                Metrics.createTestMetrics(),
-                                                new StripedExecutor<>(new InThreadExecutorService()));
+                                                curator);
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -209,9 +204,7 @@ public class TenantRepositoryTest {
         public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry, Curator curator) {
             super(globalComponentRegistry,
                   new HostRegistry(),
-                  curator,
-                  Metrics.createTestMetrics(),
-                  new StripedExecutor<>(new InThreadExecutorService()));
+                  curator);
         }
 
         @Override

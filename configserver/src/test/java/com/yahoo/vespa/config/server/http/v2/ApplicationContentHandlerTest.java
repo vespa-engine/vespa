@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
@@ -62,7 +63,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .build();
         Clock clock = componentRegistry.getClock();
 
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry);
+        TenantRepository tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
 

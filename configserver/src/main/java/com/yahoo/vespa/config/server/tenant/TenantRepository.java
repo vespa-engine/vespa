@@ -103,6 +103,13 @@ public class TenantRepository {
     public TenantRepository(GlobalComponentRegistry componentRegistry,
                             HostRegistry hostRegistry,
                             Curator curator,
+                            Metrics metrics) {
+        this(componentRegistry, hostRegistry, curator, metrics, new StripedExecutor<>());
+    }
+
+    public TenantRepository(GlobalComponentRegistry componentRegistry,
+                            HostRegistry hostRegistry,
+                            Curator curator,
                             Metrics metrics,
                             StripedExecutor<TenantName> zkWatcherExecutor) {
         this.componentRegistry = componentRegistry;
@@ -134,17 +141,18 @@ public class TenantRepository {
                                                                   TimeUnit.SECONDS);
     }
 
-
-    // For testing only
-    public TenantRepository(GlobalComponentRegistry componentRegistry) {
-        this(componentRegistry, new HostRegistry());
-    }
-
     // For testing only
     public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry) {
         this(componentRegistry,
              hostRegistry,
-             new MockCurator(),
+             new MockCurator());
+    }
+
+    // For testing only
+    public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry, Curator curator) {
+        this(componentRegistry,
+             hostRegistry,
+             curator,
              Metrics.createTestMetrics(),
              new StripedExecutor<>(new InThreadExecutorService()));
     }
