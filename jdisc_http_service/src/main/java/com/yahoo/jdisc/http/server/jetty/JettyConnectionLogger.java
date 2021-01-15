@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.ConnectionLogEntry;
+import com.yahoo.io.HexDump;
 import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EndPoint;
@@ -12,10 +13,12 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.StandardConstants;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -215,10 +218,37 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         }
 
         ConnectionLogEntry toLogEntry() {
-            return ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt))
-                    .withPeerAddress(peerAddress.getHostString())
-                    .withPeerPort(peerAddress.getPort())
-                    .build();
+            ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt))
+                    .withBytesReceived(bytesReceived)
+                    .withBytesSent(bytesSent)
+                    .withRequests(requests)
+                    .withResponses(responses);
+            if (peerAddress != null) {
+                builder.withPeerAddress(peerAddress.getHostString())
+                        .withPeerPort(peerAddress.getPort());
+            }
+            if (localAddress != null) {
+                builder.withLocalAddress(localAddress.getHostString())
+                        .withLocalPort(localAddress.getPort());
+            }
+            if (sslProtocol != null && sslCipherSuite != null && sslSessionId != null) {
+                builder.withSslProtocol(sslProtocol)
+                        .withSslCipherSuite(sslCipherSuite)
+                        .withSslSessionId(HexDump.toHexString(sslSessionId));
+            }
+            if (sslSniServerNames != null) {
+                sslSniServerNames.stream()
+                        .filter(name -> name instanceof SNIHostName && name.getType() == StandardConstants.SNI_HOST_NAME)
+                        .map(name -> ((SNIHostName) name).getAsciiName())
+                        .findAny()
+                        .ifPresent(builder::withSslSniServerName);
+            }
+            if (sslPeerSubject != null && sslPeerNotAfter != null && sslPeerNotBefore != null) {
+                builder.withSslPeerSubject(sslPeerSubject)
+                        .withSslPeerNotAfter(sslPeerNotAfter.toInstant())
+                        .withSslPeerNotBefore(sslPeerNotBefore.toInstant());
+            }
+            return builder.build();
         }
 
     }
