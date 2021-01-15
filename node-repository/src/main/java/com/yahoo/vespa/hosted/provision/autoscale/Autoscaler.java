@@ -45,7 +45,7 @@ public class Autoscaler {
      * @return scaling advice for this cluster
      */
     public Advice suggest(Cluster cluster, NodeList clusterNodes) {
-        return autoscale(cluster, clusterNodes, Limits.empty(), cluster.exclusive());
+        return autoscale(cluster, clusterNodes, Limits.empty());
     }
 
     /**
@@ -56,10 +56,10 @@ public class Autoscaler {
      */
     public Advice autoscale(Cluster cluster, NodeList clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is not enabled");
-        return autoscale(cluster, clusterNodes, Limits.of(cluster), cluster.exclusive());
+        return autoscale(cluster, clusterNodes, Limits.of(cluster));
     }
 
-    private Advice autoscale(Cluster cluster, NodeList clusterNodes, Limits limits, boolean exclusive) {
+    private Advice autoscale(Cluster cluster, NodeList clusterNodes, Limits limits) {
         if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
@@ -90,7 +90,7 @@ public class Autoscaler {
         var target = ResourceTarget.idealLoad(cpuLoad, memoryLoad, diskLoad, currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =
-                allocationOptimizer.findBestAllocation(target, currentAllocation, limits, exclusive);
+                allocationOptimizer.findBestAllocation(target, currentAllocation, limits);
         if (bestAllocation.isEmpty())
             return Advice.dontScale("No allocation changes are possible within configured limits");
 
