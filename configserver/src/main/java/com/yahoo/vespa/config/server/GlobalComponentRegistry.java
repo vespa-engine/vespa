@@ -26,7 +26,6 @@ public interface GlobalComponentRegistry {
     TenantListener getTenantListener();
     ReloadListener getReloadListener();
     ConfigDefinitionRepo getStaticConfigDefinitionRepo();
-    PermanentApplicationPackage getPermanentApplicationPackage();
     ModelFactoryRegistry getModelFactoryRegistry();
     Optional<Provisioner> getHostProvisioner();
     Zone getZone();

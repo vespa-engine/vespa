@@ -8,9 +8,7 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
@@ -35,7 +33,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ConfigDefinitionRepo defRepo;
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
-    private final PermanentApplicationPackage permanentApplicationPackage;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
@@ -46,7 +43,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final FlagSource flagSource;
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
-                                  PermanentApplicationPackage permanentApplicationPackage,
                                   ConfigserverConfig configserverConfig,
                                   Optional<Provisioner> hostProvisioner,
                                   ConfigDefinitionRepo defRepo,
@@ -60,7 +56,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
         this.defRepo = defRepo;
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.hostProvisioner = hostProvisioner;
         this.zone = zone;
@@ -80,7 +75,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
         private ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         private final MockTenantListener tenantListener = new MockTenantListener();
-        private final Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         private Optional<Provisioner> hostProvisioner = Optional.empty();
         private Zone zone = Zone.defaultZone();
@@ -128,11 +122,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         }
 
         public TestComponentRegistry build() {
-            final PermanentApplicationPackage permApp = Optional.<PermanentApplicationPackage>empty()
-                    .orElse(new PermanentApplicationPackage(configserverConfig));
             SecretStore secretStore = new MockSecretStore();
             return new TestComponentRegistry(modelFactoryRegistry,
-                                             permApp,
                                              configserverConfig,
                                              hostProvisioner,
                                              defRepo,
@@ -153,8 +144,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public ReloadListener getReloadListener() { return reloadListener; }
     @Override
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return defRepo; }
-    @Override
-    public PermanentApplicationPackage getPermanentApplicationPackage() { return permanentApplicationPackage; }
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
     @Override

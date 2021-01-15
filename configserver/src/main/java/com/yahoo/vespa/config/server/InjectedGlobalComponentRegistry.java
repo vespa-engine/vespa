@@ -8,7 +8,6 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
@@ -32,7 +31,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final RpcServer rpcServer;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
-    private final PermanentApplicationPackage permanentApplicationPackage;
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final ConfigServerDB configServerDB;
@@ -46,7 +44,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            RpcServer rpcServer,
                                            ConfigserverConfig configserverConfig,
                                            ConfigDefinitionRepo staticConfigDefinitionRepo,
-                                           PermanentApplicationPackage permanentApplicationPackage,
                                            HostProvisionerProvider hostProvisionerProvider,
                                            Zone zone,
                                            ConfigServerDB configServerDB,
@@ -56,7 +53,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.rpcServer = rpcServer;
         this.configserverConfig = configserverConfig;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.configServerDB = configServerDB;
@@ -73,8 +69,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public ReloadListener getReloadListener() { return rpcServer; }
     @Override
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return staticConfigDefinitionRepo; }
-    @Override
-    public PermanentApplicationPackage getPermanentApplicationPackage() { return permanentApplicationPackage; }
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
 

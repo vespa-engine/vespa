@@ -13,6 +13,7 @@ import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
@@ -283,10 +284,11 @@ public class TenantRepository {
                                        hostRegistry,
                                        new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                        componentRegistry.getClock());
+        PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(componentRegistry.getConfigserverConfig());
         SessionPreparer sessionPreparer = new SessionPreparer(componentRegistry.getModelFactoryRegistry(),
                                                               fileDistributionFactory,
                                                               HostProvisionerProvider.from(componentRegistry.getHostProvisioner()),
-                                                              componentRegistry.getPermanentApplicationPackage(),
+                                                              permanentApplicationPackage,
                                                               componentRegistry.getConfigserverConfig(),
                                                               componentRegistry.getStaticConfigDefinitionRepo(),
                                                               curator,
@@ -299,7 +301,8 @@ public class TenantRepository {
                                                                     sessionPreparer,
                                                                     curator,
                                                                     metrics,
-                                                                    zkWatcherExecutor);
+                                                                    zkWatcherExecutor,
+                                                                    permanentApplicationPackage);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

@@ -21,6 +21,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -82,6 +83,7 @@ public class SessionRepository {
     private final Clock clock;
     private final Curator curator;
     private final Executor zkWatcherExecutor;
+    private final PermanentApplicationPackage permanentApplicationPackage;
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final Metrics metrics;
     private final MetricUpdater metricUpdater;
@@ -100,7 +102,8 @@ public class SessionRepository {
                              SessionPreparer sessionPreparer,
                              Curator curator,
                              Metrics metrics,
-                             StripedExecutor<TenantName> zkWatcherExecutor) {
+                             StripedExecutor<TenantName> zkWatcherExecutor,
+                             PermanentApplicationPackage permanentApplicationPackage) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -110,6 +113,7 @@ public class SessionRepository {
         this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
+        this.permanentApplicationPackage = permanentApplicationPackage;
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
@@ -435,7 +439,8 @@ public class SessionRepository {
                                                                     previousApplicationSet,
                                                                     componentRegistry,
                                                                     curator,
-                                                                    metrics);
+                                                                    metrics,
+                                                                    permanentApplicationPackage);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 

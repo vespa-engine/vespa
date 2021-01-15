@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -23,7 +22,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -37,7 +36,6 @@ public class InjectedGlobalComponentRegistryTest {
     private ConfigserverConfig configserverConfig;
     private RpcServer rpcServer;
     private ConfigDefinitionRepo defRepo;
-    private PermanentApplicationPackage permanentApplicationPackage;
     private GlobalComponentRegistry globalComponentRegistry;
     private ModelFactoryRegistry modelFactoryRegistry;
     private Zone zone;
@@ -47,7 +45,7 @@ public class InjectedGlobalComponentRegistryTest {
 
     @Before
     public void setupRegistry() throws IOException {
-        modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
+        modelFactoryRegistry = new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry())));
         configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
                         .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
@@ -58,12 +56,11 @@ public class InjectedGlobalComponentRegistryTest {
                                   new FileServer(temporaryFolder.newFolder("filereferences")),
                                   new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
         defRepo = new StaticConfigDefinitionRepo();
-        permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(modelFactoryRegistry, rpcServer, configserverConfig, defRepo,
-                                                    permanentApplicationPackage, hostProvisionerProvider, zone,
+                                                    hostProvisionerProvider, zone,
                                                     new ConfigServerDB(configserverConfig), new InMemoryFlagSource(),
                                                     new MockSecretStore());
     }
@@ -75,8 +72,7 @@ public class InjectedGlobalComponentRegistryTest {
         assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getStaticConfigDefinitionRepo(), is(defRepo));
-        assertThat(globalComponentRegistry.getPermanentApplicationPackage(), is(permanentApplicationPackage));
-        assertThat(globalComponentRegistry.getZone(), is (zone));
+        assertThat(globalComponentRegistry.getZone(), is(zone));
         assertTrue(globalComponentRegistry.getHostProvisioner().isPresent());
     }
 

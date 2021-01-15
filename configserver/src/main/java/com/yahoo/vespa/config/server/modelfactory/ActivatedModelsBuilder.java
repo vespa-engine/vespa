@@ -67,7 +67,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   Optional<ApplicationSet> currentActiveApplicationSet,
                                   GlobalComponentRegistry globalComponentRegistry,
                                   Curator curator,
-                                  Metrics metrics) {
+                                  Metrics metrics,
+                                  PermanentApplicationPackage permanentApplicationPackage) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               globalComponentRegistry.getConfigserverConfig(),
               globalComponentRegistry.getZone(),
@@ -76,7 +77,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.applicationGeneration = applicationGeneration;
         this.zkClient = zkClient;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
-        this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
+        this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = globalComponentRegistry.getStaticConfigDefinitionRepo();
         this.metrics = metrics;
         this.curator = curator;
