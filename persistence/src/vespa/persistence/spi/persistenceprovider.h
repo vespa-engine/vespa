@@ -4,8 +4,6 @@
 #include "bucket.h"
 #include "bucketinfo.h"
 #include "context.h"
-#include "docentry.h"
-#include "documentselection.h"
 #include "result.h"
 #include "selection.h"
 #include "clusterstate.h"
@@ -17,7 +15,6 @@ namespace vespalib { class IDestructorCallback; }
 namespace storage::spi {
 
 class IResourceUsageListener;
-class BucketTask;
 class BucketExecutor;
 
 /**

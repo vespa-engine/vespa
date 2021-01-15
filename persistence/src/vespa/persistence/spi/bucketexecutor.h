@@ -21,11 +21,14 @@ public:
 };
 
 /**
- * Interface for running a BucketTask
+ * Interface for running a BucketTask. If it fails the task will be returned.
+ * That would normally indicate a fatal error.
+ * sync() will be called during detatching to ensure the implementation is drained.
  */
 struct BucketExecutor {
     virtual ~BucketExecutor() = default;
-    virtual void execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) = 0;
+    virtual std::unique_ptr<BucketTask> execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) = 0;
+    virtual void sync() = 0;
 };
 
 }

@@ -3,7 +3,6 @@
 
 #include "bucket.h"
 
-
 namespace storage::lib {
     class ClusterState;
     class Distribution;
