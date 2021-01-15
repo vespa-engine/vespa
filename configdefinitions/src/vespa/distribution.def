@@ -1,0 +1,28 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.content
+
+##
+## Super config for distribution in each content cluster, keyed by cluster id.
+##
+
+# How many copies of a document are stored, across nodes.
+cluster{}.redundancy int default=3
+
+# Hierarchical grouping divides the nodes into a tree of groups. The index is the
+# string representation of a path from the root node in this tree, e.g., "1.2.1".
+cluster{}.group[].index string
+
+# Each group needs to have a name. Obviously. Duh.
+cluster{}.group[].name string
+
+# Capacity of the given group.
+cluster{}.group[].capacity double default=1
+
+# Partitions define how copies are divided among child groups/nodes.
+cluster{}.group[].partitions string default=""
+
+# Leaf groups will have a set of nodes within them. Branch groups will have none.
+cluster{}.group[].nodes[].index int
+
+# Whether this node is retired, and data should migrate out of it.
+cluster{}.group[].nodes[].retired bool default=false

@@ -10,14 +10,17 @@ redundancy int default=3
 ## a subset of all copies have been persisted (known as initial persistence
 ## in BCP terms).
 ## Set to 0 to disable and use normal redundancy behavior instead.
+## TODO: seems unused
 initial_redundancy int default=0
 
 ## If set, requires that the primary nodes copy should always be persisted
 ## before an n-of-m initial persistence operation can complete.
+## TODO: seems unused
 ensure_primary_persisted bool default=true
 
 ## The number of copies that should be "ready" to be active.
 ## Maximum is redundancy.
+## TODO: seems unused
 ready_copies int default=0
 
 ## If this option is set true, the distributor will try to enforce one active copy
@@ -29,6 +32,7 @@ ready_copies int default=0
 ##   - ready_copies == redundancy
 ##   - Only one level of hierarchical grouping defined.
 ##   - That level distributes copies to all defined groups.
+## TODO: seems unused
 active_per_leaf_group bool default=false
 
 ## Search have some unfortunate properties with some queries, adding a static
@@ -36,6 +40,7 @@ active_per_leaf_group bool default=false
 ## these cases they use many small groups to be able to scale. In such cases,
 ## where groups are small, having distributors able to take over when none are
 ## available in a group is useful.
+## TODO: seems unused, i.e., always true
 distributor_auto_ownership_transfer_on_whole_group_down bool default=true
 
 ## Hierarchical grouping divides the nodes into a tree of groups. Due to config
@@ -67,4 +72,5 @@ group[].nodes[].retired bool default=false
 ## MODULO_INDEX with node index in seed
 ## MODULO_KNUTH with random(node index) in seed
 ## MODULO_BID using all used bits, except count bits, and random(node index)
+## TODO: seems unused
 disk_distribution enum { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID } default=MODULO_BID

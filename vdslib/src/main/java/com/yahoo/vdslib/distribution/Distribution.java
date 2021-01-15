@@ -68,7 +68,7 @@ public class Distribution {
             try{
                 Group root = null;
                 for (int i=0; i<config.group().size(); ++i) {
-                    StorDistributionConfig.Group cg = config.group().get(i);
+                    StorDistributionConfig.Group cg = config.group(i);
                     int[] path = new int[0];
                     if (root != null) {
                         path = getGroupPath(cg.index());
@@ -172,6 +172,7 @@ public class Distribution {
             return Double.compare(o.score, score);
         }
     }
+
     private static class ScoredNode {
         int index;
         int reliability;
@@ -179,6 +180,7 @@ public class Distribution {
 
         ScoredNode(int index, int reliability, double score) { this.index = index; this.reliability = reliability; this.score = score; }
     }
+
     private static boolean allDistributorsDown(Group g, ClusterState clusterState) {
         if (g.isLeafGroup()) {
             for (ConfiguredNode node : g.getNodes()) {
@@ -192,6 +194,7 @@ public class Distribution {
         }
         return true;
     }
+
     private Group getIdealDistributorGroup(boolean distributorAutoOwnershipTransferOnWholeGroupDown,
                                            BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
         if (parent.isLeafGroup()) {
@@ -220,6 +223,7 @@ public class Distribution {
         }
         return getIdealDistributorGroup(distributorAutoOwnershipTransferOnWholeGroupDown, bucket, clusterState, results.first().group, redundancyArray[0]);
     }
+
     private static class ResultGroup implements Comparable<ResultGroup> {
         Group group;
         int redundancy;
@@ -234,6 +238,7 @@ public class Distribution {
             return group.compareTo(o.group);
         }
     }
+
     private void getIdealGroups(BucketId bucketId, ClusterState clusterState, Group parent,
                                int redundancy, List<ResultGroup> results) {
         if (parent.isLeafGroup()) {
@@ -424,11 +429,13 @@ public class Distribution {
             super(message);
         }
     }
+
     public static class NoDistributorsAvailableException extends Exception {
         NoDistributorsAvailableException(String message) {
             super(message);
         }
     }
+
     public int getIdealDistributorNode(ClusterState state, BucketId bucket, String upStates) throws TooFewBucketBitsInUseException, NoDistributorsAvailableException {
         if (bucket.getUsedBits() < state.getDistributionBitCount()) {
             throw new TooFewBucketBitsInUseException("Cannot get ideal state for bucket " + bucket + " using " + bucket.getUsedBits()
@@ -474,6 +481,7 @@ public class Distribution {
         }
         return node.index;
     }
+
     private boolean visitGroups(GroupVisitor visitor, Map<Integer, Group> groups) {
         for (Group g : groups.values()) {
             if (!visitor.visitGroup(g)) return false;
@@ -485,12 +493,14 @@ public class Distribution {
         }
         return true;
     }
+
     public void visitGroups(GroupVisitor visitor) {
         Map<Integer, Group> groups = new TreeMap<>();
         Group nodeGraph = config.getAcquire().nodeGraph;
         groups.put(nodeGraph.getIndex(), nodeGraph);
         visitGroups(visitor, groups);
     }
+
     public Set<ConfiguredNode> getNodes() {
         final Set<ConfiguredNode> nodes = new HashSet<>();
         GroupVisitor visitor = new GroupVisitor() {
@@ -524,9 +534,11 @@ public class Distribution {
         sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
         return sb.toString();
     }
+
     public static String getSimpleGroupConfig(int redundancy, int nodeCount) {
         return getSimpleGroupConfig(redundancy, nodeCount, StorDistributionConfig.Disk_distribution.Enum.MODULO_BID);
     }
+
     private static String getSimpleGroupConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
         StringBuilder sb = new StringBuilder();
         sb.append("raw:redundancy ").append(redundancy).append("\n").append("group[4]\n");
@@ -561,6 +573,5 @@ public class Distribution {
         sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
         return sb.toString();
     }
+
 }
-
-
