@@ -47,6 +47,12 @@ public class ClusterStateBundleTest {
         return createTestBundleBuilder(modifyDefaultSpace).deriveAndBuild();
     }
 
+    private static ClusterStateBundle createTestBundleWithFeedBlock(String description) {
+        return createTestBundleBuilder(false)
+                .feedBlock(ClusterStateBundle.FeedBlock.blockedWithDescription(description))
+                .deriveAndBuild();
+    }
+
     private static ClusterStateBundle createTestBundle() {
         return createTestBundle(true);
     }
@@ -91,6 +97,34 @@ public class ClusterStateBundleTest {
     }
 
     @Test
+    public void similarity_test_considers_cluster_feed_block_state() {
+        var nonBlockingBundle = createTestBundle(false);
+        var blockingBundle = createTestBundleWithFeedBlock("foo");
+        var blockingBundleWithOtherDesc = createTestBundleWithFeedBlock("bar");
+
+        assertFalse(nonBlockingBundle.similarTo(blockingBundle));
+        assertFalse(blockingBundle.similarTo(nonBlockingBundle));
+        assertTrue(blockingBundle.similarTo(blockingBundle));
+        // We currently consider different descriptions with same blocking status to be similar
+        assertTrue(blockingBundle.similarTo(blockingBundleWithOtherDesc));
+    }
+
+    @Test
+    public void feed_block_state_is_available() {
+        var nonBlockingBundle = createTestBundle(false);
+        var blockingBundle = createTestBundleWithFeedBlock("foo");
+
+        assertFalse(nonBlockingBundle.clusterFeedIsBlocked());
+        assertFalse(nonBlockingBundle.getFeedBlock().isPresent());
+
+        assertTrue(blockingBundle.clusterFeedIsBlocked());
+        var block = blockingBundle.getFeedBlock();
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blockFeedInCluster());
+        assertEquals(block.get().getDescription(), "foo");
+    }
+
+    @Test
     public void toString_without_bucket_space_states_prints_only_baseline_state() {
         ClusterStateBundle bundle = ClusterStateBundle.ofBaselineOnly(
                 annotatedStateOf("distributor:2 storage:2"));
@@ -107,14 +141,24 @@ public class ClusterStateBundleTest {
     }
 
     @Test
+    public void toString_with_feed_blocked_includes_description() {
+        var blockingBundle = createTestBundleWithFeedBlock("bear sleeping on server rack");
+        assertThat(blockingBundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2', " +
+                "default 'distributor:2 storage:2', " +
+                "global 'distributor:2 storage:2', " +
+                "narnia 'distributor:2 .0.s:d storage:2', " +
+                "feed blocked: 'bear sleeping on server rack')"));
+    }
+
+    @Test
     public void toString_without_derived_states_specifies_deferred_activation_iff_set() {
-        var bundle = ClusterStateBundle.ofBaselineOnly(annotatedStateOf("distributor:2 storage:2"), true);
+        var bundle = ClusterStateBundle.ofBaselineOnly(annotatedStateOf("distributor:2 storage:2"), null, true);
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2' (deferred activation))"));
     }
 
     @Test
     public void toString_without_derived_states_does_not_specify_deferred_activation_iff_not_set() {
-        var bundle = ClusterStateBundle.ofBaselineOnly(annotatedStateOf("distributor:2 storage:2"), false);
+        var bundle = ClusterStateBundle.ofBaselineOnly(annotatedStateOf("distributor:2 storage:2"), null, false);
         assertThat(bundle.toString(), equalTo("ClusterStateBundle('distributor:2 storage:2')"));
     }
 
@@ -173,6 +217,13 @@ public class ClusterStateBundleTest {
     @Test
     public void cloning_preserves_true_deferred_activation_flag() {
         var bundle = createTestBundleBuilder(true).deferredActivation(true).deriveAndBuild();
+        var derived = bundle.cloneWithMapper(Function.identity());
+        assertEquals(bundle, derived);
+    }
+
+    @Test
+    public void cloning_preserves_feed_block_state() {
+        var bundle = createTestBundleWithFeedBlock("foo");;
         var derived = bundle.cloneWithMapper(Function.identity());
         assertEquals(bundle, derived);
     }
