@@ -26,9 +26,9 @@ import java.util.logging.Logger;
  * <code>MessageBusDocumentAccess.createVisitorSession</code> method and
  * progress tracked through the resulting visitor session.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
-public class MessageBusVisitorDestinationSession implements VisitorDestinationSession,MessageHandler
+public class MessageBusVisitorDestinationSession implements VisitorDestinationSession, MessageHandler
 {
     private static final Logger log = Logger.getLogger(MessageBusVisitorDestinationSession.class.getName());
 
