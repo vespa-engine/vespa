@@ -16,7 +16,7 @@ import org.w3c.dom.Element;
  *
  * TODO: Author
  */
-public class ClusterControllerConfig extends AbstractConfigProducer implements FleetcontrollerConfig.Producer {
+public class ClusterControllerConfig extends AbstractConfigProducer<ClusterControllerConfig> implements FleetcontrollerConfig.Producer {
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ClusterControllerConfig> {
         String clusterName;
@@ -28,7 +28,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         }
 
         @Override
-        protected ClusterControllerConfig doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected ClusterControllerConfig doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             ModelElement tuning = null;
 
             ModelElement clusterTuning = clusterElement.child("tuning");

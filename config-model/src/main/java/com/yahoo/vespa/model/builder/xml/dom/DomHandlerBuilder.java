@@ -27,15 +27,14 @@ import static java.util.logging.Level.INFO;
 /**
  * @author gjoranv
  */
-public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
+public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler<?>> {
 
     private static final Set<BindingPattern> reservedBindings =
-            Set.of(
-                    METRICS_V2_HANDLER_BINDING_1,
-                    METRICS_V2_HANDLER_BINDING_2,
-                    STATE_HANDLER_BINDING_1,
-                    STATE_HANDLER_BINDING_2,
-                    VIP_HANDLER_BINDING);
+            Set.of(METRICS_V2_HANDLER_BINDING_1,
+                   METRICS_V2_HANDLER_BINDING_2,
+                   STATE_HANDLER_BINDING_1,
+                   STATE_HANDLER_BINDING_2,
+                   VIP_HANDLER_BINDING);
 
     private final ApplicationContainerCluster cluster;
 
@@ -44,7 +43,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
     }
 
     @Override
-    protected Handler doBuild(DeployState deployState, AbstractConfigProducer parent, Element handlerElement) {
+    protected Handler<?> doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element handlerElement) {
         Handler<? super Component<?, ?>> handler = createHandler(handlerElement);
 
         for (Element binding : XML.getChildren(handlerElement, "binding"))

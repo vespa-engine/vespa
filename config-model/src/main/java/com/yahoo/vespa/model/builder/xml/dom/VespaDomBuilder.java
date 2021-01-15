@@ -115,10 +115,10 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * @param <T> an {@link com.yahoo.config.model.producer.AbstractConfigProducer}
      * @author vegardh
      */
-    public static abstract class DomConfigProducerBuilder<T extends AbstractConfigProducer> {
+    public static abstract class DomConfigProducerBuilder<T extends AbstractConfigProducer<?>> {
 
         // TODO: find good way to provide access to app package
-        public final T build(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        public final T build(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             T t = doBuild(deployState, ancestor, producerSpec);
 
             if (t instanceof AbstractService) {
@@ -130,9 +130,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
             return t;
         }
 
-        protected abstract T doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec);
+        protected abstract T doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec);
 
-        private void initializeProducer(AbstractConfigProducer child, DeployState deployState, Element producerSpec) {
+        private void initializeProducer(AbstractConfigProducer<?> child, DeployState deployState, Element producerSpec) {
             UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
@@ -208,16 +208,18 @@ public class VespaDomBuilder extends VespaModelBuilder {
      *
      * @author vegardh
      */
-    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilder<SimpleConfigProducer> {
-        private String configId;
+    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilder<SimpleConfigProducer<?>> {
+
+        private final String configId;
 
         DomSimpleConfigProducerBuilder(String configId) {
             this.configId = configId;
         }
 
         @Override
-        protected SimpleConfigProducer doBuild(DeployState deployState, AbstractConfigProducer parent, Element producerSpec) {
-            return new SimpleConfigProducer(parent, configId);
+        protected SimpleConfigProducer<?> doBuild(DeployState deployState, AbstractConfigProducer<?> parent,
+                                                  Element producerSpec) {
+            return new SimpleConfigProducer<>(parent, configId);
         }
     }
 
@@ -232,7 +234,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         @Override
-        protected ApplicationConfigProducerRoot doBuild(DeployState deployState, AbstractConfigProducer parent, Element producerSpec) {
+        protected ApplicationConfigProducerRoot doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element producerSpec) {
             ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent,
                                                                                    name,
                                                                                    deployState.getDocumentModel(),

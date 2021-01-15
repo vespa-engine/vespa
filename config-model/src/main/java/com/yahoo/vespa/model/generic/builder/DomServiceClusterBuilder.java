@@ -11,18 +11,17 @@ import java.util.Map;
 
 /**
 * @author Ulf Lilleengen
-* @since 5.1
 */
 public class DomServiceClusterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ServiceCluster> {
 
-    private String name;
+    private final String name;
 
     public DomServiceClusterBuilder(String name) {
         this.name = name;
     }
 
     @Override
-    protected ServiceCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
+    protected ServiceCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
         ServiceCluster cluster = new ServiceCluster(ancestor, name, spec.getAttribute("command"));
         int nodeIndex = 0;
         for (Element nodeSpec : XML.getChildren(spec, "node")) {

@@ -39,7 +39,7 @@ import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
  *
  * @author gjoranv
  */
-public class Admin extends AbstractConfigProducer implements Serializable {
+public class Admin extends AbstractConfigProducer<Admin> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

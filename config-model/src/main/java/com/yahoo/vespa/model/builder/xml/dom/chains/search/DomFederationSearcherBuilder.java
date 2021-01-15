@@ -23,10 +23,13 @@ import java.util.Optional;
 
 /**
  * Builds a federation searcher config producer from an element.
+ *
  * @author Tony Vaagenes
  */
 public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Searcher<?>> {
+
     static class FederationSearcherModelBuilder extends GenericChainedComponentModelBuilder {
+
         private final List<FederationSearcherModel.TargetSpec> sources;
         private final boolean inheritDefaultSources;
 
@@ -69,6 +72,7 @@ public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProdu
         protected FederationSearcherModel build() {
             return new FederationSearcherModel(componentId, dependencies, sources, inheritDefaultSources);
         }
+
     }
 
     @Override
@@ -86,4 +90,5 @@ public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProdu
 
         return Optional.of(new DomComponentBuilder(namespace).build(deployState, ancestor, targetSelectorElement));
     }
+
 }

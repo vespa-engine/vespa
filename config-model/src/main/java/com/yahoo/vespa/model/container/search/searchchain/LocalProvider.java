@@ -41,9 +41,6 @@ public class LocalProvider extends Provider implements
         builder.clusterId(searchCluster.getClusterIndex());
         builder.clusterName(searchCluster.getClusterName());
 
-        if (providerSpec.cacheSize != null)
-            builder.cacheSize(providerSpec.cacheSize);
-
         if (searchCluster.getVisibilityDelay() != null)
             builder.cacheTimeout(convertVisibilityDelay(searchCluster.getVisibilityDelay()));
     }
@@ -138,13 +135,6 @@ public class LocalProvider extends Provider implements
     @Override
     public void getConfig(DocumentdbInfoConfig.Builder builder) {
         searchCluster.getConfig(builder);
-    }
-
-    /**
-     * For backward compatibility only, do not use.
-     */
-    public void setCacheSize(Integer cacheSize) {
-        providerSpec.cacheSize = cacheSize;
     }
 
     // The semantics of visibility delay in search is deactivating caches if the

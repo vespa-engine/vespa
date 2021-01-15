@@ -5,8 +5,7 @@ namespace=search.config
 #Note: Use clusterName where possible instead
 clusterId int default=0
 
-#Internal searcher cache. Size is measured in megabytes of raw packet
-#size. Hits larger than 1% of total cache size will not be cached.
+# Not used
 cacheSize int default=1
 
 #Timeout for internal searcher cache. Entries older than this number

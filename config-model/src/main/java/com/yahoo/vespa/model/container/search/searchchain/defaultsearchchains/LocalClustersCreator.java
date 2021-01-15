@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -19,17 +20,18 @@ import java.util.Set;
  * @author Tony Vaagenes
  */
 public class LocalClustersCreator {
+
     static ChainSpecification emptySearchChainSpecification(String componentName) {
-        return new ChainSpecification(
-                new ComponentId(componentName),
-                VespaSearchChainsCreator.inheritsVespaPhases(), //TODO: refactor
-                Collections.<Phase>emptyList(),
-                Collections.<ComponentSpecification>emptySet());
+        return new ChainSpecification(new ComponentId(componentName),
+                                      VespaSearchChainsCreator.inheritsVespaPhases(), //TODO: refactor
+                                      List.of(),
+                                      Set.of());
     }
 
     static LocalProvider createDefaultLocalProvider(String clusterName) {
-        return new LocalProvider(emptySearchChainSpecification(clusterName), new FederationOptions(),
-                new LocalProviderSpec(clusterName, null));
+        return new LocalProvider(emptySearchChainSpecification(clusterName),
+                                 new FederationOptions(),
+                                 new LocalProviderSpec(clusterName));
     }
 
     static Set<String> presentClusters(SearchChains searchChains) {
@@ -48,4 +50,5 @@ public class LocalClustersCreator {
             searchChains.add(createDefaultLocalProvider(clusterName));
         }
     }
+
 }
