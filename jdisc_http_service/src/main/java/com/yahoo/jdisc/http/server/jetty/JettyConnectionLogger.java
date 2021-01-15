@@ -57,14 +57,16 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     //
     @Override
     protected void doStop() {
-        handleListenerInvocation("AbstractLifeCycle", "doStop", "", List.of(), () -> {});
-        log.log(Level.FINE, () -> "Jetty connection logger is stopped");
+        handleListenerInvocation("AbstractLifeCycle", "doStop", "", List.of(), () -> {
+            log.log(Level.FINE, () -> "Jetty connection logger is stopped");
+        });
     }
 
     @Override
     protected void doStart() {
-        handleListenerInvocation("AbstractLifeCycle", "doStart", "", List.of(), () -> {});
-        log.log(Level.FINE, () -> "Jetty connection logger is started");
+        handleListenerInvocation("AbstractLifeCycle", "doStart", "", List.of(), () -> {
+            log.log(Level.FINE, () -> "Jetty connection logger is started");
+        });
     }
     //
     // AbstractLifeCycle methods stop
