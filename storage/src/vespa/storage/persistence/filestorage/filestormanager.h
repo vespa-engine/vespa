@@ -52,9 +52,7 @@ class FileStorManager : public StorageLinkQueued,
 {
     ServiceLayerComponentRegister   & _compReg;
     ServiceLayerComponent             _component;
-    spi::PersistenceProvider        & _providerCore;
-    ProviderErrorWrapper              _providerErrorWrapper;
-    spi::PersistenceProvider        * _provider;
+    ProviderErrorWrapper              _provider;
     DoneInitializeHandler&            _init_handler;
     const document::BucketIdFactory & _bucketIdFactory;
 
@@ -86,10 +84,10 @@ public:
     };
 
     spi::PersistenceProvider& getPersistenceProvider() {
-        return *_provider;
+        return _provider;
     }
     ProviderErrorWrapper& error_wrapper() noexcept {
-        return _providerErrorWrapper;
+        return _provider;
     }
 
     void handleNewState() override;

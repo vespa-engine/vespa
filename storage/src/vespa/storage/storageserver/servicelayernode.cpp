@@ -21,9 +21,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".node.servicelayer");
 
-
-using StorServerConfigBuilder = vespa::config::content::core::StorServerConfigBuilder;
-
 namespace storage {
 
 ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceLayerNodeContext& context,
