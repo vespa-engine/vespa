@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_add_dimension_optimizer.h"
-#include "dense_replace_type_function.h"
+#include "just_replace_type_function.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/wrap_param.h>
 
@@ -20,6 +20,7 @@ bool same_cell_type(const TensorFunction &a, const TensorFunction &b) {
 }
 
 bool is_unit_constant(const TensorFunction &node) {
+    if (! node.result_type().is_dense()) return false;
     if (auto const_value = as<ConstValue>(node)) {
         for (const auto &dim: node.result_type().dimensions()) {
             if (dim.size != 1) {
@@ -39,15 +40,12 @@ DenseAddDimensionOptimizer::optimize(const TensorFunction &expr, Stash &stash)
     if (auto join = as<Join>(expr)) {
         const TensorFunction &lhs = join->lhs();
         const TensorFunction &rhs = join->rhs();
-        if ((join->function() == Mul::f) &&
-            lhs.result_type().is_dense() &&
-            rhs.result_type().is_dense())
-        {
+        if (join->function() == Mul::f) {
             if (is_unit_constant(lhs) && same_cell_type(rhs, expr)) {
-                return DenseReplaceTypeFunction::create_compact(expr.result_type(), rhs, stash);
+                return JustReplaceTypeFunction::create_compact(expr.result_type(), rhs, stash);
             }
             if (is_unit_constant(rhs) && same_cell_type(lhs, expr)) {
-                 return DenseReplaceTypeFunction::create_compact(expr.result_type(), lhs, stash);
+                 return JustReplaceTypeFunction::create_compact(expr.result_type(), lhs, stash);
             }
         }
     }

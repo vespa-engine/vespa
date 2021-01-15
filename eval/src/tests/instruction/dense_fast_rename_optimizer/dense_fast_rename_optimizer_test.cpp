@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/dense_replace_type_function.h>
+#include <vespa/eval/instruction/just_replace_type_function.h>
 #include <vespa/eval/instruction/dense_fast_rename_optimizer.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
@@ -22,6 +22,7 @@ EvalFixture::ParamRepo make_params() {
         .add("x5", spec({x(5)}, N()))
         .add("x5f", spec(float_cells({x(5)}), N()))
         .add("x_m", spec({x({"a", "b", "c"})}, N()))
+        .add("x_mm", spec({x({"a", "b", "c"}),y({"d","e"})}, N()))
         .add("x5y3", spec({x(5),y(3)}, N()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
@@ -29,14 +30,14 @@ EvalFixture::ParamRepo param_repo = make_params();
 void verify_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<DenseReplaceTypeFunction>();
+    auto info = fixture.find_all<JustReplaceTypeFunction>();
     EXPECT_EQUAL(info.size(), 1u);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<DenseReplaceTypeFunction>();
+    auto info = fixture.find_all<JustReplaceTypeFunction>();
     EXPECT_TRUE(info.empty());
 }
 
@@ -59,8 +60,12 @@ TEST("require that transposing dense renames are not optimized") {
     TEST_DO(verify_not_optimized("rename(x5y3,(y,x),(a,b))"));
 }
 
-TEST("require that non-dense renames are not optimized") {
-    TEST_DO(verify_not_optimized("rename(x_m,x,y)"));
+TEST("require that non-dense renames may be optimized") {
+    TEST_DO(verify_optimized("rename(x_m,x,y)"));
+    TEST_DO(verify_optimized("rename(x_mm,(x,y),(a,b))"));
+    TEST_DO(verify_optimized("rename(x_mm,(x,y),(y,z))"));
+    TEST_DO(verify_not_optimized("rename(x_mm,(x,y),(b,a))"));
+    TEST_DO(verify_not_optimized("rename(x_mm,(x,y),(y,x))"));
 }
 
 TEST("require that chained optimized renames are compacted into a single operation") {
