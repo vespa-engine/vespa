@@ -147,8 +147,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     //
     @Override
     public void handshakeSucceeded(Event event) {
-        handleListenerInvocation("SslHandshakeListener", "handshakeSucceeded", "", List.of(), () -> {
-            SSLEngine sslEngine = event.getSSLEngine();
+        SSLEngine sslEngine = event.getSSLEngine();
+        handleListenerInvocation("SslHandshakeListener", "handshakeSucceeded", "sslEngine=%h", List.of(sslEngine), () -> {
             ConnectionInfo info = sslToConnectionInfo.remove(sslEngine);
             info.setSslSessionDetails(sslEngine.getSession());
         });
@@ -156,8 +156,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
     @Override
     public void handshakeFailed(Event event, Throwable failure) {
-        handleListenerInvocation("SslHandshakeListener", "handshakeFailed", "", List.of(), () -> {
-            SSLEngine sslEngine = event.getSSLEngine();
+        SSLEngine sslEngine = event.getSSLEngine();
+        handleListenerInvocation("SslHandshakeListener", "handshakeFailed", "sslEngine=%h", List.of(sslEngine), () -> {
             sslToConnectionInfo.remove(sslEngine);
             // TODO Store details on failed ssl handshake
         });
