@@ -3,12 +3,12 @@ package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
 import ai.vespa.reindexing.ReindexingCurator.ReindexingLockException;
-import com.google.inject.Inject;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
+import com.yahoo.documentapi.VisitorControlHandler.CompletionCode;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.Metric;
@@ -33,7 +33,7 @@ import static java.util.logging.Level.WARNING;
 
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
- * which send documents straight to storage — via indexing if the documenet type has "index" mode.
+ * which send documents straight to storage — via indexing if the document type has "index" mode.
  * The {@link #reindex} method blocks until shutdown is called, or until no more reindexing is left to do.
  *
  * @author jonmv
@@ -172,11 +172,14 @@ public class Reindexer {
         Runnable sessionShutdown = visitorSessions.apply(parameters); // Also starts the visitor session.
         log.log(FINE, () -> "Running reindexing of " + type);
 
-        // Wait until done; or until termination is forced, in which we shut down the visitor session immediately.
+        // Wait until done; or until termination is forced, in which case we shut down the visitor session immediately.
         phaser.arriveAndAwaitAdvance(); // Synchronize with visitor completion.
-        sessionShutdown.run(); // Shutdown aborts the session unless already complete, then waits for it to terminate normally.
+        sessionShutdown.run();  // Shutdown aborts the session unless already complete, then waits for it to terminate normally.
+                                // Only as a last resort will we be interrupted here, and the wait for outstanding replies terminate.
 
-        switch (control.getResult().getCode()) {
+        CompletionCode result = control.getResult() != null ? control.getResult().getCode()
+                                                            : CompletionCode.ABORTED;
+        switch (result) {
             default:
                 log.log(WARNING, "Unexpected visitor result '" + control.getResult().getCode() + "'");
             case FAILURE: // Intentional fallthrough — this is an error.
