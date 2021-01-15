@@ -11,7 +11,7 @@ namespace vespalib::eval {
  * dense tensor.
  * TODO: extend to mixed tensors.
  **/
-struct DenseFastRenameOptimizer {
+struct FastRenameOptimizer {
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 

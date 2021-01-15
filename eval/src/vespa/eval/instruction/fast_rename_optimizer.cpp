@@ -1,6 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dense_fast_rename_optimizer.h"
+#include "fast_rename_optimizer.h"
 #include "just_replace_type_function.h"
 #include <vespa/eval/eval/value.h>
 
@@ -61,7 +61,7 @@ bool is_stable_rename(const ValueType &from_type, const ValueType &to_type,
 } // namespace vespalib::eval::<unnamed>
 
 const TensorFunction &
-DenseFastRenameOptimizer::optimize(const TensorFunction &expr, Stash &stash)
+FastRenameOptimizer::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto rename = as<Rename>(expr)) {
         const ValueType &from_type = rename->child().result_type();

@@ -3,7 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/just_replace_type_function.h>
-#include <vespa/eval/instruction/dense_fast_rename_optimizer.h>
+#include <vespa/eval/instruction/fast_rename_optimizer.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
