@@ -41,7 +41,8 @@ public class ApplicationSerializer {
     private static final String exclusiveKey = "exclusive";
     private static final String minResourcesKey = "min";
     private static final String maxResourcesKey = "max";
-    private static final String suggestedResourcesKey = "suggested";
+    private static final String suggestedKey = "suggested";
+    private static final String resourcesKey = "resources";
     private static final String targetResourcesKey = "target";
     private static final String nodesKey = "nodes";
     private static final String groupsKey = "groups";
@@ -94,7 +95,7 @@ public class ApplicationSerializer {
         clusterObject.setBool(exclusiveKey, cluster.exclusive());
         toSlime(cluster.minResources(), clusterObject.setObject(minResourcesKey));
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
-        cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject(suggestedResourcesKey)));
+        cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject(suggestedKey)));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject(targetResourcesKey)));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray(scalingEventsKey));
         clusterObject.setString(autoscalingStatusKey, cluster.autoscalingStatus());
@@ -105,10 +106,15 @@ public class ApplicationSerializer {
                            clusterObject.field(exclusiveKey).asBool(),
                            clusterResourcesFromSlime(clusterObject.field(minResourcesKey)),
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
-                           optionalClusterResourcesFromSlime(clusterObject.field(suggestedResourcesKey)),
+                           optionalSuggestionFromSlime(clusterObject.field(suggestedKey)),
                            optionalClusterResourcesFromSlime(clusterObject.field(targetResourcesKey)),
                            scalingEventsFromSlime(clusterObject.field(scalingEventsKey)),
                            clusterObject.field(autoscalingStatusKey).asString());
+    }
+
+    private static void toSlime(Cluster.Suggestion suggestion, Cursor suggestionObject) {
+        toSlime(suggestion.resources(), suggestionObject.setObject(resourcesKey));
+        suggestionObject.setLong(atKey, suggestion.at().toEpochMilli());
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -121,6 +127,16 @@ public class ApplicationSerializer {
         return new ClusterResources((int)clusterResourcesObject.field(nodesKey).asLong(),
                                     (int)clusterResourcesObject.field(groupsKey).asLong(),
                                     NodeResourcesSerializer.resourcesFromSlime(clusterResourcesObject.field(nodeResourcesKey)));
+    }
+
+    private static Optional<Cluster.Suggestion> optionalSuggestionFromSlime(Inspector suggestionObject) {
+        if ( ! suggestionObject.valid()) return Optional.empty();
+
+        if (suggestionObject.field(nodesKey).valid()) // TODO: Remove this line and the next after January 2021
+            return Optional.of(new Cluster.Suggestion(clusterResourcesFromSlime(suggestionObject),  Instant.EPOCH));
+
+        return Optional.of(new Cluster.Suggestion(clusterResourcesFromSlime(suggestionObject.field(resourcesKey)),
+                                                  Instant.ofEpochMilli(suggestionObject.field(atKey).asLong())));
     }
 
     private static Optional<ClusterResources> optionalClusterResourcesFromSlime(Inspector clusterResourcesObject) {

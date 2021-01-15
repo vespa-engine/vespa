@@ -67,9 +67,9 @@ public class ScalingSuggestionsMaintainerTest {
         maintainer.maintain();
 
         assertEquals("14 nodes with [vcpu: 6.9, memory: 5.1 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
-                     tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().toString());
+                     tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources().toString());
         assertEquals("8 nodes with [vcpu: 14.7, memory: 4.0 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
-                     tester.nodeRepository().applications().get(app2).get().cluster(cluster2.id()).get().suggestedResources().get().toString());
+                     tester.nodeRepository().applications().get(app2).get().cluster(cluster2.id()).get().suggestedResources().get().resources().toString());
     }
 
     public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId,
