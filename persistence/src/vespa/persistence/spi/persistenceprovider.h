@@ -10,8 +10,6 @@
 #include "selection.h"
 #include "clusterstate.h"
 #include "operationcomplete.h"
-#include "bucketexecutor.h"
-#include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace document { class FieldSet; }
 namespace vespalib { class IDestructorCallback; }
@@ -19,6 +17,8 @@ namespace vespalib { class IDestructorCallback; }
 namespace storage::spi {
 
 class IResourceUsageListener;
+class BucketTask;
+class BucketExecutor;
 
 /**
  * This interface is the basis for a persistence provider in Vespa.  A
@@ -384,7 +384,7 @@ struct PersistenceProvider
      * Register a listener for updates to resource usage.
      * The listener is deregistered when the returned object is destroyed.
      */
-    virtual std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) = 0;
+    [[nodiscard]] virtual std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) = 0;
 
     /**
      * Provides an execute interface that can be used by the provider to execute tasks while bucket guarantees are upheld.

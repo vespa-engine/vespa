@@ -5,6 +5,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace storage::spi {
 
@@ -27,6 +28,12 @@ AbstractPersistenceProvider::getModifiedBuckets(BucketSpace) const
 {
     BucketIdListResult::List list;
     return BucketIdListResult(list);
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+AbstractPersistenceProvider::register_executor(std::shared_ptr<BucketExecutor>)
+{
+    return {};
 }
 
 }
