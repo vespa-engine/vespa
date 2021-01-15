@@ -820,7 +820,7 @@ public class HttpServerTest {
         TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.NEED, overrideModule);
         driver.client().get("/status.html");
         assertTrue(driver.close());
-        Assertions.assertThat(connectionLog.logEntries()).hasSize(2); // For http connection upgraded to https
+        Assertions.assertThat(connectionLog.logEntries()).hasSize(1); // TODO Assert on content
     }
 
     private ContentResponse sendJettyClientRequest(TestDriver testDriver, HttpClient client, Object tag)
