@@ -11,6 +11,8 @@ import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
+import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -18,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -158,6 +161,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private String sslPeerSubject;
         private Date sslPeerNotBefore;
         private Date sslPeerNotAfter;
+        private List<SNIServerName> sslSniServerNames;
 
         AggregatedConnectionInfo(UUID uuid) {
             this.uuid = uuid;
@@ -185,6 +189,10 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             this.sslCipherSuite = session.getCipherSuite();
             this.sslProtocol = session.getProtocol();
             this.sslSessionId = session.getId();
+            if (session instanceof ExtendedSSLSession) {
+                ExtendedSSLSession extendedSession = (ExtendedSSLSession) session;
+                this.sslSniServerNames = extendedSession.getRequestedServerNames();
+            }
             try {
                 this.sslPeerSubject = session.getPeerPrincipal().getName();
                 X509Certificate peerCertificate = (X509Certificate) session.getPeerCertificates()[0];
