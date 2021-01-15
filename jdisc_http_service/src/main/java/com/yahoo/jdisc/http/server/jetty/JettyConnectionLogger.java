@@ -273,7 +273,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             try {
                 this.sslPeerSubject = session.getPeerPrincipal().getName();
                 X509Certificate peerCertificate = (X509Certificate) session.getPeerCertificates()[0];
-                this.sslPeerNotBefore = peerCertificate.getNotAfter();
+                this.sslPeerNotBefore = peerCertificate.getNotBefore();
                 this.sslPeerNotAfter = peerCertificate.getNotAfter();
             } catch (SSLPeerUnverifiedException e) {
                 // Throw if peer is not authenticated (e.g when client auth is disabled)
