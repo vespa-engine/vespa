@@ -38,8 +38,7 @@ public class AllocationOptimizer {
      */
     public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
                                                                     AllocatableClusterResources current,
-                                                                    Limits limits,
-                                                                    boolean exclusive) {
+                                                                    Limits limits) {
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));

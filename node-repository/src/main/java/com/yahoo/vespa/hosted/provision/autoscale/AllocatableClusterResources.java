@@ -139,10 +139,10 @@ public class AllocatableClusterResources {
         boolean exclusive = clusterSpec.isExclusive();
         if ( !clusterSpec.isExclusive() && !nodeRepository.zone().getCloud().dynamicProvisioning()) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
-            NodeResources advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
-            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec.type(), exclusive); // Attempt to ask for something legal
+            var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
+            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec.type(), exclusive); // Ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
-            NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // ... thus, what we really get may change
+            var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) return Optional.empty();
             if (matchesAny(nodeRepository.flavors().getFlavors(), advertisedResources))
                     return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
