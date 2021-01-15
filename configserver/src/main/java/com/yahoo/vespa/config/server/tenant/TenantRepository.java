@@ -27,6 +27,8 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -94,6 +96,7 @@ public class TenantRepository {
     private final ExecutorService zkCacheExecutor;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final FileDistributionFactory fileDistributionFactory;
+    private final FlagSource flagSource;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -108,8 +111,15 @@ public class TenantRepository {
     public TenantRepository(GlobalComponentRegistry componentRegistry,
                             HostRegistry hostRegistry,
                             Curator curator,
-                            Metrics metrics) {
-        this(componentRegistry, hostRegistry, curator, metrics, new StripedExecutor<>(), new FileDistributionFactory(componentRegistry.getConfigserverConfig()));
+                            Metrics metrics,
+                            FlagSource flagSource) {
+        this(componentRegistry,
+             hostRegistry,
+             curator,
+             metrics,
+             new StripedExecutor<>(),
+             new FileDistributionFactory(componentRegistry.getConfigserverConfig()),
+             flagSource);
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -117,7 +127,8 @@ public class TenantRepository {
                             Curator curator,
                             Metrics metrics,
                             StripedExecutor<TenantName> zkWatcherExecutor,
-                            FileDistributionFactory fileDistributionFactory) {
+                            FileDistributionFactory fileDistributionFactory,
+                            FlagSource flagSource) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
@@ -130,6 +141,8 @@ public class TenantRepository {
         this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
         this.zkWatcherExecutor = zkWatcherExecutor;
         this.fileDistributionFactory = fileDistributionFactory;
+        this.flagSource = flagSource;
+
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -173,7 +186,23 @@ public class TenantRepository {
              curator,
              Metrics.createTestMetrics(),
              new StripedExecutor<>(new InThreadExecutorService()),
-             fileDistributionFactory);
+             fileDistributionFactory,
+             new InMemoryFlagSource());
+    }
+
+    // For testing only
+    public TenantRepository(GlobalComponentRegistry componentRegistry,
+                            HostRegistry hostRegistry,
+                            Curator curator,
+                            FileDistributionFactory fileDistributionFactory,
+                            FlagSource flagSource) {
+        this(componentRegistry,
+             hostRegistry,
+             curator,
+             Metrics.createTestMetrics(),
+             new StripedExecutor<>(new InThreadExecutorService()),
+             fileDistributionFactory,
+             flagSource);
     }
 
     private void notifyTenantsLoaded() {
@@ -293,7 +322,7 @@ public class TenantRepository {
                                                               componentRegistry.getStaticConfigDefinitionRepo(),
                                                               curator,
                                                               componentRegistry.getZone(),
-                                                              componentRegistry.getFlagSource(),
+                                                              flagSource,
                                                               componentRegistry.getSecretStore());
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     componentRegistry,
@@ -302,7 +331,8 @@ public class TenantRepository {
                                                                     curator,
                                                                     metrics,
                                                                     zkWatcherExecutor,
-                                                                    permanentApplicationPackage);
+                                                                    permanentApplicationPackage,
+                                                                    flagSource);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

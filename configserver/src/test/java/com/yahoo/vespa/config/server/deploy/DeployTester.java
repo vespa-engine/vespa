@@ -39,6 +39,7 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -296,7 +297,8 @@ public class DeployTester {
                                                                      curator,
                                                                      Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics),
                                                                      new StripedExecutor<>(new InThreadExecutorService()),
-                                                                     new MockFileDistributionFactory(configserverConfig));
+                                                                     new MockFileDistributionFactory(configserverConfig),
+                                                                     new InMemoryFlagSource());
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

@@ -13,7 +13,6 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -34,7 +33,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final ConfigServerDB configServerDB;
-    private final FlagSource flagSource;
     private final SecretStore secretStore;
     private final ExecutorService zkCacheExecutor;
 
@@ -47,7 +45,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            HostProvisionerProvider hostProvisionerProvider,
                                            Zone zone,
                                            ConfigServerDB configServerDB,
-                                           FlagSource flagSource,
                                            SecretStore secretStore) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.rpcServer = rpcServer;
@@ -56,7 +53,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.configServerDB = configServerDB;
-        this.flagSource = flagSource;
         this.secretStore = secretStore;
         this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     }
@@ -87,9 +83,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB; }
-
-    @Override
-    public FlagSource getFlagSource() { return flagSource; }
 
     @Override
     public ExecutorService getZkCacheExecutor() {

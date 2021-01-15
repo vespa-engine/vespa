@@ -14,7 +14,6 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcRequestHandlerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
 import org.junit.Rule;
@@ -59,9 +58,13 @@ public class InjectedGlobalComponentRegistryTest {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
-                new InjectedGlobalComponentRegistry(modelFactoryRegistry, rpcServer, configserverConfig, defRepo,
-                                                    hostProvisionerProvider, zone,
-                                                    new ConfigServerDB(configserverConfig), new InMemoryFlagSource(),
+                new InjectedGlobalComponentRegistry(modelFactoryRegistry,
+                                                    rpcServer,
+                                                    configserverConfig,
+                                                    defRepo,
+                                                    hostProvisionerProvider,
+                                                    zone,
+                                                    new ConfigServerDB(configserverConfig),
                                                     new MockSecretStore());
     }
 

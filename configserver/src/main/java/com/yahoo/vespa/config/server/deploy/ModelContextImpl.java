@@ -230,7 +230,7 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<ApplicationRoles> applicationRoles;
         private final Quota quota;
 
-        private final String jvmGCOPtions;
+        private final String jvmGcOptions;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -260,7 +260,7 @@ public class ModelContextImpl implements ModelContext {
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
 
-            jvmGCOPtions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
+            jvmGcOptions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -315,7 +315,7 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public Quota quota() { return quota; }
 
-        @Override public String jvmGCOptions() { return jvmGCOPtions; }
+        @Override public String jvmGCOptions() { return jvmGcOptions; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

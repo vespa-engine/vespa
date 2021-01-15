@@ -32,6 +32,7 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -121,15 +122,16 @@ public class ApplicationRepositoryTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        InMemoryFlagSource flagSource = new InMemoryFlagSource();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .configServerConfig(configserverConfig)
-                .flagSource(flagSource)
                 .clock(clock)
                 .build();
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
         tenantRepository = new TenantRepository(componentRegistry,
                                                 new HostRegistry(),
-                                                curator);
+                                                curator,
+                                                new MockFileDistributionFactory(configserverConfig),
+                                                flagSource);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);

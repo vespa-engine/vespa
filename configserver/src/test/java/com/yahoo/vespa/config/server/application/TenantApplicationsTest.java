@@ -23,6 +23,7 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.apache.curator.framework.CuratorFramework;
@@ -87,7 +88,8 @@ public class TenantApplicationsTest {
                                                                  curator,
                                                                  Metrics.createTestMetrics(),
                                                                  new StripedExecutor<>(new InThreadExecutorService()),
-                                                                 new MockFileDistributionFactory(configserverConfig));
+                                                                 new MockFileDistributionFactory(configserverConfig),
+                                                                 new InMemoryFlagSource());
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
         applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);

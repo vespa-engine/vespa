@@ -12,8 +12,6 @@ import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
 
 import java.nio.file.Files;
@@ -40,7 +38,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ConfigServerDB configServerDB;
     private final ExecutorService zkCacheExecutor;
     private final SecretStore secretStore;
-    private final FlagSource flagSource;
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                   ConfigserverConfig configserverConfig,
@@ -50,8 +47,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   TenantListener tenantListener,
                                   Zone zone,
                                   Clock clock,
-                                  SecretStore secretStore,
-                                  FlagSource flagSource) {
+                                  SecretStore secretStore) {
         this.configserverConfig = configserverConfig;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
@@ -63,7 +59,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.configServerDB = new ConfigServerDB(configserverConfig);
         this.zkCacheExecutor = new InThreadExecutorService();
         this.secretStore = secretStore;
-        this.flagSource = flagSource;
     }
 
     public static class Builder {
@@ -79,7 +74,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private Optional<Provisioner> hostProvisioner = Optional.empty();
         private Zone zone = Zone.defaultZone();
         private Clock clock = Clock.systemUTC();
-        private FlagSource flagSource = new InMemoryFlagSource();
 
         public Builder configServerConfig(ConfigserverConfig configserverConfig) {
             this.configserverConfig = configserverConfig;
@@ -111,11 +105,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             return this;
         }
 
-        public Builder flagSource(FlagSource flagSource) {
-            this.flagSource = flagSource;
-            return this;
-        }
-
         public Builder configDefinitionRepo(ConfigDefinitionRepo configDefinitionRepo) {
             this.defRepo = configDefinitionRepo;
             return this;
@@ -131,8 +120,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                              tenantListener,
                                              zone,
                                              clock,
-                                             secretStore,
-                                             flagSource);
+                                             secretStore);
         }
     }
 
@@ -158,15 +146,10 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public Clock getClock() { return clock;}
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB;}
-
-    @Override
-    public FlagSource getFlagSource() { return flagSource; }
-
     @Override
     public ExecutorService getZkCacheExecutor() {
         return zkCacheExecutor;
     }
-
     @Override
     public SecretStore getSecretStore() {
         return secretStore;
