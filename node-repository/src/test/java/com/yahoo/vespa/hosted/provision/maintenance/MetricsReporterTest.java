@@ -234,7 +234,7 @@ public class MetricsReporterTest {
         // One node fails
         tester.fail(activeNodes.get(0).hostname());
         metricsReporter.maintain();
-        assertEquals(0.33D, getMetric("nodes.nonActiveFraction", metric, dimensions).doubleValue(), 0.005);
+        assertEquals(0.25D, getMetric("nodes.nonActiveFraction", metric, dimensions).doubleValue(), 0.005);
         assertEquals(3, getMetric("nodes.active", metric, dimensions));
         assertEquals(1, getMetric("nodes.nonActive", metric, dimensions));
 

@@ -101,7 +101,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             if (activeNodes == 0) { // Cluster has been removed
                 nonActiveFraction = 1;
             } else {
-                nonActiveFraction = (double) nonActiveNodes / (double) activeNodes;
+                nonActiveFraction = (double) nonActiveNodes / ((double) activeNodes + (double) nonActiveNodes);
             }
             Metric.Context context = getContext(dimensions(clusterKey.application, clusterKey.cluster));
             metric.set("nodes.active", activeNodes, context);
