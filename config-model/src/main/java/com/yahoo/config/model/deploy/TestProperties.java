@@ -72,7 +72,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
-    @Override public boolean useDirectStorageApiRpc() { return true; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
     @Override public String responseSequencerType() { return responseSequencerType; }
