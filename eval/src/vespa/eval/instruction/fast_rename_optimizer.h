@@ -7,9 +7,7 @@
 namespace vespalib::eval {
 
 /**
- * Tensor function optimizer for efficient non-transposing rename of a
- * dense tensor.
- * TODO: extend to mixed tensors.
+ * Tensor function optimizer for efficient non-transposing renames.
  **/
 struct FastRenameOptimizer {
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
