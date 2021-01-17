@@ -83,21 +83,16 @@ VisitorManagerTest::initializeTest()
     vdstestlib::DirConfig config(getStandardConfig(true));
     config.getConfig("stor-visitor").set("visitorthreads", "1");
 
-    _messageSessionFactory.reset(
-            new TestVisitorMessageSessionFactory(config.getConfigId()));
-    _node.reset(
-            new TestServiceLayerApp(config.getConfigId()));
+    _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>(config.getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(config.getConfigId());
     _node->setupDummyPersistence();
-    _node->getStateUpdater().setClusterState(
-            lib::ClusterState::CSP(
-                    new lib::ClusterState("storage:1 distributor:1")));
-    _top.reset(new DummyStorageLink());
-    _top->push_back(std::unique_ptr<StorageLink>(_manager
-            = new VisitorManager(
-                config.getConfigId(), _node->getComponentRegister(),
-                *_messageSessionFactory)));
-    _top->push_back(std::unique_ptr<StorageLink>(new FileStorManager(
-            config.getConfigId(), _node->getPersistenceProvider(), _node->getComponentRegister(), *_node)));
+    _node->getStateUpdater().setClusterState(std::make_shared<lib::ClusterState>("storage:1 distributor:1"));
+    _top = std::make_unique<DummyStorageLink>();
+    auto vm = std::make_unique<VisitorManager>(config.getConfigId(), _node->getComponentRegister(), *_messageSessionFactory);
+    _manager = vm.get();
+    _top->push_back(std::move(vm));
+    _top->push_back(std::make_unique<FileStorManager>(config.getConfigId(), _node->getPersistenceProvider(),
+                                                      _node->getComponentRegister(), *_node));
     _manager->setTimeBetweenTicks(10);
     _top->open();
 
