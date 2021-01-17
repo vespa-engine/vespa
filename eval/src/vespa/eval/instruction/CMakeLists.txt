@@ -2,7 +2,7 @@
 
 vespa_add_library(eval_instruction OBJECT
     SOURCES
-    dense_add_dimension_optimizer.cpp
+    add_trivial_dimension_optimizer.cpp
     dense_cell_range_function.cpp
     dense_dot_product_function.cpp
     dense_lambda_peek_function.cpp
@@ -10,7 +10,7 @@ vespa_add_library(eval_instruction OBJECT
     dense_matmul_function.cpp
     dense_multi_matmul_function.cpp
     dense_pow_as_map_optimizer.cpp
-    dense_remove_dimension_optimizer.cpp
+    remove_trivial_dimension_optimizer.cpp
     dense_simple_expand_function.cpp
     dense_simple_join_function.cpp
     dense_simple_map_function.cpp

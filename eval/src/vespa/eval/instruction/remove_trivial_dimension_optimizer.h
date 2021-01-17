@@ -11,7 +11,7 @@ namespace vespalib::eval {
  * size 1 for dense tensors.
  * TODO: extend to mixed tensors.
  **/
-struct DenseRemoveDimensionOptimizer {
+struct RemoveTrivialDimensionOptimizer {
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
