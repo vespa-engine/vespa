@@ -494,7 +494,6 @@ struct MyStorageConfig
             stor_server.rootFolder = "storage";
         }
         make_slobroks_config(slobroks, slobrok_port);
-        stor_communicationmanager.useDirectStorageapiRpc = true;
         stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
         stor_communicationmanager.rpc.eventsBeforeWakeup = params.get_rpc_events_before_wakup();
         stor_communicationmanager.rpc.numTargetsPerNode = params.get_rpc_targets_per_node();
