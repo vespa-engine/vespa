@@ -8,8 +8,7 @@ namespace vespalib::eval {
 
 /**
  * Tensor function optimizer for efficient adding of dimensions with
- * size 1 for dense tensors.
- * TODO: extend to mixed tensors.
+ * known size 1.
  **/
 struct AddTrivialDimensionOptimizer {
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);

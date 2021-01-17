@@ -36,8 +36,8 @@ JustReplaceTypeFunction::compile_self(const ValueBuilderFactory &, Stash &) cons
 
 const JustReplaceTypeFunction &
 JustReplaceTypeFunction::create_compact(const ValueType &result_type,
-                                         const TensorFunction &child,
-                                         Stash &stash)
+                                        const TensorFunction &child,
+                                        Stash &stash)
 {
     if (auto replace = as<JustReplaceTypeFunction>(child)) {
         return stash.create<JustReplaceTypeFunction>(result_type, replace->child());

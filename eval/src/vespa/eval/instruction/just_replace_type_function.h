@@ -7,21 +7,19 @@
 namespace vespalib::eval {
 
 /**
- * Tensor function for efficient type-only modification of dense
- * tensor.
- * TODO: extend to handling any tensor, dense/mixed/sparse.
+ * Tensor function for efficient type-only modification of values.
  **/
 class JustReplaceTypeFunction : public tensor_function::Op1
 {
 public:
     JustReplaceTypeFunction(const ValueType &result_type,
-                             const TensorFunction &child);
+                            const TensorFunction &child);
     ~JustReplaceTypeFunction();
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return child().result_is_mutable(); }
     static const JustReplaceTypeFunction &create_compact(const ValueType &result_type,
-            const TensorFunction &child,
-            Stash &stash);
+                                                         const TensorFunction &child,
+                                                         Stash &stash);
 };
 
 } // namespace vespalib::eval
