@@ -1,6 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dense_add_dimension_optimizer.h"
+#include "add_trivial_dimension_optimizer.h"
 #include "just_replace_type_function.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/wrap_param.h>
@@ -35,7 +35,7 @@ bool is_unit_constant(const TensorFunction &node) {
 } // namespace vespalib::eval::<unnamed>
 
 const TensorFunction &
-DenseAddDimensionOptimizer::optimize(const TensorFunction &expr, Stash &stash)
+AddTrivialDimensionOptimizer::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto join = as<Join>(expr)) {
         const TensorFunction &lhs = join->lhs();
