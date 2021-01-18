@@ -20,6 +20,7 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <thread>
 
@@ -32,10 +33,30 @@ using vespalib::make_string_short::fmt;
 
 namespace {
 
-VESPA_THREAD_STACK_TAG(response_executor)
+    VESPA_THREAD_STACK_TAG(response_executor)
 
 }
+
 namespace storage {
+namespace {
+
+class BucketExecutorWrapper : public spi::BucketExecutor {
+public:
+    BucketExecutorWrapper(spi::BucketExecutor & executor) noexcept : _executor(executor) { }
+
+    std::unique_ptr<spi::BucketTask> execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) override {
+        return _executor.execute(bucket, std::move(task));
+    }
+
+    void sync() override {
+        _executor.sync();
+    }
+
+private:
+    spi::BucketExecutor & _executor;
+};
+
+}
 
 FileStorManager::
 FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
@@ -183,6 +204,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
             _threads.push_back(std::make_unique<PersistenceThread>(createRegisteredHandler(_component),
                                                                    *_filestorHandler, i % numStripes, _component));
         }
+        _bucketExecutorRegistration = _provider->register_executor(std::make_shared<BucketExecutorWrapper>(*this));
     }
 }
 
@@ -944,6 +966,16 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
 
     update_reported_state_after_db_init();
     _init_handler.notifyDoneInitializing();
+}
+
+std::unique_ptr<spi::BucketTask>
+FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) {
+    (void) bucket;
+    return task;
+}
+
+void
+FileStorManager::sync() {
 }
 
 } // storage

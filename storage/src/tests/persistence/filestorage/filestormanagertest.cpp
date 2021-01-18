@@ -238,14 +238,14 @@ struct TestFileStorComponents {
     DummyStorageLink top;
     FileStorManager* manager;
 
-    explicit TestFileStorComponents(FileStorTestBase& test,
-                                    bool use_small_config = false)
-        : manager(new FileStorManager((use_small_config ? test.smallConfig : test.config)->getConfigId(),
-                                      test._node->getPersistenceProvider(),
-                                      test._node->getComponentRegister(),
-                                      *test._node))
+    explicit TestFileStorComponents(FileStorTestBase& test, bool use_small_config = false)
+        : manager(nullptr)
     {
-        top.push_back(unique_ptr<StorageLink>(manager));
+        auto fsm = std::make_unique<FileStorManager>((use_small_config ? test.smallConfig : test.config)->getConfigId(),
+                                                     test._node->getPersistenceProvider(),
+                                                     test._node->getComponentRegister(), *test._node);
+        manager = fsm.get();
+        top.push_back(std::move(fsm));
         top.open();
     }
 };
