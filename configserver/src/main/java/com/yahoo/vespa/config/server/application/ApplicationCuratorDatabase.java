@@ -73,12 +73,12 @@ public class ApplicationCuratorDatabase {
     /**
      * Creates a node for the given application, marking its existence.
      */
-    public void createApplication(ApplicationId id, Instant now) {
+    public void createApplication(ApplicationId id) {
         if ( ! id.tenant().equals(tenant))
             throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
         try (Lock lock = lock(id)) {
             curator.create(applicationPath(id));
-            modifyReindexing(id, ApplicationReindexing.ready(now), UnaryOperator.identity());
+            modifyReindexing(id, ApplicationReindexing.empty(), UnaryOperator.identity());
         }
     }
 
@@ -158,7 +158,6 @@ public class ApplicationCuratorDatabase {
 
     private static class ReindexingStatusSerializer {
 
-        private static final String COMMON = "common";
         private static final String ENABLED = "enabled";
         private static final String CLUSTERS = "clusters";
         private static final String PENDING = "pending";
@@ -171,13 +170,11 @@ public class ApplicationCuratorDatabase {
         private static byte[] toBytes(ApplicationReindexing reindexing) {
             Cursor root = new Slime().setObject();
             root.setBool(ENABLED, reindexing.enabled());
-            setStatus(root.setObject(COMMON), reindexing.common());
 
             Cursor clustersArray = root.setArray(CLUSTERS);
             reindexing.clusters().forEach((name, cluster) -> {
                 Cursor clusterObject = clustersArray.addObject();
                 clusterObject.setString(NAME, name);
-                setStatus(clusterObject.setObject(COMMON), cluster.common());
 
                 Cursor pendingArray = clusterObject.setArray(PENDING);
                 cluster.pending().forEach((type, generation) -> {
@@ -203,15 +200,13 @@ public class ApplicationCuratorDatabase {
         private static ApplicationReindexing fromBytes(byte[] data) {
             Cursor root = SlimeUtils.jsonToSlimeOrThrow(data).get();
             return new ApplicationReindexing(root.field(ENABLED).valid() ? root.field(ENABLED).asBool() : true,
-                                             getStatus(root.field(COMMON)),
                                              SlimeUtils.entriesStream(root.field(CLUSTERS))
                                                        .collect(toUnmodifiableMap(object -> object.field(NAME).asString(),
                                                                                   object -> getCluster(object))));
         }
 
         private static Cluster getCluster(Inspector object) {
-            return new Cluster(getStatus(object.field(COMMON)),
-                               SlimeUtils.entriesStream(object.field(PENDING))
+            return new Cluster(SlimeUtils.entriesStream(object.field(PENDING))
                                          .collect(toUnmodifiableMap(entry -> entry.field(TYPE).asString(),
                                                                     entry -> entry.field(GENERATION).asLong())),
                                SlimeUtils.entriesStream(object.field(READY))

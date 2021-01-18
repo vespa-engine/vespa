@@ -20,44 +20,36 @@ public class ApplicationReindexingTest {
 
     @Test
     public void test() {
-        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.EPOCH)
-                                                                .withReady(Instant.ofEpochMilli(1 << 20))
+        ApplicationReindexing reindexing = ApplicationReindexing.empty()
                                                                 .withPending("one", "a", 10)
                                                                 .withReady("two", "b", Instant.ofEpochMilli(2))
                                                                 .withPending("two", "b", 20)
-                                                                .withReady("two", Instant.ofEpochMilli(2 << 10))
                                                                 .withReady("one", "a", Instant.ofEpochMilli(1))
-                                                                .withReady("two", "c", Instant.ofEpochMilli(3))
+                                                                .withReady("two", "a", Instant.ofEpochMilli(3))
                                                                 .withoutPending("one", "a");
 
-        // Document is most specific, and is used.
         assertEquals(Instant.ofEpochMilli(1),
                      reindexing.status("one", "a").orElseThrow().ready());
+        assertEquals(Optional.empty(),
+                     reindexing.status("one", "b"));
 
-        // Cluster is most specific, and inherits application's common status.
-        assertEquals(Instant.ofEpochMilli(1 << 20),
-                     reindexing.status("one", "d").orElseThrow().ready());
-
-        // Cluster is most specific, and has its own status set.
-        assertEquals(Instant.ofEpochMilli(2 << 10),
-                     reindexing.status("two", "d").orElseThrow().ready());
-
-        // Application is most specific, as cluster and documeent are unknown.
-        assertEquals(Instant.ofEpochMilli(1 << 20),
-                     reindexing.status("three", "a").orElseThrow().ready());
-
-        // Cluster is most specific, and is used, also when pending reindexing exists for document.
-        assertEquals(Instant.ofEpochMilli(2 << 10),
+        assertEquals(Instant.ofEpochMilli(2),
                      reindexing.status("two", "b").orElseThrow().ready());
+        assertEquals(Instant.ofEpochMilli(3),
+                     reindexing.status("two", "a").orElseThrow().ready());
 
-        assertEquals(new Status(Instant.ofEpochMilli(1 << 20)),
-                     reindexing.common());
+        assertEquals(Optional.empty(),
+                     reindexing.status("three", "a"));
 
+        // Remove "a" in "one", and "one" entirely.
+        assertEquals(Optional.empty(),
+                     reindexing.without("one", "a").status("one", "a"));
+        assertEquals(Optional.empty(),
+                     reindexing.without("one").status("one", "a"));
+
+        // Verify content of "reindexing".
         assertEquals(Set.of("one", "two"),
                      reindexing.clusters().keySet());
-
-        assertEquals(new Status(Instant.ofEpochMilli(1 << 20)),
-                     reindexing.clusters().get("one").common());
 
         assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(1))),
                      reindexing.clusters().get("one").ready());
@@ -65,10 +57,8 @@ public class ApplicationReindexingTest {
         assertEquals(Map.of(),
                      reindexing.clusters().get("one").pending());
 
-        assertEquals(new Status(Instant.ofEpochMilli(2 << 10)),
-                     reindexing.clusters().get("two").common());
-
-        assertEquals(Map.of("c", new Status(Instant.ofEpochMilli(3))),
+        assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(3)),
+                            "b", new Status(Instant.ofEpochMilli(2))),
                      reindexing.clusters().get("two").ready());
 
         assertEquals(Map.of("b", 20L),

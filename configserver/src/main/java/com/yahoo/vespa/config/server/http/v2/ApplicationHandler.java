@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostFilter;
@@ -18,7 +19,6 @@ import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.slime.Cursor;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.http.ContentHandler;
@@ -28,7 +28,6 @@ import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.model.VespaModel;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -231,12 +230,17 @@ public class ApplicationHandler extends HttpHandler {
         throw new NotFoundException("Illegal POST request '" + request.getUri() + "'");
     }
 
+    private Model getActiveModelOrThrow(ApplicationId id) {
+        return applicationRepository.getActiveApplicationSet(id)
+                                    .orElseThrow(() -> new NotFoundException("Application '" + id + "' not found"))
+                                    .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant())
+                .getModel();
+    }
+
     private HttpResponse triggerReindexing(HttpRequest request, ApplicationId applicationId) {
-        Application application = applicationRepository.getActiveApplicationSet(applicationId)
-                                                       .orElseThrow(() -> new NotFoundException(applicationId + " not found"))
-                                                       .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant());
-        Map<String, Set<String>> documentTypes = application.getModel().documentTypesByCluster();
-        Map<String, Set<String>> indexedDocumentTypes = application.getModel().indexedDocumentTypesByCluster();
+        Model model = getActiveModelOrThrow(applicationId);
+        Map<String, Set<String>> documentTypes = model.documentTypesByCluster();
+        Map<String, Set<String>> indexedDocumentTypes = model.indexedDocumentTypesByCluster();
 
         boolean indexedOnly = request.getBooleanProperty("indexedOnly");
         Set<String> clusters = StringUtilities.split(request.getProperty("clusterId"));
@@ -279,9 +283,8 @@ public class ApplicationHandler extends HttpHandler {
         if (tenant == null)
             throw new NotFoundException("Tenant '" + applicationId.tenant().value() + "' not found");
 
-        return new ReindexingResponse(tenant.getApplicationRepo().database()
-                                            .readReindexingStatus(applicationId)
-                                            .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + applicationId)),
+        return new ReindexingResponse(getActiveModelOrThrow(applicationId).documentTypesByCluster(),
+                                      applicationRepository.getReindexing(applicationId),
                                       applicationRepository.getClusterReindexingStatus(applicationId));
     }
 
@@ -471,33 +474,33 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     static class ReindexingResponse extends JSONResponse {
-        ReindexingResponse(ApplicationReindexing reindexing, Map<String, ClusterReindexing> clusters) {
+        ReindexingResponse(Map<String, Set<String>> documentTypes, ApplicationReindexing reindexing,
+                           Map<String, ClusterReindexing> clusters) {
             super(Response.Status.OK);
             object.setBool("enabled", reindexing.enabled());
             Cursor clustersObject = object.setObject("clusters");
-            Stream<String> clusterNames = Stream.concat(clusters.keySet().stream(), reindexing.clusters().keySet().stream());
-            clusterNames.sorted()
-                        .forEach(clusterName -> {
-                            Cursor clusterObject = clustersObject.setObject(clusterName);
-                            Cursor pendingObject = clusterObject.setObject("pending");
-                            Cursor readyObject = clusterObject.setObject("ready");
+            documentTypes.forEach((cluster, types) -> {
+                Cursor clusterObject = clustersObject.setObject(cluster);
+                Cursor pendingObject = clusterObject.setObject("pending");
+                Cursor readyObject = clusterObject.setObject("ready");
 
-                            Map<String, Cursor> statuses = new HashMap<>();
-                            if (reindexing.clusters().containsKey(clusterName)) {
-                                reindexing.clusters().get(clusterName).pending().entrySet().stream().sorted(comparingByKey())
-                                          .forEach(pending -> pendingObject.setLong(pending.getKey(), pending.getValue()));
+                for (String type : types) {
+                    Cursor statusObject = readyObject.setObject(type);
+                    if (reindexing.clusters().containsKey(cluster)) {
+                        if (reindexing.clusters().get(cluster).pending().containsKey(type))
+                            pendingObject.setLong(type, reindexing.clusters().get(cluster).pending().get(type));
 
-                                reindexing.clusters().get(clusterName).ready().entrySet().stream().sorted(comparingByKey())
-                                          .forEach(ready -> setStatus(statuses.computeIfAbsent(ready.getKey(), readyObject::setObject), ready.getValue()));
-                            }
-                            if (clusters.containsKey(clusterName))
-                                clusters.get(clusterName).documentTypeStatus().entrySet().stream().sorted(comparingByKey())
-                                        .forEach(status -> setStatus(statuses.computeIfAbsent(status.getKey(), readyObject::setObject), status.getValue()));
-
-                        });
+                        if (reindexing.clusters().get(cluster).ready().containsKey(type))
+                            setStatus(statusObject, reindexing.clusters().get(cluster).ready().get(type));
+                    }
+                    if (clusters.containsKey(cluster))
+                        if (clusters.get(cluster).documentTypeStatus().containsKey(type))
+                            setStatus(statusObject, clusters.get(cluster).documentTypeStatus().get(type));
+                }
+            });
         }
 
-        private static void setStatus(Cursor object, ApplicationReindexing.Status readyStatus) {
+    private static void setStatus(Cursor object, ApplicationReindexing.Status readyStatus) {
             object.setLong("readyMillis", readyStatus.ready().toEpochMilli());
         }
 
