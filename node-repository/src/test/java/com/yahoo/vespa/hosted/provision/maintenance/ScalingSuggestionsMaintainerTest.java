@@ -70,6 +70,21 @@ public class ScalingSuggestionsMaintainerTest {
                      tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources().toString());
         assertEquals("8 nodes with [vcpu: 14.7, memory: 4.0 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
                      tester.nodeRepository().applications().get(app2).get().cluster(cluster2.id()).get().suggestedResources().get().resources().toString());
+
+        // Utilization goes way down
+        tester.clock().advance(Duration.ofHours(13));
+        addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        maintainer.maintain();
+        assertEquals("Suggestion stays at the peak value observed",
+                     "14 nodes with [vcpu: 6.9, memory: 5.1 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
+                     tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources().toString());
+        // Utilization is still way down and a week has passed
+        tester.clock().advance(Duration.ofDays(7));
+        addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        maintainer.maintain();
+        assertEquals("Peak suggestion has been  outdated",
+                     "6 nodes with [vcpu: 2.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
+                     tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources().toString());
     }
 
     public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId,

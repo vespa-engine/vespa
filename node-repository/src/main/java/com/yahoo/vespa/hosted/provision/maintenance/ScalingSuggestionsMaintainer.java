@@ -85,7 +85,16 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
         var at = nodeRepository().clock().instant();
-        applications().put(application.with(cluster.get().withSuggested(suggestion.map(s -> new Cluster.Suggestion(s,  at)))), lock);
+        var currentSuggestion = cluster.get().suggestedResources();
+        if (currentSuggestion.isEmpty()
+            || currentSuggestion.get().at().isBefore(at.minus(Duration.ofDays(7)))
+            || suggestion.isPresent() && isHigher(suggestion.get(), currentSuggestion.get().resources()))
+            applications().put(application.with(cluster.get().withSuggested(suggestion.map(s -> new Cluster.Suggestion(s,  at)))), lock);
+    }
+
+    private boolean isHigher(ClusterResources r1, ClusterResources r2) {
+        // Use cost as a measure of "highness" over multiple dimensions
+        return r1.totalResources().cost() > r2.totalResources().cost();
     }
 
     private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {
