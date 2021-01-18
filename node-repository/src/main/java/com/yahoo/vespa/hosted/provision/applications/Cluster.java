@@ -24,7 +24,7 @@ public class Cluster {
     private final ClusterSpec.Id id;
     private final boolean exclusive;
     private final ClusterResources min, max;
-    private final Optional<ClusterResources> suggested;
+    private final Optional<Suggestion> suggested;
     private final Optional<ClusterResources> target;
 
     /** The maxScalingEvents last scaling events of this, sorted by increasing time (newest last) */
@@ -35,7 +35,7 @@ public class Cluster {
                    boolean exclusive,
                    ClusterResources minResources,
                    ClusterResources maxResources,
-                   Optional<ClusterResources> suggestedResources,
+                   Optional<Suggestion> suggestedResources,
                    Optional<ClusterResources> targetResources,
                    List<ScalingEvent> scalingEvents,
                    String autoscalingStatus) {
@@ -75,7 +75,7 @@ public class Cluster {
      * The suggested size of this cluster, which may or may not be within the min and max limits,
      * or empty if there is currently no suggestion.
      */
-    public Optional<ClusterResources> suggestedResources() { return suggested; }
+    public Optional<Suggestion> suggestedResources() { return suggested; }
 
     /** Returns the recent scaling events in this cluster */
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
@@ -92,7 +92,7 @@ public class Cluster {
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
-    public Cluster withSuggested(Optional<ClusterResources> suggested) {
+    public Cluster withSuggested(Optional<Suggestion> suggested) {
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
@@ -144,6 +144,43 @@ public class Cluster {
                 return i;
         }
         return -1;
+    }
+
+    public static class Suggestion {
+
+        private final ClusterResources resources;
+        private final Instant at;
+
+        public Suggestion(ClusterResources resources, Instant at) {
+            this.resources = resources;
+            this.at = at;
+        }
+
+        /** Returns the suggested resources */
+        public ClusterResources resources() { return resources; }
+
+        /** Returns the instant this suggestion was made */
+        public Instant at() { return at; }
+
+        @Override
+        public String toString() {
+            return "suggestion made at " + at + ": " + resources;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(resources, at);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! (o instanceof Suggestion)) return false;
+            Suggestion other = (Suggestion)o;
+            if ( ! this.at.equals(other.at)) return false;
+            if ( ! this.resources.equals(other.resources)) return false;
+            return true;
+        }
+
     }
 
 }
