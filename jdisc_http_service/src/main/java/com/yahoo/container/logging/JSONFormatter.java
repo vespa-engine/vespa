@@ -33,15 +33,12 @@ public class JSONFormatter {
     private static final String COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT = "adaptive-timeout";
     private static final String COVERAGE_DEGRADED_NON_IDEAL_STATE = "non-ideal-state";
 
-    private AccessLogEntry accessLogEntry;
     private final JsonFactory generatorFactory;
 
     private static Logger logger = Logger.getLogger(JSONFormatter.class.getName());
 
-    public JSONFormatter(final AccessLogEntry entry) {
-        accessLogEntry = entry;
-        generatorFactory = new JsonFactory();
-        generatorFactory.setCodec(new ObjectMapper());
+    public JSONFormatter() {
+        generatorFactory = new JsonFactory(new ObjectMapper());
     }
 
     /**
@@ -49,7 +46,7 @@ public class JSONFormatter {
      *
      * @return The Vespa JSON access log string without trailing newline
      */
-    public String format() {
+    public String format(AccessLogEntry accessLogEntry) {
         ByteArrayOutputStream logLine = new ByteArrayOutputStream();
         try {
             JsonGenerator generator = generatorFactory.createGenerator(logLine, JsonEncoding.UTF8);
