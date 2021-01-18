@@ -34,9 +34,9 @@ public class HostRegistry implements HostValidator<ApplicationId> {
     public synchronized void update(ApplicationId key, Collection<String> newHosts) {
         verifyHosts(key, newHosts);
         Collection<String> currentHosts = getHostsForKey(key);
-        log.log(Level.INFO, () -> "Setting hosts for key '" + key + "', " +
-                "newHosts: " + newHosts + ", " +
-                "currentHosts: " + currentHosts);
+        log.log(Level.FINE, () -> "Setting hosts for key '" + key + "', " +
+                                  "newHosts: " + newHosts + ", " +
+                                  "currentHosts: " + currentHosts);
         Collection<String> removedHosts = getRemovedHosts(newHosts, currentHosts);
         removeHosts(removedHosts);
         addHosts(key, newHosts);
