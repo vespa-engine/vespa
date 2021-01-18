@@ -91,10 +91,13 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 info = ConnectionInfo.from(endpoint);
                 connectionInfo.put(endpoint, info);
             }
-            // TODO Store details on proxy-protocol
             if (connection instanceof SslConnection) {
                 SSLEngine sslEngine = ((SslConnection) connection).getSSLEngine();
                 sslToConnectionInfo.put(sslEngine, info);
+            }
+            if (connection.getEndPoint() instanceof ProxyConnectionFactory.ProxyEndPoint) {
+                InetSocketAddress remoteAddress = connection.getEndPoint().getRemoteAddress();
+                info.setRemoteAddress(remoteAddress);
             }
         });
     }
@@ -211,6 +214,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private long httpBytesSent = 0;
         private long requests = 0;
         private long responses = 0;
+        private InetSocketAddress remoteAddress;
         private byte[] sslSessionId;
         private String sslProtocol;
         private String sslCipherSuite;
@@ -253,6 +257,11 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         synchronized ConnectionInfo incrementRequests() { ++this.requests; return this; }
 
         synchronized ConnectionInfo incrementResponses() { ++this.responses; return this; }
+
+        synchronized ConnectionInfo setRemoteAddress(InetSocketAddress remoteAddress) {
+            this.remoteAddress = remoteAddress;
+            return this;
+        }
 
         synchronized ConnectionInfo setSslSessionDetails(SSLSession session) {
             this.sslCipherSuite = session.getCipherSuite();
@@ -307,6 +316,10 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             if (localAddress != null) {
                 builder.withLocalAddress(localAddress.getHostString())
                         .withLocalPort(localAddress.getPort());
+            }
+            if (remoteAddress != null) {
+                builder.withRemoteAddress(remoteAddress.getHostString())
+                        .withRemotePort(remoteAddress.getPort());
             }
             if (sslProtocol != null && sslCipherSuite != null && sslSessionId != null) {
                 builder.withSslProtocol(sslProtocol)

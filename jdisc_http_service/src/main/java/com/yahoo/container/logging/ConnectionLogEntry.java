@@ -24,6 +24,8 @@ public class ConnectionLogEntry {
     private final Integer peerPort;
     private final String localAddress;
     private final Integer localPort;
+    private final String remoteAddress;
+    private final Integer remotePort;
     private final Long httpBytesReceived;
     private final Long httpBytesSent;
     private final Long requests;
@@ -48,6 +50,8 @@ public class ConnectionLogEntry {
         this.peerPort = builder.peerPort;
         this.localAddress = builder.localAddress;
         this.localPort = builder.localPort;
+        this.remoteAddress = builder.remoteAddress;
+        this.remotePort = builder.remotePort;
         this.httpBytesReceived = builder.httpBytesReceived;
         this.httpBytesSent = builder.httpBytesSent;
         this.requests = builder.requests;
@@ -75,6 +79,8 @@ public class ConnectionLogEntry {
         setInteger(cursor, peerPort, "peerPort");
         setString(cursor, localAddress, "localAddress");
         setInteger(cursor, localPort, "localPort");
+        setString(cursor, remoteAddress, "remoteAddress");
+        setInteger(cursor, remotePort, "remotePort");
         setLong(cursor, httpBytesReceived, "httpBytesReceived");
         setLong(cursor, httpBytesSent, "httpBytesSent");
         setLong(cursor, requests, "requests");
@@ -147,6 +153,8 @@ public class ConnectionLogEntry {
         private Integer peerPort;
         private String localAddress;
         private Integer localPort;
+        private String remoteAddress;
+        private Integer remotePort;
         private Long httpBytesReceived;
         private Long httpBytesSent;
         private Long requests;
@@ -187,6 +195,14 @@ public class ConnectionLogEntry {
         }
         public Builder withLocalPort(int localPort) {
             this.localPort = localPort;
+            return this;
+        }
+        public Builder withRemoteAddress(String remoteAddress) {
+            this.remoteAddress = remoteAddress;
+            return this;
+        }
+        public Builder withRemotePort(int remotePort) {
+            this.remotePort = remotePort;
             return this;
         }
         public Builder withHttpBytesReceived(long bytesReceived) {
