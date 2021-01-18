@@ -56,7 +56,7 @@ vespa_define_module(
     src/tests/instruction/add_trivial_dimension_optimizer
     src/tests/instruction/fast_rename_optimizer
     src/tests/instruction/dense_inplace_join_function
-    src/tests/instruction/dense_pow_as_map_optimizer
+    src/tests/instruction/pow_as_map_optimizer
     src/tests/instruction/remove_trivial_dimension_optimizer
     src/tests/instruction/dense_replace_type_function
     src/tests/instruction/dense_simple_join_function

@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dense_pow_as_map_optimizer.h"
+#include "pow_as_map_optimizer.h"
 #include "dense_simple_map_function.h"
 #include <vespa/eval/eval/operation.h>
 
@@ -10,14 +10,13 @@ using namespace tensor_function;
 using namespace operation;
 
 const TensorFunction &
-DensePowAsMapOptimizer::optimize(const TensorFunction &expr, Stash &stash)
+PowAsMapOptimizer::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto join = as<Join>(expr)) {
         const TensorFunction &lhs = join->lhs();
         const TensorFunction &rhs = join->rhs();
         if ((join->function() == Pow::f) &&
-            lhs.result_type().is_dense() &&
-            rhs.result_type().is_double())
+            rhs.result_type().is_scalar())
         {
             if (auto const_value = as<ConstValue>(rhs)) {
                 if (const_value->value().as_double() == 2.0) {

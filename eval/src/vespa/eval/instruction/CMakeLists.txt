@@ -9,7 +9,7 @@ vespa_add_library(eval_instruction OBJECT
     dense_lambda_peek_optimizer.cpp
     dense_matmul_function.cpp
     dense_multi_matmul_function.cpp
-    dense_pow_as_map_optimizer.cpp
+    pow_as_map_optimizer.cpp
     remove_trivial_dimension_optimizer.cpp
     dense_simple_expand_function.cpp
     dense_simple_join_function.cpp
