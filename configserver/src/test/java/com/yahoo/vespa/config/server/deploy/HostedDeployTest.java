@@ -411,7 +411,7 @@ public class HostedDeployTest {
 
         assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
         assertTrue(prepareResult.configChangeActions().getRestartActions().isEmpty()); // Handled by deployment.
-        assertEquals(Optional.of(ApplicationReindexing.ready(clock.instant())
+        assertEquals(Optional.of(ApplicationReindexing.empty()
                                                       .withPending("cluster", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
     }

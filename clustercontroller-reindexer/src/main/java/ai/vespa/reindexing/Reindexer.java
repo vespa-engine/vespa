@@ -117,11 +117,9 @@ public class Reindexer {
     }
 
     static Reindexing updateWithReady(Map<DocumentType, Instant> ready, Reindexing reindexing, Instant now) {
-        for (DocumentType type : ready.keySet()) { // We consider update for document types for which we have config.
+        for (DocumentType type : ready.keySet()) { // We update only for document types for which we have config.
             if ( ! ready.get(type).isAfter(now)) {
-                Status status = reindexing.status().getOrDefault(type, Status.ready(now)
-                                                                             .running()
-                                                                             .successful(now));
+                Status status = reindexing.status().getOrDefault(type, Status.ready(now));
                 if (status.startedAt().isBefore(ready.get(type)))
                     status = Status.ready(now);
 

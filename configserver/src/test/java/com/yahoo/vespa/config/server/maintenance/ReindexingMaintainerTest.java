@@ -19,12 +19,10 @@ public class ReindexingMaintainerTest {
 
     @Test
     public void testReadyComputation() {
-        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.EPOCH)
+        ApplicationReindexing reindexing = ApplicationReindexing.empty()
                                                                 .withPending("one", "a", 10)
                                                                 .withPending("two", "b", 20)
-                                                                .withReady("one", Instant.ofEpochMilli(2))
                                                                 .withReady("one", "a", Instant.ofEpochMilli(3))
-                                                                .withReady("two", Instant.ofEpochMilli(2 << 10))
                                                                 .withReady("two", "b", Instant.ofEpochMilli(2))
                                                                 .withReady("two", "c", Instant.ofEpochMilli(3));
 
@@ -39,9 +37,10 @@ public class ReindexingMaintainerTest {
                      withNewReady(reindexing, () -> 19L, later));
 
         assertEquals(reindexing.withoutPending("one", "a")      // Converged, no longer pending.
+                               .withReady("one", "a", later)
                                .withoutPending("two", "b")      // Converged, no Longer pending.
-                               .withReady(later),               // Outsider calls withReady(later), overriding more specific status.
-                     withNewReady(reindexing, () -> 20L, later).withReady(later));
+                               .withReady("two", "b", later),
+                     withNewReady(reindexing, () -> 20L, later));
 
         // Verify generation supplier isn't called when no pending document types.
         withNewReady(reindexing.withoutPending("one", "a").withoutPending("two", "b"),
@@ -51,7 +50,7 @@ public class ReindexingMaintainerTest {
 
     @Test
     public void testGarbageRemoval() {
-        ApplicationReindexing reindexing = ApplicationReindexing.ready(Instant.EPOCH)
+        ApplicationReindexing reindexing = ApplicationReindexing.empty()
                                                                 .withPending("one", "a", 10)
                                                                 .withPending("two", "b", 20)
                                                                 .withReady("one", "a", Instant.ofEpochMilli(3))
@@ -67,13 +66,13 @@ public class ReindexingMaintainerTest {
                      withOnlyCurrentData(reindexing, Map.of("one", List.of("a"),
                                                             "two", List.of("b", "c"))));
 
-        assertEquals(ApplicationReindexing.ready(Instant.EPOCH)
+        assertEquals(ApplicationReindexing.empty()
                                           .withPending("two", "b", 20)
                                           .withReady("two", "b", Instant.ofEpochMilli(2)),
                      withOnlyCurrentData(reindexing, Map.of("two", List.of("a", "b"))));
 
-        assertEquals(ApplicationReindexing.ready(Instant.EPOCH)
-                                          .withReady("one", Instant.EPOCH)
+        assertEquals(ApplicationReindexing.empty()
+                                          .withReady("one", "a", Instant.EPOCH).without("one", "a")
                                           .withReady("two", "c", Instant.ofEpochMilli(3)),
                      withOnlyCurrentData(reindexing, Map.of("one", List.of("c"),
                                                             "two", List.of("c"))));

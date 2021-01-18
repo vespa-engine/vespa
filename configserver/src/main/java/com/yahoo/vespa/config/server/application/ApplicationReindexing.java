@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.search.DocumentDatabase;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,9 +27,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
- * Pending and ready reindexing per document type. Each document type can have either a pending or a ready reindexing.
- * Each cluster may also have a global status, which is merged with its document type-specific status, by selecting
- * whichever status is ready the latest. The application may also have a global status, which is merged likewise.
+ * Pending reindexing: convergence to the stored config generation allows reindexing to start.
+ * Ready reindexing: reindexing may start after this timestamp.
  * This is immutable.
  *
  * @author jonmv
@@ -36,72 +36,48 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 public class ApplicationReindexing implements Reindexing {
 
     private final boolean enabled;
-    private final Status common;
     private final Map<String, Cluster> clusters;
 
-    ApplicationReindexing(boolean enabled, Status common, Map<String, Cluster> clusters) {
+    ApplicationReindexing(boolean enabled, Map<String, Cluster> clusters) {
         this.enabled = enabled;
-        this.common = requireNonNull(common);
         this.clusters = Map.copyOf(clusters);
     }
 
     /** Reindexing for the whole application ready now. */
-    public static ApplicationReindexing ready(Instant now) {
-        return new ApplicationReindexing(true, new Status(now), Map.of());
-    }
-
-    /** Returns a copy of this with reindexing for the whole application ready at the given instant. */
-    public ApplicationReindexing withReady(Instant readyAt) {
-        return new ApplicationReindexing(enabled,
-                                         new Status(readyAt),
-                                         clusters.entrySet().stream()
-                                                 .filter(cluster -> ! cluster.getValue().pending.isEmpty())
-                                                 .collect(toUnmodifiableMap(cluster -> cluster.getKey(),
-                                                                            cluster -> new Cluster(new Status(readyAt),
-                                                                                                   cluster.getValue().pending,
-                                                                                                   Map.of()))));
-    }
-
-    /** Returns a copy of this with reindexing for the given cluster ready at the given instant. */
-    public ApplicationReindexing withReady(String cluster, Instant readyAt) {
-        Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
-        Cluster modified = new Cluster(new Status(readyAt), current.pending, Map.of());
-        return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
+    public static ApplicationReindexing empty() {
+        return new ApplicationReindexing(true, Map.of());
     }
 
     /** Returns a copy of this with reindexing for the given document type in the given cluster ready at the given instant. */
     public ApplicationReindexing withReady(String cluster, String documentType, Instant readyAt) {
-        Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
-        Cluster modified = new Cluster(current.common,
-                                       current.pending,
+        Cluster current = clusters.getOrDefault(cluster, Cluster.empty());
+        Cluster modified = new Cluster(current.pending,
                                        with(documentType, new Status(readyAt), current.ready));
-        return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
+        return new ApplicationReindexing(enabled, with(cluster, modified, clusters));
     }
 
     /** Returns a copy of this with a pending reindexing at the given generation, for the given document type. */
     public ApplicationReindexing withPending(String cluster, String documentType, long requiredGeneration) {
-        Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
-        Cluster modified = new Cluster(current.common,
-                                       with(documentType, requirePositive(requiredGeneration), current.pending),
+        Cluster current = clusters.getOrDefault(cluster, Cluster.empty());
+        Cluster modified = new Cluster(with(documentType, requirePositive(requiredGeneration), current.pending),
                                        current.ready);
-        return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
+        return new ApplicationReindexing(enabled, with(cluster, modified, clusters));
     }
 
     /** Returns a copy of this with no pending reindexing for the given document type. */
     public ApplicationReindexing withoutPending(String cluster, String documentType) {
-        Cluster current = clusters.getOrDefault(cluster, Cluster.ready(common));
+        Cluster current = clusters.getOrDefault(cluster, Cluster.empty());
         if (current == null)
             return this;
 
-        Cluster modified = new Cluster(current.common,
-                                       without(documentType, current.pending),
+        Cluster modified = new Cluster(without(documentType, current.pending),
                                        current.ready);
-        return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
+        return new ApplicationReindexing(enabled, with(cluster, modified, clusters));
     }
 
     /** Returns a copy of this without the given cluster. */
     public ApplicationReindexing without(String cluster) {
-        return new ApplicationReindexing(enabled, common, without(cluster, clusters));
+        return new ApplicationReindexing(enabled, without(cluster, clusters));
     }
 
     /** Returns a copy of this without the given document type in the given cluster. */
@@ -110,15 +86,14 @@ public class ApplicationReindexing implements Reindexing {
         if (current == null)
             return this;
 
-        Cluster modified = new Cluster(current.common,
-                                       current.pending,
+        Cluster modified = new Cluster(current.pending,
                                        without(documentType, current.ready));
-        return new ApplicationReindexing(enabled, common, with(cluster, modified, clusters));
+        return new ApplicationReindexing(enabled, with(cluster, modified, clusters));
     }
 
     /** Returns a copy of this with the enabled-state set to the given value. */
     public ApplicationReindexing enabled(boolean enabled) {
-        return new ApplicationReindexing(enabled, common, clusters);
+        return new ApplicationReindexing(enabled, clusters);
     }
 
     @Override
@@ -126,21 +101,12 @@ public class ApplicationReindexing implements Reindexing {
         return enabled;
     }
 
-    /** The common reindexing status for the whole application. */
-    public Status common() {
-        return common;
-    }
-
     /** The reindexing status of each of the clusters of this application. */
     public Map<String, Cluster> clusters() { return clusters; }
 
     @Override
-    public Optional<Reindexing.Status> status(String cluster, String documentType) {
-        return ! clusters.containsKey(cluster)
-               ? Optional.of(common())
-               : ! clusters.get(cluster).ready().containsKey(documentType)
-                 ? Optional.of(clusters.get(cluster).common())
-                 : Optional.of(clusters.get(cluster).ready().get(documentType));
+    public Optional<Reindexing.Status> status(String clusterName, String documentType) {
+        return Optional.ofNullable(clusters.get(clusterName)).map(cluster -> cluster.ready().get(documentType));
     }
 
     @Override
@@ -149,20 +115,18 @@ public class ApplicationReindexing implements Reindexing {
         if (o == null || getClass() != o.getClass()) return false;
         ApplicationReindexing that = (ApplicationReindexing) o;
         return enabled == that.enabled &&
-               common.equals(that.common) &&
                clusters.equals(that.clusters);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(enabled, common, clusters);
+        return Objects.hash(enabled, clusters);
     }
 
     @Override
     public String toString() {
         return "ApplicationReindexing{" +
                "enabled=" + enabled +
-               ", common=" + common +
                ", clusters=" + clusters +
                '}';
     }
@@ -170,21 +134,14 @@ public class ApplicationReindexing implements Reindexing {
     /** Reindexing status for a single content cluster in an application. */
     public static class Cluster {
 
-        private static Cluster ready(Status common) { return new Cluster(common, Map.of(), Map.of()); }
+        private static Cluster empty() { return new Cluster(Map.of(), Map.of()); }
 
-        private final Status common;
         private final Map<String, Long> pending;
         private final Map<String, Status> ready;
 
-        Cluster(Status common, Map<String, Long> pending, Map<String, Status> ready) {
-            this.common = requireNonNull(common);
+        Cluster(Map<String, Long> pending, Map<String, Status> ready) {
             this.pending = Map.copyOf(pending);
             this.ready = Map.copyOf(ready);
-        }
-
-        /** The common reindexing status for all document types in this cluster. */
-        public Status common() {
-            return common;
         }
 
         /** The config generation at which the application must have converged for the latest reindexing to begin, per document type.  */
@@ -202,21 +159,19 @@ public class ApplicationReindexing implements Reindexing {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Cluster cluster = (Cluster) o;
-            return common.equals(cluster.common) &&
-                   pending.equals(cluster.pending) &&
+            return pending.equals(cluster.pending) &&
                    ready.equals(cluster.ready);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(common, pending, ready);
+            return Objects.hash(pending, ready);
         }
 
         @Override
         public String toString() {
             return "Cluster{" +
-                   "common=" + common +
-                   ", pending=" + pending +
+                   "pending=" + pending +
                    ", ready=" + ready +
                    '}';
         }
@@ -265,17 +220,15 @@ public class ApplicationReindexing implements Reindexing {
     }
 
     private static <T> Map<String, T> without(String removed, Map<String, T> map) {
-        return map.keySet().stream()
-                  .filter(key -> ! removed.equals(key))
-                  .collect(toUnmodifiableMap(key -> key,
-                                             key -> map.get(key)));
+        Map<String, T> modified = new HashMap<>(map);
+        modified.remove(removed);
+        return Map.copyOf(modified);
     }
 
     private static <T> Map<String, T> with(String added, T value, Map<String, T> map) {
-        return Stream.concat(Stream.of(added), map.keySet().stream()).distinct()
-                     .collect(toUnmodifiableMap(key -> key,
-                                                key -> added.equals(key) ? value
-                                                                         : map.get(key)));
+        Map<String, T> modified = new HashMap<>(map);
+        modified.put(added, value);
+        return Map.copyOf(modified);
     }
 
 }

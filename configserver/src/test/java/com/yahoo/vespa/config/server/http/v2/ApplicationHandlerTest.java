@@ -53,6 +53,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
@@ -214,10 +217,10 @@ public class ApplicationHandlerTest {
     @Test
     public void testReindex() throws Exception {
         ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
-        reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Reindexing status not found for default.default\"}", 404);
+        reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Application 'default.default' not found\"}", 404);
 
         applicationRepository.deploy(testAppMultipleClusters, prepareParams(applicationId));
-        ApplicationReindexing expected = ApplicationReindexing.ready(clock.instant());
+        ApplicationReindexing expected = ApplicationReindexing.empty();
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
@@ -453,9 +456,8 @@ public class ApplicationHandlerTest {
     @Test
     public void testReindexingSerialization() throws IOException {
         Instant now = Instant.ofEpochMilli(123456);
-        ApplicationReindexing applicationReindexing = ApplicationReindexing.ready(now.minusSeconds(10))
+        ApplicationReindexing applicationReindexing = ApplicationReindexing.empty()
                                                                            .withPending("foo", "bar", 123L)
-                                                                           .withReady("moo", now.minusSeconds(1))
                                                                            .withReady("moo", "baz", now);
         ClusterReindexing clusterReindexing = new ClusterReindexing(Map.of("bax", new Status(now, null, null, null, null),
                                                                            "baz", new Status(now.plusSeconds(1),
@@ -463,7 +465,12 @@ public class ApplicationHandlerTest {
                                                                                              ClusterReindexing.State.FAILED,
                                                                                              "message",
                                                                                              0.1)));
-        assertJsonEquals(getRenderedString(new ReindexingResponse(applicationReindexing,
+        Map<String, Set<String>> documentTypes = new TreeMap<>(Map.of("boo", new TreeSet<>(Set.of("bar", "baz", "bax")),
+                                                                      "foo", new TreeSet<>(Set.of("bar", "hax")),
+                                                                      "moo", new TreeSet<>(Set.of("baz", "bax"))));
+
+        assertJsonEquals(getRenderedString(new ReindexingResponse(documentTypes,
+                                                                  applicationReindexing,
                                                                   Map.of("boo", clusterReindexing,
                                                                          "moo", clusterReindexing))),
                          "{\n" +
@@ -472,6 +479,7 @@ public class ApplicationHandlerTest {
                          "    \"boo\": {\n" +
                          "      \"pending\": {},\n" +
                          "      \"ready\": {\n" +
+                         "        \"bar\": {},\n" +
                          "        \"bax\": {\n" +
                          "          \"startedMillis\": 123456\n" +
                          "        },\n" +
@@ -488,11 +496,17 @@ public class ApplicationHandlerTest {
                          "      \"pending\": {\n" +
                          "        \"bar\": 123\n" +
                          "      },\n" +
-                         "      \"ready\": {},\n" +
+                         "      \"ready\": {\n" +
+                         "        \"bar\": {},\n" +
+                         "        \"hax\": {}\n" +
+                         "      },\n" +
                          "    },\n" +
                          "    \"moo\": {\n" +
                          "      \"pending\": {},\n" +
                          "      \"ready\": {\n" +
+                         "        \"bax\": {\n" +
+                         "          \"startedMillis\": 123456\n" +
+                         "        },\n" +
                          "        \"baz\": {\n" +
                          "          \"readyMillis\": 123456,\n" +
                          "          \"startedMillis\": 124456,\n" +
@@ -500,9 +514,6 @@ public class ApplicationHandlerTest {
                          "          \"state\": \"failed\",\n" +
                          "          \"message\": \"message\",\n" +
                          "          \"progress\": 0.1\n" +
-                         "        },\n" +
-                         "        \"bax\": {\n" +
-                         "          \"startedMillis\": 123456\n" +
                          "        }\n" +
                          "      }\n" +
                          "    }\n" +
