@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.routing;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
+import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.routing.*;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
@@ -79,6 +80,14 @@ public class Routing extends ConfigModel {
         errors.clear();
         if (routing.verify(app, errors)) {
             this.derivedRouting=routing;
+        }
+    }
+
+    public void getConfig(DocumentProtocolPoliciesConfig.Builder builder) {
+        for (Protocol protocol : protocols) {
+            if (protocol instanceof DocumentProtocol) {
+                ((DocumentProtocol) protocol).getConfig(builder);
+            }
         }
     }
 

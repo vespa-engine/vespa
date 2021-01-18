@@ -14,6 +14,7 @@ import com.yahoo.container.ComponentsConfig;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
@@ -99,12 +100,19 @@ public class ContentClusterTest extends ContentBaseTest {
             "  </group>" +
             "</content>"
         );
+        DistributionConfig.Builder distributionBuilder = new DistributionConfig.Builder();
+        cc.getConfig(distributionBuilder);
+        DistributionConfig distributionConfig = distributionBuilder.build();
+        assertEquals(15, distributionConfig.cluster("storage").redundancy());
+        assertEquals(4, distributionConfig.cluster("storage").group().size());
+
         StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
         cc.getConfig(storBuilder);
         StorDistributionConfig storConfig = new StorDistributionConfig(storBuilder);
         assertEquals(15, storConfig.initial_redundancy());
         assertEquals(15, storConfig.redundancy());
         assertEquals(3, storConfig.ready_copies());
+
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
         cc.getSearch().getConfig(protonBuilder);
         ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
@@ -132,12 +140,18 @@ public class ContentClusterTest extends ContentBaseTest {
             "  </group>" +
             "</content>"
         );
+        DistributionConfig.Builder distributionBuilder = new DistributionConfig.Builder();
+        cc.getConfig(distributionBuilder);
+        DistributionConfig distributionConfig = distributionBuilder.build();
+        assertEquals(5, distributionConfig.cluster("storage").redundancy());
+
         StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
         cc.getConfig(storBuilder);
         StorDistributionConfig storConfig = new StorDistributionConfig(storBuilder);
         assertEquals(4, storConfig.initial_redundancy());
         assertEquals(5, storConfig.redundancy());
         assertEquals(3, storConfig.ready_copies());
+
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
         cc.getSearch().getConfig(protonBuilder);
         ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
@@ -163,8 +177,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void testRedundancyDefaults() {
-        StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
-        parse(
+        ContentCluster cc = parse(
             "<content version=\"1.0\" id=\"storage\">\n" +
             "  <documents/>" +
             "  <group>" +
@@ -173,8 +186,15 @@ public class ContentClusterTest extends ContentBaseTest {
             "    <node hostalias=\"mockhost\" distribution-key=\"2\"/>\"" +
             "  </group>" +
             "</content>"
-        ).getConfig(builder);
+        );
 
+        DistributionConfig.Builder distributionBuilder = new DistributionConfig.Builder();
+        cc.getConfig(distributionBuilder);
+        DistributionConfig distributionConfig = distributionBuilder.build();
+        assertEquals(3, distributionConfig.cluster("storage").redundancy());
+
+        StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
+        cc.getConfig(builder);
         StorDistributionConfig config = new StorDistributionConfig(builder);
         assertEquals(2, config.initial_redundancy());
         assertEquals(3, config.redundancy());
@@ -547,6 +567,13 @@ public class ContentClusterTest extends ContentBaseTest {
             "  </nodes>\n" +
             "</content>"
         );
+
+        DistributionConfig.Builder bob = new DistributionConfig.Builder();
+        cluster.getConfig(bob);
+        DistributionConfig.Cluster.Group group = bob.build().cluster("test").group(0);
+        assertEquals("invalid", group.name());
+        assertEquals("invalid", group.index());
+        assertEquals(2, group.nodes().size());
 
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
 

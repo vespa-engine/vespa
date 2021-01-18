@@ -2,8 +2,9 @@
 package com.yahoo.vespa.model.routing;
 
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.document.select.DocumentSelector;
+import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
+import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.routing.ApplicationSpec;
 import com.yahoo.messagebus.routing.HopSpec;
 import com.yahoo.messagebus.routing.RouteSpec;
@@ -12,9 +13,9 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
+import com.yahoo.vespa.model.content.Content;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,7 +32,9 @@ import java.util.TreeMap;
  *
  * @author Simon Thoresen Hult
  */
-public final class DocumentProtocol implements Protocol, DocumentrouteselectorpolicyConfig.Producer {
+public final class DocumentProtocol implements Protocol,
+                                               DocumentrouteselectorpolicyConfig.Producer,
+                                               DocumentProtocolPoliciesConfig.Producer {
 
     private static final String NAME = "document";
     private final ApplicationSpec application;
@@ -99,6 +102,42 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
         for (ContentCluster cluster : Content.getContentClusters(repo)) {
             addRoute(cluster.getConfigId(), cluster.getRoutingSelector(), builder);
         }
+    }
+
+    @Override
+    public void getConfig(DocumentProtocolPoliciesConfig.Builder builder) {
+        for (ContentCluster cluster : Content.getContentClusters(repo)) {
+            DocumentProtocolPoliciesConfig.Cluster.Builder clusterBuilder = new DocumentProtocolPoliciesConfig.Cluster.Builder();
+            addSelector(cluster.getConfigId(), cluster.getRoutingSelector(), clusterBuilder);
+            if (cluster.getSearch().hasIndexedCluster())
+                addRoutes(getDirectRouteName(cluster.getConfigId()), getIndexedRouteName(cluster.getConfigId()), clusterBuilder);
+
+            builder.cluster(cluster.getConfigId(), clusterBuilder);
+        }
+    }
+
+    private static void addRoutes(String directRoute, String indexedRoute, DocumentProtocolPoliciesConfig.Cluster.Builder builder) {
+            builder.defaultRoute(directRoute)
+                   .route(new DocumentProtocolPoliciesConfig.Cluster.Route.Builder()
+                                  .messageType(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol.MESSAGE_PUTDOCUMENT)
+                                  .name(indexedRoute))
+                   .route(new DocumentProtocolPoliciesConfig.Cluster.Route.Builder()
+                                  .messageType(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol.MESSAGE_REMOVEDOCUMENT)
+                                  .name(indexedRoute))
+                   .route(new DocumentProtocolPoliciesConfig.Cluster.Route.Builder()
+                                  .messageType(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol.MESSAGE_UPDATEDOCUMENT)
+                                  .name(indexedRoute));
+    }
+
+    private static void addSelector(String clusterConfigId, String selector, DocumentProtocolPoliciesConfig.Cluster.Builder builder) {
+        try {
+            new DocumentSelector(selector);
+        } catch (com.yahoo.document.select.parser.ParseException e) {
+            throw new IllegalArgumentException("Failed to parse selector '" + selector +
+                                               "' for route '" + clusterConfigId +
+                                               "' in policy 'DocumentRouteSelector'.");
+        }
+        builder.selector(selector);
     }
 
     private static void addRoute(String clusterConfigId, String selector, DocumentrouteselectorpolicyConfig.Builder builder) {

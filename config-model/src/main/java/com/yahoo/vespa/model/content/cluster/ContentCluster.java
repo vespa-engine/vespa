@@ -15,6 +15,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -67,6 +68,8 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
+
 /**
  * A content cluster.
  *
@@ -74,6 +77,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class ContentCluster extends AbstractConfigProducer implements
+                                                           DistributionConfig.Producer,
                                                            StorDistributionConfig.Producer,
                                                            StorDistributormanagerConfig.Producer,
                                                            FleetcontrollerConfig.Producer,
@@ -746,6 +750,31 @@ public class ContentCluster extends AbstractConfigProducer implements
             docTypeBuilder.bucketspace(bucketSpaceOfDocumentType(docType));
             builder.documenttype(docTypeBuilder);
         }
+    }
+
+    @Override
+    public void getConfig(DistributionConfig.Builder builder) {
+        DistributionConfig.Cluster.Builder clusterBuilder = new DistributionConfig.Cluster.Builder();
+
+        if (redundancy() != null)
+            clusterBuilder.redundancy(redundancy().effectiveFinalRedundancy());
+
+        if (getRootGroup() != null)
+            clusterBuilder.group(getRootGroup().getGroupStructureConfig().stream()
+                                               .map(StorDistributionConfig.Group.Builder::build)
+                                               .map(config -> new DistributionConfig.Cluster.Group.Builder()
+                                                       .index(config.index())
+                                                       .name(config.name())
+                                                       .capacity(config.capacity())
+                                                       .partitions(config.partitions())
+                                                       .nodes(config.nodes().stream()
+                                                                    .map(node -> new DistributionConfig.Cluster.Group.Nodes.Builder()
+                                                                            .index(node.index())
+                                                                            .retired(node.retired()))
+                                                                    .collect(toList())))
+                                               .collect(toList()));
+
+        builder.cluster(getConfigId(), clusterBuilder);
     }
 
     /**
