@@ -30,6 +30,6 @@ vespa_add_library(eval_instruction OBJECT
     generic_rename.cpp
     index_lookup_table.cpp
     join_with_number_function.cpp
-    just_replace_type_function.cpp
+    replace_type_function.cpp
     vector_from_doubles_function.cpp
 )

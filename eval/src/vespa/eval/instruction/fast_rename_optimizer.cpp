@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fast_rename_optimizer.h"
-#include "just_replace_type_function.h"
+#include "replace_type_function.h"
 #include <vespa/eval/eval/value.h>
 #include <optional>
 
@@ -54,7 +54,7 @@ FastRenameOptimizer::optimize(const TensorFunction &expr, Stash &stash)
         const ValueType &to_type = expr.result_type();
         if (is_stable_rename(from_type, to_type, rename->from(), rename->to())) {
             assert(to_type.cell_type() == from_type.cell_type());
-            return JustReplaceTypeFunction::create_compact(to_type, rename->child(), stash);
+            return ReplaceTypeFunction::create_compact(to_type, rename->child(), stash);
         }
     }
     return expr;

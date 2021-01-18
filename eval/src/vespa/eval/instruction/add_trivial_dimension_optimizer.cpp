@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "add_trivial_dimension_optimizer.h"
-#include "just_replace_type_function.h"
+#include "replace_type_function.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/wrap_param.h>
 
@@ -42,10 +42,10 @@ AddTrivialDimensionOptimizer::optimize(const TensorFunction &expr, Stash &stash)
         const TensorFunction &rhs = join->rhs();
         if (join->function() == Mul::f) {
             if (is_unit_constant(lhs) && same_cell_type(rhs, expr)) {
-                return JustReplaceTypeFunction::create_compact(expr.result_type(), rhs, stash);
+                return ReplaceTypeFunction::create_compact(expr.result_type(), rhs, stash);
             }
             if (is_unit_constant(rhs) && same_cell_type(lhs, expr)) {
-                 return JustReplaceTypeFunction::create_compact(expr.result_type(), lhs, stash);
+                 return ReplaceTypeFunction::create_compact(expr.result_type(), lhs, stash);
             }
         }
     }

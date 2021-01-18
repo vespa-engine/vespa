@@ -9,17 +9,17 @@ namespace vespalib::eval {
 /**
  * Tensor function for efficient type-only modification of values.
  **/
-class JustReplaceTypeFunction : public tensor_function::Op1
+class ReplaceTypeFunction : public tensor_function::Op1
 {
 public:
-    JustReplaceTypeFunction(const ValueType &result_type,
-                            const TensorFunction &child);
-    ~JustReplaceTypeFunction();
+    ReplaceTypeFunction(const ValueType &result_type,
+                        const TensorFunction &child);
+    ~ReplaceTypeFunction();
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return child().result_is_mutable(); }
-    static const JustReplaceTypeFunction &create_compact(const ValueType &result_type,
-                                                         const TensorFunction &child,
-                                                         Stash &stash);
+    static const ReplaceTypeFunction &create_compact(const ValueType &result_type,
+                                                     const TensorFunction &child,
+                                                     Stash &stash);
 };
 
 } // namespace vespalib::eval

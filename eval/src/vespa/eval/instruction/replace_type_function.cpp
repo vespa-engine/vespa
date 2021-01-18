@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "just_replace_type_function.h"
+#include "replace_type_function.h"
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {
@@ -18,31 +18,31 @@ void my_replace_type_op(InterpretedFunction::State &state, uint64_t param) {
 
 } // namespace vespalib::eval::<unnamed>
 
-JustReplaceTypeFunction::JustReplaceTypeFunction(const ValueType &result_type,
-                                                   const TensorFunction &child)
+ReplaceTypeFunction::ReplaceTypeFunction(const ValueType &result_type,
+                                         const TensorFunction &child)
     : tensor_function::Op1(result_type, child)
 {
 }
 
-JustReplaceTypeFunction::~JustReplaceTypeFunction()
+ReplaceTypeFunction::~ReplaceTypeFunction()
 {
 }
 
 InterpretedFunction::Instruction
-JustReplaceTypeFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+ReplaceTypeFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     return InterpretedFunction::Instruction(my_replace_type_op, wrap_param<ValueType>(result_type()));
 }
 
-const JustReplaceTypeFunction &
-JustReplaceTypeFunction::create_compact(const ValueType &result_type,
-                                        const TensorFunction &child,
-                                        Stash &stash)
+const ReplaceTypeFunction &
+ReplaceTypeFunction::create_compact(const ValueType &result_type,
+                                    const TensorFunction &child,
+                                    Stash &stash)
 {
-    if (auto replace = as<JustReplaceTypeFunction>(child)) {
-        return stash.create<JustReplaceTypeFunction>(result_type, replace->child());
+    if (auto replace = as<ReplaceTypeFunction>(child)) {
+        return stash.create<ReplaceTypeFunction>(result_type, replace->child());
     } else {
-        return stash.create<JustReplaceTypeFunction>(result_type, child);
+        return stash.create<ReplaceTypeFunction>(result_type, child);
     }
 }
 

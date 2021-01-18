@@ -3,7 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/just_replace_type_function.h>
+#include <vespa/eval/instruction/replace_type_function.h>
 #include <vespa/eval/instruction/fast_rename_optimizer.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
@@ -31,14 +31,14 @@ EvalFixture::ParamRepo param_repo = make_params();
 void verify_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<JustReplaceTypeFunction>();
+    auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_EQUAL(info.size(), 1u);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<JustReplaceTypeFunction>();
+    auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_TRUE(info.empty());
 }
 

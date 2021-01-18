@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/instruction/just_replace_type_function.h>
+#include <vespa/eval/instruction/replace_type_function.h>
 #include <vespa/eval/instruction/dense_cell_range_function.h>
 #include <vespa/eval/instruction/dense_lambda_peek_function.h>
 #include <vespa/eval/instruction/fast_rename_optimizer.h>
@@ -62,7 +62,7 @@ void verify_generic(const vespalib::string &expr, const vespalib::string &expect
 }
 
 void verify_reshape(const vespalib::string &expr, const vespalib::string &expect) {
-    verify_impl<JustReplaceTypeFunction>(expr, expect);
+    verify_impl<ReplaceTypeFunction>(expr, expect);
 }
 
 void verify_range(const vespalib::string &expr, const vespalib::string &expect) {

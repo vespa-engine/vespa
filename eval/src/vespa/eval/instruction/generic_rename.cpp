@@ -102,7 +102,7 @@ void my_generic_rename_op(State &state, uint64_t param_in) {
 }
 
 template <typename CT>
-void my_dense_rename_op(State &state, uint64_t param_in) {
+void my_mixed_rename_dense_only_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<RenameParam>(param_in);
     const DenseRenamePlan &dense_plan = param.dense_plan;
     const auto &index = state.peek(0).index();
@@ -125,7 +125,7 @@ void my_dense_rename_op(State &state, uint64_t param_in) {
 struct SelectGenericRenameOp {
     template <typename CT> static auto invoke(const RenameParam &param) {
         if (param.sparse_plan.can_forward_index) {
-            return my_dense_rename_op<CT>;
+            return my_mixed_rename_dense_only_op<CT>;
         }
         return my_generic_rename_op<CT>;
     }
