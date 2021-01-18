@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
+#include <algorithm>
 #include <cassert>
 #include <array>
 
@@ -48,7 +49,7 @@ struct SparseReduceState {
     std::vector<string_id>  full_address;
     std::vector<string_id*> fetch_address;
     std::vector<string_id*> keep_address;
-    size_t                subspace;
+    size_t                  subspace;
 
     SparseReduceState(const SparseReducePlan &plan)
         : full_address(plan.keep_dims.size() + plan.num_reduce_dims),
@@ -72,8 +73,8 @@ Value::UP
 generic_reduce(const Value &value, const ReduceParam &param) {
     auto cells = value.cells().typify<ICT>();
     ArrayArrayMap<string_id,AGGR> map(param.sparse_plan.keep_dims.size(),
-                                    param.dense_plan.out_size,
-                                    value.index().size());
+                                      param.dense_plan.out_size,
+                                      value.index().size());
     SparseReduceState sparse(param.sparse_plan);
     auto full_view = value.index().create_view({});
     full_view->lookup({});
@@ -94,9 +95,7 @@ generic_reduce(const Value &value, const ReduceParam &param) {
                    });
     if ((map.size() == 0) && param.sparse_plan.keep_dims.empty()) {
         auto zero = builder->add_subspace();
-        for (size_t i = 0; i < zero.size(); ++i) {
-            zero[i] = OCT{};
-        }
+        std::fill(zero.begin(), zero.end(), OCT{});
     }
     return builder->build(std::move(builder));
 }
@@ -109,6 +108,50 @@ void my_generic_reduce_op(State &state, uint64_t param_in) {
     auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
     const Value &result_ref = *(result.get());
     state.pop_push(result_ref);
+}
+
+template <typename ICT, typename OCT, typename AGGR, bool forward_index>
+void my_generic_dense_reduce_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<ReduceParam>(param_in);
+    const Value &value = state.peek(0);
+    auto cells = value.cells().typify<ICT>();
+    const auto &index = value.index();
+    size_t num_subspaces = index.size();
+    size_t out_cells_size = forward_index ? (param.dense_plan.out_size * num_subspaces) : param.dense_plan.out_size;
+    auto out_cells = state.stash.create_uninitialized_array<OCT>(out_cells_size);
+    if (num_subspaces > 0) {
+        if constexpr (aggr::is_simple(AGGR::enum_value())) {
+            OCT *dst = out_cells.begin();
+            std::fill(out_cells.begin(), out_cells.end(), AGGR::null_value());
+            auto combine = [&](size_t src_idx, size_t dst_idx) { dst[dst_idx] = AGGR::combine(dst[dst_idx], cells[src_idx]); };
+            for (size_t i = 0; i < num_subspaces; ++i) {
+                param.dense_plan.execute(i * param.dense_plan.in_size, combine);
+                if (forward_index) {
+                    dst += param.dense_plan.out_size;
+                }
+            }
+        } else {
+            std::vector<AGGR> aggr_state(out_cells_size);
+            AGGR *dst = &aggr_state[0];
+            auto sample = [&](size_t src_idx, size_t dst_idx) { dst[dst_idx].sample(cells[src_idx]); };
+            for (size_t i = 0; i < num_subspaces; ++i) {
+                param.dense_plan.execute(i * param.dense_plan.in_size, sample);
+                if (forward_index) {
+                    dst += param.dense_plan.out_size;
+                }
+            }
+            for (size_t i = 0; i < aggr_state.size(); ++i) {
+                out_cells[i] = aggr_state[i].result();
+            }
+        }
+    } else if (!forward_index) {
+        std::fill(out_cells.begin(), out_cells.end(), OCT{});
+    }
+    if (forward_index) {
+        state.pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
+    } else {
+        state.pop_push(state.stash.create<DenseValueView>(param.res_type, TypedCells(out_cells)));
+    }
 };
 
 template <typename ICT, typename OCT, typename AGGR>
@@ -147,10 +190,17 @@ void my_full_reduce_op(State &state, uint64_t) {
 
 struct SelectGenericReduceOp {
     template <typename ICT, typename OCT, typename AGGR> static auto invoke(const ReduceParam &param) {
+        using AggrType = typename AGGR::template templ<OCT>;
         if (param.res_type.is_scalar()) {
-            return my_full_reduce_op<ICT, OCT, typename AGGR::template templ<OCT>>;
+            return my_full_reduce_op<ICT, OCT, AggrType>;
         }
-        return my_generic_reduce_op<ICT, OCT, typename AGGR::template templ<OCT>>;
+        if (param.sparse_plan.should_forward_index()) {
+            return my_generic_dense_reduce_op<ICT, OCT, AggrType, true>;
+        }
+        if (param.res_type.is_dense()) {
+            return my_generic_dense_reduce_op<ICT, OCT, AggrType, false>;
+        }
+        return my_generic_reduce_op<ICT, OCT, AggrType>;
     }
 };
 
@@ -225,6 +275,12 @@ SparseReducePlan::SparseReducePlan(const ValueType &type, const ValueType &res_t
             ++num_reduce_dims;
         }
     }
+}
+
+bool
+SparseReducePlan::should_forward_index() const
+{
+    return ((num_reduce_dims == 0) && (!keep_dims.empty()));
 }
 
 SparseReducePlan::~SparseReducePlan() = default;

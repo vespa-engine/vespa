@@ -85,8 +85,9 @@ TEST("require that PROD aggregator works as expected") {
     EXPECT_TRUE(aggr.enum_value() == Aggr::PROD);
 }
 
-TEST("require that Prod combine works as expected") {
+TEST("require that Prod static API works as expected") {
     using Type = Prod<double>;
+    EXPECT_EQUAL(Type::null_value(), 1.0);
     EXPECT_EQUAL(Type::combine(3,7), 21.0);
     EXPECT_EQUAL(Type::combine(5,4), 20.0);
 }
@@ -103,8 +104,9 @@ TEST("require that SUM aggregator works as expected") {
     EXPECT_TRUE(aggr.enum_value() == Aggr::SUM);
 }
 
-TEST("require that Sum combine works as expected") {
+TEST("require that Sum static API works as expected") {
     using Type = Sum<double>;
+    EXPECT_EQUAL(Type::null_value(), 0.0);
     EXPECT_EQUAL(Type::combine(3,7), 10.0);
     EXPECT_EQUAL(Type::combine(5,4), 9.0);
 }
@@ -121,8 +123,10 @@ TEST("require that MAX aggregator works as expected") {
     EXPECT_TRUE(aggr.enum_value() == Aggr::MAX);
 }
 
-TEST("require that Max combine works as expected") {
+TEST("require that Max static API works as expected") {
     using Type = Max<double>;
+    EXPECT_EQUAL(Max<double>::null_value(), -std::numeric_limits<double>::infinity());
+    EXPECT_EQUAL(Max<float>::null_value(), -std::numeric_limits<float>::infinity());
     EXPECT_EQUAL(Type::combine(3,7), 7.0);
     EXPECT_EQUAL(Type::combine(5,4), 5.0);
 }
@@ -165,8 +169,10 @@ TEST("require that MIN aggregator works as expected") {
     EXPECT_TRUE(aggr.enum_value() == Aggr::MIN);
 }
 
-TEST("require that Min combine works as expected") {
+TEST("require that Min static API works as expected") {
     using Type = Min<double>;
+    EXPECT_EQUAL(Min<double>::null_value(), std::numeric_limits<double>::infinity());
+    EXPECT_EQUAL(Min<float>::null_value(), std::numeric_limits<float>::infinity());
     EXPECT_EQUAL(Type::combine(3,7), 3.0);
     EXPECT_EQUAL(Type::combine(5,4), 4.0);
 }

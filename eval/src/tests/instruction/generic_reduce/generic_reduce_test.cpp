@@ -32,7 +32,8 @@ std::vector<Layout> layouts = {
     float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
     {x(3),y({"foo", "bar"}),z(7)},
     {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
+    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})}),
+    {x(3),y({}),z(7)}
 };
 
 TensorSpec perform_generic_reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims,
@@ -69,7 +70,9 @@ TEST(GenericReduceTest, sparse_reduce_plan_can_be_created) {
 void test_generic_reduce_with(const ValueBuilderFactory &factory) {
     for (const Layout &layout: layouts) {
         TensorSpec input = spec(layout, Div16(N()));
+        SCOPED_TRACE(fmt("tensor type: %s, num_cells: %zu", input.type().c_str(), input.cells().size()));
         for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
+            SCOPED_TRACE(fmt("aggregator: %s", AggrNames::name_of(aggr)->c_str()));
             for (const Domain &domain: layout) {
                 auto expect = ReferenceOperations::reduce(input, aggr, {domain.dimension}).normalize();
                 auto actual = perform_generic_reduce(input, aggr, {domain.dimension}, factory);

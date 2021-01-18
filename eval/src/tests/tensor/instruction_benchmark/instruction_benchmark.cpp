@@ -814,6 +814,14 @@ TEST(DenseJoin, partial_overlap) {
     benchmark_join("dense partial overlap multiply", lhs, rhs, operation::Mul::f);
 }
 
+TEST(DenseJoin, subset_overlap) {
+    auto lhs = make_cube(D::idx("a", 16), D::idx("b", 16), D::idx("c", 16), 1.0);
+    auto rhs_inner = make_matrix(D::idx("b", 16), D::idx("c", 16), 2.0);
+    auto rhs_outer = make_matrix(D::idx("a", 16), D::idx("b", 16), 3.0);
+    benchmark_join("dense subset overlap inner multiply", lhs, rhs_inner, operation::Mul::f);
+    benchmark_join("dense subset overlap outer multiply", lhs, rhs_outer, operation::Mul::f);
+}
+
 TEST(DenseJoin, no_overlap) {
     auto lhs = make_cube(D::idx("a", 4), D::idx("e", 4), D::idx("f", 4), 1.0);
     auto rhs = make_cube(D::idx("b", 4), D::idx("c", 4), D::idx("d", 4), 2.0);
