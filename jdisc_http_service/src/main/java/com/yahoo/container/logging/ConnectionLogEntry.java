@@ -33,6 +33,10 @@ public class ConnectionLogEntry {
     private final Instant sslPeerNotBefore;
     private final Instant sslPeerNotAfter;
     private final String sslSniServerName;
+    private final String sslHandshakeFailureException;
+    private final String sslHandshakeFailureMessage;
+    private final String sslHandshakeFailureType;
+
 
     private ConnectionLogEntry(Builder builder) {
         this.id = builder.id;
@@ -52,6 +56,9 @@ public class ConnectionLogEntry {
         this.sslPeerNotBefore = builder.sslPeerNotBefore;
         this.sslPeerNotAfter = builder.sslPeerNotAfter;
         this.sslSniServerName = builder.sslSniServerName;
+        this.sslHandshakeFailureException = builder.sslHandshakeFailureException;
+        this.sslHandshakeFailureMessage = builder.sslHandshakeFailureMessage;
+        this.sslHandshakeFailureType = builder.sslHandshakeFailureType;
     }
 
     public String toJson() {
@@ -68,7 +75,7 @@ public class ConnectionLogEntry {
         setLong(cursor, "httpBytesSent", httpBytesSent);
         setLong(cursor, "requests", requests);
         setLong(cursor, "responses", responses);
-        if (sslProtocol != null) {
+        if (sslProtocol != null || sslHandshakeFailureException != null) {
             Cursor sslCursor = cursor.setObject("ssl");
             setString(sslCursor, "protocol", sslProtocol);
             setString(sslCursor, "sessionId", sslSessionId);
@@ -77,6 +84,12 @@ public class ConnectionLogEntry {
             setTimestamp(sslCursor, "peerNotBefore", sslPeerNotBefore);
             setTimestamp(sslCursor, "peerNotAfter", sslPeerNotAfter);
             setString(sslCursor, "sniServerName", sslSniServerName);
+            if (sslHandshakeFailureException != null) {
+                Cursor handshakeFailureCursor = sslCursor.setObject("handshake-failure");
+                setString(handshakeFailureCursor, "exception", sslHandshakeFailureException);
+                setString(handshakeFailureCursor, "message", sslHandshakeFailureMessage);
+                setString(handshakeFailureCursor, "type", sslHandshakeFailureType);
+            }
         }
         return new String(Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(slime)), StandardCharsets.UTF_8);
     }
@@ -131,6 +144,10 @@ public class ConnectionLogEntry {
         private Instant sslPeerNotBefore;
         private Instant sslPeerNotAfter;
         private String sslSniServerName;
+        private String sslHandshakeFailureException;
+        private String sslHandshakeFailureMessage;
+        private String sslHandshakeFailureType;
+
 
         Builder(UUID id, Instant timestamp) {
             this.id = id;
@@ -195,6 +212,18 @@ public class ConnectionLogEntry {
         }
         public Builder withSslSniServerName(String sslSniServerName) {
             this.sslSniServerName = sslSniServerName;
+            return this;
+        }
+        public Builder withSslHandshakeFailureException(String exception) {
+            this.sslHandshakeFailureException = exception;
+            return this;
+        }
+        public Builder withSslHandshakeFailureMessage(String message) {
+            this.sslHandshakeFailureMessage = message;
+            return this;
+        }
+        public Builder withSslHandshakeFailureType(String type) {
+            this.sslHandshakeFailureType = type;
             return this;
         }
 

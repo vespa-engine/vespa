@@ -20,6 +20,7 @@ import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.StandardConstants;
@@ -157,9 +158,10 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     @Override
     public void handshakeFailed(Event event, Throwable failure) {
         SSLEngine sslEngine = event.getSSLEngine();
-        handleListenerInvocation("SslHandshakeListener", "handshakeFailed", "sslEngine=%h", List.of(sslEngine), () -> {
-            sslToConnectionInfo.remove(sslEngine);
-            // TODO Store details on failed ssl handshake
+        handleListenerInvocation("SslHandshakeListener", "handshakeFailed", "sslEngine=%h,failure=%s", List.of(sslEngine, failure), () -> {
+            log.log(Level.FINE, failure, failure::toString);
+            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine);
+            info.setSslHandshakeFailure((SSLHandshakeException)failure);
         });
     }
     //
@@ -215,6 +217,9 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private Date sslPeerNotBefore;
         private Date sslPeerNotAfter;
         private List<SNIServerName> sslSniServerNames;
+        private String sslHandshakeFailureException;
+        private String sslHandshakeFailureMessage;
+        private String sslHandshakeFailureType;
 
         private ConnectionInfo(UUID uuid, long createdAt, InetSocketAddress localAddress, InetSocketAddress peerAddress) {
             this.uuid = uuid;
@@ -263,6 +268,15 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             return this;
         }
 
+        synchronized ConnectionInfo setSslHandshakeFailure(SSLHandshakeException exception) {
+            this.sslHandshakeFailureException = exception.getClass().getName();
+            this.sslHandshakeFailureMessage = exception.getMessage();
+            this.sslHandshakeFailureType = SslHandshakeFailure.fromSslHandshakeException(exception)
+                    .map(SslHandshakeFailure::failureType)
+                    .orElse("UNKNOWN");
+            return this;
+        }
+
         synchronized ConnectionLogEntry toLogEntry() {
             ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt));
             if (httpBytesReceived >= 0) {
@@ -301,6 +315,11 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 builder.withSslPeerSubject(sslPeerSubject)
                         .withSslPeerNotAfter(sslPeerNotAfter.toInstant())
                         .withSslPeerNotBefore(sslPeerNotBefore.toInstant());
+            }
+            if (sslHandshakeFailureException != null && sslHandshakeFailureMessage != null && sslHandshakeFailureType != null) {
+                builder.withSslHandshakeFailureException(sslHandshakeFailureException)
+                        .withSslHandshakeFailureMessage(sslHandshakeFailureMessage)
+                        .withSslHandshakeFailureType(sslHandshakeFailureType);
             }
             return builder.build();
         }
