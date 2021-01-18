@@ -101,8 +101,32 @@ void my_generic_rename_op(State &state, uint64_t param_in) {
     state.pop_push(result_ref);
 }
 
+template <typename CT>
+void my_mixed_rename_dense_only_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<RenameParam>(param_in);
+    const DenseRenamePlan &dense_plan = param.dense_plan;
+    const auto &index = state.peek(0).index();
+    auto lhs_cells = state.peek(0).cells().typify<CT>();
+    size_t num_subspaces = index.size();
+    size_t num_out_cells = dense_plan.subspace_size * num_subspaces;
+    ArrayRef<CT> out_cells = state.stash.create_uninitialized_array<CT>(num_out_cells);
+    CT *dst = out_cells.begin();
+    const CT *lhs = lhs_cells.begin();
+    auto copy_cells = [&](size_t input_idx) { *dst++ = lhs[input_idx]; };
+    for (size_t i = 0; i < num_subspaces; ++i) {
+        dense_plan.execute(0, copy_cells);
+        lhs += dense_plan.subspace_size;
+    }
+    assert(lhs == lhs_cells.end());
+    assert(dst == out_cells.end());
+    state.pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
+}
+
 struct SelectGenericRenameOp {
-    template <typename CT> static auto invoke() {
+    template <typename CT> static auto invoke(const RenameParam &param) {
+        if (param.sparse_plan.can_forward_index) {
+            return my_mixed_rename_dense_only_op<CT>;
+        }
         return my_generic_rename_op<CT>;
     }
 };
@@ -115,7 +139,7 @@ SparseRenamePlan::SparseRenamePlan(const ValueType &input_type,
                                    const ValueType &output_type,
                                    const std::vector<vespalib::string> &from,
                                    const std::vector<vespalib::string> &to)
-    : output_dimensions()
+  : output_dimensions(), can_forward_index(true)
 {
     const auto in_dims = input_type.mapped_dimensions();
     const auto out_dims = output_type.mapped_dimensions();
@@ -125,6 +149,9 @@ SparseRenamePlan::SparseRenamePlan(const ValueType &input_type,
         const auto & renamed_to = find_rename(dim.name, from, to);
         size_t index = find_index_of(renamed_to, out_dims);
         assert(index < mapped_dims);
+        if (index != output_dimensions.size()) {
+            can_forward_index = false;
+        }
         output_dimensions.push_back(index);
     }
     assert(output_dimensions.size() == mapped_dims);
@@ -182,7 +209,7 @@ GenericRename::make_instruction(const ValueType &lhs_type,
     auto &param = stash.create<RenameParam>(lhs_type,
                                             rename_dimension_from, rename_dimension_to,
                                             factory);
-    auto fun = typify_invoke<1,TypifyCellType,SelectGenericRenameOp>(param.res_type.cell_type());
+    auto fun = typify_invoke<1,TypifyCellType,SelectGenericRenameOp>(param.res_type.cell_type(), param);
     return Instruction(fun, wrap_param<RenameParam>(param));
 }
 

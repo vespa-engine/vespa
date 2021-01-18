@@ -3,8 +3,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/dense_replace_type_function.h>
-#include <vespa/eval/instruction/dense_fast_rename_optimizer.h>
+#include <vespa/eval/instruction/replace_type_function.h>
+#include <vespa/eval/instruction/fast_rename_optimizer.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
@@ -31,14 +31,14 @@ EvalFixture::ParamRepo param_repo = make_params();
 void verify_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<DenseReplaceTypeFunction>();
+    auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_EQUAL(info.size(), 1u);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<DenseReplaceTypeFunction>();
+    auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_TRUE(info.empty());
 }
 
@@ -80,9 +80,9 @@ TEST("require that dimension addition with overlapping dimensions is optimized")
     TEST_DO(verify_optimized("tensor(y[1],z[1])(1)*x5y1"));
 }
 
-TEST("require that dimension addition with inappropriate dimensions is not optimized") {
-    TEST_DO(verify_not_optimized("x_m*tensor(y[1])(1)"));
-    TEST_DO(verify_not_optimized("tensor(y[1])(1)*x_m"));
+TEST("require that dimension addition with mixed dimensions is optimized") {
+    TEST_DO(verify_optimized("x_m*tensor(y[1])(1)"));
+    TEST_DO(verify_optimized("tensor(y[1])(1)*x_m"));
 }
 
 TEST("require that dimension addition optimization requires unit constant tensor") {

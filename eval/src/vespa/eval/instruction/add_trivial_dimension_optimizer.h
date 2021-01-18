@@ -7,11 +7,10 @@
 namespace vespalib::eval {
 
 /**
- * Tensor function optimizer for efficient removal of dimensions with
- * size 1 for dense tensors.
- * TODO: extend to mixed tensors.
+ * Tensor function optimizer for efficient adding of dimensions with
+ * known size 1.
  **/
-struct DenseRemoveDimensionOptimizer {
+struct AddTrivialDimensionOptimizer {
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 

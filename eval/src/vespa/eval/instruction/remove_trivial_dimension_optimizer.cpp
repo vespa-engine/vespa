@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dense_remove_dimension_optimizer.h"
-#include "dense_replace_type_function.h"
+#include "remove_trivial_dimension_optimizer.h"
+#include "replace_type_function.h"
 #include <vespa/eval/eval/value_type.h>
 
 namespace vespalib::eval {
@@ -24,17 +24,16 @@ bool is_trivial_dim_list(const ValueType &type, const std::vector<vespalib::stri
 } // namespace vespalib::eval::<unnamed>
 
 const TensorFunction &
-DenseRemoveDimensionOptimizer::optimize(const TensorFunction &expr, Stash &stash)
+RemoveTrivialDimensionOptimizer::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto reduce = as<Reduce>(expr)) {
         const TensorFunction &child = reduce->child();
-        if (expr.result_type().is_dense() &&
-            child.result_type().is_dense() &&
+        if ((! expr.result_type().dimensions().empty()) &&
             aggr::is_ident(reduce->aggr()) &&
             is_trivial_dim_list(child.result_type(), reduce->dimensions()))
         {
             assert(expr.result_type().cell_type() == child.result_type().cell_type());
-            return DenseReplaceTypeFunction::create_compact(expr.result_type(), child, stash);
+            return ReplaceTypeFunction::create_compact(expr.result_type(), child, stash);
         }
     }
     return expr;

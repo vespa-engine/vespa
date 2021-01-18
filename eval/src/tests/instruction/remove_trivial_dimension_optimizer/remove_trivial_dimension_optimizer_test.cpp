@@ -2,8 +2,8 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/dense_replace_type_function.h>
-#include <vespa/eval/instruction/dense_fast_rename_optimizer.h>
+#include <vespa/eval/instruction/replace_type_function.h>
+#include <vespa/eval/instruction/fast_rename_optimizer.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
@@ -29,14 +29,14 @@ EvalFixture::ParamRepo param_repo = make_params();
 void verify_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<DenseReplaceTypeFunction>();
+    auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_EQUAL(info.size(), 1u);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<DenseReplaceTypeFunction>();
+    auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_TRUE(info.empty());
 }
 
@@ -68,8 +68,9 @@ TEST("require that full reduce is not optimized") {
     TEST_DO(verify_not_optimized("reduce(x1y1z1,sum,x,y,z)"));
 }
 
-TEST("require that inappropriate tensor types cannot be optimized") {
-    TEST_DO(verify_not_optimized("reduce(x1y5z_m,sum,x)"));
+TEST("require that mixed tensor types can be optimized") {
+    TEST_DO(verify_optimized("reduce(x1y5z_m,sum,x)"));
+    TEST_DO(verify_not_optimized("reduce(x1y5z_m,sum,y)"));
     TEST_DO(verify_not_optimized("reduce(x1y5z_m,sum,z)"));
 }
 
