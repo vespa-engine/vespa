@@ -78,7 +78,6 @@ public:
     ~ReadBucketInfo();
 
     document::Bucket getBucket() const override { return _bucket; }
-    bool hasSingleBucketId() const override { return true; }
 
     std::unique_ptr<api::StorageReply> makeReply() override;
 
@@ -102,7 +101,6 @@ public:
     ~ReadBucketInfoReply();
 
     document::Bucket getBucket() const override { return _bucket; }
-    bool hasSingleBucketId() const override { return true; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };

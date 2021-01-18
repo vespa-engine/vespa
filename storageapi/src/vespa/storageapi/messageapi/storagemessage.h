@@ -37,8 +37,8 @@ namespace vespalib { class asciistream; }
 public: \
     DECLARE_POINTER_TYPEDEFS(reply) \
 private: \
-    bool callHandler(MessageHandler& h, \
-                     const std::shared_ptr<StorageMessage>& m) const override \
+    bool callHandler(storage::api::MessageHandler& h, \
+                     const std::shared_ptr<storage::api::StorageMessage>& m) const override \
     { \
         return h.callback(std::static_pointer_cast<reply>(m)); \
     }
@@ -46,7 +46,7 @@ private: \
 /** Commands also has a command to implement to create the reply. */
 #define DECLARE_STORAGECOMMAND(command, callback) \
 public: \
-    std::unique_ptr<StorageReply> makeReply() override; \
+    std::unique_ptr<storage::api::StorageReply> makeReply() override; \
     DECLARE_STORAGEREPLY(command, callback)
 
 /** This macro implements common stuff for all storage messages. */
@@ -62,7 +62,7 @@ public: \
     std::unique_ptr<storage::api::StorageReply> \
     storage::api::command::makeReply() \
     { \
-        return std::unique_ptr<storage::api::StorageReply>(new reply(*this)); \
+        return std::make_unique<reply>(*this); \
     }
 
 namespace storage::api {
@@ -446,7 +446,6 @@ public:
 
     virtual document::Bucket getBucket() const { return getDummyBucket(); }
     document::BucketId getBucketId() const noexcept { return getBucket().getBucketId(); }
-    virtual bool hasSingleBucketId() const { return false; }
     virtual LockingRequirements lockingRequirements() const noexcept {
         // Safe default: assume exclusive locking is required.
         return LockingRequirements::Exclusive;
