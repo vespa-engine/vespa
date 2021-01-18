@@ -30,9 +30,6 @@ public:
     document::Bucket getBucket() const override { return _bucket; }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
-    void setIteratorId(spi::IteratorId iteratorId) { _iteratorId = iteratorId; }
-
-    void setMaxByteSize(uint32_t maxByteSize) { _maxByteSize = maxByteSize; }
     uint32_t getMaxByteSize() const { return _maxByteSize; }
 
     api::LockingRequirements lockingRequirements() const noexcept override {

@@ -131,7 +131,6 @@ public:
     virtual bool onRevert(const std::shared_ptr<api::RevertCommand>&) { return false; }
     virtual bool onRevertReply(const std::shared_ptr<api::RevertReply>&) { return false; }
 
-    // Visiting
     virtual bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) { return false; }
     virtual bool onCreateVisitorReply(const std::shared_ptr<api::CreateVisitorReply>&) { return false; }
     virtual bool onDestroyVisitor(const std::shared_ptr<api::DestroyVisitorCommand>&) { return false; }
