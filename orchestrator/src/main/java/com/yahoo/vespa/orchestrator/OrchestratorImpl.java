@@ -11,10 +11,7 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
@@ -65,7 +62,6 @@ public class OrchestratorImpl implements Orchestrator {
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final Clock clock;
     private final ApplicationApiFactory applicationApiFactory;
-    private final BooleanFlag retireWithPermanentlyDownFlag;
 
     @Inject
     public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
@@ -103,7 +99,6 @@ public class OrchestratorImpl implements Orchestrator {
         this.serviceMonitor = serviceMonitor;
         this.clock = clock;
         this.applicationApiFactory = applicationApiFactory;
-        this.retireWithPermanentlyDownFlag = Flags.RETIRE_WITH_PERMANENTLY_DOWN.bindTo(flagSource);
 
         serviceMonitor.registerListener(statusService);
     }
@@ -208,10 +203,7 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstance appInstance = getApplicationInstance(hostName);
         NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
 
-        boolean usePermanentlyDownStatus = retireWithPermanentlyDownFlag
-                .with(FetchVector.Dimension.HOSTNAME, hostName.s())
-                .value();
-        OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock, usePermanentlyDownStatus);
+        OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (ApplicationLock lock = statusService.lockApplication(context, appInstance.reference())) {
             ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, lock, clusterControllerClientFactory);
 

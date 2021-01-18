@@ -43,7 +43,7 @@ public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
     public static final UnboundBooleanFlag RETIRE_WITH_PERMANENTLY_DOWN = defineFeatureFlag(
-            "retire-with-permanently-down", false,
+            "retire-with-permanently-down", true,
             List.of("hakonhall"), "2020-12-02", "2021-02-01",
             "If enabled, retirement will end with setting the host status to PERMANENTLY_DOWN, " +
             "instead of ALLOWED_TO_BE_DOWN (old behavior).",
