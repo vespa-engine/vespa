@@ -206,10 +206,10 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private final InetSocketAddress localAddress;
         private final InetSocketAddress peerAddress;
 
-        private long httpBytesReceived = -1;
-        private long httpBytesSent = -1;
-        private long requests = -1;
-        private long responses = -1;
+        private long httpBytesReceived = 0;
+        private long httpBytesSent = 0;
+        private long requests = 0;
+        private long responses = 0;
         private byte[] sslSessionId;
         private String sslProtocol;
         private String sslCipherSuite;
@@ -279,16 +279,16 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
         synchronized ConnectionLogEntry toLogEntry() {
             ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt));
-            if (httpBytesReceived >= 0) {
+            if (httpBytesReceived > 0) {
                 builder.withHttpBytesReceived(httpBytesReceived);
             }
-            if (httpBytesSent >= 0) {
+            if (httpBytesSent > 0) {
                 builder.withHttpBytesSent(httpBytesSent);
             }
-            if (requests >= 0) {
+            if (requests > 0) {
                 builder.withRequests(requests);
             }
-            if (responses >= 0) {
+            if (responses > 0) {
                 builder.withResponses(responses);
             }
             if (peerAddress != null) {
