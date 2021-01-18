@@ -3,62 +3,48 @@
 #include "fast_rename_optimizer.h"
 #include "just_replace_type_function.h"
 #include <vespa/eval/eval/value.h>
+#include <optional>
 
 namespace vespalib::eval {
 
 using namespace tensor_function;
 
-namespace {
-
-bool is_ascending(const std::vector<size_t> &values) {
-    for (size_t i = 1; i < values.size(); ++i) {
-        if (values[i-1] >= values[i]) {
-            return false;
+bool
+FastRenameOptimizer::is_stable_rename(const ValueType &from_type, const ValueType &to_type,
+                                      const std::vector<vespalib::string> &from,
+                                      const std::vector<vespalib::string> &to)
+{
+    assert(from.size() == to.size());
+    auto get_from_idx = [&](const vespalib::string &to_name) {
+        for (size_t i = 0; i < to.size(); ++i) {
+            if (to[i] == to_name) {
+                return from_type.dimension_index(from[i]);
+            }
+        }
+        return from_type.dimension_index(to_name);
+    };
+    std::optional<size_t> prev_mapped;
+    std::optional<size_t> prev_indexed;
+    const auto &from_dims = from_type.dimensions();
+    for (const auto &to_dim: to_type.dimensions()) {
+        size_t from_idx = get_from_idx(to_dim.name);
+        assert(from_idx != ValueType::Dimension::npos);
+        if (to_dim.is_mapped()) {
+            assert(from_dims[from_idx].is_mapped());
+            if (prev_mapped && (prev_mapped.value() > from_idx)) {
+                return false;
+            }
+            prev_mapped = from_idx;
+        } else if (!to_dim.is_trivial()) {
+            assert(from_dims[from_idx].is_indexed());
+            if (prev_indexed && (prev_indexed.value() > from_idx)) {
+                return false;
+            }
+            prev_indexed = from_idx;
         }
     }
     return true;
 }
-
-bool is_stable_rename(const ValueType &from_type, const ValueType &to_type,
-                      const std::vector<vespalib::string> &from,
-                      const std::vector<vespalib::string> &to)
-{
-    if (from.size() != to.size()) {
-        return false;
-    }
-    size_t npos = ValueType::Dimension::npos;
-    std::map<vespalib::string, size_t> name_to_new_idx;
-    for (size_t i = 0; i < from.size(); ++i) {
-        size_t old_idx = from_type.dimension_index(from[i]);
-        size_t new_idx = to_type.dimension_index(to[i]);
-        if (old_idx == npos || new_idx == npos) {
-            return false;
-        }
-        auto [iter, inserted] = name_to_new_idx.emplace(from[i], new_idx);
-        if (! inserted) {
-            abort();
-            return false;
-        }
-    }
-    const auto & input_dims = from_type.dimensions();
-    std::vector<size_t> sparse_order;
-    std::vector<size_t> dense_order;
-    size_t old_idx = 0;
-    for (const auto & dim : input_dims) {
-        size_t new_idx = old_idx++;
-        if (name_to_new_idx.count(dim.name) != 0) {
-            new_idx = name_to_new_idx[dim.name];
-        }
-        if (dim.is_mapped()) {
-            sparse_order.push_back(new_idx);
-        } else if (!dim.is_trivial()) {
-            dense_order.push_back(new_idx);
-        }
-    }
-    return (is_ascending(sparse_order) && is_ascending(dense_order));
-}
-
-} // namespace vespalib::eval::<unnamed>
 
 const TensorFunction &
 FastRenameOptimizer::optimize(const TensorFunction &expr, Stash &stash)
