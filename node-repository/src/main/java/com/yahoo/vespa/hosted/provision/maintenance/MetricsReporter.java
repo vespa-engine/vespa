@@ -86,6 +86,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     private void updateAllocationMetrics(NodeList nodes) {
         Map<ClusterKey, List<Node>> byCluster = nodes.stream()
                                                      .filter(node -> node.allocation().isPresent())
+                                                     .filter(node -> !node.allocation().get().owner().instance().isTester())
                                                      .collect(Collectors.groupingBy(node -> new ClusterKey(node.allocation().get().owner(), node.allocation().get().membership().cluster().id())));
         byCluster.forEach((clusterKey, allocatedNodes) -> {
             int activeNodes = 0;
