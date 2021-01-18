@@ -20,7 +20,9 @@ bool same_cell_type(const TensorFunction &a, const TensorFunction &b) {
 }
 
 bool is_unit_constant(const TensorFunction &node) {
-    if (! node.result_type().is_dense()) return false;
+    if (! node.result_type().is_dense()) {
+        return false;
+    }
     if (auto const_value = as<ConstValue>(node)) {
         for (const auto &dim: node.result_type().dimensions()) {
             if (dim.size != 1) {
