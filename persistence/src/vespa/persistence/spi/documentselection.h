@@ -8,8 +8,9 @@
 
 #pragma once
 
-#include <persistence/spi/types.h>
+#include <vespa/vespalib/stllike/string.h>
 
+namespace document { class Document; }
 namespace storage::spi {
 
 class DocumentSelection

@@ -16,6 +16,7 @@
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/persistence/spi/exceptions.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 
 #include <vespa/log/log.h>

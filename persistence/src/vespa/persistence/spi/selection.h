@@ -9,6 +9,7 @@
 #pragma once
 
 #include "documentselection.h"
+#include <persistence/spi/types.h>
 
 namespace storage::spi {
 
