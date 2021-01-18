@@ -43,6 +43,7 @@ class ReadBucketList;
 class BucketOwnershipNotifier;
 class AbortBucketOperationsCommand;
 struct DoneInitializeHandler;
+class HostInfo;
 class PersistenceHandler;
 struct FileStorMetrics;
 class ProviderErrorWrapper;
@@ -77,7 +78,7 @@ class FileStorManager : public StorageLinkQueued,
 
 public:
     FileStorManager(const config::ConfigUri &, spi::PersistenceProvider&,
-                    ServiceLayerComponentRegister&, DoneInitializeHandler&);
+                    ServiceLayerComponentRegister&, DoneInitializeHandler&, HostInfo&);
     FileStorManager(const FileStorManager &) = delete;
     FileStorManager& operator=(const FileStorManager &) = delete;
 

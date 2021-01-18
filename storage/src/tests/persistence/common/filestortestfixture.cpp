@@ -71,11 +71,12 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
         FileStorTestFixture& fixture,
         const StorageLinkInjector& injector)
     : _fixture(fixture),
+      top(),
       manager(nullptr)
 {
     injector.inject(top);
     auto fsm = std::make_unique<FileStorManager>(fixture._config->getConfigId(), fixture._node->getPersistenceProvider(),
-                                                 fixture._node->getComponentRegister(), *fixture._node);
+                                                 fixture._node->getComponentRegister(), *fixture._node, fixture._node->get_host_info());
     manager = fsm.get();
     top.push_back(std::move(fsm));
     top.open();
