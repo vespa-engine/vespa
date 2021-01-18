@@ -109,6 +109,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
             }
             if (!endpoint.isOpen()) {
+                info.setClosedAt(System.currentTimeMillis());
                 connectionLog.log(info.toLogEntry());
                 connectionInfo.remove(endpoint);
             }
@@ -199,13 +200,13 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
     @FunctionalInterface private interface ListenerHandler { void run() throws Exception; }
 
-    // TODO Include connection duration or timestamp closed
     private static class ConnectionInfo {
         private final UUID uuid;
         private final long createdAt;
         private final InetSocketAddress localAddress;
         private final InetSocketAddress peerAddress;
 
+        private long closedAt = 0;
         private long httpBytesReceived = 0;
         private long httpBytesSent = 0;
         private long requests = 0;
@@ -237,6 +238,11 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         }
 
         synchronized UUID uuid() { return uuid; }
+
+        synchronized ConnectionInfo setClosedAt(long closedAt) {
+            this.closedAt = closedAt;
+            return this;
+        }
 
         synchronized ConnectionInfo setHttpBytes(long received, long sent) {
             this.httpBytesReceived = received;
@@ -279,6 +285,9 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
         synchronized ConnectionLogEntry toLogEntry() {
             ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt));
+            if (closedAt > 0) {
+                builder.withDuration((closedAt - createdAt) / 1000D);
+            }
             if (httpBytesReceived > 0) {
                 builder.withHttpBytesReceived(httpBytesReceived);
             }

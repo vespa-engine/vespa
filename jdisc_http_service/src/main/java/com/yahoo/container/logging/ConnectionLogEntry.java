@@ -19,6 +19,7 @@ public class ConnectionLogEntry {
 
     private final UUID id;
     private final Instant timestamp;
+    private final Double durationSeconds;
     private final String peerAddress;
     private final Integer peerPort;
     private final String localAddress;
@@ -42,6 +43,7 @@ public class ConnectionLogEntry {
     private ConnectionLogEntry(Builder builder) {
         this.id = builder.id;
         this.timestamp = builder.timestamp;
+        this.durationSeconds = builder.durationSeconds;
         this.peerAddress = builder.peerAddress;
         this.peerPort = builder.peerPort;
         this.localAddress = builder.localAddress;
@@ -68,6 +70,7 @@ public class ConnectionLogEntry {
         cursor.setString("id", id.toString());
         setTimestamp(cursor, timestamp, "timestamp");
 
+        setDouble(cursor, durationSeconds, "duration");
         setString(cursor, peerAddress, "peerAddress");
         setInteger(cursor, peerPort, "peerPort");
         setString(cursor, localAddress, "localAddress");
@@ -113,6 +116,12 @@ public class ConnectionLogEntry {
         }
     }
 
+    private void setDouble(Cursor cursor, Double value, String... keys) {
+        if (value != null) {
+            subCursor(cursor, keys).setDouble(keys[keys.length - 1], value);
+        }
+    }
+
     private static Cursor subCursor(Cursor cursor, String... keys) {
         Cursor subCursor = cursor;
         for (int i = 0; i < keys.length - 1; ++i) {
@@ -133,6 +142,7 @@ public class ConnectionLogEntry {
     public static class Builder {
         private final UUID id;
         private final Instant timestamp;
+        private Double durationSeconds;
         private String peerAddress;
         private Integer peerPort;
         private String localAddress;
@@ -156,6 +166,11 @@ public class ConnectionLogEntry {
         Builder(UUID id, Instant timestamp) {
             this.id = id;
             this.timestamp = timestamp;
+        }
+
+        public Builder withDuration(double durationSeconds) {
+            this.durationSeconds = durationSeconds;
+            return this;
         }
 
         public Builder withPeerAddress(String peerAddress) {
