@@ -10,46 +10,44 @@ import static org.junit.Assert.*;
 
 public class EndpointCertificateMetadataSerializerTest {
 
-    private final EndpointCertificateMetadata sample =
-            new EndpointCertificateMetadata("keyName", "certName", 1, 0);
-    private final EndpointCertificateMetadata sampleWithRequestMetadata =
-            new EndpointCertificateMetadata("keyName", "certName", 1, 0, Optional.of("requestId"), Optional.of(List.of("SAN1", "SAN2")), Optional.of("issuer"));
+    private final EndpointCertificateMetadata sampleWithExpiry =
+            new EndpointCertificateMetadata("keyName", "certName", 1, 0, "requestId", List.of("SAN1", "SAN2"), "issuer", java.util.Optional.of(1628000000L));
+
+    private final EndpointCertificateMetadata sampleWithoutExpiry =
+            new EndpointCertificateMetadata("keyName", "certName", 1, 0, "requestId", List.of("SAN1", "SAN2"), "issuer", Optional.empty());
 
     @Test
-    public void serialize() {
+    public void serializeWithExpiry() {
         assertEquals(
-                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0}",
-                EndpointCertificateMetadataSerializer.toSlime(sample).toString());
+                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\",\"expiry\":1628000000}",
+                EndpointCertificateMetadataSerializer.toSlime(sampleWithExpiry).toString());
     }
 
     @Test
-    public void serializeWithRequestMetadata() {
+    public void serializeWithoutExpiry() {
         assertEquals(
                 "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\"}",
-                EndpointCertificateMetadataSerializer.toSlime(sampleWithRequestMetadata).toString());
+                EndpointCertificateMetadataSerializer.toSlime(sampleWithoutExpiry).toString());
     }
 
     @Test
-    public void deserializeFromJson() {
+    public void deserializeFromJsonWithExpiry() {
+        EndpointCertificateMetadata sampleWithExpiry = this.sampleWithExpiry;
+        EndpointCertificateMetadata actual = EndpointCertificateMetadataSerializer.fromJsonString(
+                "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\",\"expiry\":1628000000}");
+
+        System.out.println(sampleWithExpiry.equals(actual));
+
         assertEquals(
-                sample,
-                EndpointCertificateMetadataSerializer.fromJsonString(
-                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0}"));
+                sampleWithExpiry,
+                actual);
     }
 
     @Test
-    public void deserializeFromJsonWithRequestMetadata() {
+    public void deserializeFromJsonWithoutExpiry() {
         assertEquals(
-                sampleWithRequestMetadata,
+                sampleWithoutExpiry,
                 EndpointCertificateMetadataSerializer.fromJsonString(
                         "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1,\"lastRequested\":0,\"requestId\":\"requestId\",\"requestedDnsSans\":[\"SAN1\",\"SAN2\"],\"issuer\":\"issuer\"}"));
-    }
-
-    @Test
-    public void deserializeFromJsonWithDefaultLastRequested() {
-        assertEquals(
-                new EndpointCertificateMetadata("keyName", "certName", 1, 1597200000),
-                EndpointCertificateMetadataSerializer.fromJsonString(
-                        "{\"keyName\":\"keyName\",\"certName\":\"certName\",\"version\":1}"));
     }
 }

@@ -53,18 +53,6 @@ public class EndpointCertificateMetadataStoreTest {
     }
 
     @Test
-    public void reads_string_format() {
-        curator.set(endpointCertificateMetadataPath, ("\"vespa.tlskeys.tenant1--app1\"").getBytes());
-
-        // Read from zk and verify cert and key are available
-        var endpointCertificateSecrets = endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId)
-                .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
-        assertTrue(endpointCertificateSecrets.isPresent());
-        assertTrue(endpointCertificateSecrets.get().key().startsWith("-----BEGIN EC PRIVATE KEY"));
-        assertTrue(endpointCertificateSecrets.get().certificate().startsWith("-----BEGIN CERTIFICATE"));
-    }
-
-    @Test
     public void reads_object_format() {
         curator.set(endpointCertificateMetadataPath,
                 "{\"keyName\": \"vespa.tlskeys.tenant1--app1-key\", \"certName\":\"vespa.tlskeys.tenant1--app1-cert\", \"version\": 0}"

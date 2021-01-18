@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.Slime;
+import com.yahoo.slime.Type;
 
 /**
  * (de)serializes endpoint certificate metadata
@@ -30,26 +30,13 @@ public class EndpointCertificateMetadataSerializer {
     }
 
     public static EndpointCertificateMetadata fromSlime(Inspector inspector) {
-        switch (inspector.type()) {
-            case STRING: // TODO: Remove once all are transmitted and stored as JSON
-                return new EndpointCertificateMetadata(
-                        inspector.asString() + "-key",
-                        inspector.asString() + "-cert",
-                        0
-                );
-            case OBJECT:
-                return new EndpointCertificateMetadata(
-                        inspector.field(keyNameField).asString(),
-                        inspector.field(certNameField).asString(),
-                        Math.toIntExact(inspector.field(versionField).asLong())
-                );
-
-            default:
-                throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
+        if (inspector.type() == Type.OBJECT) {
+            return new EndpointCertificateMetadata(
+                    inspector.field(keyNameField).asString(),
+                    inspector.field(certNameField).asString(),
+                    Math.toIntExact(inspector.field(versionField).asLong())
+            );
         }
-    }
-
-    public static EndpointCertificateMetadata fromString(String tlsSecretsKeys) {
-        return fromSlime(new Slime().setString(tlsSecretsKeys));
+        throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
     }
 }

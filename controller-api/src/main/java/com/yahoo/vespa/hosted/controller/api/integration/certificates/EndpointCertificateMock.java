@@ -25,7 +25,8 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
         this.dnsNames.put(applicationId, dnsNames);
         String endpointCertificatePrefix = String.format("vespa.tls.%s.%s.%s", applicationId.tenant(),
                 applicationId.application(), applicationId.instance());
-        return new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0, 0, Optional.of("mock-id-string"), Optional.of(dnsNames), Optional.of("mockCa"));
+        return new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0, 0,
+                "mock-id-string", dnsNames, "mockCa", Optional.empty());
     }
 
     @Override
