@@ -167,11 +167,12 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(), static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
     builder.add(std::make_unique<ModifiedBucketChecker>(
             _context.getComponentRegister(), _persistenceProvider, _configUri));
+    auto state_manager = releaseStateManager();
     auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister(),
-                                                             getDoneInitializeHandler());
+                                                             getDoneInitializeHandler(), state_manager->getHostInfo());
     _fileStorManager = filstor_manager.get();
     builder.add(std::move(filstor_manager));
-    builder.add(releaseStateManager());
+    builder.add(std::move(state_manager));
 
     // Lifetimes of all referenced components shall outlive the last call going
     // through the SPI, as queues are flushed and worker threads joined when

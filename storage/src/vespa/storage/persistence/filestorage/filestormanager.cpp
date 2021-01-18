@@ -60,7 +60,8 @@ private:
 
 FileStorManager::
 FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
-                ServiceLayerComponentRegister& compReg, DoneInitializeHandler& init_handler)
+                ServiceLayerComponentRegister& compReg, DoneInitializeHandler& init_handler,
+                HostInfo& hostInfoReporterRegistrar)
     : StorageLinkQueued("File store manager", compReg),
       framework::HtmlStatusReporter("filestorman", "File store manager"),
       _compReg(compReg),
@@ -83,6 +84,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
     _component.registerStatusPage(*this);
     _component.getStateUpdater().addStateListener(*this);
     propagateClusterStates();
+    (void) hostInfoReporterRegistrar;
 }
 
 FileStorManager::~FileStorManager()

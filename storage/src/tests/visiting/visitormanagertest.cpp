@@ -92,7 +92,7 @@ VisitorManagerTest::initializeTest()
     _manager = vm.get();
     _top->push_back(std::move(vm));
     _top->push_back(std::make_unique<FileStorManager>(config.getConfigId(), _node->getPersistenceProvider(),
-                                                      _node->getComponentRegister(), *_node));
+                                                      _node->getComponentRegister(), *_node, _node->get_host_info()));
     _manager->setTimeBetweenTicks(10);
     _top->open();
 
