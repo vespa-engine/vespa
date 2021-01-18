@@ -76,4 +76,39 @@ TEST("require that optimization works for float cells") {
     TEST_DO(verify_optimized("rename(x5f,x,y)"));
 }
 
+bool is_stable(const vespalib::string &from_spec, const vespalib::string &to_spec,
+               const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to)
+{
+    auto from_type = ValueType::from_spec(from_spec);
+    auto to_type = ValueType::from_spec(to_spec);
+    return FastRenameOptimizer::is_stable_rename(from_type, to_type, from, to);
+}
+
+TEST("require that rename is stable if dimension order is preserved") {
+    EXPECT_TRUE(is_stable("tensor(a{},b{})", "tensor(a{},c{})", {"b"}, {"c"}));
+    EXPECT_TRUE(is_stable("tensor(c[3],d[5])", "tensor(c[3],e[5])", {"d"}, {"e"}));
+    EXPECT_TRUE(is_stable("tensor(a{},b{},c[3],d[5])", "tensor(a{},b{},c[3],e[5])", {"d"}, {"e"}));
+    EXPECT_TRUE(is_stable("tensor(a{},b{},c[3],d[5])", "tensor(e{},f{},g[3],h[5])", {"a", "b", "c", "d"}, {"e", "f", "g", "h"}));
+}
+
+TEST("require that rename is unstable if nontrivial indexed dimensions change order") {
+    EXPECT_FALSE(is_stable("tensor(c[3],d[5])", "tensor(d[5],e[3])", {"c"}, {"e"}));
+    EXPECT_FALSE(is_stable("tensor(c[3],d[5])", "tensor(c[5],d[3])", {"c", "d"}, {"d", "c"}));
+}
+
+TEST("require that rename is unstable if mapped dimensions change order") {
+    EXPECT_FALSE(is_stable("tensor(a{},b{})", "tensor(b{},c{})", {"a"}, {"c"}));
+    EXPECT_FALSE(is_stable("tensor(a{},b{})", "tensor(a{},b{})", {"a", "b"}, {"b", "a"}));
+}
+
+TEST("require that rename can be stable if indexed and mapped dimensions change order") {
+    EXPECT_TRUE(is_stable("tensor(a{},b{},c[3],d[5])", "tensor(a[3],b[5],c{},d{})", {"a", "b", "c", "d"}, {"c", "d", "a", "b"}));
+    EXPECT_TRUE(is_stable("tensor(a{},b{},c[3],d[5])", "tensor(c[3],d[5],e{},f{})", {"a", "b"}, {"e", "f"}));
+}
+
+TEST("require that rename can be stable if trivial dimension is moved") {
+    EXPECT_TRUE(is_stable("tensor(a[1],b{},c[3])", "tensor(b{},bb[1],c[3])", {"a"}, {"bb"}));
+    EXPECT_TRUE(is_stable("tensor(a[1],b{},c[3])", "tensor(b{},c[3],cc[1])", {"a"}, {"cc"}));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
