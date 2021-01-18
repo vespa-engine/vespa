@@ -44,6 +44,14 @@ vespalib::string serialize_state(const lib::ClusterState& state) {
     return as.str();
 }
 
+static const Memory StatesField("states");
+static const Memory BaselineField("baseline");
+static const Memory SpacesField("spaces");
+static const Memory DeferredActivationField("deferred-activation");
+static const Memory FeedBlockField("feed-block");
+static const Memory BlockFeedInClusterField("block-feed-in-cluster");
+static const Memory DescriptionField("description");
+
 }
 
 // Only used from unit tests; the cluster controller encodes all bundles
@@ -54,13 +62,19 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(
     vespalib::Slime slime;
     Cursor& root = slime.setObject();
     if (bundle.deferredActivation()) {
-        root.setBool("deferred-activation", bundle.deferredActivation());
+        root.setBool(DeferredActivationField, bundle.deferredActivation());
     }
-    Cursor& states = root.setObject("states");
-    states.setString("baseline", serialize_state(*bundle.getBaselineClusterState()));
-    Cursor& spaces = states.setObject("spaces");
+    Cursor& states = root.setObject(StatesField);
+    states.setString(BaselineField, serialize_state(*bundle.getBaselineClusterState()));
+    Cursor& spaces = states.setObject(SpacesField);
     for (const auto& sp : bundle.getDerivedClusterStates()) {
         spaces.setString(FixedBucketSpaces::to_string(sp.first), serialize_state(*sp.second));
+    }
+    // We only encode feed block state if the cluster is actually blocked.
+    if (bundle.block_feed_in_cluster()) {
+        Cursor& feed_block = root.setObject(FeedBlockField);
+        feed_block.setBool(BlockFeedInClusterField, true);
+        feed_block.setString(DescriptionField, bundle.feed_block()->description());
     }
 
     OutputBuf out_buf(4096);
@@ -79,10 +93,6 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(
 
 namespace {
 
-static const Memory StatesField("states");
-static const Memory BaselineField("baseline");
-static const Memory SpacesField("spaces");
-static const Memory DeferredActivationField("deferred-activation");
 
 struct StateInserter : vespalib::slime::ObjectTraverser {
     lib::ClusterStateBundle::BucketSpaceStateMapping& _space_states;
@@ -124,6 +134,13 @@ std::shared_ptr<const lib::ClusterStateBundle> SlimeClusterStateBundleCodec::dec
     spaces.traverse(inserter);
 
     const bool deferred_activation = root[DeferredActivationField].asBool(); // Defaults to false if not set.
+
+    Inspector& fb = root[FeedBlockField];
+    if (fb.valid()) {
+        lib::ClusterStateBundle::FeedBlock feed_block(fb[BlockFeedInClusterField].asBool(),
+                                                      fb[DescriptionField].asString().make_string());
+        return std::make_shared<lib::ClusterStateBundle>(baseline, std::move(space_states), feed_block, deferred_activation);
+    }
 
     // TODO add shared_ptr constructor for baseline?
     return std::make_shared<lib::ClusterStateBundle>(baseline, std::move(space_states), deferred_activation);
