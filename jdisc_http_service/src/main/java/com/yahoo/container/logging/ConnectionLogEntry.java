@@ -10,6 +10,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -141,9 +142,29 @@ public class ConnectionLogEntry {
         return new Builder(id, timestamp);
     }
 
-    public String id() {
-        return id.toString();
-    }
+    public String id() { return id.toString(); }
+    public Instant timestamp() { return timestamp; }
+    public Optional<Double> durationSeconds() { return Optional.ofNullable(durationSeconds); }
+    public Optional<String> peerAddress() { return Optional.ofNullable(peerAddress); }
+    public Optional<Integer> peerPort() { return Optional.ofNullable(peerPort); }
+    public Optional<String> localAddress() { return Optional.ofNullable(localAddress); }
+    public Optional<Integer> localPort() { return Optional.ofNullable(localPort); }
+    public Optional<String> remoteAddress() { return Optional.ofNullable(remoteAddress); }
+    public Optional<Integer> remotePort() { return Optional.ofNullable(remotePort); }
+    public Optional<Long> httpBytesReceived() { return Optional.ofNullable(httpBytesReceived); }
+    public Optional<Long> httpBytesSent() { return Optional.ofNullable(httpBytesSent); }
+    public Optional<Long> requests() { return Optional.ofNullable(requests); }
+    public Optional<Long> responses() { return Optional.ofNullable(responses); }
+    public Optional<String> sslSessionId() { return Optional.ofNullable(sslSessionId); }
+    public Optional<String> sslProtocol() { return Optional.ofNullable(sslProtocol); }
+    public Optional<String> sslCipherSuite() { return Optional.ofNullable(sslCipherSuite); }
+    public Optional<String> sslPeerSubject() { return Optional.ofNullable(sslPeerSubject); }
+    public Optional<Instant> sslPeerNotBefore() { return Optional.ofNullable(sslPeerNotBefore); }
+    public Optional<Instant> sslPeerNotAfter() { return Optional.ofNullable(sslPeerNotAfter); }
+    public Optional<String> sslSniServerName() { return Optional.ofNullable(sslSniServerName); }
+    public Optional<String> sslHandshakeFailureException() { return Optional.ofNullable(sslHandshakeFailureException); }
+    public Optional<String> sslHandshakeFailureMessage() { return Optional.ofNullable(sslHandshakeFailureMessage); }
+    public Optional<String> sslHandshakeFailureType() { return Optional.ofNullable(sslHandshakeFailureType); }
 
     public static class Builder {
         private final UUID id;
