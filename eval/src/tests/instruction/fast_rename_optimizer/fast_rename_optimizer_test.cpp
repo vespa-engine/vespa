@@ -23,6 +23,8 @@ EvalFixture::ParamRepo make_params() {
         .add("x5f", spec(float_cells({x(5)}), N()))
         .add("x_m", spec({x({"a", "b", "c"})}, N()))
         .add("xy_mm", spec({x({"a", "b", "c"}),y({"d","e"})}, N()))
+        .add("x5y3z_m", spec({x(5),y(3),z({"a","b"})}, N()))
+        .add("x5yz_m", spec({x(5),y({"a","b"}),z({"d","e"})}, N()))
         .add("x5y3", spec({x(5),y(3)}, N()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
@@ -66,6 +68,19 @@ TEST("require that non-dense renames may be optimized") {
     TEST_DO(verify_optimized("rename(xy_mm,(x,y),(y,z))"));
     TEST_DO(verify_not_optimized("rename(xy_mm,(x,y),(b,a))"));
     TEST_DO(verify_not_optimized("rename(xy_mm,(x,y),(y,x))"));
+
+    TEST_DO(verify_optimized("rename(x5y3z_m,(z),(a))"));
+    TEST_DO(verify_optimized("rename(x5y3z_m,(x,y,z),(b,c,a))"));
+    TEST_DO(verify_optimized("rename(x5y3z_m,(z),(a))"));
+    TEST_DO(verify_optimized("rename(x5y3z_m,(x,y,z),(b,c,a))"));
+    TEST_DO(verify_not_optimized("rename(x5y3z_m,(y),(a))"));
+    TEST_DO(verify_not_optimized("rename(x5y3z_m,(x,z),(z,x))"));
+
+    TEST_DO(verify_optimized("rename(x5yz_m,(x,y),(y,x))"));
+    TEST_DO(verify_optimized("rename(x5yz_m,(x,y,z),(c,a,b))"));
+    TEST_DO(verify_optimized("rename(x5yz_m,(y,z),(a,b))"));
+    TEST_DO(verify_not_optimized("rename(x5yz_m,(z),(a))"));
+    TEST_DO(verify_not_optimized("rename(x5yz_m,(y,z),(z,y))"));
 }
 
 TEST("require that chained optimized renames are compacted into a single operation") {
