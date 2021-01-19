@@ -32,7 +32,7 @@ import java.util.zip.GZIPOutputStream;
  *
  * @author Bob Travis
  */
-public class LogFileHandler extends StreamHandler {
+class LogFileHandler extends StreamHandler {
 
     private final static Logger logger = Logger.getLogger(LogFileHandler.class.getName());
     private final boolean compressOnRotation;
@@ -112,6 +112,7 @@ public class LogFileHandler extends StreamHandler {
      *
      * @param r logrecord to publish
      */
+    @Override
     public void publish(LogRecord r) {
         try {
             logQueue.put(r);
@@ -376,7 +377,7 @@ public class LogFileHandler extends StreamHandler {
      * Flushes all queued messages, interrupts the log thread in this and
      * waits for it to end before returning
      */
-    public void shutdown() {
+    void shutdown() {
         logThread.interrupt();
         try {
             logThread.join();
@@ -390,7 +391,7 @@ public class LogFileHandler extends StreamHandler {
     /**
      * Only for unit testing. Do not use.
      */
-    public String getFileName() {
+    String getFileName() {
         return fileName;
     }
 
