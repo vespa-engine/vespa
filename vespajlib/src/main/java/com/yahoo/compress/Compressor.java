@@ -18,6 +18,7 @@ import java.util.Random;
  */
 public class Compressor {
 
+    private final ZstdCompressor zstdCompressor = new ZstdCompressor();
     private final CompressionType type;
     private final int level;
     private final double compressionThresholdFactor;
@@ -91,6 +92,11 @@ public class Compressor {
                 if (compressedData.length + 8 >= dataSize * compressionThresholdFactor)
                     return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
                 return new Compression(CompressionType.LZ4, dataSize, compressedData);
+            case ZSTD:
+                int dataLength = uncompressedSize.orElse(data.length);
+                if (dataLength < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, dataLength, data);
+                byte[] compressed = zstdCompressor.compress(data, 0, dataLength);
+                return new Compression(CompressionType.ZSTD, dataLength, compressed);
             default:
                 throw new IllegalArgumentException(requestedCompression + " is not supported");
         }
@@ -130,6 +136,15 @@ public class Compressor {
                 if (expectedCompressedSize.isPresent() && compressedSize != expectedCompressedSize.get())
                     throw new IllegalStateException("Compressed size mismatch. Expected " + compressedSize + ". Got " + expectedCompressedSize.get());
                 return uncompressedLZ4Data;
+            case ZSTD:
+                int compressedLength = expectedCompressedSize.orElseThrow(() -> new IllegalArgumentException("Zstd decompressor requires input size"));
+                byte[] decompressedData = zstdCompressor.decompress(compressedData, compressedDataOffset, compressedLength);
+                expectedCompressedSize.ifPresent(expectedSize -> {
+                    if (compressedData.length != expectedSize) {
+                        throw new IllegalStateException("Compressed size mismatch. Expected " + expectedSize + ". Got " + decompressedData.length);
+                    }
+                });
+                return decompressedData;
             default:
                 throw new IllegalArgumentException(compression + " is not supported");
         }
