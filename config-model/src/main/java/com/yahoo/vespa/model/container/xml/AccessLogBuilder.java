@@ -59,7 +59,8 @@ public class AccessLogBuilder {
                     rotationInterval(spec),
                     compressOnRotation(spec),
                     isHostedVespa,
-                    symlinkName(spec));
+                    symlinkName(spec),
+                    deployState.featureFlags().enableZstdCompressionAccessLog());
         }
 
         private String symlinkName(Element spec) {

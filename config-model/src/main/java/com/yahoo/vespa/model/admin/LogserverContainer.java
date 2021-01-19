@@ -15,7 +15,7 @@ public class LogserverContainer extends Container {
 
     public LogserverContainer(AbstractConfigProducer parent, FeatureFlags featureFlags, boolean isHostedVespa) {
         super(parent, featureFlags, "" + 0, 0, isHostedVespa);
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, ((LogserverContainerCluster) parent).getName(), true));
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, ((LogserverContainerCluster) parent).getName(), true, false));
     }
 
     @Override

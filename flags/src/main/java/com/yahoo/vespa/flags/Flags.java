@@ -285,6 +285,12 @@ public class Flags {
             "Whether to enable jdisc connection log",
             "Takes effect on (re)deployment");
 
+    public static final UnboundBooleanFlag ENABLE_ZSTD_COMPRESSION_ACCESS_LOG = defineFeatureFlag(
+            "enable-zstd-compression-access-log", false,
+            List.of("bjorncs", "tokle", "baldersheim"), "2021-01-19", "2021-04-01",
+            "Whether to enable zstd compression of jdisc access logs",
+            "Takes effect on (re)deployment");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

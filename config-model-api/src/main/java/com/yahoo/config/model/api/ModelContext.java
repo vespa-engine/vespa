@@ -82,6 +82,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"musum", "mpolden"}, comment = "Revisit in February 2021") default boolean reconfigurableZookeeperServer() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default boolean enableJdiscConnectionLog() { return false; }
+        @ModelFeatureFlag(owners = {"bjorncs", "tokle", "baldersheim"}) default boolean enableZstdCompressionAccessLog() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

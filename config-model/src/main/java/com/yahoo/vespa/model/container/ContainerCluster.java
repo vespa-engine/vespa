@@ -530,8 +530,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         if (containerSearch != null) containerSearch.connectSearchClusters(clusterMap);
     }
 
-    public void addDefaultSearchAccessLog() {
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, getName(), isHostedVespa));
+    public void addDefaultSearchAccessLog(DeployState deployState) {
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, getName(), isHostedVespa, deployState.featureFlags().enableZstdCompressionAccessLog()));
     }
 
     @Override

@@ -346,7 +346,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         if (accessLogElements.isEmpty() && deployState.getAccessLoggingEnabledByDefault())
-            cluster.addDefaultSearchAccessLog();
+            cluster.addDefaultSearchAccessLog(deployState);
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
