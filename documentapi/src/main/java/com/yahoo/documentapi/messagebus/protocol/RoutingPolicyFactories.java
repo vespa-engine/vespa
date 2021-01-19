@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
+import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
+
 /**
  * @author Simon Thoresen Hult
  * @author jonmv
@@ -16,37 +19,54 @@ class RoutingPolicyFactories {
     }
 
     static class ContentPolicyFactory implements RoutingPolicyFactory {
+        private final DistributionConfig distributionConfig;
+        public ContentPolicyFactory(DistributionConfig config) { this.distributionConfig = config; }
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
-            return new ContentPolicy(param);
+            return new ContentPolicy(param, distributionConfig);
         }
     }
 
     static class MessageTypePolicyFactory implements RoutingPolicyFactory {
 
         private final String configId;
+        private final DocumentProtocolPoliciesConfig config;
 
-        public MessageTypePolicyFactory(String configId) {
+        public MessageTypePolicyFactory(String configId, DocumentProtocolPoliciesConfig config) {
             this.configId = configId;
+            this.config = config;
         }
 
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
-            return new MessageTypePolicy((param == null || param.isEmpty()) ? configId : param);
-        }
+            if (config != null) {
+                if (config.cluster(param) == null)
+                    return new ErrorPolicy("No message type config for cluster '" + param + "'");
 
-        public void destroy() {
+                return new MessageTypePolicy(config.cluster(param));
+            }
+            return new MessageTypePolicy(param == null || param.isEmpty() ? configId : param);
         }
     }
 
     static class DocumentRouteSelectorPolicyFactory implements RoutingPolicyFactory {
 
         private final String configId;
+        private final DocumentProtocolPoliciesConfig config;
 
-        public DocumentRouteSelectorPolicyFactory(String configId) {
+        public DocumentRouteSelectorPolicyFactory(String configId, DocumentProtocolPoliciesConfig config) {
             this.configId = configId;
+            this.config = config;
         }
 
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
-            DocumentRouteSelectorPolicy ret = new DocumentRouteSelectorPolicy((param == null || param.isEmpty()) ?
+            if (config != null) {
+                try {
+                    return new DocumentRouteSelectorPolicy(config);
+                }
+                catch (IllegalArgumentException e) {
+                    return new ErrorPolicy(e.getMessage());
+                }
+            }
+            DocumentRouteSelectorPolicy ret = new DocumentRouteSelectorPolicy(param == null || param.isEmpty() ?
                                                                               configId : param);
             String error = ret.getError();
             if (error != null) {

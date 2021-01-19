@@ -9,6 +9,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.document.BucketId;
 
@@ -52,60 +53,102 @@ public class Distribution {
         return config.getAcquire().redundancy;
     }
 
-    private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = new ConfigSubscriber.SingleSubscriber<>() {
-        private int[] getGroupPath(String path) {
-            if (path.equals("invalid")) { return new int[0]; }
-            StringTokenizer st = new StringTokenizer(path, ".");
-            int[] p = new int[st.countTokens()];
-            for (int i=0; i<p.length; ++i) {
-                p[i] = Integer.valueOf(st.nextToken());
-            }
-            return p;
+    private static int[] getGroupPath(String path) {
+        if (path.equals("invalid")) { return new int[0]; }
+        StringTokenizer st = new StringTokenizer(path, ".");
+        int[] p = new int[st.countTokens()];
+        for (int i=0; i<p.length; ++i) {
+            p[i] = Integer.valueOf(st.nextToken());
         }
+        return p;
+    }
 
-        @Override
-        public void configure(StorDistributionConfig config) {
-            try{
-                Group root = null;
-                for (int i=0; i<config.group().size(); ++i) {
-                    StorDistributionConfig.Group cg = config.group(i);
-                    int[] path = new int[0];
-                    if (root != null) {
-                        path = getGroupPath(cg.index());
-                    }
-                    boolean isLeafGroup = (cg.nodes().size() > 0);
-                    Group group;
-                    int index = (path.length == 0 ? 0 : path[path.length - 1]);
-                    if (isLeafGroup) {
-                        group = new Group(index, cg.name());
-                        List<ConfiguredNode> nodes = new ArrayList<>();
-                        for (StorDistributionConfig.Group.Nodes node : cg.nodes()) {
-                            nodes.add(new ConfiguredNode(node.index(), node.retired()));
-                        }
-                        group.setNodes(nodes);
-                    } else {
-                        group = new Group(index, cg.name(), new Group.Distribution(cg.partitions(), config.redundancy()));
-                    }
-                    group.setCapacity(cg.capacity());
-                    if (path.length == 0) {
-                        root = group;
-                    } else {
-                        Group parent = root;
-                        for (int j=0; j<path.length - 1; ++j) {
-                            parent = parent.getSubgroups().get(path[j]);
-                        }
-                        parent.addSubGroup(group);
-                    }
+    // NOTE: keep in sync with the below
+    private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = config -> {
+        try {
+            Group root = null;
+            for (int i=0; i<config.group().size(); ++i) {
+                StorDistributionConfig.Group cg = config.group(i);
+                int[] path = new int[0];
+                if (root != null) {
+                    path = getGroupPath(cg.index());
                 }
-                if (root == null)
-                    throw new IllegalStateException("Config does not specify a root group");
-                root.calculateDistributionHashValues();
-                Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
-            } catch (ParseException e) {
-                throw new IllegalStateException("Failed to parse config", e);
+                boolean isLeafGroup = (cg.nodes().size() > 0);
+                Group group;
+                int index = (path.length == 0 ? 0 : path[path.length - 1]);
+                if (isLeafGroup) {
+                    group = new Group(index, cg.name());
+                    List<ConfiguredNode> nodes = new ArrayList<>();
+                    for (StorDistributionConfig.Group.Nodes node : cg.nodes()) {
+                        nodes.add(new ConfiguredNode(node.index(), node.retired()));
+                    }
+                    group.setNodes(nodes);
+                } else {
+                    group = new Group(index, cg.name(), new Group.Distribution(cg.partitions(), config.redundancy()));
+                }
+                group.setCapacity(cg.capacity());
+                if (path.length == 0) {
+                    root = group;
+                } else {
+                    Group parent = root;
+                    for (int j=0; j<path.length - 1; ++j) {
+                        parent = parent.getSubgroups().get(path[j]);
+                    }
+                    parent.addSubGroup(group);
+                }
             }
+            if (root == null)
+                throw new IllegalStateException("Config does not specify a root group");
+            root.calculateDistributionHashValues();
+            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
+        } catch (ParseException e) {
+            throw new IllegalStateException("Failed to parse config", e);
         }
     };
+
+    // TODO jonmv: De-dupe with this.configSubscriber once common config is used
+    private void configure(DistributionConfig.Cluster config) {
+        try {
+            Group root = null;
+            for (int i=0; i<config.group().size(); ++i) {
+                DistributionConfig.Cluster.Group cg = config.group(i);
+                int[] path = new int[0];
+                if (root != null) {
+                    path = getGroupPath(cg.index());
+                }
+                boolean isLeafGroup = (cg.nodes().size() > 0);
+                Group group;
+                int index = (path.length == 0 ? 0 : path[path.length - 1]);
+                if (isLeafGroup) {
+                    group = new Group(index, cg.name());
+                    List<ConfiguredNode> nodes = new ArrayList<>();
+                    for (DistributionConfig.Cluster.Group.Nodes node : cg.nodes()) {
+                        nodes.add(new ConfiguredNode(node.index(), node.retired()));
+                    }
+                    group.setNodes(nodes);
+                } else {
+                    group = new Group(index, cg.name(), new Group.Distribution(cg.partitions(), config.redundancy()));
+                }
+                group.setCapacity(cg.capacity());
+                if (path.length == 0) {
+                    root = group;
+                } else {
+                    Group parent = root;
+                    for (int j=0; j<path.length - 1; ++j) {
+                        parent = parent.getSubgroups().get(path[j]);
+                    }
+                    parent.addSubGroup(group);
+                }
+            }
+            if (root == null)
+                throw new IllegalStateException("Config does not specify a root group");
+            root.calculateDistributionHashValues();
+            Distribution.this.config.setRelease(new Config(root, config.redundancy(), true));
+        } catch (ParseException e) {
+            throw new IllegalStateException("Failed to parse config", e);
+        }
+    }
+
 
     public Distribution(String configId) {
         int mask = 0;
@@ -129,6 +172,10 @@ public class Distribution {
             mask = (mask << 1) | 1;
         }
         configSubscriber.configure(config);
+    }
+
+    public Distribution(DistributionConfig.Cluster config) {
+        configure(config);
     }
 
     public void close() {

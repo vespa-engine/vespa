@@ -6,7 +6,6 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.jrt.slobrok.api.IMirror;
 import com.yahoo.jrt.slobrok.api.Mirror;
-import java.util.logging.Level;
 import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
@@ -22,6 +21,7 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.config.content.DistributionConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,6 +32,7 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -224,12 +225,20 @@ public class ContentPolicy extends SlobrokPolicy {
 
         protected final String clusterName;
         protected final String distributionConfigId;
+        protected final DistributionConfig distributionConfig;
         protected final SlobrokHostPatternGenerator slobrokHostPatternGenerator;
 
         public Parameters(Map<String, String> params) {
+            this(params, null);
+        }
+
+        private Parameters(Map<String, String> params, DistributionConfig config) {
             clusterName = params.get("cluster");
             if (clusterName == null)
                 throw new IllegalArgumentException("Required parameter 'cluster', the name of the content cluster, not set");
+            distributionConfig = config;
+            if (distributionConfig != null && distributionConfig.cluster(clusterName) == null)
+                throw new IllegalArgumentException("Distribution config for cluster '" + clusterName + "' not found");
             distributionConfigId = params.get("clusterconfigid"); // TODO jonmv: remove
             slobrokHostPatternGenerator = createPatternGenerator();
         }
@@ -247,7 +256,8 @@ public class ContentPolicy extends SlobrokPolicy {
             return new TargetCachingSlobrokHostFetcher(slobrokHostPatternGenerator, policy, percent);
         }
         public Distribution createDistribution(SlobrokPolicy policy) {
-            return new Distribution(getDistributionConfigId());
+            return distributionConfig == null ? new Distribution(getDistributionConfigId())
+                                              : new Distribution(distributionConfig.cluster(clusterName));
         }
 
         /**
@@ -550,12 +560,8 @@ public class ContentPolicy extends SlobrokPolicy {
     private final Parameters parameters;
 
     /** Constructor used in production. */
-    public ContentPolicy(String param) {
-        this(parse(param));
-    }
-
-    public ContentPolicy(Map<String, String> params) {
-        this(new Parameters(params));
+    public ContentPolicy(String param, DistributionConfig config) {
+        this(new Parameters(parse(param), config));
     }
 
     /** Constructor specifying a bit more in detail, so we can override what needs to be overridden in tests */
