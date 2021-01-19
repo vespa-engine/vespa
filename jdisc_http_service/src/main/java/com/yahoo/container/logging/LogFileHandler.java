@@ -17,6 +17,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -24,29 +25,29 @@ import java.util.logging.StreamHandler;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * <p>Implements log file naming/rotating logic for container logs.</p>
- *
- * <p>Overridden methods: publish</p>
- *
- * <p>Added methods: setFilePattern, setRotationTimes, rotateNow (+ few others)</p>
+ * Implements log file naming/rotating logic for container logs.
  *
  * @author Bob Travis
+ * @author bjorncs
  */
 class LogFileHandler extends StreamHandler {
 
     private final static Logger logger = Logger.getLogger(LogFileHandler.class.getName());
+
     private final boolean compressOnRotation;
-    private long[] rotationTimes = {0}; //default to one log per day, at midnight
-    private String filePattern = "./log.%T";  // default to current directory, ms time stamp
-    private long nextRotationTime = 0;
-    private FileOutputStream currentOutputStream = null;
-    private volatile String fileName;
-    private String symlinkName = null;
-    private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
-    private LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
-    private ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
+    private final long[] rotationTimes;
+    private final String filePattern;  // default to current directory, ms time stamp
+    private final String symlinkName;
+    private final ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
+    private final LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
+    private final ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
     private final NativeIO nativeIO = new NativeIO();
-    private long lastDropPosition = 0;
+    private final LogThread logThread;
+
+    private volatile FileOutputStream currentOutputStream = null;
+    private volatile long nextRotationTime = 0;
+    private volatile String fileName;
+    private volatile long lastDropPosition = 0;
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
@@ -93,18 +94,25 @@ class LogFileHandler extends StreamHandler {
             }
         }
     }
-    private final LogThread logThread;
 
-    LogFileHandler() {
-        this(false);
+    LogFileHandler(boolean compressOnRotation, String filePattern, String rotationTimes, String symlinkName, Formatter formatter) {
+        this(compressOnRotation, filePattern, calcTimesMinutes(rotationTimes), symlinkName, formatter);
     }
 
-    LogFileHandler(boolean compressOnRotation)
-    {
+    LogFileHandler(
+            boolean compressOnRotation,
+            String filePattern,
+            long[] rotationTimes,
+            String symlinkName,
+            Formatter formatter) {
         super();
+        super.setFormatter(formatter);
         this.compressOnRotation = compressOnRotation;
-        logThread = new LogThread(this);
-        logThread.start();
+        this.filePattern = filePattern;
+        this.rotationTimes = rotationTimes;
+        this.symlinkName = (symlinkName != null && !symlinkName.isBlank()) ? symlinkName : null;
+        this.logThread = new LogThread(this);
+        this.logThread.start();
     }
 
     /**
@@ -148,33 +156,6 @@ class LogFileHandler extends StreamHandler {
             internalRotateNow();
         }
         super.publish(r);
-    }
-
-    /**
-     * Assign pattern for generating (rotating) file names.
-     *
-     * @param pattern See LogFormatter for definition
-     */
-    void setFilePattern ( String pattern ) {
-        filePattern = pattern;
-    }
-
-    /**
-     * Assign times for rotating output files.
-     *
-     * @param timesOfDay in millis, from midnight
-     *
-     */
-    void setRotationTimes ( long[] timesOfDay ) {
-        rotationTimes = timesOfDay;
-    }
-
-    /** Assign time for rotating output files
-     *
-     * @param prescription string form of times, in minutes
-     */
-    void setRotationTimes ( String prescription ) {
-        setRotationTimes(calcTimesMinutes(prescription));
     }
 
     /**
@@ -367,10 +348,6 @@ class LogFileHandler extends StreamHandler {
 
     private static long timeOfDayMillis ( long time ) {
         return time % lengthOfDayMillis;
-    }
-
-    void setSymlinkName(String symlinkName) {
-        this.symlinkName = symlinkName;
     }
 
     /**

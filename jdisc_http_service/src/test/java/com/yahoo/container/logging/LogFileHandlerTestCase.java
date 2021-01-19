@@ -36,22 +36,20 @@ public class LogFileHandlerTestCase {
     public void testIt() throws IOException {
         File root = temporaryFolder.newFolder("logfilehandlertest");
 
-        LogFileHandler h = new LogFileHandler();
-        h.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S");
-        h.setFormatter(new Formatter() {
-                public String format(LogRecord r) {
-                    DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
-                    String timeStamp = df.format(new Date(r.getMillis()));
-                    return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
-                }
-            } );
+        String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S";
+        long[] rTimes = {1000, 2000, 10000};
+        Formatter formatter = new Formatter() {
+            public String format(LogRecord r) {
+                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
+                String timeStamp = df.format(new Date(r.getMillis()));
+                return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
+            }
+        };
+        LogFileHandler h = new LogFileHandler(false, pattern, rTimes, null, formatter);
         long now = System.currentTimeMillis();
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
         long tomorrowMillis = tomorrowDays * millisPerDay;
-        assertThat(tomorrowMillis).isEqualTo(h.getNextRotationTime(now));
-        long[] rTimes = {1000, 2000, 10000};
-        h.setRotationTimes(rTimes);
         assertThat(tomorrowMillis+1000).isEqualTo(h.getNextRotationTime(tomorrowMillis));
         assertThat(tomorrowMillis+10000).isEqualTo(h.getNextRotationTime(tomorrowMillis+3000));
         LogRecord lr = new LogRecord(Level.INFO, "test");
@@ -68,10 +66,7 @@ public class LogFileHandlerTestCase {
         File logFile = temporaryFolder.newFile("testLogFileG1.txt");
 
       //create logfilehandler
-      LogFileHandler h = new LogFileHandler();
-      h.setFilePattern(logFile.getAbsolutePath());
-      h.setFormatter(new SimpleFormatter());
-      h.setRotationTimes("0 5 ...");
+      LogFileHandler h = new LogFileHandler(false, logFile.getAbsolutePath(), "0 5 ...", null, new SimpleFormatter());
 
       //write log
       LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileFirst1");
@@ -85,10 +80,7 @@ public class LogFileHandlerTestCase {
       File logFile = temporaryFolder.newFile("testLogFileG2.txt");
 
       //create logfilehandler
-      LogFileHandler h = new LogFileHandler();
-      h.setFilePattern(logFile.getAbsolutePath());
-      h.setFormatter(new SimpleFormatter());
-      h.setRotationTimes("0 5 ...");
+       LogFileHandler h = new LogFileHandler(false, logFile.getAbsolutePath(), "0 5 ...", null, new SimpleFormatter());
 
       //write log
       LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileDuringLogging1");
@@ -108,16 +100,15 @@ public class LogFileHandlerTestCase {
     @Test(timeout = /*5 minutes*/300_000)
     public void testSymlink() throws IOException, InterruptedException {
         File root = temporaryFolder.newFolder("testlogforsymlinkchecking");
-        LogFileHandler handler = new LogFileHandler();
-        handler.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s");
-        handler.setFormatter(new Formatter() {
+        Formatter formatter = new Formatter() {
             public String format(LogRecord r) {
                 DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
                 String timeStamp = df.format(new Date(r.getMillis()));
-                return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
+                return ("[" + timeStamp + "]" + " " + formatMessage(r) + "\n");
             }
-        } );
-        handler.setSymlinkName("symlink");
+        };
+        LogFileHandler handler = new LogFileHandler(
+                false, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", formatter);
 
         handler.publish(new LogRecord(Level.INFO, "test"));
         String firstFile;
@@ -151,15 +142,14 @@ public class LogFileHandlerTestCase {
     public void testcompression() throws InterruptedException, IOException {
         File root = temporaryFolder.newFolder("testcompression");
 
-        LogFileHandler h = new LogFileHandler(true);
-        h.setFilePattern(root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s");
-        h.setFormatter(new Formatter() {
+        Formatter formatter = new Formatter() {
             public String format(LogRecord r) {
                 DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
                 String timeStamp = df.format(new Date(r.getMillis()));
-                return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
+                return ("[" + timeStamp + "]" + " " + formatMessage(r) + "\n");
             }
-        } );
+        };
+        LogFileHandler h = new LogFileHandler(true, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, formatter);
         int logEntries = 10000;
         for (int i = 0; i < logEntries; i++) {
             LogRecord lr = new LogRecord(Level.INFO, "test");

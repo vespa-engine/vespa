@@ -14,11 +14,14 @@ class ConnectionLogHandler {
     public ConnectionLogHandler(String clusterName) {
         connection.setUseParentHandlers(false);
 
-        logFileHandler = new LogFileHandler(true);
-        logFileHandler.setFilePattern(String.format("logs/vespa/qrs/connection.%s.%s", clusterName, "%Y%m%d%H%M%S"));
-
         LogFormatter lf = new LogFormatter();
         lf.messageOnly(true);
+        logFileHandler = new LogFileHandler(
+                true,
+                String.format("logs/vespa/qrs/connection.%s.%s", clusterName, "%Y%m%d%H%M%S"),
+                new long[]{0},
+                null,
+                lf);
         this.logFileHandler.setFormatter(lf);
         connection.addHandler(this.logFileHandler);
     }

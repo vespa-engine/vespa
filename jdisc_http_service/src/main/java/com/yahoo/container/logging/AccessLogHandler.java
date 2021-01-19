@@ -16,22 +16,10 @@ class AccessLogHandler {
     public AccessLogHandler(AccessLogConfig.FileHandler config) {
         access.setUseParentHandlers(false);
 
-        logFileHandler = new LogFileHandler(config.compressOnRotation());
-
-        logFileHandler.setFilePattern(config.pattern());
-        logFileHandler.setRotationTimes(config.rotation());
-
-        createSymlink(config, logFileHandler);
-
         LogFormatter lf = new LogFormatter();
         lf.messageOnly(true);
-        this.logFileHandler.setFormatter(lf);
+        logFileHandler = new LogFileHandler(config.compressOnRotation(), config.pattern(), config.rotation(), config.symlink(), lf);
         access.addHandler(this.logFileHandler);
-    }
-
-    private void createSymlink(AccessLogConfig.FileHandler config, LogFileHandler handler) {
-        if (!config.symlink().isEmpty())
-            handler.setSymlinkName(config.symlink());
     }
 
     public void shutdown() {
