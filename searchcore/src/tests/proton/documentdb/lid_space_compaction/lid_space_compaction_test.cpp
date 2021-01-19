@@ -72,6 +72,9 @@ struct MyScanIterator : public IDocumentScanIterator {
         }
         return search::DocumentMetaData();
     }
+    search::DocumentMetaData getMetaData(uint32_t lid) const override {
+        return search::DocumentMetaData(lid, TIMESTAMP_1, BUCKET_ID_1, GID_1);
+    }
 };
 
 struct MyHandler : public ILidSpaceCompactionHandler {
