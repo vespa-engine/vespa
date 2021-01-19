@@ -8,7 +8,7 @@
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
-#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <map>
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_handler_test");
@@ -155,7 +155,7 @@ struct Fixture
 
     void notifyRemove(GlobalId gid, SerialNum serialNum) {
         vespalib::Gate gate;
-        _handler->notifyRemove(std::make_shared<search::GateCallback>(gate), gid, serialNum);
+        _handler->notifyRemove(std::make_shared<vespalib::GateCallback>(gate), gid, serialNum);
         gate.await();
     }
 

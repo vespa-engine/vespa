@@ -17,6 +17,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     closuretask.cpp
     compress.cpp
     compressor.cpp
+    destructor_callbacks.cpp
     dual_merge_director.cpp
     error.cpp
     exception.cpp

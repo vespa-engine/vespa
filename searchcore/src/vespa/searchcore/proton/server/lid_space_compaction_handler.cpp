@@ -24,6 +24,8 @@ LidSpaceCompactionHandler::LidSpaceCompactionHandler(const MaintenanceDocumentSu
 {
 }
 
+LidSpaceCompactionHandler::~LidSpaceCompactionHandler() = default;
+
 void
 LidSpaceCompactionHandler::set_operation_listener(documentmetastore::OperationListener::SP op_listener)
 {

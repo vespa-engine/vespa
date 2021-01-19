@@ -5,7 +5,7 @@
 #include "imaintenancejobrunner.h"
 #include "lid_space_compaction_job.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <cassert>
 
@@ -85,9 +85,9 @@ LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
     uint32_t wantedLidLimit = stats.getHighestUsedLid() + 1;
     CompactLidSpaceOperation op(_handler.getSubDbId(), wantedLidLimit);
     vespalib::Gate gate;
-    auto commit_result = _opStorer.appendAndCommitOperation(op, std::make_shared<search::GateCallback>(gate));
+    auto commit_result = _opStorer.appendAndCommitOperation(op, std::make_shared<vespalib::GateCallback>(gate));
     gate.await();
-    _handler.handleCompactLidSpace(op, std::make_shared<search::KeepAlive<decltype(commit_result)>>(std::move(commit_result)));
+    _handler.handleCompactLidSpace(op, std::make_shared<vespalib::KeepAlive<decltype(commit_result)>>(std::move(commit_result)));
     EventLogger::lidSpaceCompactionComplete(_handler.getName(), wantedLidLimit);
     _shouldCompactLidSpace = false;
 }
