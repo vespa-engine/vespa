@@ -6,6 +6,7 @@
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/read_consistency.h>
+#include <vespa/persistence/spi/bucketexecutor.h>
 
 namespace storage {
 
@@ -236,6 +237,32 @@ public:
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
+
+class RunTaskCommand : public api::InternalCommand {
+public:
+    static const uint32_t ID = 1011;
+    RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task);
+    ~RunTaskCommand();
+
+    document::Bucket getBucket() const override { return _bucket.getBucket(); }
+    std::unique_ptr<api::StorageReply> makeReply() override;
+    spi::BucketTask & task() & {
+        return *_task;
+    }
+
+private:
+    std::unique_ptr<spi::BucketTask> _task;
+    spi::Bucket                 _bucket;
+};
+
+class RunTaskReply : public api::InternalReply
+{
+public:
+    explicit RunTaskReply(const RunTaskCommand&);
+private:
+    static const uint32_t ID = 1012;
+};
+
 
 } // ns storage
 

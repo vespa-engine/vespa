@@ -66,6 +66,8 @@ getStorageMessageBucket(const api::StorageMessage& msg)
             return static_cast<const ReadBucketInfo&>(msg).getBucket();
         case RecheckBucketInfoCommand::ID:
             return static_cast<const RecheckBucketInfoCommand&>(msg).getBucket();
+        case RunTaskCommand::ID:
+            return static_cast<const RunTaskCommand&>(msg).getBucket();
         default:
             break;
         }

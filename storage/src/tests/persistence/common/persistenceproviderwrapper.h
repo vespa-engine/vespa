@@ -110,6 +110,7 @@ public:
                      const spi::Bucket& target, spi::Context&) override;
     spi::Result removeEntry(const spi::Bucket&, spi::Timestamp, spi::Context&) override;
     std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(spi::IResourceUsageListener& listener) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<spi::BucketExecutor>) override;
 };
 
 } // storage

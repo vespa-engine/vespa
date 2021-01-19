@@ -2,6 +2,7 @@
 
 #include "messages.h"
 #include <ostream>
+#include <cassert>
 
 using document::BucketSpace;
 
@@ -176,5 +177,24 @@ std::unique_ptr<api::StorageReply>
 AbortBucketOperationsCommand::makeReply() {
     return std::make_unique<AbortBucketOperationsReply>(*this);
 }
+
+std::unique_ptr<api::StorageReply>
+RunTaskCommand::makeReply() {
+    return std::make_unique<RunTaskReply>(*this);
+}
+
+RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task)
+    : api::InternalCommand(ID),
+      _task(std::move(task)),
+      _bucket(bucket)
+{
+    assert(_task);
+}
+
+RunTaskCommand::~RunTaskCommand() = default;
+
+RunTaskReply::RunTaskReply(const RunTaskCommand& cmd)
+    : api::InternalReply(ID, cmd)
+{}
 
 }

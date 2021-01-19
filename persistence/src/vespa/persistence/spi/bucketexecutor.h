@@ -3,7 +3,8 @@
 #pragma once
 
 #include "bucket.h"
-#include "operationcomplete.h"
+
+namespace vespalib { class IDestructorCallback; }
 
 namespace storage::spi {
 
@@ -17,7 +18,7 @@ namespace storage::spi {
 class BucketTask {
 public:
     virtual ~BucketTask() = default;
-    virtual void run(const Bucket & bucket, std::unique_ptr<OperationComplete> onComplete) = 0;
+    virtual void run(const Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete) = 0;
 };
 
 /**

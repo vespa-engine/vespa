@@ -3,6 +3,7 @@
 #include "persistenceengine.h"
 #include "ipersistenceengineowner.h"
 #include "transport_latch.h"
+#include <vespa/persistence/spi/bucketexecutor.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -18,6 +19,7 @@ LOG_SETUP(".proton.persistenceengine.persistenceengine");
 using document::Document;
 using document::DocumentId;
 using storage::spi::BucketChecksum;
+using storage::spi::BucketExecutor;
 using storage::spi::BucketIdListResult;
 using storage::spi::BucketInfo;
 using storage::spi::BucketInfoResult;
@@ -735,6 +737,30 @@ std::unique_lock<std::shared_mutex>
 PersistenceEngine::getWLock() const
 {
     return WriteGuard(_rwMutex);
+}
+
+namespace {
+
+class UnRegisterExecutor : public vespalib::IDestructorCallback {
+public:
+    UnRegisterExecutor(std::shared_ptr<BucketExecutor> executor) : _executor(std::move(executor)) { }
+    ~UnRegisterExecutor() override {
+        if (_executor) {
+            _executor->sync();
+        }
+    }
+private:
+    std::shared_ptr<BucketExecutor> _executor;
+};
+
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+PersistenceEngine::register_executor(std::shared_ptr<BucketExecutor> executor)
+{
+    assert(_bucket_executor.expired());
+    _bucket_executor = executor;
+    return std::make_unique<UnRegisterExecutor>(executor);
 }
 
 } // storage
