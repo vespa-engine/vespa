@@ -122,7 +122,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.clock = clock;
         this.identity = new AthenzService(config.domain(), config.service());
         this.ztsEndpoint = URI.create(config.ztsUrl());
-        roleSslCertCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::requestRoleCertificate);
+        roleSslCertCache = crateAutoReloadableCache(ROLE_SSL_CONTEXT_EXPIRY, this::requestRoleCertificate, this.scheduler);
         roleKeyManagerCache = new HashMap<>();
         roleSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         domainSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
@@ -143,6 +143,18 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                         return cacheLoader.apply(key);
                     }
                 });
+    }
+
+    private static <KEY, VALUE> LoadingCache<KEY, VALUE> crateAutoReloadableCache(Duration expiry, Function<KEY, VALUE> cacheLoader, ScheduledExecutorService scheduler) {
+        LoadingCache<KEY, VALUE> cache = createCache(expiry, cacheLoader);
+
+        // The cache above will reload it's contents if and only if a request for the key is made. Scheduling
+        // a cache reloader to reload all keys in this cache.
+        scheduler.scheduleAtFixedRate(() -> { cache.asMap().keySet().forEach(cache::getUnchecked);},
+                                      expiry.dividedBy(4).toMinutes(),
+                                      expiry.dividedBy(4).toMinutes(),
+                                      TimeUnit.MINUTES);
+        return cache;
     }
 
     private static SSLContext createIdentitySslContext(X509ExtendedKeyManager keyManager, Path trustStore) {
