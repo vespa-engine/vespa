@@ -19,7 +19,7 @@ EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("a", spec(1.5))
         .add("b", spec(2.5))
-        .add("sparse", spec({x({"a"})}, N()))
+        .add("sparse", spec({x({"a","b"})}, N()))
         .add("mixed", spec({x({"a"}),y(5)}, N()))
         .add_matrix("x", 5, "y", 3);
 }
@@ -30,11 +30,10 @@ void verify_optimized(const vespalib::string &expr, op1_t op1, bool inplace = fa
     EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQ(fixture.result(), slow_fixture.result());
-    auto info = fixture.find_all<DenseSimpleMapFunction>();
+    auto info = fixture.find_all<tensor_function::Map>();
     ASSERT_EQ(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
     EXPECT_EQ(info[0]->function(), op1);
-    EXPECT_EQ(info[0]->inplace(), inplace);
     ASSERT_EQ(fixture.num_params(), 1);
     if (inplace) {
         EXPECT_EQ(fixture.get_param(0), fixture.result());
@@ -76,16 +75,16 @@ TEST(PowAsMapTest, hypercubed_dense_tensor_is_not_optimized) {
     verify_not_optimized("join(x5y3,4.0,f(x,y)(pow(x,y)))");
 }
 
-TEST(PowAsMapTest, scalar_join_is_not_optimized) {
-    verify_not_optimized("join(a,2.0,f(x,y)(pow(x,y)))");
+TEST(PowAsMapTest, scalar_join_is_optimized) {
+    verify_optimized("join(a,2.0,f(x,y)(pow(x,y)))", Square::f);
 }
 
-TEST(PowAsMapTest, sparse_join_is_not_optimized) {
-    verify_not_optimized("join(sparse,2.0,f(x,y)(pow(x,y)))");
+TEST(PowAsMapTest, sparse_join_is_optimized) {
+    verify_optimized("join(sparse,2.0,f(x,y)(pow(x,y)))", Square::f);
 }
 
-TEST(PowAsMapTest, mixed_join_is_not_optimized) {
-    verify_not_optimized("join(mixed,2.0,f(x,y)(pow(x,y)))");
+TEST(PowAsMapTest, mixed_join_is_optimized) {
+    verify_optimized("join(mixed,2.0,f(x,y)(pow(x,y)))", Square::f);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

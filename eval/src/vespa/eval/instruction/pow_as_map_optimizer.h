@@ -10,9 +10,8 @@ namespace vespalib::eval {
  * Tensor function optimizer for converting join expressions on the
  * form 'join(tensor,<small integer constant>,f(x,y)(pow(x,y))' to
  * expressions on the form 'map(tensor,f(x)(x*x...))'.
- * TODO: extend to mixed tensors.
  **/
-struct DensePowAsMapOptimizer {
+struct PowAsMapOptimizer {
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
