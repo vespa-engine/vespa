@@ -23,7 +23,7 @@ public class CloudTenant extends Tenant {
     private final TenantInfo info;
 
     /** Public for the serialization layer — do not use! */
-    public CloudTenant(TenantName name, Optional<Instant> createdAt, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
+    public CloudTenant(TenantName name, Instant createdAt, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
         super(name, createdAt, Optional.empty());
         this.creator = creator;
         this.developerKeys = developerKeys;
@@ -33,7 +33,7 @@ public class CloudTenant extends Tenant {
     /** Creates a tenant with the given name, provided it passes validation. */
     public static CloudTenant create(TenantName tenantName, Instant createdAt, Principal creator) {
         return new CloudTenant(requireName(tenantName),
-                               Optional.of(createdAt),
+                               createdAt,
                                Optional.ofNullable(creator),
                                ImmutableBiMap.of(), TenantInfo.EMPTY);
     }

@@ -1996,7 +1996,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<Instant> lastSubmission = applications.stream()
                 .flatMap(app -> app.latestVersion().flatMap(ApplicationVersion::buildTime).stream())
                 .max(Comparator.naturalOrder());
-        tenant.createdAt().ifPresent(instant -> object.setLong("createdAtMillis", instant.toEpochMilli()));
+        object.setLong("createdAtMillis", tenant.createdAt().toEpochMilli());
         lastDev.ifPresent(instant -> object.setLong("lastDeploymentToDevMillis", instant.toEpochMilli()));
         lastSubmission.ifPresent(instant -> object.setLong("lastSubmissionToProdMillis", instant.toEpochMilli()));
     }

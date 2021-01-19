@@ -24,10 +24,10 @@ public class AthenzTenant extends Tenant {
 
     /**
      * This should only be used by serialization.
-     * Use {@link #create(TenantName, AthenzDomain, Property, Optional, Optional)}.
+     * Use {@link #create(TenantName, AthenzDomain, Property, Optional, Instant)}.
      * */
     public AthenzTenant(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
-                        Optional<Contact> contact, Optional<Instant> createdAt) {
+                        Optional<Contact> contact, Instant createdAt) {
         super(name, createdAt, contact);
         this.domain = Objects.requireNonNull(domain, "domain must be non-null");
         this.property = Objects.requireNonNull(property, "property must be non-null");
@@ -61,7 +61,7 @@ public class AthenzTenant extends Tenant {
 
     /** Create a new Athenz tenant */
     public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
-                                      Optional<PropertyId> propertyId, Optional<Instant> createdAt) {
+                                      Optional<PropertyId> propertyId, Instant createdAt) {
         return new AthenzTenant(requireName(name), domain, property, propertyId, Optional.empty(), createdAt);
     }
 

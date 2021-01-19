@@ -16,10 +16,10 @@ import java.util.Optional;
 public abstract class Tenant {
 
     private final TenantName name;
-    private final Optional<Instant> createdAt;
+    private final Instant createdAt;
     private final Optional<Contact> contact;
 
-    Tenant(TenantName name, Optional<Instant> createdAt, Optional<Contact> contact) {
+    Tenant(TenantName name, Instant createdAt, Optional<Contact> contact) {
         this.name = name;
         this.createdAt = createdAt;
         this.contact = contact;
@@ -31,7 +31,7 @@ public abstract class Tenant {
     }
 
     /** Instant when the tenant was created */
-    public Optional<Instant> createdAt() {
+    public Instant createdAt() {
         return createdAt;
     }
 

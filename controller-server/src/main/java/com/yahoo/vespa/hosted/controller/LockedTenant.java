@@ -32,9 +32,9 @@ import static java.util.Objects.requireNonNull;
 public abstract class LockedTenant {
 
     final TenantName name;
-    final Optional<Instant> createdAt;
+    final Instant createdAt;
 
-    private LockedTenant(TenantName name, Optional<Instant> createdAt) {
+    private LockedTenant(TenantName name, Instant createdAt) {
         this.name = requireNonNull(name);
         this.createdAt = requireNonNull(createdAt);
     }
@@ -65,7 +65,7 @@ public abstract class LockedTenant {
         private final Optional<Contact> contact;
 
         private Athenz(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
-                       Optional<Contact> contact, Optional<Instant> createdAt) {
+                       Optional<Contact> contact, Instant createdAt) {
             super(name, createdAt);
             this.domain = domain;
             this.property = property;
@@ -108,7 +108,7 @@ public abstract class LockedTenant {
         private final BiMap<PublicKey, Principal> developerKeys;
         private final TenantInfo info;
 
-        private Cloud(TenantName name, Optional<Instant> createdAt, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
+        private Cloud(TenantName name, Instant createdAt, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
             super(name, createdAt);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
             this.creator = creator;

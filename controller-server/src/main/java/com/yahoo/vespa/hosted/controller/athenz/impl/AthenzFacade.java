@@ -96,7 +96,7 @@ public class AthenzFacade implements AccessControl {
                                                   domain,
                                                   spec.property(),
                                                   spec.propertyId(),
-                                                  Optional.of(createdAt));
+                                                  createdAt);
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain is already taken.
             throw new IllegalArgumentException("Could not create tenant '" + spec.tenant().value() +
@@ -125,10 +125,10 @@ public class AthenzFacade implements AccessControl {
                                                           .filter(tenant ->    tenant.type() == Tenant.Type.athenz
                                                                             && newDomain.equals(((AthenzTenant) tenant).domain()))
                                                           .findAny();
-        Optional<Instant> createdAt = existing.stream()
+        Instant createdAt = existing.stream()
                 .filter(tenant -> tenant.name().equals(spec.tenant()))
-                .findAny()
-                .flatMap(Tenant::createdAt);
+                .findAny().orElseThrow() // Should not happen, we assert that the tenant exists before the method is called
+                .createdAt();
 
         Tenant tenant = AthenzTenant.create(spec.tenant(),
                                             newDomain,

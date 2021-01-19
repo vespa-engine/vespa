@@ -50,8 +50,8 @@ public class TenantSerializerTest {
                                                   new AthenzDomain("domain1"),
                                                   new Property("property1"),
                                                   Optional.of(new PropertyId("1")),
-                                                  Optional.of(Instant.ofEpochMilli(1234L)));
-        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+                                                  Instant.ofEpochMilli(1234L));
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.domain(), serialized.domain());
         assertEquals(tenant.property(), serialized.property());
@@ -66,8 +66,8 @@ public class TenantSerializerTest {
                                                              new AthenzDomain("domain1"),
                                                              new Property("property1"),
                                                              Optional.empty(),
-                                                             Optional.empty());
-        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+                                                             Instant.EPOCH);
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertFalse(serialized.propertyId().isPresent());
         assertEquals(tenant.propertyId(), serialized.propertyId());
     }
@@ -79,20 +79,20 @@ public class TenantSerializerTest {
                                                new Property("property1"),
                                                Optional.of(new PropertyId("1")),
                                                Optional.of(contact()),
-                                               Optional.empty());
-        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+                                               Instant.EPOCH);
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertEquals(tenant.contact(), serialized.contact());
     }
 
     @Test
     public void cloud_tenant() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
-                                             Optional.of(Instant.ofEpochMilli(1234L)),
+                                             Instant.ofEpochMilli(1234L),
                                              Optional.of(new SimplePrincipal("foobar-user")),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                                                                otherPublicKey, new SimplePrincipal("jane")),
                                              TenantInfo.EMPTY);
-        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
         assertEquals(tenant.developerKeys(), serialized.developerKeys());
@@ -102,12 +102,12 @@ public class TenantSerializerTest {
     @Test
     public void cloud_tenant_with_info() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
-                Optional.empty(),
+                Instant.EPOCH,
                 Optional.of(new SimplePrincipal("foobar-user")),
                 ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                         otherPublicKey, new SimplePrincipal("jane")),
                 TenantInfo.EMPTY.withName("Ofni Tnanet"));
-        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertEquals(tenant.info(), serialized.info());
     }
 
