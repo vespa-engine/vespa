@@ -14,6 +14,9 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRe
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.yahoo.vdslib.state.NodeState.ORCHESTRATOR_RESERVED_DESCRIPTION;
 
 public class ContentCluster {
 
@@ -186,6 +189,26 @@ public class ContentCluster {
                 clusterInfo
         );
         return nodeStateChangeChecker.evaluateTransition(node, clusterState, condition, oldState, newState);
+    }
+
+    /** Returns the indices of the nodes that have been safely set to the given state by the Orchestrator (best guess). */
+    public List<Integer> nodesSafelySetTo(State state) {
+        switch (state) {
+            case MAINTENANCE:  // Orchestrator's ALLOWED_TO_BE_DOWN
+            case DOWN:  // Orchestrator's PERMANENTLY_DOWN
+                return clusterInfo.getStorageNodeInfo().stream()
+                        .filter(storageNodeInfo -> {
+                            NodeState userWantedState = storageNodeInfo.getUserWantedState();
+                            return userWantedState.getState() == state &&
+                                    Objects.equals(userWantedState.getDescription(), ORCHESTRATOR_RESERVED_DESCRIPTION);
+                        })
+                        .map(NodeInfo::getNodeIndex)
+                        .collect(Collectors.toList());
+            default:
+                // Note: There is no trace left if the Orchestrator set the state to UP, so that's handled
+                // like any other state:
+                return List.of();
+        }
     }
 
     public void setMinStorageNodesUp(int minStorageNodesUp) {

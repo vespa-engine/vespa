@@ -704,6 +704,34 @@ public class ClusterStateGeneratorTest {
         assertThat(state.toString(), equalTo("distributor:9 storage:9 .3.s:m .4.s:d .5.s:d"));
     }
 
+    @Test
+    public void group_nodes_are_marked_maintenance_if_group_availability_too_low_by_orchestrator() {
+        final ClusterFixture fixture = ClusterFixture
+                .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
+                .bringEntireClusterUp()
+                .proposeStorageNodeWantedState(4, State.MAINTENANCE, NodeState.ORCHESTRATOR_RESERVED_DESCRIPTION)
+                .proposeStorageNodeWantedState(5, State.MAINTENANCE, NodeState.ORCHESTRATOR_RESERVED_DESCRIPTION);
+        final ClusterStateGenerator.Params params = fixture.generatorParams();
+
+        // Both node 4 & 5 are in maintenance by Orchestrator, which will force the other nodes in the
+        // group to maintenance (node 3).
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:9 .3.s:d storage:9 .3.s:m .4.s:m .5.s:m"));
+    }
+
+    @Test
+    public void group_nodes_are_not_marked_maintenance_if_group_availability_high_by_orchestrator() {
+        final ClusterFixture fixture = ClusterFixture
+                .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
+                .bringEntireClusterUp()
+                .proposeStorageNodeWantedState(4, State.MAINTENANCE, NodeState.ORCHESTRATOR_RESERVED_DESCRIPTION);
+        final ClusterStateGenerator.Params params = fixture.generatorParams();
+
+        // Node 4 is in maintenance by Orchestrator, which is not sufficient to force group into maintenance.
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:9 storage:9 .4.s:m"));
+    }
+
     /**
      * Cluster-wide distribution bit count cannot be higher than the lowest split bit
      * count reported by the set of storage nodes. This is because the distribution bit
