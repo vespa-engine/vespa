@@ -17,6 +17,7 @@
 #include <vespa/storageserver/app/dummyservicelayerprocess.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/shutdownguard.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fastos/app.h>
 #include <iostream>
@@ -36,7 +37,7 @@ Process::UP createProcess(vespalib::stringref configId) {
     config::ConfigUri uri(configId);
     std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
     if (serverConfig->isDistributor) {
-        return Process::UP(new DistributorProcess(configId));
+        return std::make_unique<DistributorProcess>(configId);
     } else switch (serverConfig->persistenceProvider.type) {
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE:
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::DUMMY:

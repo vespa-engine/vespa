@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <persistence/spi/types.h>
 #include <vespa/document/bucket/bucket.h>
 
 namespace storage::spi {

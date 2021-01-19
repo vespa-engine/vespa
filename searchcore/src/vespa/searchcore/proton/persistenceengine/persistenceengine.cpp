@@ -78,7 +78,7 @@ GenericResultHandler::~GenericResultHandler() = default;
 class BucketIdListResultHandler : public IBucketIdListResultHandler
 {
 private:
-    typedef vespalib::hash_set<document::BucketId, document::BucketId::hash> BucketIdSet;
+    using BucketIdSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
     BucketIdSet _bucketSet;
 public:
     BucketIdListResultHandler()

@@ -52,7 +52,6 @@ class SetSystemStateCommand;
 class ActivateClusterStateVersionCommand;
 class ActivateClusterStateVersionReply;
 class GetSystemStateCommand;
-class GetBucketNodesCommand;
 class BucketsAddedCommand;
 class BucketsRemovedCommand;
 
@@ -89,7 +88,6 @@ class SetNodeStateReply;
 class GetNodeStateReply;
 class SetSystemStateReply;
 class GetSystemStateReply;
-class GetBucketNodesReply;
 class BucketsAddedReply;
 class BucketsRemovedReply;
 
@@ -190,7 +188,7 @@ public:
     virtual bool onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>&) { return false; }
     virtual bool onRemoveLocationReply(const std::shared_ptr<api::RemoveLocationReply>&) { return false; }
 
-    virtual ~MessageHandler() {}
+    virtual ~MessageHandler() = default;
 };
 
 #undef ON_M

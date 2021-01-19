@@ -20,7 +20,7 @@ public:
     }
 
     void addResultHandler(const spi::ResultHandler *resultHandler) {
-        // Only handles a signal handler now,
+        // Only handles a single handler now,
         // Can be extended if necessary later on
         assert(_resultHandler == nullptr);
         _resultHandler = resultHandler;
@@ -219,4 +219,5 @@ AsyncHandler::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTra
 
     return true;
 }
+
 }
