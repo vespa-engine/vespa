@@ -4,8 +4,11 @@ package com.yahoo.container.logging;
 
 import java.util.logging.Logger;
 
+/**
+ * @author mortent
+ */
 class ConnectionLogHandler {
-    public Logger connection = Logger.getAnonymousLogger();
+    public final Logger connection = Logger.getAnonymousLogger();
     private final LogFileHandler logFileHandler;
 
     public ConnectionLogHandler(String clusterName) {
@@ -23,8 +26,6 @@ class ConnectionLogHandler {
     public void shutdown() {
         logFileHandler.close();
         connection.removeHandler(logFileHandler);
-
-        if (logFileHandler!=null)
-            logFileHandler.shutdown();
+        logFileHandler.shutdown();
     }
 }

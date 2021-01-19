@@ -3,7 +3,7 @@
 package com.yahoo.container.logging;
 
 import com.google.inject.Inject;
-import com.yahoo.jdisc.http.container.logging.ConnectionLogConfig;
+import com.yahoo.component.AbstractComponent;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 /**
  * @author mortent
  */
-public class FileConnectionLog implements ConnectionLog {
+public class FileConnectionLog extends AbstractComponent implements ConnectionLog {
 
     private static final Logger logger = Logger.getLogger(FileConnectionLog.class.getName());
     private final ConnectionLogHandler logHandler;
@@ -28,5 +28,10 @@ public class FileConnectionLog implements ConnectionLog {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to write connection log entry for connection id " + connectionLogEntry.id(), e);
         }
+    }
+
+    @Override
+    public void deconstruct() {
+        logHandler.shutdown();
     }
 }

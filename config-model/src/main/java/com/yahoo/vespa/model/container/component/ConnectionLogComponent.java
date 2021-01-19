@@ -3,7 +3,7 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.container.logging.ConnectionLog;
-import com.yahoo.jdisc.http.container.logging.ConnectionLogConfig;
+import com.yahoo.container.logging.ConnectionLogConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 
 public class ConnectionLogComponent extends SimpleComponent implements ConnectionLogConfig.Producer {
