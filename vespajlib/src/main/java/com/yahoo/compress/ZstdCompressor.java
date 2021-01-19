@@ -25,6 +25,11 @@ public class ZstdCompressor {
         return compressor.compress(input, inputOffset, inputLength, output, outputOffset, maxOutputLength);
     }
 
+    /**
+     *   Note:
+     *   Implementation assumes single frame (since {@link #getDecompressedLength(byte[], int, int)} only includes the first frame)
+     *   The {@link #decompress(byte[], int, int, byte[], int, int)} overload will try to decompress all frame, causing the output buffer to overflow.
+     */
     public byte[] decompress(byte[] input, int inputOffset, int inputLength) {
         int decompressedLength = getDecompressedLength(input, inputOffset, inputLength);
         byte[] output = new byte[decompressedLength];
