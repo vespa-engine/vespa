@@ -6,7 +6,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import java.util.logging.Level;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -33,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import javax.ws.rs.ForbiddenException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -79,7 +80,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public Tenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing) {
+    public Tenant createTenant(TenantSpec tenantSpec, Instant createdAt, Credentials credentials, List<Tenant> existing) {
         AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         AthenzDomain domain = spec.domain();
@@ -94,7 +95,8 @@ public class AthenzFacade implements AccessControl {
         AthenzTenant tenant = AthenzTenant.create(spec.tenant(),
                                                   domain,
                                                   spec.property(),
-                                                  spec.propertyId());
+                                                  spec.propertyId(),
+                                                  createdAt);
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain is already taken.
             throw new IllegalArgumentException("Could not create tenant '" + spec.tenant().value() +
@@ -123,11 +125,16 @@ public class AthenzFacade implements AccessControl {
                                                           .filter(tenant ->    tenant.type() == Tenant.Type.athenz
                                                                             && newDomain.equals(((AthenzTenant) tenant).domain()))
                                                           .findAny();
+        Instant createdAt = existing.stream()
+                .filter(tenant -> tenant.name().equals(spec.tenant()))
+                .findAny().orElseThrow() // Should not happen, we assert that the tenant exists before the method is called
+                .createdAt();
 
         Tenant tenant = AthenzTenant.create(spec.tenant(),
                                             newDomain,
                                             spec.property(),
-                                            spec.propertyId());
+                                            spec.propertyId(),
+                                            createdAt);
 
         if (existingWithSameDomain.isPresent()) { // Throw if domain taken by someone else, or do nothing if taken by this tenant.
             if ( ! existingWithSameDomain.get().equals(tenant)) // Equality by name.

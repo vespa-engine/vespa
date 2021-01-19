@@ -7,6 +7,7 @@ import com.yahoo.config.provision.TenantName;
 
 import java.security.Principal;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -22,16 +23,17 @@ public class CloudTenant extends Tenant {
     private final TenantInfo info;
 
     /** Public for the serialization layer — do not use! */
-    public CloudTenant(TenantName name, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
-        super(name, Optional.empty());
+    public CloudTenant(TenantName name, Instant createdAt, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
+        super(name, createdAt, Optional.empty());
         this.creator = creator;
         this.developerKeys = developerKeys;
         this.info = Objects.requireNonNull(info);
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */
-    public static CloudTenant create(TenantName tenantName, Principal creator) {
+    public static CloudTenant create(TenantName tenantName, Instant createdAt, Principal creator) {
         return new CloudTenant(requireName(tenantName),
+                               createdAt,
                                Optional.ofNullable(creator),
                                ImmutableBiMap.of(), TenantInfo.EMPTY);
     }

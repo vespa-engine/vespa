@@ -5,5 +5,7 @@
   "property": "property2",
   "propertyId": "1234",
   "applications": [],
-  "metaData": {}
+  "metaData": {
+    "createdAtMillis": "(ignore)"
+  }
 }

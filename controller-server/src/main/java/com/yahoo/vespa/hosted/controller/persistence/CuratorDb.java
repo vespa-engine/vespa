@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,6 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -296,7 +298,10 @@ public class CuratorDb {
     }
 
     public Optional<Tenant> readTenant(TenantName name) {
-        return readSlime(tenantPath(name)).map(tenantSerializer::tenantFrom);
+        Supplier<Instant> tenantCreateTimeSupplier = () -> curator.getStat(tenantPath(name))
+                .map(stat -> Instant.ofEpochMilli(stat.getCtime()))
+                .orElse(Instant.parse("2021-01-01T00:00:00Z"));
+        return readSlime(tenantPath(name)).map(bytes -> tenantSerializer.tenantFrom(bytes, tenantCreateTimeSupplier));
     }
 
     public List<Tenant> readTenants() {

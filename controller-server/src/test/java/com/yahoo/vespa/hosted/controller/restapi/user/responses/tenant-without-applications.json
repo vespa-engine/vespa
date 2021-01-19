@@ -9,5 +9,7 @@
     "clusterSize": 5
   },
   "applications": [],
-  "metaData":{}
+  "metaData":{
+    "createdAtMillis": "(ignore)"
+  }
 }

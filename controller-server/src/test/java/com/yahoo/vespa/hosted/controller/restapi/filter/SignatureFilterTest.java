@@ -27,6 +27,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 
@@ -67,6 +68,7 @@ public class SignatureFilterTest {
         signer = new RequestSigner(privateKey, id.serializedForm(), tester.clock());
 
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
+                                                     Instant.EPOCH,
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(),
                                                      TenantInfo.EMPTY));
@@ -107,6 +109,7 @@ public class SignatureFilterTest {
 
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
+                                                     Instant.EPOCH,
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(publicKey, () -> "user"),
                                                      TenantInfo.EMPTY));

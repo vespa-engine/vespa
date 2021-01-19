@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -48,13 +49,15 @@ public class TenantSerializerTest {
         AthenzTenant tenant = AthenzTenant.create(TenantName.from("athenz-tenant"),
                                                   new AthenzDomain("domain1"),
                                                   new Property("property1"),
-                                                  Optional.of(new PropertyId("1")));
-        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+                                                  Optional.of(new PropertyId("1")),
+                                                  Instant.ofEpochMilli(1234L));
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.domain(), serialized.domain());
         assertEquals(tenant.property(), serialized.property());
         assertTrue(serialized.propertyId().isPresent());
         assertEquals(tenant.propertyId(), serialized.propertyId());
+        assertEquals(tenant.createdAt(), serialized.createdAt());
     }
 
     @Test
@@ -62,8 +65,9 @@ public class TenantSerializerTest {
         AthenzTenant tenant = AthenzTenant.create(TenantName.from("athenz-tenant"),
                                                              new AthenzDomain("domain1"),
                                                              new Property("property1"),
-                                                             Optional.empty());
-        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+                                                             Optional.empty(),
+                                                             Instant.EPOCH);
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertFalse(serialized.propertyId().isPresent());
         assertEquals(tenant.propertyId(), serialized.propertyId());
     }
@@ -74,32 +78,36 @@ public class TenantSerializerTest {
                                                new AthenzDomain("domain1"),
                                                new Property("property1"),
                                                Optional.of(new PropertyId("1")),
-                                               Optional.of(contact()));
-        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+                                               Optional.of(contact()),
+                                               Instant.EPOCH);
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertEquals(tenant.contact(), serialized.contact());
     }
 
     @Test
     public void cloud_tenant() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                                             Instant.ofEpochMilli(1234L),
                                              Optional.of(new SimplePrincipal("foobar-user")),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                                                                otherPublicKey, new SimplePrincipal("jane")),
                                              TenantInfo.EMPTY);
-        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
         assertEquals(tenant.developerKeys(), serialized.developerKeys());
+        assertEquals(tenant.createdAt(), serialized.createdAt());
     }
 
     @Test
     public void cloud_tenant_with_info() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                Instant.EPOCH,
                 Optional.of(new SimplePrincipal("foobar-user")),
                 ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                         otherPublicKey, new SimplePrincipal("jane")),
                 TenantInfo.EMPTY.withName("Ofni Tnanet"));
-        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant), () -> { throw new UnsupportedOperationException(); });
         assertEquals(tenant.info(), serialized.info());
     }
 
