@@ -31,7 +31,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.logging.SimpleConnectionLog;
+import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -63,6 +63,7 @@ import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.BindingPattern;
+import com.yahoo.vespa.model.container.component.ConnectionLogComponent;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
@@ -349,9 +350,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
-            cluster.addSimpleComponent(SimpleConnectionLog.class.getName(), null, "jdisc_http_service");
+            cluster.addComponent(new ConnectionLogComponent(FileConnectionLog.class, cluster.getName()));
         } else {
-            cluster.addSimpleComponent(VoidConnectionLog.class.getName(), null, "jdisc_http_service");
+            cluster.addComponent(new ConnectionLogComponent(VoidConnectionLog.class, cluster.getName()));
         }
     }
 

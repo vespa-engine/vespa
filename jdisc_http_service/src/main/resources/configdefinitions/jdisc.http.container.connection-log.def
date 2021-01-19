@@ -1,0 +1,4 @@
+namespace=jdisc.http.container.logging
+
+# Name of the cluster
+cluster             string
