@@ -1,19 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/distributor/distributortestutil.h>
-#include <vespa/storage/distributor/externaloperationhandler.h>
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
-#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
@@ -65,6 +66,8 @@ struct ExternalOperationHandlerTest : Test, DistributorTestUtil {
     }
 
     void set_up_distributor_for_sequencing_test();
+
+    void set_up_distributor_with_feed_blocked_state();
 
     const vespalib::string _dummy_id{"id:foo:testdoctype1::bar"};
 
@@ -355,6 +358,13 @@ void ExternalOperationHandlerTest::set_up_distributor_for_sequencing_test() {
     setupDistributor(1, 2, "version:1 distributor:1 storage:1");
 }
 
+void ExternalOperationHandlerTest::set_up_distributor_with_feed_blocked_state() {
+    createLinks();
+    setup_distributor(1, 2,
+                      lib::ClusterStateBundle(lib::ClusterState("version:1 distributor:1 storage:1"),
+                                              {}, {true, "full disk"}, false));
+}
+
 void ExternalOperationHandlerTest::start_operation_verify_not_rejected(
         std::shared_ptr<api::StorageCommand> cmd,
         Operation::SP& out_generated)
@@ -563,6 +573,38 @@ TEST_F(ExternalOperationHandlerTest, gets_are_sent_with_strong_consistency_by_de
 TEST_F(ExternalOperationHandlerTest, gets_are_sent_with_weak_consistency_if_config_enabled) {
     do_test_get_weak_consistency_is_propagated(true);
 }
+
+TEST_F(ExternalOperationHandlerTest, puts_are_rejected_if_feed_is_blocked) {
+    set_up_distributor_with_feed_blocked_state();
+
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(
+            makePutCommand("testdoctype1", "id:foo:testdoctype1::foo")));
+    EXPECT_EQ("ReturnCode(NO_SPACE, External feed is blocked due to resource exhaustion: full disk)",
+              _sender.reply(0)->getResult().toString());
+}
+
+TEST_F(ExternalOperationHandlerTest, non_trivial_updates_are_rejected_if_feed_is_blocked) {
+    set_up_distributor_with_feed_blocked_state();
+
+    auto cmd = makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo");
+    const auto* doc_type = _testDocMan.getTypeRepo().getDocumentType("testdoctype1");
+    document::FieldUpdate upd(doc_type->getField("title"));
+    upd.addUpdate(document::AssignValueUpdate(document::StringFieldValue("new value")));
+    cmd->getUpdate()->addUpdate(upd);
+
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(cmd)));
+    EXPECT_EQ("ReturnCode(NO_SPACE, External feed is blocked due to resource exhaustion: full disk)",
+              _sender.reply(0)->getResult().toString());
+}
+
+TEST_F(ExternalOperationHandlerTest, trivial_updates_are_not_rejected_if_feed_is_blocked) {
+    set_up_distributor_with_feed_blocked_state();
+
+    Operation::SP generated;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(
+            makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo"), generated));
+}
+
 
 struct OperationHandlerSequencingTest : ExternalOperationHandlerTest {
     void SetUp() override {

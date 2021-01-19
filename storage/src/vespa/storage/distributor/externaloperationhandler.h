@@ -118,6 +118,7 @@ private:
                                                   const lib::ClusterState& current_state,
                                                   const lib::ClusterState& pending_state);
     void bounce_with_result(api::StorageCommand& cmd, const api::ReturnCode& result);
+    void bounce_with_feed_blocked(api::StorageCommand& cmd);
     std::shared_ptr<Operation> try_generate_get_operation(const std::shared_ptr<api::GetCommand>&);
 
     bool checkSafeTimeReached(api::StorageCommand& cmd);

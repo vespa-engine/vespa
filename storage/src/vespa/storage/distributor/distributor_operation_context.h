@@ -12,6 +12,7 @@
 namespace document { class Bucket; }
 
 namespace storage { class DistributorConfiguration; }
+namespace storage::lib { class ClusterStateBundle; }
 
 namespace storage::distributor {
 
@@ -48,6 +49,7 @@ public:
                                      const document::Bucket& bucket,
                                      uint32_t message_type) const = 0;
     virtual const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const = 0;
+    virtual const lib::ClusterStateBundle& cluster_state_bundle() const = 0;
 
     // TODO: Move to being a free function instead.
     virtual const char* storage_node_up_states() const = 0;
