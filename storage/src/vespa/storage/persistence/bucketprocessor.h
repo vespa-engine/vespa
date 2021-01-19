@@ -11,7 +11,7 @@
 #include <vespa/persistence/spi/context.h>
 
 namespace document { class FieldSet; }
-namespace storage::spi { class PersistenceProvider; }
+namespace storage::spi { struct PersistenceProvider; }
 
 namespace storage {
 

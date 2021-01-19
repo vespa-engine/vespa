@@ -18,7 +18,7 @@ namespace storage::api {
 }
 
 namespace storage::spi {
-    class PersistenceProvider;
+    struct PersistenceProvider;
 }
 
 namespace storage {

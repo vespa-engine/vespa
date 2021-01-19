@@ -15,7 +15,7 @@ namespace vespalib { class IDestructorCallback; }
 namespace storage::spi {
 
 class IResourceUsageListener;
-class BucketExecutor;
+struct BucketExecutor;
 
 /**
  * This interface is the basis for a persistence provider in Vespa.  A
