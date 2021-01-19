@@ -92,7 +92,6 @@ import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
@@ -1238,7 +1237,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Create legancy tenant name containing underscores
         tester.controller().curator().writeTenant(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
-                                                                   new Property("property1"), Optional.empty(), Optional.empty()));
+                new Property("property1"), Optional.empty(), Optional.empty(), Optional.empty()));
+
         // POST (add) a Athenz tenant with dashes duplicates existing one with underscores
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
                                       .userIdentity(USER_ID)
@@ -1339,7 +1339,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property1\"}")
                                       .userIdentity(authorizedUser)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"tenant\":\"tenant1\",\"type\":\"ATHENS\",\"athensDomain\":\"domain2\",\"property\":\"property1\",\"applications\":[],\"metaData\":{}}",
+                              new File("tenant1.json"),
                               200);
 
         // Deleting a tenant for an Athens domain the user is not admin for is disallowed
