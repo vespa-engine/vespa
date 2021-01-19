@@ -1,11 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
 
-#include "vespa/vespalib/util/idestructorcallback.h"
+#include "idestructorcallback.h"
 
-namespace vespalib { class Gate; }
+namespace vespalib {
 
-namespace search {
+class Gate;
 
 class GateCallback : public vespalib::IDestructorCallback {
 public:
@@ -28,4 +29,4 @@ struct KeepAlive : public vespalib::IDestructorCallback {
     T _toKeep;
 };
 
-} // namespace search
+}

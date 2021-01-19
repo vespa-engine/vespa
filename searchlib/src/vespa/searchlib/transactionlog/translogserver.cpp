@@ -2,7 +2,7 @@
 #include "translogserver.h"
 #include "domain.h"
 #include "client_common.h"
-#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -578,8 +578,8 @@ TransLogServer::domainCommit(FRT_RPCRequest *req)
             vespalib::Gate gate;
             {
                 // Need to scope in order to drain out all the callbacks.
-                domain->append(packet, make_shared<GateCallback>(gate));
-                auto keep = domain->startCommit(make_shared<IgnoreCallback>());
+                domain->append(packet, make_shared<vespalib::GateCallback>(gate));
+                auto keep = domain->startCommit(make_shared<vespalib::IgnoreCallback>());
             }
             gate.await();
             ret.AddInt32(0);
