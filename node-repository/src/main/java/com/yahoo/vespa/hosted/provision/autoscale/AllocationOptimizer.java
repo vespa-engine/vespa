@@ -98,7 +98,7 @@ public class AllocationOptimizer {
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         NodeResources nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
-                                  ? current.toAdvertisedClusterResources().nodeResources()
+                                  ? current.advertisedResources().nodeResources()
                                   : limits.min().nodeResources(); // min=max for non-scaled
         return nonScaled.withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }

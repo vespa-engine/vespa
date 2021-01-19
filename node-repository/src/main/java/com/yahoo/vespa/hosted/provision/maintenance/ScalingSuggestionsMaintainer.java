@@ -70,7 +70,9 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         if (suggestion.isEmpty()) return false;
         // Wait only a short time for the lock to avoid interfering with change deployments
         try (Mutex lock = nodeRepository().lock(applicationId, Duration.ofSeconds(1))) {
-            applications().get(applicationId).ifPresent(a -> updateSuggestion(suggestion.target(), clusterId, a, lock));
+            // empty suggested resources == keep the current allocation, so we record that
+            var suggestedResources = suggestion.target().orElse(clusterNodes.not().retired().toResources());
+            applications().get(applicationId).ifPresent(a -> updateSuggestion(suggestedResources, clusterId, a, lock));
             return true;
         }
         catch (ApplicationLockException e) {
@@ -78,7 +80,7 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
-    private void updateSuggestion(Optional<ClusterResources> suggestion,
+    private void updateSuggestion(ClusterResources suggestion,
                                   ClusterSpec.Id clusterId,
                                   Application application,
                                   Mutex lock) {
@@ -88,8 +90,8 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         var currentSuggestion = cluster.get().suggestedResources();
         if (currentSuggestion.isEmpty()
             || currentSuggestion.get().at().isBefore(at.minus(Duration.ofDays(7)))
-            || suggestion.isPresent() && isHigher(suggestion.get(), currentSuggestion.get().resources()))
-            applications().put(application.with(cluster.get().withSuggested(suggestion.map(s -> new Cluster.Suggestion(s,  at)))), lock);
+            || isHigher(suggestion, currentSuggestion.get().resources()))
+            applications().put(application.with(cluster.get().withSuggested(Optional.of(new Cluster.Suggestion(suggestion,  at)))), lock);
     }
 
     private boolean isHigher(ClusterResources r1, ClusterResources r2) {

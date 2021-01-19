@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -69,15 +68,15 @@ public class AllocatableClusterResources {
      * Returns the resources which will actually be available per node in this cluster with this allocation.
      * These should be used for reasoning about allocation to meet measured demand.
      */
-    public NodeResources realResources() { return realResources; }
+    public ClusterResources realResources() {
+        return new ClusterResources(nodes, groups, realResources);
+    }
 
     /**
      * Returns the resources advertised by the cloud provider, which are the basis for charging
      * and which must be used in resource allocation requests
      */
-    public NodeResources advertisedResources() { return advertisedResources; }
-
-    public ClusterResources toAdvertisedClusterResources() {
+    public ClusterResources advertisedResources() {
         return new ClusterResources(nodes, groups, advertisedResources);
     }
 
@@ -115,9 +114,7 @@ public class AllocatableClusterResources {
 
     @Override
     public String toString() {
-        return nodes + " nodes " +
-               ( groups > 1 ? "(in " + groups + " groups) " : "" ) +
-               "with " + advertisedResources() +
+        return advertisedResources() +
                " at cost $" + cost() +
                (fulfilment < 1.0 ? " (fulfilment " + fulfilment + ")" : "");
     }

@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeTimeseries;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -126,7 +125,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                                 ApplicationId application,
                                 Cluster cluster,
                                 NodeList clusterNodes) {
-        ClusterResources current = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository(), cluster.exclusive()).toAdvertisedClusterResources();
+        ClusterResources current = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository(), cluster.exclusive()).advertisedResources();
         log.info("Autoscaling " + application + " " + clusterNodes.clusterSpec() + ":" +
                  "\nfrom " + toString(current) + "\nto   " + toString(target));
     }

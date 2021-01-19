@@ -12,24 +12,24 @@ public enum Resource {
 
     /** Cpu utilization ratio */
     cpu {
-        double idealAverageLoad() { return 0.2; }
+        public double idealAverageLoad() { return 0.2; }
         double valueFrom(NodeResources resources) { return resources.vcpu(); }
     },
 
     /** Memory utilization ratio */
     memory {
-        double idealAverageLoad() { return 0.7; }
+        public double idealAverageLoad() { return 0.7; }
         double valueFrom(NodeResources resources) { return resources.memoryGb(); }
     },
 
     /** Disk utilization ratio */
     disk {
-        double idealAverageLoad() { return 0.6; }
+        public double idealAverageLoad() { return 0.6; }
         double valueFrom(NodeResources resources) { return resources.diskGb(); }
     };
 
     /** The load we should have of this resource on average, when one node in the cluster is down */
-    abstract double idealAverageLoad();
+    public abstract double idealAverageLoad();
 
     abstract double valueFrom(NodeResources resources);
 
