@@ -41,7 +41,6 @@ public class Distribution {
         private final boolean distributorAutoOwnershipTransferOnWholeGroupDown;
     }
 
-    private final int[] distributionBitMasks = new int[65];
     private ConfigSubscriber configSub;
     private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
 
@@ -149,13 +148,7 @@ public class Distribution {
         }
     }
 
-
     public Distribution(String configId) {
-        int mask = 0;
-        for (int i=0; i<=64; ++i) {
-            distributionBitMasks[i] = mask;
-            mask = (mask << 1) | 1;
-        }
         try {
             configSub = new ConfigSubscriber();
             configSub.subscribe(configSubscriber, StorDistributionConfig.class, configId);
@@ -166,16 +159,18 @@ public class Distribution {
     }
 
     public Distribution(StorDistributionConfig config) {
-        int mask = 0;
-        for (int i=0; i<=64; ++i) {
-            distributionBitMasks[i] = mask;
-            mask = (mask << 1) | 1;
-        }
         configSubscriber.configure(config);
     }
 
     public Distribution(DistributionConfig.Cluster config) {
         configure(config);
+    }
+
+    private long lastNBits(long value, int n) {
+        if (n < 0 || n > 64)
+            throw new IllegalArgumentException("n must be in [0, 64], but was " + n);
+
+        return value & ((1L << n) - 1);
     }
 
     public void close() {
@@ -187,22 +182,21 @@ public class Distribution {
     }
 
     private int getGroupSeed(BucketId bucket, ClusterState state, Group group) {
-        int seed = ((int) bucket.getRawId()) & distributionBitMasks[state.getDistributionBitCount()];
+        int seed = (int) lastNBits(bucket.getRawId(), state.getDistributionBitCount());
         seed ^= group.getDistributionHash();
         return seed;
     }
 
     private int getDistributorSeed(BucketId bucket, ClusterState state) {
-        return ((int) bucket.getRawId()) & distributionBitMasks[state.getDistributionBitCount()];
+        return (int) lastNBits(bucket.getRawId(), state.getDistributionBitCount());
     }
 
     private int getStorageSeed(BucketId bucket, ClusterState state) {
-        int seed = ((int) bucket.getRawId()) & distributionBitMasks[state.getDistributionBitCount()];
+        int seed = (int) lastNBits(bucket.getRawId(), state.getDistributionBitCount());
 
         if (bucket.getUsedBits() > 33) {
             int usedBits = bucket.getUsedBits() - 1;
-            seed ^= (distributionBitMasks[usedBits - 32]
-                    & (bucket.getRawId() >> 32)) << 6;
+            seed ^= lastNBits(bucket.getRawId() >> 32, usedBits - 32) << 6;
         }
         return seed;
     }

@@ -418,4 +418,5 @@ public class DistributionTestCase {
         Distribution distr = new Distribution(new StorDistributionConfig(config));
         distr.getIdealDistributorNode(clusterState, new BucketId(16, 0), "uim");
     }
+
 }
