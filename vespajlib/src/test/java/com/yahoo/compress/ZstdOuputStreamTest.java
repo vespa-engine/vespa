@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
@@ -26,5 +27,22 @@ class ZstdOuputStreamTest {
         byte[] decompressedData = new byte[inputData.length];
         compressor.decompress(compressedData, 0, compressedData.length, decompressedData, 0, decompressedData.length);
         assertArrayEquals(inputData, decompressedData);
+    }
+
+    @Test
+    void compressed_size_is_less_than_uncompressed() throws IOException {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 100; i++) {
+            builder.append("The quick brown fox jumps over the lazy dog").append('\n');
+        }
+        byte[] inputData = builder.toString().getBytes();
+        ByteArrayOutputStream arrayOut = new ByteArrayOutputStream();
+        try (ZstdOuputStream zstdOut = new ZstdOuputStream(arrayOut)) {
+            zstdOut.write(inputData);
+        }
+        int compressedSize = arrayOut.toByteArray().length;
+        assertTrue(
+                compressedSize < inputData.length,
+                () -> "Compressed size is " + compressedSize + " while uncompressed size is " + inputData.length);
     }
 }
