@@ -31,7 +31,7 @@
 namespace vespalib { class StateServer; }
 namespace search::transactionlog { class TransLogServerApp; }
 namespace metrics { class MetricLockGuard; }
-namespace storage::spi { class PersistenceProvider; }
+namespace storage::spi { struct PersistenceProvider; }
 
 namespace proton {
 

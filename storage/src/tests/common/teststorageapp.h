@@ -35,7 +35,7 @@
 
 namespace storage {
 
-namespace spi { class PersistenceProvider; }
+namespace spi { struct PersistenceProvider; }
 class StorageBucketDBInitializer;
 
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, NodeIndex);

@@ -36,7 +36,7 @@ namespace api {
     class StorageReply;
     class BucketCommand;
 }
-namespace spi { class PersistenceProvider; }
+namespace spi { struct PersistenceProvider; }
 
 struct FileStorManagerTest;
 class ReadBucketList;
