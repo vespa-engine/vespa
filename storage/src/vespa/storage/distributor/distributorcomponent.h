@@ -201,6 +201,9 @@ public:
     const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const override {
         return getDistributor().pendingClusterStateOrNull(bucket_space);
     }
+    const lib::ClusterStateBundle& cluster_state_bundle() const override {
+        return getClusterStateBundle();
+    }
     const char* storage_node_up_states() const override {
         return getDistributor().getStorageNodeUpStates();
     }

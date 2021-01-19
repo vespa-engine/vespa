@@ -161,6 +161,12 @@ public:
                           uint32_t earlyReturn = false,
                           bool requirePrimaryToBeWritten = true);
 
+    void setup_distributor(int redundancy,
+                           int node_count,
+                           const lib::ClusterStateBundle& state,
+                           uint32_t early_return = false,
+                           bool require_primary_to_be_written = true);
+
     void setRedundancy(uint32_t redundancy);
 
     void notifyDoneInitializing() override {}
@@ -206,6 +212,7 @@ protected:
     MessageSenderImpl _messageSender;
 
     void enableDistributorClusterState(vespalib::stringref state);
+    void enable_distributor_cluster_state(const lib::ClusterStateBundle& state);
 };
 
 }

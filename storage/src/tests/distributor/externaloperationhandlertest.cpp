@@ -66,6 +66,8 @@ struct ExternalOperationHandlerTest : Test, DistributorTestUtil {
 
     void set_up_distributor_for_sequencing_test();
 
+    void set_up_distributor_with_feed_blocked_state();
+
     const vespalib::string _dummy_id{"id:foo:testdoctype1::bar"};
 
     // Returns an arbitrary bucket not owned in the pending state
@@ -355,6 +357,13 @@ void ExternalOperationHandlerTest::set_up_distributor_for_sequencing_test() {
     setupDistributor(1, 2, "version:1 distributor:1 storage:1");
 }
 
+void ExternalOperationHandlerTest::set_up_distributor_with_feed_blocked_state() {
+    createLinks();
+    setup_distributor(1, 2,
+                      lib::ClusterStateBundle(lib::ClusterState("version:1 distributor:1 storage:1"),
+                                              {}, {true, "full disk"}, false));
+}
+
 void ExternalOperationHandlerTest::start_operation_verify_not_rejected(
         std::shared_ptr<api::StorageCommand> cmd,
         Operation::SP& out_generated)
@@ -563,6 +572,16 @@ TEST_F(ExternalOperationHandlerTest, gets_are_sent_with_strong_consistency_by_de
 TEST_F(ExternalOperationHandlerTest, gets_are_sent_with_weak_consistency_if_config_enabled) {
     do_test_get_weak_consistency_is_propagated(true);
 }
+
+TEST_F(ExternalOperationHandlerTest, puts_are_rejected_if_feed_is_blocked) {
+    set_up_distributor_with_feed_blocked_state();
+
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(
+            makePutCommand("testdoctype1", "id:foo:testdoctype1::foo")));
+    EXPECT_EQ("ReturnCode(NO_SPACE, External feed is blocked due to resource exhaustion: full disk)",
+              _sender.reply(0)->getResult().toString());
+}
+
 
 struct OperationHandlerSequencingTest : ExternalOperationHandlerTest {
     void SetUp() override {

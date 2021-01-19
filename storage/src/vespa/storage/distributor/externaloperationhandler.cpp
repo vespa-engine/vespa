@@ -284,6 +284,14 @@ std::string extract_reindexing_token(const api::PutCommand& cmd) {
 }
 
 bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
+    if (_op_ctx.cluster_state_bundle().block_feed_in_cluster()) {
+        const auto& feed_block = _op_ctx.cluster_state_bundle().feed_block();
+        bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::NO_SPACE,
+                                                 "External feed is blocked due to resource exhaustion: " +
+                                                         feed_block->description()));
+        return true;
+    }
+
     auto& metrics = getMetrics().puts;
     if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
