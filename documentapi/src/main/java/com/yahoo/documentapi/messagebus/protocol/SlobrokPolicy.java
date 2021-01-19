@@ -10,10 +10,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Abstract class for policies that allow you to specify which slobrok to use for the
- * routing.
+ * Abstract class for policies that allow you to specify which slobrok to use for the routing.
  */
 public abstract class SlobrokPolicy implements DocumentProtocolRoutingPolicy {
+
     private boolean firstTry = true;
 
     protected List<Mirror.Entry> lookup(RoutingContext context, String pattern) {

@@ -221,18 +221,20 @@ public class ContentPolicy extends SlobrokPolicy {
 
     /** Class parsing the semicolon separated parameter string and exposes the appropriate value to the policy. */
     public static class Parameters {
+
         protected final String clusterName;
         protected final String distributionConfigId;
         protected final SlobrokHostPatternGenerator slobrokHostPatternGenerator;
 
         public Parameters(Map<String, String> params) {
             clusterName = params.get("cluster");
+            if (clusterName == null)
+                throw new IllegalArgumentException("Required parameter 'cluster', the name of the content cluster, not set");
             distributionConfigId = params.get("clusterconfigid"); // TODO jonmv: remove
             slobrokHostPatternGenerator = createPatternGenerator();
-            if (clusterName == null) throw new IllegalArgumentException("Required parameter 'cluster', the name of the content cluster, not set");
         }
 
-        String getDistributionConfigId() {
+        private String getDistributionConfigId() {
             return distributionConfigId == null ? clusterName : distributionConfigId;
         }
         public String getClusterName() {

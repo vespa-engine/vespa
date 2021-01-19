@@ -19,7 +19,6 @@ public class DocumentAccessProvider extends AbstractComponent implements Provide
     private final VespaDocumentAccess access;
 
     @Inject
-    // TODO jonmv: Have Slobrok and RPC config injected as well.
     public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, LoadTypeConfig loadTypeConfig,
                                   SlobroksConfig slobroksConfig, MessagebusConfig messagebusConfig) {
         this.access = new VespaDocumentAccess(documentmanagerConfig, loadTypeConfig, slobroksConfig, messagebusConfig);

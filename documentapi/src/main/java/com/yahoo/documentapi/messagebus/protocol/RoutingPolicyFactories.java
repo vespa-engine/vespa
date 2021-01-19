@@ -3,16 +3,15 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 /**
  * @author Simon Thoresen Hult
+ * @author jonmv
  */
-public abstract class RoutingPolicyFactories {
+class RoutingPolicyFactories {
+
+    private RoutingPolicyFactories() { }
 
     static class AndPolicyFactory implements RoutingPolicyFactory {
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new ANDPolicy(param);
-        }
-
-
-        public void destroy() {
         }
     }
 
@@ -20,17 +19,16 @@ public abstract class RoutingPolicyFactories {
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new ContentPolicy(param);
         }
-
-        public void destroy() {
-        }
     }
 
     static class MessageTypePolicyFactory implements RoutingPolicyFactory {
+
         private final String configId;
 
         public MessageTypePolicyFactory(String configId) {
             this.configId = configId;
         }
+
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new MessageTypePolicy((param == null || param.isEmpty()) ? configId : param);
         }
@@ -56,10 +54,6 @@ public abstract class RoutingPolicyFactories {
             }
             return ret;
         }
-
-
-        public void destroy() {
-        }
     }
 
     static class ExternPolicyFactory implements RoutingPolicyFactory {
@@ -71,19 +65,11 @@ public abstract class RoutingPolicyFactories {
             }
             return ret;
         }
-
-
-        public void destroy() {
-        }
     }
 
     static class LocalServicePolicyFactory implements RoutingPolicyFactory {
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new LocalServicePolicy(param);
-        }
-
-
-        public void destroy() {
         }
     }
 
@@ -91,19 +77,11 @@ public abstract class RoutingPolicyFactories {
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new RoundRobinPolicy();
         }
-
-
-        public void destroy() {
-        }
     }
 
     static class LoadBalancerPolicyFactory implements RoutingPolicyFactory {
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new LoadBalancerPolicy(param);
-        }
-
-
-        public void destroy() {
         }
     }
 
@@ -111,9 +89,6 @@ public abstract class RoutingPolicyFactories {
         public DocumentProtocolRoutingPolicy createPolicy(String param) {
             return new SubsetServicePolicy(param);
         }
-
-
-        public void destroy() {
-        }
     }
+
 }

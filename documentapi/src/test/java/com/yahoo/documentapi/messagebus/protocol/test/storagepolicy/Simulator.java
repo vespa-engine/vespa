@@ -31,7 +31,7 @@ public abstract class Simulator extends ContentPolicyTestEnvironment {
         RESET_CLUSTER_STATE_NO_GOOD_NODES,
         NODE_NOT_IN_SLOBROK
     };
-    private Integer getIdealTarget(String idString, String clusterState) {
+    private int getIdealTarget(String idString, String clusterState) {
         DocumentId did = new DocumentId(idString);
         BucketIdFactory factory = new BucketIdFactory();
         BucketId bid = factory.getBucketId(did);
@@ -145,6 +145,7 @@ public abstract class Simulator extends ContentPolicyTestEnvironment {
             return currentClusterState;
         }
     }
+
     public void runSimulation(String expected, PersistentFailureTestParameters params) {
         params.validate();
         // Set nodes in slobrok
@@ -157,16 +158,16 @@ public abstract class Simulator extends ContentPolicyTestEnvironment {
             replyWrongDistribution(target, "foo", null, params.getInitialClusterState().toString());
         }
         RandomGen randomizer = new RandomGen(432121);
-        int correctnode[] = new int[2],
-                wrongnode[] = new int[2],
-                failed[] = new int[2],
-                worked[] = new int[2],
-                downnode[] = new int[2];
+        int[] correctnode = new int[2],
+                wrongnode = new int[2],
+                   failed = new int[2],
+                   worked = new int[2],
+                 downnode = new int[2];
         for (int step = 0, steps = (params.getTotalRequests() / params.getParallellRequests()); step < steps; ++step) {
             int half = (step < steps / 2 ? 0 : 1);
             if (debug) System.err.println("Starting step " + step + " in half " + half);
-            String docId[] = new String[params.getParallellRequests()];
-            RoutingNode targets[] = new RoutingNode[params.getParallellRequests()];
+            String[] docId = new String[params.getParallellRequests()];
+            RoutingNode[] targets = new RoutingNode[params.getParallellRequests()];
             for (int i=0; i<params.getParallellRequests(); ++i) {
                 docId[i] = "id:ns:testdoc::" + (step * params.getParallellRequests() + i);
                 frame.setMessage(createMessage(docId[i]));
@@ -206,7 +207,6 @@ public abstract class Simulator extends ContentPolicyTestEnvironment {
             }
         }
         StringBuilder actual = new StringBuilder();
-        String result[][] = new String[2][];
         for (int i=0; i<2; ++i) {
             actual.append(i == 0 ? "First " : " Last ")
                     .append("correctnode ").append(correctnode[i])
@@ -215,7 +215,7 @@ public abstract class Simulator extends ContentPolicyTestEnvironment {
                     .append(", worked ").append(worked[i])
                     .append(", failed ").append(failed[i]);
         }
-        if (!Pattern.matches(expected, actual.toString())) {
+        if ( ! Pattern.matches(expected, actual.toString())) {
             assertEquals(expected, actual.toString());
         }
     }

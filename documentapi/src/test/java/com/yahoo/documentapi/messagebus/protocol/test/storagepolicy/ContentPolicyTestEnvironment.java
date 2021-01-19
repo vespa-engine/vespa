@@ -34,11 +34,13 @@ import java.util.TreeSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class ContentPolicyTestEnvironment {
 
-    protected StoragePolicyTestFactory policyFactory;
+    protected ContentPolicyTestFactory policyFactory;
     protected PolicyTestFrame frame;
     private Set<Integer> nodes;
     protected static int[] bucketOneNodePreference = new int[]{ 3, 5, 7, 6, 8, 0, 9, 2, 1, 4 };
@@ -51,7 +53,7 @@ public abstract class ContentPolicyTestEnvironment {
         frame = new PolicyTestFrame(manager);
         nodes = new TreeSet<>();
         DocumentProtocol protocol = (DocumentProtocol) frame.getMessageBus().getProtocol((Utf8Array)DocumentProtocol.NAME);
-        policyFactory = new StoragePolicyTestFactory(nodes);
+        policyFactory = new ContentPolicyTestFactory(nodes);
         protocol.putRoutingPolicyFactory("storage", policyFactory);
         frame.setMessage(createMessage("id:ns:testdoc:n=1:foo"));
         frame.setHop(new HopSpec("test", "[storage:cluster=foo]"));
@@ -104,7 +106,7 @@ public abstract class ContentPolicyTestEnvironment {
 
     public static class TestHostFetcher extends ContentPolicy.HostFetcher {
         private final String clusterName;
-        private RandomGen randomizer = new RandomGen(1234);
+        private final RandomGen randomizer = new RandomGen(1234);
         private final Set<Integer> nodes;
         private Integer avoidPickingAtRandom = null;
 
@@ -121,13 +123,14 @@ public abstract class ContentPolicyTestEnvironment {
             try{
                 if (distributor == null) {
                     if (nodes.size() == 1) {
-                        assertTrue(avoidPickingAtRandom != nodes.iterator().next());
+                        assertNotSame(avoidPickingAtRandom, nodes.iterator().next());
                         distributor = nodes.iterator().next();
                     } else {
                         Iterator<Integer> it = nodes.iterator();
                         for (int i = 0, n = randomizer.nextInt(nodes.size() - 1); i<n; ++i) it.next();
                         distributor = it.next();
-                        if (avoidPickingAtRandom != null && distributor == avoidPickingAtRandom) distributor = it.next();
+                        if (avoidPickingAtRandom != null && avoidPickingAtRandom.equals(distributor))
+                            distributor = it.next();
                     }
                 }
                 if (nodes.contains(distributor)) {
@@ -137,8 +140,7 @@ public abstract class ContentPolicyTestEnvironment {
                 }
             } catch (RuntimeException e) {
                 e.printStackTrace();
-                assertTrue(e.getMessage(), false);
-                throw e;
+                throw new AssertionError(e.getMessage());
             }
         }
     }
@@ -160,12 +162,12 @@ public abstract class ContentPolicyTestEnvironment {
         public Distribution createDistribution(SlobrokPolicy policy) { return distribution; }
     }
 
-    public static class StoragePolicyTestFactory implements RoutingPolicyFactory {
+    public static class ContentPolicyTestFactory implements RoutingPolicyFactory {
         private Set<Integer> nodes;
-        private final LinkedList<TestParameters> parameterInstances = new LinkedList<TestParameters>();
+        private final LinkedList<TestParameters> parameterInstances = new LinkedList<>();
         private Integer avoidPickingAtRandom = null;
 
-        public StoragePolicyTestFactory(Set<Integer> nodes) {
+        public ContentPolicyTestFactory(Set<Integer> nodes) {
             this.nodes = nodes;
         }
         public DocumentProtocolRoutingPolicy createPolicy(String parameters) {
