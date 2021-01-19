@@ -1,0 +1,4 @@
+namespace=container.logging
+
+# Name of the cluster
+cluster             string
