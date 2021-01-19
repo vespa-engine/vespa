@@ -11,7 +11,8 @@ public enum CompressionType {
     // Do not change the type->ordinal association. The gap is due to historic types no longer supported.
     NONE((byte) 0),
     INCOMPRESSIBLE((byte) 5),
-    LZ4((byte) 6);
+    LZ4((byte) 6),
+    ZSTD((byte) 7);
 
     private byte code;
 
@@ -38,6 +39,8 @@ public enum CompressionType {
                 return INCOMPRESSIBLE;
             case ((byte) 6):
                 return LZ4;
+            case ((byte) 7):
+                return ZSTD;
             default:
                 throw new IllegalArgumentException("Unknown compression type ordinal " + value);
         }
