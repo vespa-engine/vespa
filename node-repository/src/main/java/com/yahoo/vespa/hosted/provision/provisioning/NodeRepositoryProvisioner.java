@@ -179,13 +179,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (limits.min().equals(limits.max())) return limits.min();
 
         // Don't change current deployments that are still legal
-        var currentAsAdvertised = current.toAdvertisedClusterResources();
+        var currentAsAdvertised = current.advertisedResources();
         if (! firstDeployment && currentAsAdvertised.isWithin(limits.min(), limits.max())) return currentAsAdvertised;
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
         return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits)
                                   .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
-                                  .toAdvertisedClusterResources();
+                                  .advertisedResources();
     }
 
     private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {

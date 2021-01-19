@@ -94,34 +94,31 @@ public class Autoscaler {
         if (bestAllocation.isEmpty())
             return Advice.dontScale("No allocation changes are possible within configured limits");
 
-        if (similar(bestAllocation.get(), currentAllocation))
+        if (similar(bestAllocation.get().realResources(), currentAllocation.realResources()))
             return Advice.dontScale("Cluster is ideally scaled within configured limits");
 
         if (isDownscaling(bestAllocation.get(), currentAllocation) && scaledIn(scalingWindow.multipliedBy(3), cluster))
             return Advice.dontScale("Waiting " + scalingWindow.multipliedBy(3) + " since last rescaling before reducing resources");
 
-        return Advice.scaleTo(bestAllocation.get().toAdvertisedClusterResources());
+        return Advice.scaleTo(bestAllocation.get().advertisedResources());
     }
 
     /** Returns true if both total real resources and total cost are similar */
-    private boolean similar(AllocatableClusterResources a, AllocatableClusterResources b) {
+    public static boolean similar(ClusterResources a, ClusterResources b) {
         return similar(a.cost(), b.cost(), costDifferenceWorthReallocation) &&
-               similar(a.realResources().vcpu() * a.nodes(),
-                       b.realResources().vcpu() * b.nodes(), resourceDifferenceWorthReallocation) &&
-               similar(a.realResources().memoryGb() * a.nodes(),
-                       b.realResources().memoryGb() * b.nodes(), resourceDifferenceWorthReallocation) &&
-               similar(a.realResources().diskGb() * a.nodes(),
-                       b.realResources().diskGb() * b.nodes(), resourceDifferenceWorthReallocation);
+               similar(a.totalResources().vcpu(), b.totalResources().vcpu(), resourceDifferenceWorthReallocation) &&
+               similar(a.totalResources().memoryGb(), b.totalResources().memoryGb(), resourceDifferenceWorthReallocation) &&
+               similar(a.totalResources().diskGb(), b.totalResources().diskGb(), resourceDifferenceWorthReallocation);
     }
 
-    private boolean similar(double r1, double r2, double threshold) {
+    private static boolean similar(double r1, double r2, double threshold) {
         return Math.abs(r1 - r2) / (( r1 + r2) / 2) < threshold;
     }
 
     /** Returns true if this reduces total resources in any dimension */
     private boolean isDownscaling(AllocatableClusterResources target, AllocatableClusterResources current) {
-        NodeResources targetTotal = target.toAdvertisedClusterResources().totalResources();
-        NodeResources currentTotal = current.toAdvertisedClusterResources().totalResources();
+        NodeResources targetTotal = target.advertisedResources().totalResources();
+        NodeResources currentTotal = current.advertisedResources().totalResources();
         return ! targetTotal.justNumbers().satisfies(currentTotal.justNumbers());
     }
 

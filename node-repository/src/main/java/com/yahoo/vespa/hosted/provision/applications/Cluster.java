@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -73,9 +74,17 @@ public class Cluster {
 
     /**
      * The suggested size of this cluster, which may or may not be within the min and max limits,
-     * or empty if there is currently no suggestion.
+     * or empty if there is currently no recorded suggestion.
      */
     public Optional<Suggestion> suggestedResources() { return suggested; }
+
+    /** Returns true if there is a current suggestion and we should actually make this suggestion to users. */
+    public boolean shouldSuggestResources(ClusterResources currentResources) {
+        if (suggested.isEmpty()) return false;
+        if (suggested.get().resources().isWithin(min, max)) return false;
+        if (Autoscaler.similar(suggested.get().resources(), currentResources)) return false;
+        return true;
+    }
 
     /** Returns the recent scaling events in this cluster */
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
