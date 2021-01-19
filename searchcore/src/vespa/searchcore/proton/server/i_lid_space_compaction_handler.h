@@ -2,17 +2,18 @@
 
 #pragma once
 
-#include "i_document_scan_iterator.h"
-#include "ifrozenbuckethandler.h"
-#include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
-#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchlib/common/lid_usage_stats.h>
+#include <vector>
 
 namespace vespalib { class IDestructorCallback; }
-
+namespace search { class DocumentMetaData; }
 namespace proton::documentmetastore { class OperationListener; }
 
 namespace proton {
+
+class MoveOperation;
+class CompactLidSpaceOperation;
+class IDocumentScanIterator;
 
 /**
  * Interface for handling of lid space compaction, used by a LidSpaceCompactionJob.
@@ -51,12 +52,12 @@ struct ILidSpaceCompactionHandler
     /**
      * Returns an iterator for scanning documents.
      */
-    virtual IDocumentScanIterator::UP getIterator() const = 0;
+    virtual std::unique_ptr<IDocumentScanIterator> getIterator() const = 0;
 
     /**
      * Creates a move operation for moving the given document to the given lid.
      */
-    virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const = 0;
+    virtual std::unique_ptr<MoveOperation> createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const = 0;
 
     /**
      * Performs the actual move operation.

@@ -1,10 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/server/i_lid_space_compaction_handler.h>
+#include <vespa/searchcore/proton/server/i_document_scan_iterator.h>
 #include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
+#include <vespa/searchcore/proton/server/remove_operations_rate_tracker.h>
+#include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
+#include <vespa/searchcore/proton/server/i_operation_storer.h>
+#include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
+#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
@@ -65,6 +71,9 @@ struct MyScanIterator : public IDocumentScanIterator {
             _validItr = false;
         }
         return search::DocumentMetaData();
+    }
+    search::DocumentMetaData getMetaData(uint32_t lid) const override {
+        return search::DocumentMetaData(lid, TIMESTAMP_1, BUCKET_ID_1, GID_1);
     }
 };
 

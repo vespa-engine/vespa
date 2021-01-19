@@ -39,4 +39,14 @@ DocumentScanIterator::next(uint32_t compactLidLimit, bool retry)
     return DocumentMetaData();
 }
 
+search::DocumentMetaData
+DocumentScanIterator::getMetaData(uint32_t lid) const {
+    if (_metaStore.validLid(lid)) {
+        const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(_lastLid);
+        return DocumentMetaData(_lastLid, metaData.getTimestamp(),
+                                metaData.getBucketId(), metaData.getGid());
+    }
+    return DocumentMetaData();
+}
+
 } // namespace proton

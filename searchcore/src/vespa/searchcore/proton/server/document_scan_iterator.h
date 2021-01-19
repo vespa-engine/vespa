@@ -22,6 +22,7 @@ public:
     DocumentScanIterator(const IDocumentMetaStore &_metaStore);
     bool valid() const override;
     search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) override;
+    search::DocumentMetaData getMetaData(uint32_t lid) const override;
 };
 
 } // namespace proton
