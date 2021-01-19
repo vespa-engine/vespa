@@ -135,7 +135,7 @@ public class EndpointCertificateManagerTest {
                         "*.default.default.global.vespa.oath.cloud",
                         "default.default.aws-us-east-1a.vespa.oath.cloud",
                         "*.default.default.aws-us-east-1a.vespa.oath.cloud"),
-                "", Optional.empty()));
+                "", Optional.empty(), Optional.empty()));
         secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 7);
         secretStore.setSecret(testCertName, X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 7);
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
@@ -158,7 +158,7 @@ public class EndpointCertificateManagerTest {
                         "*.default.default.global.vespa.oath.cloud",
                         "default.default.aws-us-east-1a.vespa.oath.cloud",
                         "*.default.default.aws-us-east-1a.vespa.oath.cloud"),
-                "issuer", Optional.empty()));
+                "issuer", Optional.empty(), Optional.empty()));
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(testKeyName, endpointCertificateMetadata.get().keyName());
@@ -168,7 +168,7 @@ public class EndpointCertificateManagerTest {
 
     @Test
     public void reprovisions_certificate_when_necessary() {
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", List.of(), "issuer", Optional.empty()));
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 0);
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
@@ -181,7 +181,7 @@ public class EndpointCertificateManagerTest {
     public void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
         ZoneId testZone = zoneRegistryMock.zones().directlyRouted().in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
 
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", expectedSans, "mockCa", Optional.empty()));
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", expectedSans, "mockCa", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), -1);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), -1);
 

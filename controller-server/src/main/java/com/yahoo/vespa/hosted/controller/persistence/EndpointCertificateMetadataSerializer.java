@@ -36,6 +36,7 @@ public class EndpointCertificateMetadataSerializer {
     private final static String requestedDnsSansField = "requestedDnsSans";
     private final static String issuerField = "issuer";
     private final static String expiryField = "expiry";
+    private final static String lastRefreshedField = "lastRefreshed";
 
     public static Slime toSlime(EndpointCertificateMetadata metadata) {
         Slime slime = new Slime();
@@ -49,6 +50,7 @@ public class EndpointCertificateMetadataSerializer {
         metadata.requestedDnsSans().forEach(cursor::addString);
         object.setString(issuerField, metadata.issuer());
         metadata.expiry().ifPresent(expiry -> object.setLong(expiryField, expiry));
+        metadata.lastRefreshed().ifPresent(refreshTime -> object.setLong(lastRefreshedField, refreshTime));
 
         return slime;
     }
@@ -68,7 +70,10 @@ public class EndpointCertificateMetadataSerializer {
                 inspector.field(issuerField).asString(),
                 inspector.field(expiryField).valid() ?
                         Optional.of(inspector.field(expiryField).asLong()) :
-                        Optional.empty());  // Added 2021-01-18
+                        Optional.empty(),
+                inspector.field(lastRefreshedField).valid() ?
+                        Optional.of(inspector.field(lastRefreshedField).asLong()) :
+                        Optional.empty());
     }
 
     public static EndpointCertificateMetadata fromJsonString(String zkData) {

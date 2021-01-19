@@ -31,6 +31,9 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
+      "name": "EndpointCertificateMaintainer"
+    },
+    {
       "name": "HostSwitchUpdater"
     },
     {

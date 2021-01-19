@@ -8,7 +8,6 @@ import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -45,14 +44,14 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final EndpointCertificateProvider endpointCertificateProvider;
     private final BooleanFlag useEndpointCertificateMaintainer;
 
-    public EndpointCertificateMaintainer(Controller controller, Duration interval, Clock clock, FlagSource flagSource, SecretStore secretStore) {
+    public EndpointCertificateMaintainer(Controller controller, Duration interval) {
         super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.deploymentTrigger = controller.applications().deploymentTrigger();
-        this.clock = clock;
-        this.secretStore = secretStore;
+        this.clock = controller.clock();
+        this.secretStore = controller.secretStore();
         this.curator = controller().curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
-        this.useEndpointCertificateMaintainer = Flags.USE_ENDPOINT_CERTIFICATE_MAINTAINER.bindTo(flagSource);
+        this.useEndpointCertificateMaintainer = Flags.USE_ENDPOINT_CERTIFICATE_MAINTAINER.bindTo(controller().flagSource());
     }
 
     @Override
@@ -64,8 +63,9 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         try {
             deleteUnusedCertificates();
             updateRefreshedCertificates();
+            // TODO andreer: triggerDeploymentOfExpiringCertificates(); // if less than a week remains and a refreshed cert exist, trigger prod deployments
         } catch (Exception e) {
-            log.log(LogLevel.WARNING, "failed lol", e);
+            log.log(LogLevel.ERROR, "failed lol", e);
             return false;
         }
 
@@ -79,8 +79,9 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > endpointCertificateMetadata.version()) {
                 var refreshedCertificateMetadata = endpointCertificateMetadata.withVersion(latestAvailableVersion.getAsInt());
                 curator.writeEndpointCertificateMetadata(applicationId, refreshedCertificateMetadata);
+                // TODO andreer: We need to store refreshed timestamp to know whether this has been deployed(?)
                 // TODO andreer: Certificate not validated here! Is that OK?
-                deploymentTrigger.triggerChange(applicationId, Change.empty()); // TODO andreer: No idea if this does what I want, or anything at all
+                deploymentTrigger.triggerChange(applicationId, Change.empty()); // TODO andreer: No idea if this does what I want, or anything at all. NO: trigger prod jobs directly, when required
             }
         }));
     }
