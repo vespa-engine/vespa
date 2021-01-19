@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.compress.ZstdOuputStream;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
@@ -11,6 +12,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -32,9 +37,11 @@ import java.util.zip.GZIPOutputStream;
  */
 class LogFileHandler extends StreamHandler {
 
+    enum Compression { NONE, GZIP, ZSTD }
+
     private final static Logger logger = Logger.getLogger(LogFileHandler.class.getName());
 
-    private final boolean compressOnRotation;
+    private final Compression compression;
     private final long[] rotationTimes;
     private final String filePattern;  // default to current directory, ms time stamp
     private final String symlinkName;
@@ -95,19 +102,19 @@ class LogFileHandler extends StreamHandler {
         }
     }
 
-    LogFileHandler(boolean compressOnRotation, String filePattern, String rotationTimes, String symlinkName, Formatter formatter) {
-        this(compressOnRotation, filePattern, calcTimesMinutes(rotationTimes), symlinkName, formatter);
+    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, Formatter formatter) {
+        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, formatter);
     }
 
     LogFileHandler(
-            boolean compressOnRotation,
+            Compression compression,
             String filePattern,
             long[] rotationTimes,
             String symlinkName,
             Formatter formatter) {
         super();
         super.setFormatter(formatter);
-        this.compressOnRotation = compressOnRotation;
+        this.compression = compression;
         this.filePattern = filePattern;
         this.rotationTimes = rotationTimes;
         this.symlinkName = (symlinkName != null && !symlinkName.isBlank()) ? symlinkName : null;
@@ -132,7 +139,7 @@ class LogFileHandler extends StreamHandler {
     public synchronized void flush() {
         super.flush();
         try {
-            if (currentOutputStream != null) {
+            if (currentOutputStream != null && compression == Compression.GZIP) {
                 long newPos = currentOutputStream.getChannel().position();
                 if (newPos > lastDropPosition + 102400) {
                     nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
@@ -241,8 +248,8 @@ class LogFileHandler extends StreamHandler {
         if ((oldFileName != null)) {
             File oldFile = new File(oldFileName);
             if (oldFile.exists()) {
-                if (compressOnRotation) {
-                    executor.execute(() -> runCompression(oldFile));
+                if (compression != Compression.NONE) {
+                    executor.execute(() -> runCompression(oldFile, compression));
                 } else {
                     nativeIO.dropFileFromCache(oldFile);
                 }
@@ -251,7 +258,40 @@ class LogFileHandler extends StreamHandler {
     }
 
 
-    static void runCompression(File oldFile) {
+    private static void runCompression(File oldFile, Compression compression) {
+        switch (compression) {
+            case ZSTD:
+                runCompressionZstd(oldFile.toPath());
+                break;
+            case GZIP:
+                runCompressionGzip(oldFile);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown compression " + compression);
+        }
+    }
+
+    private static void runCompressionZstd(Path oldFile) {
+        try {
+            Path compressedFile = Paths.get(oldFile.toString() + ".zst");
+            Files.createFile(compressedFile);
+            int bufferSize = 0x400000; // 4M
+            byte[] buffer = new byte[bufferSize];
+            try (ZstdOuputStream out = new ZstdOuputStream(Files.newOutputStream(compressedFile), bufferSize);
+                 InputStream in = Files.newInputStream(oldFile)) {
+                int read;
+                while ((read = in.read(buffer)) >= 0) {
+                    out.write(buffer, 0, read);
+                }
+                out.flush();
+            }
+            Files.delete(oldFile);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to compress log file with zstd: " + oldFile, e);
+        }
+    }
+
+    private static void runCompressionGzip(File oldFile) {
         File gzippedFile = new File(oldFile.getPath() + ".gz");
         try (GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
              FileInputStream inputStream = new FileInputStream(oldFile))

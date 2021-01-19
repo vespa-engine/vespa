@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.compress.ZstdCompressor;
+import com.yahoo.container.logging.LogFileHandler.Compression;
 import com.yahoo.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,7 +47,7 @@ public class LogFileHandlerTestCase {
                 return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
             }
         };
-        LogFileHandler h = new LogFileHandler(false, pattern, rTimes, null, formatter);
+        LogFileHandler h = new LogFileHandler(Compression.NONE, pattern, rTimes, null, formatter);
         long now = System.currentTimeMillis();
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
@@ -66,7 +68,7 @@ public class LogFileHandlerTestCase {
         File logFile = temporaryFolder.newFile("testLogFileG1.txt");
 
       //create logfilehandler
-      LogFileHandler h = new LogFileHandler(false, logFile.getAbsolutePath(), "0 5 ...", null, new SimpleFormatter());
+      LogFileHandler h = new LogFileHandler(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, new SimpleFormatter());
 
       //write log
       LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileFirst1");
@@ -80,7 +82,7 @@ public class LogFileHandlerTestCase {
       File logFile = temporaryFolder.newFile("testLogFileG2.txt");
 
       //create logfilehandler
-       LogFileHandler h = new LogFileHandler(false, logFile.getAbsolutePath(), "0 5 ...", null, new SimpleFormatter());
+       LogFileHandler h = new LogFileHandler(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, new SimpleFormatter());
 
       //write log
       LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileDuringLogging1");
@@ -108,7 +110,7 @@ public class LogFileHandlerTestCase {
             }
         };
         LogFileHandler handler = new LogFileHandler(
-                false, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", formatter);
+                Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", formatter);
 
         handler.publish(new LogRecord(Level.INFO, "test"));
         String firstFile;
@@ -139,7 +141,7 @@ public class LogFileHandlerTestCase {
     }
 
     @Test
-    public void testcompression() throws InterruptedException, IOException {
+    public void testcompression_gzip() throws InterruptedException, IOException {
         File root = temporaryFolder.newFolder("testcompression");
 
         Formatter formatter = new Formatter() {
@@ -149,7 +151,8 @@ public class LogFileHandlerTestCase {
                 return ("[" + timeStamp + "]" + " " + formatMessage(r) + "\n");
             }
         };
-        LogFileHandler h = new LogFileHandler(true, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, formatter);
+        LogFileHandler h = new LogFileHandler(
+                Compression.GZIP, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, formatter);
         int logEntries = 10000;
         for (int i = 0; i < logEntries; i++) {
             LogRecord lr = new LogRecord(Level.INFO, "test");
@@ -171,6 +174,47 @@ public class LogFileHandlerTestCase {
         assertThat(compressed).exists();
         String unzipped = IOUtils.readAll(new InputStreamReader(new GZIPInputStream(new FileInputStream(compressed))));
         assertThat(content).isEqualTo(unzipped);
+        h.shutdown();
+    }
+
+    @Test
+    public void testcompression_zstd() throws InterruptedException, IOException {
+        File root = temporaryFolder.newFolder("testcompression");
+
+        Formatter formatter = new Formatter() {
+            public String format(LogRecord r) {
+                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
+                String timeStamp = df.format(new Date(r.getMillis()));
+                return ("[" + timeStamp + "]" + " " + formatMessage(r) + "\n");
+            }
+        };
+        LogFileHandler h = new LogFileHandler(
+                Compression.ZSTD, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, formatter);
+        int logEntries = 10000;
+        for (int i = 0; i < logEntries; i++) {
+            LogRecord lr = new LogRecord(Level.INFO, "test");
+            h.publish(lr);
+        }
+        h.waitDrained();
+        String f1 = h.getFileName();
+        assertThat(f1).startsWith(root.getAbsolutePath() + "/logfilehandlertest.");
+        File uncompressed = new File(f1);
+        File compressed = new File(f1 + ".zst");
+        assertThat(uncompressed).exists();
+        assertThat(compressed).doesNotExist();
+        String content = IOUtils.readFile(uncompressed);
+        assertThat(content).hasLineCount(logEntries);
+        h.rotateNow();
+        while (uncompressed.exists()) {
+            Thread.sleep(1);
+        }
+        assertThat(compressed).exists();
+        ZstdCompressor zstdCompressor = new ZstdCompressor();
+        byte[] uncompressedBytes = new byte[content.getBytes().length];
+        byte[] compressedBytes = Files.readAllBytes(compressed.toPath());
+        zstdCompressor.decompress(compressedBytes, 0, compressedBytes.length, uncompressedBytes, 0, uncompressedBytes.length);
+        String uncompressedContent = new String(uncompressedBytes);
+        assertThat(uncompressedContent).isEqualTo(content);
         h.shutdown();
     }
 

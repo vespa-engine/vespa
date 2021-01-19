@@ -10,19 +10,28 @@ import java.util.logging.Logger;
  */
 class AccessLogHandler {
 
-    public Logger access = Logger.getAnonymousLogger();
-    private LogFileHandler logFileHandler;
+    public final Logger access = Logger.getAnonymousLogger();
+    private final LogFileHandler logFileHandler;
 
-    public AccessLogHandler(AccessLogConfig.FileHandler config) {
+    AccessLogHandler(AccessLogConfig.FileHandler config) {
         access.setUseParentHandlers(false);
 
         LogFormatter lf = new LogFormatter();
         lf.messageOnly(true);
-        logFileHandler = new LogFileHandler(config.compressOnRotation(), config.pattern(), config.rotation(), config.symlink(), lf);
+        logFileHandler = new LogFileHandler(toCompression(config), config.pattern(), config.rotation(), config.symlink(), lf);
         access.addHandler(this.logFileHandler);
     }
 
-    public void shutdown() {
+    private LogFileHandler.Compression toCompression(AccessLogConfig.FileHandler config) {
+        if (!config.compressOnRotation()) return LogFileHandler.Compression.NONE;
+        switch (config.compressionFormat()) {
+            case ZSTD: return LogFileHandler.Compression.ZSTD;
+            case GZIP: return LogFileHandler.Compression.GZIP;
+            default: throw new IllegalArgumentException(config.compressionFormat().toString());
+        }
+    }
+
+    void shutdown() {
         logFileHandler.close();
         access.removeHandler(logFileHandler);
 

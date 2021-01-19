@@ -17,7 +17,7 @@ class ConnectionLogHandler {
         LogFormatter lf = new LogFormatter();
         lf.messageOnly(true);
         logFileHandler = new LogFileHandler(
-                true,
+                LogFileHandler.Compression.ZSTD,
                 String.format("logs/vespa/qrs/connection.%s.%s", clusterName, "%Y%m%d%H%M%S"),
                 new long[]{0},
                 null,
