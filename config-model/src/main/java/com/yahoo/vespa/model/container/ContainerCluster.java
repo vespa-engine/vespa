@@ -24,7 +24,6 @@ import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.logging.SimpleConnectionLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.http.filter.SecurityFilterInvoker;
