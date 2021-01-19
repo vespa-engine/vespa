@@ -104,6 +104,7 @@ private:
     void startSafePathUpdate(DistributorMessageSender&);
     bool lostBucketOwnershipBetweenPhases() const;
     void sendLostOwnershipTransientErrorReply(DistributorMessageSender&);
+    void send_feed_blocked_error_reply(DistributorMessageSender& sender);
     void schedulePutsWithUpdatedDocument(
             std::shared_ptr<document::Document>,
             api::Timestamp,

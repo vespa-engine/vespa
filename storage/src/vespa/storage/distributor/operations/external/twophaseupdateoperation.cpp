@@ -1,16 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "twophaseupdateoperation.h"
 #include "getoperation.h"
 #include "putoperation.h"
+#include "twophaseupdateoperation.h"
 #include "updateoperation.h"
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/select/parser.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/select/parser.h>
-#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -197,6 +198,10 @@ TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender, s
 void
 TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
 {
+    if (_op_ctx.cluster_state_bundle().block_feed_in_cluster()) {
+        send_feed_blocked_error_reply(sender);
+        return;
+    }
     _mode = Mode::SLOW_PATH;
     auto get_operation = create_initial_safe_path_get_operation();
     GetOperation& op = *get_operation;
@@ -276,6 +281,15 @@ TwoPhaseUpdateOperation::sendLostOwnershipTransientErrorReply(DistributorMessage
                             "Distributor lost ownership of bucket between "
                             "executing the read and write phases of a two-"
                             "phase update operation"));
+}
+
+void
+TwoPhaseUpdateOperation::send_feed_blocked_error_reply(DistributorMessageSender& sender)
+{
+    sendReplyWithResult(sender,
+                        api::ReturnCode(api::ReturnCode::NO_SPACE,
+                                        "External feed is blocked due to resource exhaustion: " +
+                                        _op_ctx.cluster_state_bundle().feed_block()->description()));
 }
 
 void
