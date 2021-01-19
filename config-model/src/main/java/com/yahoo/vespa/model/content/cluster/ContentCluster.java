@@ -755,24 +755,29 @@ public class ContentCluster extends AbstractConfigProducer implements
     @Override
     public void getConfig(DistributionConfig.Builder builder) {
         DistributionConfig.Cluster.Builder clusterBuilder = new DistributionConfig.Cluster.Builder();
+        StorDistributionConfig.Builder storDistributionBuilder = new StorDistributionConfig.Builder();
+        getConfig(storDistributionBuilder);
+        StorDistributionConfig config = storDistributionBuilder.build();
 
-        if (redundancy() != null)
-            clusterBuilder.redundancy(redundancy().effectiveFinalRedundancy());
+        clusterBuilder.redundancy(config.redundancy());
 
-        if (getRootGroup() != null)
-            clusterBuilder.group(getRootGroup().getGroupStructureConfig().stream()
-                                               .map(StorDistributionConfig.Group.Builder::build)
-                                               .map(config -> new DistributionConfig.Cluster.Group.Builder()
-                                                       .index(config.index())
-                                                       .name(config.name())
-                                                       .capacity(config.capacity())
-                                                       .partitions(config.partitions())
-                                                       .nodes(config.nodes().stream()
-                                                                    .map(node -> new DistributionConfig.Cluster.Group.Nodes.Builder()
-                                                                            .index(node.index())
-                                                                            .retired(node.retired()))
-                                                                    .collect(toList())))
-                                               .collect(toList()));
+        for (StorDistributionConfig.Group group : config.group()) {
+            DistributionConfig.Cluster.Group.Builder groupBuilder = new DistributionConfig.Cluster.Group.Builder();
+            groupBuilder.index(group.index())
+                        .name(group.name())
+                        .capacity(group.capacity())
+                        .partitions(group.partitions());
+
+            for (var node : group.nodes()) {
+                DistributionConfig.Cluster.Group.Nodes.Builder nodesBuilder = new DistributionConfig.Cluster.Group.Nodes.Builder();
+                nodesBuilder.index(node.index())
+                            .retired(node.retired());
+
+                groupBuilder.nodes(nodesBuilder);
+            }
+
+            clusterBuilder.group(groupBuilder);
+        }
 
         builder.cluster(getConfigId(), clusterBuilder);
     }
