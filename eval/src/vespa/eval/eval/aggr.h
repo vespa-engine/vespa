@@ -61,9 +61,10 @@ struct Aggregator {
 
 namespace aggr {
 
-// can we start by picking any value from the set to be reduced and
-// use the templated aggregator 'combine' function in arbitrary order
-// to end up with (approximately) the correct result?
+// can we start by picking any value from the set to be reduced (or
+// the special aggregator-specific null_value) and use the templated
+// aggregator 'combine' function in arbitrary order to end up with
+// (approximately) the correct result?
 constexpr bool is_simple(Aggr aggr) {
     return ((aggr == Aggr::PROD) ||
             (aggr == Aggr::SUM)  ||
@@ -124,12 +125,13 @@ private:
     T _prod;
 public:
     using value_type = T;
-    constexpr Prod() : _prod{1} {}
+    constexpr Prod() : _prod{null_value()} {}
     constexpr Prod(T value) : _prod{value} {}
-    constexpr void sample(T value) { _prod *= value; }
-    constexpr void merge(const Prod &rhs) { _prod *= rhs._prod; }
+    constexpr void sample(T value) { _prod = combine(_prod, value); }
+    constexpr void merge(const Prod &rhs) { _prod = combine(_prod, rhs._prod); }
     constexpr T result() const { return _prod; }
     static constexpr Aggr enum_value() { return Aggr::PROD; }
+    static constexpr T null_value() { return 1; }
     static constexpr T combine(T a, T b) { return (a * b); }
 };
 
@@ -138,12 +140,13 @@ private:
     T _sum;
 public:
     using value_type = T;
-    constexpr Sum() : _sum{0} {}
+    constexpr Sum() : _sum{null_value()} {}
     constexpr Sum(T value) : _sum{value} {}
-    constexpr void sample(T value) { _sum += value; }
-    constexpr void merge(const Sum &rhs) { _sum += rhs._sum; }
+    constexpr void sample(T value) { _sum = combine(_sum, value); }
+    constexpr void merge(const Sum &rhs) { _sum = combine(_sum, rhs._sum); }
     constexpr T result() const { return _sum; }
     static constexpr Aggr enum_value() { return Aggr::SUM; }
+    static constexpr T null_value() { return 0; }
     static constexpr T combine(T a, T b) { return (a + b); }
 };
 
@@ -152,12 +155,13 @@ private:
     T _max;
 public:
     using value_type = T;
-    constexpr Max() : _max{-std::numeric_limits<T>::infinity()} {}
+    constexpr Max() : _max{null_value()} {}
     constexpr Max(T value) : _max{value} {}
-    constexpr void sample(T value) { _max = std::max(_max, value); }
-    constexpr void merge(const Max &rhs) { _max = std::max(_max, rhs._max); }
+    constexpr void sample(T value) { _max = combine(_max, value); }
+    constexpr void merge(const Max &rhs) { _max = combine(_max, rhs._max); }
     constexpr T result() const { return _max; }
     static constexpr Aggr enum_value() { return Aggr::MAX; }
+    static constexpr T null_value() { return -std::numeric_limits<T>::infinity(); }
     static constexpr T combine(T a, T b) { return std::max(a,b); }
 };
 
@@ -204,12 +208,13 @@ private:
     T _min;
 public:
     using value_type = T;
-    constexpr Min() : _min{std::numeric_limits<T>::infinity()} {}
+    constexpr Min() : _min{null_value()} {}
     constexpr Min(T value) : _min{value} {}
-    constexpr void sample(T value) { _min = std::min(_min, value); }
-    constexpr void merge(const Min &rhs) { _min = std::min(_min, rhs._min); }
+    constexpr void sample(T value) { _min = combine(_min, value); }
+    constexpr void merge(const Min &rhs) { _min = combine(_min, rhs._min); }
     constexpr T result() const { return _min; }
     static constexpr Aggr enum_value() { return Aggr::MIN; }
+    static constexpr T null_value() { return std::numeric_limits<T>::infinity(); }
     static constexpr T combine(T a, T b) { return std::min(a,b); }
 };
 

@@ -30,6 +30,7 @@ struct DenseReducePlan {
 struct SparseReducePlan {
     size_t num_reduce_dims;
     std::vector<size_t> keep_dims;
+    bool should_forward_index() const;
     SparseReducePlan(const ValueType &type, const ValueType &res_type);
     ~SparseReducePlan();
 };
