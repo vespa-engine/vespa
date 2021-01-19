@@ -99,7 +99,7 @@ public class TenantController {
         try (Lock lock = lock(tenantSpec.tenant())) {
             requireNonExistent(tenantSpec.tenant());
             TenantId.validate(tenantSpec.tenant().value());
-            curator.writeTenant(accessControl.createTenant(tenantSpec, credentials, asList()));
+            curator.writeTenant(accessControl.createTenant(tenantSpec, controller.clock().instant(), credentials, asList()));
         }
     }
 

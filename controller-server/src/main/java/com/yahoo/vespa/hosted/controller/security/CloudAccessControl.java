@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import javax.ws.rs.ForbiddenException;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,12 +52,12 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public CloudTenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing) {
+    public CloudTenant createTenant(TenantSpec tenantSpec, Instant createdAt, Credentials credentials, List<Tenant> existing) {
         requireTenantCreationAllowed((Auth0Credentials) credentials);
         requireTenantTrialLimitNotReached(existing);
 
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
-        CloudTenant tenant = CloudTenant.create(spec.tenant(), credentials.user());
+        CloudTenant tenant = CloudTenant.create(spec.tenant(), createdAt, credentials.user());
 
         for (Role role : Roles.tenantRoles(spec.tenant())) {
             userManagement.createRole(role);

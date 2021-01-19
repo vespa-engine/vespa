@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
 import java.net.URI;
 import java.security.Principal;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +71,7 @@ public class TenantSerializer {
         Cursor tenantObject = slime.setObject();
         tenantObject.setString(nameField, tenant.name().value());
         tenantObject.setString(typeField, valueOf(tenant.type()));
+        tenant.createdAt().ifPresent(instant -> tenantObject.setLong(createdAtField, instant.toEpochMilli()));
 
         switch (tenant.type()) {
             case athenz: toSlime((AthenzTenant) tenant, tenantObject); break;
@@ -131,15 +133,17 @@ public class TenantSerializer {
         Property property = new Property(tenantObject.field(propertyField).asString());
         Optional<PropertyId> propertyId = SlimeUtils.optionalString(tenantObject.field(propertyIdField)).map(PropertyId::new);
         Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
-        return new AthenzTenant(name, domain, property, propertyId, contact);
+        Optional<Instant> createdAt = SlimeUtils.optionalLong(tenantObject.field(createdAtField)).map(Instant::ofEpochMilli);
+        return new AthenzTenant(name, domain, property, propertyId, contact, createdAt);
     }
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        Optional<Instant> createdAt = SlimeUtils.optionalLong(tenantObject.field(createdAtField)).map(Instant::ofEpochMilli);
         Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
         TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfoField));
-        return new CloudTenant(name, creator, developerKeys, info);
+        return new CloudTenant(name, createdAt, creator, developerKeys, info);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {

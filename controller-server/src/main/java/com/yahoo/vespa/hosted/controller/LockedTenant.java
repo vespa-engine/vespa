@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 
 import java.security.Principal;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -31,9 +32,11 @@ import static java.util.Objects.requireNonNull;
 public abstract class LockedTenant {
 
     final TenantName name;
+    final Optional<Instant> createdAt;
 
-    private LockedTenant(TenantName name) {
+    private LockedTenant(TenantName name, Optional<Instant> createdAt) {
         this.name = requireNonNull(name);
+        this.createdAt = requireNonNull(createdAt);
     }
 
     static LockedTenant of(Tenant tenant, Lock lock) {
@@ -61,8 +64,9 @@ public abstract class LockedTenant {
         private final Optional<PropertyId> propertyId;
         private final Optional<Contact> contact;
 
-        private Athenz(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId, Optional<Contact> contact) {
-            super(name);
+        private Athenz(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
+                       Optional<Contact> contact, Optional<Instant> createdAt) {
+            super(name, createdAt);
             this.domain = domain;
             this.property = property;
             this.propertyId = propertyId;
@@ -70,28 +74,28 @@ public abstract class LockedTenant {
         }
 
         private Athenz(AthenzTenant tenant) {
-            this(tenant.name(), tenant.domain(), tenant.property(), tenant.propertyId(), tenant.contact());
+            this(tenant.name(), tenant.domain(), tenant.property(), tenant.propertyId(), tenant.contact(), tenant.createdAt());
         }
 
         @Override
         public AthenzTenant get() {
-            return new AthenzTenant(name, domain, property, propertyId, contact);
+            return new AthenzTenant(name, domain, property, propertyId, contact, createdAt);
         }
 
         public Athenz with(AthenzDomain domain) {
-            return new Athenz(name, domain, property, propertyId, contact);
+            return new Athenz(name, domain, property, propertyId, contact, createdAt);
         }
 
         public Athenz with(Property property) {
-            return new Athenz(name, domain, property, propertyId, contact);
+            return new Athenz(name, domain, property, propertyId, contact, createdAt);
         }
 
         public Athenz with(PropertyId propertyId) {
-            return new Athenz(name, domain, property, Optional.of(propertyId), contact);
+            return new Athenz(name, domain, property, Optional.of(propertyId), contact, createdAt);
         }
 
         public Athenz with(Contact contact) {
-            return new Athenz(name, domain, property, propertyId, Optional.of(contact));
+            return new Athenz(name, domain, property, propertyId, Optional.of(contact), createdAt);
         }
 
     }
@@ -104,20 +108,20 @@ public abstract class LockedTenant {
         private final BiMap<PublicKey, Principal> developerKeys;
         private final TenantInfo info;
 
-        private Cloud(TenantName name, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
-            super(name);
+        private Cloud(TenantName name, Optional<Instant> createdAt, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
+            super(name, createdAt);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
             this.creator = creator;
             this.info = info;
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), Optional.empty(), tenant.developerKeys(), tenant.info());
+            this(tenant.name(), tenant.createdAt(), Optional.empty(), tenant.developerKeys(), tenant.info());
         }
 
         @Override
         public CloudTenant get() {
-            return new CloudTenant(name, creator, developerKeys, info);
+            return new CloudTenant(name, createdAt, creator, developerKeys, info);
         }
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
@@ -125,17 +129,17 @@ public abstract class LockedTenant {
             if (keys.containsKey(key))
                 throw new IllegalArgumentException("Key " + KeyUtils.toPem(key) + " is already owned by " + keys.get(key));
             keys.put(key, principal);
-            return new Cloud(name, creator, keys, info);
+            return new Cloud(name, createdAt, creator, keys, info);
         }
 
         public Cloud withoutDeveloperKey(PublicKey key) {
             BiMap<PublicKey, Principal> keys = HashBiMap.create(developerKeys);
             keys.remove(key);
-            return new Cloud(name, creator, keys, info);
+            return new Cloud(name, createdAt, creator, keys, info);
         }
 
         public Cloud withInfo(TenantInfo newInfo) {
-            return new Cloud(name, creator, developerKeys, newInfo);
+            return new Cloud(name, createdAt, creator, developerKeys, newInfo);
         }
     }
 

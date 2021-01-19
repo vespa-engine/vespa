@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -48,13 +49,15 @@ public class TenantSerializerTest {
         AthenzTenant tenant = AthenzTenant.create(TenantName.from("athenz-tenant"),
                                                   new AthenzDomain("domain1"),
                                                   new Property("property1"),
-                                                  Optional.of(new PropertyId("1")));
+                                                  Optional.of(new PropertyId("1")),
+                                                  Optional.of(Instant.ofEpochMilli(1234L)));
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.domain(), serialized.domain());
         assertEquals(tenant.property(), serialized.property());
         assertTrue(serialized.propertyId().isPresent());
         assertEquals(tenant.propertyId(), serialized.propertyId());
+        assertEquals(tenant.createdAt(), serialized.createdAt());
     }
 
     @Test
@@ -62,6 +65,7 @@ public class TenantSerializerTest {
         AthenzTenant tenant = AthenzTenant.create(TenantName.from("athenz-tenant"),
                                                              new AthenzDomain("domain1"),
                                                              new Property("property1"),
+                                                             Optional.empty(),
                                                              Optional.empty());
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertFalse(serialized.propertyId().isPresent());
@@ -74,7 +78,8 @@ public class TenantSerializerTest {
                                                new AthenzDomain("domain1"),
                                                new Property("property1"),
                                                Optional.of(new PropertyId("1")),
-                                               Optional.of(contact()));
+                                               Optional.of(contact()),
+                                               Optional.empty());
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.contact(), serialized.contact());
     }
@@ -82,6 +87,7 @@ public class TenantSerializerTest {
     @Test
     public void cloud_tenant() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                                             Optional.of(Instant.ofEpochMilli(1234L)),
                                              Optional.of(new SimplePrincipal("foobar-user")),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                                                                otherPublicKey, new SimplePrincipal("jane")),
@@ -90,11 +96,13 @@ public class TenantSerializerTest {
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
         assertEquals(tenant.developerKeys(), serialized.developerKeys());
+        assertEquals(tenant.createdAt(), serialized.createdAt());
     }
 
     @Test
     public void cloud_tenant_with_info() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                Optional.empty(),
                 Optional.of(new SimplePrincipal("foobar-user")),
                 ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                         otherPublicKey, new SimplePrincipal("jane")),

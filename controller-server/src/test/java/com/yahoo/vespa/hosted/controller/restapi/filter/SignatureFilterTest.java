@@ -68,6 +68,7 @@ public class SignatureFilterTest {
 
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
                                                      Optional.empty(),
+                                                     Optional.empty(),
                                                      ImmutableBiMap.of(),
                                                      TenantInfo.EMPTY));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
@@ -107,6 +108,7 @@ public class SignatureFilterTest {
 
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
+                                                     Optional.empty(),
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(publicKey, () -> "user"),
                                                      TenantInfo.EMPTY));
