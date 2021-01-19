@@ -15,16 +15,32 @@ public class ZstdCompressor {
     private static final io.airlift.compress.zstd.ZstdDecompressor decompressor = new io.airlift.compress.zstd.ZstdDecompressor();
 
     public byte[] compress(byte[] input, int inputOffset, int inputLength) {
-        int maxCompressedLength = compressor.maxCompressedLength(inputLength);
+        int maxCompressedLength = getMaxCompressedLength(inputLength);
         byte[] output = new byte[maxCompressedLength];
-        int compressedLength = compressor.compress(input, inputOffset, inputLength, output, 0, maxCompressedLength);
+        int compressedLength = compress(input, inputOffset, inputLength, output, 0, maxCompressedLength);
         return Arrays.copyOf(output, compressedLength);
     }
 
+    public int compress(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset, int maxOutputLength) {
+        return compressor.compress(input, inputOffset, inputLength, output, outputOffset, maxOutputLength);
+    }
+
     public byte[] decompress(byte[] input, int inputOffset, int inputLength) {
-        int decompressedLength = (int) io.airlift.compress.zstd.ZstdDecompressor.getDecompressedSize(input, inputOffset, inputLength);
+        int decompressedLength = getDecompressedLength(input, inputOffset, inputLength);
         byte[] output = new byte[decompressedLength];
-        decompressor.decompress(input, inputOffset, inputLength, output, 0, decompressedLength);
+        decompress(input, inputOffset, inputLength, output, 0, decompressedLength);
         return output;
+    }
+
+    public int decompress(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset, int maxOutputLength) {
+        return decompressor.decompress(input, inputOffset, inputLength, output, outputOffset, maxOutputLength);
+    }
+
+    public static int getMaxCompressedLength(int uncompressedLength) {
+        return compressor.maxCompressedLength(uncompressedLength);
+    }
+
+    public static int getDecompressedLength(byte[] input, int inputOffset, int inputLength) {
+        return (int) io.airlift.compress.zstd.ZstdDecompressor.getDecompressedSize(input, inputOffset, inputLength);
     }
 }
