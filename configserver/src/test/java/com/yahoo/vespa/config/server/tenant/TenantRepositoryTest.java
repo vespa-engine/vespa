@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -19,10 +21,13 @@ import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.After;
 import org.junit.Before;
@@ -66,9 +71,9 @@ public class TenantRepositoryTest {
         listener = (TenantApplicationsTest.MockReloadListener) globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener) globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
-        tenantRepository = new TenantRepository(globalComponentRegistry,
-                                                new HostRegistry(),
-                                                curator);
+        tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(globalComponentRegistry)
+                                                             .withCurator(curator)
+                                                             .build();
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -178,7 +183,7 @@ public class TenantRepositoryTest {
         // Should get exception if config is true
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry(), new MockCurator());
+        new FailingDuringBootstrapTenantRepository(createComponentRegistry());
     }
 
     private List<String> readZKChildren(String path) throws Exception {
@@ -200,10 +205,14 @@ public class TenantRepositoryTest {
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
-        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry, Curator curator) {
-            super(globalComponentRegistry,
+        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry componentRegistry) {
+            super(componentRegistry,
                   new HostRegistry(),
-                  curator);
+                  new MockCurator(),
+                  Metrics.createTestMetrics(),
+                  new StripedExecutor<>(new InThreadExecutorService()),
+                  new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
+                  new InMemoryFlagSource());
         }
 
         @Override

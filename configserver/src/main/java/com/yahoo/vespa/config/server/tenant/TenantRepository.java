@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
-import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -24,11 +23,9 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -159,50 +156,6 @@ public class TenantRepository {
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   TimeUnit.SECONDS);
-    }
-
-    // For testing only
-    public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry) {
-        this(componentRegistry,
-             hostRegistry,
-             new MockCurator());
-    }
-
-    // For testing only
-    public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry, Curator curator) {
-        this(componentRegistry,
-             hostRegistry,
-             curator,
-             new FileDistributionFactory(componentRegistry.getConfigserverConfig()));
-    }
-
-    // For testing only
-    public TenantRepository(GlobalComponentRegistry componentRegistry,
-                            HostRegistry hostRegistry,
-                            Curator curator,
-                            FileDistributionFactory fileDistributionFactory) {
-        this(componentRegistry,
-             hostRegistry,
-             curator,
-             Metrics.createTestMetrics(),
-             new StripedExecutor<>(new InThreadExecutorService()),
-             fileDistributionFactory,
-             new InMemoryFlagSource());
-    }
-
-    // For testing only
-    public TenantRepository(GlobalComponentRegistry componentRegistry,
-                            HostRegistry hostRegistry,
-                            Curator curator,
-                            FileDistributionFactory fileDistributionFactory,
-                            FlagSource flagSource) {
-        this(componentRegistry,
-             hostRegistry,
-             curator,
-             Metrics.createTestMetrics(),
-             new StripedExecutor<>(new InThreadExecutorService()),
-             fileDistributionFactory,
-             flagSource);
     }
 
     private void notifyTenantsLoaded() {

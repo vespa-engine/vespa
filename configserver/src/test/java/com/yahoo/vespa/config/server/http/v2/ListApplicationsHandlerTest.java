@@ -12,9 +12,9 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,7 +42,7 @@ public class ListApplicationsHandlerTest {
 
     @Before
     public void setup() {
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        TenantRepository tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
         tenantRepository.addTenant(mytenant);
         tenantRepository.addTenant(foobar);
         applicationRepo = tenantRepository.getTenant(mytenant).getApplicationRepo();

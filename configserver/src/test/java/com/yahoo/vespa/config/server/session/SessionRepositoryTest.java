@@ -21,10 +21,10 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
@@ -92,11 +92,11 @@ public class SessionRepositoryTest {
         GlobalComponentRegistry globalComponentRegistry = componentRegistryBuilder
                 .configServerConfig(configserverConfig)
                 .build();
-        tenantRepository = new TenantRepository(globalComponentRegistry,
-                                                new HostRegistry(),
-                                                curator,
-                                                new MockFileDistributionFactory(configserverConfig),
-                                                new InMemoryFlagSource());
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(globalComponentRegistry)
+                .withCurator(curator)
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .build();
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

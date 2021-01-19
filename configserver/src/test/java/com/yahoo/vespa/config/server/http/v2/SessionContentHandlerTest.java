@@ -14,12 +14,12 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -61,7 +61,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .configServerConfig(configserverConfig)
                 .build();
 
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
         tenantRepository.addTenant(tenantName);
 
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

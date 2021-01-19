@@ -27,7 +27,6 @@ import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -38,7 +37,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -112,10 +111,10 @@ public class ApplicationHandlerTest {
                 .configServerConfig(configserverConfig)
                 .clock(clock)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry,
-                                                new HostRegistry(),
-                                                new MockCurator(),
-                                                new MockFileDistributionFactory(configserverConfig));
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .build();
         tenantRepository.addTenant(mytenantName);
         provisioner = new MockProvisioner();
         orchestrator = new OrchestratorMock();

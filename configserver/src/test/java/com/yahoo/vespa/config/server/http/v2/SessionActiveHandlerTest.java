@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
@@ -24,7 +23,7 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.hamcrest.core.Is;
 import org.junit.Before;
@@ -79,7 +78,7 @@ public class SessionActiveHandlerTest {
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
                 .configServerConfig(configserverConfig)
                 .build();
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        TenantRepository tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
         tenantRepository.addTenant(tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
