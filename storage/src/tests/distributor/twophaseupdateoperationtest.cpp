@@ -151,6 +151,12 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorTestUtil {
         return cb;
     }
 
+    void set_up_distributor_with_feed_blocked_state() {
+        setup_distributor(2, 2,
+                          lib::ClusterStateBundle(lib::ClusterState("distributor:1 storage:2"),
+                                                  {}, {true, "full disk"}, false));
+    }
+
 };
 
 TwoPhaseUpdateOperationTest::TwoPhaseUpdateOperationTest() = default;
@@ -1089,6 +1095,17 @@ TEST_F(TwoPhaseUpdateOperationTest, update_gets_are_sent_with_strong_consistency
     ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
     auto& get_cmd = dynamic_cast<const api::GetCommand&>(*_sender.command(0));
     EXPECT_EQ(get_cmd.internal_read_consistency(), api::InternalReadConsistency::Strong);
+}
+
+TEST_F(TwoPhaseUpdateOperationTest, operation_is_rejected_in_safe_path_if_feed_is_blocked) {
+    set_up_distributor_with_feed_blocked_state();
+    auto cb = sendUpdate("0=1/2/3,1=2/3/4"); // Inconsistent replicas to trigger safe path
+    cb->start(_sender, framework::MilliSecTime(0));
+
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 0) "
+              "ReturnCode(NO_SPACE, External feed is blocked due to resource exhaustion: full disk)",
+              _sender.getLastReply(true));
 }
 
 struct ThreePhaseUpdateTest : TwoPhaseUpdateOperationTest {};
