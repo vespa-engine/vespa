@@ -759,7 +759,10 @@ public class ContentCluster extends AbstractConfigProducer implements
         getConfig(storDistributionBuilder);
         StorDistributionConfig config = storDistributionBuilder.build();
 
+        clusterBuilder.active_per_leaf_group(config.active_per_leaf_group());
+        clusterBuilder.ready_copies(config.ready_copies());
         clusterBuilder.redundancy(config.redundancy());
+        clusterBuilder.initial_redundancy(config.initial_redundancy());
 
         for (StorDistributionConfig.Group group : config.group()) {
             DistributionConfig.Cluster.Group.Builder groupBuilder = new DistributionConfig.Cluster.Group.Builder();
