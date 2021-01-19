@@ -13,7 +13,8 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -57,15 +58,16 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     @Override
     protected boolean maintain() {
 
-        if(!useEndpointCertificateMaintainer.value())
+        if (!useEndpointCertificateMaintainer.value())
             return true; // handled by EndpointCertificateManager for now
 
         try {
-            deleteUnusedCertificates();
+            // In order of importance
+            deployRefreshedCertificates();
             updateRefreshedCertificates();
-            // TODO andreer: triggerDeploymentOfExpiringCertificates(); // if less than a week remains and a refreshed cert exist, trigger prod deployments
+            deleteUnusedCertificates();
         } catch (Exception e) {
-            log.log(LogLevel.ERROR, "failed lol", e);
+            log.log(LogLevel.ERROR, "Exception caught while maintaining endpoint certificates", e);
             return false;
         }
 
@@ -77,13 +79,36 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             // Look for and use refreshed certificate
             var latestAvailableVersion = latestVersionInSecretStore(endpointCertificateMetadata);
             if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > endpointCertificateMetadata.version()) {
-                var refreshedCertificateMetadata = endpointCertificateMetadata.withVersion(latestAvailableVersion.getAsInt());
-                curator.writeEndpointCertificateMetadata(applicationId, refreshedCertificateMetadata);
-                // TODO andreer: We need to store refreshed timestamp to know whether this has been deployed(?)
-                // TODO andreer: Certificate not validated here! Is that OK?
-                deploymentTrigger.triggerChange(applicationId, Change.empty()); // TODO andreer: No idea if this does what I want, or anything at all. NO: trigger prod jobs directly, when required
+                var refreshedCertificateMetadata = endpointCertificateMetadata
+                        .withVersion(latestAvailableVersion.getAsInt())
+                        .withLastRefreshed(clock.instant().getEpochSecond());
+                curator.writeEndpointCertificateMetadata(applicationId, refreshedCertificateMetadata); // Certificate not validated here, but on deploy.
             }
         }));
+    }
+
+    /**
+     * If it's been a week since the cert has been refreshed, re-trigger all prod deployment jobs.
+     */
+    private void deployRefreshedCertificates() {
+        var now = clock.instant();
+        curator.readAllEndpointCertificateMetadata().forEach(((applicationId, endpointCertificateMetadata) ->
+                endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
+                    Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
+                    if (now.isAfter(refreshTime.plus(1, ChronoUnit.WEEKS))) {
+
+                        controller().jobController().jobs(applicationId).forEach(job -> {
+                            controller().jobController().jobStatus(new JobId(applicationId, JobType.fromJobName(job.jobName())))
+                                    .lastTriggered().ifPresent(run -> {
+                                if (run.start().isBefore(refreshTime)) {
+                                    deploymentTrigger.reTrigger(applicationId, job);
+                                    log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
+                                            applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
+                                }
+                            });
+                        });
+                    }
+                })));
     }
 
     private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
