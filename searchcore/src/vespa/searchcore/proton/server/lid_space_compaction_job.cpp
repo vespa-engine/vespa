@@ -35,9 +35,7 @@ LidSpaceCompactionJob::shouldRestartScanDocuments(const LidUsageStats &stats) co
 DocumentMetaData
 LidSpaceCompactionJob::getNextDocument(const LidUsageStats &stats)
 {
-    DocumentMetaData document =
-        _scanItr->next(std::max(stats.getLowestFreeLid(), stats.getUsedLids()),
-                       _cfg.getMaxDocsToScan(), _retryFrozenDocument);
+    DocumentMetaData document = _scanItr->next(std::max(stats.getLowestFreeLid(), stats.getUsedLids()), _retryFrozenDocument);
     _retryFrozenDocument = false;
     return document;
 }

@@ -31,7 +31,6 @@ constexpr uint32_t ALLOWED_LID_BLOAT = 1;
 constexpr double ALLOWED_LID_BLOAT_FACTOR = 0.3;
 constexpr double REMOVE_BATCH_BLOCK_RATE = 1.0 / 21.0;
 constexpr double REMOVE_BLOCK_RATE = 1.0 / 20.0;
-constexpr uint32_t MAX_DOCS_TO_SCAN = 100;
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 constexpr uint32_t MAX_OUTSTANDING_MOVE_OPS = 10;
 const vespalib::string DOC_ID = "id:test:searchdocument::0";
@@ -52,11 +51,11 @@ struct MyScanIterator : public IDocumentScanIterator {
     bool valid() const override {
         return _validItr;
     }
-    search::DocumentMetaData next(uint32_t compactLidLimit, uint32_t maxDocsToScan, bool retry) override {
+    search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) override {
         if (!retry && _itr != _lids.begin()) {
             ++_itr;
         }
-        for (uint32_t i = 0; i < maxDocsToScan && _itr != _lids.end() && (*_itr) <= compactLidLimit; ++i, ++_itr) {}
+        for (; _itr != _lids.end() && (*_itr) <= compactLidLimit; ++_itr) {}
         if (_itr != _lids.end()) {
             uint32_t lid = *_itr;
             if (lid > compactLidLimit) {
@@ -75,7 +74,6 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     mutable uint32_t _moveFromLid;
     mutable uint32_t _moveToLid;
     uint32_t _handleMoveCnt;
-    uint32_t _wantedSubDbId;
     uint32_t _wantedLidLimit;
     mutable uint32_t _iteratorCnt;
     bool _storeMoveDoneContexts;
@@ -137,7 +135,6 @@ struct MyHandler : public ILidSpaceCompactionHandler {
         }
     }
     void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<IDestructorCallback>) override {
-        _wantedSubDbId = op.getSubDbId();
         _wantedLidLimit = op.getLidLimit();
     }
 };
@@ -147,7 +144,6 @@ MyHandler::MyHandler(bool storeMoveDoneContexts)
       _moveFromLid(0),
       _moveToLid(0),
       _handleMoveCnt(0),
-      _wantedSubDbId(0),
       _wantedLidLimit(0),
       _iteratorCnt(0),
       _storeMoveDoneContexts(storeMoveDoneContexts),
@@ -281,7 +277,6 @@ struct JobTestBase : public ::testing::Test {
     }
     void init(uint32_t allowedLidBloat = ALLOWED_LID_BLOAT,
               double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
-              uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN,
               double resourceLimitFactor = RESOURCE_LIMIT_FACTOR,
               vespalib::duration interval = JOB_DELAY,
               bool nodeRetired = false,
@@ -292,7 +287,7 @@ struct JobTestBase : public ::testing::Test {
                                                                                           allowedLidBloatFactor,
                                                                                           REMOVE_BATCH_BLOCK_RATE,
                                                                                           REMOVE_BLOCK_RATE,
-                                                                                          false, maxDocsToScan),
+                                                                                          false),
                                                        *_handler, _storer, _frozenHandler, _diskMemUsageNotifier,
                                                        BlockableMaintenanceJobConfig(resourceLimitFactor, maxOutstandingMoveOps),
                                                        _clusterStateHandler, nodeRetired);
@@ -386,19 +381,18 @@ struct JobTest : public JobTestBase {
     {}
     void init(uint32_t allowedLidBloat = ALLOWED_LID_BLOAT,
               double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
-              uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN,
               double resourceLimitFactor = RESOURCE_LIMIT_FACTOR,
               vespalib::duration interval = JOB_DELAY,
               bool nodeRetired = false,
               uint32_t maxOutstandingMoveOps = MAX_OUTSTANDING_MOVE_OPS) {
-        JobTestBase::init(allowedLidBloat, allowedLidBloatFactor, maxDocsToScan, resourceLimitFactor, interval, nodeRetired, maxOutstandingMoveOps);
+        JobTestBase::init(allowedLidBloat, allowedLidBloatFactor, resourceLimitFactor, interval, nodeRetired, maxOutstandingMoveOps);
         _jobRunner = std::make_unique<MyDirectJobRunner>(*_job);
     }
     void init_with_interval(vespalib::duration interval) {
-        init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, RESOURCE_LIMIT_FACTOR, interval);
+        init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, interval);
     }
     void init_with_node_retired(bool retired) {
-        init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, RESOURCE_LIMIT_FACTOR, JOB_DELAY, retired);
+        init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, JOB_DELAY, retired);
     }
 };
 
@@ -490,16 +484,6 @@ TEST_F(JobTest, job_is_blocked_if_trying_to_move_document_for_frozen_bucket)
     EXPECT_FALSE(_job->isBlocked());
 }
 
-TEST_F(JobTest, job_handles_invalid_document_meta_data_when_max_docs_are_scanned)
-{
-    init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, 3);
-    setupOneDocumentToCompact();
-    EXPECT_FALSE(run()); // does not find 9 in first scan
-    assertNoWorkDone();
-    EXPECT_FALSE(run()); // move 9 -> 2
-    assertOneDocumentCompacted();
-}
-
 TEST_F(JobTest, job_can_restart_documents_scan_if_lid_bloat_is_still_to_large)
 {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, 3);
@@ -513,11 +497,8 @@ TEST_F(JobTest, job_can_restart_documents_scan_if_lid_bloat_is_still_to_large)
     // We simulate that the set of used docs have changed between these 2 runs
     EXPECT_FALSE(run()); // move 9 -> 2
     endScan();
-    assertJobContext(2, 9, 1, 0, 0);
-    EXPECT_EQ(2u, _handler->_iteratorCnt);
-    EXPECT_FALSE(run()); // does not find 8 in first scan
-    EXPECT_FALSE(run()); // move 8 -> 3
     assertJobContext(3, 8, 2, 0, 0);
+    EXPECT_EQ(2u, _handler->_iteratorCnt);
     endScan().compact();
     assertJobContext(3, 8, 2, 7, 1);
 }
@@ -602,7 +583,7 @@ TEST_F(JobTest, ending_resource_starvation_resumes_lid_space_compaction)
 
 TEST_F(JobTest, resource_limit_factor_adjusts_limit)
 {
-    init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, 1.05);
+    init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, 1.05);
     setupOneDocumentToCompact();
     _diskMemUsageNotifier.notify({{100, 0}, {100, 101}});
     EXPECT_FALSE(run()); // scan
@@ -729,7 +710,7 @@ struct MaxOutstandingJobTest : public JobTest {
           runner()
     {}
     void init(uint32_t maxOutstandingMoveOps) {
-        JobTest::init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN,
+        JobTest::init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR,
                       RESOURCE_LIMIT_FACTOR, JOB_DELAY, false, maxOutstandingMoveOps);
         runner = std::make_unique<MyCountJobRunner>(*_job);
     }
