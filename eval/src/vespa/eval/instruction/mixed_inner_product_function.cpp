@@ -13,23 +13,29 @@ using namespace operation;
 namespace {
 
 template <typename LCT, typename RCT>
-double my_dot_product(const LCT * lhs, const RCT * rhs, size_t count) {
-    double result = 0.0;
-    for (size_t i = 0; i < count; ++i) {
-        result += lhs[i] * rhs[i];
+struct MyDotProduct {
+    static double apply(const LCT * lhs, const RCT * rhs, size_t count) {
+        double result = 0.0;
+        for (size_t i = 0; i < count; ++i) {
+            result += lhs[i] * rhs[i];
+        }
+        return result;
     }
-    return result;
-}
+};
 
 template <>
-double my_dot_product<double,double>(const double * lhs, const double * rhs, size_t count) {
-    return cblas_ddot(count, lhs, 1, rhs, 1);
-}
+struct MyDotProduct<double,double> {
+    static double apply(const double * lhs, const double * rhs, size_t count) {
+        return cblas_ddot(count, lhs, 1, rhs, 1);
+    }
+};
 
 template <>
-double my_dot_product<float,float>(const float * lhs, const float * rhs, size_t count) {
-    return cblas_sdot(count, lhs, 1, rhs, 1);
-}
+struct MyDotProduct<float,float> {
+    static float apply(const float * lhs, const float * rhs, size_t count) {
+        return cblas_sdot(count, lhs, 1, rhs, 1);
+    }
+};
 
 struct MixedInnerProductParam {
     ValueType res_type;
@@ -61,7 +67,7 @@ void my_mixed_inner_product_op(InterpretedFunction::State &state, uint64_t param
     const MCT *m_cp = m_cells.begin();
     const VCT *v_cp = v_cells.begin();
     for (OCT &out : out_cells) {
-        out = my_dot_product(m_cp, v_cp, param.vector_size);
+        out = MyDotProduct<MCT,VCT>::apply(m_cp, v_cp, param.vector_size);
         m_cp += param.vector_size;
     }
     assert(m_cp == m_cells.end());
