@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <iosfwd>
+
 namespace storage::spi {
 
 /*
@@ -27,7 +29,14 @@ public:
 
     double get_disk_usage() const noexcept { return _disk_usage; }
     double get_memory_usage() const noexcept { return _memory_usage; }
+
+    bool operator==(const ResourceUsage &rhs) const noexcept {
+        return (_disk_usage == rhs._disk_usage) &&
+            (_memory_usage == rhs._memory_usage);
+    }
 };
+
+std::ostream& operator<<(std::ostream& out, const ResourceUsage& resource_usage);
 
 }
 
