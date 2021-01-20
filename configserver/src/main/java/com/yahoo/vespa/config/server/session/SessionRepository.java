@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
@@ -100,6 +101,7 @@ public class SessionRepository {
     private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
+    private final HostProvisionerProvider hostProvisionerProvider;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -111,7 +113,8 @@ public class SessionRepository {
                              PermanentApplicationPackage permanentApplicationPackage,
                              FlagSource flagSource,
                              ExecutorService zkCacheExecutor,
-                             SecretStore secretStore) {
+                             SecretStore secretStore,
+                             HostProvisionerProvider hostProvisionerProvider) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -129,6 +132,7 @@ public class SessionRepository {
         this.metrics = metrics;
         this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
         this.secretStore = secretStore;
+        this.hostProvisionerProvider = hostProvisionerProvider;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -453,7 +457,8 @@ public class SessionRepository {
                                                                     metrics,
                                                                     permanentApplicationPackage,
                                                                     flagSource,
-                                                                    secretStore);
+                                                                    secretStore,
+                                                                    hostProvisionerProvider);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 

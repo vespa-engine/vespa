@@ -110,17 +110,17 @@ public class ApplicationHandlerTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .provisioner(provisioner)
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .configServerConfig(configserverConfig)
                 .clock(clock)
                 .build();
+        provisioner = new MockProvisioner();
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
                 .build();
         tenantRepository.addTenant(mytenantName);
-        provisioner = new MockProvisioner();
         orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

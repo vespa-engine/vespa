@@ -97,6 +97,7 @@ public class TenantRepository {
     private final FileDistributionFactory fileDistributionFactory;
     private final FlagSource flagSource;
     private final SecretStore secretStore;
+    private final HostProvisionerProvider hostProvisionerProvider;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -113,7 +114,8 @@ public class TenantRepository {
                             Curator curator,
                             Metrics metrics,
                             FlagSource flagSource,
-                            SecretStore secretStore) {
+                            SecretStore secretStore,
+                            HostProvisionerProvider hostProvisionerProvider) {
         this(componentRegistry,
              hostRegistry,
              curator,
@@ -122,7 +124,8 @@ public class TenantRepository {
              new FileDistributionFactory(componentRegistry.getConfigserverConfig()),
              flagSource,
              Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
-             secretStore);
+             secretStore,
+             hostProvisionerProvider);
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -133,7 +136,8 @@ public class TenantRepository {
                             FileDistributionFactory fileDistributionFactory,
                             FlagSource flagSource,
                             ExecutorService zkCacheExecutor,
-                            SecretStore secretStore) {
+                            SecretStore secretStore,
+                            HostProvisionerProvider hostProvisionerProvider) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
@@ -148,6 +152,7 @@ public class TenantRepository {
         this.fileDistributionFactory = fileDistributionFactory;
         this.flagSource = flagSource;
         this.secretStore = secretStore;
+        this.hostProvisionerProvider = hostProvisionerProvider;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -278,7 +283,7 @@ public class TenantRepository {
         PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(componentRegistry.getConfigserverConfig());
         SessionPreparer sessionPreparer = new SessionPreparer(componentRegistry.getModelFactoryRegistry(),
                                                               fileDistributionFactory,
-                                                              HostProvisionerProvider.from(componentRegistry.getHostProvisioner()),
+                                                              hostProvisionerProvider,
                                                               permanentApplicationPackage,
                                                               componentRegistry.getConfigserverConfig(),
                                                               componentRegistry.getStaticConfigDefinitionRepo(),
@@ -296,7 +301,8 @@ public class TenantRepository {
                                                                     permanentApplicationPackage,
                                                                     flagSource,
                                                                     zkCacheExecutor,
-                                                                    secretStore);
+                                                                    secretStore,
+                                                                    hostProvisionerProvider);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

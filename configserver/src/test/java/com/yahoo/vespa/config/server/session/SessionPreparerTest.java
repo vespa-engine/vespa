@@ -347,7 +347,7 @@ public class SessionPreparerTest {
 
     @Test(expected = LoadBalancerServiceException.class)
     public void require_that_conflict_is_returned_when_creating_load_balancer_fails() throws IOException {
-        preparer = createPreparer(HostProvisionerProvider.withProvisioner(new MockProvisioner().transientFailureOnPrepare()));
+        preparer = createPreparer(HostProvisionerProvider.withProvisioner(new MockProvisioner().transientFailureOnPrepare(), true));
         var params = new PrepareParams.Builder().applicationId(applicationId("test")).build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
     }

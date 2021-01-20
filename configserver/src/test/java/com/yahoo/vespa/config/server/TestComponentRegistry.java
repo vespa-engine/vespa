@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.model.VespaModelFactory;
 import java.nio.file.Files;
 import java.time.Clock;
 import java.util.Collections;
-import java.util.Optional;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -29,14 +27,12 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
     private final ModelFactoryRegistry modelFactoryRegistry;
-    private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final Clock clock;
     private final ConfigServerDB configServerDB;
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                   ConfigserverConfig configserverConfig,
-                                  Optional<Provisioner> hostProvisioner,
                                   ConfigDefinitionRepo defRepo,
                                   ReloadListener reloadListener,
                                   TenantListener tenantListener,
@@ -47,7 +43,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.tenantListener = tenantListener;
         this.defRepo = defRepo;
         this.modelFactoryRegistry = modelFactoryRegistry;
-        this.hostProvisioner = hostProvisioner;
         this.zone = zone;
         this.clock = clock;
         this.configServerDB = new ConfigServerDB(configserverConfig);
@@ -63,7 +58,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         private final MockTenantListener tenantListener = new MockTenantListener();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
-        private Optional<Provisioner> hostProvisioner = Optional.empty();
         private Zone zone = Zone.defaultZone();
         private Clock clock = Clock.systemUTC();
 
@@ -74,11 +68,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
 
         public Builder modelFactoryRegistry(ModelFactoryRegistry modelFactoryRegistry) {
             this.modelFactoryRegistry = modelFactoryRegistry;
-            return this;
-        }
-
-        public Builder provisioner(Provisioner provisioner) {
-            this.hostProvisioner = Optional.ofNullable(provisioner);
             return this;
         }
 
@@ -105,7 +94,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         public TestComponentRegistry build() {
             return new TestComponentRegistry(modelFactoryRegistry,
                                              configserverConfig,
-                                             hostProvisioner,
                                              defRepo,
                                              reloadListener,
                                              tenantListener,
@@ -124,10 +112,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return defRepo; }
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
-    @Override
-    public Optional<Provisioner> getHostProvisioner() {
-        return hostProvisioner;
-    }
     @Override
     public Zone getZone() {
         return zone;

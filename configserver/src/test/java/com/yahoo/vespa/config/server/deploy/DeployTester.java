@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactor
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -287,14 +288,16 @@ public class DeployTester {
                     .configServerConfig(configserverConfig)
                     .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                     .zone(zone);
-            if (configserverConfig.hostedVespa()) testComponentRegistryBuilder.provisioner(provisioner);
 
-            TenantRepository tenantRepository = new TestTenantRepository.Builder()
-            .withComponentRegistry(testComponentRegistryBuilder.build())
+            TestTenantRepository.Builder builder = new TestTenantRepository.Builder()
+                    .withComponentRegistry(testComponentRegistryBuilder.build())
                     .withCurator(curator)
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
-                                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
-                    .build();
+                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig));
+
+            if (configserverConfig.hostedVespa()) builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true));
+
+            TenantRepository tenantRepository = builder.build();
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

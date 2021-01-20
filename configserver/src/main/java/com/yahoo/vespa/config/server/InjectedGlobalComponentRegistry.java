@@ -4,15 +4,12 @@ package com.yahoo.vespa.config.server;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 
 import java.time.Clock;
-import java.util.Optional;
 
 /**
  * Registry containing all the "static"/"global" components in a config server in one place.
@@ -25,7 +22,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final RpcServer rpcServer;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
-    private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final ConfigServerDB configServerDB;
 
@@ -35,14 +31,12 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            RpcServer rpcServer,
                                            ConfigserverConfig configserverConfig,
                                            ConfigDefinitionRepo staticConfigDefinitionRepo,
-                                           HostProvisionerProvider hostProvisionerProvider,
                                            Zone zone,
                                            ConfigServerDB configServerDB) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.rpcServer = rpcServer;
         this.configserverConfig = configserverConfig;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
-        this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.configServerDB = configServerDB;
     }
@@ -57,11 +51,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return staticConfigDefinitionRepo; }
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
-
-    @Override
-    public Optional<Provisioner> getHostProvisioner() {
-        return hostProvisioner;
-    }
 
     @Override
     public Zone getZone() {

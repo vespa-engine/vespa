@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
@@ -67,11 +68,15 @@ public class HttpGetConfigHandlerTest {
                 .configDefinitionRepo(new TestConfigDefinitionRepo())
                 .configServerConfig(configserverConfig)
                 .build();
-        TenantRepository tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+        MockProvisioner provisioner = new MockProvisioner();
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
+                .build();
         tenantRepository.addTenant(tenant);
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(new MockProvisioner())
+                .withProvisioner(provisioner)
                 .withOrchestrator(new OrchestratorMock())
                 .withConfigserverConfig(configserverConfig)
                 .build();

@@ -55,14 +55,12 @@ public class InjectedGlobalComponentRegistryTest {
                                   new FileServer(temporaryFolder.newFolder("filereferences")),
                                   new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
         defRepo = new StaticConfigDefinitionRepo();
-        HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(modelFactoryRegistry,
                                                     rpcServer,
                                                     configserverConfig,
                                                     defRepo,
-                                                    hostProvisionerProvider,
                                                     zone,
                                                     new ConfigServerDB(configserverConfig));
     }
@@ -75,7 +73,6 @@ public class InjectedGlobalComponentRegistryTest {
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getStaticConfigDefinitionRepo(), is(defRepo));
         assertThat(globalComponentRegistry.getZone(), is(zone));
-        assertTrue(globalComponentRegistry.getHostProvisioner().isPresent());
     }
 
 }

@@ -8,6 +8,7 @@ import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -24,7 +25,8 @@ public class TestTenantRepository extends TenantRepository {
                                 Curator curator,
                                 Metrics metrics,
                                 FileDistributionFactory fileDistributionFactory,
-                                FlagSource flagSource) {
+                                FlagSource flagSource,
+                                HostProvisionerProvider hostProvisionerProvider) {
         super(componentRegistry,
               hostRegistry,
               curator,
@@ -33,7 +35,8 @@ public class TestTenantRepository extends TenantRepository {
               fileDistributionFactory,
               flagSource,
               new InThreadExecutorService(),
-              new MockSecretStore());
+              new MockSecretStore(),
+              hostProvisionerProvider);
     }
 
     public static class Builder {
@@ -44,7 +47,7 @@ public class TestTenantRepository extends TenantRepository {
         Metrics metrics = Metrics.createTestMetrics();
         FileDistributionFactory fileDistributionFactory = null;
         FlagSource flagSource = new InMemoryFlagSource();
-
+        HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
 
         public Builder withFlagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
@@ -76,6 +79,11 @@ public class TestTenantRepository extends TenantRepository {
             return this;
         }
 
+        public Builder withHostProvisionerProvider(HostProvisionerProvider hostProvisionerProvider) {
+            this.hostProvisionerProvider = hostProvisionerProvider;
+            return this;
+        }
+
         public TenantRepository build() {
             if (fileDistributionFactory == null)
                 fileDistributionFactory = new FileDistributionFactory(componentRegistry.getConfigserverConfig());
@@ -84,7 +92,8 @@ public class TestTenantRepository extends TenantRepository {
                                             curator,
                                             metrics,
                                             fileDistributionFactory,
-                                            flagSource);
+                                            flagSource,
+                                            hostProvisionerProvider);
         }
 
     }

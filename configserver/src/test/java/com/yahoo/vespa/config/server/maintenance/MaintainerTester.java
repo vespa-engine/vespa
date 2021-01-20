@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
@@ -43,10 +44,12 @@ class MaintainerTester {
         GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .clock(clock)
                 .configServerConfig(configserverConfig)
-                .provisioner(provisioner)
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
                 .build();
-        tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true))
+                .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(provisioner)

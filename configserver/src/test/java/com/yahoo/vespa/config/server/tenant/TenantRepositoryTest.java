@@ -15,6 +15,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -26,6 +27,7 @@ import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -215,7 +217,8 @@ public class TenantRepositoryTest {
                   new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
                   new InMemoryFlagSource(),
                   new InThreadExecutorService(),
-                  new MockSecretStore());
+                  new MockSecretStore(),
+                  HostProvisionerProvider.withProvisioner(new MockProvisioner(), false));
         }
 
         @Override

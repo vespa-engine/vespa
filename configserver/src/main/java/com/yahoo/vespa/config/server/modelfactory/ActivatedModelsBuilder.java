@@ -70,11 +70,12 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   Metrics metrics,
                                   PermanentApplicationPackage permanentApplicationPackage,
                                   FlagSource flagSource,
-                                  SecretStore secretStore) {
+                                  SecretStore secretStore,
+                                  HostProvisionerProvider hostProvisionerProvider) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               globalComponentRegistry.getConfigserverConfig(),
               globalComponentRegistry.getZone(),
-              HostProvisionerProvider.from(globalComponentRegistry.getHostProvisioner()));
+              hostProvisionerProvider);
         this.tenant = tenant;
         this.applicationGeneration = applicationGeneration;
         this.zkClient = zkClient;

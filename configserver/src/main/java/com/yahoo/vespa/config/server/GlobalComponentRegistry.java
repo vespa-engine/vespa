@@ -3,13 +3,11 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 
 import java.time.Clock;
-import java.util.Optional;
 
 /**
  * Interface representing all global config server components used within the config server.
@@ -23,7 +21,6 @@ public interface GlobalComponentRegistry {
     ReloadListener getReloadListener();
     ConfigDefinitionRepo getStaticConfigDefinitionRepo();
     ModelFactoryRegistry getModelFactoryRegistry();
-    Optional<Provisioner> getHostProvisioner();
     Zone getZone();
     Clock getClock();
     ConfigServerDB getConfigServerDB();
