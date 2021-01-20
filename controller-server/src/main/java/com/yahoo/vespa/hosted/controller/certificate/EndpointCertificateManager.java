@@ -14,6 +14,7 @@ import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -129,7 +130,7 @@ public class EndpointCertificateManager {
             return Optional.of(reprovisionedCertificateMetadata);
         }
 
-        if(!useEndpointCertificateMaintainer.value()) {
+        if (!useEndpointCertificateMaintainer.value()) {
             // Look for and use refreshed certificate
             var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
             if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
@@ -160,15 +161,23 @@ public class EndpointCertificateManager {
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, storedMetaData) -> {
             var lastRequested = Instant.ofEpochSecond(storedMetaData.lastRequested());
             if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(applicationId)) {
-                log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
-                        + " has not been requested in a month and app has no deployments"
-                        + (mode == CleanupMode.ENABLE ? ", deleting from provider and ZK" : ""));
-                if (mode == CleanupMode.ENABLE) {
-                    endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
-                    curator.deleteEndpointCertificateMetadata(applicationId);
+                try (Lock lock = lock(applicationId)) {
+                    if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
+                        log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
+                                + " has not been requested in a month and app has no deployments"
+                                + (mode == CleanupMode.ENABLE ? ", deleting from provider and ZK" : ""));
+                        if (mode == CleanupMode.ENABLE) {
+                            endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
+                            curator.deleteEndpointCertificateMetadata(applicationId);
+                        }
+                    }
                 }
             }
         });
+    }
+
+    private Lock lock(ApplicationId applicationId) {
+        return curator.lock(TenantAndApplicationId.from(applicationId));
     }
 
     private boolean hasNoDeployments(ApplicationId applicationId) {

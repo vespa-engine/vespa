@@ -7,6 +7,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -24,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -82,7 +84,11 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 var refreshedCertificateMetadata = endpointCertificateMetadata
                         .withVersion(latestAvailableVersion.getAsInt())
                         .withLastRefreshed(clock.instant().getEpochSecond());
-                curator.writeEndpointCertificateMetadata(applicationId, refreshedCertificateMetadata); // Certificate not validated here, but on deploy.
+                try (Lock lock = lock(applicationId)) {
+                    if (Optional.of(endpointCertificateMetadata).equals(curator.readEndpointCertificateMetadata(applicationId))) {
+                        curator.writeEndpointCertificateMetadata(applicationId, refreshedCertificateMetadata); // Certificate not validated here, but on deploy.
+                    }
+                }
             }
         }));
     }
@@ -124,12 +130,20 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, storedMetaData) -> {
             var lastRequested = Instant.ofEpochSecond(storedMetaData.lastRequested());
             if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(applicationId)) {
-                log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
-                        + " has not been requested in a month and app has no deployments, deleting from provider and ZK");
-                endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
-                curator.deleteEndpointCertificateMetadata(applicationId);
+                try (Lock lock = lock(applicationId)) {
+                    if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
+                        log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
+                                + " has not been requested in a month and app has no deployments, deleting from provider and ZK");
+                        endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
+                        curator.deleteEndpointCertificateMetadata(applicationId);
+                    }
+                }
             }
         });
+    }
+
+    private Lock lock(ApplicationId applicationId) {
+        return curator.lock(TenantAndApplicationId.from(applicationId));
     }
 
     private boolean hasNoDeployments(ApplicationId applicationId) {
