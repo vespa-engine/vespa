@@ -132,6 +132,8 @@ public class StorageMaintainer {
         List<DiskCleanupRule> rules = new ArrayList<>();
 
         rules.add(CoredumpCleanupRule.forContainer(pathOnHostUnderContainerVespaHome.apply("var/crash")));
+        rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("tmp")).list(),
+                fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.HIGH, Priority.HIGHEST));
 
         if (context.node().membership().map(m -> m.type().isContainer()).orElse(false))
             rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/vespa/qrs")).list(),
