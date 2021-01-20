@@ -56,29 +56,35 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void assert_mixed_optimized(const vespalib::string &expr) {
-    EvalFixture fixture(prod_factory, expr, param_repo, true);
-    EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<MixedInnerProductFunction>();
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
+    EXPECT_EQ(slow_fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQ(fast_fixture.result(), EvalFixture::ref(expr, param_repo));
+    auto info = fast_fixture.find_all<MixedInnerProductFunction>();
     ASSERT_EQ(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
 }
 
 void assert_not_mixed_optimized(const vespalib::string &expr) {
-    EvalFixture fixture(prod_factory, expr, param_repo, true);
-    EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<MixedInnerProductFunction>();
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
+    EXPECT_EQ(slow_fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQ(fast_fixture.result(), EvalFixture::ref(expr, param_repo));
+    auto info = fast_fixture.find_all<MixedInnerProductFunction>();
     ASSERT_EQ(info.size(), 0u);
 }
 
 void assert_dense_optimized(const vespalib::string &expr) {
-    EvalFixture fixture(prod_factory, expr, param_repo, true);
-    EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
-    auto info = fixture.find_all<MixedInnerProductFunction>();
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
+    EXPECT_EQ(slow_fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQ(fast_fixture.result(), EvalFixture::ref(expr, param_repo));
+    auto info = fast_fixture.find_all<MixedInnerProductFunction>();
     ASSERT_EQ(info.size(), 0u);
-    auto info2 = fixture.find_all<DenseDotProductFunction>();
-    auto info3 = fixture.find_all<DenseMatMulFunction>();
-    auto info4 = fixture.find_all<DenseMultiMatMulFunction>();
-    auto info5 = fixture.find_all<DenseXWProductFunction>();
+    auto info2 = fast_fixture.find_all<DenseDotProductFunction>();
+    auto info3 = fast_fixture.find_all<DenseMatMulFunction>();
+    auto info4 = fast_fixture.find_all<DenseMultiMatMulFunction>();
+    auto info5 = fast_fixture.find_all<DenseXWProductFunction>();
     ASSERT_EQ(info2.size() + info3.size() + info4.size() + info5.size(), 1u);
 }
 
