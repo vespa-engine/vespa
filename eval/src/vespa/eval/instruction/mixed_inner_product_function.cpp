@@ -118,7 +118,14 @@ MixedInnerProductFunction::compatible_types(const ValueType &res, const ValueTyp
             dense_dims.pop_back();
             mixed_dims.pop_back();
         }
-        return true;
+        while (! mixed_dims.empty()) {
+            const auto &name = mixed_dims.back().name;
+            if (res.dimension_index(name) == ValueType::Dimension::npos) {
+                return false;
+            }
+            mixed_dims.pop_back();
+        }
+        return (res.mapped_dimensions() == mixed.mapped_dimensions());
     }
     return false;
 }

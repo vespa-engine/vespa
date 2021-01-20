@@ -49,6 +49,7 @@ EvalFixture::ParamRepo make_params() {
         .add("mix_y3zm", spec({y(3),z({"c","d"})}, MyVecSeq(3.5)))
         .add("mix_x3zm_f", spec(float_cells({x(3),z({"c","d"})}), MyVecSeq(0.5)))
         .add("mix_y3zm_f", spec(float_cells({y(3),z({"c","d"})}), MyVecSeq(3.5)))
+        .add("mix_x3y3zm", spec({x(3),y(3),z({"c","d"})}, MyVecSeq(0.0)))
         ;
 
 }
@@ -131,6 +132,8 @@ TEST(MixedInnerProduct, should_not_trigger_optimizer_for_other_cases) {
     assert_not_mixed_optimized("reduce(x3y3z3 * x3y3,sum,x,y)");
     assert_not_mixed_optimized("reduce(x3y3 * mix_y3zm,sum,y)");
     assert_not_mixed_optimized("reduce(mix_y3zm * x3,sum,x,y)");
+    assert_not_mixed_optimized("reduce(mix_x3y3zm * y3,sum,y,z)");
+    assert_not_mixed_optimized("reduce(mix_x3y3zm * y3,sum,x,y)");
 }
 
 TEST(MixedInnerProduct, check_compatibility_with_complex_types) {
