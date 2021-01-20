@@ -95,7 +95,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, endpointCertificateMetadata) ->
                 endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
                     Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
-                    if (now.isAfter(refreshTime.plus(1, ChronoUnit.WEEKS))) {
+                    if (now.isAfter(refreshTime.plus(7, ChronoUnit.DAYS))) {
 
                         controller().jobController().jobs(applicationId).forEach(job ->
                                 controller().jobController().jobStatus(new JobId(applicationId, JobType.fromJobName(job.jobName()))).lastTriggered().ifPresent(run -> {
