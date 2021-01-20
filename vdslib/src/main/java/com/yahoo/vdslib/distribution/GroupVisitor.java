@@ -3,6 +3,6 @@ package com.yahoo.vdslib.distribution;
 
 public interface GroupVisitor {
 
-    public boolean visitGroup(Group g);
+    boolean visitGroup(Group g);
 
 }

@@ -15,8 +15,8 @@ public class Group implements Comparable<Group> {
     private int distributionHash;
     private Distribution distribution = null;
     private double capacity;
-    private Map<Integer, Group> subgroups;
-    private List<ConfiguredNode> nodes;
+    private NavigableMap<Integer, Group> subgroups;
+    private List<ConfiguredNode> nodes; // Nodes sorted by increasing index.
 
     public Group(int index, String name) {
         this.name = name;
@@ -57,7 +57,7 @@ public class Group implements Comparable<Group> {
 
     @Override
     public int compareTo(Group o) {
-        return Integer.valueOf(index).compareTo(o.getIndex());
+        return Integer.compare(index, o.getIndex());
     }
 
     @Override
@@ -151,7 +151,7 @@ public class Group implements Comparable<Group> {
     public String getName() { return name; }
     public int getIndex() { return index; }
     public List<ConfiguredNode> getNodes() { return Collections.unmodifiableList(nodes); }
-    public Map<Integer, Group> getSubgroups() { return Collections.unmodifiableMap(subgroups); }
+    public NavigableMap<Integer, Group> getSubgroups() { return Collections.unmodifiableNavigableMap(subgroups); }
     public double getCapacity() { return capacity; }
     public int getDistributionHash() { return distributionHash; }
     public boolean isLeafGroup() { return (distribution == null); }

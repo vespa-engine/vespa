@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -56,8 +57,8 @@ public class Distribution {
         if (path.equals("invalid")) { return new int[0]; }
         StringTokenizer st = new StringTokenizer(path, ".");
         int[] p = new int[st.countTokens()];
-        for (int i=0; i<p.length; ++i) {
-            p[i] = Integer.valueOf(st.nextToken());
+        for (int i = 0; i < p.length; ++i) {
+            p[i] = Integer.parseInt(st.nextToken());
         }
         return p;
     }
@@ -109,15 +110,14 @@ public class Distribution {
     private void configure(DistributionConfig.Cluster config) {
         try {
             Group root = null;
-            for (int i=0; i<config.group().size(); ++i) {
-                DistributionConfig.Cluster.Group cg = config.group(i);
+            for (DistributionConfig.Cluster.Group cg : config.group()) {
                 int[] path = new int[0];
                 if (root != null) {
                     path = getGroupPath(cg.index());
                 }
-                boolean isLeafGroup = (cg.nodes().size() > 0);
                 Group group;
                 int index = (path.length == 0 ? 0 : path[path.length - 1]);
+                boolean isLeafGroup = (cg.nodes().size() > 0);
                 if (isLeafGroup) {
                     group = new Group(index, cg.name());
                     List<ConfiguredNode> nodes = new ArrayList<>();
@@ -133,7 +133,7 @@ public class Distribution {
                     root = group;
                 } else {
                     Group parent = root;
-                    for (int j=0; j<path.length - 1; ++j) {
+                    for (int j = 0; j < path.length - 1; ++j) {
                         parent = parent.getSubgroups().get(path[j]);
                     }
                     parent.addSubGroup(group);
@@ -202,16 +202,21 @@ public class Distribution {
     }
 
     private static class ScoredGroup implements Comparable<ScoredGroup> {
-        Group group;
-        double score;
 
-        ScoredGroup(Group g, double score) { this.group = g; this.score = score; }
+        final Group group;
+        final double score;
+
+        ScoredGroup(Group g, double score) {
+            this.group = g;
+            this.score = score;
+        }
 
         @Override
         public int compareTo(ScoredGroup o) {
             // Sorts by highest first.
             return Double.compare(o.score, score);
         }
+
     }
 
     private static class ScoredNode {
@@ -226,11 +231,14 @@ public class Distribution {
         if (g.isLeafGroup()) {
             for (ConfiguredNode node : g.getNodes()) {
                 NodeState ns = clusterState.getNodeState(new Node(NodeType.DISTRIBUTOR, node.index()));
-                if (ns.getState().oneOf("ui")) return false;
+                if (ns.getState().oneOf("ui"))
+                    return false;
             }
-        } else {
+        }
+        else {
             for (Group childGroup : g.getSubgroups().values()) {
-                if (!allDistributorsDown(childGroup, clusterState)) return false;
+                if ( ! allDistributorsDown(childGroup, clusterState))
+                    return false;
             }
         }
         return true;
@@ -363,13 +371,10 @@ public class Distribution {
 
         double maxScore = 0.0;
         int idealDisk = 0xffff;
-        for (int i=0, n=nodeState.getDiskCount(); i<n; ++i) {
+        for (int i = 0, n = nodeState.getDiskCount(); i < n; ++i) {
             double score = randomizer.nextDouble();
-            DiskState diskState = (nodeState.getDiskState(i));
-            if (diskState.getCapacity() != 1.0) {
-                score = Math.pow(score,
-                        1.0 / diskState.getCapacity());
-            }
+            DiskState diskState = nodeState.getDiskState(i);
+            score = Math.pow(score, 1.0 / diskState.getCapacity());
             if (score > maxScore) {
                 maxScore = score;
                 idealDisk = i;
@@ -381,8 +386,8 @@ public class Distribution {
     List<Integer> getIdealStorageNodes(ClusterState clusterState, BucketId bucket, String upStates) throws TooFewBucketBitsInUseException {
         List<Integer> resultNodes = new ArrayList<>();
 
-        // If bucket is split less than distribution bit, we cannot distribute
-        // it. Different nodes own various parts of the bucket.
+        // If bucket is split less than distribution bit, we cannot distribute it.
+        // Different nodes own various parts of the bucket.
         if (bucket.getUsedBits() < clusterState.getDistributionBitCount()) {
             String msg = "Cannot get ideal state for bucket " + bucket + " using "
                     + bucket.getUsedBits() + " bits when cluster uses "
@@ -397,7 +402,6 @@ public class Distribution {
         getIdealGroups(bucket, clusterState, cfg.nodeGraph, cfg.redundancy, groupDistribution);
 
         int seed = getStorageSeed(bucket, clusterState);
-
         RandomGen random = new RandomGen(seed);
         int randomIndex = 0;
         for (ResultGroup group : groupDistribution) {
@@ -414,7 +418,7 @@ public class Distribution {
 
             for (ConfiguredNode configuredNode : nodes) {
                 NodeState nodeState = clusterState.getNodeState(new Node(NodeType.STORAGE, configuredNode.index()));
-                if (!nodeState.getState().oneOf(upStates)) {
+                if ( ! nodeState.getState().oneOf(upStates)) {
                     continue;
                 }
 
@@ -543,15 +547,12 @@ public class Distribution {
     }
 
     public Set<ConfiguredNode> getNodes() {
-        final Set<ConfiguredNode> nodes = new HashSet<>();
-        GroupVisitor visitor = new GroupVisitor() {
-            @Override
-            public boolean visitGroup(Group g) {
-                if (g.isLeafGroup()) {
-                    nodes.addAll(g.getNodes());
-                }
-                return true;
+        Set<ConfiguredNode> nodes = new HashSet<>();
+        GroupVisitor visitor = group -> {
+            if (group.isLeafGroup()) {
+                nodes.addAll(group.getNodes());
             }
+            return true;
         };
         visitGroups(visitor);
         return nodes;

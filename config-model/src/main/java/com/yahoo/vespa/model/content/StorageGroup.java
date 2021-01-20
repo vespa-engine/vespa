@@ -283,7 +283,7 @@ public class StorageGroup {
 
             private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
                 int distributionKey = 0;
-                StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageNodes(), 1.0, distributionKey , false);
+                StorageNode sNode = new StorageNode(deployState.getProperties(), parent.getStorageNodes(), 1.0, distributionKey, false);
                 sNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
                 PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, null);
                 new Distributor(deployState.getProperties(), parent.getDistributorNodes(), distributionKey, null, provider);

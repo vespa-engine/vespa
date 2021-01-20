@@ -601,11 +601,11 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
     }
 
-    int getNodeCount() {
+    private int getNodeCount() {
         return storageNodes.getChildren().size();
     }
 
-    int getNodeCountPerGroup() {
+    private int getNodeCountPerGroup() {
         return rootGroup != null ? getNodeCount() / rootGroup.getNumberOfLeafGroups() : getNodeCount();
     }
 

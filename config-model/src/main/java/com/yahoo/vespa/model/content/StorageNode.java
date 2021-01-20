@@ -33,7 +33,8 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
         @Override
         protected StorageNode doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             ModelElement e = new ModelElement(producerSpec);
-            return new StorageNode(deployState.getProperties(), (StorageCluster)ancestor, e.doubleAttribute("capacity"), e.integerAttribute("distribution-key"), false);
+            return new StorageNode(deployState.getProperties(), (StorageCluster) ancestor,
+                                   e.doubleAttribute("capacity"), e.integerAttribute("distribution-key"), false);
         }
     }
 
