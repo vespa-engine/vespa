@@ -7,6 +7,7 @@
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
@@ -76,15 +77,16 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>()),
       _closed(false),
-      _lock()
+      _lock(),
+      _host_info_reporter(_component.getStateUpdater())
 {
     _configFetcher.subscribe(configUri.getConfigId(), this);
     _configFetcher.start();
     _component.registerMetric(*_metrics);
     _component.registerStatusPage(*this);
     _component.getStateUpdater().addStateListener(*this);
+    hostInfoReporterRegistrar.registerReporter(&_host_info_reporter);
     propagateClusterStates();
-    (void) hostInfoReporterRegistrar;
 }
 
 FileStorManager::~FileStorManager()

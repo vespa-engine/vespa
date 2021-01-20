@@ -8,5 +8,6 @@ vespa_add_library(storage_filestorpersistence OBJECT
     merge_handler_metrics.cpp
     mergestatus.cpp
     modifiedbucketchecker.cpp
+    service_layer_host_info_reporter.cpp
     DEPENDS
 )

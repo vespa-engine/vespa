@@ -49,7 +49,8 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _controllers_observed_explicit_node_state(),
       _noThreadTestMode(testMode),
       _grabbedExternalLock(false),
-      _notifyingListeners(false)
+      _notifyingListeners(false),
+      _requested_almost_immediate_node_state_replies(false)
 {
     _nodeState->setMinUsedBits(58);
     _nodeState->setStartTimestamp(_component.getClock().getTimeInSeconds().getTime());
@@ -520,21 +521,25 @@ StateManager::run(framework::ThreadHandle& thread)
 {
     while (true) {
         thread.registerTick();
-        std::unique_lock guard(_threadLock);
-            // Take lock before doing stuff, to be sure we don't wait after
-            // destructor have grabbed lock to stop() us.
         if (thread.interrupted()) {
             break;
         }
         tick();
-        _threadCond.wait_for(guard, 1000ms);
+        std::unique_lock guard(_threadLock);
+        if (!_requested_almost_immediate_node_state_replies.load(std::memory_order_relaxed)) {
+            _threadCond.wait_for(guard, 1000ms);
+        }
     }
 
 }
 
 void
 StateManager::tick() {
-    framework::MilliSecTime time(_component.getClock().getTimeInMillis());
+    bool almost_immediate_replies = _requested_almost_immediate_node_state_replies.load(std::memory_order_relaxed);
+    if (almost_immediate_replies) {
+        _requested_almost_immediate_node_state_replies.store(false, std::memory_order_relaxed);
+    }
+    framework::MilliSecTime time(almost_immediate_replies ? framework::MilliSecTime(0) : _component.getClock().getTimeInMillis());
     sendGetNodeStateReplies(time);
 }
 
@@ -645,6 +650,14 @@ void StateManager::immediately_send_get_node_state_replies() {
         _controllers_observed_explicit_node_state.clear();
     }
     sendGetNodeStateReplies();
+}
+
+void
+StateManager::request_almost_immediate_node_state_replies()
+{
+    std::unique_lock guard(_threadLock);
+    _requested_almost_immediate_node_state_replies.store(true, std::memory_order_relaxed);
+    _threadCond.notify_all();
 }
 
 } // storage

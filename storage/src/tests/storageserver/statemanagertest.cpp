@@ -316,6 +316,21 @@ TEST_F(StateManagerTest, immediate_node_state_replying_is_tracked_per_controller
     ASSERT_EQ(0, _upper->getNumReplies());
 }
 
+TEST_F(StateManagerTest, request_almost_immediate_replies_triggers_fast_reply)
+{
+    mark_reported_node_state_up();
+    mark_reply_observed_from_n_controllers(1);
+    auto before = std::chrono::steady_clock::now();
+    for (size_t pass = 0; pass < 100; ++pass) {
+        send_down_get_node_state_request(0);
+        _manager->request_almost_immediate_node_state_replies();
+        _upper->waitForMessage(api::MessageType::GETNODESTATE_REPLY, 2);
+        clear_sent_replies();
+    }
+    auto after = std::chrono::steady_clock::now();
+    ASSERT_GT(10s, after - before);
+}
+
 TEST_F(StateManagerTest, activation_command_is_bounced_with_current_cluster_state_version) {
     force_current_cluster_state_version(12345);
 

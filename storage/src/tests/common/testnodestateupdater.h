@@ -19,6 +19,7 @@ struct TestNodeStateUpdater : public NodeStateUpdater
     std::shared_ptr<const lib::ClusterStateBundle> _clusterStateBundle;
     std::vector<StateListener*> _listeners;
     size_t _explicit_node_state_reply_send_invocations;
+    size_t _requested_almost_immediate_node_state_replies;
 
 public:
     explicit TestNodeStateUpdater(const lib::NodeType& type);
@@ -37,6 +38,10 @@ public:
         ++_explicit_node_state_reply_send_invocations;
     }
 
+    void request_almost_immediate_node_state_replies() override {
+        ++_requested_almost_immediate_node_state_replies;
+    }
+
     void setCurrentNodeState(const lib::NodeState& state) {
         _current = std::make_shared<lib::NodeState>(state);
     }
@@ -46,6 +51,10 @@ public:
 
     size_t explicit_node_state_reply_send_invocations() const noexcept {
         return _explicit_node_state_reply_send_invocations;
+    }
+
+    size_t requested_almost_immediate_node_state_replies() const noexcept {
+        return _requested_almost_immediate_node_state_replies;
     }
 };
 

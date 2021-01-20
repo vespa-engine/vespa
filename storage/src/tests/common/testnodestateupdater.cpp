@@ -10,7 +10,8 @@ TestNodeStateUpdater::TestNodeStateUpdater(const lib::NodeType& type)
       _current(new lib::NodeState(type, lib::State::UP)),
       _clusterStateBundle(std::make_shared<const lib::ClusterStateBundle>(lib::ClusterState())),
       _listeners(),
-      _explicit_node_state_reply_send_invocations(0)
+      _explicit_node_state_reply_send_invocations(0),
+      _requested_almost_immediate_node_state_replies(0)
 { }
 
 TestNodeStateUpdater::~TestNodeStateUpdater() = default;
