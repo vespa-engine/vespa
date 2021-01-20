@@ -31,8 +31,6 @@ public interface ModelContext {
     ApplicationPackage applicationPackage();
     Optional<Model> previousModel();
     Optional<ApplicationPackage> permanentApplicationPackage();
-    // TODO: Remove after 7.338 has been released
-    default Optional<HostProvisioner> hostProvisioner() { return Optional.of(getHostProvisioner()); }
     HostProvisioner getHostProvisioner();
     Provisioned provisioned();
     DeployLogger deployLogger();
@@ -70,7 +68,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}) default double reindexerWindowSizeIncrement() { return 0.2; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2021") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"geirst"}, comment = "Remove when 7.342 is no longer in use") default boolean useDirectStorageApiRpc() { return true; }
+        @ModelFeatureFlag(owners = {"geirst"}, removeAfter = "7.342") default boolean useDirectStorageApiRpc() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int defaultNumResponseThreads() { return 2; }
