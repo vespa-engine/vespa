@@ -20,10 +20,10 @@ typedef std::vector<uint32_t> LidVector;
 struct Fixture
 {
     DocumentMetaStore _metaStore;
-    DocumentScanIterator _itr;
+    std::unique_ptr<DocumentScanIterator> _itr;
     Fixture()
         : _metaStore(std::make_shared<BucketDBOwner>()),
-          _itr(_metaStore)
+          _itr()
     {
         _metaStore.constructFreeList();
     }
@@ -43,17 +43,24 @@ struct Fixture
         return *this;
     }
     LidSet scan(uint32_t count, uint32_t compactLidLimit, uint32_t maxDocsToScan = 10) {
+        if (!_itr) {
+            _itr = std::make_unique<DocumentScanIterator>(_metaStore);
+        }
         LidSet retval;
         for (uint32_t i = 0; i < count; ++i) {
-            retval.insert(next(compactLidLimit, maxDocsToScan, false));
-            EXPECT_TRUE(_itr.valid());
+            uint32_t lid = next(compactLidLimit, maxDocsToScan, false);
+            retval.insert(lid);
+            EXPECT_TRUE(_itr->valid() || lid <= compactLidLimit);
         }
         EXPECT_EQUAL(0u, next(compactLidLimit, maxDocsToScan, false));
-        EXPECT_FALSE(_itr.valid());
+        EXPECT_FALSE(_itr->valid());
         return retval;
     }
     uint32_t next(uint32_t compactLidLimit, uint32_t maxDocsToScan = 10, bool retry = false) {
-        return _itr.next(compactLidLimit, maxDocsToScan, retry).lid;
+        if (!_itr) {
+            _itr = std::make_unique<DocumentScanIterator>(_metaStore);
+        }
+        return _itr->next(compactLidLimit, maxDocsToScan, retry).lid;
     }
 };
 
