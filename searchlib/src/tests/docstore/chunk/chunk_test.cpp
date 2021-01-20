@@ -8,6 +8,7 @@
 #include <vespa/searchlib/docstore/chunkformats.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <zstd.h>
 
 LOG_SETUP("chunk_test");
 
@@ -95,7 +96,8 @@ void verifyChunkCompression(CompressionConfig::Type cfgType, const void * buf, s
 TEST("require that V2 can create and handle lz4, zstd, and none") {
     verifyChunkCompression(CompressionConfig::NONE, MY_LONG_STRING, strlen(MY_LONG_STRING), 421);
     verifyChunkCompression(CompressionConfig::LZ4, MY_LONG_STRING, strlen(MY_LONG_STRING), 360);
-    verifyChunkCompression(CompressionConfig::ZSTD, MY_LONG_STRING, strlen(MY_LONG_STRING), 282);
+    constexpr size_t zstd_compressed_length = (ZSTD_VERSION_NUMBER >= 10407) ? 284 : 282;
+    verifyChunkCompression(CompressionConfig::ZSTD, MY_LONG_STRING, strlen(MY_LONG_STRING), zstd_compressed_length);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
