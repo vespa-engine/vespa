@@ -50,11 +50,6 @@ public class MockModelContext implements ModelContext {
     }
 
     @Override
-    public Optional<HostProvisioner> hostProvisioner() {
-        return Optional.empty();
-    }
-
-    @Override
     public HostProvisioner getHostProvisioner() {
         return DeployState.getDefaultModelHostProvisioner(applicationPackage);
     }

@@ -141,11 +141,6 @@ public class VespaModelFactoryTest {
             }
 
             @Override
-            public Optional<HostProvisioner> hostProvisioner() {
-                return Optional.of(provisionerToOverride);
-            }
-
-            @Override
             public HostProvisioner getHostProvisioner() { return provisionerToOverride; }
 
             @Override
