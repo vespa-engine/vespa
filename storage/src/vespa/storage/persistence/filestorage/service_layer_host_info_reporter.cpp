@@ -11,6 +11,8 @@ using End = vespalib::JsonStream::End;
 
 namespace {
 
+constexpr double diff_slack = 0.01;
+
 void write_usage(vespalib::JsonStream& output, const vespalib::string &label, double value)
 {
     output << label << Object();
@@ -22,7 +24,7 @@ bool want_immediate_report(const spi::ResourceUsage& old_resource_usage, const s
 {
     auto disk_usage_diff = fabs(resource_usage.get_disk_usage() - old_resource_usage.get_disk_usage());
     auto memory_usage_diff = fabs(resource_usage.get_memory_usage() - old_resource_usage.get_memory_usage());
-    return (disk_usage_diff > 0.01 || memory_usage_diff > 0.01);
+    return (disk_usage_diff > diff_slack || memory_usage_diff > diff_slack);
 }
 
 }
