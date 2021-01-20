@@ -419,14 +419,14 @@ TEST_F(FileStorManagerTest, running_task_against_unknown_bucket_fails) {
     EXPECT_TRUE(getDummyPersistence().getClusterState().nodeUp());
 
     auto executor = getDummyPersistence().get_bucket_executor();
-    EXPECT_TRUE(executor);
+    ASSERT_TRUE(executor);
 
     spi::Bucket b1 = makeSpiBucket(document::BucketId(1));
     std::atomic<size_t> numInvocations(0);
     auto response = executor->execute(b1, spi::makeBucketTask([&numInvocations](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
         numInvocations++;
     }));
-    EXPECT_TRUE(response);
+    ASSERT_TRUE(response);
     EXPECT_EQ(0, numInvocations);
     response->run(spi::Bucket(), {});
     EXPECT_EQ(1, numInvocations);
@@ -439,7 +439,7 @@ TEST_F(FileStorManagerTest, running_task_against_existing_bucket_works) {
     EXPECT_TRUE(getDummyPersistence().getClusterState().nodeUp());
 
     auto executor = getDummyPersistence().get_bucket_executor();
-    EXPECT_TRUE(executor);
+    ASSERT_TRUE(executor);
 
     spi::Bucket b1 = makeSpiBucket(document::BucketId(1));
 

@@ -193,8 +193,28 @@ RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::B
 
 RunTaskCommand::~RunTaskCommand() = default;
 
+void
+RunTaskCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "RunTaskCommand(" << _bucket <<")";
+
+    if (verbose) {
+        out << " : ";
+        InternalCommand::print(out, true, indent);
+    }
+}
+
 RunTaskReply::RunTaskReply(const RunTaskCommand& cmd)
     : api::InternalReply(ID, cmd)
 {}
+
+void
+RunTaskReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "RunTaskReply()";
+
+    if (verbose) {
+        out << " : ";
+        InternalReply::print(out, true, indent);
+    }
+}
 
 }
