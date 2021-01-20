@@ -5,6 +5,7 @@ vespa_add_library(eval_eval_test OBJECT
     eval_spec.cpp
     reference_evaluation.cpp
     reference_operations.cpp
+    spec_gen.cpp
     tensor_conformance.cpp
     tensor_model.cpp
     test_io.cpp
