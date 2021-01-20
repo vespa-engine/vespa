@@ -73,5 +73,7 @@ public class DefaultSslContextFactoryProvider extends AbstractComponent implemen
         protected TlsContext getTlsContext(String containerId, int port) {
             return tlsContext;
         }
+
+        @Override public void deconstruct() { tlsContext.close(); }
     }
 }

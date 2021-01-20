@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
 
@@ -27,18 +28,7 @@ public interface Model {
      * @param configKey the key to resolve
      * @param configDefinition the config definition to use for the schema
      */
-    @Deprecated // TODO: Return after December 2020
-    ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition configDefinition);
-
-    /**
-     * Resolves config for a given key and config definition
-     *
-     * @param configKey the key to resolve
-     * @param configDefinition the config definition to use for the schema
-     */
-    default ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition) {
-        return null; // TODO: Remove this default implementation after December 2020
-    }
+    ConfigInstance.Builder getConfigInstance(ConfigKey<?> configKey, ConfigDefinition configDefinition);
 
     /** Produces a set of the valid config keys for this model. */
     Set<ConfigKey<?>> allConfigsProduced();
@@ -90,5 +80,11 @@ public interface Model {
 
     /** Returns the provisioned hosts of this. */
     default Provisioned provisioned() { return new Provisioned(); }
+
+    /** Returns the set of document types in each content cluster. */
+    default Map<String, Set<String>> documentTypesByCluster() { return Map.of(); }
+
+    /** Returns the set of document types in each cluster, that have an index for one of more fields. */
+    default Map<String, Set<String>> indexedDocumentTypesByCluster() { return Map.of(); }
 
 }

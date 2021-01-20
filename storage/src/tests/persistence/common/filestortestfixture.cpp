@@ -37,8 +37,7 @@ void
 FileStorTestFixture::SetUp()
 {
     setupPersistenceThreads(1);
-    _node->setPersistenceProvider(
-            std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo()));
+    _node->setPersistenceProvider(std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo()));
     _node->getPersistenceProvider().initialize();
 }
 
@@ -64,8 +63,7 @@ FileStorTestFixture::createBucket(const document::BucketId& bid)
 bool
 FileStorTestFixture::bucketExistsInDb(const document::BucketId& bucket) const
 {
-    StorBucketDatabase::WrappedEntry entry(
-            _node->getStorageBucketDatabase().get(bucket, "bucketExistsInDb"));
+    StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bucket, "bucketExistsInDb"));
     return entry.exist();
 }
 
@@ -73,13 +71,14 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
         FileStorTestFixture& fixture,
         const StorageLinkInjector& injector)
     : _fixture(fixture),
-      manager(new FileStorManager(fixture._config->getConfigId(),
-                                  fixture._node->getPersistenceProvider(),
-                                  fixture._node->getComponentRegister(),
-                                  *fixture._node))
+      top(),
+      manager(nullptr)
 {
     injector.inject(top);
-    top.push_back(StorageLink::UP(manager));
+    auto fsm = std::make_unique<FileStorManager>(fixture._config->getConfigId(), fixture._node->getPersistenceProvider(),
+                                                 fixture._node->getComponentRegister(), *fixture._node, fixture._node->get_host_info());
+    manager = fsm.get();
+    top.push_back(std::move(fsm));
     top.open();
 }
 
@@ -91,8 +90,7 @@ FileStorTestFixture::makeSelfAddress() {
 }
 
 void
-FileStorTestFixture::TestFileStorComponents::sendDummyGet(
-        const document::BucketId& bid)
+FileStorTestFixture::TestFileStorComponents::sendDummyGet(const document::BucketId& bid)
 {
     std::ostringstream id;
     id << "id:foo:testdoctype1:n=" << bid.getId() << ":0";
@@ -103,14 +101,12 @@ FileStorTestFixture::TestFileStorComponents::sendDummyGet(
 }
 
 void
-FileStorTestFixture::TestFileStorComponents::sendDummyGetDiff(
-        const document::BucketId& bid)
+FileStorTestFixture::TestFileStorComponents::sendDummyGetDiff(const document::BucketId& bid)
 {
     std::vector<api::GetBucketDiffCommand::Node> nodes;
     nodes.push_back(0);
     nodes.push_back(1);
-    std::shared_ptr<api::GetBucketDiffCommand> cmd(
-            new api::GetBucketDiffCommand(makeDocumentBucket(bid), nodes, 12345));
+    auto cmd = std::make_shared<api::GetBucketDiffCommand>(makeDocumentBucket(bid), nodes, 12345);
     cmd->setAddress(makeSelfAddress());
     cmd->setPriority(255);
     top.sendDown(cmd);
@@ -124,10 +120,8 @@ FileStorTestFixture::TestFileStorComponents::sendPut(
 {
     std::ostringstream id;
     id << "id:foo:testdoctype1:n=" << bid.getId() << ":" << docIdx;
-    document::Document::SP doc(
-            _fixture._node->getTestDocMan().createDocument("foobar", id.str()));
-    std::shared_ptr<api::PutCommand> cmd(
-            new api::PutCommand(makeDocumentBucket(bid), doc, timestamp));
+    document::Document::SP doc(_fixture._node->getTestDocMan().createDocument("foobar", id.str()));
+    auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, timestamp);
     cmd->setAddress(makeSelfAddress());
     top.sendDown(cmd);
 }
@@ -135,9 +129,7 @@ FileStorTestFixture::TestFileStorComponents::sendPut(
 void 
 FileStorTestFixture::setClusterState(const std::string& state)
 {
-    _node->getStateUpdater().setClusterState(
-            lib::ClusterState::CSP(new lib::ClusterState(state)));
+    _node->getStateUpdater().setClusterState(std::make_shared<lib::ClusterState>(state));
 }
-
 
 } // ns storage

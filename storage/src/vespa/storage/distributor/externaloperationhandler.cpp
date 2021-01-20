@@ -2,26 +2,27 @@
 
 #include "bucket_space_distribution_context.h"
 #include "crypto_uuid_generator.h"
-#include "externaloperationhandler.h"
 #include "distributor.h"
+#include "distributor_bucket_space.h"
+#include "distributor_bucket_space_repo.h"
+#include "externaloperationhandler.h"
 #include "operation_sequencer.h"
 #include <vespa/document/base/documentid.h>
-#include <vespa/storage/distributor/operations/external/putoperation.h>
-#include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
-#include <vespa/storage/distributor/operations/external/updateoperation.h>
-#include <vespa/storage/distributor/operations/external/removeoperation.h>
+#include <vespa/document/util/feed_reject_helper.h>
+#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
-#include <vespa/storage/distributor/operations/external/statbucketoperation.h>
-#include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
+#include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
 #include <vespa/storage/distributor/operations/external/removelocationoperation.h>
+#include <vespa/storage/distributor/operations/external/removeoperation.h>
+#include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
+#include <vespa/storage/distributor/operations/external/statbucketoperation.h>
+#include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
+#include <vespa/storage/distributor/operations/external/updateoperation.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
-#include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
-#include "distributor_bucket_space_repo.h"
-#include "distributor_bucket_space.h"
 
 #include <vespa/log/log.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -134,6 +135,13 @@ void ExternalOperationHandler::bounce_with_result(api::StorageCommand& cmd, cons
     api::StorageReply::UP reply(cmd.makeReply());
     reply->setResult(result);
     _msg_sender.sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+}
+
+void ExternalOperationHandler::bounce_with_feed_blocked(api::StorageCommand& cmd) {
+    const auto& feed_block = _op_ctx.cluster_state_bundle().feed_block();
+    bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::NO_SPACE,
+                                            "External feed is blocked due to resource exhaustion: " +
+                                                    feed_block->description()));
 }
 
 void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd,
@@ -284,6 +292,11 @@ std::string extract_reindexing_token(const api::PutCommand& cmd) {
 }
 
 bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd) {
+    if (_op_ctx.cluster_state_bundle().block_feed_in_cluster()) {
+        bounce_with_feed_blocked(*cmd);
+        return true;
+    }
+
     auto& metrics = getMetrics().puts;
     if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;
@@ -327,6 +340,13 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
 
 
 bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand>& cmd) {
+    if (_op_ctx.cluster_state_bundle().block_feed_in_cluster() &&
+            document::FeedRejectHelper::mustReject(*cmd->getUpdate()))
+    {
+        bounce_with_feed_blocked(*cmd);
+        return true;
+    }
+
     auto& metrics = getMetrics().updates;
     if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
         return true;

@@ -207,9 +207,8 @@ AttributeUpdater::handleUpdate(PredicateAttribute &vec, uint32_t lid, const Valu
 
 namespace {
 
-template <typename TensorUpdateType>
 void
-applyTensorUpdate(TensorAttribute &vec, uint32_t lid, const TensorUpdateType &update,
+applyTensorUpdate(TensorAttribute &vec, uint32_t lid, const document::TensorUpdate &update,
                   bool create_empty_if_non_existing)
 {
     auto oldTensor = vec.getTensor(lid);
@@ -217,10 +216,7 @@ applyTensorUpdate(TensorAttribute &vec, uint32_t lid, const TensorUpdateType &up
         oldTensor = vec.getEmptyTensor();
     }
     if (oldTensor) {
-        auto newTensor = update.applyTo(*oldTensor);
-        if (newTensor) {
-            vec.setTensor(lid, *newTensor);
-        }
+        vec.update_tensor(lid, update, *oldTensor);
     }
 }
 

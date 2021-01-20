@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
-import java.util.logging.Level;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts;
@@ -11,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,7 +31,6 @@ public class OrchestratorContext implements AutoCloseable {
     private final TimeBudget timeBudget;
     private final boolean probe;
     private final boolean largeLocks;
-    private final boolean usePermanentlyDownStatus;
 
     // The key set is the set of applications locked by this context tree: Only the
     // root context has a non-empty set. The value is an unlock callback to be called
@@ -42,37 +41,30 @@ public class OrchestratorContext implements AutoCloseable {
     public static OrchestratorContext createContextForMultiAppOp(Clock clock) {
         return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP),
                 false, // probe
-                true, // large locks
-                false); // use permanently down status
+                true); // large locks
     }
 
     /** Create an OrchestratorContext for an operation on a single application. */
     public static OrchestratorContext createContextForSingleAppOp(Clock clock) {
-        return createContextForSingleAppOp(clock, false);
-    }
-
-    public static OrchestratorContext createContextForSingleAppOp(Clock clock, boolean usePermanentlyDownStatus) {
         return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP),
-                false, false, usePermanentlyDownStatus);
+                false, false);
     }
 
     public static OrchestratorContext createContextForAdminOp(Clock clock) {
         return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_ADMIN_OP),
-                false, false, false);
+                false, false);
     }
 
     private OrchestratorContext(OrchestratorContext parentOrNull,
                                 Clock clock,
                                 TimeBudget timeBudget,
                                 boolean probe,
-                                boolean largeLocks,
-                                boolean usePermanentlyDownStatus) {
+                                boolean largeLocks) {
         this.parent = Optional.ofNullable(parentOrNull);
         this.clock = clock;
         this.timeBudget = timeBudget;
         this.probe = probe;
         this.largeLocks = largeLocks;
-        this.usePermanentlyDownStatus = usePermanentlyDownStatus;
     }
 
     public Duration getTimeLeft() {
@@ -90,9 +82,6 @@ public class OrchestratorContext implements AutoCloseable {
 
     /** Whether application locks acquired during probing of a batch suspend should be closed after the non-probe is done. */
     public boolean largeLocks() { return largeLocks; }
-
-    /** Whether the PERMANENTLY_DOWN host status should be used (where appropriate). */
-    public boolean usePermanentlyDownStatus() { return usePermanentlyDownStatus; }
 
     /**
      * Returns true if 1. large locks is enabled, and 2.
@@ -131,7 +120,7 @@ public class OrchestratorContext implements AutoCloseable {
         // Move deadline towards past by a fixed amount to ensure there's time to process exceptions and
         // access ZooKeeper before the lock times out.
         TimeBudget subTimeBudget = timeBudget.withDeadline(timeBudget.deadline().get().minus(TIMEOUT_OVERHEAD));
-        return new OrchestratorContext(this, clock, subTimeBudget, probe, largeLocks, usePermanentlyDownStatus);
+        return new OrchestratorContext(this, clock, subTimeBudget, probe, largeLocks);
     }
 
     /** Create an OrchestratorContext for an operation on a single application, but limited to current timeout. */
@@ -144,7 +133,7 @@ public class OrchestratorContext implements AutoCloseable {
         }
 
         TimeBudget timeBudget = TimeBudget.from(clock, now, Optional.of(Duration.between(now, deadline)));
-        return new OrchestratorContext(this, clock, timeBudget, probe, largeLocks, usePermanentlyDownStatus);
+        return new OrchestratorContext(this, clock, timeBudget, probe, largeLocks);
     }
 
     @Override

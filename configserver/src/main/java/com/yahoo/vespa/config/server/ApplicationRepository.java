@@ -915,12 +915,20 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public ApplicationReindexing getReindexing(ApplicationId id) {
-        return getTenant(id).getApplicationRepo().database().readReindexingStatus(id)
-                .orElse(ApplicationReindexing.ready(clock.instant()));
+        Tenant tenant = getTenant(id);
+        if (tenant == null)
+            throw new NotFoundException("Tenant '" + id.tenant().value() + "' not found");
+
+        return tenant.getApplicationRepo().database().readReindexingStatus(id)
+                            .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + id));
     }
 
     public void modifyReindexing(ApplicationId id, UnaryOperator<ApplicationReindexing> modifications) {
-        getTenant(id).getApplicationRepo().database().modifyReindexing(id, ApplicationReindexing.ready(clock.instant()), modifications);
+        Tenant tenant = getTenant(id);
+        if (tenant == null)
+            throw new NotFoundException("Tenant '" + id.tenant().value() + "' not found");
+
+        tenant.getApplicationRepo().database().modifyReindexing(id, ApplicationReindexing.empty(), modifications);
     }
 
     public ConfigserverConfig configserverConfig() {

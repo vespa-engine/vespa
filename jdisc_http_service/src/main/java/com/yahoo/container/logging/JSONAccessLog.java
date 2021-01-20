@@ -14,14 +14,16 @@ import java.util.logging.Level;
 public final class JSONAccessLog implements  AccessLogInterface {
 
     private final AccessLogHandler logHandler;
+    private final JSONFormatter formatter;
 
     public JSONAccessLog(AccessLogConfig config) {
         logHandler = new AccessLogHandler(config.fileHandler());
+        formatter = new JSONFormatter();
     }
 
     @Override
     public void log(AccessLogEntry logEntry) {
-        logHandler.access.log(Level.INFO, new JSONFormatter(logEntry).format() + '\n');
+        logHandler.access.log(Level.INFO, formatter.format(logEntry) + '\n');
     }
 
     // TODO: This is never called. We should have a DI provider and call this method from its deconstruct.

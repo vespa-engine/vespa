@@ -8,7 +8,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/closure.h>
 
-namespace search { class IDestructorCallback; }
+namespace vespalib { class IDestructorCallback; }
 namespace document { class Document; }
 
 namespace searchcorespi {
@@ -36,7 +36,7 @@ protected:
     typedef search::index::Schema Schema;
 
 public:
-    using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;
+    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
     /**
      * Interface used to signal when index manager has been reconfigured.
      */
@@ -51,7 +51,7 @@ public:
     typedef std::unique_ptr<IIndexManager> UP;
     typedef std::shared_ptr<IIndexManager> SP;
 
-    virtual ~IIndexManager() {}
+    virtual ~IIndexManager() = default;
 
     /**
      * Inserts a document into the index. This method is async, caller

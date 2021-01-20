@@ -17,8 +17,6 @@
 
 
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vector>
-#include <string>
 #include <mutex>
 
 namespace storage {
@@ -111,6 +109,7 @@ public:
     spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2,
                      const spi::Bucket& target, spi::Context&) override;
     spi::Result removeEntry(const spi::Bucket&, spi::Timestamp, spi::Context&) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(spi::IResourceUsageListener& listener) override;
 };
 
 } // storage

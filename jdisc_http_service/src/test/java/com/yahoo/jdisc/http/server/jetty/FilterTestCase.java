@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.util.Modules;
+import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.ResourceReference;
@@ -554,6 +555,7 @@ public class FilterTestCase {
                         bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder().strictFiltering(strictFiltering)));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(new ConnectorConfig.Builder()));
                         bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
+                        bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                     }
                 },
                 new ConnectorFactoryRegistryModule(),

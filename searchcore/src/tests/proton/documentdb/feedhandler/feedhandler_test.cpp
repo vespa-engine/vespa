@@ -47,7 +47,7 @@ using document::DocumentUpdate;
 using document::GlobalId;
 using document::TensorDataType;
 using document::TensorFieldValue;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;

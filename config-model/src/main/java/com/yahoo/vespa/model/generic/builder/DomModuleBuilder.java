@@ -12,6 +12,7 @@ import org.w3c.dom.Element;
  * Produces sub services for generic services.
  */
 public class DomModuleBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Module> {
+
     private final String name;
 
     public DomModuleBuilder(String name) {
@@ -25,7 +26,7 @@ public class DomModuleBuilder extends VespaDomBuilder.DomConfigProducerBuilder<M
     }
 
     @Override
-    protected Module doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element subServiceSpec) {
+    protected Module doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element subServiceSpec) {
         Module s = new Module(ancestor, name);
         addChildren(deployState, s, subServiceSpec);
         return s;

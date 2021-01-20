@@ -3,6 +3,7 @@
 #include "asynchandler.h"
 #include "persistenceutil.h"
 #include "testandsethelper.h"
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
@@ -19,7 +20,7 @@ public:
     }
 
     void addResultHandler(const spi::ResultHandler *resultHandler) {
-        // Only handles a signal handler now,
+        // Only handles a single handler now,
         // Can be extended if necessary later on
         assert(_resultHandler == nullptr);
         _resultHandler = resultHandler;
@@ -218,4 +219,5 @@ AsyncHandler::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTra
 
     return true;
 }
+
 }

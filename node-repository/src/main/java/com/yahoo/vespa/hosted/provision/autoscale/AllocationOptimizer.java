@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Optional;
@@ -38,12 +39,12 @@ public class AllocationOptimizer {
      */
     public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
                                                                     AllocatableClusterResources current,
-                                                                    Limits limits,
-                                                                    boolean exclusive) {
+                                                                    Limits limits) {
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
+        NodeList hosts = nodeRepository.list().hosts();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
@@ -58,7 +59,7 @@ public class AllocationOptimizer {
                                                              groups,
                                                              nodeResourcesWith(nodesAdjustedForRedundancy, groupsAdjustedForRedundancy, limits, current, target));
 
-                var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits, nodeRepository);
+                var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits, hosts, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;
@@ -97,7 +98,7 @@ public class AllocationOptimizer {
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         NodeResources nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
-                                  ? current.toAdvertisedClusterResources().nodeResources()
+                                  ? current.advertisedResources().nodeResources()
                                   : limits.min().nodeResources(); // min=max for non-scaled
         return nonScaled.withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }

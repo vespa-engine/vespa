@@ -8,10 +8,10 @@
 #include <vespa/eval/instruction/dense_xw_product_function.h>
 #include <vespa/eval/instruction/dense_matmul_function.h>
 #include <vespa/eval/instruction/dense_multi_matmul_function.h>
-#include <vespa/eval/instruction/dense_fast_rename_optimizer.h>
-#include <vespa/eval/instruction/dense_add_dimension_optimizer.h>
+#include <vespa/eval/instruction/fast_rename_optimizer.h>
+#include <vespa/eval/instruction/add_trivial_dimension_optimizer.h>
 #include <vespa/eval/instruction/dense_single_reduce_function.h>
-#include <vespa/eval/instruction/dense_remove_dimension_optimizer.h>
+#include <vespa/eval/instruction/remove_trivial_dimension_optimizer.h>
 #include <vespa/eval/instruction/dense_lambda_peek_optimizer.h>
 #include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/eval/instruction/dense_simple_join_function.h>
@@ -58,13 +58,13 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, c
         while (!nodes.empty()) {
             const Child &child = nodes.back().get();
             child.set(DenseSimpleExpandFunction::optimize(child.get(), stash));
-            child.set(DenseAddDimensionOptimizer::optimize(child.get(), stash));
-            child.set(DenseRemoveDimensionOptimizer::optimize(child.get(), stash));
+            child.set(AddTrivialDimensionOptimizer::optimize(child.get(), stash));
+            child.set(RemoveTrivialDimensionOptimizer::optimize(child.get(), stash));
             child.set(VectorFromDoublesFunction::optimize(child.get(), stash));
             child.set(DenseTensorCreateFunction::optimize(child.get(), stash));
             child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
             child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
-            child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
+            child.set(FastRenameOptimizer::optimize(child.get(), stash));
             child.set(DensePowAsMapOptimizer::optimize(child.get(), stash));
             child.set(DenseSimpleMapFunction::optimize(child.get(), stash));
             child.set(DenseSimpleJoinFunction::optimize(child.get(), stash));

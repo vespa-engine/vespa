@@ -36,7 +36,7 @@ using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SearchableStats;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;

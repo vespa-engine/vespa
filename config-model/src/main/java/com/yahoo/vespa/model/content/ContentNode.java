@@ -27,7 +27,6 @@ public abstract class ContentNode extends AbstractService
     private final boolean skipCommunicationManagerThread;
     private final boolean skipMbusRequestThread;
     private final boolean skipMbusReplyThread;
-    private final boolean useDirectStorageApiRpc;
 
     public ContentNode(ModelContext.FeatureFlags featureFlags, AbstractConfigProducer<?> parent, String clusterName, String rootDirectory, int distributionKey) {
         super(parent, "" + distributionKey);
@@ -36,7 +35,6 @@ public abstract class ContentNode extends AbstractService
         this.skipMbusRequestThread = featureFlags.skipMbusRequestThread();
         this.skipMbusReplyThread = featureFlags.skipMbusReplyThread();
         this.rootDirectory = rootDirectory;
-        this.useDirectStorageApiRpc = featureFlags.useDirectStorageApiRpc();
 
         initialize();
         setProp("clustertype", "content");
@@ -83,7 +81,6 @@ public abstract class ContentNode extends AbstractService
         builder.skip_thread(skipCommunicationManagerThread);
         builder.mbus.skip_request_thread(skipMbusRequestThread);
         builder.mbus.skip_reply_thread(skipMbusReplyThread);
-        builder.use_direct_storageapi_rpc(useDirectStorageApiRpc);
     }
 
     @Override

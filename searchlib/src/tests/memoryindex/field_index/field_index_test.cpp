@@ -416,7 +416,7 @@ myremove(uint32_t docId, DocumentInverter &inv,
 {
     inv.removeDocument(docId);
     invertThreads.sync();
-    inv.pushDocuments(std::shared_ptr<IDestructorCallback>());
+    inv.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
 }
 
 class MyDrainRemoves : IFieldIndexRemoveListener {
@@ -442,7 +442,7 @@ public:
 void
 myPushDocument(DocumentInverter &inv)
 {
-    inv.pushDocuments(std::shared_ptr<IDestructorCallback>());
+    inv.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
 }
 
 const FeatureStore *

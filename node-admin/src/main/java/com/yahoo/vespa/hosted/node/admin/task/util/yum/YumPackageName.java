@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.google.common.base.Strings;
+import com.yahoo.component.Version;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
  * @author hakonhall
  */
 public class YumPackageName {
+
     private enum Architecture { noarch, x86_64, i386, i586, i686 }
 
     private static final String ARCHITECTURES_OR =
@@ -43,7 +45,7 @@ public class YumPackageName {
     private static final Pattern NAME_VER_REL_PATTERN = Pattern.compile("^((.+)-)?" +
             "([a-z0-9._]*[0-9][a-z0-9._]*)-" + // ver contains at least one digit
             "([a-z0-9._]*[0-9][a-z0-9._]*)$"); // rel contains at least one digit
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[()a-zA-Z0-9._-]+$");
 
     private final Optional<String> epoch;
     private final String name;
@@ -77,8 +79,8 @@ public class YumPackageName {
          *
          * <p>WARNING: Should only be invoked if the YUM package actually has an epoch. Typically
          * YUM packages doesn't have one explicitly set, and in case "0" will be used with
-         * {@link #toVersionLockName()} (otherwise it fails), but it will be absent from an
-         * install with {@link #toName()} (otherwise it fails). This typically means that
+         * {@link #toVersionLockName(Version)} (otherwise it fails), but it will be absent from an
+         * install with {@link #toName(Version)} (otherwise it fails). This typically means that
          * you should set this only if the epoch is != "0".</p>
          */
         public Builder setEpoch(String epoch) { this.epoch = Optional.of(epoch); return this; }
@@ -227,12 +229,23 @@ public class YumPackageName {
     public Optional<String> getArchitecture() { return architecture; }
 
     /** Return package name, omitting components that are not specified. */
-    public String toName() {
+    public String toName(Version yumVersion) {
         StringBuilder builder = new StringBuilder();
-        epoch.ifPresent(ep -> builder.append(ep).append(':'));
-        builder.append(name);
-        version.ifPresent(ver -> builder.append('-').append(ver));
-        release.ifPresent(rel -> builder.append('-').append(rel));
+        boolean isBare = version.isEmpty() && release.isEmpty() && architecture.isEmpty();
+        char nextDelimiter;
+        if (yumVersion.getMajor() < 4) {
+            epoch.ifPresent(ep -> builder.append(ep).append(':'));
+            builder.append(name);
+            nextDelimiter = '-';
+        } else {
+            builder.append(name);
+            // Fully versioned package names must always include epoch in Yum 4
+            epoch.or(() -> Optional.of("0").filter(v -> !isBare))
+                 .ifPresent(ep -> builder.append('-').append(ep));
+            nextDelimiter = ':';
+        }
+        version.ifPresent(s -> builder.append(nextDelimiter).append(s));
+        release.ifPresent(s -> builder.append('-').append(s));
         architecture.ifPresent(arch -> builder.append('.').append(arch));
         return builder.toString();
     }
@@ -242,13 +255,15 @@ public class YumPackageName {
      *
      * @throws IllegalStateException if any field required for the version lock spec is missing
      */
-    public String toVersionLockName() {
-        return String.format("%s:%s-%s-%s.%s",
-                epoch.orElse("0"),
-                name,
-                version.orElseThrow(() -> new IllegalStateException("Version is missing for YUM package " + name)),
-                release.orElseThrow(() -> new IllegalStateException("Release is missing for YUM package " + name)),
-                "*");
+    public String toVersionLockName(Version yumVersion) {
+        Builder b = new Builder(this).setArchitecture("*");
+        if (epoch.isEmpty()) {
+            b.setEpoch("0");
+        }
+        YumPackageName lockSpec = b.build();
+        if (lockSpec.getVersion().isEmpty()) throw new IllegalStateException("Version is missing for YUM package " + name);
+        if (lockSpec.getRelease().isEmpty()) throw new IllegalStateException("Release is missing for YUM package " + name);
+        return lockSpec.toName(yumVersion);
     }
 
     public boolean isSubsetOf(YumPackageName other) {

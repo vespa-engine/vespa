@@ -1,5 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "tensor_update.h"
 #include "valueupdate.h"
 
 namespace vespalib::eval { struct Value; }
@@ -15,7 +16,7 @@ class TensorFieldValue;
  * The operand is represented as a tensor field value containing a
  * mapped (aka sparse) tensor.
  */
-class TensorModifyUpdate : public ValueUpdate {
+class TensorModifyUpdate : public ValueUpdate, public TensorUpdate {
 public:
     /** Declare all types of tensor modify updates. */
     enum class Operation { // Operation to be applied to matching tensor cells
@@ -42,6 +43,8 @@ public:
     const TensorFieldValue &getTensor() const { return *_tensor; }
     void checkCompatibility(const Field &field) const override;
     std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value &tensor) const;
+    std::unique_ptr<Value> apply_to(const Value &tensor,
+                                    const ValueBuilderFactory &factory) const override;
     bool applyTo(FieldValue &value) const override;
     void printXml(XmlOutputStream &xos) const override;
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;

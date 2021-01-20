@@ -134,7 +134,8 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
                      lib::NodeType::STORAGE, getIndexFromConfig(configId), configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
-      _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1))
+      _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
+      _host_info()
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     _nodeStateUpdater.setReportedNodeState(ns);
@@ -146,7 +147,8 @@ TestServiceLayerApp::TestServiceLayerApp(NodeIndex index,
                      lib::NodeType::STORAGE, index, configId),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
-      _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1))
+      _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
+      _host_info()
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
     _nodeStateUpdater.setReportedNodeState(ns);

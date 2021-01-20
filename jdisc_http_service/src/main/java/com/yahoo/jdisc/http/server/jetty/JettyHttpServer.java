@@ -6,6 +6,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
@@ -72,7 +73,8 @@ public class JettyHttpServer extends AbstractServerProvider {
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            ComponentRegistry<ServletHolder> servletHolders,
                            FilterInvoker filterInvoker,
-                           AccessLog accessLog) {
+                           AccessLog accessLog,
+                           ConnectionLog connectionLog) {
         super(container);
         if (connectorFactories.allComponents().isEmpty())
             throw new IllegalArgumentException("No connectors configured.");
@@ -84,10 +86,11 @@ public class JettyHttpServer extends AbstractServerProvider {
         server.setRequestLog(new AccessLogRequestLog(accessLog, serverConfig.accessLog()));
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
+        JettyConnectionLogger connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog);
 
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
-            server.addConnector(connectorFactory.createConnector(metric, server));
+            server.addConnector(connectorFactory.createConnector(metric, server, connectionLogger));
             listenedPorts.add(connectorConfig.listenPort());
         }
 

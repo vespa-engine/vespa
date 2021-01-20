@@ -13,6 +13,7 @@
 #include <vespa/eval/eval/value.h>
 
 using document::TensorDataType;
+using document::TensorUpdate;
 using document::WrongTensorTypeException;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
@@ -248,6 +249,15 @@ TensorAttribute::getRefCopy() const
     uint32_t size = getCommittedDocIdLimit();
     assert(size <= _refVector.size());
     return RefCopyVector(&_refVector[0], &_refVector[0] + size);
+}
+
+void
+TensorAttribute::update_tensor(DocId docId,
+                               const document::TensorUpdate &update,
+                               const vespalib::eval::Value &old_tensor)
+{
+    auto new_value = update.apply_to(old_tensor, FastValueBuilderFactory::get());
+    setTensor(docId, *new_value);
 }
 
 std::unique_ptr<PrepareResult>

@@ -99,15 +99,9 @@ public class HostedVespaPolicy implements Policy {
             storageNode.setNodeState(context, ClusterControllerNodeState.DOWN);
         }
 
-        if (context.usePermanentlyDownStatus()) {
-            // Ensure all nodes in the group are marked as permanently down
-            for (HostName hostName : applicationApi.getNodesInGroupWith(status -> status != HostStatus.PERMANENTLY_DOWN)) {
-                applicationApi.setHostState(context, hostName, HostStatus.PERMANENTLY_DOWN);
-            }
-        } else {
-            for (HostName hostName : applicationApi.getNodesInGroupWith(status -> status != HostStatus.ALLOWED_TO_BE_DOWN)) {
-                applicationApi.setHostState(context, hostName, HostStatus.ALLOWED_TO_BE_DOWN);
-            }
+        // Ensure all nodes in the group are marked as permanently down
+        for (HostName hostName : applicationApi.getNodesInGroupWith(status -> status != HostStatus.PERMANENTLY_DOWN)) {
+            applicationApi.setHostState(context, hostName, HostStatus.PERMANENTLY_DOWN);
         }
     }
 

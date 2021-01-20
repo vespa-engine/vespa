@@ -15,7 +15,7 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
-#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -29,7 +29,7 @@ using document::DocumentId;
 using document::GlobalId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using search::index::Schema;
 using storage::spi::BucketInfoResult;
@@ -641,7 +641,7 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const GlobalId &
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
             vespalib::Gate gate;
-            _gidToLidChangeHandler.notifyRemove(std::make_shared<search::GateCallback>(gate), gid, serialNum);
+            _gidToLidChangeHandler.notifyRemove(std::make_shared<vespalib::GateCallback>(gate), gid, serialNum);
             gate.await();
             removeMetaData(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
         }
@@ -674,7 +674,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         vespalib::Gate gate;
         gidsToRemove = getGidsToRemove(_metaStore, lidsToRemove);
         {
-            IGidToLidChangeHandler::IDestructorCallbackSP context = std::make_shared<search::GateCallback>(gate);
+            IGidToLidChangeHandler::IDestructorCallbackSP context = std::make_shared<vespalib::GateCallback>(gate);
             for (const auto &gid : gidsToRemove) {
                 _gidToLidChangeHandler.notifyRemove(context, gid, serialNum);
             }
@@ -684,7 +684,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         _metaStore.commit(serialNum, serialNum);
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
     }
-    std::shared_ptr<search::IDestructorCallback> onWriteDone;
+    std::shared_ptr<vespalib::IDestructorCallback> onWriteDone;
     vespalib::Executor::Task::UP removeBatchDoneTask;
     if (explicitReuseLids) {
         removeBatchDoneTask = makeLambdaTask([this, lidsToRemove]() { _metaStore.removeBatchComplete(lidsToRemove); });

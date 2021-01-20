@@ -21,4 +21,6 @@ public interface Plan {
     /** The quota for this plan */
     QuotaCalculator quota();
 
+    /** Is this a plan that is billed */
+    boolean isBilled();
 }

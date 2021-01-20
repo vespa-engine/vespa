@@ -76,6 +76,17 @@ DirectTensorAttribute::setTensor(DocId lid, const vespalib::eval::Value &tensor)
     set_tensor(lid, FastValueBuilderFactory::get().copy(tensor));
 }
 
+void
+DirectTensorAttribute::update_tensor(DocId docId,
+                                     const document::TensorUpdate &update,
+                                     const vespalib::eval::Value &old_tensor)
+{
+    auto new_value = update.apply_to(old_tensor, FastValueBuilderFactory::get());
+    if (new_value) {
+        set_tensor(docId, std::move(new_value));
+    }
+}
+
 std::unique_ptr<vespalib::eval::Value>
 DirectTensorAttribute::getTensor(DocId docId) const
 {

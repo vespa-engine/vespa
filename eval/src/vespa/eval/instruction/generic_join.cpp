@@ -148,6 +148,37 @@ void my_sparse_full_overlap_join_op(State &state, uint64_t param_in) {
 
 //-----------------------------------------------------------------------------
 
+template <typename LCT, typename RCT, typename OCT, typename Fun, bool forward_lhs>
+void my_mixed_dense_join_op(State &state, uint64_t param_in) {
+    const auto &param = unwrap_param<JoinParam>(param_in);
+    Fun fun(param.function);
+    auto lhs_cells = state.peek(1).cells().typify<LCT>();
+    auto rhs_cells = state.peek(0).cells().typify<RCT>();
+    const auto &index = state.peek(forward_lhs ? 1 : 0).index();
+    size_t num_subspaces = index.size();
+    ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(param.dense_plan.out_size * num_subspaces);
+    OCT *dst = out_cells.begin();
+    const LCT *lhs = lhs_cells.begin();
+    const RCT *rhs = rhs_cells.begin();
+    auto join_cells = [&](size_t lhs_idx, size_t rhs_idx) { *dst++ = fun(lhs[lhs_idx], rhs[rhs_idx]); };
+    for (size_t i = 0; i < num_subspaces; ++i) {
+        param.dense_plan.execute(0, 0, join_cells);
+        if (forward_lhs) {
+            lhs += param.dense_plan.lhs_size;
+        } else {
+            rhs += param.dense_plan.rhs_size;
+        }
+    }
+    if (forward_lhs) {
+        assert(lhs == lhs_cells.end());
+    } else {
+        assert(rhs == rhs_cells.end());
+    }
+    state.pop_pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
+};
+
+//-----------------------------------------------------------------------------
+
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 void my_dense_join_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<JoinParam>(param_in);
@@ -179,6 +210,12 @@ struct SelectGenericJoinOp {
         }
         if (param.sparse_plan.sources.empty()) {
             return my_dense_join_op<LCT,RCT,OCT,Fun>;
+        }
+        if (param.sparse_plan.should_forward_lhs_index()) {
+            return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,true>;
+        }
+        if (param.sparse_plan.should_forward_rhs_index()) {
+            return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,false>;
         }
         if ((param.dense_plan.out_size == 1) &&
             (param.sparse_plan.sources.size() == param.sparse_plan.lhs_overlap.size()))
@@ -269,6 +306,28 @@ SparseJoinPlan::SparseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_t
     auto rhs_dims = rhs_type.mapped_dimensions();
     visit_ranges(visitor, lhs_dims.begin(), lhs_dims.end(), rhs_dims.begin(), rhs_dims.end(),
                  [](const auto &a, const auto &b){ return (a.name < b.name); });
+}
+
+bool
+SparseJoinPlan::should_forward_lhs_index() const
+{
+    for (Source src: sources) {
+        if (src != Source::LHS) {
+            return false;
+        }
+    }
+    return (sources.size() > 0);
+}
+
+bool
+SparseJoinPlan::should_forward_rhs_index() const
+{
+    for (Source src: sources) {
+        if (src != Source::RHS) {
+            return false;
+        }
+    }
+    return (sources.size() > 0);
 }
 
 SparseJoinPlan::~SparseJoinPlan() = default;

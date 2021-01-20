@@ -15,4 +15,5 @@ public class EndpointCertificateSecretsValidator extends Validator {
             throw new CertificateNotReadyException("TLS enabled, but could not yet retrieve certificate for application " + deployState.getProperties().applicationId().serializedForm());
         }
     }
+
 }

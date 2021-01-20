@@ -30,7 +30,6 @@ public:
     DECLARE_POINTER_TYPEDEFS(BucketReply);
 
     document::Bucket getBucket() const override { return _bucket; }
-    bool hasSingleBucketId() const override { return true; }
 
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
     const document::BucketId& getOriginalBucketId() const { return _originalBucket; }

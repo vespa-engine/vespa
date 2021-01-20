@@ -9,12 +9,6 @@ PendingLidTrackerBase::PendingLidTrackerBase() = default;
 PendingLidTrackerBase::~PendingLidTrackerBase() = default;
 
 ILidCommitState::State
-PendingLidTrackerBase::waitState(State state) const {
-    auto pending = pendingLids();
-    return waitState(state, pending);
-}
-
-ILidCommitState::State
 PendingLidTrackerBase::waitState(State state, uint32_t lid) const {
     MonitorGuard guard(_mutex);
     return waitFor(guard, state, lid);
@@ -74,17 +68,6 @@ PendingLidTracker::waitFor(MonitorGuard & guard, State state, uint32_t lid) cons
 PendingLidTrackerBase::Snapshot
 PendingLidTracker::produceSnapshot() {
     return Snapshot();
-}
-
-ILidCommitState::LidList
-PendingLidTracker::pendingLids() const {
-    MonitorGuard guard(_mutex);
-    LidList lids;
-    lids.reserve(_pending.size());
-    for (const auto & entry : _pending) {
-        lids.push_back(entry.first);
-    }
-    return lids;
 }
 
 }

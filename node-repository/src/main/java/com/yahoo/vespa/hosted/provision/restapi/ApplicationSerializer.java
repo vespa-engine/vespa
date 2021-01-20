@@ -40,17 +40,16 @@ public class ApplicationSerializer {
     }
 
     private static void toSlime(Cluster cluster, List<Node> applicationNodes, Cursor clustersObject) {
-        List<Node> nodes = NodeList.copyOf(applicationNodes).not().retired().cluster(cluster.id()).asList();
+        NodeList nodes = NodeList.copyOf(applicationNodes).not().retired().cluster(cluster.id());
         if (nodes.isEmpty()) return;
-
-        int groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
-        ClusterResources currentResources = new ClusterResources(nodes.size(), groups, nodes.get(0).resources());
+        ClusterResources currentResources = nodes.toResources();
 
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         toSlime(cluster.minResources(), clusterObject.setObject("min"));
         toSlime(cluster.maxResources(), clusterObject.setObject("max"));
         toSlime(currentResources, clusterObject.setObject("current"));
-        cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
+        if (cluster.shouldSuggestResources(currentResources))
+            cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested.resources(), clusterObject.setObject("suggested")));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());

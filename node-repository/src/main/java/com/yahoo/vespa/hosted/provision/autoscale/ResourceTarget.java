@@ -41,7 +41,7 @@ public class ResourceTarget {
     }
 
     private static double nodeUsage(Resource resource, double load, AllocatableClusterResources current) {
-        return load * resource.valueFrom(current.realResources());
+        return load * resource.valueFrom(current.realResources().nodeResources());
     }
 
     /** Create a target of achieving ideal load given a current load */
@@ -55,9 +55,9 @@ public class ResourceTarget {
 
     /** Crete a target of preserving a current allocation */
     public static ResourceTarget preserve(AllocatableClusterResources current) {
-        return new ResourceTarget(current.realResources().vcpu(),
-                                  current.realResources().memoryGb(),
-                                  current.realResources().diskGb(),
+        return new ResourceTarget(current.realResources().nodeResources().vcpu(),
+                                  current.realResources().nodeResources().memoryGb(),
+                                  current.realResources().nodeResources().diskGb(),
                                   false);
     }
 

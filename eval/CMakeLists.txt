@@ -15,7 +15,6 @@ vespa_define_module(
     src/tests/eval/array_array_map
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
-    src/tests/eval/fast_sparse_map
     src/tests/eval/fast_value
     src/tests/eval/function
     src/tests/eval/function_speed
@@ -54,11 +53,11 @@ vespa_define_module(
     src/tests/instruction/dense_tensor_peek_function
     src/tests/instruction/index_lookup_table
     src/tests/instruction/join_with_number
-    src/tests/instruction/dense_add_dimension_optimizer
-    src/tests/instruction/dense_fast_rename_optimizer
+    src/tests/instruction/add_trivial_dimension_optimizer
+    src/tests/instruction/fast_rename_optimizer
     src/tests/instruction/dense_inplace_join_function
     src/tests/instruction/dense_pow_as_map_optimizer
-    src/tests/instruction/dense_remove_dimension_optimizer
+    src/tests/instruction/remove_trivial_dimension_optimizer
     src/tests/instruction/dense_replace_type_function
     src/tests/instruction/dense_simple_join_function
     src/tests/instruction/dense_simple_map_function

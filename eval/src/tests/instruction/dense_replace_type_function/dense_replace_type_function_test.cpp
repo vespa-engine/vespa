@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/instruction/dense_replace_type_function.h>
+#include <vespa/eval/instruction/replace_type_function.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 
 using namespace vespalib::eval::tensor_function;
@@ -29,7 +29,7 @@ struct Fixture {
     Value::UP                                my_value;
     ValueType                                new_type;
     ChildMock                                mock_child;
-    DenseReplaceTypeFunction                 my_fun;
+    ReplaceTypeFunction                      my_fun;
     std::vector<TensorFunction::Child::CREF> children;
     InterpretedFunction::State               state;
     Fixture()
@@ -49,7 +49,7 @@ struct Fixture {
     }
 };
 
-TEST_F("require that DenseReplaceTypeFunction works as expected", Fixture()) {
+TEST_F("require that ReplaceTypeFunction works as expected", Fixture()) {
     EXPECT_EQUAL(f1.my_fun.result_type(), f1.new_type);
     EXPECT_EQUAL(f1.my_fun.result_is_mutable(), true);
     f1.mock_child.is_mutable = false;
@@ -65,8 +65,8 @@ TEST("require that create_compact will collapse duplicate replace operations") {
     Stash stash;
     ValueType type = ValueType::double_type();
     ChildMock leaf(type);
-    const DenseReplaceTypeFunction &a = DenseReplaceTypeFunction::create_compact(type, leaf, stash);
-    const DenseReplaceTypeFunction &b = DenseReplaceTypeFunction::create_compact(type, a, stash);
+    const ReplaceTypeFunction &a = ReplaceTypeFunction::create_compact(type, leaf, stash);
+    const ReplaceTypeFunction &b = ReplaceTypeFunction::create_compact(type, a, stash);
     EXPECT_EQUAL(a.result_type(), type);
     EXPECT_EQUAL(&a.child(), &leaf);
     EXPECT_EQUAL(b.result_type(), type);

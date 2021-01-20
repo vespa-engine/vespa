@@ -15,16 +15,21 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the scaling suggestions maintainer integration.
@@ -67,9 +72,51 @@ public class ScalingSuggestionsMaintainerTest {
         maintainer.maintain();
 
         assertEquals("14 nodes with [vcpu: 6.9, memory: 5.1 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
-                     tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().toString());
+                     suggestionOf(app1, cluster1, tester).get().resources().toString());
         assertEquals("8 nodes with [vcpu: 14.7, memory: 4.0 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
-                     tester.nodeRepository().applications().get(app2).get().cluster(cluster2.id()).get().suggestedResources().get().toString());
+                     suggestionOf(app2, cluster2, tester).get().resources().toString());
+
+        // Utilization goes way down
+        tester.clock().advance(Duration.ofHours(13));
+        addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        maintainer.maintain();
+        assertEquals("Suggestion stays at the peak value observed",
+                     "14 nodes with [vcpu: 6.9, memory: 5.1 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
+                     suggestionOf(app1, cluster1, tester).get().resources().toString());
+        // Utilization is still way down and a week has passed
+        tester.clock().advance(Duration.ofDays(7));
+        addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        maintainer.maintain();
+        assertEquals("Peak suggestion has been  outdated",
+                     "6 nodes with [vcpu: 2.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, storage type: remote]",
+                     suggestionOf(app1, cluster1, tester).get().resources().toString());
+        assertTrue(shouldSuggest(app1, cluster1, tester));
+
+        tester.clock().advance(Duration.ofDays(3));
+        addMeasurements(0.7f, 0.7f, 0.7f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        maintainer.maintain();
+        var suggested = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources();
+        tester.deploy(app1, cluster1, Capacity.from(suggested, suggested, false, true));
+        tester.clock().advance(Duration.ofDays(2));
+        addMeasurements((float)Resource.cpu.idealAverageLoad(),
+                        (float)Resource.memory.idealAverageLoad(),
+                        (float)Resource.disk.idealAverageLoad(),
+                        0, 500, app1, tester.nodeRepository(), metricsDb);
+        maintainer.maintain();
+        assertEquals("Suggestion is to keep the current allocation",
+                     suggested,
+                     suggestionOf(app1, cluster1, tester).get().resources());
+        assertFalse("Suggestion is not made as it matches what we have", shouldSuggest(app1, cluster1, tester));
+    }
+
+    private Optional<Cluster.Suggestion> suggestionOf(ApplicationId app, ClusterSpec cluster, ProvisioningTester tester) {
+        return tester.nodeRepository().applications().get(app).get().cluster(cluster.id()).get().suggestedResources();
+    }
+
+    private boolean shouldSuggest(ApplicationId app, ClusterSpec cluster, ProvisioningTester tester) {
+        var currentResources = tester.nodeRepository().list(app).cluster(cluster.id()).not().retired().toResources();
+        return tester.nodeRepository().applications().get(app).get().cluster(cluster.id()).get()
+                     .shouldSuggestResources(currentResources);
     }
 
     public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId,

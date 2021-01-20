@@ -25,7 +25,7 @@
 #include <vespa/searchcore/proton/server/searchview.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
-#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -51,6 +51,7 @@ using namespace search::transactionlog;
 using namespace search;
 using namespace std::chrono_literals;
 
+using vespalib::IDestructorCallback;
 using document::DocumenttypesConfig;
 using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
@@ -262,7 +263,7 @@ public:
         op->setPrevDbDocumentId(prevDbdId);
         vespalib::Gate commitDone;
         _ddb->getWriteService().master().execute(vespalib::makeLambdaTask([this, op = std::move(op), &commitDone]() {
-            _ddb->getFeedHandler().appendOperation(*op, std::make_shared<search::GateCallback>(commitDone));
+            _ddb->getFeedHandler().appendOperation(*op, std::make_shared<vespalib::GateCallback>(commitDone));
         }));
         commitDone.await();
         SearchView *sv(dynamic_cast<SearchView *>(_ddb->getReadySubDB()->getSearchView().get()));

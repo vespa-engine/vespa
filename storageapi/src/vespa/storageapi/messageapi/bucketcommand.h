@@ -28,7 +28,6 @@ public:
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
     const document::BucketId& getOriginalBucketId() const { return _originalBucket; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool hasSingleBucketId() const override { return true; }
 };
 
 }

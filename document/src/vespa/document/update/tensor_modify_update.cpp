@@ -160,10 +160,16 @@ TensorModifyUpdate::checkCompatibility(const Field& field) const
 std::unique_ptr<vespalib::eval::Value>
 TensorModifyUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
-    auto cellsTensor = _tensor->getAsTensorPtr();
-    if (cellsTensor) {
-        const auto &factory = FastValueBuilderFactory::get();
-        return TensorPartialUpdate::modify(tensor, getJoinFunction(_operation), *cellsTensor, factory);
+    return apply_to(tensor, FastValueBuilderFactory::get());
+}
+
+std::unique_ptr<vespalib::eval::Value>
+TensorModifyUpdate::apply_to(const Value &old_tensor,
+                             const ValueBuilderFactory &factory) const
+{
+    if (auto cellsTensor = _tensor->getAsTensorPtr()) {
+        auto op = getJoinFunction(_operation);
+        return TensorPartialUpdate::modify(old_tensor, op, *cellsTensor, factory);
     }
     return {};
 }

@@ -20,9 +20,10 @@
 #include "testnodestateupdater.h"
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include <persistence/spi/types.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/doneinitializehandler.h>
+#include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/frameworkimpl/component/distributorcomponentregisterimpl.h>
@@ -34,6 +35,7 @@
 
 namespace storage {
 
+namespace spi { class PersistenceProvider; }
 class StorageBucketDBInitializer;
 
 DEFINE_PRIMITIVE_WRAPPER(uint16_t, NodeIndex);
@@ -111,6 +113,7 @@ class TestServiceLayerApp : public TestStorageApp
     ServiceLayerComponentRegisterImpl& _compReg;
     PersistenceProviderUP _persistenceProvider;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _executor;
+    HostInfo _host_info;
 
 public:
     TestServiceLayerApp(vespalib::stringref configId);
@@ -121,6 +124,7 @@ public:
     void setPersistenceProvider(PersistenceProviderUP);
 
     ServiceLayerComponentRegisterImpl& getComponentRegister() { return _compReg; }
+    HostInfo &get_host_info() noexcept { return _host_info; }
 
     spi::PersistenceProvider& getPersistenceProvider();
 

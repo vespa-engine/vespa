@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 public class SpecialTokenRegistry {
 
     /** The log of this */
-    private static Logger log = Logger.getLogger(SpecialTokens.class.getName());
+    private static final Logger log = Logger.getLogger(SpecialTokenRegistry.class.getName());
 
     private static final SpecialTokens nullSpecialTokens = new SpecialTokens();
 

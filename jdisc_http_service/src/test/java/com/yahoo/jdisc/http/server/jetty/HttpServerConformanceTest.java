@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
+import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.guiceModules.ConnectorFactoryRegistryModule;
@@ -773,6 +774,8 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
                                     .toInstance(new ServerConfig(new ServerConfig.Builder()));
                             bind(ServletPathsConfig.class)
                                     .toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
+                            bind(ConnectionLog.class)
+                                    .toInstance(new VoidConnectionLog());
                         }
                     },
                     new ConnectorFactoryRegistryModule());

@@ -1197,7 +1197,7 @@ IndexMaintainer::commit()
     // only triggered via scheduleCommit()
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
-    _current_index->commit(std::shared_ptr<search::IDestructorCallback>(),
+    _current_index->commit(std::shared_ptr<vespalib::IDestructorCallback>(),
                            _current_serial_num);
     // caller calls _ctx.getThreadingService().sync()
 }

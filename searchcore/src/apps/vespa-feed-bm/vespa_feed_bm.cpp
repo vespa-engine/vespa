@@ -51,6 +51,7 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -493,7 +494,6 @@ struct MyStorageConfig
             stor_server.rootFolder = "storage";
         }
         make_slobroks_config(slobroks, slobrok_port);
-        stor_communicationmanager.useDirectStorageapiRpc = true;
         stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
         stor_communicationmanager.rpc.eventsBeforeWakeup = params.get_rpc_events_before_wakup();
         stor_communicationmanager.rpc.numTargetsPerNode = params.get_rpc_targets_per_node();
@@ -655,6 +655,7 @@ struct PersistenceProviderFixture {
     std::shared_ptr<DocumentDB>                _document_db;
     MyPersistenceEngineOwner                   _persistence_owner;
     MyResourceWriteFilter                      _write_filter;
+    test::DiskMemUsageNotifier                 _disk_mem_usage_notifier;
     std::shared_ptr<PersistenceEngine>         _persistence_engine;
     std::unique_ptr<const FieldSetRepo>        _field_set_repo;
     uint32_t                                   _bucket_bits;
@@ -724,6 +725,7 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
       _document_db(),
       _persistence_owner(),
       _write_filter(),
+      _disk_mem_usage_notifier(),
       _persistence_engine(),
       _field_set_repo(std::make_unique<const FieldSetRepo>(*_repo)),
       _bucket_bits(16),
@@ -743,7 +745,7 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
       _message_bus()
 {
     create_document_db(params);
-    _persistence_engine = std::make_unique<PersistenceEngine>(_persistence_owner, _write_filter, -1, false);
+    _persistence_engine = std::make_unique<PersistenceEngine>(_persistence_owner, _write_filter, _disk_mem_usage_notifier, -1, false);
     auto proxy = std::make_shared<PersistenceHandlerProxy>(_document_db);
     _persistence_engine->putHandler(_persistence_engine->getWLock(), _bucket_space, _doc_type_name, proxy);
     _service_layer_config.add_builders(_config_set);

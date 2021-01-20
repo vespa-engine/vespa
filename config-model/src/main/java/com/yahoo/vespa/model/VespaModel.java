@@ -35,6 +35,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
+import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
@@ -81,6 +82,10 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static com.yahoo.text.StringUtilities.quote;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableMap;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * <p>
@@ -200,6 +205,38 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             this.fileDistributor = fileDistributor;
         }
 
+    }
+
+    @Override
+    public Map<String, Set<String>> documentTypesByCluster() {
+        return getContentClusters().entrySet().stream()
+                                   .collect(toMap(cluster -> cluster.getKey(),
+                                             cluster -> cluster.getValue().getDocumentDefinitions().keySet()));
+    }
+
+    @Override
+    public Map<String, Set<String>> indexedDocumentTypesByCluster() {
+        return getContentClusters().entrySet().stream()
+                                   .collect(toUnmodifiableMap(cluster -> cluster.getKey(),
+                                                         cluster -> documentTypesWithIndex(cluster.getValue())));
+    }
+
+    private static Set<String> documentTypesWithIndex(ContentCluster content) {
+        Set<String> typesWithIndexMode = content.getSearch().getDocumentTypesWithIndexedCluster().stream()
+                                                .map(type -> type.getFullName().getName())
+                                                .collect(toSet());
+
+        Set<String> typesWithIndexedFields = content.getSearch().getIndexed() == null
+                                             ? Set.of()
+                                             : content.getSearch().getIndexed().getDocumentDbs().stream()
+                                                      .filter(database -> database.getDerivedConfiguration()
+                                                                                  .getSearch()
+                                                                                  .allConcreteFields()
+                                                                                  .stream().anyMatch(SDField::doesIndexing))
+                                                      .map(database -> database.getInputDocType())
+                                                      .collect(toSet());
+
+        return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains).collect(toUnmodifiableSet());
     }
 
     private void propagateRestartOnDeploy() {
@@ -399,25 +436,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 " for config id " + quote(configProducer.getConfigId()) +
                 ", found=" + found + ", foundOverride=" + foundOverride);
 
-    }
-
-    /**
-     * Resolve config for a given key and config definition
-     *
-     * @param configKey The key to resolve.
-     * @param targetDef The config definition to use for the schema
-     * @return The payload as a list of strings
-     */
-    @Deprecated // TODO: Remove after December 2020
-    @Override
-    public ConfigPayload getConfig(ConfigKey<?> configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
-        Objects.requireNonNull(targetDef, "config definition cannot be null");
-
-        ConfigInstance.Builder builder = resolveToBuilder(configKey);
-        log.log(Level.FINE, () -> "Found builder for " + configKey);
-        InnerCNode innerCNode = targetDef.getCNode();
-        ConfigPayload payload = getConfigFromBuilder(builder, innerCNode);
-        return (innerCNode != null) ? payload.applyDefaultsFromDef(innerCNode) : payload;
     }
 
     /**
@@ -650,7 +668,5 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                       .map(spec -> spec.membership().get().cluster().id())
                                       .collect(Collectors.toSet());
     }
-
-
 
 }

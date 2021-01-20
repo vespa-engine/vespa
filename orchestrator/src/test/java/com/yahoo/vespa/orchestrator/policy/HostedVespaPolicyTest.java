@@ -140,9 +140,9 @@ public class HostedVespaPolicyTest {
         order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.DOWN);
 
         order.verify(applicationApi).getNodesInGroupWith(any());
-        order.verify(applicationApi).setHostState(context, hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
-        order.verify(applicationApi).setHostState(context, hostName2, HostStatus.ALLOWED_TO_BE_DOWN);
-        order.verify(applicationApi).setHostState(context, hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName1, HostStatus.PERMANENTLY_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName2, HostStatus.PERMANENTLY_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName3, HostStatus.PERMANENTLY_DOWN);
 
         order.verifyNoMoreInteractions();
     }

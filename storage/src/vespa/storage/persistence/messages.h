@@ -28,12 +28,8 @@ public:
     std::unique_ptr<api::StorageReply> makeReply() override;
 
     document::Bucket getBucket() const override { return _bucket; }
-    bool hasSingleBucketId() const override { return true; }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }
-    void setIteratorId(spi::IteratorId iteratorId) { _iteratorId = iteratorId; }
-
-    void setMaxByteSize(uint32_t maxByteSize) { _maxByteSize = maxByteSize; }
     uint32_t getMaxByteSize() const { return _maxByteSize; }
 
     api::LockingRequirements lockingRequirements() const noexcept override {
@@ -59,7 +55,6 @@ public:
     explicit GetIterReply(GetIterCommand& cmd);
     ~GetIterReply() override;
 
-    bool hasSingleBucketId() const override { return true; }
     document::Bucket getBucket() const override { return _bucket; }
 
     const std::vector<spi::DocEntry::UP>& getEntries() const {
@@ -94,7 +89,6 @@ public:
                           const std::string& fields,
                           spi::IncludedVersions includedVersions);
     ~CreateIteratorCommand() override;
-    bool hasSingleBucketId() const override { return true; }
     document::Bucket getBucket() const override { return _bucket; }
     const spi::Selection& getSelection() const { return _selection; }
     spi::IncludedVersions getIncludedVersions() const { return _includedVersions; }
@@ -127,7 +121,6 @@ public:
     CreateIteratorReply(const CreateIteratorCommand& cmd, spi::IteratorId iteratorId);
     ~CreateIteratorReply() override;
 
-    bool hasSingleBucketId() const override { return true; }
     document::Bucket getBucket() const override { return _bucket; }
 
     spi::IteratorId getIteratorId() const { return _iteratorId; }

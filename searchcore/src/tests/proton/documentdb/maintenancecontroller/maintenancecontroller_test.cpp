@@ -30,7 +30,7 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -55,7 +55,7 @@ using proton::matching::ISessionCachePruner;
 using search::AttributeGuard;
 using search::DocumentIdT;
 using search::DocumentMetaData;
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
@@ -711,7 +711,7 @@ MyFeedHandler::performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op)
 {
     assert(isExecutorThread());
     if (op.getLidsToRemove()->getNumLids() != 0u) {
-        appendOperation(op, std::make_shared<search::IgnoreCallback>());
+        appendOperation(op, std::make_shared<vespalib::IgnoreCallback>());
         // magic number.
         _subDBs[1u]->handlePruneRemovedDocuments(op);
     }
@@ -924,7 +924,7 @@ MaintenanceControllerFixture::insertDocs(const test::UserDocuments &docs, MyDocu
         for (const test::Document &testDoc : bucketDocs.getDocs()) {
             PutOperation op(testDoc.getBucket(), testDoc.getTimestamp(), testDoc.getDoc());
             op.setDbDocumentId(DbDocumentId(subDb.getSubDBId(), testDoc.getLid()));
-            _fh.appendOperation(op, std::make_shared<search::IgnoreCallback>());
+            _fh.appendOperation(op, std::make_shared<vespalib::IgnoreCallback>());
             subDb.handlePut(op);
         }
     }
@@ -940,14 +940,13 @@ MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs, Timest
         for (const test::Document &testDoc : bucketDocs.getDocs()) {
             RemoveOperationWithDocId op(testDoc.getBucket(), timestamp, testDoc.getDoc()->getId());
             op.setDbDocumentId(DbDocumentId(_removed.getSubDBId(), testDoc.getLid()));
-            _fh.appendOperation(op, std::make_shared<search::IgnoreCallback>());
+            _fh.appendOperation(op, std::make_shared<vespalib::IgnoreCallback>());
             _removed.handleRemove(op);
         }
     }
 }
 
-TEST_F("require that bucket move controller is active",
-       MaintenanceControllerFixture)
+TEST_F("require that bucket move controller is active", MaintenanceControllerFixture)
 {
     f._builder.createDocs(1, 1, 4); // 3 docs
     f._builder.createDocs(2, 4, 6); // 2 docs
@@ -998,8 +997,7 @@ TEST_F("require that bucket move controller is active",
     EXPECT_EQUAL(2u, f._notReady.getDocumentCount());
 }
 
-TEST_F("require that document pruner is active",
-       MaintenanceControllerFixture)
+TEST_F("require that document pruner is active", MaintenanceControllerFixture)
 {
     uint64_t tshz = 1000000;
     uint64_t now = static_cast<uint64_t>(time(nullptr)) * tshz;
@@ -1044,8 +1042,7 @@ TEST_F("require that document pruner is active",
     EXPECT_EQUAL(5u, f._removed.getDocumentCount());
 }
 
-TEST_F("require that heartbeats are scheduled",
-       MaintenanceControllerFixture)
+TEST_F("require that heartbeats are scheduled", MaintenanceControllerFixture)
 {
     f.notifyClusterStateChanged();
     f.startMaintenance();

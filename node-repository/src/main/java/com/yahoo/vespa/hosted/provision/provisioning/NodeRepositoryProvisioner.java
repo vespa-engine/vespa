@@ -169,24 +169,23 @@ public class NodeRepositoryProvisioner implements Provisioner {
                 firstDeployment // start at min, preserve current resources otherwise
                 ? new AllocatableClusterResources(requested.minResources(), clusterSpec, nodeRepository)
                 : new AllocatableClusterResources(nodes, nodeRepository, clusterSpec.isExclusive());
-        return within(Limits.of(requested), clusterSpec.isExclusive(), currentResources, firstDeployment);
+        return within(Limits.of(requested), currentResources, firstDeployment);
     }
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
     private ClusterResources within(Limits limits,
-                                    boolean exclusive,
                                     AllocatableClusterResources current,
                                     boolean firstDeployment) {
         if (limits.min().equals(limits.max())) return limits.min();
 
         // Don't change current deployments that are still legal
-        var currentAsAdvertised = current.toAdvertisedClusterResources();
+        var currentAsAdvertised = current.advertisedResources();
         if (! firstDeployment && currentAsAdvertised.isWithin(limits.min(), limits.max())) return currentAsAdvertised;
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
-        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits, exclusive)
+        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits)
                                   .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
-                                  .toAdvertisedClusterResources();
+                                  .advertisedResources();
     }
 
     private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {

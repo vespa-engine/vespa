@@ -1,15 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "bucket.h"
+#include <memory>
 
-
+namespace vespalib { class nbostream; }
 namespace storage::lib {
     class ClusterState;
     class Distribution;
 }
 
 namespace storage::spi {
+
+class Bucket;
 
 /**
  * Used to determine the state of the current node and its buckets.
@@ -68,8 +70,8 @@ public:
 
 private:
     std::unique_ptr<lib::ClusterState> _state;
-    uint16_t _nodeIndex;
     std::unique_ptr<lib::Distribution> _distribution;
+    uint16_t _nodeIndex;
 
     void deserialize(vespalib::nbostream&);
     bool nodeHasStateOneOf(const char* states) const;

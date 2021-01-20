@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <atomic>
 
 namespace storage::spi { class Result; }
@@ -26,7 +26,7 @@ public:
  * This holds the result of the feed operation until it is either failed or acked.
  * Guarantees that the result is propagated back to the invoker via ITransport interface.
  */
-class State : public search::IDestructorCallback {
+class State : public vespalib::IDestructorCallback {
 public:
     State(const State &) = delete;
     State & operator = (const State &) = delete;

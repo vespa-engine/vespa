@@ -16,9 +16,11 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.di.osgi.BundleClasses;
 import com.yahoo.container.di.osgi.OsgiUtil;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.osgi.OsgiImpl;
@@ -142,7 +144,7 @@ public class HandlersConfigurerDi {
                 bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
                 bind(AccessLog.class).toInstance(new AccessLog(new ComponentRegistry<>()));
                 bind(Executor.class).toInstance(Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("HandlersConfigurerDI")));
-
+                bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                 if (vespaContainer.getFileAcquirer() != null)
                     bind(com.yahoo.filedistribution.fileacquirer.FileAcquirer.class).toInstance(vespaContainer.getFileAcquirer());
             }

@@ -68,7 +68,7 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertEquals(expectedOutput, new JSONFormatter(entry).format());
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
     }
 
     @Test
@@ -98,7 +98,7 @@ public class JSONLogTestCase {
                 "}" +
                 "}";
 
-        assertEquals(expectedOutput, new JSONFormatter(entry).format());
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
     }
 
     @Test
@@ -131,7 +131,7 @@ public class JSONLogTestCase {
             "\"multivalue\":[\"value2\",\"value3\"]}" +
             "}";
 
-        assertEquals(expectedOutput, new JSONFormatter(entry).format());
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
 
     }
 
@@ -163,7 +163,7 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertEquals(expectedOutput, new JSONFormatter(entry).format());
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
 
         // Add remote port and verify
         entry.setRemotePort(1234);
@@ -190,7 +190,7 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertEquals(expectedOutput, new JSONFormatter(entry).format());
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
     }
 
     @Test
@@ -198,8 +198,8 @@ public class JSONLogTestCase {
         AccessLogEntry entry = newAccessLogEntry("test");
         AccessLogEntry entrywithremote = newAccessLogEntry("test");
         entrywithremote.setRemoteAddress(entry.getIpV4Address());
-
-        assertEquals(new JSONFormatter(entry).format(), new JSONFormatter(entrywithremote).format());
+        JSONFormatter formatter = new JSONFormatter();
+        assertEquals(formatter.format(entry), formatter.format(entrywithremote));
     }
 
     @Test
@@ -238,7 +238,7 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertEquals(expectedOutput, new JSONFormatter(entry).format());
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
     }
 
     private void verifyCoverage(String coverage, AccessLogEntry entry) {
@@ -259,7 +259,7 @@ public class JSONLogTestCase {
                 "\"hits\":0," +
                 coverage +
                 "}" +
-                "}", new JSONFormatter(entry).format());
+                "}", new JSONFormatter().format(entry));
     }
 
     @Test

@@ -7,8 +7,9 @@
 #include "tensor_store.h"
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/document/update/tensor_update.h>
 
-namespace vespalib::eval { struct Value; }
+namespace vespalib::eval { struct Value; struct ValueBuilderFactory; }
 
 namespace search::tensor {
 
@@ -58,7 +59,9 @@ public:
     uint32_t getVersion() const override;
     RefCopyVector getRefCopy() const;
     virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor) = 0;
-
+    virtual void update_tensor(DocId docId,
+                               const document::TensorUpdate &update,
+                               const vespalib::eval::Value &oldTensor);
     /**
      * Performs the prepare step in a two-phase operation to set a tensor for a document.
      *

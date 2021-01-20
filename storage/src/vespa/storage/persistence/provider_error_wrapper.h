@@ -58,14 +58,8 @@ public:
     spi::BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     spi::Result split(const spi::Bucket& source, const spi::Bucket& target1, const spi::Bucket& target2, spi::Context&) override;
     spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2, const spi::Bucket& target, spi::Context&) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(spi::IResourceUsageListener& listener) override;
     spi::Result removeEntry(const spi::Bucket&, spi::Timestamp, spi::Context&) override;
-
-    spi::PersistenceProvider& getProviderImplementation() {
-        return _impl;
-    }
-    const spi::PersistenceProvider& getProviderImplementation() const {
-        return _impl;
-    }
 
     void register_error_listener(std::shared_ptr<ProviderErrorListener> listener);
 
@@ -73,7 +67,7 @@ public:
     void removeAsync(const spi::Bucket&, spi::Timestamp, const document::DocumentId&, spi::Context&, spi::OperationComplete::UP) override;
     void removeIfFoundAsync(const spi::Bucket&, spi::Timestamp, const document::DocumentId&, spi::Context&, spi::OperationComplete::UP) override;
     void updateAsync(const spi::Bucket &, spi::Timestamp, spi::DocumentUpdateSP, spi::Context &, spi::OperationComplete::UP) override;
-
+    std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<spi::BucketExecutor> executor) override;
 private:
     template <typename ResultType>
     ResultType checkResult(ResultType&& result) const;

@@ -29,7 +29,7 @@ public class IndexingScriptChangeValidatorTest {
 
         @Override
         public List<VespaConfigChangeAction> validate() {
-            return validator.validate(ValidationOverrides.empty, Instant.now());
+            return validator.validate();
         }
     }
 

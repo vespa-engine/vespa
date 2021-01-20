@@ -2,6 +2,7 @@
 
 #include "provider_error_wrapper.h"
 #include "persistenceutil.h"
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace storage {
 
@@ -155,6 +156,12 @@ ProviderErrorWrapper::join(const spi::Bucket& source1, const spi::Bucket& source
     return checkResult(_impl.join(source1, source2, target, context));
 }
 
+std::unique_ptr<vespalib::IDestructorCallback>
+ProviderErrorWrapper::register_resource_usage_listener(spi::IResourceUsageListener& listener)
+{
+    return _impl.register_resource_usage_listener(listener);
+}
+
 spi::Result
 ProviderErrorWrapper::removeEntry(const spi::Bucket& bucket, spi::Timestamp ts, spi::Context& context)
 {
@@ -191,6 +198,12 @@ ProviderErrorWrapper::updateAsync(const spi::Bucket &bucket, spi::Timestamp ts, 
 {
     onComplete->addResultHandler(this);
     _impl.updateAsync(bucket, ts, std::move(upd), context, std::move(onComplete));
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+ProviderErrorWrapper::register_executor(std::shared_ptr<spi::BucketExecutor> executor)
+{
+    return _impl.register_executor(std::move(executor));
 }
 
 } // ns storage

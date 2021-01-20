@@ -18,7 +18,7 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
-#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/transactionlog/client_session.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -109,7 +109,7 @@ TlsMgrWriter::sync(SerialNum syncTo)
     throw IllegalStateException(make_string("Failed to sync TLS to token %" PRIu64 ".", syncTo));
 }
 
-class OnCommitDone : public search::IDestructorCallback {
+class OnCommitDone : public vespalib::IDestructorCallback {
 public:
     OnCommitDone(Executor & executor, std::unique_ptr<Executor::Task> task) noexcept
         : _executor(executor),
@@ -544,7 +544,7 @@ FeedHandler::initiateCommit() {
             }));
     auto commitResult = _tlsWriter->startCommit(onCommitDoneContext);
     if (_activeFeedView) {
-        using KeepAlivePair = search::KeepAlive<std::pair<CommitResult, DoneCallback>>;
+        using KeepAlivePair = vespalib::KeepAlive<std::pair<CommitResult, DoneCallback>>;
         auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
         _activeFeedView->forceCommit(_serialNum, std::make_shared<KeepAlivePair>(std::move(pair)));
     }
@@ -569,7 +569,7 @@ FeedHandler::startCommit(DoneCallback onDone) {
 FeedHandler::CommitResult
 FeedHandler::storeOperationSync(const FeedOperation &op) {
     vespalib::Gate gate;
-    auto commit_result = appendAndCommitOperation(op, make_shared<search::GateCallback>(gate));
+    auto commit_result = appendAndCommitOperation(op, make_shared<vespalib::GateCallback>(gate));
     gate.await();
     return commit_result;
 }
@@ -746,7 +746,7 @@ FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op)
 }
 
 void
-FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx)
+FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx)
 {
     assert(_writeService.master().isCurrentThread());
     op.set_prepare_serial_num(inc_prepare_serial_num());

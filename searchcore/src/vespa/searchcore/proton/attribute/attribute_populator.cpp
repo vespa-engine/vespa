@@ -2,16 +2,16 @@
 
 #include "attribute_populator.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/common/flush_token.h>
-#include <vespa/searchlib/common/gatecallback.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_populator");
 
-using search::IDestructorCallback;
+using vespalib::IDestructorCallback;
 
 namespace proton {
 
@@ -78,7 +78,7 @@ AttributePopulator::handleExisting(uint32_t lid, const std::shared_ptr<document:
     search::SerialNum serialNum(nextSerialNum());
     _writer.put(serialNum, *doc, lid, std::make_shared<PopulateDoneContext>(doc));
     vespalib::Gate gate;
-    _writer.forceCommit(serialNum, std::make_shared<search::GateCallback>(gate));
+    _writer.forceCommit(serialNum, std::make_shared<vespalib::GateCallback>(gate));
     gate.await();
 }
 

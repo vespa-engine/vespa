@@ -50,8 +50,7 @@ public class ReindexingTriggererTest {
     public void testReindexingIsReady() {
         Instant then = Instant.now();
         ApplicationReindexing reindexing = new ApplicationReindexing(true,
-                                                                     new Status(then),
-                                                                     Map.of());
+                                                                     Map.of("c", new Cluster(Map.of(), Map.of("d", new Status(then)))));
 
         Instant now = then;
         assertFalse("Should not be ready less than one half-period after last triggering",
@@ -66,20 +65,16 @@ public class ReindexingTriggererTest {
                    reindexingIsReady(reindexing, now));
 
         reindexing = new ApplicationReindexing(true,
-                                               new Status(then),
                                                Map.of("cluster",
-                                                      new Cluster(new Status(then),
-                                                                  Map.of(),
+                                                      new Cluster(Map.of(),
                                                                   Map.of("type",
                                                                          new Status(then, then, null, null, null, null)))));
         assertFalse("Should not be ready when reindexing is already running",
                     reindexingIsReady(reindexing, now));
 
         reindexing = new ApplicationReindexing(true,
-                                               new Status(then),
                                                Map.of("cluster",
-                                                      new Cluster(new Status(then),
-                                                                  Map.of("type", 123L),
+                                                      new Cluster(Map.of("type", 123L),
                                                                   Map.of("type",
                                                                          new Status(then, then, now, null, null, null)))));
         assertTrue("Should be ready when reindexing is no longer running",

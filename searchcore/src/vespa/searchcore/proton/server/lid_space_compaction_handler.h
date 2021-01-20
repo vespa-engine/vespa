@@ -18,18 +18,18 @@ private:
 public:
     LidSpaceCompactionHandler(const MaintenanceDocumentSubDB& subDb,
                               const vespalib::string& docTypeName);
+    ~LidSpaceCompactionHandler() override;
 
-    // Implements ILidSpaceCompactionHandler
-    virtual vespalib::string getName() const override {
+    vespalib::string getName() const override {
         return _docTypeName + "." + _subDb.name();
     }
-    virtual void set_operation_listener(std::shared_ptr<documentmetastore::OperationListener> op_listener) override;
-    virtual uint32_t getSubDbId() const override { return _subDb.sub_db_id(); }
-    virtual search::LidUsageStats getLidStatus() const override;
-    virtual IDocumentScanIterator::UP getIterator() const override;
-    virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const override;
-    virtual void handleMove(const MoveOperation &op, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<search::IDestructorCallback> compact_done_context) override;
+    void set_operation_listener(std::shared_ptr<documentmetastore::OperationListener> op_listener) override;
+    uint32_t getSubDbId() const override { return _subDb.sub_db_id(); }
+    search::LidUsageStats getLidStatus() const override;
+    IDocumentScanIterator::UP getIterator() const override;
+    MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const override;
+    void handleMove(const MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> doneCtx) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<vespalib::IDestructorCallback> compact_done_context) override;
 };
 
 } // namespace proton

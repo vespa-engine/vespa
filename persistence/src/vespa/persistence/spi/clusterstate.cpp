@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "clusterstate.h"
+#include "bucket.h"
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -13,8 +14,8 @@ ClusterState::ClusterState(const lib::ClusterState& state,
                            uint16_t nodeIndex,
                            const lib::Distribution& distribution)
     : _state(std::make_unique<lib::ClusterState>(state)),
-      _nodeIndex(nodeIndex),
-      _distribution(std::make_unique<lib::Distribution>(distribution.serialize()))
+      _distribution(std::make_unique<lib::Distribution>(distribution.serialize())),
+      _nodeIndex(nodeIndex)
 {
 }
 

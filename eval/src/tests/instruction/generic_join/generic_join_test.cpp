@@ -40,7 +40,10 @@ std::vector<Layout> join_layouts = {
     {x({"a","b","c"}),y(5)},                            {y(5),z({"i","j","k","l"})},
     float_cells({x({"a","b","c"}),y(5)}),               {y(5),z({"i","j","k","l"})},
     {x({"a","b","c"}),y(5)},                            float_cells({y(5),z({"i","j","k","l"})}),
-    float_cells({x({"a","b","c"}),y(5)}),               float_cells({y(5),z({"i","j","k","l"})})
+    float_cells({x({"a","b","c"}),y(5)}),               float_cells({y(5),z({"i","j","k","l"})}),
+    {x({"a","b","c"}),y(5)},                            float_cells({y(5)}),
+    {y(5)},                                             float_cells({x({"a","b","c"}),y(5)}),
+    {x({}),y(5)},                                       float_cells({y(5)})
 };
 
 bool join_address(const TensorSpec::Address &a, const TensorSpec::Address &b, TensorSpec::Address &addr) {

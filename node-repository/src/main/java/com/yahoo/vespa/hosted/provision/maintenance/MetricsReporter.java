@@ -86,6 +86,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     private void updateAllocationMetrics(NodeList nodes) {
         Map<ClusterKey, List<Node>> byCluster = nodes.stream()
                                                      .filter(node -> node.allocation().isPresent())
+                                                     .filter(node -> !node.allocation().get().owner().instance().isTester())
                                                      .collect(Collectors.groupingBy(node -> new ClusterKey(node.allocation().get().owner(), node.allocation().get().membership().cluster().id())));
         byCluster.forEach((clusterKey, allocatedNodes) -> {
             int activeNodes = 0;
@@ -101,7 +102,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             if (activeNodes == 0) { // Cluster has been removed
                 nonActiveFraction = 1;
             } else {
-                nonActiveFraction = (double) nonActiveNodes / (double) activeNodes;
+                nonActiveFraction = (double) nonActiveNodes / ((double) activeNodes + (double) nonActiveNodes);
             }
             Metric.Context context = getContext(dimensions(clusterKey.application, clusterKey.cluster));
             metric.set("nodes.active", activeNodes, context);

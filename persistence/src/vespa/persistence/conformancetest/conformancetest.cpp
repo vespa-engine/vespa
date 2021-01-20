@@ -3,6 +3,7 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/resource_usage_listener.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -14,6 +15,7 @@
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/config-stor-distribution.h>
 #include <algorithm>
 #include <limits>
@@ -2253,6 +2255,18 @@ TEST_F(ConformanceTest, testBucketSpaces)
     assertBucketInfo(*spi, bucket01, 2);
     assertBucketInfo(*spi, bucket11, 1);
     assertBucketInfo(*spi, bucket12, 1);
+}
+
+TEST_F(ConformanceTest, resource_usage)
+{
+    ResourceUsageListener resource_usage_listener;
+    document::TestDocMan testDocMan;
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    EXPECT_EQ(0.0, resource_usage_listener.get_usage().get_disk_usage());
+    EXPECT_EQ(0.0, resource_usage_listener.get_usage().get_memory_usage());
+    auto register_guard = spi->register_resource_usage_listener(resource_usage_listener);
+    EXPECT_EQ(0.5, resource_usage_listener.get_usage().get_disk_usage());
+    EXPECT_EQ(0.4, resource_usage_listener.get_usage().get_memory_usage());
 }
 
 TEST_F(ConformanceTest, detectAndTestOptionalBehavior)

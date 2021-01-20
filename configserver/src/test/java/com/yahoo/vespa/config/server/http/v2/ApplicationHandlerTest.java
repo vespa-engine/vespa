@@ -54,6 +54,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
@@ -78,6 +81,7 @@ import static org.mockito.Mockito.when;
 public class ApplicationHandlerTest {
 
     private static final File testApp = new File("src/test/apps/app");
+    private static final File testAppMultipleClusters = new File("src/test/apps/app-with-multiple-clusters");
     private static final File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
 
     private final static TenantName mytenantName = TenantName.from("mytenant");
@@ -217,44 +221,57 @@ public class ApplicationHandlerTest {
     @Test
     public void testReindex() throws Exception {
         ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
-        reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Reindexing status not found for default.default\"}", 404);
+        reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Application 'default.default' not found\"}", 404);
 
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
-        ApplicationReindexing expected = ApplicationReindexing.ready(clock.instant());
+        applicationRepository.deploy(testAppMultipleClusters, prepareParams(applicationId));
+        ApplicationReindexing expected = ApplicationReindexing.empty();
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "", "{\"message\":\"Reindexing application default.default\"}");
-        expected = expected.withReady(clock.instant());
-        assertEquals(expected,
-                     database.readReindexingStatus(applicationId).orElseThrow());
-
-        clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady(clock.instant());
-        reindex(applicationId, "?clusterId=", "{\"message\":\"Reindexing application default.default\"}");
-        assertEquals(expected,
-                     database.readReindexingStatus(applicationId).orElseThrow());
-
-        clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady(clock.instant());
-        reindex(applicationId, "?documentType=moo", "{\"message\":\"Reindexing application default.default\"}");
-        assertEquals(expected,
-                     database.readReindexingStatus(applicationId).orElseThrow());
-
-        clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo", "{\"message\":\"Reindexing clusters foo, boo of application default.default\"}");
-        expected = expected.withReady("foo", clock.instant())
-                           .withReady("boo", clock.instant());
-        assertEquals(expected,
-                     database.readReindexingStatus(applicationId).orElseThrow());
-
-        clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo&documentType=bar,baz", "{\"message\":\"Reindexing document types bar, baz in clusters foo, boo of application default.default\"}");
-        expected = expected.withReady("foo", "bar", clock.instant())
+        reindex(applicationId, "", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant())
+                           .withReady("foo", "bar", clock.instant())
                            .withReady("foo", "baz", clock.instant())
-                           .withReady("boo", "bar", clock.instant())
-                           .withReady("boo", "baz", clock.instant());
+                           .withReady("foo", "bax", clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "?indexedOnly=true", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        expected = expected.withReady("boo", "bar", clock.instant())
+                           .withReady("foo", "bar", clock.instant())
+                           .withReady("foo", "baz", clock.instant())
+                           .withReady("foo", "bax", clock.instant());
+        reindex(applicationId, "?clusterId=", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        expected = expected.withReady("boo", "bar", clock.instant())
+                           .withReady("foo", "bar", clock.instant());
+        reindex(applicationId, "?documentType=bar", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "?clusterId=foo,boo", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant())
+                           .withReady("foo", "bar", clock.instant())
+                           .withReady("foo", "baz", clock.instant())
+                           .withReady("foo", "bax", clock.instant());
+        assertEquals(expected,
+                     database.readReindexingStatus(applicationId).orElseThrow());
+
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, "?clusterId=foo&documentType=bar,baz", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant())
+                           .withReady("foo", "baz", clock.instant());
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
@@ -273,34 +290,25 @@ public class ApplicationHandlerTest {
         long now = clock.instant().toEpochMilli();
         reindexing(applicationId, GET, "{" +
                                        "  \"enabled\": true," +
-                                       "  \"status\": {" +
-                                       "    \"readyMillis\": " + (now - 2000) +
-                                       "  }," +
                                        "  \"clusters\": {" +
                                        "    \"boo\": {" +
-                                       "      \"status\": {" +
-                                       "        \"readyMillis\": " + (now - 1000) +
-                                       "      }," +
                                        "      \"pending\": {" +
                                        "        \"bar\": 123" +
                                        "      }," +
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
-                                       "          \"readyMillis\": " + now +
+                                       "          \"readyMillis\": " + (now - 1000) +
                                        "        }," +
-                                       "        \"baz\": {" +
-                                       "          \"readyMillis\": " + now +
-                                       "        }" +
                                        "      }" +
                                        "    }," +
                                        "    \"foo\": {" +
-                                       "      \"status\": {" +
-                                       "        \"readyMillis\": " + (now - 1000) +
-                                       "      }," +
                                        "      \"pending\": {}," +
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + now +
+                                       "        }," +
+                                       "        \"bax\": {" +
+                                       "          \"readyMillis\": " + (now - 1000) +
                                        "        }," +
                                        "        \"baz\": {" +
                                        "          \"readyMillis\": " + now +
@@ -452,9 +460,8 @@ public class ApplicationHandlerTest {
     @Test
     public void testReindexingSerialization() throws IOException {
         Instant now = Instant.ofEpochMilli(123456);
-        ApplicationReindexing applicationReindexing = ApplicationReindexing.ready(now.minusSeconds(10))
+        ApplicationReindexing applicationReindexing = ApplicationReindexing.empty()
                                                                            .withPending("foo", "bar", 123L)
-                                                                           .withReady("moo", now.minusSeconds(1))
                                                                            .withReady("moo", "baz", now);
         ClusterReindexing clusterReindexing = new ClusterReindexing(Map.of("bax", new Status(now, null, null, null, null),
                                                                            "baz", new Status(now.plusSeconds(1),
@@ -462,18 +469,21 @@ public class ApplicationHandlerTest {
                                                                                              ClusterReindexing.State.FAILED,
                                                                                              "message",
                                                                                              0.1)));
-        assertJsonEquals(getRenderedString(new ReindexingResponse(applicationReindexing,
+        Map<String, Set<String>> documentTypes = new TreeMap<>(Map.of("boo", new TreeSet<>(Set.of("bar", "baz", "bax")),
+                                                                      "foo", new TreeSet<>(Set.of("bar", "hax")),
+                                                                      "moo", new TreeSet<>(Set.of("baz", "bax"))));
+
+        assertJsonEquals(getRenderedString(new ReindexingResponse(documentTypes,
+                                                                  applicationReindexing,
                                                                   Map.of("boo", clusterReindexing,
                                                                          "moo", clusterReindexing))),
                          "{\n" +
                          "  \"enabled\": true,\n" +
-                         "  \"status\": {\n" +
-                         "    \"readyMillis\": 113456\n" +
-                         "  },\n" +
                          "  \"clusters\": {\n" +
                          "    \"boo\": {\n" +
                          "      \"pending\": {},\n" +
                          "      \"ready\": {\n" +
+                         "        \"bar\": {},\n" +
                          "        \"bax\": {\n" +
                          "          \"startedMillis\": 123456\n" +
                          "        },\n" +
@@ -490,14 +500,17 @@ public class ApplicationHandlerTest {
                          "      \"pending\": {\n" +
                          "        \"bar\": 123\n" +
                          "      },\n" +
-                         "      \"ready\": {},\n" +
-                         "      \"status\": {\n" +
-                         "        \"readyMillis\": 113456\n" +
-                         "      }\n" +
+                         "      \"ready\": {\n" +
+                         "        \"bar\": {},\n" +
+                         "        \"hax\": {}\n" +
+                         "      },\n" +
                          "    },\n" +
                          "    \"moo\": {\n" +
                          "      \"pending\": {},\n" +
                          "      \"ready\": {\n" +
+                         "        \"bax\": {\n" +
+                         "          \"startedMillis\": 123456\n" +
+                         "        },\n" +
                          "        \"baz\": {\n" +
                          "          \"readyMillis\": 123456,\n" +
                          "          \"startedMillis\": 124456,\n" +
@@ -505,13 +518,7 @@ public class ApplicationHandlerTest {
                          "          \"state\": \"failed\",\n" +
                          "          \"message\": \"message\",\n" +
                          "          \"progress\": 0.1\n" +
-                         "        },\n" +
-                         "        \"bax\": {\n" +
-                         "          \"startedMillis\": 123456\n" +
                          "        }\n" +
-                         "      },\n" +
-                         "      \"status\": {\n" +
-                         "        \"readyMillis\": 122456\n" +
                          "      }\n" +
                          "    }\n" +
                          "  }\n" +

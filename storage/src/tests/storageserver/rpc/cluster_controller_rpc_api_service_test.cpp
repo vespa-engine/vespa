@@ -157,6 +157,15 @@ TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_states_rpc_with_deri
     f.assert_request_received_and_propagated(spaces_bundle);
 }
 
+TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_states_rpc_with_feed_block_state) {
+    SetStateFixture f;
+    lib::ClusterStateBundle bundle(
+            lib::ClusterState("version:123 distributor:3 storage:3"), {},
+            lib::ClusterStateBundle::FeedBlock(true, "full disk"), true);
+
+    f.assert_request_received_and_propagated(bundle);
+}
+
 TEST_F(ClusterControllerApiRpcServiceTest, compressed_bundle_is_transparently_uncompressed) {
     SetStateFixture f;
     auto state_str = make_compressable_state_string();

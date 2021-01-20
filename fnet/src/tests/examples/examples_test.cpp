@@ -115,13 +115,14 @@ TEST_MT_F("ping", 2, std::atomic<bool>()) {
 TEST_MT_F("ping times out", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
         ChildProcess proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
-                                             PORT0).c_str());
+                                                PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
+        float timeout_s = 0.1;
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
-                                                  PORT0).c_str()));
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d %f",
+                                                  PORT0, timeout_s).c_str()));
         f1 = true;
     }
 }
@@ -129,12 +130,12 @@ TEST_MT_F("ping times out", 2, std::atomic<bool>()) {
 TEST_MT_F("ping with proxy", 3, std::atomic<bool>()) {
     if (thread_id == 0) {
         ChildProcess proc(vespalib::make_string("exec ../../examples/ping/fnet_pingserver_app tcp/%d",
-                                             PORT0).c_str());
+                                                PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else if (thread_id == 1) {
         ChildProcess proc(vespalib::make_string("exec ../../examples/proxy/fnet_proxy_app tcp/%d tcp/localhost:%d",
-                                             PORT1, PORT0).c_str());
+                                                PORT1, PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {
@@ -148,7 +149,7 @@ TEST_MT_F("ping with proxy", 3, std::atomic<bool>()) {
 TEST_MT_F("rpc client server", 2, std::atomic<bool>()) {
     if (thread_id == 0) {
         ChildProcess proc(vespalib::make_string("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
-                                             PORT0).c_str());
+                                                PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else {

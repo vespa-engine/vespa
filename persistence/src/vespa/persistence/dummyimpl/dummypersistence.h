@@ -175,6 +175,8 @@ public:
 
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 
+    std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) override;
+
     /**
      * The following methods are used only for unit testing.
      * DummyPersistence is used many places to test the framework around it.

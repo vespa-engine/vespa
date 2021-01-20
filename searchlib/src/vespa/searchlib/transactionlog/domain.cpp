@@ -213,6 +213,11 @@ Domain::triggerSyncNow(std::unique_ptr<vespalib::Executor::Task> done_sync_task)
         std::unique_lock guard(_currentChunkMonitor);
         commitAndTransferResponses(guard);
     }
+    if (done_sync_task) {
+        // Need to protect against being called from the _singleCommitter as that will cause a deadlock
+        // That is done from Domain::commitChunk.lamdba->Domain::doCommit()->optionallyRotateFile->triggerSyncNow({})
+        _singleCommitter->sync();
+    }
     std::unique_lock guard(_syncMonitor);
     if (done_sync_task) {
         _done_sync_tasks.push_back(std::move(done_sync_task));

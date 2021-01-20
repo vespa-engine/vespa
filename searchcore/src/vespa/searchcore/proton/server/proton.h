@@ -16,7 +16,6 @@
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
-#include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
 #include <vespa/vespalib/net/component_config_producer.h>
@@ -32,6 +31,8 @@
 namespace vespalib { class StateServer; }
 namespace search::transactionlog { class TransLogServerApp; }
 namespace metrics { class MetricLockGuard; }
+namespace storage::spi { class PersistenceProvider; }
+
 namespace proton {
 
 class DiskMemUsageSampler;
@@ -42,6 +43,7 @@ class SummaryEngine;
 class DocsumBySlime;
 class FlushEngine;
 class MatchEngine;
+class PersistenceEngine;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -83,7 +85,7 @@ private:
     ProtonFileHeaderContext              _fileHeaderContext;
     std::unique_ptr<TLS>                 _tls;
     std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
-    PersistenceEngine::UP           _persistenceEngine;
+    std::unique_ptr<PersistenceEngine>   _persistenceEngine;
     DocumentDBMap                   _documentDBMap;
     std::unique_ptr<MatchEngine>    _matchEngine;
     std::unique_ptr<SummaryEngine>  _summaryEngine;
@@ -206,7 +208,7 @@ public:
     bool isInitializing() const override { return _isInitializing; }
 
     bool hasAbortedInit() const { return _abortInit; }
-    storage::spi::PersistenceProvider & getPersistence() { return *_persistenceEngine; }
+    storage::spi::PersistenceProvider & getPersistence();
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     std::vector<vespalib::string> get_children_names() const override;

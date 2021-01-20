@@ -70,7 +70,9 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         if (suggestion.isEmpty()) return false;
         // Wait only a short time for the lock to avoid interfering with change deployments
         try (Mutex lock = nodeRepository().lock(applicationId, Duration.ofSeconds(1))) {
-            applications().get(applicationId).ifPresent(a -> storeSuggestion(suggestion.target(), clusterId, a, lock));
+            // empty suggested resources == keep the current allocation, so we record that
+            var suggestedResources = suggestion.target().orElse(clusterNodes.not().retired().toResources());
+            applications().get(applicationId).ifPresent(a -> updateSuggestion(suggestedResources, clusterId, a, lock));
             return true;
         }
         catch (ApplicationLockException e) {
@@ -78,13 +80,23 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
-    private void storeSuggestion(Optional<ClusterResources> suggestion,
-                                 ClusterSpec.Id clusterId,
-                                 Application application,
-                                 Mutex lock) {
+    private void updateSuggestion(ClusterResources suggestion,
+                                  ClusterSpec.Id clusterId,
+                                  Application application,
+                                  Mutex lock) {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
-        applications().put(application.with(cluster.get().withSuggested(suggestion)), lock);
+        var at = nodeRepository().clock().instant();
+        var currentSuggestion = cluster.get().suggestedResources();
+        if (currentSuggestion.isEmpty()
+            || currentSuggestion.get().at().isBefore(at.minus(Duration.ofDays(7)))
+            || isHigher(suggestion, currentSuggestion.get().resources()))
+            applications().put(application.with(cluster.get().withSuggested(Optional.of(new Cluster.Suggestion(suggestion,  at)))), lock);
+    }
+
+    private boolean isHigher(ClusterResources r1, ClusterResources r2) {
+        // Use cost as a measure of "highness" over multiple dimensions
+        return r1.totalResources().cost() > r2.totalResources().cost();
     }
 
     private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {

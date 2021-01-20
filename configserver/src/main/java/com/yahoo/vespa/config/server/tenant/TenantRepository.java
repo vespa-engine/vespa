@@ -475,6 +475,7 @@ public class TenantRepository {
         return tenants.containsKey(tenant);
     }
 
+    /** Returns the tenant with the given name, or {@code null} if this does not exist. */
     public Tenant getTenant(TenantName tenantName) {
         return tenants.get(tenantName);
     }

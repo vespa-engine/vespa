@@ -73,7 +73,7 @@ namespace {
 void
 myPushDocument(DocumentInverter &inv)
 {
-    inv.pushDocuments(std::shared_ptr<IDestructorCallback>());
+    inv.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
 }
 
 }

@@ -64,6 +64,11 @@ public class ClusterResources {
         return new ClusterResources(nodes, groups, nodeResources.justNumbers());
     }
 
+    /** Returns the standard cost of these resources, in dollars per hour */
+    public double cost() {
+        return nodes * nodeResources.cost();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;

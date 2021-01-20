@@ -2,6 +2,7 @@
 
 #include "bucketprocessor.h"
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
 #include <stdexcept>

@@ -8,7 +8,7 @@
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <cassert>
@@ -117,7 +117,7 @@ public:
         _feed_view_ptr->handlePruneRemovedDocuments(op);
     }
     void replay(const MoveOperation &op) override {
-        _feed_view_ptr->handleMove(op, search::IDestructorCallback::SP());
+        _feed_view_ptr->handleMove(op, vespalib::IDestructorCallback::SP());
     }
     void replay(const CreateBucketOperation &) override {
     }

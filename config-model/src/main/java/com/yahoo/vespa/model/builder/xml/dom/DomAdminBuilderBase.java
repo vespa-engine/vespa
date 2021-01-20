@@ -42,7 +42,9 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     private final FileRegistry fileRegistry;
     protected final boolean multitenant;
 
-    DomAdminBuilderBase(ApplicationType applicationType, FileRegistry fileRegistry, boolean multitenant,
+    DomAdminBuilderBase(ApplicationType applicationType,
+                        FileRegistry fileRegistry,
+                        boolean multitenant,
                         List<ConfigServerSpec> configServerSpecs) {
         this.applicationType = applicationType;
         this.fileRegistry = fileRegistry;
@@ -50,7 +52,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         this.configServerSpecs = configServerSpecs;
     }
 
-    List<Configserver> getConfigServersFromSpec(DeployLogger deployLogger, AbstractConfigProducer parent) {
+    List<Configserver> getConfigServersFromSpec(DeployLogger deployLogger, AbstractConfigProducer<?> parent) {
         List<Configserver> configservers = new ArrayList<>();
         for (ConfigServerSpec spec : configServerSpecs) {
             HostSystem hostSystem = parent.hostSystem();

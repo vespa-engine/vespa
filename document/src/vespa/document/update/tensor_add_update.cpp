@@ -83,10 +83,15 @@ TensorAddUpdate::checkCompatibility(const Field& field) const
 std::unique_ptr<vespalib::eval::Value>
 TensorAddUpdate::applyTo(const vespalib::eval::Value &tensor) const
 {
-    auto addTensor = _tensor->getAsTensorPtr();
-    if (addTensor) {
-        const auto &factory = FastValueBuilderFactory::get();
-        return TensorPartialUpdate::add(tensor, *addTensor, factory);
+    return apply_to(tensor, FastValueBuilderFactory::get());
+}
+
+std::unique_ptr<vespalib::eval::Value>
+TensorAddUpdate::apply_to(const Value &old_tensor,
+                          const ValueBuilderFactory &factory) const
+{
+    if (auto addTensor = _tensor->getAsTensorPtr()) {
+        return TensorPartialUpdate::add(old_tensor, *addTensor, factory);
     }
     return {};
 }
@@ -98,6 +103,7 @@ TensorAddUpdate::applyTo(FieldValue& value) const
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         tensorFieldValue.make_empty_if_not_existing();
         auto oldTensor = tensorFieldValue.getAsTensorPtr();
+        assert(oldTensor);
         auto newTensor = applyTo(*oldTensor);
         if (newTensor) {
             tensorFieldValue = std::move(newTensor);

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 
 namespace proton {
@@ -14,7 +14,7 @@ namespace proton {
  * a larger task before dropping the shared pointer, triggering the
  * ack when all worker threads have completed.
  */
-class OperationDoneContext : public search::IDestructorCallback
+class OperationDoneContext : public vespalib::IDestructorCallback
 {
     FeedToken _token;
 protected:

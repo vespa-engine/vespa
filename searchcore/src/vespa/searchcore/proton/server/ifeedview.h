@@ -7,7 +7,7 @@
 
 namespace document { class DocumentTypeRepo; }
 
-namespace search { class IDestructorCallback; }
+namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
@@ -29,7 +29,7 @@ protected:
     IFeedView() = default;
 public:
     using SP = std::shared_ptr<IFeedView>;
-    using DoneCallback = std::shared_ptr<search::IDestructorCallback>;
+    using DoneCallback = std::shared_ptr<vespalib::IDestructorCallback>;
 
     IFeedView(const IFeedView &) = delete;
     IFeedView & operator = (const IFeedView &) = delete;
