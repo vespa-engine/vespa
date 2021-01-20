@@ -18,6 +18,8 @@ import java.util.StringTokenizer;
  */
 public class NodeState implements Cloneable {
 
+    public static final String ORCHESTRATOR_RESERVED_DESCRIPTION = "Orchestrator";
+
     private final NodeType type;
     private State state = State.UP;
     private String description = "";
