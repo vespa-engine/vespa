@@ -32,7 +32,7 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -42,6 +42,7 @@ import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
@@ -121,14 +122,17 @@ public class ApplicationRepositoryTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        InMemoryFlagSource flagSource = new InMemoryFlagSource();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
                 .configServerConfig(configserverConfig)
-                .flagSource(flagSource)
                 .clock(clock)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withCurator(curator)
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .withFlagSource(flagSource)
+                .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);

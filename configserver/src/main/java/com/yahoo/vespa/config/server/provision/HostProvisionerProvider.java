@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.provision;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -42,18 +42,15 @@ public class HostProvisionerProvider {
     }
 
     // for testing
-    public static HostProvisionerProvider withProvisioner(Provisioner provisioner) {
-        ComponentRegistry<Provisioner> registry = new ComponentRegistry<>();
-        registry.register(ComponentId.createAnonymousComponentId("foobar"), provisioner);
-        return new HostProvisionerProvider(registry, new ConfigserverConfig(new ConfigserverConfig.Builder().hostedVespa(true)));
+    public static HostProvisionerProvider withProvisioner(Provisioner provisioner, boolean hostedVespa) {
+        return withProvisioner(provisioner, new ConfigserverConfig(new ConfigserverConfig.Builder().hostedVespa(hostedVespa)));
     }
 
-    /** Creates either an empty provider or a provider having the given provisioner */
-    public static HostProvisionerProvider from(Optional<Provisioner> provisioner) {
-        if (provisioner.isPresent())
-            return withProvisioner(provisioner.get());
-        else
-            return empty();
+    // for testing
+    public static HostProvisionerProvider withProvisioner(Provisioner provisioner, ConfigserverConfig config) {
+        ComponentRegistry<Provisioner> registry = new ComponentRegistry<>();
+        registry.register(ComponentId.createAnonymousComponentId("foobar"), provisioner);
+        return new HostProvisionerProvider(registry, config);
     }
 
 }

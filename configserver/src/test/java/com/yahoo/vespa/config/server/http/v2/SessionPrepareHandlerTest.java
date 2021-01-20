@@ -19,11 +19,11 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
@@ -77,12 +77,14 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
                 .configServerConfig(configserverConfig)
                 .build();
         Clock clock = componentRegistry.getClock();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
-        tenantRepository = new TenantRepository(componentRegistry, new HostRegistry());
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withCurator(curator)
+                .build();
         tenantRepository.addTenant(tenant);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

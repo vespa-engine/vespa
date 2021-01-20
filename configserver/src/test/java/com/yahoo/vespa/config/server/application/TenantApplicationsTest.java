@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
@@ -55,6 +56,7 @@ public class TenantApplicationsTest {
     private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
 
     private final MockReloadListener listener = new MockReloadListener();
+    private Curator curator;
     private CuratorFramework curatorFramework;
     private TestComponentRegistry componentRegistry;
     private TenantApplications applications;
@@ -64,23 +66,26 @@ public class TenantApplicationsTest {
 
     @Before
     public void setup() throws IOException {
-        Curator curator = new MockCurator();
+        curator = new MockCurator();
         curatorFramework = curator.framework();
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
+                .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
+                .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
+                .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .curator(curator)
-                .configServerConfig(new ConfigserverConfig.Builder()
-                                            .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
-                                            .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
-                                            .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
-                                            .build())
+                .configServerConfig(configserverConfig)
                 .modelFactoryRegistry(createRegistry())
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry, hostRegistry);
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withCurator(curator)
+                .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
-        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName);
+        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);
     }
 
     @Test
@@ -173,7 +178,7 @@ public class TenantApplicationsTest {
 
     @Test
     public void testListConfigs() throws IOException, SAXException {
-        applications = TenantApplications.create(componentRegistry, new HostRegistry(), TenantName.defaultName());
+        applications = TenantApplications.create(componentRegistry, new HostRegistry(), TenantName.defaultName(), new MockCurator());
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -208,7 +213,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName);
+        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator);
     }
 
     private static ApplicationId createApplicationId(String name) {

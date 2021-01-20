@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
@@ -87,12 +88,15 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     // For testing only
-    public static TenantApplications create(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry, TenantName tenantName) {
+    public static TenantApplications create(GlobalComponentRegistry componentRegistry,
+                                            HostRegistry hostRegistry,
+                                            TenantName tenantName,
+                                            Curator curator) {
         return new TenantApplications(tenantName,
-                                      componentRegistry.getCurator(),
-                                      componentRegistry.getZkWatcherExecutor(),
-                                      componentRegistry.getZkCacheExecutor(),
-                                      componentRegistry.getMetrics(),
+                                      curator,
+                                      new StripedExecutor<>(new InThreadExecutorService()),
+                                      new InThreadExecutorService(),
+                                      Metrics.createTestMetrics(),
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),
                                       hostRegistry,

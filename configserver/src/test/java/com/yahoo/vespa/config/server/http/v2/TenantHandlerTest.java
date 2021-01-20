@@ -1,39 +1,40 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.MockProvisioner;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
+import com.yahoo.vespa.config.server.http.BadRequestException;
+import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
-import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.curator.mock.MockCurator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-
-import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.jdisc.http.HttpRequest.Method;
-import com.yahoo.vespa.config.server.http.BadRequestException;
-import com.yahoo.vespa.config.server.http.NotFoundException;
-import org.junit.rules.TemporaryFolder;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class TenantHandlerTest {
 
@@ -54,12 +55,10 @@ public class TenantHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
-                                                        .curator(new MockCurator())
-                                                        .configServerConfig(configserverConfig)
-                                                        .build(),
-                                                new HostRegistry());
-
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .configServerConfig(configserverConfig)
+                .build();
+        tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())

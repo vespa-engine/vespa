@@ -26,14 +26,16 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
@@ -263,7 +265,7 @@ public class DeployTester {
         private Provisioner provisioner;
         private ConfigserverConfig configserverConfig;
         private Zone zone;
-        private Curator curator;
+        private Curator curator = new MockCurator();
         private Metrics metrics;
         private List<ModelFactory> modelFactories;
         private Orchestrator orchestrator;
@@ -284,13 +286,18 @@ public class DeployTester {
             TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder()
                     .clock(clock)
                     .configServerConfig(configserverConfig)
-                    .curator(Optional.ofNullable(curator).orElseGet(MockCurator::new))
                     .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-                    .metrics(Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics))
                     .zone(zone);
-            if (configserverConfig.hostedVespa()) testComponentRegistryBuilder.provisioner(provisioner);
 
-            TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build(), new HostRegistry());
+            TestTenantRepository.Builder builder = new TestTenantRepository.Builder()
+                    .withComponentRegistry(testComponentRegistryBuilder.build())
+                    .withCurator(curator)
+                    .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
+                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig));
+
+            if (configserverConfig.hostedVespa()) builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true));
+
+            TenantRepository tenantRepository = builder.build();
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

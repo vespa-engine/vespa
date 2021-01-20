@@ -6,20 +6,28 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.flags.FlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -82,10 +90,14 @@ public class TenantRepository {
     private final HostRegistry hostRegistry;
     private final List<TenantListener> tenantListeners = Collections.synchronizedList(new ArrayList<>());
     private final Curator curator;
-
+    private final Metrics metrics;
     private final MetricUpdater metricUpdater;
     private final ExecutorService zkCacheExecutor;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
+    private final FileDistributionFactory fileDistributionFactory;
+    private final FlagSource flagSource;
+    private final SecretStore secretStore;
+    private final HostProvisionerProvider hostProvisionerProvider;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -97,17 +109,51 @@ public class TenantRepository {
      * @param componentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      */
     @Inject
-    public TenantRepository(GlobalComponentRegistry componentRegistry, HostRegistry hostRegistry) {
+    public TenantRepository(GlobalComponentRegistry componentRegistry,
+                            HostRegistry hostRegistry,
+                            Curator curator,
+                            Metrics metrics,
+                            FlagSource flagSource,
+                            SecretStore secretStore,
+                            HostProvisionerProvider hostProvisionerProvider) {
+        this(componentRegistry,
+             hostRegistry,
+             curator,
+             metrics,
+             new StripedExecutor<>(),
+             new FileDistributionFactory(componentRegistry.getConfigserverConfig()),
+             flagSource,
+             Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
+             secretStore,
+             hostProvisionerProvider);
+    }
+
+    public TenantRepository(GlobalComponentRegistry componentRegistry,
+                            HostRegistry hostRegistry,
+                            Curator curator,
+                            Metrics metrics,
+                            StripedExecutor<TenantName> zkWatcherExecutor,
+                            FileDistributionFactory fileDistributionFactory,
+                            FlagSource flagSource,
+                            ExecutorService zkCacheExecutor,
+                            SecretStore secretStore,
+                            HostProvisionerProvider hostProvisionerProvider) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                               new DaemonThreadFactory("bootstrap tenants"));
-        this.curator = componentRegistry.getCurator();
-        metricUpdater = componentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
+        this.curator = curator;
+        this.metrics = metrics;
+        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(componentRegistry.getTenantListener());
-        this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
-        this.zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
+        this.zkCacheExecutor = zkCacheExecutor;
+        this.zkWatcherExecutor = zkWatcherExecutor;
+        this.fileDistributionFactory = fileDistributionFactory;
+        this.flagSource = flagSource;
+        this.secretStore = secretStore;
+        this.hostProvisionerProvider = hostProvisionerProvider;
+
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -226,18 +272,37 @@ public class TenantRepository {
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
                                        curator,
-                                       componentRegistry.getZkWatcherExecutor(),
-                                       componentRegistry.getZkCacheExecutor(),
-                                       componentRegistry.getMetrics(),
+                                       zkWatcherExecutor,
+                                       zkCacheExecutor,
+                                       metrics,
                                        componentRegistry.getReloadListener(),
                                        componentRegistry.getConfigserverConfig(),
                                        hostRegistry,
                                        new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                        componentRegistry.getClock());
+        PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(componentRegistry.getConfigserverConfig());
+        SessionPreparer sessionPreparer = new SessionPreparer(componentRegistry.getModelFactoryRegistry(),
+                                                              fileDistributionFactory,
+                                                              hostProvisionerProvider,
+                                                              permanentApplicationPackage,
+                                                              componentRegistry.getConfigserverConfig(),
+                                                              componentRegistry.getStaticConfigDefinitionRepo(),
+                                                              curator,
+                                                              componentRegistry.getZone(),
+                                                              flagSource,
+                                                              secretStore);
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     componentRegistry,
                                                                     applicationRepo,
-                                                                    componentRegistry.getSessionPreparer());
+                                                                    sessionPreparer,
+                                                                    curator,
+                                                                    metrics,
+                                                                    zkWatcherExecutor,
+                                                                    permanentApplicationPackage,
+                                                                    flagSource,
+                                                                    zkCacheExecutor,
+                                                                    secretStore,
+                                                                    hostProvisionerProvider);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

@@ -28,6 +28,7 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.After;
 import org.junit.rules.TemporaryFolder;
@@ -90,7 +91,10 @@ public class RpcTester implements AutoCloseable {
                 .configServerConfig(configserverConfig)
                 .reloadListener(rpcServer)
                 .build();
-        tenantRepository = new TenantRepository(componentRegistry, hostRegistry);
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withHostRegistry(hostRegistry)
+                .build();
         tenantRepository.addTenant(tenantName);
         startRpcServer();
         applicationRepository = new ApplicationRepository.Builder()

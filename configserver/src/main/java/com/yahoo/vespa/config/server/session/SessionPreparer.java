@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
@@ -80,7 +79,6 @@ public class SessionPreparer {
     private final SecretStore secretStore;
     private final FlagSource flagSource;
 
-    @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
                            FileDistributionFactory fileDistributionFactory,
                            HostProvisionerProvider hostProvisionerProvider,

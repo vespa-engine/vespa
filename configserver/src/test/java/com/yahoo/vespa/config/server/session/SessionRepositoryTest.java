@@ -20,10 +20,11 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
@@ -82,22 +83,26 @@ public class SessionRepositoryTest {
     private void setup(FlagSource flagSource, TestComponentRegistry.Builder componentRegistryBuilder) throws Exception {
         curator = new MockCurator();
         File configserverDbDir = temporaryFolder.newFolder().getAbsoluteFile();
-        GlobalComponentRegistry globalComponentRegistry = componentRegistryBuilder
-                .curator(curator)
-                .configServerConfig(new ConfigserverConfig.Builder()
-                                            .configServerDBDir(configserverDbDir.getAbsolutePath())
-                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
-                                            .sessionLifetime(5)
-                                            .build())
-                .flagSource(flagSource)
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(configserverDbDir.getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                .sessionLifetime(5)
                 .build();
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry());
+        GlobalComponentRegistry globalComponentRegistry = componentRegistryBuilder
+                .configServerConfig(configserverConfig)
+                .build();
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(globalComponentRegistry)
+                .withCurator(curator)
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .build();
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
+                .withFlagSource(flagSource)
                 .build();
         sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
     }

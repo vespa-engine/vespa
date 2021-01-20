@@ -1,8 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -13,16 +15,22 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.MockProvisioner;
+import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.After;
 import org.junit.Before;
@@ -49,7 +57,6 @@ public class TenantRepositoryTest {
     private static final TenantName tenant3 = TenantName.from("tenant3");
 
     private TenantRepository tenantRepository;
-    private TestComponentRegistry globalComponentRegistry;
     private TenantApplicationsTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
@@ -63,11 +70,13 @@ public class TenantRepositoryTest {
     @Before
     public void setupSessions() {
         curator = new MockCurator();
-        globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
-        listener = (TenantApplicationsTest.MockReloadListener)globalComponentRegistry.getReloadListener();
-        tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
+        TestComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().build();
+        listener = (TenantApplicationsTest.MockReloadListener) globalComponentRegistry.getReloadListener();
+        tenantListener = (MockTenantListener) globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
-        tenantRepository = new TenantRepository(globalComponentRegistry, new HostRegistry());
+        tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(globalComponentRegistry)
+                                                             .withCurator(curator)
+                                                             .build();
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
@@ -185,13 +194,11 @@ public class TenantRepositoryTest {
     }
 
     private void assertZooKeeperTenantPathExists(TenantName tenantName) throws Exception {
-        assertNotNull(globalComponentRegistry.getCurator().framework()
-                              .checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
+        assertNotNull(curator.framework().checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
     }
 
     private GlobalComponentRegistry createComponentRegistry() throws IOException {
         return new TestComponentRegistry.Builder()
-                .curator(new MockCurator())
                 .configServerConfig(new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                                    .configDefinitionsDir(temporaryFolder.newFolder("configdefs").getAbsolutePath())
                                                                    .configServerDBDir(temporaryFolder.newFolder("configserverdb").getAbsolutePath())))
@@ -201,8 +208,17 @@ public class TenantRepositoryTest {
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
-        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry) {
-            super(globalComponentRegistry, new HostRegistry());
+        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry componentRegistry) {
+            super(componentRegistry,
+                  new HostRegistry(),
+                  new MockCurator(),
+                  Metrics.createTestMetrics(),
+                  new StripedExecutor<>(new InThreadExecutorService()),
+                  new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
+                  new InMemoryFlagSource(),
+                  new InThreadExecutorService(),
+                  new MockSecretStore(),
+                  HostProvisionerProvider.withProvisioner(new MockProvisioner(), false));
         }
 
         @Override

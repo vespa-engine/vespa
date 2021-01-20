@@ -65,21 +65,27 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   long applicationGeneration,
                                   SessionZooKeeperClient zkClient,
                                   Optional<ApplicationSet> currentActiveApplicationSet,
-                                  GlobalComponentRegistry globalComponentRegistry) {
+                                  GlobalComponentRegistry globalComponentRegistry,
+                                  Curator curator,
+                                  Metrics metrics,
+                                  PermanentApplicationPackage permanentApplicationPackage,
+                                  FlagSource flagSource,
+                                  SecretStore secretStore,
+                                  HostProvisionerProvider hostProvisionerProvider) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               globalComponentRegistry.getConfigserverConfig(),
               globalComponentRegistry.getZone(),
-              HostProvisionerProvider.from(globalComponentRegistry.getHostProvisioner()));
+              hostProvisionerProvider);
         this.tenant = tenant;
         this.applicationGeneration = applicationGeneration;
         this.zkClient = zkClient;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
-        this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
+        this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = globalComponentRegistry.getStaticConfigDefinitionRepo();
-        this.metrics = globalComponentRegistry.getMetrics();
-        this.curator = globalComponentRegistry.getCurator();
-        this.flagSource = globalComponentRegistry.getFlagSource();
-        this.secretStore = globalComponentRegistry.getSecretStore();
+        this.metrics = metrics;
+        this.curator = curator;
+        this.flagSource = flagSource;
+        this.secretStore = secretStore;
     }
 
     @Override

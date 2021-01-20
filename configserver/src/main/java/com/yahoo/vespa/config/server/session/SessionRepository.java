@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -11,6 +12,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.io.IOUtils;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
@@ -20,6 +22,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -27,11 +30,13 @@ import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.FlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -54,6 +59,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -81,34 +87,55 @@ public class SessionRepository {
     private final Clock clock;
     private final Curator curator;
     private final Executor zkWatcherExecutor;
+    private final PermanentApplicationPackage permanentApplicationPackage;
+    private final FlagSource flagSource;
     private final TenantFileSystemDirs tenantFileSystemDirs;
-    private final MetricUpdater metrics;
+    private final Metrics metrics;
+    private final MetricUpdater metricUpdater;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
     private final GlobalComponentRegistry componentRegistry;
+    private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
+    private final SecretStore secretStore;
+    private final HostProvisionerProvider hostProvisionerProvider;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
                              TenantApplications applicationRepo,
-                             SessionPreparer sessionPreparer) {
+                             SessionPreparer sessionPreparer,
+                             Curator curator,
+                             Metrics metrics,
+                             StripedExecutor<TenantName> zkWatcherExecutor,
+                             PermanentApplicationPackage permanentApplicationPackage,
+                             FlagSource flagSource,
+                             ExecutorService zkCacheExecutor,
+                             SecretStore secretStore,
+                             HostProvisionerProvider hostProvisionerProvider) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
-        sessionCounter = new SessionCounter(componentRegistry.getConfigCurator(), tenantName);
+        this.configCurator = ConfigCurator.create(curator);
+        sessionCounter = new SessionCounter(configCurator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = componentRegistry.getClock();
-        this.curator = componentRegistry.getCurator();
+        this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
-        this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
+        this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
+        this.permanentApplicationPackage = permanentApplicationPackage;
+        this.flagSource = flagSource;
         this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
-        this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        this.metrics = metrics;
+        this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        this.secretStore = secretStore;
+        this.hostProvisionerProvider = hostProvisionerProvider;
+
         loadSessions(); // Needs to be done before creating cache below
-        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
+        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
@@ -348,7 +375,7 @@ public class SessionRepository {
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
         remoteSessionCache.remove(sessionId);
-        metrics.incRemovedSessions();
+        metricUpdater.incRemovedSessions();
     }
 
     private void loadSessionIfActive(RemoteSession session) {
@@ -425,7 +452,13 @@ public class SessionRepository {
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
                                                                     previousApplicationSet,
-                                                                    componentRegistry);
+                                                                    componentRegistry,
+                                                                    curator,
+                                                                    metrics,
+                                                                    permanentApplicationPackage,
+                                                                    flagSource,
+                                                                    secretStore,
+                                                                    hostProvisionerProvider);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
@@ -443,10 +476,10 @@ public class SessionRepository {
             for (Session session : remoteSessionCache.values()) {
                 sessionMetrics.add(session.getStatus());
             }
-            metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
-            metrics.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
-            metrics.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
-            metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
+            metricUpdater.setNewSessions(sessionMetrics.count(Session.Status.NEW));
+            metricUpdater.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
+            metricUpdater.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
+            metricUpdater.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
         });
     }
 
@@ -507,7 +540,7 @@ public class SessionRepository {
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
         Path sessionPath = getSessionPath(sessionId);
-        if (componentRegistry.getConfigCurator().exists(sessionPath.getAbsolute())) {
+        if (configCurator.exists(sessionPath.getAbsolute())) {
             throw new IllegalArgumentException("Path " + sessionPath.getAbsolute() + " already exists in ZooKeeper");
         }
     }
@@ -677,7 +710,7 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = componentRegistry.getConfigserverConfig().serverId();
-        return new SessionZooKeeperClient(curator, componentRegistry.getConfigCurator(), tenantName, sessionId, serverId);
+        return new SessionZooKeeperClient(curator, configCurator, tenantName, sessionId, serverId);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {
@@ -697,7 +730,7 @@ public class SessionRepository {
         if (sessionStateWatcher == null) {
             Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
-            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metrics, zkWatcherExecutor, this));
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metricUpdater, zkWatcherExecutor, this));
         } else {
             sessionStateWatcher.updateRemoteSession(remoteSession);
         }
