@@ -298,7 +298,8 @@ public class DeployTester {
                                                                      Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics),
                                                                      new StripedExecutor<>(new InThreadExecutorService()),
                                                                      new MockFileDistributionFactory(configserverConfig),
-                                                                     new InMemoryFlagSource());
+                                                                     new InMemoryFlagSource(),
+                                                                     new InThreadExecutorService());
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

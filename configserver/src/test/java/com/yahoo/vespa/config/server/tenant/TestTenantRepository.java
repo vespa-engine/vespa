@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -23,10 +22,16 @@ public class TestTenantRepository extends TenantRepository {
                                 HostRegistry hostRegistry,
                                 Curator curator,
                                 Metrics metrics,
-                                StripedExecutor<TenantName> zkWatcherExecutor,
                                 FileDistributionFactory fileDistributionFactory,
                                 FlagSource flagSource) {
-        super(componentRegistry, hostRegistry, curator, metrics, zkWatcherExecutor, fileDistributionFactory, flagSource);
+        super(componentRegistry,
+              hostRegistry,
+              curator,
+              metrics,
+              new StripedExecutor<>(new InThreadExecutorService()),
+              fileDistributionFactory,
+              flagSource,
+              new InThreadExecutorService());
     }
 
     public static class Builder {
@@ -35,7 +40,6 @@ public class TestTenantRepository extends TenantRepository {
         HostRegistry hostRegistry = new HostRegistry();
         Curator curator = new MockCurator();
         Metrics metrics = Metrics.createTestMetrics();
-        StripedExecutor<TenantName> zkWatcherExecutor = new StripedExecutor<>(new InThreadExecutorService());
         FileDistributionFactory fileDistributionFactory = null;
         FlagSource flagSource = new InMemoryFlagSource();
 
@@ -72,7 +76,6 @@ public class TestTenantRepository extends TenantRepository {
                                             hostRegistry,
                                             curator,
                                             metrics,
-                                            zkWatcherExecutor,
                                             fileDistributionFactory,
                                             flagSource);
         }

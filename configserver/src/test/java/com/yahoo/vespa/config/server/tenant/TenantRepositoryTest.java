@@ -212,7 +212,8 @@ public class TenantRepositoryTest {
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
-                  new InMemoryFlagSource());
+                  new InMemoryFlagSource(),
+                  new InThreadExecutorService());
         }
 
         @Override

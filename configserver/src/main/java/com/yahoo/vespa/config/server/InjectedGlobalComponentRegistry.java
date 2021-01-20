@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
@@ -12,12 +11,9 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.time.Clock;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Registry containing all the "static"/"global" components in a config server in one place.
@@ -34,7 +30,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final Zone zone;
     private final ConfigServerDB configServerDB;
     private final SecretStore secretStore;
-    private final ExecutorService zkCacheExecutor;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
@@ -54,7 +49,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.zone = zone;
         this.configServerDB = configServerDB;
         this.secretStore = secretStore;
-        this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     }
 
     @Override
@@ -83,11 +77,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB; }
-
-    @Override
-    public ExecutorService getZkCacheExecutor() {
-        return zkCacheExecutor;
-    }
 
     @Override
     public SecretStore getSecretStore() {

@@ -83,13 +83,15 @@ public class TenantApplicationsTest {
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
+        InThreadExecutorService zkCacheExecutor = new InThreadExecutorService();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry,
                                                                  hostRegistry,
                                                                  curator,
                                                                  Metrics.createTestMetrics(),
                                                                  new StripedExecutor<>(new InThreadExecutorService()),
                                                                  new MockFileDistributionFactory(configserverConfig),
-                                                                 new InMemoryFlagSource());
+                                                                 new InMemoryFlagSource(),
+                                                                 zkCacheExecutor);
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
         applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);

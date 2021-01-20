@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
@@ -18,7 +17,6 @@ import java.nio.file.Files;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -36,7 +34,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Zone zone;
     private final Clock clock;
     private final ConfigServerDB configServerDB;
-    private final ExecutorService zkCacheExecutor;
     private final SecretStore secretStore;
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
@@ -57,7 +54,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.zone = zone;
         this.clock = clock;
         this.configServerDB = new ConfigServerDB(configserverConfig);
-        this.zkCacheExecutor = new InThreadExecutorService();
         this.secretStore = secretStore;
     }
 
@@ -146,10 +142,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public Clock getClock() { return clock;}
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB;}
-    @Override
-    public ExecutorService getZkCacheExecutor() {
-        return zkCacheExecutor;
-    }
     @Override
     public SecretStore getSecretStore() {
         return secretStore;

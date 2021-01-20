@@ -29,6 +29,5 @@ public interface GlobalComponentRegistry {
     Zone getZone();
     Clock getClock();
     ConfigServerDB getConfigServerDB();
-    ExecutorService getZkCacheExecutor();
     SecretStore getSecretStore();
 }

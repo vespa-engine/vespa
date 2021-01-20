@@ -95,7 +95,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         return new TenantApplications(tenantName,
                                       curator,
                                       new StripedExecutor<>(new InThreadExecutorService()),
-                                      componentRegistry.getZkCacheExecutor(),
+                                      new InThreadExecutorService(),
                                       Metrics.createTestMetrics(),
                                       componentRegistry.getReloadListener(),
                                       componentRegistry.getConfigserverConfig(),

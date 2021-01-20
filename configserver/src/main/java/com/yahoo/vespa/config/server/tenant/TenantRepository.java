@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -116,7 +117,8 @@ public class TenantRepository {
              metrics,
              new StripedExecutor<>(),
              new FileDistributionFactory(componentRegistry.getConfigserverConfig()),
-             flagSource);
+             flagSource,
+             Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())));
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -125,7 +127,8 @@ public class TenantRepository {
                             Metrics metrics,
                             StripedExecutor<TenantName> zkWatcherExecutor,
                             FileDistributionFactory fileDistributionFactory,
-                            FlagSource flagSource) {
+                            FlagSource flagSource,
+                            ExecutorService zkCacheExecutor) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
@@ -135,7 +138,7 @@ public class TenantRepository {
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(componentRegistry.getTenantListener());
-        this.zkCacheExecutor = componentRegistry.getZkCacheExecutor();
+        this.zkCacheExecutor = zkCacheExecutor;
         this.zkWatcherExecutor = zkWatcherExecutor;
         this.fileDistributionFactory = fileDistributionFactory;
         this.flagSource = flagSource;
@@ -259,7 +262,7 @@ public class TenantRepository {
                 new TenantApplications(tenantName,
                                        curator,
                                        zkWatcherExecutor,
-                                       componentRegistry.getZkCacheExecutor(),
+                                       zkCacheExecutor,
                                        metrics,
                                        componentRegistry.getReloadListener(),
                                        componentRegistry.getConfigserverConfig(),
@@ -285,7 +288,8 @@ public class TenantRepository {
                                                                     metrics,
                                                                     zkWatcherExecutor,
                                                                     permanentApplicationPackage,
-                                                                    flagSource);
+                                                                    flagSource,
+                                                                    zkCacheExecutor);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

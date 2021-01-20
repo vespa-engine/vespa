@@ -57,6 +57,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -97,6 +98,7 @@ public class SessionRepository {
     private final GlobalComponentRegistry componentRegistry;
     private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
+    private final ExecutorService zkCacheExecutor;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -106,7 +108,8 @@ public class SessionRepository {
                              Metrics metrics,
                              StripedExecutor<TenantName> zkWatcherExecutor,
                              PermanentApplicationPackage permanentApplicationPackage,
-                             FlagSource flagSource) {
+                             FlagSource flagSource,
+                             ExecutorService zkCacheExecutor) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -123,8 +126,10 @@ public class SessionRepository {
         this.sessionPreparer = sessionPreparer;
         this.metrics = metrics;
         this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        this.zkCacheExecutor = zkCacheExecutor;
+
         loadSessions(); // Needs to be done before creating cache below
-        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
+        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
