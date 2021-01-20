@@ -6,6 +6,9 @@
 
 namespace storage::spi {
 
+/**
+ * Simple Bucket task that wraps a lambda that does the job.
+ */
 template<class FunctionType>
 class LambdaBucketTask : public BucketTask {
 public:

@@ -238,6 +238,9 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
+
+// Internal Command task for bringing along a Bucket and a BucketTask in
+// the inner workings of the storagelink chain.
 class RunTaskCommand : public api::InternalCommand {
 public:
     static const uint32_t ID = 1011;
@@ -252,9 +255,10 @@ public:
 
 private:
     std::unique_ptr<spi::BucketTask> _task;
-    spi::Bucket                 _bucket;
+    spi::Bucket                      _bucket;
 };
 
+// Simple reply for matching the RunTaskCommand
 class RunTaskReply : public api::InternalReply
 {
 public:
@@ -262,7 +266,6 @@ public:
 private:
     static const uint32_t ID = 1012;
 };
-
 
 } // ns storage
 
