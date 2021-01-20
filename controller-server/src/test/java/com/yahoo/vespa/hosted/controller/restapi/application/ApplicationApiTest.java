@@ -141,7 +141,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final UserId OTHER_USER_ID = new UserId("otheruser");
     private static final UserId HOSTED_VESPA_OPERATOR = new UserId("johnoperator");
     private static final OktaIdentityToken OKTA_IT = new OktaIdentityToken("okta-it");
-    private static final OktaAccessToken OKTA_AT = new OktaAccessToken("okta-at");
+    private static final OktaAccessToken OKTA_AT = new OktaAccessToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.he0ErCNloe4J7Id0Ry2SEDg09lKkZkfsRiGsdX_vgEg");
 
 
     private ContainerTester tester;
