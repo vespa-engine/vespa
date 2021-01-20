@@ -13,6 +13,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 public class DeleteMojo extends AbstractVespaDeploymentMojo {
 
     @Override
+    protected boolean requireInstance() { return true; }
+
+    @Override
     protected void doExecute() {
         if (!isNullOrBlank(environment) && ! Environment.from(environment).isManuallyDeployed())
             throw new IllegalArgumentException("Manual deletion is not permitted in " + environment);

@@ -16,6 +16,9 @@ public class SuspendMojo extends AbstractVespaDeploymentMojo {
     private boolean suspend;
 
     @Override
+    protected boolean requireInstance() { return true; }
+
+    @Override
     protected void doExecute() {
         getLog().info(controller.suspend(id, zoneOf(environment, region), suspend));
     }
