@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -20,7 +19,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final RpcServer rpcServer;
-    private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
     private final Zone zone;
     private final ConfigServerDB configServerDB;
@@ -29,20 +27,16 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     @Inject
     public InjectedGlobalComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                            RpcServer rpcServer,
-                                           ConfigserverConfig configserverConfig,
                                            ConfigDefinitionRepo staticConfigDefinitionRepo,
                                            Zone zone,
                                            ConfigServerDB configServerDB) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.rpcServer = rpcServer;
-        this.configserverConfig = configserverConfig;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
         this.zone = zone;
         this.configServerDB = configServerDB;
     }
 
-    @Override
-    public ConfigserverConfig getConfigserverConfig() { return configserverConfig; }
     @Override
     public TenantListener getTenantListener() { return rpcServer; }
     @Override

@@ -58,7 +58,10 @@ public class TenantHandlerTest {
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .configServerConfig(configserverConfig)
                 .build();
-        tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
+                .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())

@@ -22,7 +22,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class TestComponentRegistry implements GlobalComponentRegistry {
 
-    private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo defRepo;
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
@@ -32,13 +31,12 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ConfigServerDB configServerDB;
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
-                                  ConfigserverConfig configserverConfig,
                                   ConfigDefinitionRepo defRepo,
                                   ReloadListener reloadListener,
                                   TenantListener tenantListener,
                                   Zone zone,
-                                  Clock clock) {
-        this.configserverConfig = configserverConfig;
+                                  Clock clock,
+                                  ConfigserverConfig configserverConfig) {
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
         this.defRepo = defRepo;
@@ -93,17 +91,15 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
 
         public TestComponentRegistry build() {
             return new TestComponentRegistry(modelFactoryRegistry,
-                                             configserverConfig,
                                              defRepo,
                                              reloadListener,
                                              tenantListener,
                                              zone,
-                                             clock);
+                                             clock,
+                                             configserverConfig);
         }
     }
 
-    @Override
-    public ConfigserverConfig getConfigserverConfig() { return configserverConfig; }
     @Override
     public TenantListener getTenantListener() { return tenantListener; }
     @Override

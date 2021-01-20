@@ -61,7 +61,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private TimeoutBudget timeoutBudget;
     private ApplicationRepository applicationRepository;
 
-    private TestComponentRegistry componentRegistry;
+    private ConfigserverConfig configserverConfig;
     private String preparedMessage = " prepared.\"}";
     private String tenantMessage = "";
     private TenantRepository tenantRepository;
@@ -71,18 +71,19 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Before
     public void setupRepo() throws IOException {
-        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+        configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        componentRegistry = new TestComponentRegistry.Builder()
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .configServerConfig(configserverConfig)
                 .build();
         Clock clock = componentRegistry.getClock();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .build();
         tenantRepository.addTenant(tenant);
@@ -255,7 +256,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         String exceptionMessage = "Out of capacity";
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
                                                                                 applicationRepository,
-                                                                                componentRegistry.getConfigserverConfig(),
+                                                                                configserverConfig,
                                                                                 new OutOfCapacityException(exceptionMessage));
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(400, response.getStatus());
@@ -270,7 +271,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         String exceptionMessage = "nullpointer thrown in test handler";
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
                                                                                 applicationRepository,
-                                                                                componentRegistry.getConfigserverConfig(),
+                                                                                configserverConfig,
                                                                                 new NullPointerException(exceptionMessage));
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(500, response.getStatus());
@@ -285,7 +286,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
                                                                                 applicationRepository,
-                                                                                componentRegistry.getConfigserverConfig(),
+                                                                                configserverConfig,
                                                                                 new ApplicationLockException(new UncheckedTimeoutException(exceptionMessage)));
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(500, response.getStatus());
@@ -320,10 +321,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private SessionHandler createHandler() {
-        return new SessionPrepareHandler(
-                SessionPrepareHandler.testOnlyContext(),
-                applicationRepository,
-                componentRegistry.getConfigserverConfig());
+        return new SessionPrepareHandler(SessionPrepareHandler.testOnlyContext(), applicationRepository, configserverConfig);
     }
 
     private HttpResponse request(HttpRequest.Method put, long l) {

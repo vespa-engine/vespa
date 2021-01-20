@@ -61,7 +61,10 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .configServerConfig(configserverConfig)
                 .build();
 
-        tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+        tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
+                .build();
         tenantRepository.addTenant(tenantName);
 
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

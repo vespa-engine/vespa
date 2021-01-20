@@ -16,7 +16,6 @@ import java.time.Clock;
  */
 public interface GlobalComponentRegistry {
 
-    ConfigserverConfig getConfigserverConfig();
     TenantListener getTenantListener();
     ReloadListener getReloadListener();
     ConfigDefinitionRepo getStaticConfigDefinitionRepo();

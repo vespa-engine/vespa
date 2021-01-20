@@ -89,6 +89,7 @@ public class SessionPreparerTest {
     private SessionPreparer preparer;
     private TestComponentRegistry componentRegistry;
     private final MockSecretStore secretStore = new MockSecretStore();
+    private ConfigserverConfig configserverConfig;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -100,12 +101,13 @@ public class SessionPreparerTest {
     public void setUp() throws IOException {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
+        configserverConfig = new ConfigserverConfig.Builder()
+                .fileReferencesDir(folder.newFolder().getAbsolutePath())
+                .configServerDBDir(folder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(folder.newFolder().getAbsolutePath())
+                .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(new ConfigserverConfig.Builder()
-                                            .fileReferencesDir(folder.newFolder().getAbsolutePath())
-                                            .configServerDBDir(folder.newFolder().getAbsolutePath())
-                                            .configDefinitionsDir(folder.newFolder().getAbsolutePath())
-                                            .build())
+                .configServerConfig(configserverConfig)
                 .build();
         preparer = createPreparer();
     }
@@ -124,10 +126,10 @@ public class SessionPreparerTest {
                                            HostProvisionerProvider hostProvisionerProvider) {
         return new SessionPreparer(
                 modelFactoryRegistry,
-                new MockFileDistributionFactory(componentRegistry.getConfigserverConfig()),
+                new MockFileDistributionFactory(configserverConfig),
                 hostProvisionerProvider,
-                new PermanentApplicationPackage(componentRegistry.getConfigserverConfig()),
-                componentRegistry.getConfigserverConfig(),
+                new PermanentApplicationPackage(configserverConfig),
+                configserverConfig,
                 componentRegistry.getStaticConfigDefinitionRepo(),
                 curator,
                 componentRegistry.getZone(),

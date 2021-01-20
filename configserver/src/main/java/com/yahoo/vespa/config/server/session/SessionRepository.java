@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -102,6 +103,7 @@ public class SessionRepository {
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
+    private final ConfigserverConfig configserverConfig;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -114,7 +116,8 @@ public class SessionRepository {
                              FlagSource flagSource,
                              ExecutorService zkCacheExecutor,
                              SecretStore secretStore,
-                             HostProvisionerProvider hostProvisionerProvider) {
+                             HostProvisionerProvider hostProvisionerProvider,
+                             ConfigserverConfig configserverConfig) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -122,7 +125,7 @@ public class SessionRepository {
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = componentRegistry.getClock();
         this.curator = curator;
-        this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
+        this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
@@ -133,6 +136,7 @@ public class SessionRepository {
         this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
         this.secretStore = secretStore;
         this.hostProvisionerProvider = hostProvisionerProvider;
+        this.configserverConfig = configserverConfig;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -458,7 +462,8 @@ public class SessionRepository {
                                                                     permanentApplicationPackage,
                                                                     flagSource,
                                                                     secretStore,
-                                                                    hostProvisionerProvider);
+                                                                    hostProvisionerProvider,
+                                                                    configserverConfig);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
@@ -671,7 +676,7 @@ public class SessionRepository {
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference != null) {
-            File rootDir = new File(Defaults.getDefaults().underVespaHome(componentRegistry.getConfigserverConfig().fileReferencesDir()));
+            File rootDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
             File sessionDir;
             FileDirectory fileDirectory = new FileDirectory(rootDir);
             try {
@@ -709,7 +714,7 @@ public class SessionRepository {
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
-        String serverId = componentRegistry.getConfigserverConfig().serverId();
+        String serverId = configserverConfig.serverId();
         return new SessionZooKeeperClient(curator, configCurator, tenantName, sessionId, serverId);
     }
 

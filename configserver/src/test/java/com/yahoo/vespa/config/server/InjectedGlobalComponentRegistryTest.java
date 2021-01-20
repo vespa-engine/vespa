@@ -10,7 +10,6 @@ import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcRequestHandlerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
@@ -25,14 +24,12 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
  */
 public class InjectedGlobalComponentRegistryTest {
 
-    private ConfigserverConfig configserverConfig;
     private RpcServer rpcServer;
     private ConfigDefinitionRepo defRepo;
     private GlobalComponentRegistry globalComponentRegistry;
@@ -45,7 +42,7 @@ public class InjectedGlobalComponentRegistryTest {
     @Before
     public void setupRegistry() throws IOException {
         modelFactoryRegistry = new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry())));
-        configserverConfig = new ConfigserverConfig(
+        ConfigserverConfig configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
                         .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                         .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
@@ -59,7 +56,6 @@ public class InjectedGlobalComponentRegistryTest {
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(modelFactoryRegistry,
                                                     rpcServer,
-                                                    configserverConfig,
                                                     defRepo,
                                                     zone,
                                                     new ConfigServerDB(configserverConfig));
@@ -68,7 +64,6 @@ public class InjectedGlobalComponentRegistryTest {
     @Test
     public void testThatAllComponentsAreSetup() {
         assertThat(globalComponentRegistry.getModelFactoryRegistry(), is(modelFactoryRegistry));
-        assertThat(globalComponentRegistry.getConfigserverConfig(), is(configserverConfig));
         assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getStaticConfigDefinitionRepo(), is(defRepo));

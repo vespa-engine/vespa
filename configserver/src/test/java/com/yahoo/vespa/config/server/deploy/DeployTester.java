@@ -291,6 +291,7 @@ public class DeployTester {
 
             TestTenantRepository.Builder builder = new TestTenantRepository.Builder()
                     .withComponentRegistry(testComponentRegistryBuilder.build())
+                    .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
                     .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig));

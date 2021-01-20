@@ -218,7 +218,8 @@ public class TenantRepositoryTest {
                   new InMemoryFlagSource(),
                   new InThreadExecutorService(),
                   new MockSecretStore(),
-                  HostProvisionerProvider.withProvisioner(new MockProvisioner(), false));
+                  HostProvisionerProvider.withProvisioner(new MockProvisioner(), false),
+                  new ConfigserverConfig.Builder().build());
         }
 
         @Override

@@ -49,6 +49,7 @@ class MaintainerTester {
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true))
+                .withConfigserverConfig(configserverConfig)
                 .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

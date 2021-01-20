@@ -52,7 +52,6 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
 
     @Before
     public void setupHandler() throws IOException {
-
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
@@ -63,7 +62,10 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .build();
         Clock clock = componentRegistry.getClock();
 
-        TenantRepository tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
+                .build();
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
 

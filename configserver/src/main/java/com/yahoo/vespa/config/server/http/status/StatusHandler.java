@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.http.status;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -23,25 +24,27 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
 public class StatusHandler extends HttpHandler {
 
     private final GlobalComponentRegistry componentRegistry;
+    private final ConfigserverConfig configserverConfig;
 
     @Inject
-    public StatusHandler(Context ctx, GlobalComponentRegistry componentRegistry) {
+    public StatusHandler(Context ctx, GlobalComponentRegistry componentRegistry, ConfigserverConfig configserverConfig) {
         super(ctx);
         this.componentRegistry = componentRegistry;
+        this.configserverConfig = configserverConfig;
     }
 
     @Override
     public HttpResponse handleGET(HttpRequest req) {
-        return new StatusResponse(OK, componentRegistry);
+        return new StatusResponse(OK, componentRegistry, configserverConfig);
     }
 
     private static class StatusResponse extends JSONResponse {
 
-        StatusResponse(int status, GlobalComponentRegistry componentRegistry) {
+        StatusResponse(int status, GlobalComponentRegistry componentRegistry, ConfigserverConfig configserverConfig) {
             super(status);
 
             Cursor configCursor = object.setObject("configserverConfig");
-            SlimeUtils.copyObject(ConfigPayload.fromInstance(componentRegistry.getConfigserverConfig()).getSlime().get(),
+            SlimeUtils.copyObject(ConfigPayload.fromInstance(configserverConfig).getSlime().get(),
                                   configCursor);
 
             Cursor modelVersionsCursor = object.setArray("modelVersions");

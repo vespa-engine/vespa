@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.modelfactory;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -71,9 +72,10 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   PermanentApplicationPackage permanentApplicationPackage,
                                   FlagSource flagSource,
                                   SecretStore secretStore,
-                                  HostProvisionerProvider hostProvisionerProvider) {
+                                  HostProvisionerProvider hostProvisionerProvider,
+                                  ConfigserverConfig configserverConfig) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
-              globalComponentRegistry.getConfigserverConfig(),
+              configserverConfig,
               globalComponentRegistry.getZone(),
               hostProvisionerProvider);
         this.tenant = tenant;

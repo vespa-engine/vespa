@@ -85,7 +85,7 @@ public class TenantApplicationsTest {
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
-        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);
+        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator, configserverConfig);
     }
 
     @Test
@@ -178,7 +178,11 @@ public class TenantApplicationsTest {
 
     @Test
     public void testListConfigs() throws IOException, SAXException {
-        applications = TenantApplications.create(componentRegistry, new HostRegistry(), TenantName.defaultName(), new MockCurator());
+        applications = TenantApplications.create(componentRegistry,
+                                                 new HostRegistry(),
+                                                 TenantName.defaultName(),
+                                                 new MockCurator(),
+                                                 new ConfigserverConfig.Builder().build());
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -213,7 +217,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator);
+        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator, new ConfigserverConfig.Builder().build());
     }
 
     private static ApplicationId createApplicationId(String name) {

@@ -98,6 +98,7 @@ public class TenantRepository {
     private final FlagSource flagSource;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
+    private final ConfigserverConfig configserverConfig;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -115,17 +116,19 @@ public class TenantRepository {
                             Metrics metrics,
                             FlagSource flagSource,
                             SecretStore secretStore,
-                            HostProvisionerProvider hostProvisionerProvider) {
+                            HostProvisionerProvider hostProvisionerProvider,
+                            ConfigserverConfig configserverConfig) {
         this(componentRegistry,
              hostRegistry,
              curator,
              metrics,
              new StripedExecutor<>(),
-             new FileDistributionFactory(componentRegistry.getConfigserverConfig()),
+             new FileDistributionFactory(configserverConfig),
              flagSource,
              Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
              secretStore,
-             hostProvisionerProvider);
+             hostProvisionerProvider,
+             configserverConfig);
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -137,10 +140,11 @@ public class TenantRepository {
                             FlagSource flagSource,
                             ExecutorService zkCacheExecutor,
                             SecretStore secretStore,
-                            HostProvisionerProvider hostProvisionerProvider) {
+                            HostProvisionerProvider hostProvisionerProvider,
+                            ConfigserverConfig configserverConfig) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
-        ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
+        this.configserverConfig = configserverConfig;
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                               new DaemonThreadFactory("bootstrap tenants"));
         this.curator = curator;
@@ -276,16 +280,16 @@ public class TenantRepository {
                                        zkCacheExecutor,
                                        metrics,
                                        componentRegistry.getReloadListener(),
-                                       componentRegistry.getConfigserverConfig(),
+                                       configserverConfig,
                                        hostRegistry,
                                        new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
                                        componentRegistry.getClock());
-        PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(componentRegistry.getConfigserverConfig());
+        PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         SessionPreparer sessionPreparer = new SessionPreparer(componentRegistry.getModelFactoryRegistry(),
                                                               fileDistributionFactory,
                                                               hostProvisionerProvider,
                                                               permanentApplicationPackage,
-                                                              componentRegistry.getConfigserverConfig(),
+                                                              configserverConfig,
                                                               componentRegistry.getStaticConfigDefinitionRepo(),
                                                               curator,
                                                               componentRegistry.getZone(),
@@ -302,7 +306,8 @@ public class TenantRepository {
                                                                     flagSource,
                                                                     zkCacheExecutor,
                                                                     secretStore,
-                                                                    hostProvisionerProvider);
+                                                                    hostProvisionerProvider,
+                                                                    configserverConfig);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

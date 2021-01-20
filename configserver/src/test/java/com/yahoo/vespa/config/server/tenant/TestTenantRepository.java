@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
@@ -26,7 +27,8 @@ public class TestTenantRepository extends TenantRepository {
                                 Metrics metrics,
                                 FileDistributionFactory fileDistributionFactory,
                                 FlagSource flagSource,
-                                HostProvisionerProvider hostProvisionerProvider) {
+                                HostProvisionerProvider hostProvisionerProvider,
+                                ConfigserverConfig configserverConfig) {
         super(componentRegistry,
               hostRegistry,
               curator,
@@ -36,7 +38,8 @@ public class TestTenantRepository extends TenantRepository {
               flagSource,
               new InThreadExecutorService(),
               new MockSecretStore(),
-              hostProvisionerProvider);
+              hostProvisionerProvider,
+              configserverConfig);
     }
 
     public static class Builder {
@@ -48,6 +51,7 @@ public class TestTenantRepository extends TenantRepository {
         FileDistributionFactory fileDistributionFactory = null;
         FlagSource flagSource = new InMemoryFlagSource();
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
 
         public Builder withFlagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
@@ -84,16 +88,22 @@ public class TestTenantRepository extends TenantRepository {
             return this;
         }
 
+        public Builder withConfigserverConfig(ConfigserverConfig configserverConfig) {
+            this.configserverConfig = configserverConfig;
+            return this;
+        }
+
         public TenantRepository build() {
             if (fileDistributionFactory == null)
-                fileDistributionFactory = new FileDistributionFactory(componentRegistry.getConfigserverConfig());
+                fileDistributionFactory = new FileDistributionFactory(configserverConfig);
             return new TestTenantRepository(componentRegistry,
                                             hostRegistry,
                                             curator,
                                             metrics,
                                             fileDistributionFactory,
                                             flagSource,
-                                            hostProvisionerProvider);
+                                            hostProvisionerProvider,
+                                            configserverConfig);
         }
 
     }
