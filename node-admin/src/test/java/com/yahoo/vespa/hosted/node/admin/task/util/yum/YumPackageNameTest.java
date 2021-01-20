@@ -106,6 +106,17 @@ public class YumPackageNameTest {
                 "x86_64",
                 "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
                 "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.*");
+
+        // name-ver-rel.arch (RHEL 8)
+        verifyPackageName("podman-1.9.3-2.module+el8.2.1+6867+366c07d6.x86_64",
+                          null,
+                          "podman",
+                          "1.9.3",
+                          "2.module+el8.2.1+6867+366c07d6",
+                          "x86_64",
+                          "podman-0:1.9.3-2.module+el8.2.1+6867+366c07d6.x86_64",
+                          "podman-0:1.9.3-2.module+el8.2.1+6867+366c07d6.*",
+                          YumVersion.rhel8);
     }
 
     private void verifyPackageName(String packageName,
@@ -116,24 +127,35 @@ public class YumPackageNameTest {
                                    String architecture,
                                    String toName,
                                    String toVersionName) {
-        Version yumVersion = Version.fromString("3");
+        verifyPackageName(packageName, epoch, name, version, release, architecture, toName, toVersionName, YumVersion.rhel7);
+    }
+
+    private void verifyPackageName(String packageName,
+                                   String epoch,
+                                   String name,
+                                   String version,
+                                   String release,
+                                   String architecture,
+                                   String toName,
+                                   String toVersionName,
+                                   YumVersion yumVersion) {
         YumPackageName yumPackageName = YumPackageName.fromString(packageName);
         verifyValue(epoch, yumPackageName.getEpoch());
         verifyValue(name, Optional.of(yumPackageName.getName()));
         verifyValue(version, yumPackageName.getVersion());
         verifyValue(release, yumPackageName.getRelease());
         verifyValue(architecture, yumPackageName.getArchitecture());
-        verifyValue(toName, Optional.of(yumPackageName.toName(yumVersion)));
+        verifyValue(toName, Optional.of(yumPackageName.toName(yumVersion.asVersion())));
 
         if (toVersionName == null) {
             try {
-                yumPackageName.toVersionLockName(yumVersion);
+                yumPackageName.toVersionLockName(yumVersion.asVersion());
                 fail();
             } catch (IllegalStateException e) {
                 assertThat(e.getMessage(), containsStringIgnoringCase("Version is missing "));
             }
         } else {
-            assertEquals(toVersionName, yumPackageName.toVersionLockName(yumVersion));
+            assertEquals(toVersionName, yumPackageName.toVersionLockName(yumVersion.asVersion()));
         }
     }
 
