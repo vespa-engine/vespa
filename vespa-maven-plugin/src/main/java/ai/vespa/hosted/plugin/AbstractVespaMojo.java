@@ -2,8 +2,8 @@
 package ai.vespa.hosted.plugin;
 
 import ai.vespa.hosted.api.ControllerHttpClient;
-import ai.vespa.hosted.api.Properties;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.yolean.Exceptions;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -16,7 +16,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -56,6 +55,8 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     protected ApplicationId id;
     protected ControllerHttpClient controller;
 
+    protected boolean requireInstance() { return false; }
+
     @Override
     public final void execute() throws MojoExecutionException, MojoFailureException {
         try {
@@ -80,19 +81,24 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     /** Return the name of the relevant entity, e.g., application with or without instance. */
     protected String name() { return tenant + "." + application; }
 
-    protected void setup() {
-        tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"));
-        application = firstNonBlank(application, project.getProperties().getProperty("application"));
-        instance = firstNonBlank(instance, project.getProperties().getProperty("instance"), Properties.user());
+    protected void setup() throws MojoExecutionException {
+        tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"))
+                .orElseThrow(() -> new MojoExecutionException("'tenant' must be specified as a parameter or project property"));
+        application = firstNonBlank(application, project.getProperties().getProperty("application"))
+                .orElseThrow(() -> new MojoExecutionException("'application' must be specified as a parameter or project property"));
+        instance = firstNonBlank(instance, project.getProperties().getProperty("instance"), requireInstance() ? null : InstanceName.defaultName().value())
+                .orElseThrow(() -> new MojoExecutionException("'instance' must be specified as a parameter or project property"));
         id = ApplicationId.from(tenant, application, instance);
 
-        if (!isNullOrBlank(apiKey)) {
+        if ( ! isNullOrBlank(apiKey)) {
             controller = ControllerHttpClient.withSignatureKey(URI.create(endpoint), apiKey, id);
-        } else if (!isNullOrBlank(apiKeyFile)) {
+        }
+        else if ( ! isNullOrBlank(apiKeyFile)) {
             controller = isNullOrBlank(apiCertificateFile)
                     ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(apiKeyFile), id)
                     : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(apiKeyFile), Paths.get(apiCertificateFile));
-        } else {
+        }
+        else {
             throw new IllegalArgumentException("One of the properties 'apiKey' or 'apiKeyFile' is required.");
         }
     }
@@ -102,12 +108,12 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     }
 
     /** Returns the first of the given strings which is non-null and non-blank, or throws IllegalArgumentException. */
-    protected static String firstNonBlank(String... values) {
+    protected static Optional<String> firstNonBlank(String... values) {
         for (String value : values)
             if (value != null && ! value.isBlank())
-                return value;
+                return Optional.of(value);
 
-        throw new IllegalArgumentException("No valid value given");
+        return Optional.empty();
     }
 
     protected static Optional<String> optionalOf(String value) {

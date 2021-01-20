@@ -37,10 +37,14 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
     private DeploymentLog.Level loggable;
 
     @Override
+    protected boolean requireInstance() { return true; }
+
+    @Override
     protected void doExecute() throws MojoFailureException, MojoExecutionException {
         loggable = DeploymentLog.Level.valueOf(vespaLogLevel);
         Deployment deployment = Deployment.ofPackage(Paths.get(firstNonBlank(applicationZip,
-                                                                             projectPathOf("target", "application.zip"))));
+                                                                             projectPathOf("target", "application.zip"))
+                                                                       .orElseThrow())); // Fallback always exists.
         if ( ! isNullOrBlank(vespaVersion)) deployment = deployment.atVersion(vespaVersion);
 
         ZoneId zone = zoneOf(environment, region);
