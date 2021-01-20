@@ -33,7 +33,10 @@
 
     <properties>
         <vespaversion>${project.version}</vespaversion>
-        <test-framework.version>${project.version}</test-framework.version>
+        <!-- when <test-framework.version> is "${project.version}", it is decoupled from the
+             compile version set with "-D vespaversion=...", and is instead the newest version.
+             When it is "${vespaversion}", it is coupled, which should be the default. -->
+        <test-framework.version>${vespaversion}</test-framework.version>
         <target_jdk_version>11</target_jdk_version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
