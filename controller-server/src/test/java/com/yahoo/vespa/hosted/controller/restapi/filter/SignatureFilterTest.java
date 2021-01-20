@@ -100,14 +100,16 @@ public class SignatureFilterTest {
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody),
                               new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
                                                   Set.of(Role.reader(id.tenant()),
-                                                         Role.headless(id.tenant(), id.application()))));
+                                                         Role.headless(id.tenant(), id.application())),
+                                                  tester.clock().instant()));
 
         // Signed POST request with X-Key header gets a headless role.
         byte[] hiBytes = new byte[]{0x48, 0x69};
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                               new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
                                                   Set.of(Role.reader(id.tenant()),
-                                                         Role.headless(id.tenant(), id.application()))));
+                                                         Role.headless(id.tenant(), id.application())),
+                                                  tester.clock().instant()));
 
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
@@ -119,7 +121,8 @@ public class SignatureFilterTest {
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                               new SecurityContext(new SimplePrincipal("user"),
                                                   Set.of(Role.reader(id.tenant()),
-                                                         Role.developer(id.tenant()))));
+                                                         Role.developer(id.tenant())),
+                                                  tester.clock().instant()));
 
         // Unsigned requests still get no roles.
         verifySecurityContext(requestOf(request.copy().method("GET", HttpRequest.BodyPublishers.ofByteArray(emptyBody)).build(), emptyBody),
