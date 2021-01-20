@@ -176,6 +176,8 @@ public:
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
 
     std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor>) override;
+    std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
 
     /**
      * The following methods are used only for unit testing.
@@ -213,6 +215,7 @@ private:
     std::condition_variable _cond;
 
     std::unique_ptr<ClusterState> _clusterState;
+    std::weak_ptr<BucketExecutor> _bucket_executor;
 
     std::unique_ptr<document::select::Node> parseDocumentSelection(
             const string& documentSelection,

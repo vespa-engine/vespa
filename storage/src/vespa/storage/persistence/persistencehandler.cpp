@@ -75,6 +75,8 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
             return _simpleHandler.handleReadBucketInfo(static_cast<ReadBucketInfo&>(msg), std::move(tracker));
         case RecheckBucketInfoCommand::ID:
             return _splitJoinHandler.handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg), std::move(tracker));
+        case RunTaskCommand::ID:
+            return _asyncHandler.handleRunTask(static_cast<RunTaskCommand &>(msg), std::move(tracker));
         default:
             LOG(warning, "Persistence handler received unhandled internal command %s", msg.toString().c_str());
             break;

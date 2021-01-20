@@ -8,6 +8,7 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/persistence/spi/i_resource_usage_listener.h>
 #include <vespa/persistence/spi/resource_usage.h>
+#include <vespa/persistence/spi/bucketexecutor.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -861,6 +862,30 @@ DummyPersistence::register_resource_usage_listener(IResourceUsageListener &liste
     ResourceUsage usage(0.5, 0.4);
     listener.update_resource_usage(usage);
     return {};
+}
+
+namespace {
+
+class SyncExecutorOnDestruction : public vespalib::IDestructorCallback {
+public:
+    explicit SyncExecutorOnDestruction(std::shared_ptr<BucketExecutor> executor) : _executor(std::move(executor)) { }
+    ~SyncExecutorOnDestruction() override {
+        if (_executor) {
+            _executor->sync();
+        }
+    }
+private:
+    std::shared_ptr<BucketExecutor> _executor;
+};
+
+}
+
+std::unique_ptr<vespalib::IDestructorCallback>
+DummyPersistence::register_executor(std::shared_ptr<BucketExecutor> executor)
+{
+    assert(_bucket_executor.expired());
+    _bucket_executor = executor;
+    return std::make_unique<SyncExecutorOnDestruction>(executor);
 }
 
 std::string

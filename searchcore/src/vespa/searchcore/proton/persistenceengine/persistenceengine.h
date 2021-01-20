@@ -39,6 +39,7 @@ private:
     using TimestampList = storage::spi::TimestampList;
     using UpdateResult = storage::spi::UpdateResult;
     using OperationComplete = storage::spi::OperationComplete;
+    using BucketExecutor = storage::spi::BucketExecutor;
 
     struct IteratorEntry {
         PersistenceHandlerSequence  handler_sequence;
@@ -73,6 +74,7 @@ private:
     mutable ExtraModifiedBuckets            _extraModifiedBuckets;
     mutable std::shared_mutex               _rwMutex;
     std::shared_ptr<ResourceUsageTracker>   _resource_usage_tracker;
+    std::weak_ptr<BucketExecutor>           _bucket_executor;
 
     using ReadGuard = std::shared_lock<std::shared_mutex>;
     using WriteGuard = std::unique_lock<std::shared_mutex>;
@@ -116,12 +118,14 @@ public:
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
     std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) override;
+    std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor>) override;
     void destroyIterators();
     void propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler &handler);
     void populateInitialBucketDB(const WriteGuard & guard, BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
     WriteGuard getWLock() const;
     ResourceUsageTracker &get_resource_usage_tracker() noexcept { return *_resource_usage_tracker; }
+    std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
 };
 
 }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "types.h"
+#include "messages.h"
 #include <vespa/storageapi/message/persistence.h>
 
 namespace document { class BucketIdFactory; }
@@ -25,6 +26,7 @@ public:
     MessageTrackerUP handlePut(api::PutCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRemove(api::RemoveCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleUpdate(api::UpdateCommand& cmd, MessageTrackerUP tracker) const;
+    MessageTrackerUP handleRunTask(RunTaskCommand & cmd, MessageTrackerUP tracker) const;
     static bool is_async_message(api::MessageType::Id type_id) noexcept;
 private:
     static bool tasConditionExists(const api::TestAndSetCommand & cmd);

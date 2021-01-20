@@ -209,6 +209,12 @@ PersistenceProviderWrapper::register_resource_usage_listener(spi::IResourceUsage
     return _spi.register_resource_usage_listener(listener);
 }
 
+std::unique_ptr<vespalib::IDestructorCallback>
+PersistenceProviderWrapper::register_executor(std::shared_ptr<spi::BucketExecutor> executor)
+{
+    return _spi.register_executor(std::move(executor));
+}
+
 spi::Result
 PersistenceProviderWrapper::removeEntry(const spi::Bucket& bucket,
                                         spi::Timestamp timestamp,

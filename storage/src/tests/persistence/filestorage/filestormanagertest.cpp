@@ -14,6 +14,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/bucket_tasks.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
@@ -24,6 +25,7 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/gate.h>
 #include <atomic>
 #include <thread>
 
@@ -35,6 +37,7 @@ using document::Document;
 using namespace storage::api;
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
+using vespalib::IDestructorCallback;
 using namespace ::testing;
 
 #define ASSERT_SINGLE_REPLY(replytype, reply, link, time) \
@@ -407,6 +410,50 @@ TEST_F(FileStorManagerTest, put) {
         EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
         EXPECT_EQ(1, reply->getBucketInfo().getDocumentCount());
     }
+}
+
+TEST_F(FileStorManagerTest, running_task_against_unknown_bucket_fails) {
+    TestFileStorComponents c(*this);
+
+    setClusterState("storage:3 distributor:3");
+    EXPECT_TRUE(getDummyPersistence().getClusterState().nodeUp());
+
+    auto executor = getDummyPersistence().get_bucket_executor();
+    ASSERT_TRUE(executor);
+
+    spi::Bucket b1 = makeSpiBucket(document::BucketId(1));
+    std::atomic<size_t> numInvocations(0);
+    auto response = executor->execute(b1, spi::makeBucketTask([&numInvocations](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
+        numInvocations++;
+    }));
+    ASSERT_TRUE(response);
+    EXPECT_EQ(0, numInvocations);
+    response->run(spi::Bucket(), {});
+    EXPECT_EQ(1, numInvocations);
+}
+
+TEST_F(FileStorManagerTest, running_task_against_existing_bucket_works) {
+    TestFileStorComponents c(*this);
+
+    setClusterState("storage:3 distributor:3");
+    EXPECT_TRUE(getDummyPersistence().getClusterState().nodeUp());
+
+    auto executor = getDummyPersistence().get_bucket_executor();
+    ASSERT_TRUE(executor);
+
+    spi::Bucket b1 = makeSpiBucket(document::BucketId(1));
+
+    createBucket(b1.getBucketId());
+
+    std::atomic<size_t> numInvocations(0);
+    vespalib::Gate gate;
+    auto response = executor->execute(b1, spi::makeBucketTask([&numInvocations, &gate](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
+        numInvocations++;
+        gate.countDown();
+    }));
+    EXPECT_FALSE(response);
+    gate.await();
+    EXPECT_EQ(1, numInvocations);
 }
 
 TEST_F(FileStorManagerTest, state_change) {

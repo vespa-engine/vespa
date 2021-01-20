@@ -2,6 +2,7 @@
 
 #include "messages.h"
 #include <ostream>
+#include <cassert>
 
 using document::BucketSpace;
 
@@ -175,6 +176,45 @@ AbortBucketOperationsReply::print(std::ostream& out, bool, const std::string &) 
 std::unique_ptr<api::StorageReply>
 AbortBucketOperationsCommand::makeReply() {
     return std::make_unique<AbortBucketOperationsReply>(*this);
+}
+
+std::unique_ptr<api::StorageReply>
+RunTaskCommand::makeReply() {
+    return std::make_unique<RunTaskReply>(*this);
+}
+
+RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task)
+    : api::InternalCommand(ID),
+      _task(std::move(task)),
+      _bucket(bucket)
+{
+    assert(_task);
+}
+
+RunTaskCommand::~RunTaskCommand() = default;
+
+void
+RunTaskCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "RunTaskCommand(" << _bucket <<")";
+
+    if (verbose) {
+        out << " : ";
+        InternalCommand::print(out, true, indent);
+    }
+}
+
+RunTaskReply::RunTaskReply(const RunTaskCommand& cmd)
+    : api::InternalReply(ID, cmd)
+{}
+
+void
+RunTaskReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "RunTaskReply()";
+
+    if (verbose) {
+        out << " : ";
+        InternalReply::print(out, true, indent);
+    }
 }
 
 }

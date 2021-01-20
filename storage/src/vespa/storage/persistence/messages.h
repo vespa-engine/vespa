@@ -6,6 +6,7 @@
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/read_consistency.h>
+#include <vespa/persistence/spi/bucketexecutor.h>
 
 namespace storage {
 
@@ -16,7 +17,7 @@ private:
     uint32_t _maxByteSize;
 
 public:
-    static const uint32_t ID = 1001;
+    static constexpr uint32_t ID = 1001;
     typedef std::unique_ptr<GetIterCommand> UP;
     typedef std::shared_ptr<GetIterCommand> SP;
 
@@ -50,7 +51,7 @@ private:
 public:
     typedef std::unique_ptr<GetIterReply> UP;
     typedef std::shared_ptr<GetIterReply> SP;
-    static const uint32_t ID = 1002;
+    static constexpr uint32_t ID = 1002;
 
     explicit GetIterReply(GetIterCommand& cmd);
     ~GetIterReply() override;
@@ -80,7 +81,7 @@ class CreateIteratorCommand : public api::InternalCommand
     spi::ReadConsistency _readConsistency;
 
 public:
-    static const uint32_t ID = 1003;
+    static constexpr uint32_t ID = 1003;
     typedef std::unique_ptr<CreateIteratorCommand> UP;
     typedef std::shared_ptr<CreateIteratorCommand> SP;
 
@@ -114,7 +115,7 @@ class CreateIteratorReply : public api::InternalReply
     document::Bucket _bucket;
     spi::IteratorId _iteratorId;
 public:
-    static const uint32_t ID = 1004;
+    static constexpr uint32_t ID = 1004;
     typedef std::unique_ptr<CreateIteratorReply> UP;
     typedef std::shared_ptr<CreateIteratorReply> SP;
 
@@ -132,7 +133,7 @@ class DestroyIteratorCommand : public api::InternalCommand
 {
     spi::IteratorId _iteratorId;
 public:
-    static const uint32_t ID = 1005;
+    static constexpr uint32_t ID = 1005;
     typedef std::unique_ptr<DestroyIteratorCommand> UP;
     typedef std::shared_ptr<DestroyIteratorCommand> SP;
 
@@ -150,7 +151,7 @@ class DestroyIteratorReply : public api::InternalReply
 {
     spi::IteratorId _iteratorId;
 public:
-    static const uint32_t ID = 1006;
+    static constexpr uint32_t ID = 1006;
     typedef std::unique_ptr<DestroyIteratorReply> UP;
     typedef std::shared_ptr<DestroyIteratorReply> SP;
 
@@ -164,7 +165,7 @@ class RecheckBucketInfoCommand : public api::InternalCommand
 {
     document::Bucket _bucket;
 public:
-    static const uint32_t ID = 1007;
+    static constexpr uint32_t ID = 1007;
     typedef std::shared_ptr<RecheckBucketInfoCommand> SP;
     typedef std::unique_ptr<RecheckBucketInfoCommand> UP;
 
@@ -182,7 +183,7 @@ class RecheckBucketInfoReply : public api::InternalReply
 {
     document::Bucket _bucket;
 public:
-    static const uint32_t ID = 1008;
+    static constexpr uint32_t ID = 1008;
     typedef std::shared_ptr<RecheckBucketInfoReply> SP;
     typedef std::unique_ptr<RecheckBucketInfoReply> UP;
 
@@ -206,7 +207,7 @@ public:
         }
     };
 
-    static const uint32_t ID = 1009;
+    static constexpr uint32_t ID = 1009;
     typedef std::shared_ptr<AbortBucketOperationsCommand> SP;
     typedef std::shared_ptr<const AbortBucketOperationsCommand> CSP;
 private:
@@ -227,7 +228,7 @@ public:
 class AbortBucketOperationsReply : public api::InternalReply
 {
 public:
-    static const uint32_t ID = 1010;
+    static constexpr uint32_t ID = 1010;
     typedef std::shared_ptr<AbortBucketOperationsReply> SP;
     typedef std::shared_ptr<const AbortBucketOperationsReply> CSP;
 
@@ -235,6 +236,37 @@ public:
     ~AbortBucketOperationsReply() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+};
+
+
+// Internal Command task for bringing along a Bucket and a BucketTask in
+// the inner workings of the storagelink chain.
+class RunTaskCommand : public api::InternalCommand {
+public:
+    static constexpr uint32_t ID = 1011;
+    RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task);
+    ~RunTaskCommand();
+
+    document::Bucket getBucket() const override { return _bucket.getBucket(); }
+    std::unique_ptr<api::StorageReply> makeReply() override;
+    spi::BucketTask & task() & {
+        return *_task;
+    }
+
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+private:
+    std::unique_ptr<spi::BucketTask> _task;
+    spi::Bucket                      _bucket;
+};
+
+// Simple reply for matching the RunTaskCommand
+class RunTaskReply : public api::InternalReply
+{
+public:
+    explicit RunTaskReply(const RunTaskCommand&);
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+private:
+    static constexpr uint32_t ID = 1012;
 };
 
 } // ns storage

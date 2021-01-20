@@ -30,10 +30,4 @@ AbstractPersistenceProvider::getModifiedBuckets(BucketSpace) const
     return BucketIdListResult(list);
 }
 
-std::unique_ptr<vespalib::IDestructorCallback>
-AbstractPersistenceProvider::register_executor(std::shared_ptr<BucketExecutor>)
-{
-    return {};
-}
-
 }

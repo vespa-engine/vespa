@@ -972,7 +972,11 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
 
 std::unique_ptr<spi::BucketTask>
 FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) {
-    (void) bucket;
+    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
+            bucket.getBucketId(), "FileStorManager::execute"));
+    if (entry.exist()) {
+        _filestorHandler->schedule(std::make_shared<RunTaskCommand>(bucket, std::move(task)));
+    }
     return task;
 }
 
