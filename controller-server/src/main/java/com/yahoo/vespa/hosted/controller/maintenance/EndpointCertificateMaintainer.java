@@ -92,23 +92,21 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
      */
     private void deployRefreshedCertificates() {
         var now = clock.instant();
-        curator.readAllEndpointCertificateMetadata().forEach(((applicationId, endpointCertificateMetadata) ->
+        curator.readAllEndpointCertificateMetadata().forEach((applicationId, endpointCertificateMetadata) ->
                 endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
                     Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
                     if (now.isAfter(refreshTime.plus(1, ChronoUnit.WEEKS))) {
 
-                        controller().jobController().jobs(applicationId).forEach(job -> {
-                            controller().jobController().jobStatus(new JobId(applicationId, JobType.fromJobName(job.jobName())))
-                                    .lastTriggered().ifPresent(run -> {
-                                if (run.start().isBefore(refreshTime)) {
-                                    deploymentTrigger.reTrigger(applicationId, job);
-                                    log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
-                                            applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
-                                }
-                            });
-                        });
+                        controller().jobController().jobs(applicationId).forEach(job ->
+                                controller().jobController().jobStatus(new JobId(applicationId, JobType.fromJobName(job.jobName()))).lastTriggered().ifPresent(run -> {
+                                    if (run.start().isBefore(refreshTime) && job.isProduction()) {
+                                        deploymentTrigger.reTrigger(applicationId, job);
+                                        log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
+                                                applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
+                                    }
+                                }));
                     }
-                })));
+                }));
     }
 
     private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
