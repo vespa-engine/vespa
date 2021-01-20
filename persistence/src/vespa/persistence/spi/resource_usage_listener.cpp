@@ -14,7 +14,7 @@ ResourceUsageListener::ResourceUsageListener()
 
 ResourceUsageListener::~ResourceUsageListener()
 {
-    _register_guard.reset();
+    reset();
 }
 
 void
@@ -27,6 +27,12 @@ void
 ResourceUsageListener::set_register_guard(std::unique_ptr<vespalib::IDestructorCallback> register_guard)
 {
     _register_guard = std::move(register_guard);
+}
+
+void
+ResourceUsageListener::reset()
+{
+    _register_guard.reset();
 }
 
 }

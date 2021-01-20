@@ -22,6 +22,7 @@ public:
     void update_resource_usage(const ResourceUsage& resource_usage) override;
     const ResourceUsage& get_usage() const noexcept { return _usage; }
     void set_register_guard(std::unique_ptr<vespalib::IDestructorCallback> register_guard);
+    void reset();
 };
 
 }

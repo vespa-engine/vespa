@@ -71,6 +71,11 @@ struct NodeStateUpdater {
      * regardless of whether the reported state has changed.
      */
     virtual void immediately_send_get_node_state_replies() = 0;
+
+    /**
+     * Request almost immediate node state replies.
+     */
+    virtual void request_almost_immediate_node_state_replies() = 0;
 };
 
 } // storage

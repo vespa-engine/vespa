@@ -69,6 +69,7 @@ class StateManager : public NodeStateUpdater,
     bool _noThreadTestMode;
     bool _grabbedExternalLock;
     std::atomic<bool> _notifyingListeners;
+    std::atomic<bool> _requested_almost_immediate_node_state_replies;
 
 public:
     explicit StateManager(StorageComponentRegister&, metrics::MetricManager&,
@@ -96,6 +97,7 @@ public:
     HostInfo& getHostInfo() { return *_hostInfo; }
 
     void immediately_send_get_node_state_replies() override;
+    void request_almost_immediate_node_state_replies() override;
 
 private:
     struct ExternalStateLock;
@@ -145,6 +147,8 @@ private:
     std::string getNodeInfo() const;
 
     void run(framework::ThreadHandle&) override;
+
+    void clear_controllers_observed_explicit_node_state_vector();
 };
 
 } // storage

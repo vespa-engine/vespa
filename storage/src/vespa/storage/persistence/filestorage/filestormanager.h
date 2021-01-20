@@ -9,6 +9,7 @@
 #pragma once
 
 #include "filestorhandler.h"
+#include "service_layer_host_info_reporter.h"
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/document/bucket/bucketid.h>
@@ -75,6 +76,7 @@ class FileStorManager : public StorageLinkQueued,
     bool       _closed;
     std::mutex _lock;
     std::unique_ptr<vespalib::IDestructorCallback> _bucketExecutorRegistration;
+    ServiceLayerHostInfoReporter                   _host_info_reporter;
 
 public:
     FileStorManager(const config::ConfigUri &, spi::PersistenceProvider&,
