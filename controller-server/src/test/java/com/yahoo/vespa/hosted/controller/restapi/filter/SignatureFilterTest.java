@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +70,7 @@ public class SignatureFilterTest {
 
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
                                                      Instant.EPOCH,
+                                                     LastLoginInfo.EMPTY,
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(),
                                                      TenantInfo.EMPTY));
@@ -110,6 +112,7 @@ public class SignatureFilterTest {
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
                                                      Instant.EPOCH,
+                                                     LastLoginInfo.EMPTY,
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(publicKey, () -> "user"),
                                                      TenantInfo.EMPTY));

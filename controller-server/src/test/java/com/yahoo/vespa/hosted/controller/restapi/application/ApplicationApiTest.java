@@ -67,6 +67,7 @@ import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
@@ -1237,7 +1238,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Create legacy tenant name containing underscores
         tester.controller().curator().writeTenant(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
-                new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH));
+                new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH, LastLoginInfo.EMPTY));
 
         // POST (add) a Athenz tenant with dashes duplicates existing one with underscores
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)

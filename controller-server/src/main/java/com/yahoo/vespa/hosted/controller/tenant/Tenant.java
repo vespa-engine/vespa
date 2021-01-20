@@ -17,11 +17,13 @@ public abstract class Tenant {
 
     private final TenantName name;
     private final Instant createdAt;
+    private final LastLoginInfo lastLoginInfo;
     private final Optional<Contact> contact;
 
-    Tenant(TenantName name, Instant createdAt, Optional<Contact> contact) {
+    Tenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Contact> contact) {
         this.name = name;
         this.createdAt = createdAt;
+        this.lastLoginInfo = lastLoginInfo;
         this.contact = contact;
     }
 
@@ -33,6 +35,11 @@ public abstract class Tenant {
     /** Instant when the tenant was created */
     public Instant createdAt() {
         return createdAt;
+    }
+
+    /** Returns login information for this tenant */
+    public LastLoginInfo lastLoginInfo() {
+        return lastLoginInfo;
     }
 
     /** Contact information for this tenant */

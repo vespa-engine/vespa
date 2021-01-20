@@ -23,8 +23,9 @@ public class CloudTenant extends Tenant {
     private final TenantInfo info;
 
     /** Public for the serialization layer — do not use! */
-    public CloudTenant(TenantName name, Instant createdAt, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
-        super(name, createdAt, Optional.empty());
+    public CloudTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Principal> creator,
+                       BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
+        super(name, createdAt, lastLoginInfo, Optional.empty());
         this.creator = creator;
         this.developerKeys = developerKeys;
         this.info = Objects.requireNonNull(info);
@@ -34,6 +35,7 @@ public class CloudTenant extends Tenant {
     public static CloudTenant create(TenantName tenantName, Instant createdAt, Principal creator) {
         return new CloudTenant(requireName(tenantName),
                                createdAt,
+                               LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator),
                                ImmutableBiMap.of(), TenantInfo.EMPTY);
     }
