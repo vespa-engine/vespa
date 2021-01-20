@@ -642,19 +642,24 @@ StateManager::getNodeInfo() const
     return json.str();
 }
 
+void
+StateManager::clear_controllers_observed_explicit_node_state_vector()
+{
+    std::lock_guard guard(_stateLock);
+    // Next GetNodeState request from any controller will be replied to instantly
+    _controllers_observed_explicit_node_state.clear();
+}
+
 void StateManager::immediately_send_get_node_state_replies() {
     LOG(debug, "Immediately replying to all pending GetNodeState requests");
-    {
-        std::lock_guard guard(_stateLock);
-        // Next GetNodeState request from any controller will be replied to instantly
-        _controllers_observed_explicit_node_state.clear();
-    }
+    clear_controllers_observed_explicit_node_state_vector();
     sendGetNodeStateReplies();
 }
 
 void
 StateManager::request_almost_immediate_node_state_replies()
 {
+    clear_controllers_observed_explicit_node_state_vector();
     std::unique_lock guard(_threadLock);
     _requested_almost_immediate_node_state_replies.store(true, std::memory_order_relaxed);
     _threadCond.notify_all();

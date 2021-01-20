@@ -147,6 +147,8 @@ private:
     std::string getNodeInfo() const;
 
     void run(framework::ThreadHandle&) override;
+
+    void clear_controllers_observed_explicit_node_state_vector();
 };
 
 } // storage
