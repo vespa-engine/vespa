@@ -3,8 +3,6 @@ package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
 
-import java.util.logging.Level;
-
 /**
  * Log a message in Vespa JSON access log format.
  *
@@ -23,7 +21,7 @@ public final class JSONAccessLog implements RequestLogHandler {
 
     @Override
     public void log(RequestLogEntry entry) {
-        logHandler.access.log(Level.INFO, formatter.format(entry) + '\n');
+        logHandler.log(formatter.format(entry) + '\n');
     }
 
     // TODO: This is never called. We should have a DI provider and call this method from its deconstruct.
