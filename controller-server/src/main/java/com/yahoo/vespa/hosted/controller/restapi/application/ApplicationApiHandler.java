@@ -91,6 +91,7 @@ import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
@@ -1999,6 +2000,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setLong("createdAtMillis", tenant.createdAt().toEpochMilli());
         lastDev.ifPresent(instant -> object.setLong("lastDeploymentToDevMillis", instant.toEpochMilli()));
         lastSubmission.ifPresent(instant -> object.setLong("lastSubmissionToProdMillis", instant.toEpochMilli()));
+
+        tenant.lastLoginInfo().get(LastLoginInfo.UserLevel.user)
+                .ifPresent(instant -> object.setLong("lastLoginByUserMillis", instant.toEpochMilli()));
+        tenant.lastLoginInfo().get(LastLoginInfo.UserLevel.developer)
+                .ifPresent(instant -> object.setLong("lastLoginByDeveloperMillis", instant.toEpochMilli()));
+        tenant.lastLoginInfo().get(LastLoginInfo.UserLevel.administrator)
+                .ifPresent(instant -> object.setLong("lastLoginByAdministratorMillis", instant.toEpochMilli()));
     }
 
     /** Returns a copy of the given URI with the host and port from the given URI, the path set to the given path and the query set to given query*/

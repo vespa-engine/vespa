@@ -193,8 +193,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("tenant-without-applications-with-id.json"));
         // GET a tenant with property ID and contact information
         updateContactInformation();
+        tester.controller().tenants().updateLastLogin(TenantName.from("tenant2"),
+                List.of(LastLoginInfo.UserLevel.user, LastLoginInfo.UserLevel.administrator), Instant.ofEpochMilli(1234));
         tester.assertResponse(request("/application/v4/tenant/tenant2", GET).userIdentity(USER_ID),
-                              new File("tenant-with-contact-info.json"));
+                              new File("tenant2.json"));
 
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
