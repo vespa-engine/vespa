@@ -55,7 +55,7 @@ private:
         using CleanContext = typename ParentType::CleanContext;
     public:
         TensorBufferType();
-        virtual void cleanHold(void* buffer, size_t offset, size_t num_elems, CleanContext clean_ctx) override;
+        virtual void cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx) override;
     };
     TensorStoreType _concrete_store;
     const vespalib::eval::ValueType _tensor_type;

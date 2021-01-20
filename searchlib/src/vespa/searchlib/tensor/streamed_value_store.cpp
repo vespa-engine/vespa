@@ -162,7 +162,7 @@ StreamedValueStore::TensorBufferType::TensorBufferType()
 }
 
 void
-StreamedValueStore::TensorBufferType::cleanHold(void* buffer, size_t offset, size_t num_elems, CleanContext clean_ctx)
+StreamedValueStore::TensorBufferType::cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx)
 {
     TensorEntry::SP* elem = static_cast<TensorEntry::SP*>(buffer) + offset;
     for (size_t i = 0; i < num_elems; ++i) {
