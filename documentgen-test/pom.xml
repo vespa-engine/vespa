@@ -27,6 +27,12 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespajlib</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <!-- TODO: Excluded from container-dev. Remove when deps are explicitly listed.  -->
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>linguistics</artifactId>
