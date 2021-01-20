@@ -3,8 +3,6 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.InThreadExecutorService;
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -29,7 +27,6 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -37,9 +34,9 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -292,14 +289,12 @@ public class DeployTester {
                     .zone(zone);
             if (configserverConfig.hostedVespa()) testComponentRegistryBuilder.provisioner(provisioner);
 
-            TenantRepository tenantRepository = new TenantRepository(testComponentRegistryBuilder.build(),
-                                                                     new HostRegistry(),
-                                                                     curator,
-                                                                     Optional.ofNullable(metrics).orElseGet(Metrics::createTestMetrics),
-                                                                     new StripedExecutor<>(new InThreadExecutorService()),
-                                                                     new MockFileDistributionFactory(configserverConfig),
-                                                                     new InMemoryFlagSource(),
-                                                                     new InThreadExecutorService());
+            TenantRepository tenantRepository = new TestTenantRepository.Builder()
+            .withComponentRegistry(testComponentRegistryBuilder.build())
+                    .withCurator(curator)
+                    .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
+                                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                    .build();
             tenantRepository.addTenant(tenantName);
 
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()

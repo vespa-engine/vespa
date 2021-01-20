@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -31,7 +32,8 @@ public class TestTenantRepository extends TenantRepository {
               new StripedExecutor<>(new InThreadExecutorService()),
               fileDistributionFactory,
               flagSource,
-              new InThreadExecutorService());
+              new InThreadExecutorService(),
+              new MockSecretStore());
     }
 
     public static class Builder {
@@ -61,6 +63,11 @@ public class TestTenantRepository extends TenantRepository {
 
         public Builder withCurator(Curator curator) {
             this.curator = curator;
+            return this;
+        }
+
+        public Builder withMetrics(Metrics metrics) {
+            this.metrics = metrics;
             return this;
         }
 

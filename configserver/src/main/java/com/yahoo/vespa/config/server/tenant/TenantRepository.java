@@ -9,6 +9,7 @@ import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
@@ -95,6 +96,7 @@ public class TenantRepository {
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final FileDistributionFactory fileDistributionFactory;
     private final FlagSource flagSource;
+    private final SecretStore secretStore;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -110,7 +112,8 @@ public class TenantRepository {
                             HostRegistry hostRegistry,
                             Curator curator,
                             Metrics metrics,
-                            FlagSource flagSource) {
+                            FlagSource flagSource,
+                            SecretStore secretStore) {
         this(componentRegistry,
              hostRegistry,
              curator,
@@ -118,7 +121,8 @@ public class TenantRepository {
              new StripedExecutor<>(),
              new FileDistributionFactory(componentRegistry.getConfigserverConfig()),
              flagSource,
-             Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())));
+             Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
+             secretStore);
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -128,7 +132,8 @@ public class TenantRepository {
                             StripedExecutor<TenantName> zkWatcherExecutor,
                             FileDistributionFactory fileDistributionFactory,
                             FlagSource flagSource,
-                            ExecutorService zkCacheExecutor) {
+                            ExecutorService zkCacheExecutor,
+                            SecretStore secretStore) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         ConfigserverConfig configserverConfig = componentRegistry.getConfigserverConfig();
@@ -142,6 +147,7 @@ public class TenantRepository {
         this.zkWatcherExecutor = zkWatcherExecutor;
         this.fileDistributionFactory = fileDistributionFactory;
         this.flagSource = flagSource;
+        this.secretStore = secretStore;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -279,7 +285,7 @@ public class TenantRepository {
                                                               curator,
                                                               componentRegistry.getZone(),
                                                               flagSource,
-                                                              componentRegistry.getSecretStore());
+                                                              secretStore);
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     componentRegistry,
                                                                     applicationRepo,
@@ -289,7 +295,8 @@ public class TenantRepository {
                                                                     zkWatcherExecutor,
                                                                     permanentApplicationPackage,
                                                                     flagSource,
-                                                                    zkCacheExecutor);
+                                                                    zkCacheExecutor,
+                                                                    secretStore);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

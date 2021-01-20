@@ -64,8 +64,7 @@ public class InjectedGlobalComponentRegistryTest {
                                                     defRepo,
                                                     hostProvisionerProvider,
                                                     zone,
-                                                    new ConfigServerDB(configserverConfig),
-                                                    new MockSecretStore());
+                                                    new ConfigServerDB(configserverConfig));
     }
 
     @Test

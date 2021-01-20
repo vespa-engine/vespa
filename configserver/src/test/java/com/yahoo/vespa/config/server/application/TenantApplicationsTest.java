@@ -3,8 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.InThreadExecutorService;
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -14,16 +12,14 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.apache.curator.framework.CuratorFramework;
@@ -83,15 +79,10 @@ public class TenantApplicationsTest {
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
-        InThreadExecutorService zkCacheExecutor = new InThreadExecutorService();
-        TenantRepository tenantRepository = new TenantRepository(componentRegistry,
-                                                                 hostRegistry,
-                                                                 curator,
-                                                                 Metrics.createTestMetrics(),
-                                                                 new StripedExecutor<>(new InThreadExecutorService()),
-                                                                 new MockFileDistributionFactory(configserverConfig),
-                                                                 new InMemoryFlagSource(),
-                                                                 zkCacheExecutor);
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withCurator(curator)
+                .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
         applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);

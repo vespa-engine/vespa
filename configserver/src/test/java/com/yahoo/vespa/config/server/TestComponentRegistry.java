@@ -6,7 +6,6 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
@@ -34,7 +33,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Zone zone;
     private final Clock clock;
     private final ConfigServerDB configServerDB;
-    private final SecretStore secretStore;
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                   ConfigserverConfig configserverConfig,
@@ -43,8 +41,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   ReloadListener reloadListener,
                                   TenantListener tenantListener,
                                   Zone zone,
-                                  Clock clock,
-                                  SecretStore secretStore) {
+                                  Clock clock) {
         this.configserverConfig = configserverConfig;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
@@ -54,7 +51,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.zone = zone;
         this.clock = clock;
         this.configServerDB = new ConfigServerDB(configserverConfig);
-        this.secretStore = secretStore;
     }
 
     public static class Builder {
@@ -107,7 +103,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         }
 
         public TestComponentRegistry build() {
-            SecretStore secretStore = new MockSecretStore();
             return new TestComponentRegistry(modelFactoryRegistry,
                                              configserverConfig,
                                              hostProvisioner,
@@ -115,8 +110,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                              reloadListener,
                                              tenantListener,
                                              zone,
-                                             clock,
-                                             secretStore);
+                                             clock);
         }
     }
 
@@ -142,9 +136,5 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public Clock getClock() { return clock;}
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB;}
-    @Override
-    public SecretStore getSecretStore() {
-        return secretStore;
-    }
 
 }

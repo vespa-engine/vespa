@@ -15,6 +15,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.Application;
@@ -213,7 +214,8 @@ public class TenantRepositoryTest {
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
                   new InMemoryFlagSource(),
-                  new InThreadExecutorService());
+                  new InThreadExecutorService(),
+                  new MockSecretStore());
         }
 
         @Override

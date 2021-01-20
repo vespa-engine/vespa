@@ -69,7 +69,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   Curator curator,
                                   Metrics metrics,
                                   PermanentApplicationPackage permanentApplicationPackage,
-                                  FlagSource flagSource) {
+                                  FlagSource flagSource,
+                                  SecretStore secretStore) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               globalComponentRegistry.getConfigserverConfig(),
               globalComponentRegistry.getZone(),
@@ -83,7 +84,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.metrics = metrics;
         this.curator = curator;
         this.flagSource = flagSource;
-        this.secretStore = globalComponentRegistry.getSecretStore();
+        this.secretStore = secretStore;
     }
 
     @Override

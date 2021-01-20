@@ -6,7 +6,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
@@ -29,7 +28,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final ConfigServerDB configServerDB;
-    private final SecretStore secretStore;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
@@ -39,8 +37,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            ConfigDefinitionRepo staticConfigDefinitionRepo,
                                            HostProvisionerProvider hostProvisionerProvider,
                                            Zone zone,
-                                           ConfigServerDB configServerDB,
-                                           SecretStore secretStore) {
+                                           ConfigServerDB configServerDB) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.rpcServer = rpcServer;
         this.configserverConfig = configserverConfig;
@@ -48,7 +45,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.configServerDB = configServerDB;
-        this.secretStore = secretStore;
     }
 
     @Override
@@ -77,10 +73,5 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB; }
-
-    @Override
-    public SecretStore getSecretStore() {
-        return secretStore;
-    }
 
 }

@@ -5,13 +5,11 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 
 import java.time.Clock;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Interface representing all global config server components used within the config server.
@@ -29,5 +27,4 @@ public interface GlobalComponentRegistry {
     Zone getZone();
     Clock getClock();
     ConfigServerDB getConfigServerDB();
-    SecretStore getSecretStore();
 }

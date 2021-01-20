@@ -12,6 +12,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.io.IOUtils;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
@@ -98,7 +99,7 @@ public class SessionRepository {
     private final GlobalComponentRegistry componentRegistry;
     private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
-    private final ExecutorService zkCacheExecutor;
+    private final SecretStore secretStore;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -109,7 +110,8 @@ public class SessionRepository {
                              StripedExecutor<TenantName> zkWatcherExecutor,
                              PermanentApplicationPackage permanentApplicationPackage,
                              FlagSource flagSource,
-                             ExecutorService zkCacheExecutor) {
+                             ExecutorService zkCacheExecutor,
+                             SecretStore secretStore) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -126,7 +128,7 @@ public class SessionRepository {
         this.sessionPreparer = sessionPreparer;
         this.metrics = metrics;
         this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
-        this.zkCacheExecutor = zkCacheExecutor;
+        this.secretStore = secretStore;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -450,7 +452,8 @@ public class SessionRepository {
                                                                     curator,
                                                                     metrics,
                                                                     permanentApplicationPackage,
-                                                                    flagSource);
+                                                                    flagSource,
+                                                                    secretStore);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
