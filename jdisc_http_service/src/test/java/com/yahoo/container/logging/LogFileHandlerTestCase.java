@@ -9,20 +9,21 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.function.BiFunction;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 import java.util.zip.GZIPInputStream;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -142,44 +143,28 @@ public class LogFileHandlerTestCase {
 
     @Test
     public void testcompression_gzip() throws InterruptedException, IOException {
-        File root = temporaryFolder.newFolder("testcompression");
-
-        Formatter formatter = new Formatter() {
-            public String format(LogRecord r) {
-                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
-                String timeStamp = df.format(new Date(r.getMillis()));
-                return ("[" + timeStamp + "]" + " " + formatMessage(r) + "\n");
-            }
-        };
-        LogFileHandler h = new LogFileHandler(
-                Compression.GZIP, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, formatter);
-        int logEntries = 10000;
-        for (int i = 0; i < logEntries; i++) {
-            LogRecord lr = new LogRecord(Level.INFO, "test");
-            h.publish(lr);
-        }
-        h.waitDrained();
-        String f1 = h.getFileName();
-        assertThat(f1).startsWith(root.getAbsolutePath() + "/logfilehandlertest.");
-        File uncompressed = new File(f1);
-        File compressed = new File(f1 + ".gz");
-        assertThat(uncompressed).exists();
-        assertThat(compressed).doesNotExist();
-        String content = IOUtils.readFile(uncompressed);
-        assertThat(content).hasLineCount(logEntries);
-        h.rotateNow();
-        while (uncompressed.exists()) {
-            Thread.sleep(1);
-        }
-        assertThat(compressed).exists();
-        String unzipped = IOUtils.readAll(new InputStreamReader(new GZIPInputStream(new FileInputStream(compressed))));
-        assertThat(content).isEqualTo(unzipped);
-        h.shutdown();
+        testcompression(
+                Compression.GZIP, "gz",
+                (compressedFile, __) -> uncheck(() -> new String(new GZIPInputStream(Files.newInputStream(compressedFile)).readAllBytes())));
     }
 
     @Test
     public void testcompression_zstd() throws InterruptedException, IOException {
-        File root = temporaryFolder.newFolder("testcompression");
+        testcompression(
+                Compression.ZSTD, "zst",
+                (compressedFile, uncompressedSize) -> uncheck(() -> {
+                    ZstdCompressor zstdCompressor = new ZstdCompressor();
+                    byte[] uncompressedBytes = new byte[uncompressedSize];
+                    byte[] compressedBytes = Files.readAllBytes(compressedFile);
+                    zstdCompressor.decompress(compressedBytes, 0, compressedBytes.length, uncompressedBytes, 0, uncompressedBytes.length);
+                    return new String(uncompressedBytes);
+                }));
+    }
+
+    private void testcompression(Compression compression,
+                                 String fileExtension,
+                                 BiFunction<Path, Integer, String> decompressor) throws IOException, InterruptedException {
+        File root = temporaryFolder.newFolder("testcompression" + compression.name());
 
         Formatter formatter = new Formatter() {
             public String format(LogRecord r) {
@@ -189,7 +174,7 @@ public class LogFileHandlerTestCase {
             }
         };
         LogFileHandler h = new LogFileHandler(
-                Compression.ZSTD, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, formatter);
+                compression, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, formatter);
         int logEntries = 10000;
         for (int i = 0; i < logEntries; i++) {
             LogRecord lr = new LogRecord(Level.INFO, "test");
@@ -199,7 +184,7 @@ public class LogFileHandlerTestCase {
         String f1 = h.getFileName();
         assertThat(f1).startsWith(root.getAbsolutePath() + "/logfilehandlertest.");
         File uncompressed = new File(f1);
-        File compressed = new File(f1 + ".zst");
+        File compressed = new File(f1 + "." + fileExtension);
         assertThat(uncompressed).exists();
         assertThat(compressed).doesNotExist();
         String content = IOUtils.readFile(uncompressed);
@@ -209,11 +194,7 @@ public class LogFileHandlerTestCase {
             Thread.sleep(1);
         }
         assertThat(compressed).exists();
-        ZstdCompressor zstdCompressor = new ZstdCompressor();
-        byte[] uncompressedBytes = new byte[content.getBytes().length];
-        byte[] compressedBytes = Files.readAllBytes(compressed.toPath());
-        zstdCompressor.decompress(compressedBytes, 0, compressedBytes.length, uncompressedBytes, 0, uncompressedBytes.length);
-        String uncompressedContent = new String(uncompressedBytes);
+        String uncompressedContent = decompressor.apply(compressed.toPath(), content.getBytes().length);
         assertThat(uncompressedContent).isEqualTo(content);
         h.shutdown();
     }
