@@ -5,6 +5,7 @@
 #include "simple_value.h"
 
 #include <vespa/eval/instruction/dense_dot_product_function.h>
+#include <vespa/eval/instruction/mixed_inner_product_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
 #include <vespa/eval/instruction/dense_matmul_function.h>
 #include <vespa/eval/instruction/dense_multi_matmul_function.h>
@@ -47,6 +48,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, c
             child.set(DenseXWProductFunction::optimize(child.get(), stash));
             child.set(DenseMatMulFunction::optimize(child.get(), stash));
             child.set(DenseMultiMatMulFunction::optimize(child.get(), stash));
+            child.set(MixedInnerProductFunction::optimize(child.get(), stash));
             nodes.pop_back();
         }
     }

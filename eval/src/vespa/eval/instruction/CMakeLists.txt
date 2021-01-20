@@ -9,8 +9,6 @@ vespa_add_library(eval_instruction OBJECT
     dense_lambda_peek_optimizer.cpp
     dense_matmul_function.cpp
     dense_multi_matmul_function.cpp
-    pow_as_map_optimizer.cpp
-    remove_trivial_dimension_optimizer.cpp
     dense_simple_expand_function.cpp
     dense_simple_join_function.cpp
     dense_simple_map_function.cpp
@@ -30,6 +28,9 @@ vespa_add_library(eval_instruction OBJECT
     generic_rename.cpp
     index_lookup_table.cpp
     join_with_number_function.cpp
+    mixed_inner_product_function.cpp
+    pow_as_map_optimizer.cpp
+    remove_trivial_dimension_optimizer.cpp
     replace_type_function.cpp
     vector_from_doubles_function.cpp
 )
