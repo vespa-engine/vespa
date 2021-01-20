@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.compress.ZstdOuputStream;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
@@ -11,12 +12,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -24,29 +30,31 @@ import java.util.logging.StreamHandler;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * <p>Implements log file naming/rotating logic for container logs.</p>
- *
- * <p>Overridden methods: publish</p>
- *
- * <p>Added methods: setFilePattern, setRotationTimes, rotateNow (+ few others)</p>
+ * Implements log file naming/rotating logic for container logs.
  *
  * @author Bob Travis
+ * @author bjorncs
  */
-public class LogFileHandler extends StreamHandler {
+class LogFileHandler extends StreamHandler {
+
+    enum Compression { NONE, GZIP, ZSTD }
 
     private final static Logger logger = Logger.getLogger(LogFileHandler.class.getName());
-    private final boolean compressOnRotation;
-    private long[] rotationTimes = {0}; //default to one log per day, at midnight
-    private String filePattern = "./log.%T";  // default to current directory, ms time stamp
-    private long nextRotationTime = 0;
-    private FileOutputStream currentOutputStream = null;
-    private volatile String fileName;
-    private String symlinkName = null;
-    private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
-    private LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
-    private ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
+
+    private final Compression compression;
+    private final long[] rotationTimes;
+    private final String filePattern;  // default to current directory, ms time stamp
+    private final String symlinkName;
+    private final ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
+    private final LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
+    private final ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
     private final NativeIO nativeIO = new NativeIO();
-    private long lastDropPosition = 0;
+    private final LogThread logThread;
+
+    private volatile FileOutputStream currentOutputStream = null;
+    private volatile long nextRotationTime = 0;
+    private volatile String fileName;
+    private volatile long lastDropPosition = 0;
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
@@ -93,18 +101,25 @@ public class LogFileHandler extends StreamHandler {
             }
         }
     }
-    private final LogThread logThread;
 
-    LogFileHandler() {
-        this(false);
+    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, Formatter formatter) {
+        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, formatter);
     }
 
-    LogFileHandler(boolean compressOnRotation)
-    {
+    LogFileHandler(
+            Compression compression,
+            String filePattern,
+            long[] rotationTimes,
+            String symlinkName,
+            Formatter formatter) {
         super();
-        this.compressOnRotation = compressOnRotation;
-        logThread = new LogThread(this);
-        logThread.start();
+        super.setFormatter(formatter);
+        this.compression = compression;
+        this.filePattern = filePattern;
+        this.rotationTimes = rotationTimes;
+        this.symlinkName = (symlinkName != null && !symlinkName.isBlank()) ? symlinkName : null;
+        this.logThread = new LogThread(this);
+        this.logThread.start();
     }
 
     /**
@@ -112,6 +127,7 @@ public class LogFileHandler extends StreamHandler {
      *
      * @param r logrecord to publish
      */
+    @Override
     public void publish(LogRecord r) {
         try {
             logQueue.put(r);
@@ -123,7 +139,7 @@ public class LogFileHandler extends StreamHandler {
     public synchronized void flush() {
         super.flush();
         try {
-            if (currentOutputStream != null) {
+            if (currentOutputStream != null && compression == Compression.GZIP) {
                 long newPos = currentOutputStream.getChannel().position();
                 if (newPos > lastDropPosition + 102400) {
                     nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
@@ -147,33 +163,6 @@ public class LogFileHandler extends StreamHandler {
             internalRotateNow();
         }
         super.publish(r);
-    }
-
-    /**
-     * Assign pattern for generating (rotating) file names.
-     *
-     * @param pattern See LogFormatter for definition
-     */
-    void setFilePattern ( String pattern ) {
-        filePattern = pattern;
-    }
-
-    /**
-     * Assign times for rotating output files.
-     *
-     * @param timesOfDay in millis, from midnight
-     *
-     */
-    void setRotationTimes ( long[] timesOfDay ) {
-        rotationTimes = timesOfDay;
-    }
-
-    /** Assign time for rotating output files
-     *
-     * @param prescription string form of times, in minutes
-     */
-    void setRotationTimes ( String prescription ) {
-        setRotationTimes(calcTimesMinutes(prescription));
     }
 
     /**
@@ -259,8 +248,8 @@ public class LogFileHandler extends StreamHandler {
         if ((oldFileName != null)) {
             File oldFile = new File(oldFileName);
             if (oldFile.exists()) {
-                if (compressOnRotation) {
-                    executor.execute(() -> runCompression(oldFile));
+                if (compression != Compression.NONE) {
+                    executor.execute(() -> runCompression(oldFile, compression));
                 } else {
                     nativeIO.dropFileFromCache(oldFile);
                 }
@@ -269,7 +258,40 @@ public class LogFileHandler extends StreamHandler {
     }
 
 
-    static void runCompression(File oldFile) {
+    private static void runCompression(File oldFile, Compression compression) {
+        switch (compression) {
+            case ZSTD:
+                runCompressionZstd(oldFile.toPath());
+                break;
+            case GZIP:
+                runCompressionGzip(oldFile);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown compression " + compression);
+        }
+    }
+
+    private static void runCompressionZstd(Path oldFile) {
+        try {
+            Path compressedFile = Paths.get(oldFile.toString() + ".zst");
+            Files.createFile(compressedFile);
+            int bufferSize = 0x400000; // 4M
+            byte[] buffer = new byte[bufferSize];
+            try (ZstdOuputStream out = new ZstdOuputStream(Files.newOutputStream(compressedFile), bufferSize);
+                 InputStream in = Files.newInputStream(oldFile)) {
+                int read;
+                while ((read = in.read(buffer)) >= 0) {
+                    out.write(buffer, 0, read);
+                }
+                out.flush();
+            }
+            Files.delete(oldFile);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to compress log file with zstd: " + oldFile, e);
+        }
+    }
+
+    private static void runCompressionGzip(File oldFile) {
         File gzippedFile = new File(oldFile.getPath() + ".gz");
         try (GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
              FileInputStream inputStream = new FileInputStream(oldFile))
@@ -368,15 +390,11 @@ public class LogFileHandler extends StreamHandler {
         return time % lengthOfDayMillis;
     }
 
-    void setSymlinkName(String symlinkName) {
-        this.symlinkName = symlinkName;
-    }
-
     /**
      * Flushes all queued messages, interrupts the log thread in this and
      * waits for it to end before returning
      */
-    public void shutdown() {
+    void shutdown() {
         logThread.interrupt();
         try {
             logThread.join();
@@ -390,7 +408,7 @@ public class LogFileHandler extends StreamHandler {
     /**
      * Only for unit testing. Do not use.
      */
-    public String getFileName() {
+    String getFileName() {
         return fileName;
     }
 

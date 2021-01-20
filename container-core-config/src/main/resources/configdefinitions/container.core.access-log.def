@@ -15,3 +15,6 @@ fileHandler.symlink string default=""
 
 # compress the previous access log after rotation
 fileHandler.compressOnRotation bool default=true
+
+# Compression format
+fileHandler.compressionFormat enum {GZIP, ZSTD} default=GZIP

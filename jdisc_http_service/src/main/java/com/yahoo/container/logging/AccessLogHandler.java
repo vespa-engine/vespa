@@ -10,31 +10,28 @@ import java.util.logging.Logger;
  */
 class AccessLogHandler {
 
-    public Logger access = Logger.getAnonymousLogger();
-    private LogFileHandler logFileHandler;
+    public final Logger access = Logger.getAnonymousLogger();
+    private final LogFileHandler logFileHandler;
 
-    public AccessLogHandler(AccessLogConfig.FileHandler config) {
+    AccessLogHandler(AccessLogConfig.FileHandler config) {
         access.setUseParentHandlers(false);
-
-        logFileHandler = new LogFileHandler(config.compressOnRotation());
-
-        logFileHandler.setFilePattern(config.pattern());
-        logFileHandler.setRotationTimes(config.rotation());
-
-        createSymlink(config, logFileHandler);
 
         LogFormatter lf = new LogFormatter();
         lf.messageOnly(true);
-        this.logFileHandler.setFormatter(lf);
+        logFileHandler = new LogFileHandler(toCompression(config), config.pattern(), config.rotation(), config.symlink(), lf);
         access.addHandler(this.logFileHandler);
     }
 
-    private void createSymlink(AccessLogConfig.FileHandler config, LogFileHandler handler) {
-        if (!config.symlink().isEmpty())
-            handler.setSymlinkName(config.symlink());
+    private LogFileHandler.Compression toCompression(AccessLogConfig.FileHandler config) {
+        if (!config.compressOnRotation()) return LogFileHandler.Compression.NONE;
+        switch (config.compressionFormat()) {
+            case ZSTD: return LogFileHandler.Compression.ZSTD;
+            case GZIP: return LogFileHandler.Compression.GZIP;
+            default: throw new IllegalArgumentException(config.compressionFormat().toString());
+        }
     }
 
-    public void shutdown() {
+    void shutdown() {
         logFileHandler.close();
         access.removeHandler(logFileHandler);
 
