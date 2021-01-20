@@ -13,26 +13,22 @@ using namespace operation;
 namespace {
 
 template <typename LCT, typename RCT>
-double my_dot_product(const LCT * &lhs, const RCT * rhs, size_t count) {
+double my_dot_product(const LCT * lhs, const RCT * rhs, size_t count) {
     double result = 0.0;
     for (size_t i = 0; i < count; ++i) {
-        result += (*lhs++) * (*rhs++);
+        result += lhs[i] * rhs[i];
     }
     return result;
 }
 
 template <>
-double my_dot_product<double,double>(const double * &lhs, const double * rhs, size_t count) {
-    double result = cblas_ddot(count, lhs, 1, rhs, 1);
-    lhs += count;
-    return result;
+double my_dot_product<double,double>(const double * lhs, const double * rhs, size_t count) {
+    return cblas_ddot(count, lhs, 1, rhs, 1);
 }
 
 template <>
-double my_dot_product<float,float>(const float * &lhs, const float * rhs, size_t count) {
-    double result = cblas_sdot(count, lhs, 1, rhs, 1);
-    lhs += count;
-    return result;
+double my_dot_product<float,float>(const float * lhs, const float * rhs, size_t count) {
+    return cblas_sdot(count, lhs, 1, rhs, 1);
 }
 
 template <typename MCT, typename VCT, typename OCT>
@@ -47,10 +43,11 @@ void my_mixed_inner_product_op(InterpretedFunction::State &state, uint64_t param
     size_t num_output_cells = num_subspaces * param.out_subspace_size;
     ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(num_output_cells);
     const MCT *m_cp = m_cells.begin();
+    const VCT *v_cp = v_cells.begin();
     OCT *out = out_cells.begin();
     for (size_t i = 0; i < num_output_cells; ++i) {
-        const VCT *v_cp = v_cells.begin();
         *out++ = my_dot_product(m_cp, v_cp, param.vector_size);
+        m_cp += param.vector_size;
     }
     assert(out == out_cells.end());
     assert(m_cp == m_cells.end());
