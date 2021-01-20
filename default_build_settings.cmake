@@ -1,4 +1,4 @@
-# Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 include(VespaExtendedDefaultBuildSettings OPTIONAL)
 
@@ -186,10 +186,10 @@ function(vespa_use_default_build_settings)
   elseif(VESPA_OS_DISTRO_COMBINED STREQUAL "debian 10")
     setup_vespa_default_build_settings_debian_10()
   else()
-    message(FATAL_ERROR "-- Unkonwn vespa build platform ${VESPA_OS_DISTRO_COMBINED}")
+    message(FATAL_ERROR "-- Unknown vespa build platform ${VESPA_OS_DISTRO_COMBINED}")
   endif()
   if(NOT DEFINED VESPA_LLVM_VERSION AND NOT DEFINED DEFAULT_VESPA_LLVM_VERSION)
-    message(FATAL_ERROR "-- Unkonwn default llvm version")
+    message(FATAL_ERROR "-- Unknown default llvm version")
   endif()
   if(NOT DEFINED DEFAULT_CMAKE_PREFIX_PATH)
     set(DEFAULT_CMAKE_PREFIX_PATH "${VESPA_DEPS}")
