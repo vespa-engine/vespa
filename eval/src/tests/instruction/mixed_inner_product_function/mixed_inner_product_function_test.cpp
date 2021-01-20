@@ -29,7 +29,7 @@ struct MyVecSeq : Sequence {
 };
 
 std::function<double(size_t)> my_vec_gen(double cellBias) {
-    return [=] (size_t i) { return i + cellBias; };
+    return [=] (size_t i) noexcept { return i + cellBias; };
 }
 
 //-----------------------------------------------------------------------------
