@@ -51,21 +51,19 @@ template <typename MCT, typename VCT, typename OCT>
 void my_mixed_inner_product_op(InterpretedFunction::State &state, uint64_t param_in) {
     const auto &param = unwrap_param<MixedInnerProductParam>(param_in);
     const auto &mixed = state.peek(1);
-    const auto &dense = state.peek(0);
+    const auto &vector = state.peek(0);
     auto m_cells = mixed.cells().typify<MCT>();
-    auto v_cells = dense.cells().typify<VCT>();
+    auto v_cells = vector.cells().typify<VCT>();
     const auto &index = mixed.index();
     size_t num_subspaces = index.size();
     size_t num_output_cells = num_subspaces * param.out_subspace_size;
     ArrayRef<OCT> out_cells = state.stash.create_uninitialized_array<OCT>(num_output_cells);
     const MCT *m_cp = m_cells.begin();
     const VCT *v_cp = v_cells.begin();
-    OCT *out = out_cells.begin();
-    for (size_t i = 0; i < num_output_cells; ++i) {
-        *out++ = my_dot_product(m_cp, v_cp, param.vector_size);
+    for (OCT &out : out_cells) {
+        out = my_dot_product(m_cp, v_cp, param.vector_size);
         m_cp += param.vector_size;
     }
-    assert(out == out_cells.end());
     assert(m_cp == m_cells.end());
     state.pop_pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
 }
@@ -79,9 +77,9 @@ struct SelectMixedInnerProduct {
 } // namespace <unnamed>
 
 MixedInnerProductFunction::MixedInnerProductFunction(const ValueType &res_type_in,
-                                                     const TensorFunction &lhs_in,
-                                                     const TensorFunction &rhs_in)
-  : tensor_function::Op2(res_type_in, lhs_in, rhs_in)
+                                                     const TensorFunction &mixed_child,
+                                                     const TensorFunction &vector_child)
+  : tensor_function::Op2(res_type_in, mixed_child, vector_child)
 {
 }
 

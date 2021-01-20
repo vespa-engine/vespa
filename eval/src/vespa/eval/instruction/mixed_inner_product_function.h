@@ -35,8 +35,8 @@ class MixedInnerProductFunction : public tensor_function::Op2
 {
 public:
     MixedInnerProductFunction(const ValueType &res_type_in,
-                              const TensorFunction &mix_in,
-                              const TensorFunction &vec_in);
+                              const TensorFunction &mixed_child,
+                              const TensorFunction &vector_child);
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
     static bool compatible_types(const ValueType &res, const ValueType &mixed, const ValueType &dense);
