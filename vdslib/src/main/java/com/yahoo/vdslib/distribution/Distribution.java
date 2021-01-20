@@ -18,14 +18,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Distribution {
@@ -219,12 +215,21 @@ public class Distribution {
 
     }
 
-    private static class ScoredNode {
-        int index;
-        int reliability;
-        double score;
+    private static class ScoredNode implements Comparable<ScoredNode> {
 
-        ScoredNode(int index, int reliability, double score) { this.index = index; this.reliability = reliability; this.score = score; }
+        final int index;
+        final double score;
+
+        ScoredNode(int index, double score) {
+            this.index = index;
+            this.score = score;
+        }
+
+        @Override
+        public int compareTo(ScoredNode o) {
+            return Double.compare(o.score, score);
+        }
+
     }
 
     private static boolean allDistributorsDown(Group g, ClusterState clusterState) {
@@ -244,33 +249,35 @@ public class Distribution {
         return true;
     }
 
+    private PriorityQueue<ScoredGroup> groupsByScore(BucketId bucketId, ClusterState clusterState, Group parent) {
+        List<ScoredGroup> results = new ArrayList<>();
+        int seed = getGroupSeed(bucketId, clusterState, parent);
+        RandomGen random = new RandomGen(seed);
+        int currentIndex = 0;
+        for (Group group : parent.getSubgroups().values()) {
+            while (group.getIndex() < currentIndex++) // TODO: Flip comparison the correct way!
+                random.nextDouble();
+
+            double score = random.nextDouble();
+            score = Math.pow(score, 1.0 / group.getCapacity());
+            results.add(new ScoredGroup(group, score));
+        }
+        return new PriorityQueue<>(results);
+    }
+
     private Group getIdealDistributorGroup(boolean distributorAutoOwnershipTransferOnWholeGroupDown,
                                            BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
         if (parent.isLeafGroup()) {
             return parent;
         }
         int[] redundancyArray = parent.getDistribution().getRedundancyArray(redundancy);
-        TreeSet<ScoredGroup> results = new TreeSet<>();
-        int seed = getGroupSeed(bucket, clusterState, parent);
-        RandomGen random = new RandomGen(seed);
-        int currentIndex = 0;
-        for(Group g : parent.getSubgroups().values()) {
-            while (g.getIndex() < currentIndex++) random.nextDouble();
-            double score = random.nextDouble();
-            if (Math.abs(g.getCapacity() - 1.0) > 0.0000001) {
-                score = Math.pow(score, 1.0 / g.getCapacity());
-            }
-            results.add(new ScoredGroup(g, score));
+        PriorityQueue<ScoredGroup> groups = groupsByScore(bucket, clusterState, parent);
+        while ( ! groups.isEmpty()) {
+            Group group = groups.poll().group;
+            if ( ! distributorAutoOwnershipTransferOnWholeGroupDown || ! allDistributorsDown(group, clusterState))
+                return getIdealDistributorGroup(distributorAutoOwnershipTransferOnWholeGroupDown, bucket, clusterState, group, redundancyArray[0]);
         }
-        if (distributorAutoOwnershipTransferOnWholeGroupDown) {
-            while (!results.isEmpty() && allDistributorsDown(results.first().group, clusterState)) {
-                results.remove(results.first());
-            }
-        }
-        if (results.isEmpty()) {
-            return null;
-        }
-        return getIdealDistributorGroup(distributorAutoOwnershipTransferOnWholeGroupDown, bucket, clusterState, results.first().group, redundancyArray[0]);
+        return null;
     }
 
     private static class ResultGroup implements Comparable<ResultGroup> {
@@ -295,44 +302,10 @@ public class Distribution {
             return;
         }
 
+        PriorityQueue<ScoredGroup> groups = groupsByScore(bucketId, clusterState, parent);
         int[] redundancyArray = parent.getDistribution().getRedundancyArray(redundancy);
-
-        List<ScoredGroup> tmpResults = new ArrayList<>();
-        for (int i = 0; i < redundancyArray.length; ++i) {
-            tmpResults.add(new ScoredGroup(null, 0.0));
-        }
-
-        int seed = getGroupSeed(bucketId, clusterState, parent);
-
-        RandomGen random = new RandomGen(seed);
-
-        int currentIndex = 0;
-        Map<Integer, Group> subGroups = parent.getSubgroups();
-
-        for (Map.Entry<Integer, Group> group : subGroups.entrySet()) {
-            while (group.getKey() < currentIndex++) {
-                random.nextDouble();
-            }
-
-            double score = random.nextDouble();
-
-            if (group.getValue().getCapacity() != 1) {
-                score = Math.pow(score, 1.0 / group.getValue().getCapacity());
-            }
-
-            if (score > tmpResults.get(tmpResults.size() - 1).score) {
-                tmpResults.add(new ScoredGroup(group.getValue(), score));
-                Collections.sort(tmpResults);
-                tmpResults.remove(tmpResults.size() - 1);
-            }
-        }
-
-        for (int i = 0; i < tmpResults.size(); ++i) {
-            Group group = tmpResults.get(i).group;
-
-            if (group != null) {
-                getIdealGroups(bucketId, clusterState, group, redundancyArray[i], results);
-            }
+        for (int i = 0, n = Math.min(groups.size(), redundancyArray.length); i < n; i++) {
+            getIdealGroups(bucketId, clusterState, groups.poll().group, redundancyArray[i], results);
         }
     }
 
@@ -395,28 +368,17 @@ public class Distribution {
             throw new TooFewBucketBitsInUseException(msg);
         }
 
-        // Find what hierarchical groups we should have copies in
-        List<ResultGroup> groupDistribution = new ArrayList<>();
-
+        // Find what hierarchical groups we should have copies in.
         Config cfg = config.getAcquire();
+        List<ResultGroup> groupDistribution = new ArrayList<>();
         getIdealGroups(bucket, clusterState, cfg.nodeGraph, cfg.redundancy, groupDistribution);
 
         int seed = getStorageSeed(bucket, clusterState);
         RandomGen random = new RandomGen(seed);
         int randomIndex = 0;
         for (ResultGroup group : groupDistribution) {
-            int redundancy = group.redundancy;
-            Collection<ConfiguredNode> nodes = group.group.getNodes();
-
-            // Create temporary place to hold results. Use double linked list
-            // for cheap access to back(). Stuff in redundancy fake entries to
-            // avoid needing to check size during iteration.
-            LinkedList<ScoredNode> tmpResults = new LinkedList<>();
-            for (int i = 0; i < redundancy; ++i) {
-                tmpResults.add(new ScoredNode(0, 0, 0.0));
-            }
-
-            for (ConfiguredNode configuredNode : nodes) {
+            List<ScoredNode> tmpResults = new ArrayList<>();
+            for (ConfiguredNode configuredNode : group.group.getNodes()) {
                 NodeState nodeState = clusterState.getNodeState(new Node(NodeType.STORAGE, configuredNode.index()));
                 if ( ! nodeState.getState().oneOf(upStates)) {
                     continue;
@@ -432,37 +394,21 @@ public class Distribution {
                 // Get the score from the random number generator. Make sure we
                 // pick correct random number. Optimize for the case where we
                 // pick in rising order.
-                if (configuredNode.index() != randomIndex) {
-                    if (configuredNode.index() < randomIndex) {
-                        random.setSeed(seed);
-                        randomIndex = 0;
-                    }
-
-                    for (int k = randomIndex; k < configuredNode.index(); ++k) {
-                        random.nextDouble();
-                    }
-
-                    randomIndex = configuredNode.index();
+                if (configuredNode.index() < randomIndex) {
+                    random.setSeed(seed);
+                    randomIndex = 0;
                 }
+
+                while (configuredNode.index() > randomIndex++)
+                    random.nextDouble();
 
                 double score = random.nextDouble();
-                ++randomIndex;
-                if (nodeState.getCapacity() != 1.0) {
-                    score = Math.pow(score, 1.0 / nodeState.getCapacity());
-                }
-                if (score > tmpResults.getLast().score) {
-                    for (int i = 0; i < tmpResults.size(); ++i) {
-                        if (score > tmpResults.get(i).score) {
-                            tmpResults.add(i, new ScoredNode(configuredNode.index(), nodeState.getReliability(), score));
-                            break;
-                        }
-                    }
-                    tmpResults.removeLast();
-                }
+                score = Math.pow(score, 1.0 / nodeState.getCapacity());
+                tmpResults.add(new ScoredNode(configuredNode.index(), score));
             }
-
-            for (ScoredNode node : tmpResults) {
-                resultNodes.add(node.index);
+            PriorityQueue<ScoredNode> nodes = new PriorityQueue<>(tmpResults);
+            for (int i = Math.min(nodes.size(), group.redundancy); i-- > 0; ) {
+                resultNodes.add(nodes.poll().index);
             }
         }
 
@@ -495,31 +441,23 @@ public class Distribution {
         int seed = getDistributorSeed(bucket, state);
         RandomGen random = new RandomGen(seed);
         int randomIndex = 0;
-        List<ConfiguredNode> configuredNodes = idealGroup.getNodes();
-        ScoredNode node = new ScoredNode(0, 0, 0);
-        for (ConfiguredNode configuredNode : configuredNodes) {
+        ScoredNode node = null;
+        for (ConfiguredNode configuredNode : idealGroup.getNodes()) {
             NodeState nodeState = state.getNodeState(new Node(NodeType.DISTRIBUTOR, configuredNode.index()));
-            if (!nodeState.getState().oneOf(upStates)) continue;
-            if (configuredNode.index() != randomIndex) {
-                if (configuredNode.index() < randomIndex) {
-                    random.setSeed(seed);
-                    randomIndex = 0;
-                }
-                for (int k=randomIndex; k < configuredNode.index(); ++k) {
-                    random.nextDouble();
-                }
-                randomIndex = configuredNode.index();
-            }
+            if ( ! nodeState.getState().oneOf(upStates))
+                continue;
+
+            while (configuredNode.index() > randomIndex++)
+                random.nextDouble();
+
             double score = random.nextDouble();
-            ++randomIndex;
-            if (Math.abs(nodeState.getCapacity() - 1.0) > 0.0000001) {
-                score = Math.pow(score, 1.0 / nodeState.getCapacity());
-            }
-            if (score > node.score) {
-                node = new ScoredNode(configuredNode.index(), 1, score);
+            score = Math.pow(score, 1.0 / nodeState.getCapacity());
+
+            if (node == null || score > node.score) {
+                node = new ScoredNode(configuredNode.index(), score);
             }
         }
-        if (node.reliability == 0) {
+        if (node == null) {
             throw new NoDistributorsAvailableException(
                     "No available distributors in any of the given upstates '"
                     + upStates + "'.");
@@ -527,11 +465,13 @@ public class Distribution {
         return node.index;
     }
 
-    private boolean visitGroups(GroupVisitor visitor, Map<Integer, Group> groups) {
-        for (Group g : groups.values()) {
-            if (!visitor.visitGroup(g)) return false;
-            if (!g.isLeafGroup()) {
-                if (!visitGroups(visitor, g.getSubgroups())) {
+    private boolean visitGroups(GroupVisitor visitor, Collection<Group> groups) {
+        for (Group g : groups) {
+            if ( ! visitor.visitGroup(g))
+                return false;
+
+            if ( ! g.isLeafGroup()) {
+                if ( ! visitGroups(visitor, g.getSubgroups().values())) {
                     return false;
                 }
             }
@@ -540,10 +480,8 @@ public class Distribution {
     }
 
     public void visitGroups(GroupVisitor visitor) {
-        Map<Integer, Group> groups = new TreeMap<>();
         Group nodeGraph = config.getAcquire().nodeGraph;
-        groups.put(nodeGraph.getIndex(), nodeGraph);
-        visitGroups(visitor, groups);
+        visitGroups(visitor, Set.of(nodeGraph));
     }
 
     public Set<ConfiguredNode> getNodes() {

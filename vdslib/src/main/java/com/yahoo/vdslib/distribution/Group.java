@@ -1,8 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib.distribution;
 
-import java.util.*;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 /**
  * Represent a group in the tree structure of groups in hierarchical setup of VDS nodes.
@@ -207,11 +214,12 @@ public class Group implements Comparable<Group> {
             StringTokenizer st = new StringTokenizer(serialized, "|");
             // Create the distribution spec
             int[] distributionSpec = new int[st.countTokens()];
-            for (int i=0; i<distributionSpec.length; ++i) {
+            for (int i = 0; i < distributionSpec.length; ++i) {
                 String token = st.nextToken();
-                try{
-                    distributionSpec[i] = (token.equals("*") ? 0 : Integer.valueOf(token));
-                } catch (NumberFormatException e) {
+                try {
+                    distributionSpec[i] = (token.equals("*") ? 0 : Integer.parseInt(token));
+                }
+                catch (NumberFormatException e) {
                     throw new ParseException("Illegal distribution spec \"" + serialized + "\". Copy counts must be integer values in the range 1-255.", i);
                 }
                 if (!token.equals("*") && distributionSpec[i] == 0) {
@@ -220,7 +228,7 @@ public class Group implements Comparable<Group> {
             }
             // Verify sanity of the distribution spec
             int firstAsterix = distributionSpec.length;
-            for (int i=0; i<distributionSpec.length; ++i) {
+            for (int i = 0; i < distributionSpec.length; ++i) {
                 if (i > firstAsterix) {
                     if (distributionSpec[i] != 0) {
                         throw new ParseException("Illegal distribution spec \"" + serialized + "\". Asterix specification must be tailing the specification.", i);
@@ -236,25 +244,25 @@ public class Group implements Comparable<Group> {
                 }
             }
             this.distributionSpec = distributionSpec;
-            // Create the pre calculated results
+            // Create the pre-calculated results.
             if (maxRedundancy <= 0 || maxRedundancy > 255) {
                 throw new IllegalArgumentException("The max redundancy (" + maxRedundancy + ") must be a positive number in the range 1-255.");
             }
             int asterixCount = distributionSpec.length - firstAsterix;
             int[][] preCalculations = new int[maxRedundancy + 1][];
-            for (int i=1; i<=maxRedundancy; ++i) {
-                List<Integer> spec = new ArrayList<Integer>();
-                for (int j=0; j<distributionSpec.length; ++j) {
-                    spec.add(distributionSpec[j]);
+            for (int i = 1; i <= maxRedundancy; ++i) {
+                List<Integer> spec = new ArrayList<>();
+                for (int k : distributionSpec) {
+                    spec.add(k);
                 }
                 int remainingRedundancy = i;
-                for (int j=0; j<firstAsterix; ++j) {
+                for (int j = 0; j < firstAsterix; ++j) {
                     spec.set(j, Math.min(remainingRedundancy, spec.get(j)));
                     remainingRedundancy -= spec.get(j);
                 }
                 int divided = remainingRedundancy / asterixCount;
                 remainingRedundancy = remainingRedundancy % asterixCount;
-                for (int j=firstAsterix; j<spec.size(); ++j) {
+                for (int j = firstAsterix; j < spec.size(); ++j) {
                     spec.set(j, divided + (j - firstAsterix < remainingRedundancy ? 1 : 0));
                 }
                 while (spec.get(spec.size() - 1) == 0) {
@@ -262,7 +270,8 @@ public class Group implements Comparable<Group> {
                 }
                 preCalculations[i] = new int[spec.size()];
                 Collections.sort(spec);
-                for (int j=0; j<spec.size(); ++j) preCalculations[i][j] = spec.get(spec.size() - 1 - j);
+                for (int j = 0; j < spec.size(); ++j)
+                    preCalculations[i][j] = spec.get(spec.size() - 1 - j);
             }
             this.preCalculatedResults = preCalculations;
         }
