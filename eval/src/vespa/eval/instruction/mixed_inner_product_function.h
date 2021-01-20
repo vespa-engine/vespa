@@ -7,6 +7,8 @@
 namespace vespalib::eval {
 
 /**
+ * Tensor function for a dot product inside a mixed tensor.
+ *
  * Optimized tensor function for dot-product inside a bigger (possibly
  * mixed) tensor.  To trigger this, the function must be in the form
  * reduce((mixed tensor)*(vector),sum,dimension names)
@@ -29,25 +31,6 @@ namespace vespalib::eval {
  * to pick up the operation, even if this function could also
  * handle them.
  **/
-struct MixedInnerProductParam {
-    ValueType res_type;
-    size_t vector_size;
-    size_t out_subspace_size;
-
-    MixedInnerProductParam(const ValueType &res_type_in,
-                           const ValueType &mix_type,
-                           const ValueType &vec_type)
-      : res_type(res_type_in),
-        vector_size(vec_type.dense_subspace_size()),
-        out_subspace_size(res_type.dense_subspace_size())
-    {
-        assert(vector_size * out_subspace_size == mix_type.dense_subspace_size());
-    }
-};
-
-/**
- * Tensor function for a dot product inside a mixed tensor.
- */
 class MixedInnerProductFunction : public tensor_function::Op2
 {
 public:

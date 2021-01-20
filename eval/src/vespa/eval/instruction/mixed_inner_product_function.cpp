@@ -31,6 +31,22 @@ double my_dot_product<float,float>(const float * lhs, const float * rhs, size_t 
     return cblas_sdot(count, lhs, 1, rhs, 1);
 }
 
+struct MixedInnerProductParam {
+    ValueType res_type;
+    size_t vector_size;
+    size_t out_subspace_size;
+
+    MixedInnerProductParam(const ValueType &res_type_in,
+                           const ValueType &mix_type,
+                           const ValueType &vec_type)
+      : res_type(res_type_in),
+        vector_size(vec_type.dense_subspace_size()),
+        out_subspace_size(res_type.dense_subspace_size())
+    {
+        assert(vector_size * out_subspace_size == mix_type.dense_subspace_size());
+    }
+};
+
 template <typename MCT, typename VCT, typename OCT>
 void my_mixed_inner_product_op(InterpretedFunction::State &state, uint64_t param_in) {
     const auto &param = unwrap_param<MixedInnerProductParam>(param_in);
