@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dense_simple_map_function.h"
+#include "mixed_map_function.h"
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>

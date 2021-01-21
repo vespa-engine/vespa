@@ -18,7 +18,7 @@
 #include <vespa/eval/instruction/dense_simple_join_function.h>
 #include <vespa/eval/instruction/join_with_number_function.h>
 #include <vespa/eval/instruction/pow_as_map_optimizer.h>
-#include <vespa/eval/instruction/dense_simple_map_function.h>
+#include <vespa/eval/instruction/mixed_map_function.h>
 #include <vespa/eval/instruction/vector_from_doubles_function.h>
 #include <vespa/eval/instruction/dense_tensor_create_function.h>
 #include <vespa/eval/instruction/dense_tensor_peek_function.h>

@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "pow_as_map_optimizer.h"
-#include "dense_simple_map_function.h"
 #include <vespa/eval/eval/operation.h>
 
 namespace vespalib::eval {
