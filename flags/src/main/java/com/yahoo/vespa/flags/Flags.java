@@ -50,6 +50,12 @@ public class Flags {
             "Takes effect on the next run of RetiredExpirer.",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag WAIT_FOR_RESOURCES_IN_PREPARE = defineFeatureFlag(
+            "wait-for-resources-in-prepare", false,
+            List.of("freva"), "2021-01-21", "2021-04-01",
+            "Whether deployment prepare should wait until all resources (parent hosts, LBs, etc.) are ready before returning",
+            "Takes effect at redeployment.");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2021-02-01",

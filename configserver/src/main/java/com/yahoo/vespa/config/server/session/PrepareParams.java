@@ -44,6 +44,7 @@ public final class PrepareParams {
     static final String APPLICATION_CONTAINER_ROLE = "applicationContainerRole";
     static final String QUOTA_PARAM_NAME = "quota";
     static final String FORCE_PARAM_NAME = "force";
+    static final String WAIT_FOR_RESOURCES_IN_PREPARE = "waitForResourcesInPrepare";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -52,6 +53,7 @@ public final class PrepareParams {
     private final boolean verbose;
     private final boolean isBootstrap;
     private final boolean force;
+    private final boolean waitForResourcesInPrepare;
     private final Optional<Version> vespaVersion;
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
@@ -65,7 +67,8 @@ public final class PrepareParams {
                           List<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
-                          Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, boolean force) {
+                          Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, boolean force,
+                          boolean waitForResourcesInPrepare) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = Objects.requireNonNull(applicationId);
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -80,6 +83,7 @@ public final class PrepareParams {
         this.applicationRoles = applicationRoles;
         this.quota = quota;
         this.force = force;
+        this.waitForResourcesInPrepare = waitForResourcesInPrepare;
     }
 
     public static class Builder {
@@ -89,6 +93,7 @@ public final class PrepareParams {
         private boolean verbose = false;
         private boolean isBootstrap = false;
         private boolean force = false;
+        private boolean waitForResourcesInPrepare = false;
         private ApplicationId applicationId = null;
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60));
         private Optional<Version> vespaVersion = Optional.empty();
@@ -193,6 +198,11 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder waitForResourcesInPrepare(boolean waitForResourcesInPrepare) {
+            this.waitForResourcesInPrepare = waitForResourcesInPrepare;
+            return this;
+        }
+
         public Builder force(boolean force) {
             this.force = force;
             return this;
@@ -202,7 +212,7 @@ public final class PrepareParams {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
                                      verbose, isBootstrap, vespaVersion, containerEndpoints,
                                      endpointCertificateMetadata, dockerImageRepository, athenzDomain,
-                                     applicationRoles, quota, force);
+                                     applicationRoles, quota, force, waitForResourcesInPrepare);
         }
     }
 
@@ -220,6 +230,7 @@ public final class PrepareParams {
                             .applicationRoles(ApplicationRoles.fromString(request.getProperty(APPLICATION_HOST_ROLE), request.getProperty(APPLICATION_CONTAINER_ROLE)))
                             .quota(request.getProperty(QUOTA_PARAM_NAME))
                             .force(request.getBooleanProperty(FORCE_PARAM_NAME))
+                            .waitForResourcesInPrepare(request.getBooleanProperty(WAIT_FOR_RESOURCES_IN_PREPARE))
                             .build();
     }
 
@@ -268,6 +279,8 @@ public final class PrepareParams {
     public boolean isBootstrap() { return isBootstrap; }
 
     public boolean force() { return force; }
+
+    public boolean waitForResourcesInPrepare() { return waitForResourcesInPrepare; }
 
     public TimeoutBudget getTimeoutBudget() {
         return timeoutBudget;
