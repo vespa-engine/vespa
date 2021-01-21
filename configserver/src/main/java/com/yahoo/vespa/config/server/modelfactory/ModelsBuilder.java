@@ -23,6 +23,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.provision.ProvisionerAdapter;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,6 +80,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                          ApplicationPackage applicationPackage,
                                          SettableOptional<AllocatedHosts> allocatedHosts,
                                          Instant now) {
+        Instant start = Instant.now();
         log.log(Level.FINE, "Will build models for " + applicationId);
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
@@ -132,10 +134,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             }
         }
         log.log(Level.FINE, "Done building models for " + applicationId + ". Built models for versions " +
-                allApplicationModels.stream()
-                        .map(result -> result.getModel().version())
-                        .map(Version::toFullString)
-                        .collect(Collectors.toSet())) ;
+                            allApplicationModels.stream()
+                                                .map(result -> result.getModel().version())
+                                                .map(Version::toFullString)
+                                                .collect(Collectors.toSet()) +
+                            " in " + Duration.between(start, Instant.now()));
         return allApplicationModels;
     }
 
