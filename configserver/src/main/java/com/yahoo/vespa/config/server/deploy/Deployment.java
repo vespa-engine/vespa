@@ -5,9 +5,15 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TransientException;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
@@ -23,6 +29,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -38,6 +45,7 @@ import java.util.stream.Collectors;
 public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private static final Logger log = Logger.getLogger(Deployment.class.getName());
+    private static final Duration durationBetweenResourceReadyChecks = Duration.ofSeconds(60);
 
     /** The session containing the application instance to activate */
     private final Session session;
@@ -73,15 +81,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
-                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
-        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false);
+                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap, boolean waitForResourcesInPrepare) {
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false, waitForResourcesInPrepare);
         return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true, false);
     }
 
     public static Deployment prepared(Session session, ApplicationRepository applicationRepository,
                                       Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
                                       Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
-        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force);
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, false, force, false);
         return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, false, true);
     }
 
@@ -95,6 +103,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             this.configChangeActions = tenant.getSessionRepository().prepareLocalSession(session, deployLogger, params, clock.instant());
             this.prepared = true;
         }
+
+        waitForResourcesOrTimeout(params, session, provisioner);
     }
 
     /** Activates this. If it is not already prepared, this will call prepare first. */
@@ -195,7 +205,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
      */
     private static Supplier<PrepareParams> createPrepareParams(
             Clock clock, Duration timeout, Session session,
-            boolean isBootstrap, boolean ignoreValidationErrors, boolean force) {
+            boolean isBootstrap, boolean ignoreValidationErrors, boolean force, boolean waitForResourcesInPrepare) {
 
         // Supplier because shouldn't/cant create this before validateSessionStatus() for prepared deployments
         // memoized because we want to create this once for unprepared deployments
@@ -208,12 +218,42 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .timeoutBudget(timeoutBudget)
                     .ignoreValidationErrors(ignoreValidationErrors)
                     .isBootstrap(isBootstrap)
-                    .force(force);
+                    .force(force)
+                    .waitForResourcesInPrepare(waitForResourcesInPrepare);
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
             session.getAthenzDomain().ifPresent(params::athenzDomain);
 
             return params.build();
         });
+    }
+
+    private static void waitForResourcesOrTimeout(PrepareParams params, Session session, Optional<Provisioner> provisioner) {
+        if (!params.waitForResourcesInPrepare() || provisioner.isEmpty()) return;
+
+        Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
+        ActivationContext context = new ActivationContext(session.getSessionId());
+        ApplicationTransaction transaction = new ApplicationTransaction(
+                new ProvisionLock(session.getApplicationId(), () -> {}), new NestedTransaction());
+        AtomicReference<TransientException> lastException = new AtomicReference<>();
+
+        while (true) {
+            params.getTimeoutBudget().assertNotTimedOut(
+                    () -> "Timeout exceeded while waiting for application resources of '" + session.getApplicationId() + "'" +
+                            Optional.ofNullable(lastException.get()).map(e -> ". Last exception: " + e.getMessage()).orElse(""));
+
+            try {
+                // Call to activate to make sure that everything is ready, but do not commit the transaction
+                provisioner.get().activate(preparedHosts, context, transaction);
+                return;
+            } catch (TransientException e) {
+                lastException.set(e);
+                try {
+                    Thread.sleep(durationBetweenResourceReadyChecks.toMillis());
+                } catch (InterruptedException e1) {
+                    throw new RuntimeException(e1);
+                }
+            }
+        }
     }
 
 }
