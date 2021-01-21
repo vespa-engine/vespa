@@ -486,13 +486,14 @@ TEST_F(JobTest, job_is_blocked_if_trying_to_move_document_for_frozen_bucket)
 
 TEST_F(JobTest, job_can_restart_documents_scan_if_lid_bloat_is_still_to_large)
 {
-    init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, 3);
+    init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR);
     addMultiStats(10, {{1,3,4,5,6,9},{1,2,4,5,6,8}},
                   {{9,2},   // 30% bloat: move 9 -> 2
                    {8,3},   // move 8 -> 3 (this should trigger rescan as the set of used docs have changed)
                    {6,7}}); // no documents to move
 
     EXPECT_FALSE(run()); // does not find 9 in first scan
+    assertJobContext(2, 9, 1, 0, 0);
     EXPECT_EQ(1u, _handler->_iteratorCnt);
     // We simulate that the set of used docs have changed between these 2 runs
     EXPECT_FALSE(run()); // move 9 -> 2
