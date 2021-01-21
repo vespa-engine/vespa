@@ -93,7 +93,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                             HostRegistry hostRegistry,
                                             TenantName tenantName,
                                             Curator curator,
-                                            ConfigserverConfig configserverConfig) {
+                                            ConfigserverConfig configserverConfig,
+                                            Clock clock) {
         return new TenantApplications(tenantName,
                                       curator,
                                       new StripedExecutor<>(new InThreadExecutorService()),
@@ -103,7 +104,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       configserverConfig,
                                       hostRegistry,
                                       new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),
-                                      componentRegistry.getClock());
+                                      clock);
     }
 
     /** The curator backed ZK storage of this. */

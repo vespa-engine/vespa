@@ -284,10 +284,10 @@ public class DeployTester {
                     .orElseGet(() -> List.of(createModelFactory(clock)));
 
             TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder()
-                    .clock(clock)
                     .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories));
 
             TestTenantRepository.Builder builder = new TestTenantRepository.Builder()
+                    .withClock(clock)
                     .withComponentRegistry(testComponentRegistryBuilder.build())
                     .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)

@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -86,7 +87,7 @@ public class TenantApplicationsTest {
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
-        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator, configserverConfig);
+        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator, configserverConfig, Clock.systemUTC());
     }
 
     @Test
@@ -183,7 +184,8 @@ public class TenantApplicationsTest {
                                                  new HostRegistry(),
                                                  TenantName.defaultName(),
                                                  new MockCurator(),
-                                                 configserverConfig);
+                                                 configserverConfig,
+                                                 Clock.systemUTC());
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -218,7 +220,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator, configserverConfig);
+        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator, configserverConfig, Clock.systemUTC());
     }
 
     private static ApplicationId createApplicationId(String name) {

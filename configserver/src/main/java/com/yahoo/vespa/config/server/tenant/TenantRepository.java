@@ -36,6 +36,7 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -103,6 +104,7 @@ public class TenantRepository {
     private final ConfigserverConfig configserverConfig;
     private final ConfigServerDB configServerDB;
     private final Zone zone;
+    private final Clock clock;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -136,7 +138,8 @@ public class TenantRepository {
              hostProvisionerProvider,
              configserverConfig,
              configServerDB,
-             zone);
+             zone,
+             Clock.systemUTC());
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -151,7 +154,8 @@ public class TenantRepository {
                             HostProvisionerProvider hostProvisionerProvider,
                             ConfigserverConfig configserverConfig,
                             ConfigServerDB configServerDB,
-                            Zone zone) {
+                            Zone zone,
+                            Clock clock) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
@@ -169,6 +173,7 @@ public class TenantRepository {
         this.hostProvisionerProvider = hostProvisionerProvider;
         this.configServerDB = configServerDB;
         this.zone = zone;
+        this.clock = clock;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -196,7 +201,7 @@ public class TenantRepository {
 
     public synchronized Tenant addTenant(TenantName tenantName) {
         writeTenantPath(tenantName);
-        return createTenant(tenantName, componentRegistry.getClock().instant());
+        return createTenant(tenantName, clock.instant());
     }
 
     public void createAndWriteTenantMetaData(Tenant tenant) {
@@ -274,7 +279,7 @@ public class TenantRepository {
         if (stat.isPresent())
             return Instant.ofEpochMilli(stat.get().getCtime());
         else
-            return componentRegistry.getClock().instant();
+            return clock.instant();
     }
 
     // Creates tenant and all its dependencies. This also includes loading active applications
@@ -295,7 +300,7 @@ public class TenantRepository {
                                        configserverConfig,
                                        hostRegistry,
                                        new TenantFileSystemDirs(configServerDB, tenantName),
-                                       componentRegistry.getClock());
+                                       clock);
         PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         SessionPreparer sessionPreparer = new SessionPreparer(componentRegistry.getModelFactoryRegistry(),
                                                               fileDistributionFactory,
@@ -321,7 +326,8 @@ public class TenantRepository {
                                                                     hostProvisionerProvider,
                                                                     configserverConfig,
                                                                     configServerDB,
-                                                                    zone);
+                                                                    zone,
+                                                                    clock);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

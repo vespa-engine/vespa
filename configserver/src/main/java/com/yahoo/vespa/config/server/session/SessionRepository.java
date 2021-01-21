@@ -123,13 +123,14 @@ public class SessionRepository {
                              HostProvisionerProvider hostProvisionerProvider,
                              ConfigserverConfig configserverConfig,
                              ConfigServerDB configServerDB,
-                             Zone zone) {
+                             Zone zone,
+                             Clock clock) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
         sessionCounter = new SessionCounter(configCurator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
-        this.clock = componentRegistry.getClock();
+        this.clock = clock;
         this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);

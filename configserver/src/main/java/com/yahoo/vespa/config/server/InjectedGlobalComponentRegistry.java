@@ -7,8 +7,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 
-import java.time.Clock;
-
 /**
  * Registry containing all the "static"/"global" components in a config server in one place.
  *
@@ -38,8 +36,5 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return staticConfigDefinitionRepo; }
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
-
-    @Override
-    public Clock getClock() {return  Clock.systemUTC();}
 
 }

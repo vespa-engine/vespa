@@ -42,10 +42,10 @@ class MaintainerTester {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .clock(clock)
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
                 .build();
         tenantRepository = new TestTenantRepository.Builder()
+                .withClock(clock)
                 .withComponentRegistry(componentRegistry)
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true))
                 .withConfigserverConfig(configserverConfig)

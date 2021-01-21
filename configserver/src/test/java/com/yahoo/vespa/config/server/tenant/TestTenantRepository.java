@@ -17,6 +17,8 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 
+import java.time.Clock;
+
 /**
  *
  * @author hmusum
@@ -31,7 +33,8 @@ public class TestTenantRepository extends TenantRepository {
                                 FlagSource flagSource,
                                 HostProvisionerProvider hostProvisionerProvider,
                                 ConfigserverConfig configserverConfig,
-                                Zone zone) {
+                                Zone zone,
+                                Clock clock) {
         super(componentRegistry,
               hostRegistry,
               curator,
@@ -44,11 +47,13 @@ public class TestTenantRepository extends TenantRepository {
               hostProvisionerProvider,
               configserverConfig,
               new ConfigServerDB(configserverConfig),
-              zone);
+              zone,
+              clock);
     }
 
     public static class Builder {
 
+        Clock clock = Clock.systemUTC();
         GlobalComponentRegistry componentRegistry;
         HostRegistry hostRegistry = new HostRegistry();
         Curator curator = new MockCurator();
@@ -58,6 +63,11 @@ public class TestTenantRepository extends TenantRepository {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
         Zone zone = Zone.defaultZone();
+
+        public Builder withClock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
 
         public Builder withFlagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
@@ -115,7 +125,8 @@ public class TestTenantRepository extends TenantRepository {
                                             flagSource,
                                             hostProvisionerProvider,
                                             configserverConfig,
-                                            zone);
+                                            zone,
+                                            clock);
         }
 
     }

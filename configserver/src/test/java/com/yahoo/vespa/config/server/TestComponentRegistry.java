@@ -9,7 +9,6 @@ import com.yahoo.vespa.config.server.tenant.MockTenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.model.VespaModelFactory;
 
-import java.time.Clock;
 import java.util.Collections;
 
 /**
@@ -21,18 +20,15 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
     private final ModelFactoryRegistry modelFactoryRegistry;
-    private final Clock clock;
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                   ConfigDefinitionRepo defRepo,
                                   ReloadListener reloadListener,
-                                  TenantListener tenantListener,
-                                  Clock clock) {
+                                  TenantListener tenantListener) {
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
         this.defRepo = defRepo;
         this.modelFactoryRegistry = modelFactoryRegistry;
-        this.clock = clock;
     }
 
     public static class Builder {
@@ -40,15 +36,9 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         private final MockTenantListener tenantListener = new MockTenantListener();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
-        private Clock clock = Clock.systemUTC();
 
         public Builder modelFactoryRegistry(ModelFactoryRegistry modelFactoryRegistry) {
             this.modelFactoryRegistry = modelFactoryRegistry;
-            return this;
-        }
-
-        public Builder clock(Clock clock) {
-            this.clock = clock;
             return this;
         }
 
@@ -66,8 +56,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             return new TestComponentRegistry(modelFactoryRegistry,
                                              defRepo,
                                              reloadListener,
-                                             tenantListener,
-                                             clock);
+                                             tenantListener);
         }
     }
 
@@ -79,7 +68,5 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return defRepo; }
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
-    @Override
-    public Clock getClock() { return clock;}
 
 }

@@ -39,6 +39,7 @@ import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -220,7 +221,8 @@ public class TenantRepositoryTest {
                   HostProvisionerProvider.withProvisioner(new MockProvisioner(), false),
                   configserverConfig,
                   new ConfigServerDB(configserverConfig),
-                  Zone.defaultZone());
+                  Zone.defaultZone(),
+                  Clock.systemUTC());
         }
 
         @Override

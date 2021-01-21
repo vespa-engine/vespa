@@ -34,6 +34,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 
@@ -58,9 +59,9 @@ public class SessionActiveHandlerTest {
     private static final String pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
 
     private MockProvisioner provisioner;
-    private TestComponentRegistry componentRegistry;
     private ApplicationRepository applicationRepository;
     private SessionActiveHandler handler;
+    private final Clock clock = Clock.systemUTC();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -74,7 +75,7 @@ public class SessionActiveHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        componentRegistry = new TestComponentRegistry.Builder()
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
@@ -86,7 +87,7 @@ public class SessionActiveHandlerTest {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(provisioner)
                 .withOrchestrator(new OrchestratorMock())
-                .withClock(componentRegistry.getClock())
+                .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .build();
         handler = createHandler();
@@ -137,7 +138,7 @@ public class SessionActiveHandlerTest {
 
         void invoke() {
             long sessionId = applicationRepository.createSession(applicationId(),
-                                                                 new TimeoutBudget(componentRegistry.getClock(), Duration.ofSeconds(10)),
+                                                                 new TimeoutBudget(clock, Duration.ofSeconds(10)),
                                                                  testApp);
             applicationRepository.prepare(sessionId, new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));

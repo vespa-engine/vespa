@@ -25,7 +25,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -58,7 +57,6 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-        Clock clock = componentRegistry.getClock();
 
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
@@ -71,7 +69,6 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
-                .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .build();
 

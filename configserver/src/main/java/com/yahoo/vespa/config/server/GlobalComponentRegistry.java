@@ -18,5 +18,4 @@ public interface GlobalComponentRegistry {
     ReloadListener getReloadListener();
     ConfigDefinitionRepo getStaticConfigDefinitionRepo();
     ModelFactoryRegistry getModelFactoryRegistry();
-    Clock getClock();
 }
