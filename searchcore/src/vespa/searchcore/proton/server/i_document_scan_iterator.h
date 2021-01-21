@@ -14,7 +14,7 @@ struct IDocumentScanIterator
 {
     typedef std::unique_ptr<IDocumentScanIterator> UP;
 
-    virtual ~IDocumentScanIterator() {}
+    virtual ~IDocumentScanIterator() = default;
 
     /**
      * Returns false if we are certain there are no more documents to scan, true otherwise.
@@ -24,16 +24,12 @@ struct IDocumentScanIterator
 
     /**
      * Returns the next document that has lid > compactLidLimit to be moved.
-     * Returns an invalid document if no documents satisfy the limit or
-     * if max documents are scanned.
+     * Returns an invalid document if no documents satisfy the limit.
      *
      * @param compactLidLimit The returned document must have lid larger than this limit.
-     * @param maxDocsToScan The maximum documents to scan before returning.
      * @param retry Whether we should start the scan with the previous returned document.
      */
-    virtual search::DocumentMetaData next(uint32_t compactLidLimit,
-                                          uint32_t maxDocsToScan,
-                                          bool retry) = 0;
+    virtual search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) = 0;
 };
 
 } // namespace proton
