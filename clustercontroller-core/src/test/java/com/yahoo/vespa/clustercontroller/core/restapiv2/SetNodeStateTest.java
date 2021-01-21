@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.time.TimeBudget;
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.MasterInterface;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.requests.SetNodeStateRequest;
@@ -25,12 +26,15 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -205,28 +209,91 @@ public class SetNodeStateTest extends StateRestApiTest {
         SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/1")
                 .setNewState("user", "maintenance", "whatever reason.")
                 .setCondition(SetUnitStateRequest.Condition.SAFE));
-        assertThat(setResponse.getWasModified(), is(true));
         assertThat(setResponse.getReason(), is("ok"));
+        assertThat(setResponse.getWasModified(), is(true));
     }
 
     @Test
     public void testShouldModifyStorageSafeBlocked() throws Exception {
-        setUp(false);
-        {
-            SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/1")
-                    .setNewState("user", "maintenance", "whatever reason.")
-                    .setCondition(SetUnitStateRequest.Condition.SAFE));
+        // Sets up 2 groups: [0, 2, 4] and [1, 3, 5]
+        setUpBookGroup(6);
+
+        assertUnitState(1, "user", State.UP, "");
+        assertSetUnitState(1, State.MAINTENANCE, null);
+        assertUnitState(1, "user", State.MAINTENANCE, "whatever reason.");
+        assertSetUnitState(1, State.MAINTENANCE, null);  // sanity-check
+
+        // Because 2 is in a different group maintenance should be denied
+        assertSetUnitStateCausesAlreadyInMaintenance(2, State.MAINTENANCE);
+
+        // Because 3 and 5 are in the same group as 1, these should be OK
+        assertSetUnitState(3, State.MAINTENANCE, null);
+        assertUnitState(1, "user", State.MAINTENANCE, "whatever reason.");  // sanity-check
+        assertUnitState(3, "user", State.MAINTENANCE, "whatever reason.");  // sanity-check
+        assertSetUnitState(5, State.MAINTENANCE, null);
+        assertSetUnitStateCausesAlreadyInMaintenance(2, State.MAINTENANCE);  // sanity-check
+
+        // Set all to up
+        assertSetUnitState(1, State.UP, null);
+        assertSetUnitState(1, State.UP, null); // sanity-check
+        assertSetUnitState(3, State.UP, null);
+        assertSetUnitStateCausesAlreadyInMaintenance(2, State.MAINTENANCE);  // sanity-check
+        assertSetUnitState(5, State.UP, null);
+
+        // Now we should be allowed to upgrade second group, while the first group will be denied
+        assertSetUnitState(2, State.MAINTENANCE, null);
+        assertSetUnitStateCausesAlreadyInMaintenance(1, State.MAINTENANCE);  // sanity-check
+        assertSetUnitState(0, State.MAINTENANCE, null);
+        assertSetUnitState(4, State.MAINTENANCE, null);
+        assertSetUnitStateCausesAlreadyInMaintenance(1, State.MAINTENANCE);  // sanity-check
+
+        // And set second group up again
+        assertSetUnitState(0, State.MAINTENANCE, null);
+        assertSetUnitState(2, State.MAINTENANCE, null);
+        assertSetUnitState(4, State.MAINTENANCE, null);
+    }
+
+    private void assertUnitState(int index, String type, State state, String reason) throws StateRestApiException {
+        String path = "music/storage/" + index;
+        UnitResponse response = restAPI.getState(new StateRequest(path, 0));
+        Response.NodeResponse nodeResponse = (Response.NodeResponse) response;
+        UnitState unitState = nodeResponse.getStatePerType().get(type);
+        assertNotNull("No such type " + type + " at path " + path, unitState);
+        assertEquals(state.toString().toLowerCase(), unitState.getId());
+        assertEquals(reason, unitState.getReason());
+    }
+
+    private void assertSetUnitState(int index, State state, String failureReason) throws StateRestApiException {
+        SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/" + index)
+                .setNewState("user", state.toString().toLowerCase(), "whatever reason.")
+                .setCondition(SetUnitStateRequest.Condition.SAFE));
+        if (failureReason == null) {
             assertThat(setResponse.getReason(), is("ok"));
             assertThat(setResponse.getWasModified(), is(true));
-        }
-        {
-            SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/3")
-                    .setNewState("user", "maintenance", "whatever reason.")
-                    .setCondition(SetUnitStateRequest.Condition.SAFE));
-            assertThat(setResponse.getReason(), is(
-                    "There is a node already in maintenance:1"));
+        } else {
+            assertThat(setResponse.getReason(), is(failureReason));
             assertThat(setResponse.getWasModified(), is(false));
         }
+    }
+
+    private void assertSetUnitStateCausesAlreadyInMaintenance(int index, State state) throws StateRestApiException {
+        SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/" + index)
+                .setNewState("user", state.toString().toLowerCase(), "whatever reason.")
+                .setCondition(SetUnitStateRequest.Condition.SAFE));
+
+        String regex = "^There is a node already in maintenance:([0-9]+)$";
+        Matcher matcher = Pattern.compile(regex).matcher(setResponse.getReason());
+
+        String errorMessage = "Expected reason to match '" + regex + "', but got: " + setResponse.getReason() + "'";
+        assertTrue(errorMessage, matcher.find());
+
+        int alreadyMaintainedIndex = Integer.parseInt(matcher.group(1));
+        // Example: Say index 1 is in maintenance, and we try to set 2 in maintenance. This should
+        // NOT be allowed, since 2 is in a different group than 1.
+        assertEquals("Tried to set " + index + " in maintenance, but got: " + setResponse.getReason(),
+                index % 2, (alreadyMaintainedIndex + 1) % 2);
+
+        assertThat(setResponse.getWasModified(), is(false));
     }
 
     @Test

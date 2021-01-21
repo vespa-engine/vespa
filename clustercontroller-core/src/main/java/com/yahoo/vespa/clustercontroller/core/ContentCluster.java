@@ -7,13 +7,22 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.state.*;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vdslib.state.NodeState.ORCHESTRATOR_RESERVED_DESCRIPTION;
@@ -177,15 +186,18 @@ public class ContentCluster {
      * @param node the node to be checked for upgrad
      * @param clusterState the current cluster state version
      * @param condition the upgrade condition
+     * @param oldState the old/current wanted state
      * @param newState state wanted to be set  @return NodeUpgradePrechecker.Response
      */
     public NodeStateChangeChecker.Result calculateEffectOfNewState(
-            Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition, NodeState oldState, NodeState newState) {
+            Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition,
+            NodeState oldState, NodeState newState) {
 
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
                 minStorageNodesUp,
                 minRatioOfStorageNodesUp,
                 distribution.getRedundancy(),
+                new HierarchicalGroupVisitingAdapter(distribution),
                 clusterInfo
         );
         return nodeStateChangeChecker.evaluateTransition(node, clusterState, condition, oldState, newState);

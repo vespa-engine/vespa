@@ -3,14 +3,29 @@ package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
-import com.yahoo.vdslib.state.*;
-import com.yahoo.vespa.clustercontroller.core.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.ContentCluster;
+import com.yahoo.vespa.clustercontroller.core.FleetControllerTest;
+import com.yahoo.vespa.clustercontroller.core.NodeInfo;
+import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskScheduler;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.JsonWriter;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 // TODO: Author
 public abstract class StateRestApiTest {
@@ -83,6 +98,33 @@ public abstract class StateRestApiTest {
         }, ccSockets);
     }
 
+    protected void setUpBookGroup(int nodeCount) {
+        books = null;
+        Distribution distribution = new Distribution(Distribution.getSimpleGroupConfig(2, nodeCount));
+        jsonWriter.setDefaultPathPrefix("/cluster/v2");
+        ContentCluster cluster = new ContentCluster(
+                "music", distribution.getNodes(), distribution, 0 /* minStorageNodesUp*/, 0.0 /* minRatioOfStorageNodesUp */);
+        initializeCluster(cluster, distribution.getNodes());
+        AnnotatedClusterState baselineState = AnnotatedClusterState
+                .withoutAnnotations(ClusterState.stateFromString("distributor:" + nodeCount + " storage:" + nodeCount));
+        Map<String, AnnotatedClusterState> bucketSpaceStates = new HashMap<>();
+        bucketSpaceStates.put("default", AnnotatedClusterState
+                .withoutAnnotations(ClusterState.stateFromString("distributor:" + nodeCount + " storage:" + nodeCount)));
+        bucketSpaceStates.put("global", baselineState);
+        music = new ClusterControllerMock(cluster, baselineState.getClusterState(),
+                ClusterStateBundle.of(baselineState, bucketSpaceStates), 0, 0);
+        ccSockets = new TreeMap<>();
+        ccSockets.put(0, new ClusterControllerStateRestAPI.Socket("localhost", 80));
+        restAPI = new ClusterControllerStateRestAPI(new ClusterControllerStateRestAPI.FleetControllerResolver() {
+            @Override
+            public Map<String, RemoteClusterControllerTaskScheduler> getFleetControllers() {
+                Map<String, RemoteClusterControllerTaskScheduler> fleetControllers = new LinkedHashMap<>();
+                fleetControllers.put(music.context.cluster.getName(), music);
+                return fleetControllers;
+            }
+        }, ccSockets);
+    }
+
     private void initializeCluster(ContentCluster cluster, Collection<ConfiguredNode> nodes) {
         for (ConfiguredNode configuredNode : nodes) {
             for (NodeType type : NodeType.getTypes()) {
@@ -93,12 +135,12 @@ public abstract class StateRestApiTest {
 
                 NodeInfo nodeInfo = cluster.clusterInfo().setRpcAddress(new Node(type, configuredNode.index()), "rpc:" + type + "/" + configuredNode);
                 nodeInfo.setReportedState(reported, 10);
-                nodeInfo.setHostInfo(HostInfo.createHostInfo(getHostInfo()));
+                nodeInfo.setHostInfo(HostInfo.createHostInfo(getHostInfo(nodes)));
             }
         }
     }
 
-    private String getHostInfo() {
+    private String getHostInfo(Collection<ConfiguredNode> nodes) {
         return "{\n" +
                 "    \"cluster-state-version\": 0,\n" +
                 "    \"metrics\": {\n" +
@@ -125,22 +167,15 @@ public abstract class StateRestApiTest {
                 "    },\n" +
                 "    \"distributor\": {\n" +
                 "        \"storage-nodes\": [\n" +
+
+                nodes.stream()
+                        .map(configuredNode ->
                 "            {\n" +
-                "                \"node-index\": 1,\n" +
+                "                \"node-index\": " + configuredNode.index() + ",\n" +
                 "                \"min-current-replication-factor\": 2\n" +
-                "            },\n" +
-                "            {\n" +
-                "                \"node-index\": 3,\n" +
-                "                \"min-current-replication-factor\": 2\n" +
-                "            },\n" +
-                "            {\n" +
-                "                \"node-index\": 5,\n" +
-                "                \"min-current-replication-factor\": 2\n" +
-                "            },\n" +
-                "            {\n" +
-                "                \"node-index\": 7,\n" +
-                "                \"min-current-replication-factor\": 2\n" +
-                "            }\n" +
+                "            }")
+                        .collect(Collectors.joining(",\n")) + "\n" +
+
                 "        ]\n" +
                 "    }\n" +
                 "}";
