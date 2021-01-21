@@ -492,11 +492,11 @@ TEST_F(JobTest, job_can_restart_documents_scan_if_lid_bloat_is_still_to_large)
                    {8,3},   // move 8 -> 3 (this should trigger rescan as the set of used docs have changed)
                    {6,7}}); // no documents to move
 
-    EXPECT_FALSE(run()); // does not find 9 in first scan
+    EXPECT_FALSE(run());  // move 9 -> 2
     assertJobContext(2, 9, 1, 0, 0);
     EXPECT_EQ(1u, _handler->_iteratorCnt);
     // We simulate that the set of used docs have changed between these 2 runs
-    EXPECT_FALSE(run()); // move 9 -> 2
+    EXPECT_FALSE(run()); // move 8 -> 3
     endScan();
     assertJobContext(3, 8, 2, 0, 0);
     EXPECT_EQ(2u, _handler->_iteratorCnt);
