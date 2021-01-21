@@ -23,8 +23,9 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStore;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
@@ -34,7 +35,6 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
@@ -89,7 +89,6 @@ public class SessionPreparerTest {
     private MockCurator curator;
     private ConfigCurator configCurator;
     private SessionPreparer preparer;
-    private TestComponentRegistry componentRegistry;
     private final MockSecretStore secretStore = new MockSecretStore();
     private ConfigserverConfig configserverConfig;
 
@@ -108,7 +107,6 @@ public class SessionPreparerTest {
                 .configServerDBDir(folder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(folder.newFolder().getAbsolutePath())
                 .build();
-        componentRegistry = new TestComponentRegistry.Builder().build();
         preparer = createPreparer();
     }
 
@@ -130,7 +128,7 @@ public class SessionPreparerTest {
                 hostProvisionerProvider,
                 new PermanentApplicationPackage(configserverConfig),
                 configserverConfig,
-                componentRegistry.getStaticConfigDefinitionRepo(),
+                new TestConfigDefinitionRepo(),
                 curator,
                 zone,
                 flagSource,

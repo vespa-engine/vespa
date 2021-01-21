@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -26,7 +25,6 @@ import static org.junit.Assert.assertThat;
 public class InjectedGlobalComponentRegistryTest {
 
     private RpcServer rpcServer;
-    private ConfigDefinitionRepo defRepo;
     private GlobalComponentRegistry globalComponentRegistry;
 
     @Rule
@@ -43,15 +41,13 @@ public class InjectedGlobalComponentRegistryTest {
                                   hostRegistry, new ConfigRequestHostLivenessTracker(),
                                   new FileServer(temporaryFolder.newFolder("filereferences")),
                                   new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
-        defRepo = new StaticConfigDefinitionRepo();
-        globalComponentRegistry = new InjectedGlobalComponentRegistry(rpcServer, defRepo);
+        globalComponentRegistry = new InjectedGlobalComponentRegistry(rpcServer);
     }
 
     @Test
     public void testThatAllComponentsAreSetup() {
         assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));
-        assertThat(globalComponentRegistry.getStaticConfigDefinitionRepo(), is(defRepo));
     }
 
 }

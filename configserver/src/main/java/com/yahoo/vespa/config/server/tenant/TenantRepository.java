@@ -7,6 +7,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -107,6 +108,7 @@ public class TenantRepository {
     private final Zone zone;
     private final Clock clock;
     private final ModelFactoryRegistry modelFactoryRegistry;
+    private final ConfigDefinitionRepo configDefinitionRepo;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -128,7 +130,8 @@ public class TenantRepository {
                             ConfigserverConfig configserverConfig,
                             ConfigServerDB configServerDB,
                             Zone zone,
-                            ModelFactoryRegistry modelFactoryRegistry) {
+                            ModelFactoryRegistry modelFactoryRegistry,
+                            ConfigDefinitionRepo configDefinitionRepo) {
         this(componentRegistry,
              hostRegistry,
              curator,
@@ -143,7 +146,8 @@ public class TenantRepository {
              configServerDB,
              zone,
              Clock.systemUTC(),
-             modelFactoryRegistry);
+             modelFactoryRegistry,
+             configDefinitionRepo);
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -160,7 +164,8 @@ public class TenantRepository {
                             ConfigServerDB configServerDB,
                             Zone zone,
                             Clock clock,
-                            ModelFactoryRegistry modelFactoryRegistry) {
+                            ModelFactoryRegistry modelFactoryRegistry,
+                            ConfigDefinitionRepo configDefinitionRepo) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
@@ -180,6 +185,7 @@ public class TenantRepository {
         this.zone = zone;
         this.clock = clock;
         this.modelFactoryRegistry = modelFactoryRegistry;
+        this.configDefinitionRepo = configDefinitionRepo;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -313,7 +319,7 @@ public class TenantRepository {
                                                               hostProvisionerProvider,
                                                               permanentApplicationPackage,
                                                               configserverConfig,
-                                                              componentRegistry.getStaticConfigDefinitionRepo(),
+                                                              configDefinitionRepo,
                                                               curator,
                                                               zone,
                                                               flagSource,
@@ -334,7 +340,8 @@ public class TenantRepository {
                                                                     configServerDB,
                                                                     zone,
                                                                     clock,
-                                                                    modelFactoryRegistry);
+                                                                    modelFactoryRegistry,
+                                                                    configDefinitionRepo);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

@@ -18,6 +18,7 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -226,7 +227,8 @@ public class TenantRepositoryTest {
                   new ConfigServerDB(configserverConfig),
                   Zone.defaultZone(),
                   Clock.systemUTC(),
-                  new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))));
+                  new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))),
+                  new TestConfigDefinitionRepo());
         }
 
         @Override

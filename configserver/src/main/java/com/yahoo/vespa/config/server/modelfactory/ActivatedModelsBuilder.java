@@ -76,7 +76,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   HostProvisionerProvider hostProvisionerProvider,
                                   ConfigserverConfig configserverConfig,
                                   Zone zone,
-                                  ModelFactoryRegistry modelFactoryRegistry) {
+                                  ModelFactoryRegistry modelFactoryRegistry,
+                                  ConfigDefinitionRepo configDefinitionRepo) {
         super(modelFactoryRegistry,
               configserverConfig,
               zone,
@@ -86,7 +87,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.zkClient = zkClient;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
         this.permanentApplicationPackage = permanentApplicationPackage;
-        this.configDefinitionRepo = globalComponentRegistry.getStaticConfigDefinitionRepo();
+        this.configDefinitionRepo = configDefinitionRepo;
         this.metrics = metrics;
         this.curator = curator;
         this.flagSource = flagSource;

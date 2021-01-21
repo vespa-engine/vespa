@@ -5,10 +5,12 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockSecretStore;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -39,7 +41,8 @@ public class TestTenantRepository extends TenantRepository {
                                 ConfigserverConfig configserverConfig,
                                 Zone zone,
                                 Clock clock,
-                                ModelFactoryRegistry modelFactoryRegistry) {
+                                ModelFactoryRegistry modelFactoryRegistry,
+                                ConfigDefinitionRepo configDefinitionRepo) {
         super(componentRegistry,
               hostRegistry,
               curator,
@@ -54,12 +57,13 @@ public class TestTenantRepository extends TenantRepository {
               new ConfigServerDB(configserverConfig),
               zone,
               clock,
-              modelFactoryRegistry);
+              modelFactoryRegistry,
+              configDefinitionRepo);
     }
 
     public static class Builder {
-
         Clock clock = Clock.systemUTC();
+        ConfigDefinitionRepo configDefinitionRepo = new TestConfigDefinitionRepo();
         GlobalComponentRegistry componentRegistry;
         HostRegistry hostRegistry = new HostRegistry();
         Curator curator = new MockCurator();
@@ -139,7 +143,8 @@ public class TestTenantRepository extends TenantRepository {
                                             configserverConfig,
                                             zone,
                                             clock,
-                                            modelFactoryRegistry);
+                                            modelFactoryRegistry,
+                                            configDefinitionRepo);
         }
 
     }

@@ -8,6 +8,7 @@ import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -110,6 +111,7 @@ public class SessionRepository {
     private final ConfigServerDB configServerDB;
     private final Zone zone;
     private final ModelFactoryRegistry modelFactoryRegistry;
+    private final ConfigDefinitionRepo configDefinitionRepo;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -127,7 +129,8 @@ public class SessionRepository {
                              ConfigServerDB configServerDB,
                              Zone zone,
                              Clock clock,
-                             ModelFactoryRegistry modelFactoryRegistry) {
+                             ModelFactoryRegistry modelFactoryRegistry,
+                             ConfigDefinitionRepo configDefinitionRepo) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -150,6 +153,7 @@ public class SessionRepository {
         this.configServerDB = configServerDB;
         this.zone = zone;
         this.modelFactoryRegistry = modelFactoryRegistry;
+        this.configDefinitionRepo = configDefinitionRepo;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -478,7 +482,8 @@ public class SessionRepository {
                                                                     hostProvisionerProvider,
                                                                     configserverConfig,
                                                                     zone,
-                                                                    modelFactoryRegistry);
+                                                                    modelFactoryRegistry,
+                                                                    configDefinitionRepo);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
