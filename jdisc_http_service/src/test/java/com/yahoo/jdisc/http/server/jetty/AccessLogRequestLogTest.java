@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
+import com.yahoo.container.logging.RequestLog;
 import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.http.MetaData;
 import org.eclipse.jetty.server.HttpChannel;
@@ -117,7 +117,7 @@ public class AccessLogRequestLogTest {
                 new ServerConfig.AccessLog.Builder()
                         .remoteAddressHeaders(List.of("x-forwarded-for", "y-ra"))
                         .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
-        new AccessLogRequestLog(mock(AccessLog.class), config).log(jettyRequest, createResponseMock());
+        new AccessLogRequestLog(mock(RequestLog.class), config).log(jettyRequest, createResponseMock());
     }
 
     private static Request createRequestMock(AccessLogEntry entry) {

@@ -4,10 +4,10 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.common.base.Objects;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
+import com.yahoo.container.logging.RequestLog;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
@@ -30,19 +30,19 @@ import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLoca
  * @author Oyvind Bakksjo
  * @author bjorncs
  */
-class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog {
+class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty.server.RequestLog {
 
     private static final Logger logger = Logger.getLogger(AccessLogRequestLog.class.getName());
 
     // HTTP headers that are logged as extra key-value-pairs in access log entries
     private static final List<String> LOGGED_REQUEST_HEADERS = List.of("Vespa-Client-Version");
 
-    private final AccessLog accessLog;
+    private final RequestLog requestLog;
     private final List<String> remoteAddressHeaders;
     private final List<String> remotePortHeaders;
 
-    AccessLogRequestLog(AccessLog accessLog, ServerConfig.AccessLog config) {
-        this.accessLog = accessLog;
+    AccessLogRequestLog(RequestLog requestLog, ServerConfig.AccessLog config) {
+        this.requestLog = requestLog;
         this.remoteAddressHeaders = config.remoteAddressHeaders();
         this.remotePortHeaders = config.remotePortHeaders();
     }
@@ -126,7 +126,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog {
                 accessLogEntry.setConnectionId(connectionId.toString());
             }
 
-            accessLog.log(accessLogEntry);
+            requestLog.log(accessLogEntry);
         } catch (Exception e) {
             // Catching any exceptions here as it is unclear how Jetty handles exceptions from a RequestLog.
             logger.log(Level.SEVERE, "Failed to log access log entry: " + e.getMessage(), e);
