@@ -15,7 +15,7 @@
 #include <vespa/eval/instruction/remove_trivial_dimension_optimizer.h>
 #include <vespa/eval/instruction/dense_lambda_peek_optimizer.h>
 #include <vespa/eval/instruction/dense_simple_expand_function.h>
-#include <vespa/eval/instruction/dense_simple_join_function.h>
+#include <vespa/eval/instruction/mixed_simple_join_function.h>
 #include <vespa/eval/instruction/join_with_number_function.h>
 #include <vespa/eval/instruction/pow_as_map_optimizer.h>
 #include <vespa/eval/instruction/mixed_map_function.h>
@@ -69,7 +69,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, c
             child.set(FastRenameOptimizer::optimize(child.get(), stash));
             child.set(PowAsMapOptimizer::optimize(child.get(), stash));
             child.set(MixedMapFunction::optimize(child.get(), stash));
-            child.set(DenseSimpleJoinFunction::optimize(child.get(), stash));
+            child.set(MixedSimpleJoinFunction::optimize(child.get(), stash));
             child.set(JoinWithNumberFunction::optimize(child.get(), stash));
             child.set(DenseSingleReduceFunction::optimize(child.get(), stash));
             nodes.pop_back();

@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/dense_simple_join_function.h>
+#include <vespa/eval/instruction/mixed_simple_join_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 
@@ -15,8 +15,8 @@ using namespace vespalib::eval::tensor_function;
 
 using vespalib::make_string_short::fmt;
 
-using Primary = DenseSimpleJoinFunction::Primary;
-using Overlap = DenseSimpleJoinFunction::Overlap;
+using Primary = MixedSimpleJoinFunction::Primary;
+using Overlap = MixedSimpleJoinFunction::Overlap;
 
 namespace vespalib::eval {
 
@@ -47,12 +47,14 @@ EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("a", spec(1.5))
         .add("b", spec(2.5))
-        .add("sparse", spec({x({"a"})}, N()))
-        .add("mixed", spec({x({"a"}),y(5)}, N()))
+        .add("sparse", spec({x({"a", "b", "c"})}, N()))
+        .add("mixed", spec({x({"a", "b", "c"}),y(5),z(3)}, N()))
+        .add("empty_mixed", spec({x({}),y(5),z(3)}, N()))
+        .add_mutable("@mixed", spec({x({"a", "b", "c"}),y(5),z(3)}, N()))
         .add_cube("a", 1, "b", 1, "c", 1)
         .add_cube("x", 1, "y", 1, "z", 1)
         .add_cube("x", 3, "y", 5, "z", 3)
-        .add_vector("x", 5)
+        .add_vector("z", 3)
         .add_dense({{"c", 5}, {"d", 1}})
         .add_dense({{"b", 1}, {"c", 5}})
         .add_matrix("x", 3, "y", 5, [](size_t idx) noexcept { return double((idx * 2) + 3); })
@@ -69,7 +71,7 @@ void verify_optimized(const vespalib::string &expr, Primary primary, Overlap ove
     EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
-    auto info = fixture.find_all<DenseSimpleJoinFunction>();
+    auto info = fixture.find_all<MixedSimpleJoinFunction>();
     ASSERT_EQUAL(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
     EXPECT_EQUAL(info[0]->primary(), primary);
@@ -81,7 +83,9 @@ void verify_optimized(const vespalib::string &expr, Primary primary, Overlap ove
         if (i == size_t(p_inplace)) {
             EXPECT_EQUAL(fixture.get_param(i), fixture.result());
         } else {
-            EXPECT_NOT_EQUAL(fixture.get_param(i), fixture.result());
+            if (!fixture.result().cells().empty()) {
+                EXPECT_NOT_EQUAL(fixture.get_param(i), fixture.result());
+            }
         }
     }
 }
@@ -91,7 +95,7 @@ void verify_not_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQUAL(fixture.result(), slow_fixture.result());
-    auto info = fixture.find_all<DenseSimpleJoinFunction>();
+    auto info = fixture.find_all<MixedSimpleJoinFunction>();
     EXPECT_TRUE(info.empty());
 }
 
@@ -112,7 +116,7 @@ TEST("require that outer nesting is preferred to inner nesting") {
 }
 
 TEST("require that non-subset join is not optimized") {
-    TEST_DO(verify_not_optimized("x5+y5"));
+    TEST_DO(verify_not_optimized("y5+z3"));
 }
 
 TEST("require that subset join with complex overlap is not optimized") {
@@ -207,7 +211,7 @@ TEST("require that scalar values are not optimized") {
     TEST_DO(verify_not_optimized("mixed+a"));
 }
 
-TEST("require that mapped tensors are not optimized") {
+TEST("require that sparse tensors are mostly not optimized") {
     TEST_DO(verify_not_optimized("sparse+sparse"));
     TEST_DO(verify_not_optimized("sparse+y5"));
     TEST_DO(verify_not_optimized("y5+sparse"));
@@ -215,10 +219,33 @@ TEST("require that mapped tensors are not optimized") {
     TEST_DO(verify_not_optimized("mixed+sparse"));
 }
 
-TEST("require mixed tensors are not optimized") {
+TEST("require that sparse tensor joined with trivial dense tensor is optimized") {
+    TEST_DO(verify_optimized("sparse+a1b1c1", Primary::LHS, Overlap::FULL, false, 1));
+    TEST_DO(verify_optimized("a1b1c1+sparse", Primary::RHS, Overlap::FULL, false, 1));
+}
+
+TEST("require that primary tensor can be empty") {
+    TEST_DO(verify_optimized("empty_mixed+y5z3", Primary::LHS, Overlap::FULL, false, 1));
+    TEST_DO(verify_optimized("y5z3+empty_mixed", Primary::RHS, Overlap::FULL, false, 1));
+}
+
+TEST("require that mixed tensors can be optimized") {
     TEST_DO(verify_not_optimized("mixed+mixed"));
-    TEST_DO(verify_not_optimized("mixed+y5"));
-    TEST_DO(verify_not_optimized("y5+mixed"));
+    TEST_DO(verify_optimized("mixed+y5z3", Primary::LHS, Overlap::FULL,  false, 1));
+    TEST_DO(verify_optimized("mixed+y5",   Primary::LHS, Overlap::OUTER, false, 3));
+    TEST_DO(verify_optimized("mixed+z3",   Primary::LHS, Overlap::INNER, false, 5));
+    TEST_DO(verify_optimized("y5z3+mixed", Primary::RHS, Overlap::FULL,  false, 1));
+    TEST_DO(verify_optimized("y5+mixed",   Primary::RHS, Overlap::OUTER, false, 3));
+    TEST_DO(verify_optimized("z3+mixed",   Primary::RHS, Overlap::INNER, false, 5));
+}
+
+TEST("require that mixed tensors can be inplace") {
+    TEST_DO(verify_optimized("@mixed+y5z3", Primary::LHS, Overlap::FULL,  true, 1, 0));
+    TEST_DO(verify_optimized("@mixed+y5",   Primary::LHS, Overlap::OUTER, true, 3, 0));
+    TEST_DO(verify_optimized("@mixed+z3",   Primary::LHS, Overlap::INNER, true, 5, 0));
+    TEST_DO(verify_optimized("y5z3+@mixed", Primary::RHS, Overlap::FULL,  true, 1, 1));
+    TEST_DO(verify_optimized("y5+@mixed",   Primary::RHS, Overlap::OUTER, true, 3, 1));
+    TEST_DO(verify_optimized("z3+@mixed",   Primary::RHS, Overlap::INNER, true, 5, 1));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
