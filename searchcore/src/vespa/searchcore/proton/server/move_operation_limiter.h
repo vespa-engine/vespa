@@ -24,22 +24,21 @@ private:
 
     struct Callback;
 
-    mutable std::mutex _mutex;
+    mutable std::mutex        _mutex;
     IBlockableMaintenanceJob *_job;
-    uint32_t _outstandingOps;
-    const uint32_t _maxOutstandingOps;
+    uint32_t                  _outstandingOps;
+    const uint32_t            _maxOutstandingOps;
 
     bool isOnLimit(const LockGuard &guard) const;
     void endOperation();
 
 public:
     using SP = std::shared_ptr<MoveOperationLimiter>;
-    MoveOperationLimiter(IBlockableMaintenanceJob *job,
-                         uint32_t maxOutstandingOps);
+    MoveOperationLimiter(IBlockableMaintenanceJob *job, uint32_t maxOutstandingOps);
     ~MoveOperationLimiter();
     void clearJob();
     bool isAboveLimit() const;
-    virtual std::shared_ptr<vespalib::IDestructorCallback> beginOperation() override;
+    std::shared_ptr<vespalib::IDestructorCallback> beginOperation() override;
 };
 
 }

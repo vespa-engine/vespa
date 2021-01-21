@@ -24,7 +24,7 @@ struct ILidSpaceCompactionHandler
     typedef std::unique_ptr<ILidSpaceCompactionHandler> UP;
     typedef std::vector<UP> Vector;
 
-    virtual ~ILidSpaceCompactionHandler() {}
+    virtual ~ILidSpaceCompactionHandler() = default;
 
     /**
      * Returns the name of this handler.
