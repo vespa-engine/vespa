@@ -48,7 +48,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final BooleanFlag useEndpointCertificateMaintainer;
 
     public EndpointCertificateMaintainer(Controller controller, Duration interval) {
-        super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
+        super(controller, interval, null, SystemName.all());
         this.deploymentTrigger = controller.applications().deploymentTrigger();
         this.clock = controller.clock();
         this.secretStore = controller.secretStore();
