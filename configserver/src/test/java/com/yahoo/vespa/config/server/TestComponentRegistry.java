@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.MockTenantListener;
@@ -22,20 +21,17 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
     private final ModelFactoryRegistry modelFactoryRegistry;
-    private final Zone zone;
     private final Clock clock;
 
     private TestComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                   ConfigDefinitionRepo defRepo,
                                   ReloadListener reloadListener,
                                   TenantListener tenantListener,
-                                  Zone zone,
                                   Clock clock) {
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
         this.defRepo = defRepo;
         this.modelFactoryRegistry = modelFactoryRegistry;
-        this.zone = zone;
         this.clock = clock;
     }
 
@@ -44,16 +40,10 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         private final MockTenantListener tenantListener = new MockTenantListener();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
-        private Zone zone = Zone.defaultZone();
         private Clock clock = Clock.systemUTC();
 
         public Builder modelFactoryRegistry(ModelFactoryRegistry modelFactoryRegistry) {
             this.modelFactoryRegistry = modelFactoryRegistry;
-            return this;
-        }
-
-        public Builder zone(Zone zone) {
-            this.zone = zone;
             return this;
         }
 
@@ -77,7 +67,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                              defRepo,
                                              reloadListener,
                                              tenantListener,
-                                             zone,
                                              clock);
         }
     }
@@ -90,10 +79,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return defRepo; }
     @Override
     public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
-    @Override
-    public Zone getZone() {
-        return zone;
-    }
     @Override
     public Clock getClock() { return clock;}
 

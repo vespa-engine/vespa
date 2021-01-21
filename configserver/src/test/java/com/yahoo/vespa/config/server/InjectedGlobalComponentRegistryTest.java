@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -34,7 +33,6 @@ public class InjectedGlobalComponentRegistryTest {
     private ConfigDefinitionRepo defRepo;
     private GlobalComponentRegistry globalComponentRegistry;
     private ModelFactoryRegistry modelFactoryRegistry;
-    private Zone zone;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -52,12 +50,10 @@ public class InjectedGlobalComponentRegistryTest {
                                   new FileServer(temporaryFolder.newFolder("filereferences")),
                                   new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
         defRepo = new StaticConfigDefinitionRepo();
-        zone = Zone.defaultZone();
         globalComponentRegistry =
                 new InjectedGlobalComponentRegistry(modelFactoryRegistry,
                                                     rpcServer,
-                                                    defRepo,
-                                                    zone);
+                                                    defRepo);
     }
 
     @Test
@@ -66,7 +62,6 @@ public class InjectedGlobalComponentRegistryTest {
         assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getStaticConfigDefinitionRepo(), is(defRepo));
-        assertThat(globalComponentRegistry.getZone(), is(zone));
     }
 
 }

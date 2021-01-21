@@ -14,6 +14,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -80,6 +81,7 @@ public class SessionPreparerTest {
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
     private static final Version version123 = new Version(1, 2, 3);
     private static final Version version321 = new Version(3, 2, 1);
+    private static final Zone zone = Zone.defaultZone();
     private final KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
     private final X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, new X500Principal("CN=subject"),
             Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(12345)).build();
@@ -130,7 +132,7 @@ public class SessionPreparerTest {
                 configserverConfig,
                 componentRegistry.getStaticConfigDefinitionRepo(),
                 curator,
-                componentRegistry.getZone(),
+                zone,
                 flagSource,
                 secretStore);
     }

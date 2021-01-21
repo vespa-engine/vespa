@@ -9,6 +9,7 @@ import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -101,6 +102,7 @@ public class TenantRepository {
     private final HostProvisionerProvider hostProvisionerProvider;
     private final ConfigserverConfig configserverConfig;
     private final ConfigServerDB configServerDB;
+    private final Zone zone;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -120,7 +122,8 @@ public class TenantRepository {
                             SecretStore secretStore,
                             HostProvisionerProvider hostProvisionerProvider,
                             ConfigserverConfig configserverConfig,
-                            ConfigServerDB configServerDB) {
+                            ConfigServerDB configServerDB,
+                            Zone zone) {
         this(componentRegistry,
              hostRegistry,
              curator,
@@ -132,7 +135,8 @@ public class TenantRepository {
              secretStore,
              hostProvisionerProvider,
              configserverConfig,
-             configServerDB);
+             configServerDB,
+             zone);
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -146,7 +150,8 @@ public class TenantRepository {
                             SecretStore secretStore,
                             HostProvisionerProvider hostProvisionerProvider,
                             ConfigserverConfig configserverConfig,
-                            ConfigServerDB configServerDB) {
+                            ConfigServerDB configServerDB,
+                            Zone zone) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
@@ -163,6 +168,7 @@ public class TenantRepository {
         this.secretStore = secretStore;
         this.hostProvisionerProvider = hostProvisionerProvider;
         this.configServerDB = configServerDB;
+        this.zone = zone;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -298,7 +304,7 @@ public class TenantRepository {
                                                               configserverConfig,
                                                               componentRegistry.getStaticConfigDefinitionRepo(),
                                                               curator,
-                                                              componentRegistry.getZone(),
+                                                              zone,
                                                               flagSource,
                                                               secretStore);
         SessionRepository sessionRepository = new SessionRepository(tenantName,
@@ -314,7 +320,8 @@ public class TenantRepository {
                                                                     secretStore,
                                                                     hostProvisionerProvider,
                                                                     configserverConfig,
-                                                                    configServerDB);
+                                                                    configServerDB,
+                                                                    zone);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

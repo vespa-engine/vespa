@@ -8,10 +8,7 @@ import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
@@ -205,9 +202,7 @@ public class TenantRepositoryTest {
     }
 
     private GlobalComponentRegistry createComponentRegistry() {
-        return new TestComponentRegistry.Builder()
-                .zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("foo")))
-                .build();
+        return new TestComponentRegistry.Builder().build();
     }
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
@@ -224,7 +219,8 @@ public class TenantRepositoryTest {
                   new MockSecretStore(),
                   HostProvisionerProvider.withProvisioner(new MockProvisioner(), false),
                   configserverConfig,
-                  new ConfigServerDB(configserverConfig));
+                  new ConfigServerDB(configserverConfig),
+                  Zone.defaultZone());
         }
 
         @Override

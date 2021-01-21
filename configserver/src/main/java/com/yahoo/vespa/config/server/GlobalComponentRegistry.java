@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 
@@ -19,6 +18,5 @@ public interface GlobalComponentRegistry {
     ReloadListener getReloadListener();
     ConfigDefinitionRepo getStaticConfigDefinitionRepo();
     ModelFactoryRegistry getModelFactoryRegistry();
-    Zone getZone();
     Clock getClock();
 }

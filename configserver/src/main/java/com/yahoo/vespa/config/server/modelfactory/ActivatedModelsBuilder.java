@@ -15,6 +15,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ServerCache;
@@ -73,10 +74,11 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   FlagSource flagSource,
                                   SecretStore secretStore,
                                   HostProvisionerProvider hostProvisionerProvider,
-                                  ConfigserverConfig configserverConfig) {
+                                  ConfigserverConfig configserverConfig,
+                                  Zone zone) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               configserverConfig,
-              globalComponentRegistry.getZone(),
+              zone,
               hostProvisionerProvider);
         this.tenant = tenant;
         this.applicationGeneration = applicationGeneration;

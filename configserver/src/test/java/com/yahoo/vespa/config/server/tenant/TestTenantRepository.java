@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockSecretStore;
@@ -29,7 +30,8 @@ public class TestTenantRepository extends TenantRepository {
                                 FileDistributionFactory fileDistributionFactory,
                                 FlagSource flagSource,
                                 HostProvisionerProvider hostProvisionerProvider,
-                                ConfigserverConfig configserverConfig) {
+                                ConfigserverConfig configserverConfig,
+                                Zone zone) {
         super(componentRegistry,
               hostRegistry,
               curator,
@@ -41,7 +43,8 @@ public class TestTenantRepository extends TenantRepository {
               new MockSecretStore(),
               hostProvisionerProvider,
               configserverConfig,
-              new ConfigServerDB(configserverConfig));
+              new ConfigServerDB(configserverConfig),
+              zone);
     }
 
     public static class Builder {
@@ -54,6 +57,7 @@ public class TestTenantRepository extends TenantRepository {
         FlagSource flagSource = new InMemoryFlagSource();
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
+        Zone zone = Zone.defaultZone();
 
         public Builder withFlagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
@@ -95,6 +99,11 @@ public class TestTenantRepository extends TenantRepository {
             return this;
         }
 
+        public Builder withZone(Zone zone) {
+            this.zone = zone;
+            return this;
+        }
+
         public TenantRepository build() {
             if (fileDistributionFactory == null)
                 fileDistributionFactory = new FileDistributionFactory(configserverConfig);
@@ -105,7 +114,8 @@ public class TestTenantRepository extends TenantRepository {
                                             fileDistributionFactory,
                                             flagSource,
                                             hostProvisionerProvider,
-                                            configserverConfig);
+                                            configserverConfig,
+                                            zone);
         }
 
     }

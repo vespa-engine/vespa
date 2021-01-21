@@ -285,15 +285,15 @@ public class DeployTester {
 
             TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder()
                     .clock(clock)
-                    .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-                    .zone(zone);
+                    .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories));
 
             TestTenantRepository.Builder builder = new TestTenantRepository.Builder()
                     .withComponentRegistry(testComponentRegistryBuilder.build())
                     .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
-                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig));
+                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                    .withZone(zone);
 
             if (configserverConfig.hostedVespa()) builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true));
 
