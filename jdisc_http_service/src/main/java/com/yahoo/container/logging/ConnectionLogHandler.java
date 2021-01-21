@@ -18,9 +18,9 @@ class ConnectionLogHandler {
         lf.messageOnly(true);
         logFileHandler = new LogFileHandler(
                 LogFileHandler.Compression.ZSTD,
-                String.format("logs/vespa/qrs/connection.%s.%s", clusterName, "%Y%m%d%H%M%S"),
-                new long[]{0},
-                null,
+                String.format("logs/vespa/qrs/ConnectionLog.%s.%s", clusterName, "%Y%m%d%H%M%S"),
+                "0 60 ...",
+                String.format("ConnectionLog.%s", clusterName),
                 lf);
         this.logFileHandler.setFormatter(lf);
         connection.addHandler(this.logFileHandler);
