@@ -105,7 +105,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
 
                         controller().jobController().jobs(applicationId).forEach(job ->
                                 controller().jobController().jobStatus(new JobId(applicationId, JobType.fromJobName(job.jobName()))).lastTriggered().ifPresent(run -> {
-                                    if (run.start().isBefore(refreshTime) && job.isProduction()) {
+                                    if (run.start().isBefore(refreshTime) && job.isProduction() && job.isDeployment()) {
                                         deploymentTrigger.reTrigger(applicationId, job);
                                         log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
                                                 applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
