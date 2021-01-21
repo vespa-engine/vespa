@@ -13,14 +13,11 @@ class ConnectionLogHandler {
     private final LogFileHandler logFileHandler;
 
     public ConnectionLogHandler(String clusterName) {
-        LogFormatter lf = new LogFormatter();
-        lf.messageOnly(true);
         logFileHandler = new LogFileHandler(
                 LogFileHandler.Compression.ZSTD,
                 String.format("logs/vespa/qrs/ConnectionLog.%s.%s", clusterName, "%Y%m%d%H%M%S"),
                 "0 60 ...",
-                String.format("ConnectionLog.%s", clusterName),
-                lf);
+                String.format("ConnectionLog.%s", clusterName));
     }
 
     public void log(String message) {

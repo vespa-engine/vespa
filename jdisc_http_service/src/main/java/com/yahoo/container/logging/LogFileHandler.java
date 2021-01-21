@@ -110,16 +110,15 @@ class LogFileHandler {
         }
     }
 
-    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, Formatter formatter) {
-        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, formatter);
+    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName) {
+        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName);
     }
 
     LogFileHandler(
             Compression compression,
             String filePattern,
             long[] rotationTimes,
-            String symlinkName,
-            Formatter formatter) {
+            String symlinkName) {
         this.compression = compression;
         this.filePattern = filePattern;
         this.rotationTimes = rotationTimes;

@@ -14,9 +14,7 @@ class AccessLogHandler {
     private final LogFileHandler logFileHandler;
 
     AccessLogHandler(AccessLogConfig.FileHandler config) {
-        LogFormatter lf = new LogFormatter();
-        lf.messageOnly(true);
-        logFileHandler = new LogFileHandler(toCompression(config), config.pattern(), config.rotation(), config.symlink(), lf);
+        logFileHandler = new LogFileHandler(toCompression(config), config.pattern(), config.rotation(), config.symlink());
     }
 
     public void log(String message) {
