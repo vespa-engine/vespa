@@ -16,7 +16,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -76,12 +75,9 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .build();
         Clock clock = Clock.systemUTC();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
         tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .build();

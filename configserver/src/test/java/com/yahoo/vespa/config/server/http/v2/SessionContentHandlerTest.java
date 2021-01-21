@@ -12,7 +12,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -57,10 +56,8 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
 
         tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .build();
         tenantRepository.addTenant(tenantName);

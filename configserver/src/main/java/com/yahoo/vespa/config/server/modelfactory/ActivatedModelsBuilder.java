@@ -17,7 +17,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
@@ -33,6 +32,7 @@ import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
+import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -67,7 +67,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   long applicationGeneration,
                                   SessionZooKeeperClient zkClient,
                                   Optional<ApplicationSet> currentActiveApplicationSet,
-                                  GlobalComponentRegistry globalComponentRegistry,
                                   Curator curator,
                                   Metrics metrics,
                                   PermanentApplicationPackage permanentApplicationPackage,
@@ -77,7 +76,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   ConfigserverConfig configserverConfig,
                                   Zone zone,
                                   ModelFactoryRegistry modelFactoryRegistry,
-                                  ConfigDefinitionRepo configDefinitionRepo) {
+                                  ConfigDefinitionRepo configDefinitionRepo,
+                                  TenantListener tenantListener) {
         super(modelFactoryRegistry,
               configserverConfig,
               zone,

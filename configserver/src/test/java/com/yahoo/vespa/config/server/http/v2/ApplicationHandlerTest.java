@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockTesterClient;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
@@ -109,11 +108,9 @@ public class ApplicationHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         provisioner = new MockProvisioner();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))

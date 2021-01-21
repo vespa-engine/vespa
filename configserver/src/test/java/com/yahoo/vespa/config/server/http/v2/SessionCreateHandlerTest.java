@@ -9,7 +9,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -28,7 +27,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.Clock;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +52,6 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private static final TenantName tenant = TenantName.from("test");
     private static final HashMap<String, String> postHeaders = new HashMap<>();
 
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
     ApplicationRepository applicationRepository;
 
     private String pathPrefix = "/application/v2/session/";
@@ -75,7 +72,6 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .build();
         applicationRepository = new ApplicationRepository.Builder()

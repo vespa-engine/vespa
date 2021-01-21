@@ -11,7 +11,6 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -56,10 +55,8 @@ public class TenantApplicationsTest {
     private static final TenantName tenantName = TenantName.from("tenant");
     private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
 
-    private final MockReloadListener listener = new MockReloadListener();
     private Curator curator;
     private CuratorFramework curatorFramework;
-    private TestComponentRegistry componentRegistry;
     private TenantApplications applications;
     private ConfigserverConfig configserverConfig;
 
@@ -75,10 +72,8 @@ public class TenantApplicationsTest {
                 .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
                 .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
                 .build();
-        componentRegistry = new TestComponentRegistry.Builder().build();
         HostRegistry hostRegistry = new HostRegistry();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withModelFactoryRegistry(createRegistry())

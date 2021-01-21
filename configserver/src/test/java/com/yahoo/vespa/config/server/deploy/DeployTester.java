@@ -23,7 +23,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
@@ -283,11 +282,8 @@ public class DeployTester {
             List<ModelFactory> modelFactories = Optional.ofNullable(this.modelFactories)
                     .orElseGet(() -> List.of(createModelFactory(clock)));
 
-            TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder();
-
             TestTenantRepository.Builder builder = new TestTenantRepository.Builder()
                     .withClock(clock)
-                    .withComponentRegistry(testComponentRegistryBuilder.build())
                     .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)
                     .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))

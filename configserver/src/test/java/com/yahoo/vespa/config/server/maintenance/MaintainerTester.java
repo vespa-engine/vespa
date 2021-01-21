@@ -5,10 +5,8 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockLogRetriever;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -41,10 +39,8 @@ class MaintainerTester {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
-                .withComponentRegistry(componentRegistry)
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true))
                 .withConfigserverConfig(configserverConfig)
                 .withModelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))

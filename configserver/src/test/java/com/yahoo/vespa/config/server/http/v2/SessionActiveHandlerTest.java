@@ -12,7 +12,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HandlerTest;
@@ -75,9 +74,7 @@ public class SessionActiveHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .withModelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
                 .build();

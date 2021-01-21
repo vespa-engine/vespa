@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.PortRangeAllocator;
 import com.yahoo.vespa.config.server.SuperModelManager;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
@@ -86,9 +85,7 @@ public class RpcTester implements AutoCloseable {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath());
         configserverConfig = new ConfigserverConfig(configBuilder);
         rpcServer = createRpcServer(configserverConfig);
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(componentRegistry)
                 .withHostRegistry(hostRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .build();

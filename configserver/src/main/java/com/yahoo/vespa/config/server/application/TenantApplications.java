@@ -14,7 +14,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.ConfigServerDB;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.RequestHandler;

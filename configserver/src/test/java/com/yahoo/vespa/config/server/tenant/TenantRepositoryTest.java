@@ -13,11 +13,9 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -74,18 +72,17 @@ public class TenantRepositoryTest {
     @Before
     public void setupSessions() throws IOException {
         curator = new MockCurator();
-        TestComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().build();
         listener = new TenantApplicationsTest.MockReloadListener();
-        tenantListener = (MockTenantListener) globalComponentRegistry.getTenantListener();
+        tenantListener = new MockTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
         configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(globalComponentRegistry)
-                                                             .withConfigserverConfig(configserverConfig)
+        tenantRepository = new TestTenantRepository.Builder().withConfigserverConfig(configserverConfig)
                                                              .withCurator(curator)
                                                              .withReloadListener(listener)
+                                                             .withTenantListener(tenantListener)
                                                              .build();
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
@@ -196,7 +193,7 @@ public class TenantRepositoryTest {
         // Should get exception if config is true
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry(), configserverConfig);
+        new FailingDuringBootstrapTenantRepository(configserverConfig);
     }
 
     private List<String> readZKChildren(String path) throws Exception {
@@ -207,15 +204,10 @@ public class TenantRepositoryTest {
         assertNotNull(curator.framework().checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
     }
 
-    private GlobalComponentRegistry createComponentRegistry() {
-        return new TestComponentRegistry.Builder().build();
-    }
-
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
-        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry componentRegistry, ConfigserverConfig configserverConfig) {
-            super(componentRegistry,
-                  new HostRegistry(),
+        public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig) {
+            super(new HostRegistry(),
                   new MockCurator(),
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
@@ -230,7 +222,8 @@ public class TenantRepositoryTest {
                   Clock.systemUTC(),
                   new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))),
                   new TestConfigDefinitionRepo(),
-                  new TenantApplicationsTest.MockReloadListener());
+                  new TenantApplicationsTest.MockReloadListener(),
+                  new MockTenantListener());
         }
 
         @Override

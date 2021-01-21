@@ -23,7 +23,6 @@ import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -36,6 +35,7 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
@@ -102,7 +102,6 @@ public class SessionRepository {
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
-    private final GlobalComponentRegistry componentRegistry;
     private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
@@ -112,9 +111,9 @@ public class SessionRepository {
     private final Zone zone;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
+    private final TenantListener tenantListener;
 
     public SessionRepository(TenantName tenantName,
-                             GlobalComponentRegistry componentRegistry,
                              TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
                              Curator curator,
@@ -130,9 +129,9 @@ public class SessionRepository {
                              Zone zone,
                              Clock clock,
                              ModelFactoryRegistry modelFactoryRegistry,
-                             ConfigDefinitionRepo configDefinitionRepo) {
+                             ConfigDefinitionRepo configDefinitionRepo,
+                             TenantListener tenantListener) {
         this.tenantName = tenantName;
-        this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
         sessionCounter = new SessionCounter(configCurator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
@@ -154,6 +153,7 @@ public class SessionRepository {
         this.zone = zone;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
+        this.tenantListener = tenantListener;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -473,7 +473,6 @@ public class SessionRepository {
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
                                                                     previousApplicationSet,
-                                                                    componentRegistry,
                                                                     curator,
                                                                     metrics,
                                                                     permanentApplicationPackage,
@@ -483,7 +482,8 @@ public class SessionRepository {
                                                                     configserverConfig,
                                                                     zone,
                                                                     modelFactoryRegistry,
-                                                                    configDefinitionRepo);
+                                                                    configDefinitionRepo,
+                                                                    tenantListener);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
