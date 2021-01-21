@@ -14,10 +14,10 @@ void add_variants(EvalFixture::ParamRepo &repo,
     auto name_f = name_base + "_f";
     auto name_m = "@" + name_base;
     auto name_m_f = "@" + name_base + "_f";
-    repo.add(name_base, spec(base_layout, seq), false);
-    repo.add(name_m, spec(base_layout, seq), true);
-    repo.add(name_f, spec(float_cells(base_layout), seq), false);
-    repo.add(name_m_f, spec(float_cells(base_layout), seq), true);
+    repo.add(name_base, spec(base_layout, seq));
+    repo.add(name_f, spec(float_cells(base_layout), seq));
+    repo.add_mutable(name_m, spec(base_layout, seq));
+    repo.add_mutable(name_m_f, spec(float_cells(base_layout), seq));
 }
 
 } // namespace

@@ -19,8 +19,8 @@ EvalFixture::ParamRepo make_params() {
         .add("b", spec(2.5))
         .add("sparse", spec({x({"a"})}, N()))
         .add("mixed", spec({x({"a"}),y(5)}, N()))
-        .add("@sparse", spec({x({"a"})}, N()), true)
-        .add("@mixed", spec({x({"a"}),y(5)}, N()), true)
+        .add_mutable("@sparse", spec({x({"a"})}, N()))
+        .add_mutable("@mixed", spec({x({"a"}),y(5)}, N()))
         .add_matrix("x", 5, "y", 3);
 }
 EvalFixture::ParamRepo param_repo = make_params();
