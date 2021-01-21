@@ -18,7 +18,9 @@ DummyBucketExecutor::DummyBucketExecutor(size_t numExecutors)
 {
 }
 
-DummyBucketExecutor::~DummyBucketExecutor() = default;
+DummyBucketExecutor::~DummyBucketExecutor() {
+    sync();
+}
 
 std::unique_ptr<BucketTask>
 DummyBucketExecutor::execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) {
