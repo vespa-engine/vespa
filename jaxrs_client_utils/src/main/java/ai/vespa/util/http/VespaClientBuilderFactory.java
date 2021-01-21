@@ -84,9 +84,6 @@ public class VespaClientBuilderFactory implements AutoCloseable {
     @Override
     public void close() {
         if (closed.getAndSet(true)) throw new IllegalStateException("Client already closed");
-        if (tlsContext != null) {
-            tlsContext.close();
-        }
     }
 
     static class UriRewritingRequestFilter implements ClientRequestFilter {
