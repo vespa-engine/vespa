@@ -230,13 +230,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag CONTENT_NODE_BUCKET_DB_STRIPE_BITS = defineIntFlag(
-            "content-node-bucket-db-stripe-bits", 0,
-            List.of("baldersheim"), "2020-12-02", "2021-02-01",
-            "Number of bits used for striping the bucket DB in service layer",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundIntFlag MERGE_CHUNK_SIZE = defineIntFlag(
             "merge-chunk-size", 0x400000,
             List.of("baldersheim"), "2020-12-02", "2021-02-01",

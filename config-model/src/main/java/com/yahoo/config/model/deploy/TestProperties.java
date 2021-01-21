@@ -48,7 +48,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Quota quota = Quota.unlimited();
     private boolean useAccessControlTlsHandshakeClientAuth;
     private boolean useAsyncMessageHandlingOnSchedule = false;
-    private int contentNodeBucketDBStripeBits = 0;
     private int mergeChunkSize = 0x400000 - 0x1000; // 4M -4k
     private double feedConcurrency = 0.5;
     private boolean enableAutomaticReindexing = false;
@@ -82,7 +81,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Quota quota() { return quota; }
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
-    @Override public int contentNodeBucketDBStripeBits() { return contentNodeBucketDBStripeBits; }
     @Override public int mergeChunkSize() { return mergeChunkSize; }
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
@@ -95,10 +93,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMergeChunkSize(int size) {
         mergeChunkSize = size;
-        return this;
-    }
-    public TestProperties setContentNodeBucketDBStripeBits(int bits) {
-        contentNodeBucketDBStripeBits = bits;
         return this;
     }
 
