@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
 
@@ -10,7 +9,6 @@ import com.yahoo.container.logging.RequestLogEntry;
  */
 public class VoidRequestLog implements RequestLog {
 
-    @Override public void log(AccessLogEntry entry) {}
     @Override public void log(RequestLogEntry entry) {}
 
 }

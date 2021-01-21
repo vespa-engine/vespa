@@ -8,8 +8,6 @@ package com.yahoo.container.logging;
  */
 public interface RequestLog {
 
-    void log(AccessLogEntry entry);
-
     void log(RequestLogEntry entry);
 
 }

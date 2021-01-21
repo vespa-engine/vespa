@@ -13,10 +13,10 @@ import com.yahoo.component.provider.ComponentRegistry;
  */
 public class AccessLog implements RequestLog {
 
-    private ComponentRegistry<AccessLogInterface> implementers;
+    private final ComponentRegistry<RequestLogHandler> implementers;
 
     @Inject
-    public AccessLog(ComponentRegistry<AccessLogInterface> implementers) {
+    public AccessLog(ComponentRegistry<RequestLogHandler> implementers) {
         this.implementers = implementers;
     }
 
@@ -25,15 +25,10 @@ public class AccessLog implements RequestLog {
     }
 
     @Override
-    public void log(AccessLogEntry accessLogEntry) {
-        for (AccessLogInterface log: implementers.allComponents()) {
-            log.log(accessLogEntry);
-        }
-    }
-
-    @Override
     public void log(RequestLogEntry entry) {
-        // TODO Implement
+        for (RequestLogHandler handler: implementers.allComponents()) {
+            handler.log(entry);
+        }
     }
 
 }

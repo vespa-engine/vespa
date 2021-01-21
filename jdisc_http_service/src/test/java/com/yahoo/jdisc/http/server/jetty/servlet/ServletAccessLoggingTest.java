@@ -5,8 +5,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
+import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.server.jetty.TestDriver;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers;
 import org.junit.Test;
@@ -44,7 +44,7 @@ public class ServletAccessLoggingTest extends ServletTestBase {
     }
 
     private void verifyCallsLog(RequestLog requestLog, final VerificationMode verificationMode) {
-        verify(requestLog, verificationMode).log(any(AccessLogEntry.class));
+        verify(requestLog, verificationMode).log(any(RequestLogEntry.class));
     }
 
     private TestDriver newTestDriver(RequestLog requestLog) throws IOException {

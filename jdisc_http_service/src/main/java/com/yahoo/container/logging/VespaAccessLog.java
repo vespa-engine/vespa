@@ -12,7 +12,7 @@ import java.util.logging.Level;
  * @author Bjorn Borud
  * @author Oyvind Bakksjo
  */
-public final class VespaAccessLog implements AccessLogInterface {
+public final class VespaAccessLog implements RequestLogHandler {
 
     private static final ThreadLocal<SimpleDateFormat> dateFormat = ThreadLocal.withInitial(VespaAccessLog::createDateFormat);
 
@@ -92,20 +92,20 @@ public final class VespaAccessLog implements AccessLogInterface {
     }
 
     @Override
-    public void log(final AccessLogEntry accessLogEntry) {
+    public void log(RequestLogEntry entry) {
         writeLog(
-                accessLogEntry.getIpV4Address(),
-                accessLogEntry.getUser(),
+                entry.peerAddress().get(),
+                null,
                 getRequest(
-                        accessLogEntry.getHttpMethod(),
-                        accessLogEntry.getRawPath(),
-                        accessLogEntry.getRawQuery().orElse(null),
-                        accessLogEntry.getHttpVersion()),
-                accessLogEntry.getReferer(),
-                accessLogEntry.getUserAgent(),
-                accessLogEntry.getDurationBetweenRequestResponseMillis(),
-                accessLogEntry.getReturnedContentSize(),
-                accessLogEntry.getHitCounts(),
-                accessLogEntry.getStatusCode());
+                        entry.httpMethod().orElse(null),
+                        entry.rawPath().orElse(null),
+                        entry.rawQuery().orElse(null),
+                        entry.httpVersion().orElse(null)),
+                entry.referer().orElse(null),
+                entry.userAgent().orElse(null),
+                entry.duration().get().toMillis(),
+                entry.contentSize().orElse(0L),
+                entry.hitCounts().orElse(null),
+                entry.statusCode().orElse(0));
     }
 }

@@ -5,6 +5,7 @@ import com.google.common.base.Objects;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
+import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.server.Request;
@@ -13,11 +14,12 @@ import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
-import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,83 +52,67 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
     @Override
     public void log(Request request, Response response) {
         try {
-            AccessLogEntry accessLogEntry = Optional.ofNullable(request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY))
-                    .map(AccessLogEntry.class::cast)
-                    .orElseGet(AccessLogEntry::new);
-
-            accessLogEntry.setRawPath(request.getRequestURI());
-            String queryString = request.getQueryString();
-            if (queryString != null) {
-                accessLogEntry.setRawQuery(queryString);
-            }
-
-            accessLogEntry.setUserAgent(request.getHeader("User-Agent"));
-            accessLogEntry.setHttpMethod(request.getMethod());
-            accessLogEntry.setHostString(request.getHeader("Host"));
-            accessLogEntry.setReferer(request.getHeader("Referer"));
+            RequestLogEntry.Builder builder = new RequestLogEntry.Builder();
 
             String peerAddress = request.getRemoteAddr();
-            accessLogEntry.setIpV4Address(peerAddress);
-            accessLogEntry.setPeerAddress(peerAddress);
-            String remoteAddress = getRemoteAddress(request);
-            if (!Objects.equal(remoteAddress, peerAddress)) {
-                accessLogEntry.setRemoteAddress(remoteAddress);
-            }
-
             int peerPort = request.getRemotePort();
-            accessLogEntry.setPeerPort(peerPort);
-            int remotePort = getRemotePort(request);
-            if (remotePort != peerPort) {
-                accessLogEntry.setRemotePort(remotePort);
-            }
-            accessLogEntry.setHttpVersion(request.getProtocol());
-            accessLogEntry.setScheme(request.getScheme());
-            accessLogEntry.setLocalPort(getConnectorLocalPort(request));
-            Principal principal = (Principal) request.getAttribute(ServletRequest.JDISC_REQUEST_PRINCIPAL);
-            if (principal != null) {
-                accessLogEntry.setUserPrincipal(principal);
-            }
-            X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute(ServletRequest.SERVLET_REQUEST_X509CERT);
-            if (clientCert != null && clientCert.length > 0) {
-                accessLogEntry.setSslPrincipal(clientCert[0].getSubjectX500Principal());
-            }
-            String sslSessionId = (String) request.getAttribute(ServletRequest.SERVLET_REQUEST_SSL_SESSION_ID);
-            if (sslSessionId != null) {
-                accessLogEntry.addKeyValue("ssl-session-id", sslSessionId);
-            }
-            String cipherSuite = (String) request.getAttribute(ServletRequest.SERVLET_REQUEST_CIPHER_SUITE);
-            if (cipherSuite != null) {
-                accessLogEntry.addKeyValue("cipher-suite", cipherSuite);
-            }
-            String requestFilterId = (String) request.getAttribute(ServletRequest.JDISC_REQUEST_CHAIN);
-            if (requestFilterId != null) {
-                accessLogEntry.addKeyValue("request-chain", requestFilterId);
-            }
-            String responseFilterId = (String) request.getAttribute(ServletRequest.JDISC_RESPONSE_CHAIN);
-            if (responseFilterId != null) {
-                accessLogEntry.addKeyValue("response-chain", responseFilterId);
-            }
-
             long startTime = request.getTimeStamp();
             long endTime = System.currentTimeMillis();
-            accessLogEntry.setTimeStamp(startTime);
-            accessLogEntry.setDurationBetweenRequestResponse(endTime - startTime);
-            accessLogEntry.setReturnedContentSize(response.getHttpChannel().getBytesWritten());
-            accessLogEntry.setStatusCode(response.getCommittedMetaData().getStatus());
+            builder.peerAddress(peerAddress)
+                    .peerPort(peerPort)
+                    .localPort(getConnectorLocalPort(request))
+                    .timestamp(Instant.ofEpochMilli(startTime))
+                    .duration(Duration.ofMillis(endTime - startTime))
+                    .contentSize(response.getHttpChannel().getBytesWritten())
+                    .statusCode(response.getCommittedMetaData().getStatus());
 
+            addNonNullValue(builder, request.getMethod(), RequestLogEntry.Builder::httpMethod);
+            addNonNullValue(builder, request.getRequestURI(), RequestLogEntry.Builder::rawPath);
+            addNonNullValue(builder, request.getProtocol(), RequestLogEntry.Builder::httpVersion);
+            addNonNullValue(builder, request.getScheme(), RequestLogEntry.Builder::scheme);
+            addNonNullValue(builder, request.getHeader("User-Agent"), RequestLogEntry.Builder::userAgent);
+            addNonNullValue(builder, request.getHeader("Host"), RequestLogEntry.Builder::hostString);
+            addNonNullValue(builder, request.getHeader("Referer"), RequestLogEntry.Builder::referer);
+            addNonNullValue(builder, request.getQueryString(), RequestLogEntry.Builder::rawQuery);
+
+            Principal principal = (Principal) request.getAttribute(ServletRequest.JDISC_REQUEST_PRINCIPAL);
+            addNonNullValue(builder, principal, RequestLogEntry.Builder::userPrincipal);
+
+            String requestFilterId = (String) request.getAttribute(ServletRequest.JDISC_REQUEST_CHAIN);
+            addNonNullValue(builder, requestFilterId, (b, chain) -> b.addExtraAttribute("request-chain", chain));
+
+            String responseFilterId = (String) request.getAttribute(ServletRequest.JDISC_RESPONSE_CHAIN);
+            addNonNullValue(builder, responseFilterId, (b, chain) -> b.addExtraAttribute("response-chain", chain));
+
+            UUID connectionId = (UUID) request.getAttribute(JettyConnectionLogger.CONNECTION_ID_REQUEST_ATTRIBUTE);
+            addNonNullValue(builder, connectionId, (b, uuid) -> b.connectionId(uuid.toString()));
+
+            String remoteAddress = getRemoteAddress(request);
+            if (!Objects.equal(remoteAddress, peerAddress)) {
+                builder.remoteAddress(remoteAddress);
+            }
+            int remotePort = getRemotePort(request);
+            if (remotePort != peerPort) {
+                builder.remotePort(remotePort);
+            }
             LOGGED_REQUEST_HEADERS.forEach(header -> {
                 String value = request.getHeader(header);
                 if (value != null) {
-                    accessLogEntry.addKeyValue(header, value);
+                    builder.addExtraAttribute(header, value);
                 }
             });
 
-            UUID connectionId = (UUID) request.getAttribute(JettyConnectionLogger.CONNECTION_ID_REQUEST_ATTRIBUTE);
-            if (connectionId != null) {
-                accessLogEntry.setConnectionId(connectionId.toString());
+            AccessLogEntry accessLogEntry = (AccessLogEntry) request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
+            if (accessLogEntry != null) {
+                var extraAttributes = accessLogEntry.getKeyValues();
+                if (extraAttributes != null) {
+                    extraAttributes.forEach(builder::addExtraAttributes);
+                }
+                addNonNullValue(builder, accessLogEntry.getHitCounts(), RequestLogEntry.Builder::hitCounts);
+                addNonNullValue(builder, accessLogEntry.getTrace(), RequestLogEntry.Builder::traceNode);
             }
 
-            requestLog.log(accessLogEntry);
+            requestLog.log(builder.build());
         } catch (Exception e) {
             // Catching any exceptions here as it is unclear how Jetty handles exceptions from a RequestLog.
             logger.log(Level.SEVERE, "Failed to log access log entry: " + e.getMessage(), e);
@@ -157,6 +143,13 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             return OptionalInt.of(Integer.parseInt(port));
         } catch (IllegalArgumentException e) {
             return OptionalInt.empty();
+        }
+    }
+
+    private static <T> void addNonNullValue(
+            RequestLogEntry.Builder builder, T value, BiConsumer<RequestLogEntry.Builder, T> setter) {
+        if (value != null) {
+            setter.accept(builder, value);
         }
     }
 

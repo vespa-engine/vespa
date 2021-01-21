@@ -3,7 +3,6 @@ package com.yahoo.container.jdisc;
 
 import com.google.inject.Inject;
 import com.yahoo.container.handler.Timing;
-import com.yahoo.container.http.AccessLogUtil;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
@@ -11,16 +10,15 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler;
-import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 /**
  * A request handler base class extending the features of
@@ -28,35 +26,43 @@ import java.util.concurrent.Executor;
  *
  * @author Steinar Knutsen
  */
+// TODO Vespa 8: Deprecate all constructors taking AccessLog as parameter
 public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
-    private final AccessLog accessLog;
+    public LoggingRequestHandler(Executor executor, AccessLog ignored) {
+        this(executor, ignored, null);
+    }
 
-    public LoggingRequestHandler(Executor executor, AccessLog accessLog) {
-        this(executor, accessLog, null);
+    public LoggingRequestHandler(Executor executor) {
+        this(executor, null, null);
     }
 
     public static class Context {
 
         final Executor executor;
-        final AccessLog accessLog;
+        final AccessLog ignored;
         final Metric metric;
 
         @Inject
-        public Context(Executor executor, AccessLog accessLog, Metric metric) {
+        public Context(Executor executor, AccessLog ignored, Metric metric) {
             this.executor = executor;
-            this.accessLog = accessLog;
+            this.ignored = ignored;
             this.metric = metric;
+        }
+
+
+        public Context(Executor executor, Metric metric) {
+            this(executor, null, metric);
         }
 
         public Context(Context other) {
             this.executor = other.executor;
-            this.accessLog = other.accessLog;
+            this.ignored = other.ignored;
             this.metric = other.metric;
         }
 
         public Executor getExecutor() { return executor; }
-        public AccessLog getAccessLog() { return accessLog; }
+        public AccessLog getAccessLog() { return ignored; }
         public Metric getMetric() { return metric; }
 
     }
@@ -74,20 +80,19 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
     @Inject
     public LoggingRequestHandler(Context ctx) {
-        this(ctx.executor, ctx.accessLog, ctx.metric);
+        this(ctx.executor, ctx.ignored, ctx.metric);
     }
 
     public LoggingRequestHandler(Context ctx, boolean allowAsyncResponse) {
-        this(ctx.executor, ctx.accessLog, ctx.metric, allowAsyncResponse);
+        this(ctx.executor, ctx.ignored, ctx.metric, allowAsyncResponse);
     }
 
-    public LoggingRequestHandler(Executor executor, AccessLog accessLog, Metric metric) {
-        this(executor, accessLog, metric, false);
+    public LoggingRequestHandler(Executor executor, AccessLog ignored, Metric metric) {
+        this(executor, ignored, metric, false);
     }
 
-    public LoggingRequestHandler(Executor executor, AccessLog accessLog, Metric metric, boolean allowAsyncResponse) {
+    public LoggingRequestHandler(Executor executor, AccessLog ignored, Metric metric, boolean allowAsyncResponse) {
         super(executor, metric, allowAsyncResponse);
-        this.accessLog = accessLog;
     }
 
     @Override
@@ -104,26 +109,6 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         if (clientAddress == null) return "0.0.0.0";
 
         return clientAddress.toString();
-    }
-
-    private static long getEvalStart(Timing timing, long startTime) {
-        if (timing == null || timing.getQueryStartTime() == 0L) {
-            return startTime;
-        } else {
-            return timing.getQueryStartTime();
-        }
-    }
-
-    private static String remoteHostAddress(com.yahoo.jdisc.http.HttpRequest httpRequest) {
-        SocketAddress remoteAddress = httpRequest.getRemoteAddress();
-        if (remoteAddress == null) return "0.0.0.0";
-
-        if (remoteAddress instanceof InetSocketAddress) {
-            return ((InetSocketAddress) remoteAddress).getAddress().getHostAddress();
-        } else {
-            throw new RuntimeException("Expected remote address of type InetSocketAddress, got " +
-                                       remoteAddress.getClass().getName());
-        }
     }
 
     private void logTimes(long startTime, String sourceIP,
@@ -257,21 +242,8 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
                 // The request is created by JDisc http layer (Jetty)
                 // Actual logging will be done by the Jetty integration; here, we just need to populate.
                 entry = jdiscRequestAccessLogEntry.get();
-            } else {
-                // Not running on JDisc http layer (Jetty), e.g unit tests
-                AccessLogEntry accessLogEntry = new AccessLogEntry();
-                populateAccessLogEntryNotCreatedByHttpServer(accessLogEntry,
-                                                             jdiscRequest,
-                                                             extendedResponse.getTiming(),
-                                                             httpRequest.getUri().toString(),
-                                                             commitStartTime,
-                                                             startTime,
-                                                             rendererWiring.written(),
-                                                             httpResponse.getStatus());
-                accessLog.log(accessLogEntry);
-                entry = accessLogEntry;
+                httpResponse.populateAccessLogEntry(entry);
             }
-            httpResponse.populateAccessLogEntry(entry);
         }
 
         private String getUri(com.yahoo.jdisc.http.HttpRequest jdiscRequest) {
@@ -282,38 +254,6 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
                 builder.append('?').append(query);
             }
             return builder.toString();
-        }
-    }
-
-    private void populateAccessLogEntryNotCreatedByHttpServer(AccessLogEntry logEntry,
-                                                              com.yahoo.jdisc.http.HttpRequest httpRequest,
-                                                              Timing timing,
-                                                              String fullRequest,
-                                                              long commitStartTime,
-                                                              long startTime,
-                                                              long written,
-                                                              int status) {
-        try {
-            InetSocketAddress remoteAddress = AccessLogUtil.getRemoteAddress(httpRequest);
-            long evalStartTime = getEvalStart(timing, startTime);
-            logEntry.setIpV4Address(remoteHostAddress(httpRequest));
-            logEntry.setTimeStamp(evalStartTime);
-            logEntry.setDurationBetweenRequestResponse(commitStartTime - evalStartTime);
-            logEntry.setReturnedContentSize(written);
-            logEntry.setStatusCode(status);
-            if (remoteAddress != null) {
-                logEntry.setRemoteAddress(remoteAddress);
-                logEntry.setRemotePort(remoteAddress.getPort());
-            }
-            URI uri = AccessLogUtil.getUri(httpRequest);
-            logEntry.setRawPath(uri.getRawPath());
-            logEntry.setRawQuery(uri.getRawQuery());
-            logEntry.setUserAgent(AccessLogUtil.getUserAgentHeader(httpRequest));
-            logEntry.setReferer(AccessLogUtil.getReferrerHeader(httpRequest));
-            logEntry.setHttpMethod(AccessLogUtil.getHttpMethod(httpRequest));
-            logEntry.setHttpVersion(AccessLogUtil.getHttpVersion(httpRequest));
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Could not populate the access log [" + fullRequest + "]", e);
         }
     }
 
