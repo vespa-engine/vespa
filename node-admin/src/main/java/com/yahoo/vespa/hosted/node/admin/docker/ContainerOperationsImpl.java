@@ -98,10 +98,10 @@ public class ContainerOperationsImpl implements ContainerOperations {
         if (context.node().membership().map(m -> m.type().isContent()).orElse(false))
             command.withSecurityOpt("seccomp=unconfined");
 
-        DockerNetworking networking = context.dockerNetworking();
-        command.withNetworkMode(networking.getDockerNetworkMode());
+        ContainerNetworkMode networkMode = context.networkMode();
+        command.withNetworkMode(networkMode.networkName());
 
-        if (networking == DockerNetworking.NPT) {
+        if (networkMode == ContainerNetworkMode.NPT) {
             Optional<? extends InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().hostname());
             Optional<? extends InetAddress> ipV6Local = ipAddresses.getIPv6Address(context.node().hostname());
 
@@ -109,7 +109,7 @@ public class ContainerOperationsImpl implements ContainerOperations {
             assertEqualIpAddresses(context.hostname(), ipV6Local, context.node().ipAddresses(), IPVersion.IPv6);
 
             if (ipV4Local.isEmpty() && ipV6Local.isEmpty()) {
-                throw new ConvergenceException("Container " + context.node().hostname() + " with " + networking +
+                throw new ConvergenceException("Container " + context.node().hostname() + " with " + networkMode +
                         " networking must have at least 1 IP address, but found none");
             }
 
@@ -120,7 +120,7 @@ public class ContainerOperationsImpl implements ContainerOperations {
             ipV4Local.ifPresent(command::withIpAddress);
 
             addEtcHosts(containerData, context.node().hostname(), ipV4Local, ipV6Local);
-        } else if (networking == DockerNetworking.LOCAL) {
+        } else if (networkMode == ContainerNetworkMode.LOCAL) {
             var ipv4Address = ipAddresses.getIPv4Address(context.node().hostname())
                                          .orElseThrow(() -> new IllegalArgumentException("No IPv4 address could be resolved from '" + context.hostname()+ "'"));
             command.withIpAddress(ipv4Address);

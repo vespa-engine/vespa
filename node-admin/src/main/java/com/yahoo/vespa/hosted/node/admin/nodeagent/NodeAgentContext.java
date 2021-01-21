@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
+import com.yahoo.vespa.hosted.node.admin.docker.ContainerNetworkMode;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -36,7 +36,7 @@ public interface NodeAgentContext extends TaskContext {
 
     AthenzIdentity identity();
 
-    DockerNetworking dockerNetworking();
+    ContainerNetworkMode networkMode();
 
     ZoneApi zone();
 
