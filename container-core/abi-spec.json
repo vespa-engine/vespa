@@ -515,13 +515,15 @@
       "abstract"
     ],
     "methods": [
-      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog)",
-      "public void <init>(java.util.concurrent.Executor)",
       "public static com.yahoo.container.jdisc.LoggingRequestHandler$Context testOnlyContext()",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context)",
+      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog)",
+      "public void <init>(java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context, boolean)",
+      "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric, boolean)",
+      "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric, boolean)",
       "protected com.yahoo.container.jdisc.LoggingCompletionHandler createLoggingCompletionHandler(long, long, com.yahoo.container.jdisc.HttpResponse, com.yahoo.container.jdisc.HttpRequest, com.yahoo.container.jdisc.ContentChannelOutputStream)"
     ],
     "fields": []

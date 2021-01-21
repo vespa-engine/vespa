@@ -63,9 +63,8 @@ public class BillingApiHandler extends LoggingRequestHandler {
     private final TenantController tenantController;
 
     public BillingApiHandler(Executor executor,
-                             AccessLog accessLog,
                              Controller controller) {
-        super(executor, accessLog);
+        super(executor);
         this.billingController = controller.serviceRegistry().billingController();
         this.applicationController = controller.applications();
         this.tenantController = controller.tenants();

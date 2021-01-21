@@ -5,8 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
-import java.util.logging.Level;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.Path;
@@ -16,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
 
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 /**
  * Handler implementation for '/system-flags/v1', an API for controlling system-wide feature flags
@@ -32,9 +31,8 @@ public class SystemFlagsHandler extends LoggingRequestHandler {
     @Inject
     public SystemFlagsHandler(ZoneRegistry zoneRegistry,
                               ServiceIdentityProvider identityProvider,
-                              Executor executor,
-                              AccessLog accessLog) {
-        super(executor, accessLog);
+                              Executor executor) {
+        super(executor);
         this.deployer = new SystemFlagsDeployer(identityProvider, zoneRegistry.system(), FlagsTarget.getAllTargetsInSystem(zoneRegistry));
     }
 

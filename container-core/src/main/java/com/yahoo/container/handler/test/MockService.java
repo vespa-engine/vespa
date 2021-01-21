@@ -5,7 +5,6 @@ import com.google.common.annotations.Beta;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.Metric;
 
@@ -19,7 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * This is a generic http handler that can be used to mock a service when testing your application on jDISC.
@@ -50,14 +48,13 @@ public class MockService extends LoggingRequestHandler {
      * A custom handler can be created by subclassing and overriding the createHandler method.
      *
      * @param executor used to create threads
-     * @param accessLog where requests will be logged
      * @param fileAcquirer used to fetch file from config
      * @param config the mock config for this service
      * @throws InterruptedException if unable to get data file within timeout
      * @throws IOException if unable to create handler due to some IO errors
      */
-    public MockService(Executor executor, AccessLog accessLog, FileAcquirer fileAcquirer, MockserviceConfig config, Metric metric) throws InterruptedException, IOException {
-        super(executor, accessLog, metric);
+    public MockService(Executor executor, FileAcquirer fileAcquirer, MockserviceConfig config, Metric metric) throws InterruptedException, IOException {
+        super(executor, metric);
         File dataFile = fileAcquirer.waitFor(config.file(), config.fileAcquirerTimeout(), TimeUnit.SECONDS);
         this.handler = createHandler(dataFile);
     }

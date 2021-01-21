@@ -7,7 +7,6 @@ import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
@@ -37,8 +36,8 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     private final TestRunner testRunner;
 
     @Inject
-    public TestRunnerHandler(Executor executor, AccessLog accessLog, TestRunner testRunner) {
-        super(executor, accessLog);
+    public TestRunnerHandler(Executor executor, TestRunner testRunner) {
+        super(executor);
         this.testRunner = testRunner;
     }
 

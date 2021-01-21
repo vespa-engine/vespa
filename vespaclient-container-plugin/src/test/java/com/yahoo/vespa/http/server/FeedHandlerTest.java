@@ -2,7 +2,6 @@ package com.yahoo.vespa.http.server;// Copyright Verizon Media. Licensed under t
 
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.metrics.simple.MetricReceiver;
@@ -25,7 +24,6 @@ public class FeedHandlerTest {
         FeedHandler handler = new FeedHandler(
                 new RejectingContainerThreadpool(),
                 new CollectingMetric(),
-                AccessLog.voidAccessLog(),
                 new DocumentmanagerConfig(new DocumentmanagerConfig.Builder().enablecompression(true)),
                 null /* session cache */,
                 MetricReceiver.nullImplementation);

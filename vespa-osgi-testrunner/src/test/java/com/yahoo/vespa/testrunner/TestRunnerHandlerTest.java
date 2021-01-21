@@ -4,7 +4,6 @@ package com.yahoo.vespa.testrunner;
 import ai.vespa.hosted.api.TestDescriptor;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,7 +19,6 @@ import java.util.logging.LogRecord;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.junit.Assert.assertEquals;
-
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -49,7 +47,6 @@ public class TestRunnerHandlerTest {
 
         testRunnerHandler = new TestRunnerHandler(
                 Executors.newSingleThreadExecutor(),
-                AccessLog.voidAccessLog(),
                 new MockJunitRunner(LegacyTestRunner.Status.SUCCESS, testReport),
                 null);
     }
@@ -85,7 +82,6 @@ public class TestRunnerHandlerTest {
         when(testRunner.getReport()).thenReturn(null);
         testRunnerHandler = new TestRunnerHandler(
                 Executors.newSingleThreadExecutor(),
-                AccessLog.voidAccessLog(),
                 testRunner, null);
 
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
@@ -103,7 +99,6 @@ public class TestRunnerHandlerTest {
 
         testRunnerHandler = new TestRunnerHandler(
                 Executors.newSingleThreadExecutor(),
-                AccessLog.voidAccessLog(),
                 testRunner, legacyTestRunner);
 
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));

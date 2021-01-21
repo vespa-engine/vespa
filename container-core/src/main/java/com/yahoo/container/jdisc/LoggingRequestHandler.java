@@ -26,43 +26,33 @@ import java.util.logging.Level;
  *
  * @author Steinar Knutsen
  */
-// TODO Vespa 8: Deprecate all constructors taking AccessLog as parameter
+// TODO Vespa 8: Remove deprecated constructors
 public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
-
-    public LoggingRequestHandler(Executor executor, AccessLog ignored) {
-        this(executor, ignored, null);
-    }
-
-    public LoggingRequestHandler(Executor executor) {
-        this(executor, null, null);
-    }
 
     public static class Context {
 
         final Executor executor;
-        final AccessLog ignored;
         final Metric metric;
 
-        @Inject
+        /** @deprecated Use {@link #Context(Executor, Metric)} instead */
+        @Deprecated(forRemoval = true, since = "7")
         public Context(Executor executor, AccessLog ignored, Metric metric) {
-            this.executor = executor;
-            this.ignored = ignored;
-            this.metric = metric;
+            this(executor, metric);
         }
 
-
+        @Inject
         public Context(Executor executor, Metric metric) {
-            this(executor, null, metric);
+            this.executor = executor;
+            this.metric = metric;
         }
 
         public Context(Context other) {
             this.executor = other.executor;
-            this.ignored = other.ignored;
             this.metric = other.metric;
         }
 
         public Executor getExecutor() { return executor; }
-        public AccessLog getAccessLog() { return ignored; }
+        @Deprecated(forRemoval = true, since = "7") public AccessLog getAccessLog() { return null; }
         public Metric getMetric() { return metric; }
 
     }
@@ -74,24 +64,45 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
                     command.run();
                 }
             },
-            AccessLog.voidAccessLog(),
             null);
     }
 
     @Inject
     public LoggingRequestHandler(Context ctx) {
-        this(ctx.executor, ctx.ignored, ctx.metric);
+        this(ctx.executor, ctx.metric);
+    }
+
+    /** @deprecated Use {@link #LoggingRequestHandler(Executor)} instead */
+    @Deprecated(forRemoval = true, since = "7")
+    public LoggingRequestHandler(Executor executor, AccessLog ignored) {
+        this(executor, (Metric)null);
+    }
+
+    public LoggingRequestHandler(Executor executor) {
+        this(executor, (Metric)null);
     }
 
     public LoggingRequestHandler(Context ctx, boolean allowAsyncResponse) {
-        this(ctx.executor, ctx.ignored, ctx.metric, allowAsyncResponse);
+        this(ctx.executor, ctx.metric, allowAsyncResponse);
     }
 
+    public LoggingRequestHandler(Executor executor, Metric metric) {
+        this(executor, metric, false);
+    }
+
+    /** @deprecated Use {@link #LoggingRequestHandler(Executor, Metric)} instead */
+    @Deprecated(forRemoval = true, since = "7")
     public LoggingRequestHandler(Executor executor, AccessLog ignored, Metric metric) {
-        this(executor, ignored, metric, false);
+        this(executor, metric, false);
     }
 
+    /** @deprecated Use {@link #LoggingRequestHandler(Executor, Metric, boolean)} instead */
+    @Deprecated(forRemoval = true, since = "7")
     public LoggingRequestHandler(Executor executor, AccessLog ignored, Metric metric, boolean allowAsyncResponse) {
+        this(executor, metric, allowAsyncResponse);
+    }
+
+    public LoggingRequestHandler(Executor executor, Metric metric, boolean allowAsyncResponse) {
         super(executor, metric, allowAsyncResponse);
     }
 

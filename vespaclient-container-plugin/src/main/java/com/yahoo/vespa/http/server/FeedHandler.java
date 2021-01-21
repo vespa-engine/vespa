@@ -7,7 +7,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
@@ -46,13 +45,12 @@ public class FeedHandler extends LoggingRequestHandler {
     @Inject
     public FeedHandler(ContainerThreadPool threadpool,
                        Metric metric,
-                       AccessLog accessLog,
                        DocumentmanagerConfig documentManagerConfig,
                        SessionCache sessionCache,
                        MetricReceiver metricReceiver) {
-        super(threadpool.executor(), accessLog, metric);
+        super(threadpool.executor(), metric);
         metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
-        feedHandlerV3 = new FeedHandlerV3(threadpool.executor(), metric, accessLog, documentManagerConfig, sessionCache, metricsHelper);
+        feedHandlerV3 = new FeedHandlerV3(threadpool.executor(), metric, documentManagerConfig, sessionCache, metricsHelper);
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
     }
 
