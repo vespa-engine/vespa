@@ -1,12 +1,16 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
 import com.google.common.testing.EqualsTester;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.host.HostRegistry;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
@@ -24,16 +28,26 @@ public class TenantTest {
     private Tenant t3;
     private Tenant t4;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupTenant() {
+    public void setupTenant() throws IOException {
         t1 = createTenant("foo");
         t2 = createTenant("foo");
         t3 = createTenant("bar");
         t4 = createTenant("baz");
     }
 
-    private Tenant createTenant(String name) {
-        TenantRepository tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+    private Tenant createTenant(String name) throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
+                .build();
         TenantName tenantName = TenantName.from(name);
         tenantRepository.addTenant(tenantName);
         return tenantRepository.getTenant(tenantName);

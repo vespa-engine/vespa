@@ -1,18 +1,29 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockSecretStore;
+import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.model.VespaModelFactory;
+
+import java.time.Clock;
+import java.util.List;
 
 /**
  *
@@ -26,7 +37,12 @@ public class TestTenantRepository extends TenantRepository {
                                 Metrics metrics,
                                 FileDistributionFactory fileDistributionFactory,
                                 FlagSource flagSource,
-                                HostProvisionerProvider hostProvisionerProvider) {
+                                HostProvisionerProvider hostProvisionerProvider,
+                                ConfigserverConfig configserverConfig,
+                                Zone zone,
+                                Clock clock,
+                                ModelFactoryRegistry modelFactoryRegistry,
+                                ConfigDefinitionRepo configDefinitionRepo) {
         super(componentRegistry,
               hostRegistry,
               curator,
@@ -36,11 +52,18 @@ public class TestTenantRepository extends TenantRepository {
               flagSource,
               new InThreadExecutorService(),
               new MockSecretStore(),
-              hostProvisionerProvider);
+              hostProvisionerProvider,
+              configserverConfig,
+              new ConfigServerDB(configserverConfig),
+              zone,
+              clock,
+              modelFactoryRegistry,
+              configDefinitionRepo);
     }
 
     public static class Builder {
-
+        Clock clock = Clock.systemUTC();
+        ConfigDefinitionRepo configDefinitionRepo = new TestConfigDefinitionRepo();
         GlobalComponentRegistry componentRegistry;
         HostRegistry hostRegistry = new HostRegistry();
         Curator curator = new MockCurator();
@@ -48,6 +71,14 @@ public class TestTenantRepository extends TenantRepository {
         FileDistributionFactory fileDistributionFactory = null;
         FlagSource flagSource = new InMemoryFlagSource();
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
+        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry())));
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
+        Zone zone = Zone.defaultZone();
+
+        public Builder withClock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
 
         public Builder withFlagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
@@ -74,6 +105,11 @@ public class TestTenantRepository extends TenantRepository {
             return this;
         }
 
+        public Builder withModelFactoryRegistry(ModelFactoryRegistry modelFactoryRegistry) {
+            this.modelFactoryRegistry = modelFactoryRegistry;
+            return this;
+        }
+
         public Builder withFileDistributionFactory(FileDistributionFactory fileDistributionFactory) {
             this.fileDistributionFactory = fileDistributionFactory;
             return this;
@@ -84,16 +120,31 @@ public class TestTenantRepository extends TenantRepository {
             return this;
         }
 
+        public Builder withConfigserverConfig(ConfigserverConfig configserverConfig) {
+            this.configserverConfig = configserverConfig;
+            return this;
+        }
+
+        public Builder withZone(Zone zone) {
+            this.zone = zone;
+            return this;
+        }
+
         public TenantRepository build() {
             if (fileDistributionFactory == null)
-                fileDistributionFactory = new FileDistributionFactory(componentRegistry.getConfigserverConfig());
+                fileDistributionFactory = new FileDistributionFactory(configserverConfig);
             return new TestTenantRepository(componentRegistry,
                                             hostRegistry,
                                             curator,
                                             metrics,
                                             fileDistributionFactory,
                                             flagSource,
-                                            hostProvisionerProvider);
+                                            hostProvisionerProvider,
+                                            configserverConfig,
+                                            zone,
+                                            clock,
+                                            modelFactoryRegistry,
+                                            configDefinitionRepo);
         }
 
     }

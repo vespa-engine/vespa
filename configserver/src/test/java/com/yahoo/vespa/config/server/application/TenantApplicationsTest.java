@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -60,6 +61,7 @@ public class TenantApplicationsTest {
     private CuratorFramework curatorFramework;
     private TestComponentRegistry componentRegistry;
     private TenantApplications applications;
+    private ConfigserverConfig configserverConfig;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -68,24 +70,24 @@ public class TenantApplicationsTest {
     public void setup() throws IOException {
         curator = new MockCurator();
         curatorFramework = curator.framework();
-        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+        configserverConfig = new ConfigserverConfig.Builder()
                 .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
                 .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
                 .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
                 .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(configserverConfig)
-                .modelFactoryRegistry(createRegistry())
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
+                .withModelFactoryRegistry(createRegistry())
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
-        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator);
+        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator, configserverConfig, Clock.systemUTC());
     }
 
     @Test
@@ -178,7 +180,12 @@ public class TenantApplicationsTest {
 
     @Test
     public void testListConfigs() throws IOException, SAXException {
-        applications = TenantApplications.create(componentRegistry, new HostRegistry(), TenantName.defaultName(), new MockCurator());
+        applications = TenantApplications.create(componentRegistry,
+                                                 new HostRegistry(),
+                                                 TenantName.defaultName(),
+                                                 new MockCurator(),
+                                                 configserverConfig,
+                                                 Clock.systemUTC());
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -213,7 +220,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator);
+        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator, configserverConfig, Clock.systemUTC());
     }
 
     private static ApplicationId createApplicationId(String name) {

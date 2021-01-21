@@ -25,7 +25,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -52,18 +51,17 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
 
     @Before
     public void setupHandler() throws IOException {
-
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(configserverConfig)
-                .build();
-        Clock clock = componentRegistry.getClock();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
 
-        TenantRepository tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
+                .build();
         tenantRepository.addTenant(tenantName1);
         tenantRepository.addTenant(tenantName2);
 
@@ -71,7 +69,6 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
-                .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .build();
 

@@ -13,6 +13,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.ReloadListener;
@@ -91,17 +92,19 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     public static TenantApplications create(GlobalComponentRegistry componentRegistry,
                                             HostRegistry hostRegistry,
                                             TenantName tenantName,
-                                            Curator curator) {
+                                            Curator curator,
+                                            ConfigserverConfig configserverConfig,
+                                            Clock clock) {
         return new TenantApplications(tenantName,
                                       curator,
                                       new StripedExecutor<>(new InThreadExecutorService()),
                                       new InThreadExecutorService(),
                                       Metrics.createTestMetrics(),
                                       componentRegistry.getReloadListener(),
-                                      componentRegistry.getConfigserverConfig(),
+                                      configserverConfig,
                                       hostRegistry,
-                                      new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
-                                      componentRegistry.getClock());
+                                      new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),
+                                      clock);
     }
 
     /** The curator backed ZK storage of this. */

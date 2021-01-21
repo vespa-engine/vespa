@@ -3,15 +3,18 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.io.IOUtils;
 import com.yahoo.lang.SettableOptional;
@@ -19,6 +22,7 @@ import com.yahoo.path.Path;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -28,6 +32,7 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -102,6 +107,11 @@ public class SessionRepository {
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
+    private final ConfigserverConfig configserverConfig;
+    private final ConfigServerDB configServerDB;
+    private final Zone zone;
+    private final ModelFactoryRegistry modelFactoryRegistry;
+    private final ConfigDefinitionRepo configDefinitionRepo;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -114,25 +124,36 @@ public class SessionRepository {
                              FlagSource flagSource,
                              ExecutorService zkCacheExecutor,
                              SecretStore secretStore,
-                             HostProvisionerProvider hostProvisionerProvider) {
+                             HostProvisionerProvider hostProvisionerProvider,
+                             ConfigserverConfig configserverConfig,
+                             ConfigServerDB configServerDB,
+                             Zone zone,
+                             Clock clock,
+                             ModelFactoryRegistry modelFactoryRegistry,
+                             ConfigDefinitionRepo configDefinitionRepo) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
         sessionCounter = new SessionCounter(configCurator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
-        this.clock = componentRegistry.getClock();
+        this.clock = clock;
         this.curator = curator;
-        this.sessionLifetime = Duration.ofSeconds(componentRegistry.getConfigserverConfig().sessionLifetime());
+        this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
-        this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
+        this.tenantFileSystemDirs = new TenantFileSystemDirs(configServerDB, tenantName);
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
         this.metrics = metrics;
         this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
         this.secretStore = secretStore;
         this.hostProvisionerProvider = hostProvisionerProvider;
+        this.configserverConfig = configserverConfig;
+        this.configServerDB = configServerDB;
+        this.zone = zone;
+        this.modelFactoryRegistry = modelFactoryRegistry;
+        this.configDefinitionRepo = configDefinitionRepo;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -458,7 +479,11 @@ public class SessionRepository {
                                                                     permanentApplicationPackage,
                                                                     flagSource,
                                                                     secretStore,
-                                                                    hostProvisionerProvider);
+                                                                    hostProvisionerProvider,
+                                                                    configserverConfig,
+                                                                    zone,
+                                                                    modelFactoryRegistry,
+                                                                    configDefinitionRepo);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
@@ -671,7 +696,7 @@ public class SessionRepository {
         FileReference fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference != null) {
-            File rootDir = new File(Defaults.getDefaults().underVespaHome(componentRegistry.getConfigserverConfig().fileReferencesDir()));
+            File rootDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
             File sessionDir;
             FileDirectory fileDirectory = new FileDirectory(rootDir);
             try {
@@ -709,7 +734,7 @@ public class SessionRepository {
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
-        String serverId = componentRegistry.getConfigserverConfig().serverId();
+        String serverId = configserverConfig.serverId();
         return new SessionZooKeeperClient(curator, configCurator, tenantName, sessionId, serverId);
     }
 
@@ -722,7 +747,7 @@ public class SessionRepository {
     }
 
     private File getSessionAppDir(long sessionId) {
-        return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
+        return new TenantFileSystemDirs(configServerDB, tenantName).getUserApplicationDir(sessionId);
     }
 
     private void updateSessionStateWatcher(long sessionId, RemoteSession remoteSession) {

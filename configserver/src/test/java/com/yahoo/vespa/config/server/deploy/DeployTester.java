@@ -283,17 +283,17 @@ public class DeployTester {
             List<ModelFactory> modelFactories = Optional.ofNullable(this.modelFactories)
                     .orElseGet(() -> List.of(createModelFactory(clock)));
 
-            TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder()
-                    .clock(clock)
-                    .configServerConfig(configserverConfig)
-                    .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-                    .zone(zone);
+            TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder();
 
             TestTenantRepository.Builder builder = new TestTenantRepository.Builder()
+                    .withClock(clock)
                     .withComponentRegistry(testComponentRegistryBuilder.build())
+                    .withConfigserverConfig(configserverConfig)
                     .withCurator(curator)
+                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
-                    .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig));
+                    .withModelFactoryRegistry((new ModelFactoryRegistry(modelFactories)))
+                    .withZone(zone);
 
             if (configserverConfig.hostedVespa()) builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true));
 

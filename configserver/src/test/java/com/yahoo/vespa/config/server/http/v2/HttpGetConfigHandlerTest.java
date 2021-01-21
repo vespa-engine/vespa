@@ -11,7 +11,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
-import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
@@ -64,13 +63,11 @@ public class HttpGetConfigHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .configDefinitionRepo(new TestConfigDefinitionRepo())
-                .configServerConfig(configserverConfig)
-                .build();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         MockProvisioner provisioner = new MockProvisioner();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
                 .build();
         tenantRepository.addTenant(tenant);

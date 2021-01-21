@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -32,6 +33,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -73,14 +75,10 @@ public class SessionRepositoryTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     public void setup() throws Exception {
-        setup(new InMemoryFlagSource());
+        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))));
     }
 
-    private void setup(FlagSource flagSource) throws Exception {
-        setup(flagSource, new TestComponentRegistry.Builder());
-    }
-
-    private void setup(FlagSource flagSource, TestComponentRegistry.Builder componentRegistryBuilder) throws Exception {
+    private void setup(FlagSource flagSource, ModelFactoryRegistry modelFactoryRegistry) throws Exception {
         curator = new MockCurator();
         File configserverDbDir = temporaryFolder.newFolder().getAbsoluteFile();
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
@@ -89,13 +87,13 @@ public class SessionRepositoryTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .sessionLifetime(5)
                 .build();
-        GlobalComponentRegistry globalComponentRegistry = componentRegistryBuilder
-                .configServerConfig(configserverConfig)
-                .build();
+        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(globalComponentRegistry)
+                .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .withModelFactoryRegistry(modelFactoryRegistry)
                 .build();
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
@@ -197,9 +195,7 @@ public class SessionRepositoryTest {
         okFactory.vespaVersion = new Version(1, 1, 0);
         okFactory.throwOnLoad = false;
 
-        TestComponentRegistry.Builder registryBuilder = new TestComponentRegistry.Builder()
-                .modelFactoryRegistry(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
-        setup(new InMemoryFlagSource(), registryBuilder);
+        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
         deploy();
     }
@@ -215,9 +211,7 @@ public class SessionRepositoryTest {
         okFactory.vespaVersion = new Version(2, 0, 0);
         okFactory.throwOnLoad = false;
 
-        TestComponentRegistry.Builder registryBuilder = new TestComponentRegistry.Builder()
-                .modelFactoryRegistry(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
-        setup(new InMemoryFlagSource(), registryBuilder);
+        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
         deploy();
     }
@@ -232,9 +226,7 @@ public class SessionRepositoryTest {
         okFactory.vespaVersion = new Version(2, 0, 0);
         okFactory.throwErrorOnLoad = false;
 
-        TestComponentRegistry.Builder registryBuilder = new TestComponentRegistry.Builder()
-                .modelFactoryRegistry(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
-        setup(new InMemoryFlagSource(), registryBuilder);
+        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
         File testApp = new File("src/test/apps/app-major-version-2");
         deploy(applicationId, testApp);
@@ -252,9 +244,7 @@ public class SessionRepositoryTest {
         okFactory.vespaVersion = new Version(1, 0, 0);
         okFactory.throwErrorOnLoad = false;
 
-        TestComponentRegistry.Builder registryBuilder = new TestComponentRegistry.Builder()
-                .modelFactoryRegistry(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
-        setup(new InMemoryFlagSource(), registryBuilder);
+        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
         File testApp = new File("src/test/apps/app-major-version-2");
         deploy(applicationId, testApp);

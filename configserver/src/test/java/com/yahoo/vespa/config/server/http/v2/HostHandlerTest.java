@@ -54,10 +54,11 @@ public class HostHandlerTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .zone(zone)
-                .configServerConfig(configserverConfig)
                 .build();
-        TenantRepository tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
+                .build();
         tenantRepository.addTenant(mytenant);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

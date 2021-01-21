@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -18,13 +19,16 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,14 +65,23 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         postHeaders.put(ApplicationApiHandler.contentTypeHeader, ApplicationApiHandler.APPLICATION_X_GZIP);
     }
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setupRepo() {
-        TenantRepository tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(componentRegistry).build();
+    public void setupRepo() throws IOException {
+        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
+        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+                .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
+                .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
-                .withClock(componentRegistry.getClock())
                 .build();
         tenantRepository.addTenant(tenant);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
@@ -165,7 +178,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private SessionCreateHandler createHandler() {
         return new SessionCreateHandler(SessionCreateHandler.testOnlyContext(),
                                         applicationRepository,
-                                        componentRegistry.getConfigserverConfig());
+                                        new ConfigserverConfig.Builder().build());
     }
 
     private HttpRequest post() throws FileNotFoundException {
