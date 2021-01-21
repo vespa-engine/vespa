@@ -68,7 +68,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, c
             child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
             child.set(FastRenameOptimizer::optimize(child.get(), stash));
             child.set(PowAsMapOptimizer::optimize(child.get(), stash));
-            child.set(DenseSimpleMapFunction::optimize(child.get(), stash));
+            child.set(MixedMapFunction::optimize(child.get(), stash));
             child.set(DenseSimpleJoinFunction::optimize(child.get(), stash));
             child.set(JoinWithNumberFunction::optimize(child.get(), stash));
             child.set(DenseSingleReduceFunction::optimize(child.get(), stash));

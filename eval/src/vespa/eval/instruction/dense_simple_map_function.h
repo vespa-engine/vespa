@@ -7,17 +7,16 @@
 namespace vespalib::eval {
 
 /**
- * Tensor function for simple map operations on dense tensors.
- * TODO: Fix generic map to handle inplace, and remove this.
+ * Tensor function optimizing map operations on tensors.
  **/
-class DenseSimpleMapFunction : public tensor_function::Map
+class MixedMapFunction : public tensor_function::Map
 {
 public:
     using map_fun_t = operation::op1_t;
-    DenseSimpleMapFunction(const ValueType &result_type,
-                           const TensorFunction &child,
-                           map_fun_t function_in);
-    ~DenseSimpleMapFunction() override;
+    MixedMapFunction(const ValueType &result_type,
+                     const TensorFunction &child,
+                     map_fun_t function_in);
+    ~MixedMapFunction() override;
     bool inplace() const { return child().result_is_mutable(); }
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
