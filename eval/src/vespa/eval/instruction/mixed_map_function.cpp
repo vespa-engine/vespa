@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dense_simple_map_function.h"
+#include "mixed_map_function.h"
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/operation.h>
@@ -36,7 +36,7 @@ void my_simple_map_op(State &state, uint64_t param) {
     auto dst_cells = make_dst_cells<CT, inplace>(src_cells, state.stash);
     apply_op1_vec(dst_cells.begin(), src_cells.begin(), dst_cells.size(), my_fun);
     if (!inplace) {
-        state.pop_push(state.stash.create<DenseValueView>(child.type(), TypedCells(dst_cells)));
+        state.pop_push(state.stash.create<ValueView>(child.type(), child.index(), TypedCells(dst_cells)));
     }
 }
 
@@ -54,17 +54,17 @@ using MyTypify = TypifyValue<TypifyCellType,TypifyOp1,TypifyBool>;
 
 //-----------------------------------------------------------------------------
 
-DenseSimpleMapFunction::DenseSimpleMapFunction(const ValueType &result_type,
-                                               const TensorFunction &child,
-                                               map_fun_t function_in)
+MixedMapFunction::MixedMapFunction(const ValueType &result_type,
+                                   const TensorFunction &child,
+                                   map_fun_t function_in)
     : Map(result_type, child, function_in)
 {
 }
 
-DenseSimpleMapFunction::~DenseSimpleMapFunction() = default;
+MixedMapFunction::~MixedMapFunction() = default;
 
 Instruction
-DenseSimpleMapFunction::compile_self(const ValueBuilderFactory &, Stash &) const
+MixedMapFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
     auto op = typify_invoke<3,MyTypify,MyGetFun>(result_type().cell_type(), function(), inplace());
     static_assert(sizeof(uint64_t) == sizeof(function()));
@@ -72,11 +72,11 @@ DenseSimpleMapFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 }
 
 const TensorFunction &
-DenseSimpleMapFunction::optimize(const TensorFunction &expr, Stash &stash)
+MixedMapFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto map = as<Map>(expr)) {
-        if (map->child().result_type().is_dense()) {
-            return stash.create<DenseSimpleMapFunction>(map->result_type(), map->child(), map->function());
+        if (! map->child().result_type().is_scalar()) {
+            return stash.create<MixedMapFunction>(map->result_type(), map->child(), map->function());
         }
     }
     return expr;

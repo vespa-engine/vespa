@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/dense_simple_map_function.h>
+#include <vespa/eval/instruction/mixed_map_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -19,6 +19,8 @@ EvalFixture::ParamRepo make_params() {
         .add("b", spec(2.5))
         .add("sparse", spec({x({"a"})}, N()))
         .add("mixed", spec({x({"a"}),y(5)}, N()))
+        .add_mutable("@sparse", spec({x({"a"})}, N()))
+        .add_mutable("@mixed", spec({x({"a"}),y(5)}, N()))
         .add_matrix("x", 5, "y", 3);
 }
 EvalFixture::ParamRepo param_repo = make_params();
@@ -28,7 +30,7 @@ void verify_optimized(const vespalib::string &expr, bool inplace) {
     EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQ(fixture.result(), slow_fixture.result());
-    auto info = fixture.find_all<DenseSimpleMapFunction>();
+    auto info = fixture.find_all<MixedMapFunction>();
     ASSERT_EQ(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
     EXPECT_EQ(info[0]->inplace(), inplace);
@@ -45,7 +47,7 @@ void verify_not_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQ(fixture.result(), slow_fixture.result());
-    auto info = fixture.find_all<DenseSimpleMapFunction>();
+    auto info = fixture.find_all<MixedMapFunction>();
     EXPECT_TRUE(info.empty());
 }
 
@@ -63,12 +65,20 @@ TEST(MapTest, scalar_map_is_not_optimized) {
     verify_not_optimized("map(a,f(x)(x+10))");
 }
 
-TEST(MapTest, sparse_map_is_not_optimized) {
-    verify_not_optimized("map(sparse,f(x)(x+10))");
+TEST(MapTest, sparse_map_is_optimized) {
+    verify_optimized("map(sparse,f(x)(x+10))", false);
 }
 
-TEST(MapTest, mixed_map_is_not_optimized) {
-    verify_not_optimized("map(mixed,f(x)(x+10))");
+TEST(MapTest, sparse_map_can_be_inplace) {
+    verify_optimized("map(@sparse,f(x)(x+10))", true);
+}
+
+TEST(MapTest, mixed_map_is_optimized) {
+    verify_optimized("map(mixed,f(x)(x+10))", false);
+}
+
+TEST(MapTest, mixed_map_can_be_inplace) {
+    verify_optimized("map(@mixed,f(x)(x+10))", true);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

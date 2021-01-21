@@ -11,7 +11,6 @@ vespa_add_library(eval_instruction OBJECT
     dense_multi_matmul_function.cpp
     dense_simple_expand_function.cpp
     dense_simple_join_function.cpp
-    dense_simple_map_function.cpp
     dense_single_reduce_function.cpp
     dense_tensor_create_function.cpp
     dense_tensor_peek_function.cpp
@@ -29,6 +28,7 @@ vespa_add_library(eval_instruction OBJECT
     index_lookup_table.cpp
     join_with_number_function.cpp
     mixed_inner_product_function.cpp
+    mixed_map_function.cpp
     pow_as_map_optimizer.cpp
     remove_trivial_dimension_optimizer.cpp
     replace_type_function.cpp
