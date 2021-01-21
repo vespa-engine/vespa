@@ -92,8 +92,4 @@ use_content_node_btree_bucket_db bool default=true restart
 ## If non-zero, the bucket DB will be striped into 2^bits sub-databases, each handling
 ## a disjoint subset of the node's buckets, in order to reduce locking contention.
 ## Max value is unspecified, but will be clamped internally.
-## WARNING:
-## Setting this to a non-zero value requires the minimum split bit level in the cluster
-## to be enforced, so only set this value if you know exactly what you're doing!
-content_node_bucket_db_stripe_bits int default=0 restart
-
+content_node_bucket_db_stripe_bits int default=4 restart
