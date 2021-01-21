@@ -86,14 +86,14 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                                                      .map(CloudTenant.class::cast);
             if (tenant.isPresent() && tenant.get().developerKeys().containsKey(key))
                 return Optional.of(new SecurityContext(tenant.get().developerKeys().get(key),
-                                                       Set.of(Role.reader(id.tenant()),
-                                                              Role.developer(id.tenant()))));
+                                                       Set.of(Role.reader(id.tenant()), Role.developer(id.tenant())),
+                                                       controller.clock().instant()));
 
             Optional <Application> application = controller.applications().getApplication(TenantAndApplicationId.from(id));
             if (application.isPresent() && application.get().deployKeys().contains(key))
                 return Optional.of(new SecurityContext(new SimplePrincipal("headless@" + id.tenant() + "." + id.application()),
-                                                       Set.of(Role.reader(id.tenant()),
-                                                              Role.headless(id.tenant(), id.application()))));
+                                                       Set.of(Role.reader(id.tenant()), Role.headless(id.tenant(), id.application())),
+                                                       controller.clock().instant()));
         }
         return Optional.empty();
     }

@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
@@ -118,6 +119,22 @@ public class TenantController {
         try (Lock lock = lock(tenantSpec.tenant())) {
             curator.writeTenant(accessControl.updateTenant(tenantSpec, credentials, asList(),
                                                            controller.applications().asList(tenantSpec.tenant())));
+        }
+    }
+
+    /**
+     * Update last login times for the given tenant at the given user levers with the given instant, but only if the
+     * new instant is later
+     */
+    public void updateLastLogin(TenantName tenantName, List<LastLoginInfo.UserLevel> userLevels, Instant loggedInAt) {
+        try (Lock lock = lock(tenantName)) {
+            Tenant tenant = require(tenantName);
+            LastLoginInfo loginInfo = tenant.lastLoginInfo();
+            for (LastLoginInfo.UserLevel userLevel : userLevels)
+                loginInfo = loginInfo.withLastLoginIfLater(userLevel, loggedInAt);
+
+            if (tenant.lastLoginInfo().equals(loginInfo)) return; // no change
+            curator.writeTenant(LockedTenant.of(tenant, lock).with(loginInfo).get());
         }
     }
 

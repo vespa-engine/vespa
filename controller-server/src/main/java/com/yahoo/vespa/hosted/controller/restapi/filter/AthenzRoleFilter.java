@@ -1,11 +1,16 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
+import com.auth0.jwt.JWT;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
+
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.util.Date;
 import java.util.logging.Level;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -64,9 +69,14 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         try {
             Principal principal = request.getUserPrincipal();
             if (principal instanceof AthenzPrincipal) {
+                Instant issuedAt = request.getClientCertificateChain().stream().findFirst()
+                        .map(X509Certificate::getNotBefore)
+                        .or(() -> Optional.ofNullable((String) request.getAttribute("okta.access-token")).map(iat -> JWT.decode(iat).getIssuedAt()))
+                        .map(Date::toInstant)
+                        .orElse(Instant.EPOCH);
                 request.setAttribute(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(principal,
-                                                                                         roles((AthenzPrincipal) principal,
-                                                                                               request.getUri())));
+                        roles((AthenzPrincipal) principal, request.getUri()),
+                        issuedAt));
             }
         }
         catch (Exception e) {

@@ -17,6 +17,8 @@
   ],
   "applications": [],
   "metaData": {
-    "createdAtMillis": "(ignore)"
+    "createdAtMillis": "(ignore)",
+    "lastLoginByUserMillis": 1234,
+    "lastLoginByAdministratorMillis": 1234
   }
 }

@@ -67,6 +67,7 @@ import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
@@ -140,7 +141,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final UserId OTHER_USER_ID = new UserId("otheruser");
     private static final UserId HOSTED_VESPA_OPERATOR = new UserId("johnoperator");
     private static final OktaIdentityToken OKTA_IT = new OktaIdentityToken("okta-it");
-    private static final OktaAccessToken OKTA_AT = new OktaAccessToken("okta-at");
+    private static final OktaAccessToken OKTA_AT = new OktaAccessToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.he0ErCNloe4J7Id0Ry2SEDg09lKkZkfsRiGsdX_vgEg");
 
 
     private ContainerTester tester;
@@ -192,8 +193,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("tenant-without-applications-with-id.json"));
         // GET a tenant with property ID and contact information
         updateContactInformation();
+        tester.controller().tenants().updateLastLogin(TenantName.from("tenant2"),
+                List.of(LastLoginInfo.UserLevel.user, LastLoginInfo.UserLevel.administrator), Instant.ofEpochMilli(1234));
         tester.assertResponse(request("/application/v4/tenant/tenant2", GET).userIdentity(USER_ID),
-                              new File("tenant-with-contact-info.json"));
+                              new File("tenant2.json"));
 
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
@@ -1237,7 +1240,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Create legacy tenant name containing underscores
         tester.controller().curator().writeTenant(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
-                new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH));
+                new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH, LastLoginInfo.EMPTY));
 
         // POST (add) a Athenz tenant with dashes duplicates existing one with underscores
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
