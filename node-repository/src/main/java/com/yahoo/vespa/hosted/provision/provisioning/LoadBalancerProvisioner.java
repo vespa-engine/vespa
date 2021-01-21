@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
@@ -85,7 +86,9 @@ public class LoadBalancerProvisioner {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             List<Node> nodes = nodesOf(clusterId, application);
             LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
-            provision(loadBalancerId, nodes, false);
+            ApplicationTransaction transaction = new ApplicationTransaction(new ProvisionLock(application, lock), new NestedTransaction());
+            provision(transaction, loadBalancerId, nodes, false);
+            transaction.nested().commit();
         }
     }
 
@@ -102,7 +105,7 @@ public class LoadBalancerProvisioner {
     public void activate(Set<ClusterSpec> clusters, ApplicationTransaction transaction) {
         for (var cluster : loadBalancedClustersOf(transaction.application()).entrySet()) {
             // Provision again to ensure that load balancer instance is re-configured with correct nodes
-            provision(transaction.application(), cluster.getKey(), cluster.getValue(), true);
+            provision(transaction, cluster.getKey(), cluster.getValue());
         }
         // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
         var surplusLoadBalancers = surplusLoadBalancersOf(transaction.application(), clusters.stream()
@@ -175,7 +178,7 @@ public class LoadBalancerProvisioner {
     }
 
     /** Idempotently provision a load balancer for given application and cluster */
-    private void provision(LoadBalancerId id, List<Node> nodes, boolean activate) {
+    private void provision(ApplicationTransaction transaction, LoadBalancerId id, List<Node> nodes, boolean activate) {
         var now = nodeRepository.clock().instant();
         var loadBalancer = db.readLoadBalancer(id);
         if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
@@ -192,11 +195,11 @@ public class LoadBalancerProvisioner {
                 log.log(Level.FINE, "Moving " + newLoadBalancer.id() + " to state " + newLoadBalancer.state());
             }
         }
-        db.writeLoadBalancer(newLoadBalancer);
+        db.writeLoadBalancers(List.of(newLoadBalancer), transaction.nested());
     }
 
-    private void provision(ApplicationId application, ClusterSpec.Id clusterId, List<Node> nodes, boolean activate) {
-        provision(new LoadBalancerId(application, clusterId), nodes, activate);
+    private void provision(ApplicationTransaction transaction, ClusterSpec.Id clusterId, List<Node> nodes) {
+        provision(transaction, new LoadBalancerId(transaction.application(), clusterId), nodes, true);
     }
 
     private LoadBalancerInstance provisionInstance(LoadBalancerId id, List<Node> nodes, boolean force) {
