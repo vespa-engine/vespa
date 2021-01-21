@@ -111,12 +111,12 @@ public class ApplicationHandlerTest {
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-                .configServerConfig(configserverConfig)
                 .clock(clock)
                 .build();
         provisioner = new MockProvisioner();
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
                 .build();

@@ -76,7 +76,6 @@ public class SessionActiveHandlerTest {
                 .build();
         componentRegistry = new TestComponentRegistry.Builder()
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
-                .configServerConfig(configserverConfig)
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)

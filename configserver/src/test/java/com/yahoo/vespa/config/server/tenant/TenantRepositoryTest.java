@@ -14,6 +14,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStore;
@@ -60,6 +61,7 @@ public class TenantRepositoryTest {
     private TenantApplicationsTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
+    private ConfigserverConfig configserverConfig;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -68,13 +70,18 @@ public class TenantRepositoryTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
-    public void setupSessions() {
+    public void setupSessions() throws IOException {
         curator = new MockCurator();
         TestComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().build();
         listener = (TenantApplicationsTest.MockReloadListener) globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener) globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
+        configserverConfig = new ConfigserverConfig.Builder()
+                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .build();
         tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(globalComponentRegistry)
+                                                             .withConfigserverConfig(configserverConfig)
                                                              .withCurator(curator)
                                                              .build();
         assertTrue(tenantListener.tenantsLoaded);
@@ -180,13 +187,13 @@ public class TenantRepositoryTest {
     }
 
     @Test
-    public void testFailingBootstrap() throws IOException {
+    public void testFailingBootstrap() {
         tenantRepository.close(); // stop using the one setup in Before method
 
         // Should get exception if config is true
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(createComponentRegistry());
+        new FailingDuringBootstrapTenantRepository(createComponentRegistry(), configserverConfig);
     }
 
     private List<String> readZKChildren(String path) throws Exception {
@@ -197,18 +204,15 @@ public class TenantRepositoryTest {
         assertNotNull(curator.framework().checkExists().forPath(TenantRepository.getTenantPath(tenantName).getAbsolute()));
     }
 
-    private GlobalComponentRegistry createComponentRegistry() throws IOException {
+    private GlobalComponentRegistry createComponentRegistry() {
         return new TestComponentRegistry.Builder()
-                .configServerConfig(new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                   .configDefinitionsDir(temporaryFolder.newFolder("configdefs").getAbsolutePath())
-                                                                   .configServerDBDir(temporaryFolder.newFolder("configserverdb").getAbsolutePath())))
                 .zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("foo")))
                 .build();
     }
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
-        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry componentRegistry) {
+        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry componentRegistry, ConfigserverConfig configserverConfig) {
             super(componentRegistry,
                   new HostRegistry(),
                   new MockCurator(),
@@ -219,7 +223,8 @@ public class TenantRepositoryTest {
                   new InThreadExecutorService(),
                   new MockSecretStore(),
                   HostProvisionerProvider.withProvisioner(new MockProvisioner(), false),
-                  new ConfigserverConfig.Builder().build());
+                  configserverConfig,
+                  new ConfigServerDB(configserverConfig));
         }
 
         @Override

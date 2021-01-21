@@ -56,7 +56,6 @@ public class TenantHandlerTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(configserverConfig)
                 .build();
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)

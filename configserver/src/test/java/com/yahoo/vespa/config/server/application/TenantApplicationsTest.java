@@ -60,6 +60,7 @@ public class TenantApplicationsTest {
     private CuratorFramework curatorFramework;
     private TestComponentRegistry componentRegistry;
     private TenantApplications applications;
+    private ConfigserverConfig configserverConfig;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -68,19 +69,19 @@ public class TenantApplicationsTest {
     public void setup() throws IOException {
         curator = new MockCurator();
         curatorFramework = curator.framework();
-        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+        configserverConfig = new ConfigserverConfig.Builder()
                 .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
                 .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
                 .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
                 .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(configserverConfig)
                 .modelFactoryRegistry(createRegistry())
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
+                .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
@@ -182,7 +183,7 @@ public class TenantApplicationsTest {
                                                  new HostRegistry(),
                                                  TenantName.defaultName(),
                                                  new MockCurator(),
-                                                 new ConfigserverConfig.Builder().build());
+                                                 configserverConfig);
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -217,7 +218,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator, new ConfigserverConfig.Builder().build());
+        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator, configserverConfig);
     }
 
     private static ApplicationId createApplicationId(String name) {

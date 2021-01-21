@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
@@ -39,7 +40,8 @@ public class TestTenantRepository extends TenantRepository {
               new InThreadExecutorService(),
               new MockSecretStore(),
               hostProvisionerProvider,
-              configserverConfig);
+              configserverConfig,
+              new ConfigServerDB(configserverConfig));
     }
 
     public static class Builder {

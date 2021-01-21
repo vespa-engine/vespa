@@ -62,7 +62,6 @@ public class HttpListConfigsHandlerTest {
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .configDefinitionRepo(new TestConfigDefinitionRepo())
-                .configServerConfig(configserverConfig)
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)

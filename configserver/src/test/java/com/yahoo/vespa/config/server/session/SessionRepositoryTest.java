@@ -89,11 +89,10 @@ public class SessionRepositoryTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .sessionLifetime(5)
                 .build();
-        GlobalComponentRegistry globalComponentRegistry = componentRegistryBuilder
-                .configServerConfig(configserverConfig)
-                .build();
+        GlobalComponentRegistry globalComponentRegistry = componentRegistryBuilder.build();
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(globalComponentRegistry)
+                .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .build();

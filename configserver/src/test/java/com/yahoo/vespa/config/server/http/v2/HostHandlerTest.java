@@ -55,7 +55,6 @@ public class HostHandlerTest {
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .zone(zone)
-                .configServerConfig(configserverConfig)
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)

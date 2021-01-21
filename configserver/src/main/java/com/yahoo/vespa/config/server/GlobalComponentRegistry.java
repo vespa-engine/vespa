@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -22,5 +21,4 @@ public interface GlobalComponentRegistry {
     ModelFactoryRegistry getModelFactoryRegistry();
     Zone getZone();
     Clock getClock();
-    ConfigServerDB getConfigServerDB();
 }

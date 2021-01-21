@@ -88,7 +88,6 @@ public class RpcTester implements AutoCloseable {
         rpcServer = createRpcServer(configserverConfig);
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .configDefinitionRepo(new TestConfigDefinitionRepo())
-                .configServerConfig(configserverConfig)
                 .reloadListener(rpcServer)
                 .build();
         tenantRepository = new TestTenantRepository.Builder()

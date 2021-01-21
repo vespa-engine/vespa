@@ -13,6 +13,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.ReloadListener;
@@ -101,7 +102,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                                       componentRegistry.getReloadListener(),
                                       configserverConfig,
                                       hostRegistry,
-                                      new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
+                                      new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),
                                       componentRegistry.getClock());
     }
 

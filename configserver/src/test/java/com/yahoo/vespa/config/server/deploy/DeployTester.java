@@ -285,7 +285,6 @@ public class DeployTester {
 
             TestComponentRegistry.Builder testComponentRegistryBuilder = new TestComponentRegistry.Builder()
                     .clock(clock)
-                    .configServerConfig(configserverConfig)
                     .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                     .zone(zone);
 

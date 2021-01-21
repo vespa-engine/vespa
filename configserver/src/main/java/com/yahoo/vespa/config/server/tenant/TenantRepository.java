@@ -13,6 +13,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -99,6 +100,7 @@ public class TenantRepository {
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
     private final ConfigserverConfig configserverConfig;
+    private final ConfigServerDB configServerDB;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -117,7 +119,8 @@ public class TenantRepository {
                             FlagSource flagSource,
                             SecretStore secretStore,
                             HostProvisionerProvider hostProvisionerProvider,
-                            ConfigserverConfig configserverConfig) {
+                            ConfigserverConfig configserverConfig,
+                            ConfigServerDB configServerDB) {
         this(componentRegistry,
              hostRegistry,
              curator,
@@ -128,7 +131,8 @@ public class TenantRepository {
              Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
              secretStore,
              hostProvisionerProvider,
-             configserverConfig);
+             configserverConfig,
+             configServerDB);
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -141,7 +145,8 @@ public class TenantRepository {
                             ExecutorService zkCacheExecutor,
                             SecretStore secretStore,
                             HostProvisionerProvider hostProvisionerProvider,
-                            ConfigserverConfig configserverConfig) {
+                            ConfigserverConfig configserverConfig,
+                            ConfigServerDB configServerDB) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
@@ -157,6 +162,7 @@ public class TenantRepository {
         this.flagSource = flagSource;
         this.secretStore = secretStore;
         this.hostProvisionerProvider = hostProvisionerProvider;
+        this.configServerDB = configServerDB;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -282,7 +288,7 @@ public class TenantRepository {
                                        componentRegistry.getReloadListener(),
                                        configserverConfig,
                                        hostRegistry,
-                                       new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName),
+                                       new TenantFileSystemDirs(configServerDB, tenantName),
                                        componentRegistry.getClock());
         PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         SessionPreparer sessionPreparer = new SessionPreparer(componentRegistry.getModelFactoryRegistry(),
@@ -307,7 +313,8 @@ public class TenantRepository {
                                                                     zkCacheExecutor,
                                                                     secretStore,
                                                                     hostProvisionerProvider,
-                                                                    configserverConfig);
+                                                                    configserverConfig,
+                                                                    configServerDB);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

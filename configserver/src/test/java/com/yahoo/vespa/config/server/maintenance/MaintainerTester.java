@@ -43,7 +43,6 @@ class MaintainerTester {
                 .build();
         GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .clock(clock)
-                .configServerConfig(configserverConfig)
                 .modelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
                 .build();
         tenantRepository = new TestTenantRepository.Builder()

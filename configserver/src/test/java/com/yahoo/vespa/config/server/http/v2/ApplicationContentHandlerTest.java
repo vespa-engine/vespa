@@ -57,9 +57,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(configserverConfig)
-                .build();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         Clock clock = componentRegistry.getClock();
 
         TenantRepository tenantRepository = new TestTenantRepository.Builder()

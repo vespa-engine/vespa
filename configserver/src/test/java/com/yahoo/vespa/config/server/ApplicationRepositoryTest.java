@@ -123,7 +123,6 @@ public class ApplicationRepositoryTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(configserverConfig)
                 .clock(clock)
                 .build();
         InMemoryFlagSource flagSource = new InMemoryFlagSource();

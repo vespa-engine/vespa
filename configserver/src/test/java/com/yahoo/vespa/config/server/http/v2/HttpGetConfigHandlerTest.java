@@ -66,7 +66,6 @@ public class HttpGetConfigHandlerTest {
                 .build();
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .configDefinitionRepo(new TestConfigDefinitionRepo())
-                .configServerConfig(configserverConfig)
                 .build();
         MockProvisioner provisioner = new MockProvisioner();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()

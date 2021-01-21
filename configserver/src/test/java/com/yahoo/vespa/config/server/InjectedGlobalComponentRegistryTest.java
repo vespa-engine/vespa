@@ -57,8 +57,7 @@ public class InjectedGlobalComponentRegistryTest {
                 new InjectedGlobalComponentRegistry(modelFactoryRegistry,
                                                     rpcServer,
                                                     defRepo,
-                                                    zone,
-                                                    new ConfigServerDB(configserverConfig));
+                                                    zone);
     }
 
     @Test

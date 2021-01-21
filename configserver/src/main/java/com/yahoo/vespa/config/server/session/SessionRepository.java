@@ -20,6 +20,7 @@ import com.yahoo.path.Path;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -104,6 +105,7 @@ public class SessionRepository {
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
     private final ConfigserverConfig configserverConfig;
+    private final ConfigServerDB configServerDB;
 
     public SessionRepository(TenantName tenantName,
                              GlobalComponentRegistry componentRegistry,
@@ -117,7 +119,8 @@ public class SessionRepository {
                              ExecutorService zkCacheExecutor,
                              SecretStore secretStore,
                              HostProvisionerProvider hostProvisionerProvider,
-                             ConfigserverConfig configserverConfig) {
+                             ConfigserverConfig configserverConfig,
+                             ConfigServerDB configServerDB) {
         this.tenantName = tenantName;
         this.componentRegistry = componentRegistry;
         this.configCurator = ConfigCurator.create(curator);
@@ -129,7 +132,7 @@ public class SessionRepository {
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
-        this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
+        this.tenantFileSystemDirs = new TenantFileSystemDirs(configServerDB, tenantName);
         this.applicationRepo = applicationRepo;
         this.sessionPreparer = sessionPreparer;
         this.metrics = metrics;
@@ -137,6 +140,7 @@ public class SessionRepository {
         this.secretStore = secretStore;
         this.hostProvisionerProvider = hostProvisionerProvider;
         this.configserverConfig = configserverConfig;
+        this.configServerDB = configServerDB;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -727,7 +731,7 @@ public class SessionRepository {
     }
 
     private File getSessionAppDir(long sessionId) {
-        return new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName).getUserApplicationDir(sessionId);
+        return new TenantFileSystemDirs(configServerDB, tenantName).getUserApplicationDir(sessionId);
     }
 
     private void updateSessionStateWatcher(long sessionId, RemoteSession remoteSession) {

@@ -21,20 +21,17 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final RpcServer rpcServer;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
     private final Zone zone;
-    private final ConfigServerDB configServerDB;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
     public InjectedGlobalComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
                                            RpcServer rpcServer,
                                            ConfigDefinitionRepo staticConfigDefinitionRepo,
-                                           Zone zone,
-                                           ConfigServerDB configServerDB) {
+                                           Zone zone) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.rpcServer = rpcServer;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
         this.zone = zone;
-        this.configServerDB = configServerDB;
     }
 
     @Override
@@ -53,8 +50,5 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public Clock getClock() {return  Clock.systemUTC();}
-
-    @Override
-    public ConfigServerDB getConfigServerDB() { return configServerDB; }
 
 }

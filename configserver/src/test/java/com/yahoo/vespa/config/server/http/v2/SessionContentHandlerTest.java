@@ -57,9 +57,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(configserverConfig)
-                .build();
+        componentRegistry = new TestComponentRegistry.Builder().build();
 
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)

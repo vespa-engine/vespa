@@ -106,9 +106,7 @@ public class SessionPreparerTest {
                 .configServerDBDir(folder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(folder.newFolder().getAbsolutePath())
                 .build();
-        componentRegistry = new TestComponentRegistry.Builder()
-                .configServerConfig(configserverConfig)
-                .build();
+        componentRegistry = new TestComponentRegistry.Builder().build();
         preparer = createPreparer();
     }
 
