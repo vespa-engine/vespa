@@ -298,10 +298,7 @@ public class CuratorDb {
     }
 
     public Optional<Tenant> readTenant(TenantName name) {
-        Supplier<Instant> tenantCreateTimeSupplier = () -> curator.getStat(tenantPath(name))
-                .map(stat -> Instant.ofEpochMilli(stat.getCtime()))
-                .orElse(Instant.parse("2021-01-01T00:00:00Z"));
-        return readSlime(tenantPath(name)).map(bytes -> tenantSerializer.tenantFrom(bytes, tenantCreateTimeSupplier));
+        return readSlime(tenantPath(name)).map(bytes -> tenantSerializer.tenantFrom(bytes));
     }
 
     public List<Tenant> readTenants() {
