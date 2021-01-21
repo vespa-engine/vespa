@@ -232,8 +232,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
         ActivationContext context = new ActivationContext(session.getSessionId());
-        ApplicationTransaction transaction = new ApplicationTransaction(
-                new ProvisionLock(session.getApplicationId(), () -> {}), new NestedTransaction());
+        ProvisionLock lock = new ProvisionLock(session.getApplicationId(), () -> {});
         AtomicReference<TransientException> lastException = new AtomicReference<>();
 
         while (true) {
@@ -243,6 +242,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             try {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
+                ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
                 provisioner.get().activate(preparedHosts, context, transaction);
                 return;
             } catch (TransientException e) {
