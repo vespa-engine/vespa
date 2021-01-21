@@ -602,5 +602,4 @@ public class NodeStateChangeCheckerTest {
             nodes.add(new ConfiguredNode(i, false));
         return nodes;
     }
-
 }
