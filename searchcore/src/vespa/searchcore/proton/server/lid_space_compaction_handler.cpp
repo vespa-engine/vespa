@@ -3,10 +3,11 @@
 #include "document_scan_iterator.h"
 #include "ifeedview.h"
 #include "lid_space_compaction_handler.h"
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchcore/proton/docsummary/isummarymanager.h>
-#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
+#include "maintenancedocumentsubdb.h"
+#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 
 using document::BucketId;
@@ -25,6 +26,16 @@ LidSpaceCompactionHandler::LidSpaceCompactionHandler(const MaintenanceDocumentSu
 }
 
 LidSpaceCompactionHandler::~LidSpaceCompactionHandler() = default;
+
+vespalib::string
+LidSpaceCompactionHandler::getName() const {
+    return _docTypeName + "." + _subDb.name();
+}
+
+uint32_t
+LidSpaceCompactionHandler::getSubDbId() const {
+    return _subDb.sub_db_id();
+}
 
 void
 LidSpaceCompactionHandler::set_operation_listener(documentmetastore::OperationListener::SP op_listener)

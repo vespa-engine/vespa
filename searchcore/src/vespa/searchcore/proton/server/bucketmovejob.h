@@ -176,7 +176,7 @@ public:
 
     // IBucketStateChangedHandler API
     void notifyBucketStateChanged(const document::BucketId &bucketId,
-                                          storage::spi::BucketInfo::ActiveState newState) override;
+                                  storage::spi::BucketInfo::ActiveState newState) override;
 
     void notifyDiskMemUsage(DiskMemUsageState state) override;
 

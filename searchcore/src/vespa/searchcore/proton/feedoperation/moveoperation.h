@@ -19,17 +19,16 @@ public:
                   const DocumentSP &doc,
                   DbDocumentId sourceDbdId,
                   uint32_t targetSubDbId);
-    virtual ~MoveOperation();
+    ~MoveOperation() override;
     const DocumentSP &getDocument() const { return _doc; }
     DbDocumentId getSourceDbdId() const { return getPrevDbDocumentId(); }
     DbDocumentId getTargetDbdId() const { return getDbDocumentId(); }
     void setTargetLid(search::DocumentIdT lid) {
         setDbDocumentId(DbDocumentId(getSubDbId(), lid));
     }
-    virtual void serialize(vespalib::nbostream &os) const override;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo) override;
-    virtual vespalib::string toString() const override;
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
+    vespalib::string toString() const override;
 };
 
 } // namespace proton
