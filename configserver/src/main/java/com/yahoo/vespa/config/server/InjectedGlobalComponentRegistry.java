@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 
@@ -14,16 +13,12 @@ import com.yahoo.vespa.config.server.tenant.TenantListener;
  */
 public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry {
 
-    private final ModelFactoryRegistry modelFactoryRegistry;
     private final RpcServer rpcServer;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
-    public InjectedGlobalComponentRegistry(ModelFactoryRegistry modelFactoryRegistry,
-                                           RpcServer rpcServer,
-                                           ConfigDefinitionRepo staticConfigDefinitionRepo) {
-        this.modelFactoryRegistry = modelFactoryRegistry;
+    public InjectedGlobalComponentRegistry(RpcServer rpcServer, ConfigDefinitionRepo staticConfigDefinitionRepo) {
         this.rpcServer = rpcServer;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
     }
@@ -34,7 +29,5 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public ReloadListener getReloadListener() { return rpcServer; }
     @Override
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return staticConfigDefinitionRepo; }
-    @Override
-    public ModelFactoryRegistry getModelFactoryRegistry() { return modelFactoryRegistry; }
 
 }

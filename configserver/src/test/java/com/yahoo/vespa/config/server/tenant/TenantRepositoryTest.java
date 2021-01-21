@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -23,6 +24,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -30,6 +32,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -222,7 +225,8 @@ public class TenantRepositoryTest {
                   configserverConfig,
                   new ConfigServerDB(configserverConfig),
                   Zone.defaultZone(),
-                  Clock.systemUTC());
+                  Clock.systemUTC(),
+                  new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))));
         }
 
         @Override

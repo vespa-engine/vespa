@@ -41,14 +41,13 @@ class MaintainerTester {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .modelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
-                .build();
+        GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withComponentRegistry(componentRegistry)
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true))
                 .withConfigserverConfig(configserverConfig)
+                .withModelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
                 .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)

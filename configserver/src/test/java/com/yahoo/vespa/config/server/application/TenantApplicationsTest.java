@@ -76,7 +76,6 @@ public class TenantApplicationsTest {
                 .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
                 .build();
         componentRegistry = new TestComponentRegistry.Builder()
-                .modelFactoryRegistry(createRegistry())
                 .reloadListener(listener)
                 .build();
         HostRegistry hostRegistry = new HostRegistry();
@@ -84,6 +83,7 @@ public class TenantApplicationsTest {
                 .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
+                .withModelFactoryRegistry(createRegistry())
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);

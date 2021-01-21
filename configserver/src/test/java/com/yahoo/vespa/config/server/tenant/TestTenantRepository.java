@@ -4,20 +4,24 @@ package com.yahoo.vespa.config.server.tenant;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.model.VespaModelFactory;
 
 import java.time.Clock;
+import java.util.List;
 
 /**
  *
@@ -34,7 +38,8 @@ public class TestTenantRepository extends TenantRepository {
                                 HostProvisionerProvider hostProvisionerProvider,
                                 ConfigserverConfig configserverConfig,
                                 Zone zone,
-                                Clock clock) {
+                                Clock clock,
+                                ModelFactoryRegistry modelFactoryRegistry) {
         super(componentRegistry,
               hostRegistry,
               curator,
@@ -48,7 +53,8 @@ public class TestTenantRepository extends TenantRepository {
               configserverConfig,
               new ConfigServerDB(configserverConfig),
               zone,
-              clock);
+              clock,
+              modelFactoryRegistry);
     }
 
     public static class Builder {
@@ -61,6 +67,7 @@ public class TestTenantRepository extends TenantRepository {
         FileDistributionFactory fileDistributionFactory = null;
         FlagSource flagSource = new InMemoryFlagSource();
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
+        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry())));
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
         Zone zone = Zone.defaultZone();
 
@@ -91,6 +98,11 @@ public class TestTenantRepository extends TenantRepository {
 
         public Builder withMetrics(Metrics metrics) {
             this.metrics = metrics;
+            return this;
+        }
+
+        public Builder withModelFactoryRegistry(ModelFactoryRegistry modelFactoryRegistry) {
+            this.modelFactoryRegistry = modelFactoryRegistry;
             return this;
         }
 
@@ -126,7 +138,8 @@ public class TestTenantRepository extends TenantRepository {
                                             hostProvisionerProvider,
                                             configserverConfig,
                                             zone,
-                                            clock);
+                                            clock,
+                                            modelFactoryRegistry);
         }
 
     }

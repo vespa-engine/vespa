@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -105,6 +106,7 @@ public class TenantRepository {
     private final ConfigServerDB configServerDB;
     private final Zone zone;
     private final Clock clock;
+    private final ModelFactoryRegistry modelFactoryRegistry;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -125,7 +127,8 @@ public class TenantRepository {
                             HostProvisionerProvider hostProvisionerProvider,
                             ConfigserverConfig configserverConfig,
                             ConfigServerDB configServerDB,
-                            Zone zone) {
+                            Zone zone,
+                            ModelFactoryRegistry modelFactoryRegistry) {
         this(componentRegistry,
              hostRegistry,
              curator,
@@ -139,7 +142,8 @@ public class TenantRepository {
              configserverConfig,
              configServerDB,
              zone,
-             Clock.systemUTC());
+             Clock.systemUTC(),
+             modelFactoryRegistry);
     }
 
     public TenantRepository(GlobalComponentRegistry componentRegistry,
@@ -155,7 +159,8 @@ public class TenantRepository {
                             ConfigserverConfig configserverConfig,
                             ConfigServerDB configServerDB,
                             Zone zone,
-                            Clock clock) {
+                            Clock clock,
+                            ModelFactoryRegistry modelFactoryRegistry) {
         this.componentRegistry = componentRegistry;
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
@@ -174,6 +179,7 @@ public class TenantRepository {
         this.configServerDB = configServerDB;
         this.zone = zone;
         this.clock = clock;
+        this.modelFactoryRegistry = modelFactoryRegistry;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -302,7 +308,7 @@ public class TenantRepository {
                                        new TenantFileSystemDirs(configServerDB, tenantName),
                                        clock);
         PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
-        SessionPreparer sessionPreparer = new SessionPreparer(componentRegistry.getModelFactoryRegistry(),
+        SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry,
                                                               fileDistributionFactory,
                                                               hostProvisionerProvider,
                                                               permanentApplicationPackage,
@@ -327,7 +333,8 @@ public class TenantRepository {
                                                                     configserverConfig,
                                                                     configServerDB,
                                                                     zone,
-                                                                    clock);
+                                                                    clock,
+                                                                    modelFactoryRegistry);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

@@ -2,10 +2,7 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
-import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
-
-import java.time.Clock;
 
 /**
  * Interface representing all global config server components used within the config server.
@@ -17,5 +14,4 @@ public interface GlobalComponentRegistry {
     TenantListener getTenantListener();
     ReloadListener getReloadListener();
     ConfigDefinitionRepo getStaticConfigDefinitionRepo();
-    ModelFactoryRegistry getModelFactoryRegistry();
 }

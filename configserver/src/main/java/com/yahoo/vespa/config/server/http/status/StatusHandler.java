@@ -13,6 +13,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
+import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 
 import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
 
@@ -23,24 +24,24 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
  */
 public class StatusHandler extends HttpHandler {
 
-    private final GlobalComponentRegistry componentRegistry;
+    private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigserverConfig configserverConfig;
 
     @Inject
-    public StatusHandler(Context ctx, GlobalComponentRegistry componentRegistry, ConfigserverConfig configserverConfig) {
+    public StatusHandler(Context ctx, ModelFactoryRegistry modelFactoryRegistry, ConfigserverConfig configserverConfig) {
         super(ctx);
-        this.componentRegistry = componentRegistry;
+        this.modelFactoryRegistry = modelFactoryRegistry;
         this.configserverConfig = configserverConfig;
     }
 
     @Override
     public HttpResponse handleGET(HttpRequest req) {
-        return new StatusResponse(OK, componentRegistry, configserverConfig);
+        return new StatusResponse(OK, modelFactoryRegistry, configserverConfig);
     }
 
     private static class StatusResponse extends JSONResponse {
 
-        StatusResponse(int status, GlobalComponentRegistry componentRegistry, ConfigserverConfig configserverConfig) {
+        StatusResponse(int status, ModelFactoryRegistry modelFactoryRegistry, ConfigserverConfig configserverConfig) {
             super(status);
 
             Cursor configCursor = object.setObject("configserverConfig");
@@ -48,10 +49,10 @@ public class StatusHandler extends HttpHandler {
                                   configCursor);
 
             Cursor modelVersionsCursor = object.setArray("modelVersions");
-            componentRegistry.getModelFactoryRegistry().getFactories().stream()
-                    .map(ModelFactory::version)
-                    .map(Version::toFullString)
-                    .forEach(modelVersionsCursor::addString);
+            modelFactoryRegistry.getFactories().stream()
+                                .map(ModelFactory::version)
+                                .map(Version::toFullString)
+                                .forEach(modelVersionsCursor::addString);
         }
 
     }

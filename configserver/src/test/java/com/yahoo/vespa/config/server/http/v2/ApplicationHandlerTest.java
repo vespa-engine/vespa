@@ -109,9 +109,7 @@ public class ApplicationHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
-                .build();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         provisioner = new MockProvisioner();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
@@ -119,6 +117,7 @@ public class ApplicationHandlerTest {
                 .withConfigserverConfig(configserverConfig)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
+                .withModelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();
         tenantRepository.addTenant(mytenantName);
         orchestrator = new OrchestratorMock();

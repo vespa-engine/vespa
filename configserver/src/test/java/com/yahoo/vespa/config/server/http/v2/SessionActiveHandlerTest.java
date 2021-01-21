@@ -75,12 +75,11 @@ public class SessionActiveHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .modelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
-                .build();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
+                .withModelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
                 .build();
         tenantRepository.addTenant(tenantName);
         applicationRepository = new ApplicationRepository.Builder()

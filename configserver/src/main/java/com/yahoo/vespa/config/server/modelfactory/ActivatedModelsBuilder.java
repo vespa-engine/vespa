@@ -75,8 +75,9 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   SecretStore secretStore,
                                   HostProvisionerProvider hostProvisionerProvider,
                                   ConfigserverConfig configserverConfig,
-                                  Zone zone) {
-        super(globalComponentRegistry.getModelFactoryRegistry(),
+                                  Zone zone,
+                                  ModelFactoryRegistry modelFactoryRegistry) {
+        super(modelFactoryRegistry,
               configserverConfig,
               zone,
               hostProvisionerProvider);
