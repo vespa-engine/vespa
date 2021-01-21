@@ -16,9 +16,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockProvisioner;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
@@ -87,9 +85,7 @@ public class SessionRepositoryTest {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .sessionLifetime(5)
                 .build();
-        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(globalComponentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))

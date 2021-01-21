@@ -8,9 +8,10 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockSecretStore;
+import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -31,8 +32,7 @@ import java.util.List;
  */
 public class TestTenantRepository extends TenantRepository {
 
-    public TestTenantRepository(GlobalComponentRegistry componentRegistry,
-                                HostRegistry hostRegistry,
+    public TestTenantRepository(HostRegistry hostRegistry,
                                 Curator curator,
                                 Metrics metrics,
                                 FileDistributionFactory fileDistributionFactory,
@@ -42,9 +42,10 @@ public class TestTenantRepository extends TenantRepository {
                                 Zone zone,
                                 Clock clock,
                                 ModelFactoryRegistry modelFactoryRegistry,
-                                ConfigDefinitionRepo configDefinitionRepo) {
-        super(componentRegistry,
-              hostRegistry,
+                                ConfigDefinitionRepo configDefinitionRepo,
+                                ReloadListener reloadListener,
+                                TenantListener tenantListener) {
+        super(hostRegistry,
               curator,
               metrics,
               new StripedExecutor<>(new InThreadExecutorService()),
@@ -58,13 +59,14 @@ public class TestTenantRepository extends TenantRepository {
               zone,
               clock,
               modelFactoryRegistry,
-              configDefinitionRepo);
+              configDefinitionRepo,
+              reloadListener,
+              tenantListener);
     }
 
     public static class Builder {
         Clock clock = Clock.systemUTC();
         ConfigDefinitionRepo configDefinitionRepo = new TestConfigDefinitionRepo();
-        GlobalComponentRegistry componentRegistry;
         HostRegistry hostRegistry = new HostRegistry();
         Curator curator = new MockCurator();
         Metrics metrics = Metrics.createTestMetrics();
@@ -73,6 +75,8 @@ public class TestTenantRepository extends TenantRepository {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
         ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry())));
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
+        ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
+        TenantListener tenantListener = new MockTenantListener();
         Zone zone = Zone.defaultZone();
 
         public Builder withClock(Clock clock) {
@@ -82,11 +86,6 @@ public class TestTenantRepository extends TenantRepository {
 
         public Builder withFlagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
-            return this;
-        }
-
-        public Builder withComponentRegistry(GlobalComponentRegistry componentRegistry) {
-            this.componentRegistry = componentRegistry;
             return this;
         }
 
@@ -125,6 +124,16 @@ public class TestTenantRepository extends TenantRepository {
             return this;
         }
 
+        public Builder withReloadListener(ReloadListener reloadListener) {
+            this.reloadListener = reloadListener;
+            return this;
+        }
+
+        public Builder withTenantListener(TenantListener tenantListener) {
+            this.tenantListener = tenantListener;
+            return this;
+        }
+
         public Builder withZone(Zone zone) {
             this.zone = zone;
             return this;
@@ -133,8 +142,7 @@ public class TestTenantRepository extends TenantRepository {
         public TenantRepository build() {
             if (fileDistributionFactory == null)
                 fileDistributionFactory = new FileDistributionFactory(configserverConfig);
-            return new TestTenantRepository(componentRegistry,
-                                            hostRegistry,
+            return new TestTenantRepository(hostRegistry,
                                             curator,
                                             metrics,
                                             fileDistributionFactory,
@@ -144,7 +152,9 @@ public class TestTenantRepository extends TenantRepository {
                                             zone,
                                             clock,
                                             modelFactoryRegistry,
-                                            configDefinitionRepo);
+                                            configDefinitionRepo,
+                                            reloadListener,
+                                            tenantListener);
         }
 
     }

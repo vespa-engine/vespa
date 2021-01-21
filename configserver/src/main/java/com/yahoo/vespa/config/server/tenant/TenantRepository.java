@@ -16,7 +16,7 @@ import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
-import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -91,7 +91,6 @@ public class TenantRepository {
     private static final Logger log = Logger.getLogger(TenantRepository.class.getName());
 
     private final Map<TenantName, Tenant> tenants = Collections.synchronizedMap(new LinkedHashMap<>());
-    private final GlobalComponentRegistry componentRegistry;
     private final HostRegistry hostRegistry;
     private final List<TenantListener> tenantListeners = Collections.synchronizedList(new ArrayList<>());
     private final Curator curator;
@@ -109,6 +108,8 @@ public class TenantRepository {
     private final Clock clock;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
+    private final ReloadListener reloadListener;
+    private final TenantListener tenantListener;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -117,11 +118,9 @@ public class TenantRepository {
     /**
      * Creates a new tenant repository
      * 
-     * @param componentRegistry a {@link com.yahoo.vespa.config.server.GlobalComponentRegistry}
      */
     @Inject
-    public TenantRepository(GlobalComponentRegistry componentRegistry,
-                            HostRegistry hostRegistry,
+    public TenantRepository(HostRegistry hostRegistry,
                             Curator curator,
                             Metrics metrics,
                             FlagSource flagSource,
@@ -131,9 +130,10 @@ public class TenantRepository {
                             ConfigServerDB configServerDB,
                             Zone zone,
                             ModelFactoryRegistry modelFactoryRegistry,
-                            ConfigDefinitionRepo configDefinitionRepo) {
-        this(componentRegistry,
-             hostRegistry,
+                            ConfigDefinitionRepo configDefinitionRepo,
+                            ReloadListener reloadListener,
+                            TenantListener tenantListener) {
+        this(hostRegistry,
              curator,
              metrics,
              new StripedExecutor<>(),
@@ -147,11 +147,12 @@ public class TenantRepository {
              zone,
              Clock.systemUTC(),
              modelFactoryRegistry,
-             configDefinitionRepo);
+             configDefinitionRepo,
+             reloadListener,
+             tenantListener);
     }
 
-    public TenantRepository(GlobalComponentRegistry componentRegistry,
-                            HostRegistry hostRegistry,
+    public TenantRepository(HostRegistry hostRegistry,
                             Curator curator,
                             Metrics metrics,
                             StripedExecutor<TenantName> zkWatcherExecutor,
@@ -165,8 +166,9 @@ public class TenantRepository {
                             Zone zone,
                             Clock clock,
                             ModelFactoryRegistry modelFactoryRegistry,
-                            ConfigDefinitionRepo configDefinitionRepo) {
-        this.componentRegistry = componentRegistry;
+                            ConfigDefinitionRepo configDefinitionRepo,
+                            ReloadListener reloadListener,
+                            TenantListener tenantListener) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
@@ -174,7 +176,7 @@ public class TenantRepository {
         this.curator = curator;
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
-        this.tenantListeners.add(componentRegistry.getTenantListener());
+        this.tenantListeners.add(tenantListener);
         this.zkCacheExecutor = zkCacheExecutor;
         this.zkWatcherExecutor = zkWatcherExecutor;
         this.fileDistributionFactory = fileDistributionFactory;
@@ -186,6 +188,8 @@ public class TenantRepository {
         this.clock = clock;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
+        this.reloadListener = reloadListener;
+        this.tenantListener = tenantListener;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -308,7 +312,7 @@ public class TenantRepository {
                                        zkWatcherExecutor,
                                        zkCacheExecutor,
                                        metrics,
-                                       componentRegistry.getReloadListener(),
+                                       reloadListener,
                                        configserverConfig,
                                        hostRegistry,
                                        new TenantFileSystemDirs(configServerDB, tenantName),
@@ -325,7 +329,6 @@ public class TenantRepository {
                                                               flagSource,
                                                               secretStore);
         SessionRepository sessionRepository = new SessionRepository(tenantName,
-                                                                    componentRegistry,
                                                                     applicationRepo,
                                                                     sessionPreparer,
                                                                     curator,
@@ -341,7 +344,8 @@ public class TenantRepository {
                                                                     zone,
                                                                     clock,
                                                                     modelFactoryRegistry,
-                                                                    configDefinitionRepo);
+                                                                    configDefinitionRepo,
+                                                                    tenantListener);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);

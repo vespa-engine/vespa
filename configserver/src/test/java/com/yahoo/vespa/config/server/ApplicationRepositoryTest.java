@@ -122,12 +122,9 @@ public class ApplicationRepositoryTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .build();
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))

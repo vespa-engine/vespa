@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.tenant;
 import com.google.common.testing.EqualsTester;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,8 +19,6 @@ import static org.junit.Assert.assertThat;
  * @author Ulf Lilleengen
  */
 public class TenantTest {
-
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
 
     private Tenant t1;
     private Tenant t2;
@@ -45,7 +42,6 @@ public class TenantTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .build();
         TenantName tenantName = TenantName.from(name);

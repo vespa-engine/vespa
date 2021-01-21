@@ -11,7 +11,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -38,8 +37,6 @@ public class ListApplicationsHandlerTest {
     private static final TenantName mytenant = TenantName.from("mytenant");
     private static final TenantName foobar = TenantName.from("foobar");
 
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-
     private TenantApplications applicationRepo, applicationRepo2;
     private ListApplicationsHandler handler;
 
@@ -53,7 +50,6 @@ public class ListApplicationsHandlerTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
-                .withComponentRegistry(componentRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .build();
         tenantRepository.addTenant(mytenant);
