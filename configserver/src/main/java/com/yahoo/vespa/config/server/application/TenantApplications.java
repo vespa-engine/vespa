@@ -89,18 +89,18 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     // For testing only
-    public static TenantApplications create(GlobalComponentRegistry componentRegistry,
-                                            HostRegistry hostRegistry,
+    public static TenantApplications create(HostRegistry hostRegistry,
                                             TenantName tenantName,
                                             Curator curator,
                                             ConfigserverConfig configserverConfig,
-                                            Clock clock) {
+                                            Clock clock,
+                                            ReloadListener reloadListener) {
         return new TenantApplications(tenantName,
                                       curator,
                                       new StripedExecutor<>(new InThreadExecutorService()),
                                       new InThreadExecutorService(),
                                       Metrics.createTestMetrics(),
-                                      componentRegistry.getReloadListener(),
+                                      reloadListener,
                                       configserverConfig,
                                       hostRegistry,
                                       new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),

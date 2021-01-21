@@ -10,7 +10,9 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockSecretStore;
+import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
+import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -42,7 +44,8 @@ public class TestTenantRepository extends TenantRepository {
                                 Zone zone,
                                 Clock clock,
                                 ModelFactoryRegistry modelFactoryRegistry,
-                                ConfigDefinitionRepo configDefinitionRepo) {
+                                ConfigDefinitionRepo configDefinitionRepo,
+                                ReloadListener reloadListener) {
         super(componentRegistry,
               hostRegistry,
               curator,
@@ -58,7 +61,8 @@ public class TestTenantRepository extends TenantRepository {
               zone,
               clock,
               modelFactoryRegistry,
-              configDefinitionRepo);
+              configDefinitionRepo,
+              reloadListener);
     }
 
     public static class Builder {
@@ -73,6 +77,7 @@ public class TestTenantRepository extends TenantRepository {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
         ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry())));
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
+        ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         Zone zone = Zone.defaultZone();
 
         public Builder withClock(Clock clock) {
@@ -125,6 +130,11 @@ public class TestTenantRepository extends TenantRepository {
             return this;
         }
 
+        public Builder withReloadListener(ReloadListener reloadListener) {
+            this.reloadListener = reloadListener;
+            return this;
+        }
+
         public Builder withZone(Zone zone) {
             this.zone = zone;
             return this;
@@ -144,7 +154,8 @@ public class TestTenantRepository extends TenantRepository {
                                             zone,
                                             clock,
                                             modelFactoryRegistry,
-                                            configDefinitionRepo);
+                                            configDefinitionRepo,
+                                            reloadListener);
         }
 
     }

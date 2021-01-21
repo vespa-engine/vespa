@@ -75,9 +75,7 @@ public class TenantApplicationsTest {
                 .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
                 .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
                 .build();
-        componentRegistry = new TestComponentRegistry.Builder()
-                .reloadListener(listener)
-                .build();
+        componentRegistry = new TestComponentRegistry.Builder().build();
         HostRegistry hostRegistry = new HostRegistry();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
@@ -87,7 +85,12 @@ public class TenantApplicationsTest {
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
-        applications = TenantApplications.create(componentRegistry, hostRegistry, tenantName, curator, configserverConfig, Clock.systemUTC());
+        applications = TenantApplications.create(hostRegistry,
+                                                 tenantName,
+                                                 curator,
+                                                 configserverConfig,
+                                                 Clock.systemUTC(),
+                                                 new TenantApplicationsTest.MockReloadListener());
     }
 
     @Test
@@ -180,12 +183,12 @@ public class TenantApplicationsTest {
 
     @Test
     public void testListConfigs() throws IOException, SAXException {
-        applications = TenantApplications.create(componentRegistry,
-                                                 new HostRegistry(),
+        applications = TenantApplications.create(new HostRegistry(),
                                                  TenantName.defaultName(),
                                                  new MockCurator(),
                                                  configserverConfig,
-                                                 Clock.systemUTC());
+                                                 Clock.systemUTC(),
+                                                 new TenantApplicationsTest.MockReloadListener());
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -220,7 +223,12 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return TenantApplications.create(componentRegistry, new HostRegistry(), tenantName, curator, configserverConfig, Clock.systemUTC());
+        return TenantApplications.create(new HostRegistry(),
+                                         tenantName,
+                                         curator,
+                                         configserverConfig,
+                                         Clock.systemUTC(),
+                                         new TenantApplicationsTest.MockReloadListener());
     }
 
     private static ApplicationId createApplicationId(String name) {

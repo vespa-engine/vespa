@@ -22,7 +22,5 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
 
     @Override
     public TenantListener getTenantListener() { return rpcServer; }
-    @Override
-    public ReloadListener getReloadListener() { return rpcServer; }
 
 }

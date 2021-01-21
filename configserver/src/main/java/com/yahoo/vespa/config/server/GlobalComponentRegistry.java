@@ -11,5 +11,4 @@ import com.yahoo.vespa.config.server.tenant.TenantListener;
 public interface GlobalComponentRegistry {
 
     TenantListener getTenantListener();
-    ReloadListener getReloadListener();
 }

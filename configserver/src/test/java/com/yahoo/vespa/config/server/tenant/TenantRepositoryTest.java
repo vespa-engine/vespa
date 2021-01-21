@@ -75,7 +75,7 @@ public class TenantRepositoryTest {
     public void setupSessions() throws IOException {
         curator = new MockCurator();
         TestComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().build();
-        listener = (TenantApplicationsTest.MockReloadListener) globalComponentRegistry.getReloadListener();
+        listener = new TenantApplicationsTest.MockReloadListener();
         tenantListener = (MockTenantListener) globalComponentRegistry.getTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
         configserverConfig = new ConfigserverConfig.Builder()
@@ -85,6 +85,7 @@ public class TenantRepositoryTest {
         tenantRepository = new TestTenantRepository.Builder().withComponentRegistry(globalComponentRegistry)
                                                              .withConfigserverConfig(configserverConfig)
                                                              .withCurator(curator)
+                                                             .withReloadListener(listener)
                                                              .build();
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
@@ -228,7 +229,8 @@ public class TenantRepositoryTest {
                   Zone.defaultZone(),
                   Clock.systemUTC(),
                   new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))),
-                  new TestConfigDefinitionRepo());
+                  new TestConfigDefinitionRepo(),
+                  new TenantApplicationsTest.MockReloadListener());
         }
 
         @Override

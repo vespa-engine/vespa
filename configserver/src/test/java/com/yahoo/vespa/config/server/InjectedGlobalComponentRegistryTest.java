@@ -46,7 +46,6 @@ public class InjectedGlobalComponentRegistryTest {
 
     @Test
     public void testThatAllComponentsAreSetup() {
-        assertThat(globalComponentRegistry.getReloadListener().hashCode(), is(rpcServer.hashCode()));
         assertThat(globalComponentRegistry.getTenantListener().hashCode(), is(rpcServer.hashCode()));
     }
 

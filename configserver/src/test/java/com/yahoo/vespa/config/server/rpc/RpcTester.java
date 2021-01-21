@@ -86,9 +86,7 @@ public class RpcTester implements AutoCloseable {
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath());
         configserverConfig = new ConfigserverConfig(configBuilder);
         rpcServer = createRpcServer(configserverConfig);
-        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
-                .reloadListener(rpcServer)
-                .build();
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         tenantRepository = new TestTenantRepository.Builder()
                 .withComponentRegistry(componentRegistry)
                 .withHostRegistry(hostRegistry)
