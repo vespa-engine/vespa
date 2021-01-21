@@ -291,6 +291,12 @@ public class Flags {
             "Whether to enable zstd compression of jdisc access logs",
             "Takes effect on (re)deployment");
 
+    public static final UnboundBooleanFlag USE_ENDPOINT_CERTIFICATE_MAINTAINER = defineFeatureFlag(
+            "use-endpoint-certificate-maintainer", false,
+            List.of("andreer"), "2021-01-12", "2021-02-12",
+            "Use EndpointCertificateMaintainer instead of EndpointCertificateManager cleanup thread to handle certificate refreshes and deletions",
+            "Takes effect on next run of maintainer / next manager cleanup thread run");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

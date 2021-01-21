@@ -7,7 +7,6 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -16,7 +15,7 @@ import java.util.stream.IntStream;
  * (de)serializes endpoint certificate metadata
  * <p>
  * A copy of package com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadata,
- * but will soon be extended as we need to store some more information in the controller.
+ * but with additional fields as we need to store some more information in the controller.
  *
  * @author andreer
  */
@@ -36,6 +35,8 @@ public class EndpointCertificateMetadataSerializer {
     private final static String requestIdField = "requestId";
     private final static String requestedDnsSansField = "requestedDnsSans";
     private final static String issuerField = "issuer";
+    private final static String expiryField = "expiry";
+    private final static String lastRefreshedField = "lastRefreshed";
 
     public static Slime toSlime(EndpointCertificateMetadata metadata) {
         Slime slime = new Slime();
@@ -44,13 +45,12 @@ public class EndpointCertificateMetadataSerializer {
         object.setString(certNameField, metadata.certName());
         object.setLong(versionField, metadata.version());
         object.setLong(lastRequestedField, metadata.lastRequested());
-
-        metadata.request_id().ifPresent(id -> object.setString(requestIdField, id));
-        metadata.requestedDnsSans().ifPresent(sans -> {
-            Cursor cursor = object.setArray(requestedDnsSansField);
-            sans.forEach(cursor::addString);
-        });
-        metadata.issuer().ifPresent(id -> object.setString(issuerField, id));
+        object.setString(requestIdField, metadata.request_id());
+        var cursor = object.setArray(requestedDnsSansField);
+        metadata.requestedDnsSans().forEach(cursor::addString);
+        object.setString(issuerField, metadata.issuer());
+        metadata.expiry().ifPresent(expiry -> object.setLong(expiryField, expiry));
+        metadata.lastRefreshed().ifPresent(refreshTime -> object.setLong(lastRefreshedField, refreshTime));
 
         return slime;
     }
@@ -58,32 +58,22 @@ public class EndpointCertificateMetadataSerializer {
     public static EndpointCertificateMetadata fromSlime(Inspector inspector) {
         if (inspector.type() != Type.OBJECT)
             throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
-        Optional<String> request_id = inspector.field(requestIdField).valid() ?
-                Optional.of(inspector.field(requestIdField).asString()) :
-                Optional.empty();
-
-        Optional<List<String>> requestedDnsSans = inspector.field(requestedDnsSansField).valid() ?
-                Optional.of(IntStream.range(0, inspector.field(requestedDnsSansField).entries())
-                        .mapToObj(i -> inspector.field(requestedDnsSansField).entry(i).asString()).collect(Collectors.toList())) :
-                Optional.empty();
-
-        Optional<String> issuer = inspector.field(issuerField).valid() ?
-                Optional.of(inspector.field(issuerField).asString()) :
-                Optional.empty();
-
-        long lastRequested = inspector.field(lastRequestedField).valid() ?
-                inspector.field(lastRequestedField).asLong() :
-                1597200000L; // Wed Aug 12 02:40:00 UTC 2020
-                // Not originally stored, so we default to when field was added
 
         return new EndpointCertificateMetadata(
                 inspector.field(keyNameField).asString(),
                 inspector.field(certNameField).asString(),
                 Math.toIntExact(inspector.field(versionField).asLong()),
-                lastRequested,
-                request_id,
-                requestedDnsSans,
-                issuer);
+                inspector.field(lastRequestedField).asLong(),
+                inspector.field(requestIdField).asString(),
+                IntStream.range(0, inspector.field(requestedDnsSansField).entries())
+                        .mapToObj(i -> inspector.field(requestedDnsSansField).entry(i).asString()).collect(Collectors.toList()),
+                inspector.field(issuerField).asString(),
+                inspector.field(expiryField).valid() ?
+                        Optional.of(inspector.field(expiryField).asLong()) :
+                        Optional.empty(),
+                inspector.field(lastRefreshedField).valid() ?
+                        Optional.of(inspector.field(lastRefreshedField).asLong()) :
+                        Optional.empty());
     }
 
     public static EndpointCertificateMetadata fromJsonString(String zkData) {

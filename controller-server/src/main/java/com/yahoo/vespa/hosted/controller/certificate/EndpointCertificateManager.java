@@ -14,6 +14,7 @@ import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -67,6 +68,7 @@ public class EndpointCertificateManager {
     private final BooleanFlag validateEndpointCertificates;
     private final StringFlag deleteUnusedEndpointCertificates;
     private final BooleanFlag endpointCertInSharedRouting;
+    private final BooleanFlag useEndpointCertificateMaintainer;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
                                       CuratorDb curator,
@@ -81,6 +83,7 @@ public class EndpointCertificateManager {
         this.validateEndpointCertificates = Flags.VALIDATE_ENDPOINT_CERTIFICATES.bindTo(flagSource);
         this.deleteUnusedEndpointCertificates = Flags.DELETE_UNUSED_ENDPOINT_CERTIFICATES.bindTo(flagSource);
         this.endpointCertInSharedRouting = Flags.ENDPOINT_CERT_IN_SHARED_ROUTING.bindTo(flagSource);
+        this.useEndpointCertificateMaintainer = Flags.USE_ENDPOINT_CERTIFICATE_MAINTAINER.bindTo(flagSource);
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             try {
                 this.deleteUnusedCertificates();
@@ -117,10 +120,9 @@ public class EndpointCertificateManager {
             return Optional.of(provisionedCertificateMetadata);
         }
 
-        // Reprovision certificate if it is missing SANs for the zone we are deploying to
-        var sansInCertificate = currentCertificateMetadata.get().requestedDnsSans();
+        // Re-provision certificate if it is missing SANs for the zone we are deploying to
         var requiredSansForZone = dnsNamesOf(instance.id(), zone);
-        if (sansInCertificate.isPresent() && !sansInCertificate.get().containsAll(requiredSansForZone)) {
+        if (!currentCertificateMetadata.get().requestedDnsSans().containsAll(requiredSansForZone)) {
             var reprovisionedCertificateMetadata = provisionEndpointCertificate(instance, currentCertificateMetadata, zone, instanceSpec);
             curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
             // Verification is unlikely to succeed in this case, as certificate must be available first - controller will retry
@@ -128,13 +130,17 @@ public class EndpointCertificateManager {
             return Optional.of(reprovisionedCertificateMetadata);
         }
 
-        // Look for and use refreshed certificate
-        var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
-        if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
-            var refreshedCertificateMetadata = currentCertificateMetadata.get().withVersion(latestAvailableVersion.getAsInt());
-            validateEndpointCertificate(refreshedCertificateMetadata, instance, zone);
-            curator.writeEndpointCertificateMetadata(instance.id(), refreshedCertificateMetadata);
-            return Optional.of(refreshedCertificateMetadata);
+        if (!useEndpointCertificateMaintainer.value()) {
+            // Look for and use refreshed certificate
+            var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
+            if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
+                var refreshedCertificateMetadata = currentCertificateMetadata.get()
+                        .withVersion(latestAvailableVersion.getAsInt())
+                        .withLastRefreshed(clock.instant().getEpochSecond());
+                validateEndpointCertificate(refreshedCertificateMetadata, instance, zone);
+                curator.writeEndpointCertificateMetadata(instance.id(), refreshedCertificateMetadata);
+                return Optional.of(refreshedCertificateMetadata);
+            }
         }
 
         validateEndpointCertificate(currentCertificateMetadata.get(), instance, zone);
@@ -149,21 +155,29 @@ public class EndpointCertificateManager {
 
     private void deleteUnusedCertificates() {
         CleanupMode mode = CleanupMode.valueOf(deleteUnusedEndpointCertificates.value().toUpperCase());
-        if (mode == CleanupMode.DISABLE) return;
+        if (mode == CleanupMode.DISABLE || useEndpointCertificateMaintainer.value()) return;
 
         var oneMonthAgo = clock.instant().minus(30, ChronoUnit.DAYS);
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, storedMetaData) -> {
             var lastRequested = Instant.ofEpochSecond(storedMetaData.lastRequested());
             if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(applicationId)) {
-                log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
-                        + " has not been requested in a month and app has no deployments"
-                        + (mode == CleanupMode.ENABLE ? ", deleting from provider and ZK" : ""));
-                if (mode == CleanupMode.ENABLE) {
-                    endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
-                    curator.deleteEndpointCertificateMetadata(applicationId);
+                try (Lock lock = lock(applicationId)) {
+                    if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
+                        log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
+                                + " has not been requested in a month and app has no deployments"
+                                + (mode == CleanupMode.ENABLE ? ", deleting from provider and ZK" : ""));
+                        if (mode == CleanupMode.ENABLE) {
+                            endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
+                            curator.deleteEndpointCertificateMetadata(applicationId);
+                        }
+                    }
                 }
             }
         });
+    }
+
+    private Lock lock(ApplicationId applicationId) {
+        return curator.lock(TenantAndApplicationId.from(applicationId));
     }
 
     private boolean hasNoDeployments(ApplicationId applicationId) {
@@ -187,8 +201,7 @@ public class EndpointCertificateManager {
     private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance, Optional<EndpointCertificateMetadata> currentMetadata, ZoneId deploymentZone, Optional<DeploymentInstanceSpec> instanceSpec) {
 
         List<String> currentlyPresentNames = currentMetadata.isPresent() ?
-                currentMetadata.get().requestedDnsSans().orElseThrow(() -> new RuntimeException("Certificate metadata exists but SANs are not present!"))
-                : Collections.emptyList();
+                currentMetadata.get().requestedDnsSans() : Collections.emptyList();
 
         var requiredZones = new LinkedHashSet<>(Set.of(deploymentZone));
 

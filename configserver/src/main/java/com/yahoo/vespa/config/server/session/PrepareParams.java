@@ -37,7 +37,6 @@ public final class PrepareParams {
     static final String VERBOSE_PARAM_NAME = "verbose";
     static final String VESPA_VERSION_PARAM_NAME = "vespaVersion";
     static final String CONTAINER_ENDPOINTS_PARAM_NAME = "containerEndpoints";
-    static final String TLS_SECRETS_KEY_NAME_PARAM_NAME = "tlsSecretsKeyName";
     static final String ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME = "endpointCertificateMetadata";
     static final String DOCKER_IMAGE_REPOSITORY = "dockerImageRepository";
     static final String ATHENZ_DOMAIN = "athenzDomain";
@@ -55,7 +54,6 @@ public final class PrepareParams {
     private final boolean force;
     private final Optional<Version> vespaVersion;
     private final List<ContainerEndpoint> containerEndpoints;
-    private final Optional<String> tlsSecretsKeyName;
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
     private final Optional<DockerImage> dockerImageRepository;
     private final Optional<AthenzDomain> athenzDomain;
@@ -64,7 +62,7 @@ public final class PrepareParams {
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
-                          List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName,
+                          List<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, boolean force) {
@@ -76,7 +74,6 @@ public final class PrepareParams {
         this.isBootstrap = isBootstrap;
         this.vespaVersion = vespaVersion;
         this.containerEndpoints = containerEndpoints;
-        this.tlsSecretsKeyName = tlsSecretsKeyName;
         this.endpointCertificateMetadata = endpointCertificateMetadata;
         this.dockerImageRepository = dockerImageRepository;
         this.athenzDomain = athenzDomain;
@@ -96,7 +93,6 @@ public final class PrepareParams {
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60));
         private Optional<Version> vespaVersion = Optional.empty();
         private List<ContainerEndpoint> containerEndpoints = null;
-        private Optional<String> tlsSecretsKeyName = Optional.empty();
         private Optional<EndpointCertificateMetadata> endpointCertificateMetadata = Optional.empty();
         private Optional<DockerImage> dockerImageRepository = Optional.empty();
         private Optional<AthenzDomain> athenzDomain = Optional.empty();
@@ -156,12 +152,6 @@ public final class PrepareParams {
             return this;
         }
 
-        public Builder tlsSecretsKeyName(String tlsSecretsKeyName) {
-            this.tlsSecretsKeyName = Optional.ofNullable(tlsSecretsKeyName)
-                                           .filter(s -> ! s.isEmpty());
-            return this;
-        }
-
         public Builder endpointCertificateMetadata(String serialized) {
             this.endpointCertificateMetadata = (serialized == null)
                     ? Optional.empty()
@@ -210,7 +200,7 @@ public final class PrepareParams {
 
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
-                                     verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName,
+                                     verbose, isBootstrap, vespaVersion, containerEndpoints,
                                      endpointCertificateMetadata, dockerImageRepository, athenzDomain,
                                      applicationRoles, quota, force);
         }
@@ -224,7 +214,6 @@ public final class PrepareParams {
                             .applicationId(createApplicationId(request, tenant))
                             .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
                             .containerEndpoints(request.getProperty(CONTAINER_ENDPOINTS_PARAM_NAME))
-                            .tlsSecretsKeyName(request.getProperty(TLS_SECRETS_KEY_NAME_PARAM_NAME))
                             .endpointCertificateMetadata(request.getProperty(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME))
                             .dockerImageRepository(request.getProperty(DOCKER_IMAGE_REPOSITORY))
                             .athenzDomain(request.getProperty(ATHENZ_DOMAIN))
@@ -282,10 +271,6 @@ public final class PrepareParams {
 
     public TimeoutBudget getTimeoutBudget() {
         return timeoutBudget;
-    }
-
-    public Optional<String> tlsSecretsKeyName() {
-        return tlsSecretsKeyName;
     }
 
     public Optional<EndpointCertificateMetadata> endpointCertificateMetadata() {

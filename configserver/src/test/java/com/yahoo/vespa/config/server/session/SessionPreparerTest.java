@@ -289,27 +289,6 @@ public class SessionPreparerTest {
     }
 
     @Test
-    public void require_that_tlssecretkey_is_written() throws IOException {
-        var tlskey = "vespa.tlskeys.tenant1--app1";
-        var applicationId = applicationId("test");
-        var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
-
-        secretStore.put("vespa.tlskeys.tenant1--app1-cert", X509CertificateUtils.toPem(certificate));
-        secretStore.put("vespa.tlskeys.tenant1--app1-key", KeyUtils.toPem(keyPair.getPrivate()));
-
-        prepare(new File("src/test/resources/deploy/hosted-app"), params);
-
-        // Read from zk and verify cert and key are available
-        Path tenantPath = TenantRepository.getTenantPath(applicationId.tenant());
-        Optional<EndpointCertificateSecrets> endpointCertificateSecrets = new EndpointCertificateMetadataStore(curator, tenantPath)
-                .readEndpointCertificateMetadata(applicationId)
-                .flatMap(p -> new EndpointCertificateRetriever(secretStore).readEndpointCertificateSecrets(p));
-        assertTrue(endpointCertificateSecrets.isPresent());
-        assertTrue(endpointCertificateSecrets.get().key().startsWith("-----BEGIN EC PRIVATE KEY"));
-        assertTrue(endpointCertificateSecrets.get().certificate().startsWith("-----BEGIN CERTIFICATE"));
-    }
-
-    @Test
     public void require_that_endpoint_certificate_metadata_is_written() throws IOException {
         var applicationId = applicationId("test");
         var params = new PrepareParams.Builder().applicationId(applicationId).endpointCertificateMetadata("{\"keyName\": \"vespa.tlskeys.tenant1--app1-key\", \"certName\":\"vespa.tlskeys.tenant1--app1-cert\", \"version\": 7}").build();
@@ -329,19 +308,18 @@ public class SessionPreparerTest {
     }
 
     @Test(expected = CertificateNotReadyException.class)
-    public void require_that_tlssecretkey_is_missing_when_not_in_secretstore() throws IOException {
-        var tlskey = "vespa.tlskeys.tenant1--app1";
+    public void endpoint_certificate_is_missing_when_not_in_secretstore() throws IOException {
         var applicationId = applicationId("test");
-        var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
+        var params = new PrepareParams.Builder().applicationId(applicationId).endpointCertificateMetadata("{\"keyName\": \"vespa.tlskeys.tenant1--app1-key\", \"certName\":\"vespa.tlskeys.tenant1--app1-cert\", \"version\": 7}").build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
     }
 
     @Test(expected = CertificateNotReadyException.class)
-    public void require_that_tlssecretkey_is_missing_when_certificate_not_in_secretstore() throws IOException {
+    public void endpoint_certificate_is_missing_when_certificate_not_in_secretstore() throws IOException {
         var tlskey = "vespa.tlskeys.tenant1--app1";
         var applicationId = applicationId("test");
-        var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
-        secretStore.put(tlskey+"-key", "KEY");
+        var params = new PrepareParams.Builder().applicationId(applicationId).endpointCertificateMetadata("{\"keyName\": \"vespa.tlskeys.tenant1--app1-key\", \"certName\":\"vespa.tlskeys.tenant1--app1-cert\", \"version\": 7}").build();
+        secretStore.put(tlskey+"-key", 7, "KEY");
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
     }
 

@@ -181,8 +181,7 @@ public class SessionPreparer {
             this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
             EndpointCertificateRetriever endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
-            this.endpointCertificateMetadata = params.endpointCertificateMetadata()
-                    .or(() -> params.tlsSecretsKeyName().map(EndpointCertificateMetadataSerializer::fromString));
+            this.endpointCertificateMetadata = params.endpointCertificateMetadata();
             Optional<EndpointCertificateSecrets> endpointCertificateSecrets = endpointCertificateMetadata
                     .or(() -> endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId))
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);

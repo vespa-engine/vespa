@@ -79,6 +79,7 @@ public class Controller extends AbstractComponent {
     private final Metric metric;
     private final RoutingController routingController;
     private final ControllerConfig controllerConfig;
+    private final SecretStore secretStore;
 
     /**
      * Creates a controller 
@@ -115,6 +116,7 @@ public class Controller extends AbstractComponent {
         auditLogger = new AuditLogger(curator, clock);
         jobControl = new JobControl(new JobControlFlags(curator, flagSource));
         this.controllerConfig = controllerConfig;
+        this.secretStore = secretStore;
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), ControllerVersion.CURRENT);
@@ -279,6 +281,10 @@ public class Controller extends AbstractComponent {
 
     public Metric metric() {
         return metric;
+    }
+
+    public SecretStore secretStore() {
+        return secretStore;
     }
 
     private Set<CloudName> clouds() {

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import com.yahoo.config.provision.ApplicationId;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -25,7 +26,10 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
         this.dnsNames.put(applicationId, dnsNames);
         String endpointCertificatePrefix = String.format("vespa.tls.%s.%s.%s", applicationId.tenant(),
                 applicationId.application(), applicationId.instance());
-        return new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0, 0, Optional.of("mock-id-string"), Optional.of(dnsNames), Optional.of("mockCa"));
+        long epochSecond = Instant.now().getEpochSecond();
+        long inAnHour = epochSecond + 3600;
+        return new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0, 0,
+                "mock-id-string", dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond));
     }
 
     @Override
