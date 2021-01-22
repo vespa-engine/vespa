@@ -172,7 +172,7 @@ public class TenantRepository {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                              new DaemonThreadFactory("bootstrap tenants"));
+                                                              new DaemonThreadFactory("bootstrap-tenants-"));
         this.curator = curator;
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
@@ -286,7 +286,7 @@ public class TenantRepository {
     }
 
     // Use when bootstrapping an existing tenant based on ZooKeeper data
-    protected synchronized void bootstrapTenant(TenantName tenantName) {
+    protected void bootstrapTenant(TenantName tenantName) {
         createTenant(tenantName, readCreatedTimeFromZooKeeper(tenantName));
     }
 
@@ -306,6 +306,8 @@ public class TenantRepository {
             return tenant;
         }
 
+        Instant start = Instant.now();
+        log.log(Level.FINE, "Adding tenant '" + tenantName);
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
                                        curator,
@@ -346,7 +348,8 @@ public class TenantRepository {
                                                                     modelFactoryRegistry,
                                                                     configDefinitionRepo,
                                                                     tenantListener);
-        log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
+        log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created +
+                            ". Bootstrapping in " + Duration.between(start, Instant.now()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         notifyNewTenant(tenant);
         tenants.putIfAbsent(tenantName, tenant);
