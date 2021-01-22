@@ -62,7 +62,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                     .peerPort(peerPort)
                     .localPort(getConnectorLocalPort(request))
                     .timestamp(Instant.ofEpochMilli(startTime))
-                    .duration(Duration.ofMillis(endTime - startTime))
+                    .duration(Duration.ofMillis(Math.max(0, endTime - startTime)))
                     .contentSize(response.getHttpChannel().getBytesWritten())
                     .statusCode(response.getCommittedMetaData().getStatus());
 
