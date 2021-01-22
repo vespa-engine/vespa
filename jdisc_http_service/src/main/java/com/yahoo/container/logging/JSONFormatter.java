@@ -15,6 +15,8 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.container.logging.FormatUtil.writeSecondsField;
+
 /**
  * Formatting of an {@link AccessLogEntry} in the Vespa JSON access log format.
  *
@@ -45,8 +47,8 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
             String peerAddress = entry.peerAddress().get();
             generator.writeStringField("ip", peerAddress);
             long time = entry.timestamp().get().toEpochMilli();
-            writeSeconds(generator, "time", time);
-            writeSeconds(generator, "duration", entry.duration().get().toMillis());
+            FormatUtil.writeSecondsField(generator, "time", time);
+            FormatUtil.writeSecondsField(generator, "duration", entry.duration().get());
             generator.writeNumberField("responsesize", entry.contentSize().orElse(0));
             generator.writeNumberField("code", entry.statusCode().orElse(0));
             generator.writeStringField("method", entry.httpMethod().orElse(""));
@@ -185,23 +187,4 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
         if (rawPath == null) return null;
         return rawQuery != null ? rawPath + "?" + rawQuery : rawPath;
     }
-
-    private static void writeSeconds(JsonGenerator generator, String fieldName, long milliseconds) throws IOException {
-        generator.writeFieldName(fieldName);
-        generator.writeRawValue(toSecondsString(milliseconds));
-    }
-
-    /** @return a string with number of seconds with 3 decimals */
-    private static String toSecondsString(long milliseconds) {
-        StringBuilder builder = new StringBuilder().append(milliseconds / 1000L).append('.');
-        long decimals = milliseconds % 1000;
-        if (decimals < 100) {
-            builder.append('0');
-            if (decimals < 10) {
-                builder.append('0');
-            }
-        }
-        return builder.append(decimals).toString();
-    }
-
 }

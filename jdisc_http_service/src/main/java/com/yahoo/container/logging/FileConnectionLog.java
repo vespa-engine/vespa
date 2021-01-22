@@ -5,23 +5,19 @@ package com.yahoo.container.logging;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author mortent
  */
-public class FileConnectionLog extends AbstractComponent implements ConnectionLog, LogWriter<ConnectionLogEntry> {
+public class FileConnectionLog extends AbstractComponent implements ConnectionLog {
 
     private static final Logger logger = Logger.getLogger(FileConnectionLog.class.getName());
     private final ConnectionLogHandler logHandler;
 
     @Inject
     public FileConnectionLog(ConnectionLogConfig config) {
-        logHandler = new ConnectionLogHandler(config.cluster(), this);
+        logHandler = new ConnectionLogHandler(config.cluster(), new JsonConnectionLogWriter());
     }
 
     @Override
@@ -34,9 +30,4 @@ public class FileConnectionLog extends AbstractComponent implements ConnectionLo
         logHandler.shutdown();
     }
 
-    @Override
-    // TODO serialize directly to outputstream
-    public void write(ConnectionLogEntry entry, OutputStream outputStream) throws IOException {
-        outputStream.write(entry.toJson().getBytes(StandardCharsets.UTF_8));
-    }
 }
