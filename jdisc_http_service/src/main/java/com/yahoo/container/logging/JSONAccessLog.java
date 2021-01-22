@@ -12,25 +12,18 @@ import com.yahoo.container.core.AccessLogConfig;
 public final class JSONAccessLog implements RequestLogHandler {
 
     private final AccessLogHandler logHandler;
-    private final JSONFormatter formatter;
 
     public JSONAccessLog(AccessLogConfig config) {
-        logHandler = new AccessLogHandler(config.fileHandler());
-        formatter = new JSONFormatter();
+        logHandler = new AccessLogHandler(config.fileHandler(), new JSONFormatter());
     }
 
     @Override
     public void log(RequestLogEntry entry) {
-        logHandler.log(formatter.format(entry) + '\n');
+        logHandler.log(entry);
     }
 
     // TODO: This is never called. We should have a DI provider and call this method from its deconstruct.
     public void shutdown() {
         logHandler.shutdown();
     }
-
-    void rotateNow() {
-        logHandler.rotateNow();
-    }
-
 }
