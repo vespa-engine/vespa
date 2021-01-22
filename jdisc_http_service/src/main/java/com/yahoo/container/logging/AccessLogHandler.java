@@ -3,23 +3,22 @@ package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
 
-import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 /**
  * @author Bjorn Borud
  */
 class AccessLogHandler {
 
-    public final Logger access = Logger.getAnonymousLogger();
     private final LogFileHandler logFileHandler;
 
     AccessLogHandler(AccessLogConfig.FileHandler config) {
-        access.setUseParentHandlers(false);
+        logFileHandler = new LogFileHandler(toCompression(config), config.pattern(), config.rotation(), config.symlink());
+    }
 
-        LogFormatter lf = new LogFormatter();
-        lf.messageOnly(true);
-        logFileHandler = new LogFileHandler(toCompression(config), config.pattern(), config.rotation(), config.symlink(), lf);
-        access.addHandler(this.logFileHandler);
+    public void log(String message) {
+        logFileHandler.publish(new LogRecord(Level.INFO, message));
     }
 
     private LogFileHandler.Compression toCompression(AccessLogConfig.FileHandler config) {
@@ -33,7 +32,6 @@ class AccessLogHandler {
 
     void shutdown() {
         logFileHandler.close();
-        access.removeHandler(logFileHandler);
 
         if (logFileHandler!=null)
             logFileHandler.shutdown();
