@@ -34,8 +34,4 @@ class AccessLogHandler {
         logFileHandler.close();
         logFileHandler.shutdown();
     }
-
-//    void rotateNow() {
-//        logFileHandler.rotateNow();
-//    }
 }

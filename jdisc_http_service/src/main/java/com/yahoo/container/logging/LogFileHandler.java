@@ -63,12 +63,10 @@ class LogFileHandler <LOGTYPE>  {
     private volatile String fileName;
     private volatile long lastDropPosition = 0;
 
-    private volatile Writer writer;
-
     private final LogWriter<LOGTYPE> logWriter;
 
     static private class LogThread<LOGTYPE> extends Thread {
-        LogFileHandler<LOGTYPE> logFileHandler;
+        final LogFileHandler<LOGTYPE> logFileHandler;
         long lastFlush = 0;
         LogThread(LogFileHandler<LOGTYPE> logFile) {
             super("Logger");
@@ -144,19 +142,16 @@ class LogFileHandler <LOGTYPE>  {
     }
 
     public synchronized void flush() {
-        if(writer != null) {
-            try {
-                writer.flush();
-            } catch (IOException e) {
-                logger.warning("Failed flushing file writer: " + Exceptions.toMessageString(e));
-            }
-        }
         try {
-            if (currentOutputStream != null && compression == Compression.GZIP) {
-                long newPos = currentOutputStream.getChannel().position();
-                if (newPos > lastDropPosition + 102400) {
-                    nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
-                    lastDropPosition = newPos;
+            if (currentOutputStream != null) {
+                if (compression == Compression.GZIP) {
+                    long newPos = currentOutputStream.getChannel().position();
+                    if (newPos > lastDropPosition + 102400) {
+                        nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
+                        lastDropPosition = newPos;
+                    }
+                } else {
+                    currentOutputStream.flush();
                 }
             }
         } catch (IOException e) {
@@ -164,27 +159,13 @@ class LogFileHandler <LOGTYPE>  {
         }
     }
 
-    private synchronized void setOutputStream(OutputStream out) {
-        if (out == null) {
-            throw new NullPointerException();
-        }
-        flushAndClose();
-        writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
-    }
-    private synchronized void flushAndClose() throws SecurityException {
-        if (writer != null) {
-            try {
-                writer.flush();
-                writer.close();
-            } catch (Exception ex) {
-                logger.log(Level.SEVERE, "Failed to close writer", ex);
-            }
-            writer = null;
-        }
-    }
-
     public void close() {
-        flushAndClose();
+        try {
+            flush();
+            currentOutputStream.close();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Got error while closing log file", e);
+        }
     }
 
     private void internalPublish(LOGTYPE r) {
@@ -268,12 +249,10 @@ class LogFileHandler <LOGTYPE>  {
         long now = System.currentTimeMillis();
         fileName = LogFormatter.insertDate(filePattern, now);
         flush();
-        flushAndClose();
 
         try {
             checkAndCreateDir(fileName);
             FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
-            setOutputStream(os);
             currentOutputStream = os;
             lastDropPosition = 0;
             LogFileDb.nowLoggingTo(fileName);
