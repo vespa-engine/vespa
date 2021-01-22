@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * All models imported from the models/ directory in the application package.
@@ -19,6 +20,8 @@ import java.util.Optional;
  * @author bratseth
  */
 public class ImportedMlModels {
+
+    private static final Logger log = Logger.getLogger(ImportedMlModels.class.getName());
 
     /** All imported models, indexed by their names */
     private final Map<String, ImportedMlModel> importedModels;
@@ -66,7 +69,13 @@ public class ImportedMlModels {
                 if (existing != null)
                     throw new IllegalArgumentException("The models in " + child + " and " + existing.source() +
                                                        " both resolve to the model name '" + name + "'");
-                models.put(name, importer.get().importModel(name, child));
+                try {
+                    ImportedMlModel importedModel = importer.get().importModel(name, child);
+                    models.put(name, importedModel);
+                } catch (RuntimeException e) {
+                    log.warning("Skipping import of model " + name + " as an exception occurred during import. " +
+                            "Error: " + e.getMessage());
+                }
             }
             else {
                 importRecursively(child, models, importers);
