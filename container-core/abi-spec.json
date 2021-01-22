@@ -499,7 +499,6 @@
     ],
     "methods": [
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
-      "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context)",
       "public java.util.concurrent.Executor getExecutor()",
       "public com.yahoo.container.logging.AccessLog getAccessLog()",
@@ -516,7 +515,6 @@
     ],
     "methods": [
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog)",
-      "public void <init>(java.util.concurrent.Executor)",
       "public static com.yahoo.container.jdisc.LoggingRequestHandler$Context testOnlyContext()",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context)",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context, boolean)",
@@ -779,7 +777,7 @@
       "public void <init>(java.lang.String, java.util.Collection, com.yahoo.component.provider.ComponentRegistry)",
       "public void <init>(com.yahoo.processing.handler.ProcessingHandler)",
       "public void <init>(java.lang.String, com.yahoo.processing.handler.ProcessingHandler)",
-      "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.container.logging.RequestLogHandler)",
+      "public void <init>(com.yahoo.component.chain.Chain, com.yahoo.container.logging.AccessLogInterface)",
       "public com.yahoo.processing.handler.ProcessingHandler processingHandler()"
     ],
     "fields": []

@@ -11,7 +11,7 @@ import java.util.logging.Level;
  * @author frodelu
  * @author Tony Vaagenes
  */
-public final class JSONAccessLog implements RequestLogHandler {
+public final class JSONAccessLog implements  AccessLogInterface {
 
     private final AccessLogHandler logHandler;
     private final JSONFormatter formatter;
@@ -22,8 +22,8 @@ public final class JSONAccessLog implements RequestLogHandler {
     }
 
     @Override
-    public void log(RequestLogEntry entry) {
-        logHandler.access.log(Level.INFO, formatter.format(entry) + '\n');
+    public void log(AccessLogEntry logEntry) {
+        logHandler.access.log(Level.INFO, formatter.format(logEntry) + '\n');
     }
 
     // TODO: This is never called. We should have a DI provider and call this method from its deconstruct.

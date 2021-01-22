@@ -9,14 +9,13 @@ import com.yahoo.component.provider.ComponentRegistry;
  * Logs to all the configured access logs.
  *
  * @author Tony Vaagenes
- * @author bjorncs
  */
-public class AccessLog implements RequestLog {
+public class AccessLog {
 
-    private final ComponentRegistry<RequestLogHandler> implementers;
+    private ComponentRegistry<AccessLogInterface> implementers;
 
     @Inject
-    public AccessLog(ComponentRegistry<RequestLogHandler> implementers) {
+    public AccessLog(ComponentRegistry<AccessLogInterface> implementers) {
         this.implementers = implementers;
     }
 
@@ -24,10 +23,9 @@ public class AccessLog implements RequestLog {
         return new AccessLog(new ComponentRegistry<>());
     }
 
-    @Override
-    public void log(RequestLogEntry entry) {
-        for (RequestLogHandler handler: implementers.allComponents()) {
-            handler.log(entry);
+    public void log(AccessLogEntry accessLogEntry) {
+        for (AccessLogInterface log: implementers.allComponents()) {
+            log.log(accessLogEntry);
         }
     }
 

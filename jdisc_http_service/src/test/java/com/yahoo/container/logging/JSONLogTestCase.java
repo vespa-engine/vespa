@@ -6,10 +6,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URI;
-import java.time.Duration;
-import java.time.Instant;
 
-import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -21,25 +19,25 @@ public class JSONLogTestCase {
     private static final String EMPTY_REFERRER = "";
     private static final String EMPTY_USERAGENT = "";
 
-    private RequestLogEntry.Builder newRequestLogEntry(final String query) {
-        return newRequestLogEntry(query, new Coverage(100,100,100,0));
+    private AccessLogEntry newAccessLogEntry(final String query) {
+        return newAccessLogEntry(query, new Coverage(100,100,100,0));
     }
-    private RequestLogEntry.Builder newRequestLogEntry(final String query, Coverage coverage) {
-        return new RequestLogEntry.Builder()
-                .rawQuery("query=" + query)
-                .rawPath("")
-                .peerAddress(ipAddress)
-                .httpMethod("GET")
-                .httpVersion("HTTP/1.1")
-                .userAgent("Mozilla/4.05 [en] (Win95; I)")
-                .hitCounts(new HitCounts(0, 10, 1234, 0, 10, coverage))
-                .hostString("localhost")
-                .statusCode(200)
-                .timestamp(Instant.ofEpochMilli(920880005023L))
-                .duration(Duration.ofMillis(122))
-                .contentSize(9875)
-                .localPort(0)
-                .peerPort(0);
+    private AccessLogEntry newAccessLogEntry(final String query, Coverage coverage) {
+        final AccessLogEntry entry = new AccessLogEntry();
+        entry.setRawQuery("query="+query);
+        entry.setRawPath("");
+        entry.setIpV4Address(ipAddress);
+        entry.setHttpMethod("GET");
+        entry.setHttpVersion("HTTP/1.1");
+        entry.setUserAgent("Mozilla/4.05 [en] (Win95; I)");
+        entry.setHitCounts(new HitCounts(0, 10, 1234, 0, 10, coverage));
+        entry.setHostString("localhost");
+        entry.setStatusCode(200);
+        entry.setTimeStamp(920880005023L);
+        entry.setDurationBetweenRequestResponse(122);
+        entry.setReturnedContentSize(9875);
+
+        return entry;
     }
 
     private static URI newQueryUri(final String query) {
@@ -48,11 +46,10 @@ public class JSONLogTestCase {
 
     @Test
     public void test_json_log_entry() throws Exception {
-        RequestLogEntry entry = newRequestLogEntry("test").build();
+        AccessLogEntry entry = newAccessLogEntry("test");
 
          String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
@@ -71,19 +68,17 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
     }
 
     @Test
     public void test_json_of_trace() throws IOException {
         TraceNode root = new TraceNode("root", 7);
-        RequestLogEntry entry = newRequestLogEntry("test")
-                .traceNode(root)
-                .build();
+        AccessLogEntry entry = newAccessLogEntry("test");
+        entry.setTrace(root);
 
         String expectedOutput =
                 "{\"ip\":\"152.200.54.243\"," +
-                "\"peeraddr\":\"152.200.54.243\"," +
                 "\"time\":920880005.023," +
                 "\"duration\":0.122," +
                 "\"responsesize\":9875," +
@@ -103,20 +98,18 @@ public class JSONLogTestCase {
                 "}" +
                 "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
     }
 
     @Test
     public void test_with_keyvalues() {
-        RequestLogEntry entry = newRequestLogEntry("test")
-                .addExtraAttribute("singlevalue", "value1")
-                .addExtraAttribute("multivalue", "value2")
-                .addExtraAttribute("multivalue", "value3")
-                .build();
+        AccessLogEntry entry = newAccessLogEntry("test");
+        entry.addKeyValue("singlevalue", "value1");
+        entry.addKeyValue("multivalue", "value2");
+        entry.addKeyValue("multivalue", "value3");
 
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
@@ -138,19 +131,19 @@ public class JSONLogTestCase {
             "\"multivalue\":[\"value2\",\"value3\"]}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
 
     }
 
     @Test
     public void test_with_remoteaddrport() throws Exception {
-        RequestLogEntry entry = newRequestLogEntry("test")
-                .remoteAddress("FE80:0000:0000:0000:0202:B3FF:FE1E:8329")
-                .build();
+        AccessLogEntry entry = newAccessLogEntry("test");
+
+        // First test with only remote address and not port set
+        entry.setRemoteAddress("FE80:0000:0000:0000:0202:B3FF:FE1E:8329");
 
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
@@ -170,17 +163,13 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
 
         // Add remote port and verify
-        entry = newRequestLogEntry("test")
-                .remoteAddress("FE80:0000:0000:0000:0202:B3FF:FE1E:8329")
-                .remotePort(1234)
-                .build();
+        entry.setRemotePort(1234);
 
         expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
@@ -201,41 +190,36 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
     }
 
     @Test
     public void test_remote_address_same_as_ip_address() throws Exception {
-        RequestLogEntry entry = newRequestLogEntry("test").build();
-        RequestLogEntry entrywithremote = newRequestLogEntry("test")
-                .remoteAddress(entry.peerAddress().get())
-                .build();
+        AccessLogEntry entry = newAccessLogEntry("test");
+        AccessLogEntry entrywithremote = newAccessLogEntry("test");
+        entrywithremote.setRemoteAddress(entry.getIpV4Address());
         JSONFormatter formatter = new JSONFormatter();
-        assertJsonEquals(formatter.format(entry), formatter.format(entrywithremote));
+        assertEquals(formatter.format(entry), formatter.format(entrywithremote));
     }
 
     @Test
     public void test_useragent_with_quotes() {
-        RequestLogEntry entry = new RequestLogEntry.Builder()
-                .rawQuery("query=test")
-                .rawPath("")
-                .peerAddress(ipAddress)
-                .httpMethod("GET")
-                .httpVersion("HTTP/1.1")
-                .userAgent("Mozilla/4.05 [en] (Win95; I; \"Best Browser Ever\")")
-                .hitCounts(new HitCounts(0, 10, 1234, 0, 10, new Coverage(100, 200, 200, 0)))
-                .hostString("localhost")
-                .statusCode(200)
-                .timestamp(Instant.ofEpochMilli(920880005023L))
-                .duration(Duration.ofMillis(122))
-                .contentSize(9875)
-                .localPort(0)
-                .peerPort(0)
-                .build();
+        final AccessLogEntry entry = new AccessLogEntry();
+        entry.setRawQuery("query=test");
+        entry.setRawPath("");
+        entry.setIpV4Address(ipAddress);
+        entry.setHttpMethod("GET");
+        entry.setHttpVersion("HTTP/1.1");
+        entry.setUserAgent("Mozilla/4.05 [en] (Win95; I; \"Best Browser Ever\")");
+        entry.setHitCounts(new HitCounts(0, 10, 1234, 0, 10, new Coverage(100,200,200,0)));
+        entry.setHostString("localhost");
+        entry.setStatusCode(200);
+        entry.setTimeStamp(920880005023L);
+        entry.setDurationBetweenRequestResponse(122);
+        entry.setReturnedContentSize(9875);
 
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"peeraddr\":\"152.200.54.243\"," +
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
@@ -254,13 +238,11 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertEquals(expectedOutput, new JSONFormatter().format(entry));
     }
 
-    private void verifyCoverage(String coverage, RequestLogEntry entry) {
-        assertJsonEquals(new JSONFormatter().format(entry),
-                "{\"ip\":\"152.200.54.243\"," +
-                "\"peeraddr\":\"152.200.54.243\"," +
+    private void verifyCoverage(String coverage, AccessLogEntry entry) {
+        assertEquals("{\"ip\":\"152.200.54.243\"," +
                 "\"time\":920880005.023," +
                 "\"duration\":0.122," +
                 "\"responsesize\":9875," +
@@ -277,18 +259,18 @@ public class JSONLogTestCase {
                 "\"hits\":0," +
                 coverage +
                 "}" +
-                "}");
+                "}", new JSONFormatter().format(entry));
     }
 
     @Test
     public void test_with_coverage_degradation() {
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"non-ideal-state\":true}}",
-                       newRequestLogEntry("test",  new Coverage(100,200,200,0)).build());
+                       newAccessLogEntry("test",  new Coverage(100,200,200,0)));
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"match-phase\":true}}",
-                       newRequestLogEntry("test",  new Coverage(100,200,200,1)).build());
+                       newAccessLogEntry("test",  new Coverage(100,200,200,1)));
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"timeout\":true}}",
-                       newRequestLogEntry("test",  new Coverage(100,200,200,2)).build());
+                       newAccessLogEntry("test",  new Coverage(100,200,200,2)));
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"adaptive-timeout\":true}}",
-                       newRequestLogEntry("test",  new Coverage(100,200,200,4)).build());
+                       newAccessLogEntry("test",  new Coverage(100,200,200,4)));
     }
 }

@@ -3,10 +3,10 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
+import com.yahoo.container.logging.AccessLog;
+import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.ConnectionLogEntry;
-import com.yahoo.container.logging.RequestLog;
-import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -175,18 +176,31 @@ public class HttpServerTest {
 
     @Test
     public void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
-        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        AccessLogMock accessLogMock = new AccessLogMock();
         final TestDriver driver = TestDrivers.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().requestHeaderSize(1),
-                binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
+                binder -> binder.bind(AccessLog.class).toInstance(accessLogMock));
         driver.client().get("/status.html")
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
         assertThat(driver.close(), is(true));
-        assertThat(requestLogMock.entries().size(), equalTo(1));
-        RequestLogEntry entry = requestLogMock.entries().get(0);
-        assertEquals(414, entry.statusCode().getAsInt());
+
+        assertThat(accessLogMock.logEntries.size(), equalTo(1));
+        AccessLogEntry accessLogEntry = accessLogMock.logEntries.get(0);
+        assertEquals(414, accessLogEntry.getStatusCode());
+    }
+
+    private static class AccessLogMock extends AccessLog {
+
+        final List<AccessLogEntry> logEntries = new CopyOnWriteArrayList<>();
+
+        AccessLogMock() { super(null); }
+
+        @Override
+        public void log(AccessLogEntry accessLogEntry) {
+            logEntries.add(accessLogEntry);
+        }
     }
 
     @Test
@@ -762,9 +776,9 @@ public class HttpServerTest {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        AccessLogMock accessLogMock = new AccessLogMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, /*mixedMode*/connectionLog, false);
+        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, accessLogMock, /*mixedMode*/connectionLog, false);
 
         String proxiedRemoteAddress = "192.168.0.100";
         int proxiedRemotePort = 12345;
@@ -772,9 +786,9 @@ public class HttpServerTest {
         sendJettyClientRequest(driver, certificateFile, new V2.Tag(proxiedRemoteAddress, proxiedRemotePort));
         assertTrue(driver.close());
 
-        assertEquals(2, requestLogMock.entries().size());
-        assertLogEntryHasRemote(requestLogMock.entries().get(0), proxiedRemoteAddress, proxiedRemotePort);
-        assertLogEntryHasRemote(requestLogMock.entries().get(1), proxiedRemoteAddress, proxiedRemotePort);
+        assertEquals(2, accessLogMock.logEntries.size());
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(0), proxiedRemoteAddress, proxiedRemotePort);
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, proxiedRemotePort);
         Assertions.assertThat(connectionLog.logEntries()).hasSize(2);
         assertLogEntryHasRemote(connectionLog.logEntries().get(0), proxiedRemoteAddress, proxiedRemotePort);
         assertLogEntryHasRemote(connectionLog.logEntries().get(1), proxiedRemoteAddress, proxiedRemotePort);
@@ -785,18 +799,18 @@ public class HttpServerTest {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        AccessLogMock accessLogMock = new AccessLogMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, /*mixedMode*/connectionLog, true);
+        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, accessLogMock, /*mixedMode*/connectionLog, true);
 
         String proxiedRemoteAddress = "192.168.0.100";
         sendJettyClientRequest(driver, certificateFile, null);
         sendJettyClientRequest(driver, certificateFile, new V2.Tag(proxiedRemoteAddress, 12345));
         assertTrue(driver.close());
 
-        assertEquals(2, requestLogMock.entries().size());
-        assertLogEntryHasRemote(requestLogMock.entries().get(0), "127.0.0.1", 0);
-        assertLogEntryHasRemote(requestLogMock.entries().get(1), proxiedRemoteAddress, 0);
+        assertEquals(2, accessLogMock.logEntries.size());
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(0), "127.0.0.1", 0);
+        assertLogEntryHasRemote(accessLogMock.logEntries.get(1), proxiedRemoteAddress, 0);
         Assertions.assertThat(connectionLog.logEntries()).hasSize(2);
         assertLogEntryHasRemote(connectionLog.logEntries().get(0), null, 0);
         assertLogEntryHasRemote(connectionLog.logEntries().get(1), proxiedRemoteAddress, 12345);
@@ -807,9 +821,9 @@ public class HttpServerTest {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        AccessLogMock accessLogMock = new AccessLogMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, connectionLog, /*mixedMode*/false);
+        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, accessLogMock, connectionLog, /*mixedMode*/false);
 
         String proxiedRemoteAddress = "192.168.0.100";
         int proxiedRemotePort = 12345;
@@ -892,10 +906,10 @@ public class HttpServerTest {
         return client;
     }
 
-    private static void assertLogEntryHasRemote(RequestLogEntry entry, String expectedAddress, int expectedPort) {
-        assertEquals(expectedAddress, entry.peerAddress().get());
+    private static void assertLogEntryHasRemote(AccessLogEntry entry, String expectedAddress, int expectedPort) {
+        assertEquals(expectedAddress, entry.getPeerAddress());
         if (expectedPort > 0) {
-            assertEquals(expectedPort, entry.peerPort().getAsInt());
+            assertEquals(expectedPort, entry.getPeerPort());
         }
     }
 
@@ -913,8 +927,8 @@ public class HttpServerTest {
     }
 
     private static TestDriver createSslWithProxyProtocolTestDriver(
-            Path certificateFile, Path privateKeyFile, RequestLog requestLog,
-            ConnectionLog connectionLog, boolean mixedMode) {
+            Path certificateFile, Path privateKeyFile, AccessLogMock accessLogMock,
+            InMemoryConnectionLog connectionLog, boolean mixedMode) {
         ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
                                        .enabled(true)
@@ -929,7 +943,7 @@ public class HttpServerTest {
                 new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
                 connectorConfig,
                 binder -> {
-                    binder.bind(RequestLog.class).toInstance(requestLog);
+                    binder.bind(AccessLog.class).toInstance(accessLogMock);
                     binder.bind(ConnectionLog.class).toInstance(connectionLog);
                 });
     }

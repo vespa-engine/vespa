@@ -12,7 +12,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.Principal;
-import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,76 +42,76 @@ public class JSONFormatter {
     }
 
     /**
-     * The main method for formatting the associated {@link RequestLogEntry} as a Vespa JSON access log string
+     * The main method for formatting the associated {@link AccessLogEntry} as a Vespa JSON access log string
      *
      * @return The Vespa JSON access log string without trailing newline
      */
-    public String format(RequestLogEntry entry) {
+    public String format(AccessLogEntry accessLogEntry) {
         ByteArrayOutputStream logLine = new ByteArrayOutputStream();
         try {
             JsonGenerator generator = generatorFactory.createGenerator(logLine, JsonEncoding.UTF8);
             generator.writeStartObject();
-            String peerAddress = entry.peerAddress().get();
-            generator.writeStringField("ip", peerAddress);
-            long time = entry.timestamp().get().toEpochMilli();
-            generator.writeNumberField("time", toTimestampInSeconds(time));
-            generator.writeNumberField("duration", durationAsSeconds(entry.duration().get().toMillis()));
-            generator.writeNumberField("responsesize", entry.contentSize().orElse(0));
-            generator.writeNumberField("code", entry.statusCode().orElse(0));
-            generator.writeStringField("method", entry.httpMethod().orElse(""));
-            generator.writeStringField("uri", getNormalizedURI(entry.rawPath().get(), entry.rawQuery().orElse(null)));
-            generator.writeStringField("version", entry.httpVersion().orElse(""));
-            generator.writeStringField("agent", entry.userAgent().orElse(""));
-            generator.writeStringField("host", entry.hostString().orElse(""));
-            generator.writeStringField("scheme", entry.scheme().orElse(null));
-            generator.writeNumberField("localport", entry.localPort().getAsInt());
+            generator.writeStringField("ip", accessLogEntry.getIpV4Address());
+            generator.writeNumberField("time", toTimestampInSeconds(accessLogEntry.getTimeStampMillis()));
+            generator.writeNumberField("duration", durationAsSeconds(accessLogEntry.getDurationBetweenRequestResponseMillis()));
+            generator.writeNumberField("responsesize", accessLogEntry.getReturnedContentSize());
+            generator.writeNumberField("code", accessLogEntry.getStatusCode());
+            generator.writeStringField("method", accessLogEntry.getHttpMethod());
+            generator.writeStringField("uri", getNormalizedURI(accessLogEntry.getRawPath(), accessLogEntry.getRawQuery().orElse(null)));
+            generator.writeStringField("version", accessLogEntry.getHttpVersion());
+            generator.writeStringField("agent", accessLogEntry.getUserAgent());
+            generator.writeStringField("host", accessLogEntry.getHostString());
+            generator.writeStringField("scheme", accessLogEntry.getScheme());
+            generator.writeNumberField("localport", accessLogEntry.getLocalPort());
 
-            String connectionId = entry.connectionId().orElse(null);
+            String connectionId = accessLogEntry.getConnectionId().orElse(null);
             if (connectionId != null) {
                 generator.writeStringField("connection", connectionId);
             }
 
-            Principal principal = entry.userPrincipal().orElse(null);
+            Principal principal = accessLogEntry.getUserPrincipal();
             if (principal != null) {
                 generator.writeStringField("user-principal", principal.getName());
             }
 
-            String remoteAddress = entry.remoteAddress().orElse(null);
-            int remotePort = entry.remotePort().orElse(0);
+            Principal sslPrincipal = accessLogEntry.getSslPrincipal();
+            if (sslPrincipal != null) {
+                generator.writeStringField("ssl-principal", sslPrincipal.getName());
+            }
+
             // Only add remote address/port fields if relevant
-            if (remoteAddressDiffers(peerAddress, remoteAddress)) {
-                generator.writeStringField("remoteaddr", remoteAddress);
-                if (remotePort > 0) {
-                    generator.writeNumberField("remoteport", remotePort);
+            if (remoteAddressDiffers(accessLogEntry.getIpV4Address(), accessLogEntry.getRemoteAddress())) {
+                generator.writeStringField("remoteaddr", accessLogEntry.getRemoteAddress());
+                if (accessLogEntry.getRemotePort() > 0) {
+                    generator.writeNumberField("remoteport", accessLogEntry.getRemotePort());
                 }
             }
 
             // Only add peer address/port fields if relevant
-            if (peerAddress != null) {
-                generator.writeStringField("peeraddr", peerAddress);
+            if (accessLogEntry.getPeerAddress() != null) {
+                generator.writeStringField("peeraddr", accessLogEntry.getPeerAddress());
 
-                int peerPort = entry.peerPort().getAsInt();
-                if (peerPort > 0 && peerPort != remotePort) {
+                int peerPort = accessLogEntry.getPeerPort();
+                if (peerPort > 0 && peerPort != accessLogEntry.getRemotePort()) {
                     generator.writeNumberField("peerport", peerPort);
                 }
             }
 
-            TraceNode trace = entry.traceNode().orElse(null);
+            TraceNode trace = accessLogEntry.getTrace();
             if (trace != null) {
                 long timestamp = trace.timestamp();
                 if (timestamp == 0L) {
-                    timestamp = time;
+                    timestamp = accessLogEntry.getTimeStampMillis();
                 }
                 trace.accept(new TraceRenderer(generator, timestamp));
             }
 
             // Only add search sub block of this is a search request
-            if (isSearchRequest(entry)) {
-                HitCounts hitCounts = entry.hitCounts().get();
+            if (isSearchRequest(accessLogEntry)) {
                 generator.writeObjectFieldStart("search");
-                generator.writeNumberField("totalhits", getTotalHitCount(hitCounts));
-                generator.writeNumberField("hits", getRetrievedHitCount(hitCounts));
-                Coverage c = hitCounts.getCoverage();
+                generator.writeNumberField("totalhits", getTotalHitCount(accessLogEntry.getHitCounts()));
+                generator.writeNumberField("hits", getRetrievedHitCount(accessLogEntry.getHitCounts()));
+                Coverage c = accessLogEntry.getHitCounts().getCoverage();
                 if (c != null) {
                     generator.writeObjectFieldStart(COVERAGE);
                     generator.writeNumberField(COVERAGE_COVERAGE, c.getResultPercentage());
@@ -134,17 +135,16 @@ public class JSONFormatter {
 
             // Add key/value access log entries. Keys with single values are written as single
             // string value fields while keys with multiple values are written as string arrays
-            Collection<String> keys = entry.extraAttributeKeys();
-            if (!keys.isEmpty()) {
+            Map<String,List<String>> keyValues = accessLogEntry.getKeyValues();
+            if (keyValues != null && !keyValues.isEmpty()) {
                 generator.writeObjectFieldStart("attributes");
-                for (String key : keys) {
-                    Collection<String> values = entry.extraAttributeValues(key);
-                    if (values.size() == 1) {
-                        generator.writeStringField(key, values.iterator().next());
+                for (Map.Entry<String,List<String>> entry : keyValues.entrySet()) {
+                    if (entry.getValue().size() == 1) {
+                        generator.writeStringField(entry.getKey(), entry.getValue().get(0));
                     } else {
-                        generator.writeFieldName(key);
+                        generator.writeFieldName(entry.getKey());
                         generator.writeStartArray();
-                        for (String s : values) {
+                        for (String s : entry.getValue()) {
                             generator.writeString(s);
                         }
                         generator.writeEndArray();
@@ -168,8 +168,8 @@ public class JSONFormatter {
         return remoteAddress != null && !Objects.equals(ipV4Address, remoteAddress);
     }
 
-    private boolean isSearchRequest(RequestLogEntry entry) {
-        return entry != null && entry.hitCounts().isPresent();
+    private boolean isSearchRequest(AccessLogEntry logEntry) {
+        return logEntry != null && (logEntry.getHitCounts() != null);
     }
 
     private long getTotalHitCount(HitCounts counts) {
