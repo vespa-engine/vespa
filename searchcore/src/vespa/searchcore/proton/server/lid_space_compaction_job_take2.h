@@ -14,11 +14,8 @@ namespace proton {
 namespace proton::lidspace {
 
 /**
- * Job that regularly checks whether lid space compaction should be performed
- * for the given handler.
- *
- * Compaction is handled by moving documents from high lids to low free lids.
- * A handler is typically working over a single document sub db.
+ * Moves documents from higher lids to lower lids. It uses a BucketExecutor that ensures that the bucket
+ * is locked for changes while the document is moved.
  */
 class CompactionJob : public LidSpaceCompactionJobBase
 {

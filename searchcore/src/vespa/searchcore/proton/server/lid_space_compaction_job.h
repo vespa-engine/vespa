@@ -8,11 +8,7 @@ namespace proton {
 class IFrozenBucketHandler;
 
 /**
- * Job that regularly checks whether lid space compaction should be performed
- * for the given handler.
- *
- * Compaction is handled by moving documents from high lids to low free lids.
- * A handler is typically working over a single document sub db.
+ * Moves documents from higher lids to lower lids. It uses a 'frozen' bucket mechanism to ensure that it has exclusive access to the document.
  */
 class LidSpaceCompactionJob : public LidSpaceCompactionJobBase
 {
