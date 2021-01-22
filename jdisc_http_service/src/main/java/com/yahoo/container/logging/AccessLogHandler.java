@@ -11,14 +11,14 @@ import java.util.logging.LogRecord;
  */
 class AccessLogHandler {
 
-    private final LogFileHandler logFileHandler;
+    private final LogFileHandler<RequestLogEntry> logFileHandler;
 
-    AccessLogHandler(AccessLogConfig.FileHandler config) {
-        logFileHandler = new LogFileHandler(toCompression(config), config.pattern(), config.rotation(), config.symlink());
+    AccessLogHandler(AccessLogConfig.FileHandler config, LogWriter<RequestLogEntry> logWriter) {
+        logFileHandler = new LogFileHandler<>(toCompression(config), config.pattern(), config.rotation(), config.symlink(), logWriter);
     }
 
-    public void log(String message) {
-        logFileHandler.publish(new LogRecord(Level.INFO, message));
+    public void log(RequestLogEntry entry) {
+        logFileHandler.publish(entry);
     }
 
     private LogFileHandler.Compression toCompression(AccessLogConfig.FileHandler config) {
@@ -32,12 +32,10 @@ class AccessLogHandler {
 
     void shutdown() {
         logFileHandler.close();
-
-        if (logFileHandler!=null)
-            logFileHandler.shutdown();
+        logFileHandler.shutdown();
     }
 
-    void rotateNow() {
-        logFileHandler.rotateNow();
-    }
+//    void rotateNow() {
+//        logFileHandler.rotateNow();
+//    }
 }

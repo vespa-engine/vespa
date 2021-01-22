@@ -9,6 +9,7 @@ import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Objects;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
  *
  * @author frodelu
  */
-public class JSONFormatter {
+public class JSONFormatter implements LogWriter<RequestLogEntry> {
     private static final String COVERAGE = "coverage";
     private static final String COVERAGE_COVERAGE = "coverage";
     private static final String COVERAGE_DOCUMENTS = "documents";
@@ -38,15 +39,9 @@ public class JSONFormatter {
         generatorFactory = new JsonFactory(new ObjectMapper());
     }
 
-    /**
-     * The main method for formatting the associated {@link RequestLogEntry} as a Vespa JSON access log string
-     *
-     * @return The Vespa JSON access log string without trailing newline
-     */
-    public String format(RequestLogEntry entry) {
-        ByteArrayOutputStream logLine = new ByteArrayOutputStream();
-        try {
-            JsonGenerator generator = generatorFactory.createGenerator(logLine, JsonEncoding.UTF8);
+    @Override
+    public void write(RequestLogEntry entry, OutputStream outputStream) throws IOException {
+        try (JsonGenerator generator = generatorFactory.createGenerator(outputStream, JsonEncoding.UTF8)){
             generator.writeStartObject();
             String peerAddress = entry.peerAddress().get();
             generator.writeStringField("ip", peerAddress);
@@ -152,13 +147,9 @@ public class JSONFormatter {
             }
 
             generator.writeEndObject();
-            generator.close();
-
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to generate JSON access log entry: " + e.getMessage(), e);
         }
-
-        return logLine.toString();
     }
 
 

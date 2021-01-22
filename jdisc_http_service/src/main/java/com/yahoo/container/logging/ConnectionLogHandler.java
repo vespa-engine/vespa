@@ -4,24 +4,24 @@ package com.yahoo.container.logging;
 
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
 /**
  * @author mortent
  */
 class ConnectionLogHandler {
-    private final LogFileHandler logFileHandler;
+    private final LogFileHandler<ConnectionLogEntry> logFileHandler;
 
-    public ConnectionLogHandler(String clusterName) {
-        logFileHandler = new LogFileHandler(
+    public ConnectionLogHandler(String clusterName, LogWriter<ConnectionLogEntry> logWriter) {
+        logFileHandler = new LogFileHandler<>(
                 LogFileHandler.Compression.ZSTD,
                 String.format("logs/vespa/qrs/ConnectionLog.%s.%s", clusterName, "%Y%m%d%H%M%S"),
                 "0 60 ...",
-                String.format("ConnectionLog.%s", clusterName));
+                String.format("ConnectionLog.%s", clusterName),
+                logWriter);
     }
 
-    public void log(String message) {
-        logFileHandler.publish(new LogRecord(Level.INFO, message));
+    public void log(ConnectionLogEntry entry) {
+        logFileHandler.publish(entry);
     }
 
     public void shutdown() {

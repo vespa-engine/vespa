@@ -4,6 +4,8 @@ package com.yahoo.container.logging;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -63,9 +65,8 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertJsonEquals(formatEntry(entry), expectedOutput);
     }
-
     @Test
     public void test_json_of_trace() {
         TraceNode root = new TraceNode("root", 7);
@@ -95,9 +96,8 @@ public class JSONLogTestCase {
                 "}" +
                 "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertJsonEquals(formatEntry(entry), expectedOutput);
     }
-
     @Test
     public void test_with_keyvalues() {
         RequestLogEntry entry = newRequestLogEntry("test")
@@ -130,7 +130,7 @@ public class JSONLogTestCase {
             "\"multivalue\":[\"value2\",\"value3\"]}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertJsonEquals(formatEntry(entry), expectedOutput);
 
     }
 
@@ -162,7 +162,7 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertJsonEquals(formatEntry(entry), expectedOutput);
 
         // Add remote port and verify
         entry = newRequestLogEntry("test")
@@ -193,7 +193,7 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertJsonEquals(formatEntry(entry), expectedOutput);
     }
 
     @Test
@@ -203,7 +203,7 @@ public class JSONLogTestCase {
                 .remoteAddress(entry.peerAddress().get())
                 .build();
         JSONFormatter formatter = new JSONFormatter();
-        assertJsonEquals(formatter.format(entry), formatter.format(entrywithremote));
+        assertJsonEquals(formatEntry(entry), formatEntry(entrywithremote));
     }
 
     @Test
@@ -246,11 +246,11 @@ public class JSONLogTestCase {
             "}" +
             "}";
 
-        assertJsonEquals(new JSONFormatter().format(entry), expectedOutput);
+        assertJsonEquals(formatEntry(entry), expectedOutput);
     }
 
     private void verifyCoverage(String coverage, RequestLogEntry entry) {
-        assertJsonEquals(new JSONFormatter().format(entry),
+        assertJsonEquals(formatEntry(entry),
                 "{\"ip\":\"152.200.54.243\"," +
                 "\"peeraddr\":\"152.200.54.243\"," +
                 "\"time\":920880005.023," +
@@ -282,5 +282,14 @@ public class JSONLogTestCase {
                        newRequestLogEntry("test",  new Coverage(100,200,200,2)).build());
         verifyCoverage("\"coverage\":{\"coverage\":50,\"documents\":100,\"degraded\":{\"adaptive-timeout\":true}}",
                        newRequestLogEntry("test",  new Coverage(100,200,200,4)).build());
+    }
+
+    private String formatEntry(RequestLogEntry entry) {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            new JSONFormatter().write(entry, outputStream);
+            return outputStream.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

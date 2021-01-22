@@ -10,6 +10,8 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,7 +22,6 @@ import java.util.function.BiFunction;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.logging.SimpleFormatter;
 import java.util.zip.GZIPInputStream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -48,18 +49,18 @@ public class LogFileHandlerTestCase {
                 return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
             }
         };
-        LogFileHandler h = new LogFileHandler(Compression.NONE, pattern, rTimes, null);
+        LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, pattern, rTimes, null, new StringLogWriter());
         long now = System.currentTimeMillis();
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
         long tomorrowMillis = tomorrowDays * millisPerDay;
         assertThat(tomorrowMillis+1000).isEqualTo(h.getNextRotationTime(tomorrowMillis));
         assertThat(tomorrowMillis+10000).isEqualTo(h.getNextRotationTime(tomorrowMillis+3000));
-        LogRecord lr = new LogRecord(Level.INFO, "test");
-        h.publish(lr);
-        h.publish(new LogRecord(Level.INFO, "another test"));
+        String message = "test";
+        h.publish(message);
+        h.publish( "another test");
         h.rotateNow();
-        h.publish(lr);
+        h.publish(message);
         h.flush();
         h.shutdown();
     }
@@ -69,11 +70,10 @@ public class LogFileHandlerTestCase {
         File logFile = temporaryFolder.newFile("testLogFileG1.txt");
 
       //create logfilehandler
-      LogFileHandler h = new LogFileHandler(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null);
+      LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, new StringLogWriter());
 
       //write log
-      LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileFirst1");
-      h.publish(lr);
+      h.publish("testDeleteFileFirst1");
       h.flush();
       h.shutdown();
     }
@@ -83,19 +83,17 @@ public class LogFileHandlerTestCase {
       File logFile = temporaryFolder.newFile("testLogFileG2.txt");
 
       //create logfilehandler
-       LogFileHandler h = new LogFileHandler(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null);
+       LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, new StringLogWriter());
 
       //write log
-      LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileDuringLogging1");
-      h.publish(lr);
+      h.publish("testDeleteFileDuringLogging1");
       h.flush();
 
       //delete log file
         logFile.delete();
 
       //write log again
-      lr = new LogRecord(Level.INFO, "testDeleteFileDuringLogging2");
-      h.publish(lr);
+      h.publish("testDeleteFileDuringLogging2");
       h.flush();
       h.shutdown();
     }
@@ -107,14 +105,14 @@ public class LogFileHandlerTestCase {
             public String format(LogRecord r) {
                 DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
                 String timeStamp = df.format(new Date(r.getMillis()));
-                return ("[" + timeStamp + "]" + " " + formatMessage(r) + "\n");
+                return ("[" + timeStamp + "]" + " " + formatMessage(r));
             }
         };
-        LogFileHandler handler = new LogFileHandler(
-                Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink");
+        LogFileHandler<String> handler = new LogFileHandler<>(
+                Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", new StringLogWriter());
 
         String message = formatter.format(new LogRecord(Level.INFO, "test"));
-        handler.publish(new LogRecord(Level.INFO, message));
+        handler.publish(message);
         String firstFile;
         do {
              Thread.sleep(1);
@@ -128,7 +126,7 @@ public class LogFileHandlerTestCase {
         } while (firstFile.equals(secondFileName));
 
         String longMessage = formatter.format(new LogRecord(Level.INFO, "string which is way longer than the word test"));
-        handler.publish(new LogRecord(Level.INFO, longMessage));
+        handler.publish(longMessage);
         handler.waitDrained();
         assertThat(Files.size(Paths.get(firstFile))).isEqualTo(31);
         final long expectedSecondFileLength = 72;
@@ -168,19 +166,11 @@ public class LogFileHandlerTestCase {
                                  BiFunction<Path, Integer, String> decompressor) throws IOException, InterruptedException {
         File root = temporaryFolder.newFolder("testcompression" + compression.name());
 
-        Formatter formatter = new Formatter() {
-            public String format(LogRecord r) {
-                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
-                String timeStamp = df.format(new Date(r.getMillis()));
-                return ("[" + timeStamp + "]" + " " + formatMessage(r) + "\n");
-            }
-        };
-        LogFileHandler h = new LogFileHandler(
-                compression, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null);
+        LogFileHandler<String> h = new LogFileHandler<>(
+                compression, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, new StringLogWriter());
         int logEntries = 10000;
         for (int i = 0; i < logEntries; i++) {
-            LogRecord lr = new LogRecord(Level.INFO, "test\n");
-            h.publish(lr);
+            h.publish("test");
         }
         h.waitDrained();
         String f1 = h.getFileName();
@@ -201,4 +191,11 @@ public class LogFileHandlerTestCase {
         h.shutdown();
     }
 
+    static class StringLogWriter implements LogWriter<String> {
+
+        @Override
+        public void write(String record, OutputStream outputStream) throws IOException {
+            outputStream.write((record + "\n").getBytes(StandardCharsets.UTF_8));
+        }
+    }
 }

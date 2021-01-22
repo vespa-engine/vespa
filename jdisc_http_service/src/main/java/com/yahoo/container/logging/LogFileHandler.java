@@ -27,6 +27,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -41,7 +42,7 @@ import java.util.zip.GZIPOutputStream;
  * @author Bob Travis
  * @author bjorncs
  */
-class LogFileHandler {
+class LogFileHandler <LOGTYPE>  {
 
     enum Compression { NONE, GZIP, ZSTD }
 
@@ -51,11 +52,11 @@ class LogFileHandler {
     private final long[] rotationTimes;
     private final String filePattern;  // default to current directory, ms time stamp
     private final String symlinkName;
-    private final ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
-    private final LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
+    private final ArrayBlockingQueue<LOGTYPE> logQueue = new ArrayBlockingQueue<>(100000);
+    private final AtomicBoolean rotate = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
     private final NativeIO nativeIO = new NativeIO();
-    private final LogThread logThread;
+    private final LogThread<LOGTYPE> logThread;
 
     private volatile FileOutputStream currentOutputStream = null;
     private volatile long nextRotationTime = 0;
@@ -64,10 +65,12 @@ class LogFileHandler {
 
     private volatile Writer writer;
 
-    static private class LogThread extends Thread {
-        LogFileHandler logFileHandler;
+    private final LogWriter<LOGTYPE> logWriter;
+
+    static private class LogThread<LOGTYPE> extends Thread {
+        LogFileHandler<LOGTYPE> logFileHandler;
         long lastFlush = 0;
-        LogThread(LogFileHandler logFile) {
+        LogThread(LogFileHandler<LOGTYPE> logFile) {
             super("Logger");
             setDaemon(true);
             logFileHandler = logFile;
@@ -86,14 +89,14 @@ class LogFileHandler {
 
         private void storeLogRecords() throws InterruptedException {
             while (!isInterrupted()) {
-                LogRecord r = logFileHandler.logQueue.poll(100, TimeUnit.MILLISECONDS);
+                LOGTYPE r = logFileHandler.logQueue.poll(100, TimeUnit.MILLISECONDS);
+                if(logFileHandler.rotate.get()) {
+                    logFileHandler.internalRotateNow();
+                    lastFlush = System.nanoTime();
+                    logFileHandler.rotate.set(false);
+                }
                 if (r != null) {
-                    if (r == logFileHandler.rotateCmd) {
-                        logFileHandler.internalRotateNow();
-                        lastFlush = System.nanoTime();
-                    } else {
-                        logFileHandler.internalPublish(r);
-                    }
+                    logFileHandler.internalPublish(r);
                     flushIfOld(3, TimeUnit.SECONDS);
                 } else {
                     flushIfOld(100, TimeUnit.MILLISECONDS);
@@ -110,20 +113,21 @@ class LogFileHandler {
         }
     }
 
-    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName) {
-        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName);
+    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, LogWriter<LOGTYPE> logWriter) {
+        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, logWriter);
     }
 
     LogFileHandler(
             Compression compression,
             String filePattern,
             long[] rotationTimes,
-            String symlinkName) {
+            String symlinkName, LogWriter<LOGTYPE> logWriter) {
         this.compression = compression;
         this.filePattern = filePattern;
         this.rotationTimes = rotationTimes;
         this.symlinkName = (symlinkName != null && !symlinkName.isBlank()) ? symlinkName : null;
-        this.logThread = new LogThread(this);
+        this.logWriter = logWriter;
+        this.logThread = new LogThread<>(this);
         this.logThread.start();
     }
 
@@ -132,7 +136,7 @@ class LogFileHandler {
      *
      * @param r logrecord to publish
      */
-    public void publish(LogRecord r) {
+    public void publish(LOGTYPE r) {
         try {
             logQueue.put(r);
         } catch (InterruptedException e) {
@@ -183,7 +187,7 @@ class LogFileHandler {
         flushAndClose();
     }
 
-    private void internalPublish(LogRecord r) {
+    private void internalPublish(LOGTYPE r) {
         // first check to see if new file needed.
         // if so, use this.internalRotateNow() to do it
 
@@ -195,7 +199,7 @@ class LogFileHandler {
             internalRotateNow();
         }
         try {
-            writer.write(r.getMessage());
+            logWriter.write(r, currentOutputStream);
         } catch (IOException e) {
             logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
         }
@@ -251,7 +255,7 @@ class LogFileHandler {
      * Force file rotation now, independent of schedule.
      */
     void rotateNow () {
-        publish(rotateCmd);
+        rotate.set(true);
     }
 
     // Throw InterruptedException upwards rather than relying on isInterrupted to stop the thread as
