@@ -27,6 +27,7 @@ DummyBucketExecutor::execute(const Bucket & bucket, std::unique_ptr<BucketTask> 
     _executor->execute(makeLambdaTask([this, bucket, bucketTask=std::move(task)]() {
         {
             std::unique_lock guard(_lock);
+            // Use contains when dropping support for gcc 8.
             while (_inFlight.count(bucket.getBucket()) != 0) {
                 _cond.wait(guard);
             }
