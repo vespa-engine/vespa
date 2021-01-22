@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -96,26 +96,14 @@ struct MyStorer : public IOperationStorer {
         : _moveCnt(0),
           _compactCnt(0)
     {}
-    void appendOperation(const FeedOperation &op, DoneCallback) override {
-        if (op.getType() == FeedOperation::MOVE) {
-            ++ _moveCnt;
-        } else if (op.getType() == FeedOperation::COMPACT_LID_SPACE) {
-            ++_compactCnt;
-        }
-    }
-    CommitResult startCommit(DoneCallback) override {
-        return CommitResult();
-    }
+    void appendOperation(const FeedOperation &op, DoneCallback) override;
+    CommitResult startCommit(DoneCallback) override;
 };
 
 struct MyFrozenBucketHandler : public IFrozenBucketHandler {
     BucketId _bucket;
     MyFrozenBucketHandler() : _bucket() {}
-    ExclusiveBucketGuard::UP acquireExclusiveBucket(BucketId bucket) override {
-        return (_bucket == bucket)
-               ? ExclusiveBucketGuard::UP()
-               : std::make_unique<ExclusiveBucketGuard>(bucket);
-    }
+    ExclusiveBucketGuard::UP acquireExclusiveBucket(BucketId bucket) override;
     void addListener(IBucketFreezeListener *) override { }
     void removeListener(IBucketFreezeListener *) override { }
 };
@@ -130,28 +118,21 @@ struct MyFeedView : public test::DummyFeedView {
 struct MyDocumentStore : public test::DummyDocumentStore {
     Document::SP _readDoc;
     mutable uint32_t _readLid;
-    MyDocumentStore() : _readDoc(), _readLid(0) {}
+    MyDocumentStore();
     ~MyDocumentStore() override;
-    document::Document::UP read(search::DocumentIdT lid, const document::DocumentTypeRepo &) const override {
-        _readLid = lid;
-        return Document::UP(_readDoc->clone());
-    }
+    document::Document::UP read(search::DocumentIdT lid, const document::DocumentTypeRepo &) const override;
 };
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     std::shared_ptr<const DocumentTypeRepo> repo;
     const MyDocumentStore& store;
-    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept
-        : repo(std::move(repo_in)),
-          store(store_in)
-    {}
-    const document::DocumentTypeRepo& getDocumentTypeRepo() const override { return *repo; }
-    void getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector&) const override { abort(); }
-    DocumentMetaData getDocumentMetaData(const DocumentId&) const override { abort(); }
-    Document::UP getFullDocument(DocumentIdT lid) const override {
-        return store.read(lid, *repo);
-    }
-    CachedSelect::SP parseSelect(const vespalib::string&) const override { abort(); }
+    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept;
+    ~MyDocumentRetriever();
+    const document::DocumentTypeRepo& getDocumentTypeRepo() const override;
+    void getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector&) const override;
+    DocumentMetaData getDocumentMetaData(const DocumentId&) const override;
+    Document::UP getFullDocument(DocumentIdT lid) const override;
+    CachedSelect::SP parseSelect(const vespalib::string&) const override;
 };
 
 struct MySubDb {
