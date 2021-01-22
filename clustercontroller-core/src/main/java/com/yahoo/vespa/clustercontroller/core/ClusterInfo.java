@@ -32,8 +32,10 @@ public class ClusterInfo {
     /** Information about the current state of all nodes - always consists of both sets of nodes in the two maps above */
     private final Map<Node, NodeInfo> allNodeInfo = new TreeMap<>(); // TODO: Remove
 
+    /** Returns non-null iff index is a configured nodes (except perhaps in tests). */
     DistributorNodeInfo getDistributorNodeInfo(int index) { return distributorNodeInfo.get(index); }
 
+    /** Returns non-null iff index is a configured nodes (except perhaps in tests). */
     StorageNodeInfo getStorageNodeInfo(int index) { return storageNodeInfo.get(index); }
 
     NodeInfo getNodeInfo(NodeType type, int index) { return getNodeInfo(new Node(type, index)); }

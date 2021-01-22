@@ -61,7 +61,8 @@ public class NodeStateChangeCheckerTest {
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
-        return new NodeStateChangeChecker(minStorageNodesUp, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
+        return new NodeStateChangeChecker(minStorageNodesUp, minRatioOfStorageNodesUp, requiredRedundancy,
+                visitor -> {}, cluster.clusterInfo());
     }
 
     private ContentCluster createCluster(Collection<ConfiguredNode> nodes) {
@@ -136,7 +137,8 @@ public class NodeStateChangeCheckerTest {
     public void testUnknownStorageNode() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
+                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy,
+                visitor -> {}, cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -161,7 +163,8 @@ public class NodeStateChangeCheckerTest {
         ContentCluster cluster = createCluster(createNodes(4));
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
+                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, visitor -> {},
+                cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -317,10 +320,10 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testDifferentDescriptionImpliesAlreadySet() {
+    public void testDifferentDescriptionImpliesDenied() {
         NodeStateChangeChecker.Result result = transitionToSameState("foo", "bar");
         assertFalse(result.settingWantedStateIsAllowed());
-        assertTrue(result.wantedStateAlreadySet());
+        assertFalse(result.wantedStateAlreadySet());
     }
 
     private NodeStateChangeChecker.Result transitionToMaintenanceWithOneStorageNodeDown(
@@ -599,5 +602,4 @@ public class NodeStateChangeCheckerTest {
             nodes.add(new ConfiguredNode(i, false));
         return nodes;
     }
-
 }
