@@ -26,7 +26,7 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
                 _retryFrozenDocument = true;
                 return true;
             } else {
-                std::unique_ptr<MoveOperation> op = _handler.createMoveOperation(document, stats.getLowestFreeLid());
+                auto op = _handler.createMoveOperation(document, stats.getLowestFreeLid());
                 if ( ! op ) {
                     return false;
                 }

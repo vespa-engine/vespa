@@ -20,8 +20,8 @@ namespace proton {
 namespace proton {
 
 /**
- * Job that regularly checks whether lid space compaction should be performed
- * for the given handler.
+ * This is a base class for moving documents from a high lid to a lower free
+ * lid in order to keep the lid space compact.
  *
  * Compaction is handled by moving documents from high lids to low free lids.
  * A handler is typically working over a single document sub db.
