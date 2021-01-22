@@ -13,11 +13,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,12 +23,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.ErrorManager;
-import java.util.logging.Formatter;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.logging.StreamHandler;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -143,15 +134,16 @@ class LogFileHandler <LOGTYPE>  {
 
     public synchronized void flush() {
         try {
-            if (currentOutputStream != null) {
+            FileOutputStream currentOut = this.currentOutputStream;
+            if (currentOut != null) {
                 if (compression == Compression.GZIP) {
-                    long newPos = currentOutputStream.getChannel().position();
+                    long newPos = currentOut.getChannel().position();
                     if (newPos > lastDropPosition + 102400) {
-                        nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
+                        nativeIO.dropPartialFileFromCache(currentOut.getFD(), lastDropPosition, newPos, true);
                         lastDropPosition = newPos;
                     }
                 } else {
-                    currentOutputStream.flush();
+                    currentOut.flush();
                 }
             }
         } catch (IOException e) {
@@ -162,7 +154,8 @@ class LogFileHandler <LOGTYPE>  {
     public void close() {
         try {
             flush();
-            currentOutputStream.close();
+            FileOutputStream currentOut = this.currentOutputStream;
+            if (currentOut != null) currentOut.close();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Got error while closing log file", e);
         }
