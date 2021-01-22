@@ -4,6 +4,7 @@ vespa_add_executable(searchcore_persistenceengine_test_app TEST
     persistenceengine_test.cpp
     DEPENDS
     searchcore_persistenceengine
+    searchcore_attribute
     searchcore_pcommon
     searchcore_proton_metrics
 )
