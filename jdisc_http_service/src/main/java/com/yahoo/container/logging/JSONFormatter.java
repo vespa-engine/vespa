@@ -155,7 +155,7 @@ public class JSONFormatter {
             generator.close();
 
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to generate JSON access log entry: " + e.getMessage());
+            logger.log(Level.WARNING, "Unable to generate JSON access log entry: " + e.getMessage(), e);
         }
 
         return logLine.toString();
