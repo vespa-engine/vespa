@@ -130,6 +130,7 @@ vespa_define_module(
     src/tests/tutorial/simple
     src/tests/tutorial/threads
     src/tests/typify
+    src/tests/util/brain_float16
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
     src/tests/util/md5
