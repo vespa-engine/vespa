@@ -62,6 +62,7 @@ public:
     }
 
     ResourceUsage get_usage() { return _listener->get_usage(); }
+    size_t get_update_count() const { return _listener->get_update_count(); }
 };
 
 ResourceUsageTrackerTest::~ResourceUsageTrackerTest() = default;
@@ -201,16 +202,16 @@ TEST_F(ResourceUsageTrackerTest, can_skip_scan_when_aggregating_attributes)
     b2.merge(ready_a1, 15, 15);
     aul1->notify_attribute_usage(b1.build());
     EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
-    EXPECT_EQ(2u, _listener->get_update_count());
+    EXPECT_EQ(2u, get_update_count());
     aul1->notify_attribute_usage(b1.build());
     EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
-    EXPECT_EQ(2u, _listener->get_update_count()); // usage for doctype1 has not changed
+    EXPECT_EQ(2u, get_update_count()); // usage for doctype1 has not changed
     aul2->notify_attribute_usage(b2.build());
     EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
-    EXPECT_EQ(2u, _listener->get_update_count()); // usage for doctype2 is less than usage for doctype1
+    EXPECT_EQ(2u, get_update_count()); // usage for doctype2 is less than usage for doctype1
     aul2.reset();
     aul1.reset();
-    EXPECT_EQ(4u, _listener->get_update_count()); // never skip scan when removing document type
+    EXPECT_EQ(4u, get_update_count()); // never skip scan when removing document type
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
