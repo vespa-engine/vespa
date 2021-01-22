@@ -4,8 +4,6 @@ package com.yahoo.container.logging;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -18,8 +16,6 @@ import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 public class JSONLogTestCase {
 
     private static String ipAddress = "152.200.54.243";
-    private static final String EMPTY_REFERRER = "";
-    private static final String EMPTY_USERAGENT = "";
 
     private RequestLogEntry.Builder newRequestLogEntry(final String query) {
         return newRequestLogEntry(query, new Coverage(100,100,100,0));
@@ -42,12 +38,8 @@ public class JSONLogTestCase {
                 .peerPort(0);
     }
 
-    private static URI newQueryUri(final String query) {
-        return URI.create("http://localhost?query=" + query);
-    }
-
     @Test
-    public void test_json_log_entry() throws Exception {
+    public void test_json_log_entry() {
         RequestLogEntry entry = newRequestLogEntry("test").build();
 
          String expectedOutput =
@@ -75,7 +67,7 @@ public class JSONLogTestCase {
     }
 
     @Test
-    public void test_json_of_trace() throws IOException {
+    public void test_json_of_trace() {
         TraceNode root = new TraceNode("root", 7);
         RequestLogEntry entry = newRequestLogEntry("test")
                 .traceNode(root)
