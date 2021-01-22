@@ -4,6 +4,6 @@ package com.yahoo.container.logging;
 /**
  * @author Tony Vaagenes
  */
-public interface AccessLogInterface {
-    void log(AccessLogEntry accessLogEntry);
+public interface RequestLogHandler {
+    void log(RequestLogEntry entry);
 }
