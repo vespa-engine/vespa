@@ -5,7 +5,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 import com.yahoo.container.logging.ConnectionLog;
-import com.yahoo.container.logging.RequestLog;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
@@ -83,7 +82,6 @@ public class TestDrivers {
                             bind(ConnectorConfig.class).toInstance(new ConnectorConfig(connectorConfigBuilder));
                             bind(FilterBindings.class).toInstance(new FilterBindings.Builder().build());
                             bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
-                            bind(RequestLog.class).toInstance(new VoidRequestLog());
                         }
                     },
                     new ConnectorFactoryRegistryModule(connectorConfigBuilder),

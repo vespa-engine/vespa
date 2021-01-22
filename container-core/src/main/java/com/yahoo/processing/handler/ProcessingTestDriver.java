@@ -7,7 +7,7 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.logging.RequestLogHandler;
+import com.yahoo.container.logging.AccessLogInterface;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.processing.rendering.Renderer;
@@ -60,15 +60,15 @@ public class ProcessingTestDriver extends RequestHandlerTestDriver {
         this.processingHandler = processingHandler;
     }
 
-    public ProcessingTestDriver(Chain<Processor> chain, RequestLogHandler accessLogInterface) {
+    public ProcessingTestDriver(Chain<Processor> chain, AccessLogInterface accessLogInterface) {
         this(createProcessingHandler(
                 Collections.singleton(chain),
                 new ComponentRegistry<>(),
                 createAccessLog(accessLogInterface)));
     }
 
-    private static AccessLog createAccessLog(RequestLogHandler accessLogInterface) {
-        ComponentRegistry<RequestLogHandler> componentRegistry = new ComponentRegistry<>();
+    private static AccessLog createAccessLog(AccessLogInterface accessLogInterface) {
+        ComponentRegistry<AccessLogInterface> componentRegistry = new ComponentRegistry<>();
         componentRegistry.register(ComponentId.createAnonymousComponentId("access-log"), accessLogInterface);
         componentRegistry.freeze();
 

@@ -5,8 +5,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.logging.RequestLog;
-import com.yahoo.container.logging.RequestLogEntry;
+import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.http.server.jetty.TestDriver;
 import com.yahoo.jdisc.http.server.jetty.TestDrivers;
 import org.junit.Test;
@@ -22,7 +21,6 @@ import static org.mockito.Mockito.verify;
 
 /**
  * @author bakksjo
- * @author bjorncs
  */
 public class ServletAccessLoggingTest extends ServletTestBase {
     private static final long MAX_LOG_WAIT_TIME_MILLIS = TimeUnit.SECONDS.toMillis(60);
@@ -43,20 +41,20 @@ public class ServletAccessLoggingTest extends ServletTestBase {
         verifyCallsLog(accessLog, timeout(MAX_LOG_WAIT_TIME_MILLIS).times(1));
     }
 
-    private void verifyCallsLog(RequestLog requestLog, final VerificationMode verificationMode) {
-        verify(requestLog, verificationMode).log(any(RequestLogEntry.class));
+    private void verifyCallsLog(final AccessLog accessLog, final VerificationMode verificationMode) {
+        verify(accessLog, verificationMode).log(any(AccessLogEntry.class));
     }
 
-    private TestDriver newTestDriver(RequestLog requestLog) throws IOException {
-        return TestDrivers.newInstance(dummyRequestHandler, bindings(requestLog));
+    private TestDriver newTestDriver(final AccessLog accessLog) throws IOException {
+        return TestDrivers.newInstance(dummyRequestHandler, bindings(accessLog));
     }
 
-    private Module bindings(RequestLog requestLog) {
+    private Module bindings(final AccessLog accessLog) {
         return Modules.combine(
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(RequestLog.class).toInstance(requestLog);
+                        bind(AccessLog.class).toInstance(accessLog);
                     }
                 },
                 guiceModule());
