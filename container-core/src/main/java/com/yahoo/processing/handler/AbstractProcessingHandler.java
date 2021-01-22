@@ -13,7 +13,6 @@ import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -29,15 +28,8 @@ import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.ErrorMessage;
 import com.yahoo.processing.request.Properties;
-import com.yahoo.processing.response.Data;
-import com.yahoo.processing.response.DataList;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 import static com.yahoo.component.chain.ChainsConfigurer.prepareChainRegistry;
@@ -68,9 +60,9 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
     public AbstractProcessingHandler(ChainRegistry<COMPONENT> chainRegistry,
                                      ComponentRegistry<Renderer> renderers,
                                      Executor executor,
-                                     AccessLog accessLog,
+                                     AccessLog ignored,
                                      Metric metric) {
-        super(executor, accessLog, metric, true);
+        super(executor, metric, true);
         renderingExecutor = executor;
         this.chainRegistry = chainRegistry;
         this.renderers = renderers;
@@ -87,16 +79,16 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
     public AbstractProcessingHandler(ChainRegistry<COMPONENT> chainRegistry,
                                      ComponentRegistry<Renderer> renderers,
                                      Executor executor,
-                                     AccessLog accessLog) {
-        this(chainRegistry, renderers, executor, accessLog, null);
+                                     AccessLog ignored) {
+        this(chainRegistry, renderers, executor, ignored, null);
     }
 
     public AbstractProcessingHandler(ChainsConfig processingChainsConfig,
                                      ComponentRegistry <COMPONENT> chainedComponents,
                                      ComponentRegistry<Renderer> renderers,
                                      Executor executor,
-                                     AccessLog accessLog) {
-        this(processingChainsConfig, chainedComponents, renderers, executor, accessLog, null);
+                                     AccessLog ignored) {
+        this(processingChainsConfig, chainedComponents, renderers, executor, ignored, null);
     }
 
     @Inject
@@ -104,9 +96,9 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
                                      ComponentRegistry<COMPONENT> chainedComponents,
                                      ComponentRegistry<Renderer> renderers,
                                      Executor executor,
-                                     AccessLog accessLog,
+                                     AccessLog ignored,
                                      Metric metric) {
-        this(createChainRegistry(processingChainsConfig, chainedComponents), renderers, executor, accessLog, metric);
+        this(createChainRegistry(processingChainsConfig, chainedComponents), renderers, executor, ignored, metric);
     }
 
     /** Throws UnsupportedOperationException: Call handle(request, channel instead) */

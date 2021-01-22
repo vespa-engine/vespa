@@ -9,7 +9,6 @@ import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
@@ -47,8 +46,8 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     private final boolean useOsgiMode;
 
     @Inject
-    public TestRunnerHandler(Executor executor, AccessLog accessLog, TestRunner junitRunner, LegacyTestRunner testRunner) {
-        super(executor, accessLog);
+    public TestRunnerHandler(Executor executor, TestRunner junitRunner, LegacyTestRunner testRunner) {
+        super(executor);
         this.junitRunner = junitRunner;
         this.testRunner = testRunner;
         this.useOsgiMode = junitRunner.isSupported();

@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.jdisc.Metric;
 
 /**
  * Dummy for internal use.
@@ -15,7 +16,7 @@ public class RestApi extends LoggingRequestHandler {
 
     @Inject
     public RestApi() {
-        super(ignored -> { throw new IllegalStateException("Not supposed to handle anything"); }, null, null);
+        super(ignored -> { throw new IllegalStateException("Not supposed to handle anything"); }, (Metric)null);
     }
 
     @Override

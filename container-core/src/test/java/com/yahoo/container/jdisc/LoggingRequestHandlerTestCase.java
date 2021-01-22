@@ -2,12 +2,9 @@
 package com.yahoo.container.jdisc;
 
 import com.google.inject.Key;
-import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.handler.Coverage;
 import com.yahoo.container.handler.Timing;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.HitCounts;
-import com.yahoo.container.logging.RequestLogHandler;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
@@ -102,8 +99,8 @@ public class LoggingRequestHandlerTestCase {
 
     static final class AccessLogTestHandler extends LoggingRequestHandler {
 
-        public AccessLogTestHandler(Executor executor, AccessLog accessLog) {
-            super(executor, accessLog);
+        public AccessLogTestHandler(Executor executor) {
+            super(executor);
         }
 
         @Override
@@ -115,10 +112,8 @@ public class LoggingRequestHandlerTestCase {
 
     @Before
     public void setUp() throws Exception {
-        ComponentRegistry<RequestLogHandler> implementers = new ComponentRegistry<>();
-        implementers.freeze();
         executor = Executors.newCachedThreadPool();
-        handler = new AccessLogTestHandler(executor, new AccessLog(implementers));
+        handler = new AccessLogTestHandler(executor);
     }
 
     @After

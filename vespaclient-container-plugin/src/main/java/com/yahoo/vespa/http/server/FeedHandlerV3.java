@@ -6,7 +6,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
@@ -47,11 +46,10 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
 
     public FeedHandlerV3(Executor executor,
                          Metric metric,
-                         AccessLog accessLog,
                          DocumentmanagerConfig documentManagerConfig,
                          SessionCache sessionCache,
                          DocumentApiMetrics metricsHelper) {
-        super(executor, accessLog, metric);
+        super(executor, metric);
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
         feedReplyHandler = new FeedReplyReader(metric, metricsHelper);

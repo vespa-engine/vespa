@@ -5,7 +5,6 @@ import com.google.common.base.Splitter;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
@@ -118,7 +117,6 @@ public class FeedHandlerV3Test {
         FeedHandlerV3 feedHandlerV3 = new FeedHandlerV3(
                 threadPool,
                 metric,
-                AccessLog.voidAccessLog(),
                 docMan,
                 null /* session cache */,
                 new DocumentApiMetrics(MetricReceiver.nullImplementation, "test")) {

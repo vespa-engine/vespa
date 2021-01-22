@@ -120,24 +120,23 @@ public class SearchHandler extends LoggingRequestHandler {
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          ContainerThreadPool threadpool,
-                         AccessLog accessLog,
+                         AccessLog ignored,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ContainerHttpConfig config,
                          ExecutionFactory executionFactory) {
-        this(statistics, metric, threadpool.executor(), accessLog, queryProfileRegistry, config, executionFactory);
+        this(statistics, metric, threadpool.executor(), ignored, queryProfileRegistry, config, executionFactory);
     }
 
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
-                         AccessLog accessLog,
+                         AccessLog ignored,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ContainerHttpConfig containerHttpConfig,
                          ExecutionFactory executionFactory) {
         this(statistics,
              metric,
              executor,
-             accessLog,
              queryProfileRegistry,
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
@@ -152,14 +151,13 @@ public class SearchHandler extends LoggingRequestHandler {
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
-                         AccessLog accessLog,
+                         AccessLog ignored,
                          QueryProfilesConfig queryProfileConfig,
                          ContainerHttpConfig containerHttpConfig,
                          ExecutionFactory executionFactory) {
         this(statistics,
              metric,
              executor,
-             accessLog,
              QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
@@ -170,22 +168,21 @@ public class SearchHandler extends LoggingRequestHandler {
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
-                         AccessLog accessLog,
+                         AccessLog ignored,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
                          Optional<String> hostResponseHeaderKey) {
-        this(statistics, metric, executor, accessLog, queryProfileRegistry, executionFactory, 0, hostResponseHeaderKey);
+        this(statistics, metric, executor, queryProfileRegistry, executionFactory, 0, hostResponseHeaderKey);
     }
 
     private SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
-                         AccessLog accessLog,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
                          long numQueriesToTraceOnDebugAfterStartup,
                          Optional<String> hostResponseHeaderKey) {
-        super(executor, accessLog, metric, true);
+        super(executor, metric, true);
         log.log(Level.FINE, "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
         this.executionFactory = executionFactory;

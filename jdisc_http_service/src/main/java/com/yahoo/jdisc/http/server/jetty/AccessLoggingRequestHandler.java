@@ -4,7 +4,6 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.common.base.Preconditions;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Request;
-import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -23,7 +22,6 @@ import java.util.Optional;
  * Does not otherwise interfere with the request processing of the delegate request handler.
  *
  * @author bakksjo
- * $Id$
  */
 public class AccessLoggingRequestHandler extends AbstractRequestHandler {
     public static final String CONTEXT_KEY_ACCESS_LOG_ENTRY
@@ -54,30 +52,8 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler {
         Preconditions.checkArgument(request instanceof HttpRequest, "Expected HttpRequest, got " + request);
         final HttpRequest httpRequest = (HttpRequest) request;
         httpRequest.context().put(CONTEXT_KEY_ACCESS_LOG_ENTRY, accessLogEntry);
-        final ResponseHandler accessLoggingResponseHandler = new AccessLoggingResponseHandler(httpRequest, handler, accessLogEntry);
-        final ContentChannel requestContentChannel = delegate.handleRequest(request, accessLoggingResponseHandler);
-        return requestContentChannel;
+        return delegate.handleRequest(request, handler);
     }
 
-    private static class AccessLoggingResponseHandler implements ResponseHandler {
-        private final HttpRequest request;
-        private final ResponseHandler delegateHandler;
-        private final AccessLogEntry accessLogEntry;
-
-        public AccessLoggingResponseHandler(
-                HttpRequest request, final ResponseHandler delegateHandler,
-                final AccessLogEntry accessLogEntry) {
-            this.request = request;
-            this.delegateHandler = delegateHandler;
-            this.accessLogEntry = accessLogEntry;
-        }
-
-        @Override
-        public ContentChannel handleResponse(Response response) {
-            accessLogEntry.setUserPrincipal(request.getUserPrincipal());
-            return delegateHandler.handleResponse(response);
-        }
-
-    }
 
 }
