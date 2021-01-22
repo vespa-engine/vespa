@@ -205,7 +205,8 @@ public class StateHandler extends AbstractRequestHandler {
 
     private MetricSnapshot getSnapshot() {
         if (snapshotPreprocessor == null) {
-            return monitor.snapshot();
+            // TODO: throw exception in ctor instead
+            return new MetricSnapshot(0L, 0L, TimeUnit.MILLISECONDS);
         } else {
             return snapshotPreprocessor.latestSnapshot();
         }

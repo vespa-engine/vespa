@@ -55,7 +55,7 @@ public class StateHandlerTestBase {
         snapshotProvider = new MockSnapshotProvider();
         snapshotProviderRegistry = new ComponentRegistry<>();
         snapshotProviderRegistry.register(new ComponentId("foo"), snapshotProvider);
-        monitor = new StateMonitor(healthMonitorConfig, timer, null);
+        monitor = new StateMonitor(healthMonitorConfig);
     }
 
     String requestAsString(String requestUri) {
