@@ -68,30 +68,27 @@ void my_simple_join_op(State &state, uint64_t param) {
     auto dst_cells = make_dst_cells<OCT, pri_mut>(pri_cells, state.stash);
     const auto &index = state.peek(swap ? 0 : 1).index();
     size_t subspace_size = params.subspace_size;
-    const PCT *pri = pri_cells.begin();
-    OCT *dst = dst_cells.begin();
-    for (; pri < pri_cells.end(); pri += subspace_size, dst += subspace_size) {
+    size_t offset = 0;
+    while (offset < pri_cells.size()) {
         if constexpr (overlap == Overlap::FULL) {
-            apply_op2_vec_vec(dst, pri, sec_cells.begin(), subspace_size, my_op);
+            apply_op2_vec_vec(&dst_cells[offset], &pri_cells[offset], sec_cells.begin(), subspace_size, my_op);
+            offset += subspace_size;
         } else if constexpr (overlap == Overlap::OUTER) {
-            size_t offset = 0;
             size_t factor = params.factor;
             for (SCT cell: sec_cells) {
-                apply_op2_vec_num(dst + offset, pri + offset, cell, factor, my_op);
+                apply_op2_vec_num(&dst_cells[offset], &pri_cells[offset], cell, factor, my_op);
                 offset += factor;
             }
         } else {
             static_assert(overlap == Overlap::INNER);
-            size_t offset = 0;
             size_t factor = params.factor;
             for (size_t i = 0; i < factor; ++i) {
-                apply_op2_vec_vec(dst + offset, pri + offset, sec_cells.begin(), sec_cells.size(), my_op);
+                apply_op2_vec_vec(&dst_cells[offset], &pri_cells[offset], sec_cells.begin(), sec_cells.size(), my_op);
                 offset += sec_cells.size();
             }
         }
     }
-    assert(pri == pri_cells.end());
-    assert(dst == dst_cells.end());
+    assert(offset == pri_cells.size());
     state.pop_pop_push(state.stash.create<ValueView>(params.result_type, index, TypedCells(dst_cells)));
 }
 
