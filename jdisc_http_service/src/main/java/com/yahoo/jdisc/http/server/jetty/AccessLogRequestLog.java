@@ -60,7 +60,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             long endTime = System.currentTimeMillis();
             builder.peerAddress(peerAddress)
                     .peerPort(peerPort)
-                    .localPort(getConnectorLocalPort(request))
+                    .localPort(getLocalPort(request))
                     .timestamp(Instant.ofEpochMilli(startTime))
                     .duration(Duration.ofMillis(Math.max(0, endTime - startTime)))
                     .contentSize(response.getHttpChannel().getBytesWritten())
@@ -136,6 +136,12 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             }
         }
         return request.getRemotePort();
+    }
+
+    private static int getLocalPort(Request request) {
+        int connectorLocalPort = getConnectorLocalPort(request);
+        if (connectorLocalPort <= 0) return request.getLocalPort(); // If connector is already closed
+        return connectorLocalPort;
     }
 
     private static OptionalInt parsePort(String port) {
