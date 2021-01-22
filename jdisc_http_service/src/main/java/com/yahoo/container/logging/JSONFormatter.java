@@ -58,7 +58,7 @@ public class JSONFormatter {
             generator.writeNumberField("responsesize", entry.contentSize().orElse(0));
             generator.writeNumberField("code", entry.statusCode().orElse(0));
             generator.writeStringField("method", entry.httpMethod().orElse(""));
-            generator.writeStringField("uri", getNormalizedURI(entry.rawPath().get(), entry.rawQuery().orElse(null)));
+            generator.writeStringField("uri", getNormalizedURI(entry.rawPath().orElse(null), entry.rawQuery().orElse(null)));
             generator.writeStringField("version", entry.httpVersion().orElse(""));
             generator.writeStringField("agent", entry.userAgent().orElse(""));
             generator.writeStringField("host", entry.hostString().orElse(""));
@@ -217,6 +217,7 @@ public class JSONFormatter {
     }
 
     private static String getNormalizedURI(String rawPath, String rawQuery) {
+        if (rawPath == null) return null;
         return rawQuery != null ? rawPath + "?" + rawQuery : rawPath;
     }
 
