@@ -22,7 +22,7 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
     if (_scanItr->valid()) {
         DocumentMetaData document = getNextDocument(stats, false);
         if (document.valid()) {
-            Bucket metaBucket(document::Bucket(document::BucketSpace::placeHolder(), document.bucketId));
+            Bucket metaBucket(document::Bucket(_bucketSpace, document.bucketId));
             IDestructorCallback::SP context = _moveOpsLimiter->beginOperation();
             auto failed = _bucketExecutor.execute(metaBucket, makeBucketTask([this, meta=document, opsTracker=std::move(context)] (const Bucket & bucket, std::shared_ptr<IDestructorCallback> onDone) {
                 assert(bucket.getBucketId() == meta.bucketId);
@@ -58,10 +58,12 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                              IDiskMemUsageNotifier &diskMemUsageNotifier,
                              const BlockableMaintenanceJobConfig &blockableConfig,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
-                             bool nodeRetired)
+                             bool nodeRetired,
+                             document::BucketSpace bucketSpace)
     : LidSpaceCompactionJobBase(config, handler, opStorer, diskMemUsageNotifier,
                                 blockableConfig, clusterStateChangedNotifier, nodeRetired),
-      _bucketExecutor(bucketExecutor)
+      _bucketExecutor(bucketExecutor),
+      _bucketSpace(bucketSpace)
 {
 }
 

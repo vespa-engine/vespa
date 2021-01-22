@@ -3,6 +3,7 @@
 #pragma once
 
 #include "lid_space_compaction_job_base.h"
+#include <vespa/document/bucket/bucketspace.h>
 
 namespace storage::spi { class BucketExecutor;}
 namespace proton {
@@ -25,6 +26,7 @@ private:
     using BucketExecutor = storage::spi::BucketExecutor;
     using IDestructorCallback = vespalib::IDestructorCallback;
     BucketExecutor               &_bucketExecutor;
+    document::BucketSpace         _bucketSpace;
 
     bool scanDocuments(const search::LidUsageStats &stats) override;
     void moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> onDone);
@@ -37,7 +39,8 @@ public:
                   IDiskMemUsageNotifier &diskMemUsageNotifier,
                   const BlockableMaintenanceJobConfig &blockableConfig,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
-                  bool nodeRetired);
+                  bool nodeRetired,
+                  document::BucketSpace bucketSpace);
     ~CompactionJob() override;
 };
 
