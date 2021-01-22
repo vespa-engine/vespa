@@ -4,6 +4,9 @@
 
 namespace proton {
 
+/*
+ * Interface class for listening to attribute usage changes.
+ */
 class IAttributeUsageListener
 {
 public:
