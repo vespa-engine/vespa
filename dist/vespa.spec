@@ -162,6 +162,7 @@ Requires: gdb
 Requires: nc
 Requires: net-tools
 Requires: unzip
+Requires: zstd # For inspection of compressed jdisc access log files
 %if 0%{?el7}
 Requires: llvm7.0
 Requires: vespa-icu >= 65.1.0-1
