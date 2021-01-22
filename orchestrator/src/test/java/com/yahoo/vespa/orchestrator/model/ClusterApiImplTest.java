@@ -12,6 +12,8 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
@@ -49,6 +51,7 @@ public class ClusterApiImplTest {
     private final ApplicationApi applicationApi = mock(ApplicationApi.class);
     private final ModelTestUtils modelUtils = new ModelTestUtils();
     private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(1600436659));
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     @Test
     public void testServicesDownAndNotInGroup() {
@@ -103,7 +106,7 @@ public class ClusterApiImplTest {
     public void testCfg1SuspensionFailsWithMissingCfg3() {
         ClusterApiImpl clusterApi = makeCfg1ClusterApi(ServiceStatus.UP, ServiceStatus.UP);
 
-        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy();
+        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
 
         try {
             policy.verifyGroupGoingDownIsFine(clusterApi);
@@ -111,8 +114,19 @@ public class ClusterApiImplTest {
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(),
                     containsString("Changing the state of cfg1 would violate enough-services-up: " +
-                            "Suspension for service type configserver would increase from 33% to 66%, " +
+                            "Suspension of service with type 'configserver' would increase from 33% to 66%, " +
                             "over the limit of 10%. Services down on resumed hosts: [1 missing config server]."));
+        }
+
+        flagSource.withBooleanFlag(Flags.GROUP_SUSPENSION.id(), true);
+
+        try {
+            policy.verifyGroupGoingDownIsFine(clusterApi);
+            fail();
+        } catch (HostStateChangeDeniedException e) {
+            assertThat(e.getMessage(),
+                    containsString("Suspension of service with type 'configserver' not allowed: 33% are suspended already. " +
+                            "Services down on resumed hosts: [1 missing config server]."));
         }
     }
 
@@ -120,7 +134,7 @@ public class ClusterApiImplTest {
     public void testCfg1SuspendsIfDownWithMissingCfg3() throws HostStateChangeDeniedException {
         ClusterApiImpl clusterApi = makeCfg1ClusterApi(ServiceStatus.DOWN, ServiceStatus.UP);
 
-        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy();
+        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
 
         policy.verifyGroupGoingDownIsFine(clusterApi);
     }
@@ -129,7 +143,7 @@ public class ClusterApiImplTest {
     public void testSingleConfigServerCanSuspend() {
         for (var status : EnumSet.of(ServiceStatus.UP, ServiceStatus.DOWN)) {
             var clusterApi = makeConfigClusterApi(1, status);
-            var policy = new HostedVespaClusterPolicy();
+            var policy = new HostedVespaClusterPolicy(flagSource);
             try {
                 policy.verifyGroupGoingDownIsFine(clusterApi);
             } catch (HostStateChangeDeniedException e) {
@@ -227,7 +241,7 @@ public class ClusterApiImplTest {
 
         ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
-                VespaModelUtil.STORAGENODE_SERVICE_TYPE,
+                ServiceType.STORAGE,
                 Arrays.asList(
                         modelUtils.createServiceInstance("storage-1", hostName1, ServiceStatus.UP),
                         modelUtils.createServiceInstance("storage-2", hostName2, ServiceStatus.DOWN)

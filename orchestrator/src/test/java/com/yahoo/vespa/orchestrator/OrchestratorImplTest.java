@@ -101,7 +101,7 @@ public class OrchestratorImplTest {
         app2 = OrchestratorUtil.toApplicationId(iterator.next().reference());
 
         clustercontroller = new ClusterControllerClientFactoryMock();
-        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clustercontroller, applicationApiFactory),
+        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clustercontroller, applicationApiFactory),
                                             clustercontroller,
                                             statusService,
                                             new DummyServiceMonitor(),
@@ -433,7 +433,7 @@ public class OrchestratorImplTest {
 
         ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance));
 
-        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory),
+        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clusterControllerClientFactory, applicationApiFactory),
                                             clusterControllerClientFactory,
                                             statusService,
                                             serviceMonitor,
