@@ -71,7 +71,7 @@ public class OrchestratorImpl implements Orchestrator {
                             ConfigserverConfig configServerConfig,
                             FlagSource flagSource)
     {
-        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(),
+        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource),
                                    clusterControllerClientFactory,
                                    new ApplicationApiFactory(configServerConfig.zookeeperserver().size(), Clock.systemUTC())),
                 clusterControllerClientFactory,
