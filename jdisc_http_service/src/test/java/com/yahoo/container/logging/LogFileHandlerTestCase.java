@@ -48,7 +48,7 @@ public class LogFileHandlerTestCase {
                 return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
             }
         };
-        LogFileHandler h = new LogFileHandler(Compression.NONE, pattern, rTimes, null, formatter);
+        LogFileHandler h = new LogFileHandler(Compression.NONE, pattern, rTimes, null);
         long now = System.currentTimeMillis();
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
@@ -69,7 +69,7 @@ public class LogFileHandlerTestCase {
         File logFile = temporaryFolder.newFile("testLogFileG1.txt");
 
       //create logfilehandler
-      LogFileHandler h = new LogFileHandler(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, new SimpleFormatter());
+      LogFileHandler h = new LogFileHandler(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null);
 
       //write log
       LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileFirst1");
@@ -83,7 +83,7 @@ public class LogFileHandlerTestCase {
       File logFile = temporaryFolder.newFile("testLogFileG2.txt");
 
       //create logfilehandler
-       LogFileHandler h = new LogFileHandler(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, new SimpleFormatter());
+       LogFileHandler h = new LogFileHandler(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null);
 
       //write log
       LogRecord lr = new LogRecord(Level.INFO, "testDeleteFileDuringLogging1");
@@ -111,9 +111,10 @@ public class LogFileHandlerTestCase {
             }
         };
         LogFileHandler handler = new LogFileHandler(
-                Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", formatter);
+                Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink");
 
-        handler.publish(new LogRecord(Level.INFO, "test"));
+        String message = formatter.format(new LogRecord(Level.INFO, "test"));
+        handler.publish(new LogRecord(Level.INFO, message));
         String firstFile;
         do {
              Thread.sleep(1);
@@ -126,7 +127,8 @@ public class LogFileHandlerTestCase {
             secondFileName = handler.getFileName();
         } while (firstFile.equals(secondFileName));
 
-        handler.publish(new LogRecord(Level.INFO, "string which is way longer than the word test"));
+        String longMessage = formatter.format(new LogRecord(Level.INFO, "string which is way longer than the word test"));
+        handler.publish(new LogRecord(Level.INFO, longMessage));
         handler.waitDrained();
         assertThat(Files.size(Paths.get(firstFile))).isEqualTo(31);
         final long expectedSecondFileLength = 72;
@@ -174,10 +176,10 @@ public class LogFileHandlerTestCase {
             }
         };
         LogFileHandler h = new LogFileHandler(
-                compression, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, formatter);
+                compression, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null);
         int logEntries = 10000;
         for (int i = 0; i < logEntries; i++) {
-            LogRecord lr = new LogRecord(Level.INFO, "test");
+            LogRecord lr = new LogRecord(Level.INFO, "test\n");
             h.publish(lr);
         }
         h.waitDrained();

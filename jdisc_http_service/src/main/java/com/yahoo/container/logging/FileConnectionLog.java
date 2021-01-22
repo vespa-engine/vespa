@@ -24,7 +24,7 @@ public class FileConnectionLog extends AbstractComponent implements ConnectionLo
     @Override
     public void log(ConnectionLogEntry connectionLogEntry) {
         try {
-            logHandler.connection.log(Level.INFO, connectionLogEntry.toJson()+ '\n');
+            logHandler.log(connectionLogEntry.toJson()+ '\n');
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to write connection log entry for connection id " + connectionLogEntry.id(), e);
         }
