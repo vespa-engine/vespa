@@ -8,11 +8,13 @@ import com.yahoo.log.LogFileDb;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.yolean.Exceptions;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,7 +51,8 @@ class LogFileHandler <LOGTYPE>  {
     private final NativeIO nativeIO = new NativeIO();
     private final LogThread<LOGTYPE> logThread;
 
-    private volatile FileOutputStream currentOutputStream = null;
+    private volatile OutputStream currentOutputStream = null;
+    private volatile FileOutputStream currentFileOutputStream = null;
     private volatile long nextRotationTime = 0;
     private volatile String fileName;
     private volatile long lastDropPosition = 0;
@@ -134,15 +137,18 @@ class LogFileHandler <LOGTYPE>  {
 
     public synchronized void flush() {
         try {
-            FileOutputStream currentOut = this.currentOutputStream;
-            if (currentOut != null) {
-                if (compression == Compression.GZIP) {
-                    long newPos = currentOut.getChannel().position();
+            if (compression == Compression.GZIP) {
+                FileOutputStream currentFileOut = this.currentFileOutputStream;
+                if (currentFileOut != null) {
+                    long newPos = currentFileOut.getChannel().position();
                     if (newPos > lastDropPosition + 102400) {
-                        nativeIO.dropPartialFileFromCache(currentOut.getFD(), lastDropPosition, newPos, true);
+                        nativeIO.dropPartialFileFromCache(currentFileOut.getFD(), lastDropPosition, newPos, true);
                         lastDropPosition = newPos;
                     }
-                } else {
+                }
+            } else {
+                OutputStream currentOut = this.currentOutputStream;
+                if (currentOut != null) {
                     currentOut.flush();
                 }
             }
@@ -154,7 +160,7 @@ class LogFileHandler <LOGTYPE>  {
     public void close() {
         try {
             flush();
-            FileOutputStream currentOut = this.currentOutputStream;
+            OutputStream currentOut = this.currentOutputStream;
             if (currentOut != null) currentOut.close();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Got error while closing log file", e);
@@ -173,9 +179,8 @@ class LogFileHandler <LOGTYPE>  {
             internalRotateNow();
         }
         try {
-            FileOutputStream out = this.currentOutputStream;
-            logWriter.write(r, out);
-            out.write('\n');
+            logWriter.write(r, currentOutputStream);
+            currentOutputStream.write('\n');
         } catch (IOException e) {
             logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
         }
@@ -247,8 +252,10 @@ class LogFileHandler <LOGTYPE>  {
 
         try {
             checkAndCreateDir(fileName);
-            FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
+            FileOutputStream fileOut = new FileOutputStream(fileName, true); // append mode, for safety
+            OutputStream os = new BufferedOutputStream(fileOut, 1024*1024);
             currentOutputStream = os;
+            currentFileOutputStream = fileOut;
             lastDropPosition = 0;
             LogFileDb.nowLoggingTo(fileName);
         }
