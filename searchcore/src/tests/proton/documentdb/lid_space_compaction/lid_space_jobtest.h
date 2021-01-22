@@ -73,7 +73,7 @@ public:
     void job_is_re_enabled_when_remove_ops_are_no_longer_ongoing(bool remove_batch);
 };
 
-class MyCountJobRunner;
+struct MyCountJobRunner;
 
 struct MaxOutstandingJobTest : public JobTest {
     std::unique_ptr<MyCountJobRunner> runner;

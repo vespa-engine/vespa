@@ -11,9 +11,9 @@
 namespace proton {
     class IDiskMemUsageNotifier;
     class IClusterStateChangedNotifier;
-    class IOperationStorer;
-    class ILidSpaceCompactionHandler;
-    class IDocumentScanIterator;
+    struct IOperationStorer;
+    struct ILidSpaceCompactionHandler;
+    struct IDocumentScanIterator;
     class RemoveOperationsRateTracker;
 }
 

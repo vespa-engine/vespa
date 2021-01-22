@@ -6,14 +6,14 @@
 #include <vector>
 
 namespace vespalib { class IDestructorCallback; }
-namespace search { class DocumentMetaData; }
+namespace search { struct DocumentMetaData; }
 namespace proton::documentmetastore { class OperationListener; }
 
 namespace proton {
 
 class MoveOperation;
 class CompactLidSpaceOperation;
-class IDocumentScanIterator;
+struct IDocumentScanIterator;
 
 /**
  * Interface for handling of lid space compaction, used by a LidSpaceCompactionJob.
