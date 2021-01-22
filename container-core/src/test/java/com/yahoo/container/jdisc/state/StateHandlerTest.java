@@ -3,14 +3,13 @@ package com.yahoo.container.jdisc.state;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Vtag;
-import com.yahoo.jdisc.Metric;
+import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.vespa.defaults.Defaults;
+import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,98 +20,82 @@ import static org.junit.Assert.assertTrue;
  */
 public class StateHandlerTest extends StateHandlerTestBase {
 
+    private static final String V1_URI = URI_BASE + "/state/v1/";
+    private static StateHandler stateHandler;
+
+    @Before
+    public void setupHandler() {
+        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry , metricsPresentationConfig);
+        testDriver = new RequestHandlerTestDriver(stateHandler);
+    }
+
     @Test
-    public void testReportPriorToFirstSnapshot() throws Exception {
-        metric.add("foo", 1, null);
-        metric.set("bar", 4, null);
-        JsonNode json = requestAsJson("http://localhost/state/v1/all");
+    public void testStatusReportPriorToFirstSnapshot() throws Exception {
+        JsonNode json = requestAsJson(V1_URI + "/all");
         assertEquals(json.toString(), "up", json.get("status").get("code").asText());
         assertFalse(json.toString(), json.get("metrics").has("values"));
     }
 
     @Test
     public void testReportIncludesMetricsAfterSnapshot() throws Exception {
-        metric.add("foo", 1, null);
-        metric.set("bar", 4, null);
-        advanceToNextSnapshot();
-        JsonNode json1 = requestAsJson("http://localhost/state/v1/metrics");
+        var snapshot = new MetricSnapshot();
+        snapshot.add(null, "foo", 1);
+        snapshot.set(null, "bar", 4);
+        snapshotProvider.setSnapshot(snapshot);
+
+        JsonNode json1 = requestAsJson(V1_URI + "metrics");
         assertEquals(json1.toString(), "up", json1.get("status").get("code").asText());
         assertEquals(json1.toString(), 2, json1.get("metrics").get("values").size());
-
-        metric.add("fuz", 1, metric.createContext(new HashMap<>(0)));
-        advanceToNextSnapshot();
-        JsonNode json2 = requestAsJson("http://localhost/state/v1/metrics");
-        assertEquals(json2.toString(), "up", json2.get("status").get("code").asText());
-        assertEquals(json2.toString(), 3, json2.get("metrics").get("values").size());
-    }
-
-    /**
-     * Tests that we restart an metric when it changes type from gauge to counter or back.
-     * This may happen in practice on config reloads.
-     */
-    @Test
-    public void testMetricTypeChangeIsAllowed() {
-        String metricName = "myMetric";
-        Metric.Context metricContext = null;
-
-        {
-            // Add a count metric
-            metric.add(metricName, 1, metricContext);
-            metric.add(metricName, 2, metricContext);
-            // Change it to a gauge metric
-            metric.set(metricName, 9, metricContext);
-            advanceToNextSnapshot();
-            MetricValue resultingMetric = monitor.snapshot().iterator().next().getValue().get(metricName);
-            assertEquals(GaugeMetric.class, resultingMetric.getClass());
-            assertEquals("Value was reset and produces the last gauge value",
-                         9.0, ((GaugeMetric) resultingMetric).getLast(), 0.000001);
-        }
-
-        {
-            // Add a gauge metric
-            metric.set(metricName, 9, metricContext);
-            // Change it to a count metric
-            metric.add(metricName, 1, metricContext);
-            metric.add(metricName, 2, metricContext);
-            advanceToNextSnapshot();
-            MetricValue resultingMetric = monitor.snapshot().iterator().next().getValue().get(metricName);
-            assertEquals(CountMetric.class, resultingMetric.getClass());
-            assertEquals("Value was reset, and changed to add semantics giving 1+2",
-                         3, ((CountMetric) resultingMetric).getCount());
-        }
     }
 
     @Test
-    public void testAverageAggregationOfValues() throws Exception {
-        metric.set("bar", 4, null);
-        metric.set("bar", 5, null);
-        metric.set("bar", 7, null);
-        metric.set("bar", 2, null);
-        advanceToNextSnapshot();
-        JsonNode json = requestAsJson("http://localhost/state/v1/all");
+    public void testCountMetricCount() throws Exception {
+        var snapshot = new MetricSnapshot();
+        snapshot.add(null, "foo", 4);
+        snapshot.add(null, "foo", 2);
+        snapshotProvider.setSnapshot(snapshot);
+
+        JsonNode json = requestAsJson(V1_URI + "all");
         assertEquals(json.toString(), "up", json.get("status").get("code").asText());
         assertEquals(json.toString(), 1, json.get("metrics").get("values").size());
-        assertEquals(json.toString(), 4.5,
-                     json.get("metrics").get("values").get(0).get("values").get("average").asDouble(), 0.001);
-    }
-
-    @Test
-    public void testSumAggregationOfCounts() throws Exception {
-        metric.add("foo", 1, null);
-        metric.add("foo", 1, null);
-        metric.add("foo", 2, null);
-        metric.add("foo", 1, null);
-        advanceToNextSnapshot();
-        JsonNode json = requestAsJson("http://localhost/state/v1/all");
-        assertEquals(json.toString(), "up", json.get("status").get("code").asText());
-        assertEquals(json.toString(), 1, json.get("metrics").get("values").size());
-        assertEquals(json.toString(), 5,
+        assertEquals(json.toString(), 6,
                      json.get("metrics").get("values").get(0).get("values").get("count").asDouble(), 0.001);
     }
 
     @Test
-    public void testReadabilityOfJsonReport() throws Exception {
-        metric.add("foo", 1, null);
+    public void gaugeSnapshotsTracksCountMinMaxAvgPerPeriod() throws Exception {
+        var snapshot = new MetricSnapshot();
+        snapshot.set(null, "bar", 20);
+        snapshot.set(null, "bar", 40);
+        snapshotProvider.setSnapshot(snapshot);
+
+        JsonNode json = requestAsJson(V1_URI + "all");
+        JsonNode metricValues = getFirstMetricValueNode(json);
+        assertEquals(json.toString(), 40, metricValues.get("last").asDouble(), 0.001);
+        // Last snapshot had explicit values set
+        assertEquals(json.toString(), 30, metricValues.get("average").asDouble(), 0.001);
+        assertEquals(json.toString(), 20, metricValues.get("min").asDouble(), 0.001);
+        assertEquals(json.toString(), 40, metricValues.get("max").asDouble(), 0.001);
+        assertEquals(json.toString(), 2, metricValues.get("count").asInt());
+    }
+
+    private JsonNode getFirstMetricValueNode(JsonNode root) {
+        assertEquals(root.toString(), 1, root.get("metrics").get("values").size());
+        JsonNode metricValues = root.get("metrics").get("values").get(0).get("values");
+        assertTrue(root.toString(), metricValues.has("last"));
+        return metricValues;
+    }
+
+    @Test
+    public void testReadabilityOfJsonReport() {
+        var snapshot = new MetricSnapshot(0L, SNAPSHOT_INTERVAL, TimeUnit.MILLISECONDS);
+        snapshot.add(null, "foo", 1);
+        var ctx = StateMetricContext.newInstance(Map.of("component", "test"));
+        snapshot.set(ctx, "bar", 2);
+        snapshot.set(ctx, "bar", 3);
+        snapshot.set(ctx, "bar", 4);
+        snapshot.set(ctx, "bar", 5);
+        snapshotProvider.setSnapshot(snapshot);
         advanceToNextSnapshot();
         assertEquals("{\n" +
                      "    \"metrics\": {\n" +
@@ -120,37 +103,12 @@ public class StateHandlerTest extends StateHandlerTestBase {
                      "            \"from\": 0,\n" +
                      "            \"to\": 300\n" +
                      "        },\n" +
-                     "        \"values\": [{\n" +
-                     "            \"name\": \"foo\",\n" +
-                     "            \"values\": {\n" +
-                     "                \"count\": 1,\n" +
-                     "                \"rate\": 0.0033333333333333335\n" +
-                     "            }\n" +
-                     "        }]\n" +
-                     "    },\n" +
-                     "    \"status\": {\"code\": \"up\"},\n" +
-                     "    \"time\": 300000\n" +
-                     "}",
-                     requestAsString("http://localhost/state/v1/all"));
-
-        Metric.Context ctx = metric.createContext(Collections.singletonMap("component", "test"));
-        metric.set("bar", 2, ctx);
-        metric.set("bar", 3, ctx);
-        metric.set("bar", 4, ctx);
-        metric.set("bar", 5, ctx);
-        advanceToNextSnapshot();
-        assertEquals("{\n" +
-                     "    \"metrics\": {\n" +
-                     "        \"snapshot\": {\n" +
-                     "            \"from\": 300,\n" +
-                     "            \"to\": 600\n" +
-                     "        },\n" +
                      "        \"values\": [\n" +
                      "            {\n" +
                      "                \"name\": \"foo\",\n" +
                      "                \"values\": {\n" +
-                     "                    \"count\": 0,\n" +
-                     "                    \"rate\": 0\n" +
+                     "                    \"count\": 1,\n" +
+                     "                    \"rate\": 0.0033333333333333335\n" +
                      "                }\n" +
                      "            },\n" +
                      "            {\n" +
@@ -169,131 +127,24 @@ public class StateHandlerTest extends StateHandlerTestBase {
                      "        ]\n" +
                      "    },\n" +
                      "    \"status\": {\"code\": \"up\"},\n" +
-                     "    \"time\": 600000\n" +
+                     "    \"time\": 300000\n" +
                      "}",
-                     requestAsString("http://localhost/state/v1/all"));
-    }
-
-    @Test
-    public void testNotAggregatingCountsBeyondSnapshots() throws Exception {
-        metric.add("foo", 1, null);
-        metric.add("foo", 1, null);
-        advanceToNextSnapshot();
-        metric.add("foo", 2, null);
-        metric.add("foo", 1, null);
-        advanceToNextSnapshot();
-        JsonNode json = requestAsJson("http://localhost/state/v1/all");
-        assertEquals(json.toString(), "up", json.get("status").get("code").asText());
-        assertEquals(json.toString(), 1, json.get("metrics").get("values").size());
-        assertEquals(json.toString(), 3,
-                     json.get("metrics").get("values").get(0).get("values").get("count").asDouble(), 0.001);
-    }
-
-    @Test
-    public void testSnapshottingTimes() throws Exception {
-        metric.add("foo", 1, null);
-        metric.set("bar", 3, null);
-        // At this time we should not have done any snapshotting
-        {
-            JsonNode json = requestAsJson("http://localhost/state/v1/all");
-            assertFalse(json.toString(), json.get("metrics").has("snapshot"));
-        }
-        // At this time first snapshot should have been generated
-        advanceToNextSnapshot();
-        {
-            JsonNode json = requestAsJson("http://localhost/state/v1/all");
-            assertTrue(json.toString(), json.get("metrics").has("snapshot"));
-            assertEquals(0.0, json.get("metrics").get("snapshot").get("from").asDouble(), 0.00001);
-            assertEquals(300.0, json.get("metrics").get("snapshot").get("to").asDouble(), 0.00001);
-        }
-        // No new snapshot
-        {
-            JsonNode json = requestAsJson("http://localhost/state/v1/all");
-            assertTrue(json.toString(), json.get("metrics").has("snapshot"));
-            assertEquals(0.0, json.get("metrics").get("snapshot").get("from").asDouble(), 0.00001);
-            assertEquals(300.0, json.get("metrics").get("snapshot").get("to").asDouble(), 0.00001);
-        }
-        // A new snapshot
-        advanceToNextSnapshot();
-        {
-            JsonNode json = requestAsJson("http://localhost/state/v1/all");
-            assertTrue(json.toString(), json.get("metrics").has("snapshot"));
-            assertEquals(300.0, json.get("metrics").get("snapshot").get("from").asDouble(), 0.00001);
-            assertEquals(600.0, json.get("metrics").get("snapshot").get("to").asDouble(), 0.00001);
-        }
-    }
-
-    @Test
-    public void testFreshStartOfValuesBeyondSnapshot() throws Exception {
-        metric.set("bar", 4, null);
-        metric.set("bar", 5, null);
-        advanceToNextSnapshot();
-        metric.set("bar", 4, null);
-        metric.set("bar", 2, null);
-        advanceToNextSnapshot();
-        JsonNode json = requestAsJson("http://localhost/state/v1/all");
-        assertEquals(json.toString(), "up", json.get("status").get("code").asText());
-        assertEquals(json.toString(), 1, json.get("metrics").get("values").size());
-        assertEquals(json.toString(), 3,
-                     json.get("metrics").get("values").get(0).get("values").get("average").asDouble(), 0.001);
-    }
-
-    @Test
-    public void snapshotsPreserveLastGaugeValue() throws Exception {
-        metric.set("bar", 4, null);
-        advanceToNextSnapshot();
-        advanceToNextSnapshot();
-        JsonNode json = requestAsJson("http://localhost/state/v1/all");
-        JsonNode metricValues = getFirstMetricValueNode(json);
-        assertEquals(json.toString(), 4, metricValues.get("last").asDouble(), 0.001);
-        // Use 'last' as avg/min/max when none has been set explicitly during snapshot period
-        assertEquals(json.toString(), 4, metricValues.get("average").asDouble(), 0.001);
-        assertEquals(json.toString(), 4, metricValues.get("min").asDouble(), 0.001);
-        assertEquals(json.toString(), 4, metricValues.get("max").asDouble(), 0.001);
-        // Count is tracked per period.
-        assertEquals(json.toString(), 0, metricValues.get("count").asInt());
-    }
-
-    private JsonNode getFirstMetricValueNode(JsonNode root) {
-        assertEquals(root.toString(), 1, root.get("metrics").get("values").size());
-        JsonNode metricValues = root.get("metrics").get("values").get(0).get("values");
-        assertTrue(root.toString(), metricValues.has("last"));
-        return metricValues;
-    }
-
-    @Test
-    public void gaugeSnapshotsTracksCountMinMaxAvgPerPeriod() throws Exception {
-        metric.set("bar", 10000, null); // Ensure any cross-snapshot noise is visible
-        advanceToNextSnapshot();
-        metric.set("bar", 20, null);
-        metric.set("bar", 40, null);
-        advanceToNextSnapshot();
-        JsonNode json = requestAsJson("http://localhost/state/v1/all");
-        JsonNode metricValues = getFirstMetricValueNode(json);
-        assertEquals(json.toString(), 40, metricValues.get("last").asDouble(), 0.001);
-        // Last snapshot had explicit values set
-        assertEquals(json.toString(), 30, metricValues.get("average").asDouble(), 0.001);
-        assertEquals(json.toString(), 20, metricValues.get("min").asDouble(), 0.001);
-        assertEquals(json.toString(), 40, metricValues.get("max").asDouble(), 0.001);
-        assertEquals(json.toString(), 2, metricValues.get("count").asInt());
+                     requestAsString(V1_URI + "all"));
     }
 
     @Test
     public void testHealthAggregation() throws Exception {
-        Map<String, String> dimensions1 = new TreeMap<>();
-        dimensions1.put("port", String.valueOf(Defaults.getDefaults().vespaWebServicePort()));
-        Metric.Context context1 = metric.createContext(dimensions1);
-        Map<String, String> dimensions2 = new TreeMap<>();
-        dimensions2.put("port", "80");
-        Metric.Context context2 = metric.createContext(dimensions2);
+        var context1 = StateMetricContext.newInstance(Map.of("port", Defaults.getDefaults().vespaWebServicePort()));
+        var context2 = StateMetricContext.newInstance(Map.of("port", 80));
+        var snapshot = new MetricSnapshot();
+        snapshot.add(context1, "serverNumSuccessfulResponses", 4);
+        snapshot.add(context2, "serverNumSuccessfulResponses", 2);
+        snapshot.set(context1, "serverTotalSuccessfulResponseLatency", 20);
+        snapshot.set(context2, "serverTotalSuccessfulResponseLatency", 40);
+        snapshot.add(context1, "random", 3);
+        snapshotProvider.setSnapshot(snapshot);
 
-        metric.add("serverNumSuccessfulResponses", 4, context1);
-        metric.add("serverNumSuccessfulResponses", 2, context2);
-        metric.set("serverTotalSuccessfulResponseLatency", 20, context1);
-        metric.set("serverTotalSuccessfulResponseLatency", 40, context2);
-        metric.add("random", 3, context1);
-        advanceToNextSnapshot();
-        JsonNode json = requestAsJson("http://localhost/state/v1/health");
+        JsonNode json = requestAsJson(V1_URI + "health");
         assertEquals(json.toString(), "up", json.get("status").get("code").asText());
         assertEquals(json.toString(), 2, json.get("metrics").get("values").size());
         assertEquals(json.toString(), "requestsPerSecond",
@@ -308,7 +159,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
     @Test
     public void testStateConfig() throws Exception {
-        JsonNode root = requestAsJson("http://localhost/state/v1/config");
+        JsonNode root = requestAsJson(V1_URI + "config");
 
         JsonNode config = root.get("config");
         JsonNode container = config.get("container");
@@ -317,7 +168,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
     @Test
     public void testStateVersion() throws Exception {
-        JsonNode root = requestAsJson("http://localhost/state/v1/version");
+        JsonNode root = requestAsJson(V1_URI + "version");
 
         JsonNode version = root.get("version");
         assertEquals(Vtag.currentVersion.toString(), version.asText());
