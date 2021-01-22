@@ -9,8 +9,6 @@ import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Objects;
@@ -53,8 +51,8 @@ public class JSONFormatter {
             String peerAddress = entry.peerAddress().get();
             generator.writeStringField("ip", peerAddress);
             long time = entry.timestamp().get().toEpochMilli();
-            generator.writeNumberField("time", toTimestampInSeconds(time));
-            generator.writeNumberField("duration", durationAsSeconds(entry.duration().get().toMillis()));
+            writeSeconds(generator, "time", time);
+            writeSeconds(generator, "duration", entry.duration().get().toMillis());
             generator.writeNumberField("responsesize", entry.contentSize().orElse(0));
             generator.writeNumberField("code", entry.statusCode().orElse(0));
             generator.writeStringField("method", entry.httpMethod().orElse(""));
@@ -188,37 +186,27 @@ public class JSONFormatter {
         return counts.getRetrievedHitCount();
     }
 
-    private BigDecimal toTimestampInSeconds(long numMillisSince1Jan1970AtMidnightUTC) {
-        BigDecimal timestampInSeconds =
-            new BigDecimal(numMillisSince1Jan1970AtMidnightUTC).divide(BigDecimal.valueOf(1000));
-
-        if (numMillisSince1Jan1970AtMidnightUTC/1000 > 0x7fffffff) {
-            logger.log(Level.WARNING, "A year 2038 problem occurred.");
-            logger.log(Level.INFO, "numMillisSince1Jan1970AtMidnightUTC: "
-                       + numMillisSince1Jan1970AtMidnightUTC);
-            timestampInSeconds =
-                new BigDecimal(numMillisSince1Jan1970AtMidnightUTC)
-                    .divide(BigDecimal.valueOf(1000))
-                    .remainder(BigDecimal.valueOf(0x7fffffff));
-        }
-        return timestampInSeconds.setScale(3, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal durationAsSeconds(long timeInMillis) {
-        BigDecimal duration =
-            new BigDecimal(timeInMillis).divide(BigDecimal.valueOf(1000));
-
-        if (timeInMillis > 0xffffffffL) {
-            logger.log(Level.WARNING, "Duration too long: " + timeInMillis);
-            duration = new BigDecimal(0xffffffff);
-        }
-
-        return duration.setScale(3, RoundingMode.HALF_UP);
-    }
-
     private static String getNormalizedURI(String rawPath, String rawQuery) {
         if (rawPath == null) return null;
         return rawQuery != null ? rawPath + "?" + rawQuery : rawPath;
+    }
+
+    private static void writeSeconds(JsonGenerator generator, String fieldName, long milliseconds) throws IOException {
+        generator.writeFieldName(fieldName);
+        generator.writeRawValue(toSecondsString(milliseconds));
+    }
+
+    /** @return a string with number of seconds with 3 decimals */
+    private static String toSecondsString(long milliseconds) {
+        StringBuilder builder = new StringBuilder().append(milliseconds / 1000L).append('.');
+        long decimals = milliseconds % 1000;
+        if (decimals < 100) {
+            builder.append('0');
+            if (decimals < 10) {
+                builder.append('0');
+            }
+        }
+        return builder.append(decimals).toString();
     }
 
 }
