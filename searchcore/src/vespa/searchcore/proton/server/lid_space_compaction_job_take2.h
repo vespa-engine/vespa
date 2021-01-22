@@ -5,7 +5,7 @@
 #include "lid_space_compaction_job_base.h"
 #include <vespa/document/bucket/bucketspace.h>
 
-namespace storage::spi { class BucketExecutor;}
+namespace storage::spi { struct BucketExecutor;}
 namespace proton {
     class IDiskMemUsageNotifier;
     class IClusterStateChangedNotifier;
