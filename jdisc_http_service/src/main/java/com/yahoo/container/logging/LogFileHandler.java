@@ -13,11 +13,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,7 +22,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -41,7 +35,7 @@ import java.util.zip.GZIPOutputStream;
  * @author Bob Travis
  * @author bjorncs
  */
-class LogFileHandler {
+class LogFileHandler extends StreamHandler {
 
     enum Compression { NONE, GZIP, ZSTD }
 
@@ -61,8 +55,6 @@ class LogFileHandler {
     private volatile long nextRotationTime = 0;
     private volatile String fileName;
     private volatile long lastDropPosition = 0;
-
-    private volatile Writer writer;
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
@@ -110,15 +102,18 @@ class LogFileHandler {
         }
     }
 
-    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName) {
-        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName);
+    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, Formatter formatter) {
+        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, formatter);
     }
 
     LogFileHandler(
             Compression compression,
             String filePattern,
             long[] rotationTimes,
-            String symlinkName) {
+            String symlinkName,
+            Formatter formatter) {
+        super();
+        super.setFormatter(formatter);
         this.compression = compression;
         this.filePattern = filePattern;
         this.rotationTimes = rotationTimes;
@@ -132,6 +127,7 @@ class LogFileHandler {
      *
      * @param r logrecord to publish
      */
+    @Override
     public void publish(LogRecord r) {
         try {
             logQueue.put(r);
@@ -139,14 +135,9 @@ class LogFileHandler {
         }
     }
 
+    @Override
     public synchronized void flush() {
-        if(writer != null) {
-            try {
-                writer.flush();
-            } catch (IOException e) {
-                logger.warning("Failed flushing file writer: " + Exceptions.toMessageString(e));
-            }
-        }
+        super.flush();
         try {
             if (currentOutputStream != null && compression == Compression.GZIP) {
                 long newPos = currentOutputStream.getChannel().position();
@@ -160,29 +151,6 @@ class LogFileHandler {
         }
     }
 
-    private synchronized void setOutputStream(OutputStream out) {
-        if (out == null) {
-            throw new NullPointerException();
-        }
-        flushAndClose();
-        writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
-    }
-    private synchronized void flushAndClose() throws SecurityException {
-        if (writer != null) {
-            try {
-                writer.flush();
-                writer.close();
-            } catch (Exception ex) {
-                logger.log(Level.SEVERE, "Failed to close writer", ex);
-            }
-            writer = null;
-        }
-    }
-
-    public void close() {
-        flushAndClose();
-    }
-
     private void internalPublish(LogRecord r) {
         // first check to see if new file needed.
         // if so, use this.internalRotateNow() to do it
@@ -194,11 +162,7 @@ class LogFileHandler {
         if (now > nextRotationTime || currentOutputStream == null) {
             internalRotateNow();
         }
-        try {
-            writer.write(r.getMessage());
-        } catch (IOException e) {
-            logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
-        }
+        super.publish(r);
     }
 
     /**
@@ -264,12 +228,12 @@ class LogFileHandler {
         long now = System.currentTimeMillis();
         fileName = LogFormatter.insertDate(filePattern, now);
         flush();
-        flushAndClose();
+        super.close();
 
         try {
             checkAndCreateDir(fileName);
             FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
-            setOutputStream(os);
+            super.setOutputStream(os);
             currentOutputStream = os;
             lastDropPosition = 0;
             LogFileDb.nowLoggingTo(fileName);

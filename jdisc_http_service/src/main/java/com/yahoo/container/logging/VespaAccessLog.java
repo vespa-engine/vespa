@@ -69,7 +69,7 @@ public final class VespaAccessLog implements RequestLogHandler {
                 .append(" 0.0 ")
                 .append((hitcounts == null) ? 0 : hitcounts.getSummaryCount())
                 .append('\n');
-        logHandler.log(sb.toString());
+        logHandler.access.log(Level.INFO, sb.toString());
     }
 
     private void decimalsOfSecondsFromMilliseconds(long ms, StringBuilder sb) {
