@@ -33,7 +33,7 @@ private:
     ILidSpaceCompactionHandler   &_handler;
     IOperationStorer             &_opStorer;
     IFrozenBucketHandler         &_frozenHandler;
-    IDocumentScanIterator::UP     _scanItr;
+    std::unique_ptr<IDocumentScanIterator> _scanItr;
     bool                          _retryFrozenDocument;
     bool                          _shouldCompactLidSpace;
     IDiskMemUsageNotifier        &_diskMemUsageNotifier;

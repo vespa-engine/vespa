@@ -4,8 +4,7 @@
 
 #include <vespa/document/bucket/bucketid.h>
 
-namespace proton
-{
+namespace proton {
 
 class IBucketFreezeListener;
 
@@ -22,12 +21,10 @@ public:
         document::BucketId _bucketId;
     };
 
-    virtual ~IFrozenBucketHandler() { }
+    virtual ~IFrozenBucketHandler() = default;
     virtual ExclusiveBucketGuard::UP acquireExclusiveBucket(document::BucketId bucket) = 0;
     virtual void addListener(IBucketFreezeListener *listener) = 0;
     virtual void removeListener(IBucketFreezeListener *listener) = 0;
 };
 
-
-} // namespace proton
-
+}

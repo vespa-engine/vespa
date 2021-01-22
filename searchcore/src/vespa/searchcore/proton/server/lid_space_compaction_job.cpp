@@ -4,6 +4,10 @@
 #include "iclusterstatechangednotifier.h"
 #include "imaintenancejobrunner.h"
 #include "lid_space_compaction_job.h"
+#include "i_document_scan_iterator.h"
+#include "ifrozenbuckethandler.h"
+#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>

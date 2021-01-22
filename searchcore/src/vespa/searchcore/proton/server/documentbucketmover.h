@@ -6,7 +6,6 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/query/base.h>
 #include <persistence/spi/types.h>
-#include "ifrozenbuckethandler.h"
 
 namespace proton {
 
