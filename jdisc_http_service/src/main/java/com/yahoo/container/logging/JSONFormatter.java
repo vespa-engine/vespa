@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.yolean.trace.TraceNode;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Principal;
@@ -41,7 +40,7 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
 
     @Override
     public void write(RequestLogEntry entry, OutputStream outputStream) throws IOException {
-        try (JsonGenerator generator = generatorFactory.createGenerator(outputStream, JsonEncoding.UTF8)){
+        try (JsonGenerator generator = createJsonGenerator(outputStream)){
             generator.writeStartObject();
             String peerAddress = entry.peerAddress().get();
             generator.writeStringField("ip", peerAddress);
@@ -152,6 +151,11 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
         }
     }
 
+    private JsonGenerator createJsonGenerator(OutputStream outputStream) throws IOException {
+        return generatorFactory.createGenerator(outputStream, JsonEncoding.UTF8)
+                .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
+                .configure(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM, false);
+    }
 
     private boolean remoteAddressDiffers(String ipV4Address, String remoteAddress) {
         return remoteAddress != null && !Objects.equals(ipV4Address, remoteAddress);
