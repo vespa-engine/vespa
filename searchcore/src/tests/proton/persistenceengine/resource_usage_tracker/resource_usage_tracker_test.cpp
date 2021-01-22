@@ -33,8 +33,6 @@ struct MyResourceUsageListener : public storage::spi::ResourceUsageListener
         storage::spi::ResourceUsageListener::update_resource_usage(resource_usage);
         ++_update_count;
     }
-    std::vector<double> get_usage_vector() const { return { get_usage().get_disk_usage(), get_usage().get_memory_usage() }; }
-    
     size_t get_update_count() const { return _update_count; }
 };
 
@@ -63,17 +61,18 @@ public:
         _notifier.notify(DiskMemUsageState({ 0.8, disk_usage }, { 0.8, memory_usage }));
     }
 
+    ResourceUsage get_usage() { return _listener->get_usage(); }
 };
 
 ResourceUsageTrackerTest::~ResourceUsageTrackerTest() = default;
 
 TEST_F(ResourceUsageTrackerTest, resource_usage_is_forwarded_to_listener)
 {
-    EXPECT_EQ((std::vector<double>{ 0.0, 0.0 }), _listener->get_usage_vector());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0), get_usage());
     auto register_guard = _tracker->set_listener(*_listener);
-    EXPECT_EQ((std::vector<double>{ 0.5, 0.4 }), _listener->get_usage_vector());
+    EXPECT_EQ(ResourceUsage(0.5, 0.4), get_usage());
     notify(0.75, 0.25);
-    EXPECT_EQ((std::vector<double>{ 0.75, 0.25 }), _listener->get_usage_vector());
+    EXPECT_EQ(ResourceUsage(0.75, 0.25), get_usage());
 }
 
 TEST_F(ResourceUsageTrackerTest, forwarding_depends_on_register_guard)
@@ -81,14 +80,14 @@ TEST_F(ResourceUsageTrackerTest, forwarding_depends_on_register_guard)
     auto register_guard = _tracker->set_listener(*_listener);
     register_guard.reset();
     notify(0.75, 0.25);
-    EXPECT_EQ((std::vector<double>{ 0.5, 0.4 }), _listener->get_usage_vector());
+    EXPECT_EQ(ResourceUsage(0.5, 0.4), get_usage());
 }
 
 TEST_F(ResourceUsageTrackerTest, no_forwarding_to_deleted_listener)
 {
     _listener->set_register_guard(_tracker->set_listener(*_listener));
     notify(0.75, 0.25);
-    EXPECT_EQ((std::vector<double>{ 0.75, 0.25 }), _listener->get_usage_vector());
+    EXPECT_EQ(ResourceUsage(0.75, 0.25), get_usage());
     _listener.reset();
     notify(0.2, 0.1);
 }
@@ -174,20 +173,20 @@ TEST_F(ResourceUsageTrackerTest, aggregates_attribute_usage)
     b2.merge(ready_a1, 15, 15);
     aul1->notify_attribute_usage(b1.build());
     aul2->notify_attribute_usage(b2.build());
-    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.0.ready.a2", 30), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.0.ready.a2", 30), get_usage());
     b1.merge(notready_a1, 5, 31);
     aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.2.notready.a1", 31), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.2.notready.a1", 31), get_usage());
     b1.reset().merge(ready_a1, 10, 20).merge(ready_a2, 5, 30);
     aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.0.ready.a2", 30), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.0.ready.a2", 30), get_usage());
     aul2.reset();
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 10, "doctype1.0.ready.a2", 30), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 10, "doctype1.0.ready.a2", 30), get_usage());
     aul1.reset();
-    EXPECT_EQ(make_resource_usage("", 0, "", 0), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("", 0, "", 0), get_usage());
     aul2 = _tracker->make_attribute_usage_listener("doctype2");
     aul2->notify_attribute_usage(b2.build());
-    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype2.0.ready.a1", 15), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype2.0.ready.a1", 15), get_usage());
 }
 
 TEST_F(ResourceUsageTrackerTest, can_skip_scan_when_aggregating_attributes)
@@ -201,13 +200,13 @@ TEST_F(ResourceUsageTrackerTest, can_skip_scan_when_aggregating_attributes)
     b1.merge(ready_a1, 20, 20).merge(ready_a2, 5, 30);
     b2.merge(ready_a1, 15, 15);
     aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
     EXPECT_EQ(2u, _listener->get_update_count());
     aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
     EXPECT_EQ(2u, _listener->get_update_count()); // usage for doctype1 has not changed
     aul2->notify_attribute_usage(b2.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), _listener->get_usage());
+    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
     EXPECT_EQ(2u, _listener->get_update_count()); // usage for doctype2 is less than usage for doctype1
     aul2.reset();
     aul1.reset();
