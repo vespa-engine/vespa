@@ -12,7 +12,6 @@
 #include <vespa/document/base/exceptions.h>
 #include <thread>
 
-
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.persistenceengine");
 
@@ -20,6 +19,7 @@ using document::Document;
 using document::DocumentId;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketExecutor;
+using storage::spi::BucketTask;
 using storage::spi::BucketIdListResult;
 using storage::spi::BucketInfo;
 using storage::spi::BucketInfoResult;
@@ -761,6 +761,22 @@ PersistenceEngine::register_executor(std::shared_ptr<BucketExecutor> executor)
     assert(_bucket_executor.expired());
     _bucket_executor = executor;
     return std::make_unique<SyncExecutorOnDestruction>(executor);
+}
+
+std::unique_ptr<BucketTask>
+PersistenceEngine::execute(const storage::spi::Bucket &bucket, std::unique_ptr<BucketTask> task) {
+    auto bucketExecutor = get_bucket_executor();
+    if (bucketExecutor) {
+        bucketExecutor->execute(bucket, std::move(task));
+    }
+    return task;
+}
+
+void PersistenceEngine::sync() {
+    auto bucketExecutor = get_bucket_executor();
+    if (bucketExecutor) {
+        bucketExecutor->sync();
+    }
 }
 
 } // storage
