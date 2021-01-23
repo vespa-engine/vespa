@@ -2,7 +2,7 @@
 
 #include "buckethandler.h"
 #include "ibucketstatechangedhandler.h"
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.buckethandler");
@@ -15,8 +15,7 @@ using storage::spi::BucketInfo;
 using storage::spi::BucketInfoResult;
 using storage::spi::Result;
 using vespalib::Executor;
-using vespalib::makeTask;
-using vespalib::makeClosure;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -104,9 +103,9 @@ BucketHandler::handleSetCurrentState(const BucketId &bucketId,
                                      storage::spi::BucketInfo::ActiveState newState,
                                      IGenericResultHandler &resultHandler)
 {
-    _executor.execute(makeTask(makeClosure(this,
-                                           &proton::BucketHandler::performSetCurrentState,
-                                           bucketId, newState, &resultHandler)));
+    _executor.execute(makeLambdaTask([this, bucketId, newState, resultHandlerP = &resultHandler]() {
+        performSetCurrentState(bucketId, newState, resultHandlerP);
+    }));
 }
 
 void
@@ -137,21 +136,17 @@ void
 BucketHandler::handlePopulateActiveBuckets(document::BucketId::List &buckets,
                                            IGenericResultHandler &resultHandler)
 {
-    _executor.execute(makeTask(makeClosure(this,
-            &proton::BucketHandler::
-            performPopulateActiveBuckets,
-            buckets,
-            &resultHandler)));
+    _executor.execute(makeLambdaTask([this, buckets, &resultHandler]() {
+        performPopulateActiveBuckets(std::move(buckets), &resultHandler);
+    }));
 }
 
 void
-BucketHandler::notifyClusterStateChanged(const IBucketStateCalculator::SP &
-                                         newCalc)
+BucketHandler::notifyClusterStateChanged(const IBucketStateCalculator::SP & newCalc)
 {
     bool oldNodeUp = _nodeUp;
     _nodeUp = newCalc->nodeUp();
-    LOG(spam,
-        "notifyClusterStateChanged: %s -> %s",
+    LOG(spam, "notifyClusterStateChanged: %s -> %s",
         oldNodeUp ? "up" : "down",
         _nodeUp ? "up" : "down");
     if (oldNodeUp && !_nodeUp) {
@@ -170,8 +165,7 @@ BucketHandler::
 removeBucketStateChangedHandler(IBucketStateChangedHandler *handler)
 {
     // Called by executor thread
-    auto it = std::find(_changedHandlers.begin(), _changedHandlers.end(),
-                        handler);
+    auto it = std::find(_changedHandlers.begin(), _changedHandlers.end(), handler);
     if (it != _changedHandlers.end()) {
         _changedHandlers.erase(it);
     }

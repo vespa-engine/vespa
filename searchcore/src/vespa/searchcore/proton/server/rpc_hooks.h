@@ -4,7 +4,6 @@
 
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchlib/engine/proto_rpc_adapter.h>
@@ -70,7 +69,7 @@ private:
     vespalib::ThreadStackExecutor    _executor;
 
     void initRPC();
-    void letProtonDo(vespalib::Closure::UP closure);
+    void letProtonDo(vespalib::Executor::Task::UP task);
 
     void triggerFlush(FRT_RPCRequest *req);
     void prepareRestart(FRT_RPCRequest *req);

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storebybucket.h"
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/data/databuffer.h>
 #include <algorithm>
@@ -9,8 +9,7 @@
 namespace search::docstore {
 
 using document::BucketId;
-using vespalib::makeTask;
-using vespalib::makeClosure;
+using vespalib::makeLambdaTask;
 
 StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression) noexcept
     : _chunkSerial(0),
@@ -36,7 +35,9 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
         Chunk::UP tmpChunk = createChunk();
         _current.swap(tmpChunk);
         incChunksPosted();
-        _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(tmpChunk))));
+        _executor.execute(makeLambdaTask([this, chunk=std::move(tmpChunk)]() mutable {
+            closeChunk(std::move(chunk));
+        }));
     }
     Index idx(bucketId, _current->getId(), chunkId, lid);
     _current->append(lid, buffer, sz);
@@ -87,7 +88,9 @@ void
 StoreByBucket::drain(IWrite & drainer)
 {
     incChunksPosted();
-    _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(_current))));
+    _executor.execute(makeLambdaTask([this, chunk=std::move(_current)]() mutable {
+        closeChunk(std::move(chunk));
+    }));
     waitAllProcessed();
     std::vector<Chunk::UP> chunks;
     chunks.resize(_chunks.size());

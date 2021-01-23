@@ -5,7 +5,6 @@
 #include "document_db_maintenance_config.h"
 #include "i_blockable_maintenance_job.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
 
@@ -14,8 +13,6 @@ LOG_SETUP(".proton.server.maintenancecontroller");
 
 using document::BucketId;
 using vespalib::Executor;
-using vespalib::makeClosure;
-using vespalib::makeTask;
 using vespalib::makeLambdaTask;
 
 namespace proton {
@@ -102,7 +99,9 @@ MaintenanceController::killJobs()
         _jobs.clear();
     }
     // Hold jobs until existing tasks have been drained
-    _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performHoldJobs, tmpJobs)));
+    _masterThread.execute(makeLambdaTask([this, jobs=std::move(tmpJobs)]() {
+        performHoldJobs(std::move(jobs));
+    }));
 }
 
 void

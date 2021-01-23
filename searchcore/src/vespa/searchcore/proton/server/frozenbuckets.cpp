@@ -3,12 +3,11 @@
 #include "frozenbuckets.h"
 #include "ibucketfreezelistener.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <algorithm>
 
 using document::BucketId;
-using vespalib::makeClosure;
-using vespalib::makeTask;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -119,7 +118,7 @@ void
 FrozenBuckets::thawBucket(BucketId bucket)
 {
     if (_frozen.thawBucket(bucket)) {
-        _masterThread.execute(makeTask(makeClosure(this, &FrozenBuckets::notifyThawed, bucket)));
+        _masterThread.execute(makeLambdaTask([this, bucket]() { notifyThawed(bucket); }));
     }
 }
 
