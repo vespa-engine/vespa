@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "warmupindexcollection.h"
 #include "idiskindex.h"
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.warmupindexcollection");
 
 namespace searchcorespi {
@@ -19,8 +18,6 @@ using search::query::StringBase;
 using search::queryeval::Blueprint;
 using search::queryeval::ISourceSelector;
 using search::queryeval::SearchIterator;
-using vespalib::makeClosure;
-using vespalib::makeTask;
 using TermMap = vespalib::hash_set<vespalib::string>;
 
 class FieldTermMap : public vespalib::hash_map<uint32_t, TermMap>

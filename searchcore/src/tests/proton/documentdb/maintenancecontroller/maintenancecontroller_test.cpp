@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/test/make_bucket_space.h>
-#include <vespa/fastos/thread.h>
-#include <vespa/config-attributes.h>
+
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
@@ -31,6 +28,10 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/config-attributes.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -39,6 +40,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/fastos/thread.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -64,6 +66,7 @@ using vespalib::Slime;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 using vespa::config::search::AttributesConfigBuilder;
+using storage::spi::dummy::DummyBucketExecutor;
 
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
@@ -357,31 +360,32 @@ struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 class MaintenanceControllerFixture
 {
 public:
-    MyExecutor                    _executor;
-    MyExecutor                    _genericExecutor;
-    ExecutorThreadService         _threadService;
-    DocTypeName                   _docTypeName;
-    test::UserDocumentsBuilder    _builder;
-    std::shared_ptr<BucketDBOwner> _bucketDB;
-    test::BucketStateCalculator::SP _calc;
-    test::ClusterStateHandler     _clusterStateHandler;
-    test::BucketHandler           _bucketHandler;
-    MyBucketModifiedHandler       _bmc;
-    MyDocumentSubDB               _ready;
-    MyDocumentSubDB               _removed;
-    MyDocumentSubDB               _notReady;
-    MySessionCachePruner          _gsp;
-    MyFeedHandler                 _fh;
+    MyExecutor                         _executor;
+    MyExecutor                         _genericExecutor;
+    ExecutorThreadService              _threadService;
+    DummyBucketExecutor                _bucketExecutor;
+    DocTypeName                        _docTypeName;
+    test::UserDocumentsBuilder         _builder;
+    std::shared_ptr<BucketDBOwner>     _bucketDB;
+    test::BucketStateCalculator::SP    _calc;
+    test::ClusterStateHandler          _clusterStateHandler;
+    test::BucketHandler                _bucketHandler;
+    MyBucketModifiedHandler            _bmc;
+    MyDocumentSubDB                    _ready;
+    MyDocumentSubDB                    _removed;
+    MyDocumentSubDB                    _notReady;
+    MySessionCachePruner               _gsp;
+    MyFeedHandler                      _fh;
     ILidSpaceCompactionHandler::Vector _lscHandlers;
-    DocumentDBMaintenanceConfig::SP _mcCfg;
-    bool                          _injectDefaultJobs;
-    DocumentDBJobTrackers         _jobTrackers;
+    DocumentDBMaintenanceConfig::SP    _mcCfg;
+    bool                               _injectDefaultJobs;
+    DocumentDBJobTrackers              _jobTrackers;
     std::shared_ptr<proton::IAttributeManager> _readyAttributeManager;
     std::shared_ptr<proton::IAttributeManager> _notReadyAttributeManager;
-    AttributeUsageFilter          _attributeUsageFilter;
-    test::DiskMemUsageNotifier    _diskMemUsageNotifier;
-    BucketCreateNotifier          _bucketCreateNotifier;
-    MaintenanceController         _mc;
+    AttributeUsageFilter               _attributeUsageFilter;
+    test::DiskMemUsageNotifier         _diskMemUsageNotifier;
+    BucketCreateNotifier               _bucketCreateNotifier;
+    MaintenanceController              _mc;
 
     MaintenanceControllerFixture();
 
@@ -779,6 +783,7 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
     : _executor(),
       _genericExecutor(),
       _threadService(_executor),
+      _bucketExecutor(2),
       _docTypeName("searchdocument"), // must match document builder
       _builder(),
       _bucketDB(std::make_shared<BucketDBOwner>()),
@@ -787,10 +792,8 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _bucketHandler(),
       _bmc(),
       _ready(0u, SubDbType::READY, _builder.getRepo(), _bucketDB, _docTypeName),
-      _removed(1u, SubDbType::REMOVED, _builder.getRepo(), _bucketDB,
-               _docTypeName),
-      _notReady(2u, SubDbType::NOTREADY, _builder.getRepo(), _bucketDB,
-                _docTypeName),
+      _removed(1u, SubDbType::REMOVED, _builder.getRepo(), _bucketDB, _docTypeName),
+      _notReady(2u, SubDbType::NOTREADY, _builder.getRepo(), _bucketDB, _docTypeName),
       _gsp(),
       _fh(_executor._threadId),
       _lscHandlers(),
@@ -821,9 +824,7 @@ MaintenanceControllerFixture::~MaintenanceControllerFixture()
 void
 MaintenanceControllerFixture::syncSubDBs()
 {
-    _executor.execute(makeTask(makeClosure(this,
-                                       &MaintenanceControllerFixture::
-                                       performSyncSubDBs)));
+    _executor.execute(makeTask(makeClosure(this, &MaintenanceControllerFixture::performSyncSubDBs)));
     _executor.sync();
 }
 
@@ -831,18 +832,14 @@ MaintenanceControllerFixture::syncSubDBs()
 void
 MaintenanceControllerFixture::performSyncSubDBs()
 {
-    _mc.syncSubDBs(_ready.getSubDB(),
-                   _removed.getSubDB(),
-                   _notReady.getSubDB());
+    _mc.syncSubDBs(_ready.getSubDB(), _removed.getSubDB(), _notReady.getSubDB());
 }
 
 
 void
 MaintenanceControllerFixture::notifyClusterStateChanged()
 {
-    _executor.execute(makeTask(makeClosure(this,
-                                       &MaintenanceControllerFixture::
-                                       performNotifyClusterStateChanged)));
+    _executor.execute(makeTask(makeClosure(this, &MaintenanceControllerFixture::performNotifyClusterStateChanged)));
     _executor.sync();
 }
 
@@ -857,9 +854,7 @@ MaintenanceControllerFixture::performNotifyClusterStateChanged()
 void
 MaintenanceControllerFixture::startMaintenance()
 {
-    _executor.execute(makeTask(makeClosure(this,
-                                       &MaintenanceControllerFixture::
-                                       performStartMaintenance)));
+    _executor.execute(makeTask(makeClosure(this, &MaintenanceControllerFixture::performStartMaintenance)));
     _executor.sync();
 }
 
@@ -900,9 +895,7 @@ MaintenanceControllerFixture::stopMaintenance()
 void
 MaintenanceControllerFixture::forwardMaintenanceConfig()
 {
-    _executor.execute(makeTask(makeClosure(this,
-                                       &MaintenanceControllerFixture::
-                                       performForwardMaintenanceConfig)));
+    _executor.execute(makeTask(makeClosure(this, &MaintenanceControllerFixture::performForwardMaintenanceConfig)));
     _executor.sync();
 }
 

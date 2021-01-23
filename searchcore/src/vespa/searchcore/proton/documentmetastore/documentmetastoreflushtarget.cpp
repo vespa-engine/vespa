@@ -12,7 +12,6 @@
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <fstream>
 
 #include <vespa/log/log.h>
@@ -22,8 +21,6 @@ using namespace search;
 using namespace vespalib;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
-using vespalib::makeTask;
-using vespalib::makeClosure;
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
 

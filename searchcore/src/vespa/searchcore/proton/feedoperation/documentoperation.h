@@ -45,7 +45,7 @@ public:
     bool changedDbdId() const { return _dbdId != _prevDbdId; }
     bool getPrevMarkedAsRemoved() const { return _prevMarkedAsRemoved; }
     void setPrevMarkedAsRemoved(bool prevMarkedAsRemoved) { _prevMarkedAsRemoved = prevMarkedAsRemoved; }
-    DbDocumentId getDbDocumentId() const;
+    DbDocumentId getDbDocumentId() const { return _dbdId; }
     DbDocumentId getPrevDbDocumentId() const { return _prevDbdId; }
 
     void setDbDocumentId(DbDocumentId dbdId) { _dbdId = dbdId; }

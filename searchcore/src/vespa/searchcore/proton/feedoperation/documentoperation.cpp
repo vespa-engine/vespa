@@ -96,8 +96,4 @@ DocumentOperation::deserialize(vespalib::nbostream &is, const DocumentTypeRepo &
     is >> _prevTimestamp;
 }
 
-    DbDocumentId DocumentOperation::getDbDocumentId() const {
-        return _dbdId;
-    }
-
 } // namespace proton
