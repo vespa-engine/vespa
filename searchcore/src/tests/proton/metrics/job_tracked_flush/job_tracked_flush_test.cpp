@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("job_tracked_flush_test");
 
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_task.h>
@@ -8,16 +6,18 @@ LOG_SETUP("job_tracked_flush_test");
 #include <vespa/searchcore/proton/test/simple_job_tracker.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/gate.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("job_tracked_flush_test");
 
 using namespace proton;
 using namespace searchcorespi;
 using search::SerialNum;
 using test::SimpleJobTracker;
-using vespalib::makeTask;
-using vespalib::makeClosure;
+using vespalib::makeLambdaTask;
 using vespalib::Gate;
 using vespalib::ThreadStackExecutor;
 
@@ -47,7 +47,7 @@ struct MyFlushTarget : public test::DummyFlushTarget
     {}
 
     // Implements searchcorespi::IFlushTarget
-    virtual FlushTask::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) override {
+    FlushTask::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) override {
         if (currentSerial > 0) {
             _initFlushSerial = currentSerial;
             _initGate.await(5000);
@@ -94,7 +94,7 @@ TEST_F("require that flush task init is tracked", Fixture)
     EXPECT_EQUAL(1u, f._tracker->_started.getCount());
     EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
 
-    f._exec.execute(makeTask(makeClosure(&f, &Fixture::initFlush, FLUSH_SERIAL)));
+    f._exec.execute(makeLambdaTask([&]() {f.initFlush(FLUSH_SERIAL); }));
     f._tracker->_started.await(5000);
     EXPECT_EQUAL(0u, f._tracker->_started.getCount());
     EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
@@ -112,7 +112,7 @@ TEST_F("require that flush task init is tracked", Fixture)
 
 TEST_F("require that flush task execution is tracked", Fixture(2))
 {
-    f._exec.execute(makeTask(makeClosure(&f, &Fixture::initFlush, FLUSH_SERIAL)));
+    f._exec.execute(makeLambdaTask([&]() { f.initFlush(FLUSH_SERIAL); }));
     f._target->_initGate.countDown();
     f._taskGate.await(5000);
 

@@ -37,7 +37,7 @@
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/thread.h>
@@ -63,8 +63,7 @@ using search::SerialNum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
 using vespalib::Slime;
-using vespalib::makeClosure;
-using vespalib::makeTask;
+using vespalib::makeLambdaTask;
 using vespa::config::search::AttributesConfigBuilder;
 using storage::spi::dummy::DummyBucketExecutor;
 
@@ -356,7 +355,6 @@ struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
     void handleCompactLidSpace(const CompactLidSpaceOperation &, std::shared_ptr<IDestructorCallback>) override {}
 };
 
-
 class MaintenanceControllerFixture
 {
 public:
@@ -388,7 +386,6 @@ public:
     MaintenanceController              _mc;
 
     MaintenanceControllerFixture();
-
     ~MaintenanceControllerFixture();
 
     void syncSubDBs();
@@ -481,10 +478,9 @@ public:
     void
     notifyBucketStateChanged(const document::BucketId &bucketId, BucketInfo::ActiveState newState)
     {
-        _executor.execute(makeTask(makeClosure(this,
-                                               &MaintenanceControllerFixture::
-                                               performNotifyBucketStateChanged,
-                                               bucketId, newState)));
+        _executor.execute(makeLambdaTask([&]() {
+            performNotifyBucketStateChanged(bucketId, newState);
+        }));
         _executor.sync();
     }
 };
@@ -744,18 +740,17 @@ MyFeedHandler::appendOperation(const FeedOperation &op, DoneCallback)
     const_cast<FeedOperation &>(op).setSerialNum(inc_serial_num());
 }
 
-
 MyExecutor::MyExecutor()
     : vespalib::ThreadStackExecutor(1, 128 * 1024),
       _threadId()
 {
-    execute(makeTask(makeClosure(&sampleThreadId, &_threadId)));
+    execute(makeLambdaTask([this]() {
+        sampleThreadId(&_threadId);
+    }));
     sync();
 }
 
-
 MyExecutor::~MyExecutor() = default;
-
 
 bool
 MyExecutor::isIdle()
@@ -765,7 +760,6 @@ MyExecutor::isIdle()
     Stats stats(getStats());
     return stats.acceptedTasks == 0u;
 }
-
 
 bool
 MyExecutor::waitIdle(vespalib::duration timeout)
@@ -814,20 +808,17 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
     syncSubDBs();
 }
 
-
 MaintenanceControllerFixture::~MaintenanceControllerFixture()
 {
     stopMaintenance();
 }
 
-
 void
 MaintenanceControllerFixture::syncSubDBs()
 {
-    _executor.execute(makeTask(makeClosure(this, &MaintenanceControllerFixture::performSyncSubDBs)));
+    _executor.execute(makeLambdaTask([this]() { performSyncSubDBs(); }));
     _executor.sync();
 }
-
 
 void
 MaintenanceControllerFixture::performSyncSubDBs()
@@ -835,14 +826,12 @@ MaintenanceControllerFixture::performSyncSubDBs()
     _mc.syncSubDBs(_ready.getSubDB(), _removed.getSubDB(), _notReady.getSubDB());
 }
 
-
 void
 MaintenanceControllerFixture::notifyClusterStateChanged()
 {
-    _executor.execute(makeTask(makeClosure(this, &MaintenanceControllerFixture::performNotifyClusterStateChanged)));
+    _executor.execute(makeLambdaTask([this]() { performNotifyClusterStateChanged(); }));
     _executor.sync();
 }
-
 
 void
 MaintenanceControllerFixture::performNotifyClusterStateChanged()
@@ -850,11 +839,10 @@ MaintenanceControllerFixture::performNotifyClusterStateChanged()
     _clusterStateHandler.notifyClusterStateChanged(_calc);
 }
 
-
 void
 MaintenanceControllerFixture::startMaintenance()
 {
-    _executor.execute(makeTask(makeClosure(this, &MaintenanceControllerFixture::performStartMaintenance)));
+    _executor.execute(makeLambdaTask([this]() { performStartMaintenance(); }));
     _executor.sync();
 }
 
@@ -891,7 +879,7 @@ MaintenanceControllerFixture::stopMaintenance()
 void
 MaintenanceControllerFixture::forwardMaintenanceConfig()
 {
-    _executor.execute(makeTask(makeClosure(this, &MaintenanceControllerFixture::performForwardMaintenanceConfig)));
+    _executor.execute(makeLambdaTask([this]() { performForwardMaintenanceConfig(); }));
     _executor.sync();
 }
 
