@@ -65,6 +65,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final double defaultFeedConcurrency;
+    private final boolean useBucketExecutorForLidSpaceCompact;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
@@ -205,6 +206,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.combined = combined;
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         defaultFeedConcurrency = featureFlags.feedConcurrency();
+        useBucketExecutorForLidSpaceCompact = featureFlags.useBucketExecutorForLidSpaceCompact();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -425,6 +427,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         } else {
             builder.indexing.optimize(feedSequencerType);
         }
+        builder.lidspacecompaction.usebucketexecutor(useBucketExecutorForLidSpaceCompact);
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {

@@ -26,7 +26,6 @@ import java.util.Set;
  *
  * @author hakonhall
  */
-@SuppressWarnings("deprecation")
 public class TestProperties implements ModelContext.Properties, ModelContext.FeatureFlags {
 
     private boolean multitenant = false;
@@ -53,6 +52,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean enableAutomaticReindexing = false;
     private boolean reconfigurableZookeeperServer = false;
+    private boolean useBucketExecutorForLidSpaceCompact;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -87,6 +87,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
     @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
+    @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -192,6 +193,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties reconfigurableZookeeperServer(boolean enabled) {
         this.reconfigurableZookeeperServer = enabled;
+        return this;
+    }
+
+    public TestProperties useBucketExecutorForLidSpaceCompact(boolean enabled) {
+        useBucketExecutorForLidSpaceCompact = enabled;
         return this;
     }
 

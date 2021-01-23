@@ -719,6 +719,17 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertThat(config.search().mmap().options(0), is(ProtonConfig.Search.Mmap.Options.POPULATE));
     }
 
+    private String singleNodeContentXml() {
+        return  "<services>" +
+                "<content version='1.0' id='search'>" +
+                "  <redundancy>1</redundancy>" +
+                "  <documents>" +
+                "    <document type='music' mode='index'/>" +
+                "  </documents>" +
+                "  <nodes count='1'/>" +
+                "</content>" +
+                "</services>";
+    }
     @Test
     public void ensurePruneRemovedDocumentsAgeForHostedVespa() {
         {
@@ -738,15 +749,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         }
 
         {
-            String hostedXml = "<services>" +
-                    "<content version='1.0' id='search'>" +
-                    "  <redundancy>1</redundancy>" +
-                    "  <documents>" +
-                    "    <document type='music' mode='index'/>" +
-                    "  </documents>" +
-                    "  <nodes count='1'/>" +
-                    "</content>" +
-                    "</services>";
+            String hostedXml = singleNodeContentXml();
 
             DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true));
             VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
@@ -819,6 +822,23 @@ public class ContentBuilderTest extends DomBuilderTest {
         verifyThatFeatureFlagControlsVisibilityDelayDefault(null, 0.0);
         verifyThatFeatureFlagControlsVisibilityDelayDefault(0.5, 0.5);
         verifyThatFeatureFlagControlsVisibilityDelayDefault(0.6, 0.6);
+    }
+
+    private void verifyThatFeatureFlagControlsUseBucketExecutorForLidSpaceCompact(boolean flag) {
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().useBucketExecutorForLidSpaceCompact(flag));
+        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices(singleNodeContentXml())
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .build())
+                .create(deployStateBuilder);
+        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
+        assertEquals(flag, config.lidspacecompaction().usebucketexecutor());
+    }
+
+    @Test
+    public void verifyUseBucketExecutorForLidSpaceCompact() {
+        verifyThatFeatureFlagControlsUseBucketExecutorForLidSpaceCompact(true);
+        verifyThatFeatureFlagControlsUseBucketExecutorForLidSpaceCompact(false);
     }
 
     @Test
