@@ -47,7 +47,7 @@ CompactionJob::moveDocument(const search::DocumentMetaData & metaThen, std::shar
     if (metaNow.lid != metaThen.lid) return;
     if (metaNow.bucketId != metaThen.bucketId) return;
 
-    MoveOperation::UP op = _handler.createMoveOperation(metaNow, 0); // Th real lid must be sampled in the master thread.
+    auto op = _handler.createMoveOperation(metaNow, 0); // The real lid must be sampled in the master thread.
     if (!op) return;
 
     _master.execute(makeLambdaTask([this, moveOp=std::move(op), onDone=std::move(context)]() {

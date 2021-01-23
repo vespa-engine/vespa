@@ -24,9 +24,9 @@ private:
     using BucketExecutor = storage::spi::BucketExecutor;
     using IDestructorCallback = vespalib::IDestructorCallback;
     using IThreadService = searchcorespi::index::IThreadService;
-    searchcorespi::index::IThreadService & _master;
-    BucketExecutor               &_bucketExecutor;
-    document::BucketSpace         _bucketSpace;
+    IThreadService          & _master;
+    BucketExecutor          &_bucketExecutor;
+    document::BucketSpace    _bucketSpace;
 
     bool scanDocuments(const search::LidUsageStats &stats) override;
     void moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> onDone);
