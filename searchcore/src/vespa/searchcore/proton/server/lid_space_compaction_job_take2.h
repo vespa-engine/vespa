@@ -6,7 +6,6 @@
 #include <vespa/document/bucket/bucketspace.h>
 
 namespace storage::spi { struct BucketExecutor;}
-namespace searchcorespi::index { class IThreadService; }
 namespace proton {
     class IDiskMemUsageNotifier;
     class IClusterStateChangedNotifier;
@@ -23,10 +22,8 @@ class CompactionJob : public LidSpaceCompactionJobBase
 private:
     using BucketExecutor = storage::spi::BucketExecutor;
     using IDestructorCallback = vespalib::IDestructorCallback;
-    using IThreadService = searchcorespi::index::IThreadService;
-    IThreadService          & _master;
-    BucketExecutor          &_bucketExecutor;
-    document::BucketSpace    _bucketSpace;
+    BucketExecutor               &_bucketExecutor;
+    document::BucketSpace         _bucketSpace;
 
     bool scanDocuments(const search::LidUsageStats &stats) override;
     void moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> onDone);
@@ -35,7 +32,6 @@ public:
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                   ILidSpaceCompactionHandler &handler,
                   IOperationStorer &opStorer,
-                  IThreadService & master,
                   BucketExecutor & bucketExecutor,
                   IDiskMemUsageNotifier &diskMemUsageNotifier,
                   const BlockableMaintenanceJobConfig &blockableConfig,

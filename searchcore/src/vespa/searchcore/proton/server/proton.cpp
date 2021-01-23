@@ -602,7 +602,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     }
     auto ret = std::make_shared<DocumentDB>(config.basedir + "/documents", documentDBConfig, config.tlsspec,
                                             _queryLimiter, _clock, docTypeName, bucketSpace, config, *this,
-                                            *_warmupExecutor, *_sharedExecutor, *_persistenceEngine, *_tls->getTransLogServer(),
+                                            *_warmupExecutor, *_sharedExecutor, *_tls->getTransLogServer(),
                                             *_metricsEngine, _fileHeaderContext, std::move(config_store),
                                             initializeThreads, bootstrapConfig->getHwInfo());
     try {

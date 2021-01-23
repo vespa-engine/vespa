@@ -25,7 +25,6 @@
 #include <vespa/searchcore/proton/server/searchview.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
-#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -174,7 +173,6 @@ public:
     DummyFileHeaderContext _fileHeaderContext;
     TransLogServer _tls;
     vespalib::ThreadStackExecutor _summaryExecutor;
-    storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
     bool _mkdirOk;
     matching::QueryLimiter _queryLimiter;
     vespalib::Clock _clock;
@@ -194,7 +192,6 @@ public:
           _fileHeaderContext(),
           _tls("tmp", 9013, ".", _fileHeaderContext),
           _summaryExecutor(8, 128*1024),
-          _bucketExecutor(2),
           _mkdirOk(FastOS_File::MakeDirectory("tmpdb")),
           _queryLimiter(),
           _clock(),
@@ -222,7 +219,7 @@ public:
         }
         _ddb = std::make_unique<DocumentDB>("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
                                             DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
-                                            _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy, _fileHeaderContext,
+                                            _summaryExecutor, _summaryExecutor, _tls, _dummy, _fileHeaderContext,
                                             std::make_unique<MemoryConfigStore>(),
                                             std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo),
         _ddb->start();
