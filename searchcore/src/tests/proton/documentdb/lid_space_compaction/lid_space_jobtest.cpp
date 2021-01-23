@@ -46,7 +46,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
 {
     _handler = std::make_unique<MyHandler>(maxOutstandingMoveOps != MAX_OUTSTANDING_MOVE_OPS, useBucketDB());
     DocumentDBLidSpaceCompactionConfig compactCfg(interval, allowedLidBloat, allowedLidBloatFactor,
-                                                  REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false);
+                                                  REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false, useBucketDB());
     BlockableMaintenanceJobConfig blockableCfg(resourceLimitFactor, maxOutstandingMoveOps);
 
     if (useBucketDB()) {

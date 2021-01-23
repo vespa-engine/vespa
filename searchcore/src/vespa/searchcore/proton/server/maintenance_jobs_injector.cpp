@@ -39,7 +39,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
     for (auto &lidHandler : lscHandlers) {
 
         IMaintenanceJob::UP job;
-        if (true) {
+        if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
             job = std::make_unique<LidSpaceCompactionJob>(
                     config.getLidSpaceCompactionConfig(),
                     *lidHandler, opStorer, fbHandler,
