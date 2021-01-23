@@ -2,14 +2,10 @@
 #include "frtconfigrequest.h"
 #include "frtconfigresponse.h"
 #include "frtsource.h"
-#include <vespa/vespalib/util/closuretask.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtsource");
-
-using vespalib::Closure;
-using vespalib::makeClosure;
 
 namespace config {
 
@@ -36,7 +32,7 @@ FRTSource::FRTSource(const ConnectionFactory::SP & connectionFactory, const FRTC
       _agent(std::move(agent)),
       _currentRequest(),
       _key(key),
-      _task(new GetConfigTask(_connectionFactory->getScheduler(), this)),
+      _task(std::make_unique<GetConfigTask>(_connectionFactory->getScheduler(), this)),
       _lock(),
       _closed(false)
 {

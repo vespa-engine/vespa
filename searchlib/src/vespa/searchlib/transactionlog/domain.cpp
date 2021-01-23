@@ -4,7 +4,6 @@
 #include "domainpart.h"
 #include "session.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fastos/file.h>
@@ -19,8 +18,6 @@ LOG_SETUP(".transactionlog.domain");
 
 using vespalib::string;
 using vespalib::make_string_short::fmt;
-using vespalib::makeTask;
-using vespalib::makeClosure;
 using vespalib::makeLambdaTask;
 using std::runtime_error;
 using std::make_shared;
@@ -68,7 +65,7 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
     const SerialNum lastPart = partIdVector.empty() ? 0 : partIdVector.back();
     for (const SerialNum partId : partIdVector) {
         if ( partId != std::numeric_limits<SerialNum>::max()) {
-            _executor.execute(makeTask(makeClosure(this, &Domain::addPart, partId, partId == lastPart)));
+            _executor.execute(makeLambdaTask([this, partId, lastPart]() { addPart(partId, partId == lastPart); }));
         }
     }
     _executor.sync();

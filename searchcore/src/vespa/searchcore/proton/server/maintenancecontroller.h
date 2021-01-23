@@ -15,7 +15,7 @@ namespace vespalib {
     class SyncableThreadExecutor;
     class Executor;
 }
-namespace searchcorespi { namespace index { struct IThreadService; }}
+namespace searchcorespi::index { struct IThreadService; }
 
 namespace proton {
 
@@ -37,7 +37,7 @@ public:
 
     MaintenanceController(IThreadService &masterThread, vespalib::SyncableThreadExecutor & defaultExecutor, const DocTypeName &docTypeName);
 
-    virtual ~MaintenanceController();
+    ~MaintenanceController() override;
     void registerJobInMasterThread(IMaintenanceJob::UP job);
     void registerJobInDefaultPool(IMaintenanceJob::UP job);
 
@@ -69,6 +69,7 @@ public:
     const MaintenanceDocumentSubDB &    getReadySubDB() const { return _readySubDB; }
     const MaintenanceDocumentSubDB &      getRemSubDB() const { return _remSubDB; }
     const MaintenanceDocumentSubDB & getNotReadySubDB() const { return _notReadySubDB; }
+    IThreadService & masterThread() { return _masterThread; }
 private:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;

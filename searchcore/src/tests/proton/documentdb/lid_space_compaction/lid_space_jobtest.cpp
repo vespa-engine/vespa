@@ -71,10 +71,12 @@ JobTestBase::addStats(uint32_t docIdLimit, const LidVector &usedLids, const LidP
 {
     return addMultiStats(docIdLimit, {usedLids}, usedFreePairs);
 }
+
 JobTestBase &
 JobTestBase::addMultiStats(uint32_t docIdLimit,
-                          const std::vector<LidVector> &usedLidsVector,
-                          const LidPairVector &usedFreePairs) {
+                           const std::vector<LidVector> &usedLidsVector,
+                           const LidPairVector &usedFreePairs)
+{
     uint32_t usedLids = usedLidsVector[0].size();
     for (auto pair : usedFreePairs) {
         uint32_t highestUsedLid = pair.first;
@@ -84,34 +86,37 @@ JobTestBase::addMultiStats(uint32_t docIdLimit,
     _handler->_lids = usedLidsVector;
     return *this;
 }
+
 JobTestBase &
-JobTestBase::addStats(uint32_t docIdLimit,
-                      uint32_t numDocs,
-                      uint32_t lowestFreeLid,
-                      uint32_t highestUsedLid) {
+JobTestBase::addStats(uint32_t docIdLimit, uint32_t numDocs, uint32_t lowestFreeLid, uint32_t highestUsedLid) {
     _handler->_stats.emplace_back(docIdLimit, numDocs, lowestFreeLid, highestUsedLid);
     return *this;
 }
+
 bool
 JobTestBase::run() const {
     return _job->run();
 }
+
 JobTestBase &
 JobTestBase::endScan() {
     EXPECT_FALSE(run());
     return *this;
 }
+
 JobTestBase &
 JobTestBase::compact() {
     EXPECT_TRUE(run());
     return *this;
 }
+
 void
 JobTestBase::notifyNodeRetired(bool nodeRetired) {
     test::BucketStateCalculator::SP calc = std::make_shared<test::BucketStateCalculator>();
     calc->setNodeRetired(nodeRetired);
     _clusterStateHandler.notifyClusterStateChanged(calc);
 }
+
 void
 JobTestBase::assertJobContext(uint32_t moveToLid,
                       uint32_t moveFromLid,
@@ -127,10 +132,12 @@ JobTestBase::assertJobContext(uint32_t moveToLid,
     EXPECT_EQ(wantedLidLimit, _handler->_wantedLidLimit);
     EXPECT_EQ(compactStoreCnt, _storer._compactCnt);
 }
+
 void
 JobTestBase::assertNoWorkDone() const {
     assertJobContext(0, 0, 0, 0, 0);
 }
+
 JobTestBase &
 JobTestBase::setupOneDocumentToCompact() {
     addStats(10, {1,3,4,5,6,9},
@@ -138,12 +145,14 @@ JobTestBase::setupOneDocumentToCompact() {
               {6,7}}); // no documents to move
     return *this;
 }
+
 void
 JobTestBase::assertOneDocumentCompacted() {
     assertJobContext(2, 9, 1, 0, 0);
     endScan().compact();
     assertJobContext(2, 9, 1, 7, 1);
 }
+
 JobTestBase &
 JobTestBase::setupThreeDocumentsToCompact() {
     addStats(10, {1,5,6,9,8,7},
@@ -162,7 +171,9 @@ JobTest::JobTest()
     : JobTestBase(),
       _jobRunner(std::make_unique<MyDirectJobRunner>(*_job))
 {}
+
 JobTest::~JobTest() = default;
+
 void
 JobTest::init(uint32_t allowedLidBloat,
               double allowedLidBloatFactor,
@@ -174,10 +185,12 @@ JobTest::init(uint32_t allowedLidBloat,
     JobTestBase::init(allowedLidBloat, allowedLidBloatFactor, resourceLimitFactor, interval, nodeRetired, maxOutstandingMoveOps);
     _jobRunner = std::make_unique<MyDirectJobRunner>(*_job);
 }
+
 void
 JobTest::init_with_interval(vespalib::duration interval) {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, interval);
 }
+
 void
 JobTest::init_with_node_retired(bool retired) {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, JOB_DELAY, retired);
@@ -219,6 +232,7 @@ MaxOutstandingJobTest::MaxOutstandingJobTest()
     : JobTest(),
       runner()
 {}
+
 MaxOutstandingJobTest::~MaxOutstandingJobTest() = default;
 
 void
@@ -227,17 +241,20 @@ MaxOutstandingJobTest::init(uint32_t maxOutstandingMoveOps) {
                   RESOURCE_LIMIT_FACTOR, JOB_DELAY, false, maxOutstandingMoveOps);
     runner = std::make_unique<MyCountJobRunner>(*_job);
 }
+
 void
 MaxOutstandingJobTest::assertRunToBlocked() {
     EXPECT_TRUE(run()); // job becomes blocked as max outstanding limit is reached
     EXPECT_TRUE(_job->isBlocked());
     EXPECT_TRUE(_job->isBlocked(BlockedReason::OUTSTANDING_OPS));
 }
+
 void
 MaxOutstandingJobTest::assertRunToNotBlocked() {
     EXPECT_FALSE(run());
     EXPECT_FALSE(_job->isBlocked());
 }
+
 void
 MaxOutstandingJobTest::unblockJob(uint32_t expRunnerCnt) {
     _handler->clearMoveDoneContexts(); // unblocks job and try to execute it via runner

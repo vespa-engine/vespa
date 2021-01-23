@@ -3,13 +3,10 @@
 #include "lidreusedelayer.h"
 #include "i_store.h"
 #include <vespa/searchcorespi/index/ithreadingservice.h>
-#include <vespa/vespalib/util/closuretask.h>
 
 namespace proton::documentmetastore {
 
 using searchcorespi::index::IThreadingService;
-using vespalib::makeClosure;
-using vespalib::makeTask;
 
 LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService, IStore &documentMetaStore)
     : _writeService(writeService),

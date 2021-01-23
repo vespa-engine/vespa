@@ -2,8 +2,7 @@
 
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/vespalib/util/closure.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -104,7 +103,7 @@ BenchmarkDataStoreApp::benchmark(const vespalib::string & dir, size_t numReads, 
     vespalib::ThreadStackExecutor bmPool(numThreads, 128*1024);
     LOG(info, "Start read benchmark with %lu threads doing %lu reads in chunks of %lu reads. Totally %lu objects", numThreads, numReads, perChunk, numThreads * numReads * perChunk);
     for (size_t i(0); i < numThreads; i++) {
-        bmPool.execute(vespalib::makeTask(vespalib::makeClosure(this, &BenchmarkDataStoreApp::read, numReads, perChunk, static_cast<const IDataStore *>(&store))));
+        bmPool.execute(vespalib::makeLambdaTask([&]() { read(numReads, perChunk, static_cast<const IDataStore *>(&store)); }));
     }
     bmPool.sync();
     LOG(info, "Benchmark done.");

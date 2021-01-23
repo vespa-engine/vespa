@@ -1,14 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("job_tracked_maintenance_test");
+
 
 #include <vespa/searchcore/proton/server/i_blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/job_tracked_maintenance_job.h>
 #include <vespa/searchcore/proton/test/simple_job_tracker.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("job_tracked_maintenance_test");
 
 using namespace proton;
 using namespace vespalib;
@@ -79,7 +81,7 @@ struct Fixture
         EXPECT_EQUAL(endedGateCount, _tracker->_ended.getCount());
     }
     void runJobAndWait(size_t runIdx, size_t startedGateCount, size_t endedGateCount) {
-        _exec.execute(makeTask(makeClosure(this, &Fixture::runJob)));
+        _exec.execute(vespalib::makeLambdaTask([this]() { runJob(); }));
         _tracker->_started.await(5000);
         assertTracker(startedGateCount, endedGateCount);
         _myJob->_runGates[runIdx]->countDown();

@@ -60,7 +60,6 @@ using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
 using vespalib::ThreadStackExecutor;
 using vespalib::ThreadStackExecutorBase;
-using vespalib::makeClosure;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
