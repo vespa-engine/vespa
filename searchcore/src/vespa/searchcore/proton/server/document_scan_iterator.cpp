@@ -42,8 +42,8 @@ DocumentScanIterator::next(uint32_t compactLidLimit, bool retry)
 search::DocumentMetaData
 DocumentScanIterator::getMetaData(uint32_t lid) const {
     if (_metaStore.validLid(lid)) {
-        const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(_lastLid);
-        return DocumentMetaData(_lastLid, metaData.getTimestamp(),
+        const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(lid);
+        return DocumentMetaData(lid, metaData.getTimestamp(),
                                 metaData.getBucketId(), metaData.getGid());
     }
     return DocumentMetaData();

@@ -56,6 +56,19 @@ struct Fixture
         EXPECT_FALSE(_itr->valid());
         return retval;
     }
+    LidSet fetch(uint32_t begin, uint32_t count) {
+        if (!_itr) {
+            _itr = std::make_unique<DocumentScanIterator>(_metaStore);
+        }
+        LidSet retval;
+        for (uint32_t i(begin); i < begin+count; i++) {
+            DocumentMetaData meta = _itr->getMetaData(i);
+            if (meta.valid()) {
+                retval.insert(meta.lid);
+            }
+        }
+        return retval;
+    }
     uint32_t next(uint32_t compactLidLimit, bool retry = false) {
         if (!_itr) {
             _itr = std::make_unique<DocumentScanIterator>(_metaStore);
@@ -87,6 +100,14 @@ TEST_F("require that we start scan at previous doc if retry is set", Fixture)
     uint32_t lid1 = f.next(4, false);
     uint32_t lid2 = f.next(4, true);
     EXPECT_EQUAL(lid1, lid2);
+}
+
+TEST_F("require getMetaData return correct info", Fixture)
+{
+    f.add({1,2,3,4,5,6,7,8});
+    assertLidSet({1}, f.fetch(1, 1));
+    assertLidSet({1,2,3,4,5,6,7,8}, f.fetch(1, 20));
+    assertLidSet({4,5,6,7,8}, f.fetch(4, 20));
 }
 
 TEST_MAIN()
