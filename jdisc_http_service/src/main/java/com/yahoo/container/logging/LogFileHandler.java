@@ -252,14 +252,16 @@ class LogFileHandler <LOGTYPE>  {
 
         try {
             checkAndCreateDir(fileName);
-            FileOutputStream fileOut = new FileOutputStream(fileName, true); // append mode, for safety
-            OutputStream os = new BufferedOutputStream(fileOut, 1024*1024);
-            currentOutputStream = os;
-            currentFileOutputStream = fileOut;
+            FileOutputStream newFileOut = new FileOutputStream(fileName, true); // append mode, for safety
+            OutputStream newOutputStream = new BufferedOutputStream(newFileOut, 1024*1024);
+            if (currentOutputStream != null) currentOutputStream.close();
+            this.currentOutputStream = newOutputStream;
+            currentFileOutputStream = newFileOut;
             lastDropPosition = 0;
             LogFileDb.nowLoggingTo(fileName);
         }
         catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to rotate log file: " + e.getMessage(), e);
             throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
         }
 
