@@ -26,7 +26,7 @@ public class ConnectionLogEntryTest {
                           "\"id\":\""+id.toString()+"\"," +
                           "\"timestamp\":\"2021-01-13T12:12:12Z\"," +
                           "\"peerPort\":1234" +
-                          "}";
+                          "}\n";
         Assert.assertEquals(expected, entry.toJson());
     }
 }

@@ -96,7 +96,7 @@ public class ConnectionLogEntry {
         setString(cursor, sslHandshakeFailureException, "ssl", "handshake-failure", "exception");
         setString(cursor, sslHandshakeFailureMessage, "ssl", "handshake-failure", "message");
         setString(cursor, sslHandshakeFailureType, "ssl", "handshake-failure", "type");
-        return new String(Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(slime)), StandardCharsets.UTF_8);
+        return new String(Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(slime)), StandardCharsets.UTF_8)+"\n";
     }
 
     private void setString(Cursor cursor, String value, String... keys) {
