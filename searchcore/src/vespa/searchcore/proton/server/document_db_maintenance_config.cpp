@@ -55,7 +55,8 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
       _allowedLidBloatFactor(1.0),
       _remove_batch_block_rate(0.5),
       _remove_block_rate(100),
-      _disabled(false)
+      _disabled(false),
+      _useBucketExecutor(false)
 {
 }
 
@@ -64,14 +65,16 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(vespalib:
                                                                        double allowedLidBloatFactor,
                                                                        double remove_batch_block_rate,
                                                                        double remove_block_rate,
-                                                                       bool disabled)
+                                                                       bool disabled,
+                                                                       bool useBucketExecutor)
     : _delay(std::min(MAX_DELAY_SEC, interval)),
       _interval(interval),
       _allowedLidBloat(allowedLidBloat),
       _allowedLidBloatFactor(allowedLidBloatFactor),
       _remove_batch_block_rate(remove_batch_block_rate),
       _remove_block_rate(remove_block_rate),
-      _disabled(disabled)
+      _disabled(disabled),
+      _useBucketExecutor(useBucketExecutor)
 {
 }
 

@@ -134,6 +134,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        IDocumentDBOwner &owner,
                        vespalib::SyncableThreadExecutor &warmupExecutor,
                        vespalib::ThreadStackExecutorBase &sharedExecutor,
+                       storage::spi::BucketExecutor & bucketExecutor,
                        const search::transactionlog::WriterFactory &tlsWriterFactory,
                        MetricsWireService &metricsWireService,
                        const FileHeaderContext &fileHeaderContext,
@@ -174,6 +175,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _refCount(),
       _syncFeedViewEnabled(false),
       _owner(owner),
+      _bucketExecutor(bucketExecutor),
       _state(),
       _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
@@ -934,6 +936,7 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
     _maintenanceController.killJobs();
     MaintenanceJobsInjector::injectJobs(_maintenanceController,
             config,
+            _bucketExecutor,
             *_feedHandler, // IHeartBeatHandler
             *_sessionManager, // ISessionCachePruner
             _lidSpaceCompactionHandlers,
