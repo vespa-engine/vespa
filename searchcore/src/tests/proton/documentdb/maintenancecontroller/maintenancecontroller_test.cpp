@@ -862,10 +862,14 @@ void
 MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
-        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _gsp, _lscHandlers, _fh, _mc,
-                                            _bucketCreateNotifier, _docTypeName.getName(), makeBucketSpace(), _fh, _fh,
-                                            _bmc, _clusterStateHandler, _bucketHandler, _calc, _diskMemUsageNotifier,
-                                            _jobTrackers, _readyAttributeManager, _notReadyAttributeManager,
+        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _fh, _gsp,
+                                            _lscHandlers, _fh, _mc, _bucketCreateNotifier, _docTypeName.getName(), makeBucketSpace(),
+                                            _fh, _fh, _bmc, _clusterStateHandler, _bucketHandler,
+                                            _calc,
+                                            _diskMemUsageNotifier,
+                                            _jobTrackers,
+                                            _readyAttributeManager,
+                                            _notReadyAttributeManager,
                                             std::make_unique<const AttributeConfigInspector>(AttributesConfigBuilder()),
                                             std::make_shared<TransientMemoryUsageProvider>(),
                                             _attributeUsageFilter);

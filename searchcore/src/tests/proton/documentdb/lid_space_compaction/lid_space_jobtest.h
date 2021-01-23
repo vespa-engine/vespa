@@ -7,8 +7,6 @@
 
 struct JobTestBase : public ::testing::TestWithParam<bool> {
     std::unique_ptr<storage::spi::BucketExecutor> _bucketExecutor;
-    std::unique_ptr<vespalib::SyncableThreadExecutor> _singleExecutor;
-    std::unique_ptr<searchcorespi::index::IThreadService> _master;
     std::unique_ptr<MyHandler> _handler;
     MyStorer _storer;
     MyFrozenBucketHandler _frozenHandler;

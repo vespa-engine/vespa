@@ -50,7 +50,6 @@ private:
     double               _remove_batch_block_rate;
     double               _remove_block_rate;
     bool                 _disabled;
-    bool                 _useBucketExecutor;
 
 public:
     DocumentDBLidSpaceCompactionConfig();
@@ -59,8 +58,7 @@ public:
                                        double allowwedLidBloatFactor,
                                        double remove_batch_block_rate,
                                        double remove_block_rate,
-                                       bool disabled,
-                                       bool useBucketExecutor);
+                                       bool disabled);
 
     static DocumentDBLidSpaceCompactionConfig createDisabled();
     bool operator==(const DocumentDBLidSpaceCompactionConfig &rhs) const;
@@ -71,7 +69,6 @@ public:
     double get_remove_batch_block_rate() const { return _remove_batch_block_rate; }
     double get_remove_block_rate() const { return _remove_block_rate; }
     bool isDisabled() const { return _disabled; }
-    bool useBucketExecutor() const { return _useBucketExecutor; }
 };
 
 class BlockableMaintenanceJobConfig {
