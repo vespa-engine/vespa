@@ -9,7 +9,6 @@ import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Objects;
@@ -147,7 +146,6 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
             }
 
             generator.writeEndObject();
-            outputStream.write("\n".getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to generate JSON access log entry: " + e.getMessage(), e);
         }
