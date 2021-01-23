@@ -7,6 +7,7 @@
 #include "ipersistencehandler.h"
 #include "resource_usage_tracker.h"
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
+#include <vespa/persistence/spi/bucketexecutor.h>
 #include <mutex>
 #include <shared_mutex>
 
@@ -15,7 +16,8 @@ namespace proton {
 class IPersistenceEngineOwner;
 class IDiskMemUsageNotifier;
 
-class PersistenceEngine : public storage::spi::AbstractPersistenceProvider {
+class PersistenceEngine : public storage::spi::AbstractPersistenceProvider,
+                          public storage::spi::BucketExecutor {
 private:
     using PersistenceHandlerSequence = PersistenceHandlerMap::PersistenceHandlerSequence;
     using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
@@ -40,6 +42,7 @@ private:
     using UpdateResult = storage::spi::UpdateResult;
     using OperationComplete = storage::spi::OperationComplete;
     using BucketExecutor = storage::spi::BucketExecutor;
+    using BucketTask = storage::spi::BucketTask;
 
     struct IteratorEntry {
         PersistenceHandlerSequence  handler_sequence;
@@ -86,6 +89,7 @@ private:
 
     void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
     ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;
+    std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
 
 public:
     typedef std::unique_ptr<PersistenceEngine> UP;
@@ -125,7 +129,8 @@ public:
     void populateInitialBucketDB(const WriteGuard & guard, BucketSpace bucketSpace, IPersistenceHandler &targetHandler);
     WriteGuard getWLock() const;
     ResourceUsageTracker &get_resource_usage_tracker() noexcept { return *_resource_usage_tracker; }
-    std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
+    std::unique_ptr<BucketTask> execute(const Bucket &bucket, std::unique_ptr<BucketTask> task) override;
+    void sync() override;
 };
 
 }
