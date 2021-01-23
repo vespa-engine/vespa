@@ -173,7 +173,9 @@ class LogFileHandler <LOGTYPE>  {
             internalRotateNow();
         }
         try {
-            logWriter.write(r, currentOutputStream);
+            FileOutputStream out = this.currentOutputStream;
+            logWriter.write(r, out);
+            out.write('\n');
         } catch (IOException e) {
             logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
         }

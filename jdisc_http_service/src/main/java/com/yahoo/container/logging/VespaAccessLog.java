@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.logging.Level;
 
 /**
  * @author Bjorn Borud
@@ -70,8 +69,7 @@ public final class VespaAccessLog implements RequestLogHandler, LogWriter<Reques
         sb.append(' ')
                 .append((hitcounts == null) ? 0 : hitcounts.getTotalHitCount())
                 .append(" 0.0 ")
-                .append((hitcounts == null) ? 0 : hitcounts.getSummaryCount())
-                .append('\n');
+                .append((hitcounts == null) ? 0 : hitcounts.getSummaryCount());
         return sb.toString();
     }
 
