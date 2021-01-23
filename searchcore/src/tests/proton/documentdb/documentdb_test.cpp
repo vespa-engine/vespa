@@ -19,6 +19,7 @@
 #include <vespa/searchcore/proton/server/document_db_explorer.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
+#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -69,6 +70,7 @@ struct Fixture {
     MyDBOwner _myDBOwner;
     vespalib::ThreadStackExecutor _summaryExecutor;
     HwInfo _hwInfo;
+    storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
     DocumentDB::SP _db;
     DummyFileHeaderContext _fileHeaderContext;
     TransLogServer _tls;
@@ -84,31 +86,31 @@ Fixture::Fixture()
       _myDBOwner(),
       _summaryExecutor(8, 128*1024),
       _hwInfo(),
+      _bucketExecutor(2),
       _db(),
       _fileHeaderContext(),
       _tls("tmp", 9014, ".", _fileHeaderContext),
       _queryLimiter(),
       _clock()
 {
-    DocumentDBConfig::DocumenttypesConfigSP documenttypesConfig(new DocumenttypesConfig());
+    auto documenttypesConfig = std::make_shared<DocumenttypesConfig>();
     DocumentType docType("typea", 0);
-    std::shared_ptr<const DocumentTypeRepo> repo(new DocumentTypeRepo(docType));
-    TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB);
+    auto repo = std::make_shared<DocumentTypeRepo>(docType);
+    auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
     config::DirSpec spec(TEST_PATH("cfg"));
     DocumentDBConfigHelper mgr(spec, "typea");
-    BootstrapConfig::SP
-        b(new BootstrapConfig(1, documenttypesConfig, repo,
+    auto b = std::make_shared<BootstrapConfig>(1, documenttypesConfig, repo,
                               std::make_shared<ProtonConfig>(),
                               std::make_shared<FiledistributorrpcConfig>(),
                               std::make_shared<BucketspacesConfig>(),
-                              tuneFileDocumentDB, HwInfo()));
+                              tuneFileDocumentDB, HwInfo());
     mgr.forwardConfig(b);
     mgr.nextGeneration(0ms);
-    _db.reset(new DocumentDB(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
+    _db = std::make_shared<DocumentDB>(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
                              makeBucketSpace(),
-                             *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _tls, _dummy,
-                             _fileHeaderContext, ConfigStore::UP(new MemoryConfigStore),
-                             std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo));
+                             *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy,
+                             _fileHeaderContext, std::make_unique<MemoryConfigStore>(),
+                             std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo);
     _db->start();
     _db->waitForOnlineState();
 }

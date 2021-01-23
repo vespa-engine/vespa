@@ -805,6 +805,7 @@ PersistenceProviderFixture::create_document_db(const BMParams & params)
                                                 _document_db_owner,
                                                 _summary_executor,
                                                 _summary_executor,
+                                                *_persistence_engine,
                                                 _tls,
                                                 _metrics_wire_service,
                                                 _file_header_context,
