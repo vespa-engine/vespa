@@ -40,14 +40,6 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
 
         IMaintenanceJob::UP job;
         if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
-            job = std::make_unique<LidSpaceCompactionJob>(
-                    config.getLidSpaceCompactionConfig(),
-                    *lidHandler, opStorer, fbHandler,
-                    diskMemUsageNotifier,
-                    config.getBlockableJobConfig(),
-                    clusterStateChangedNotifier,
-                    (calc ? calc->nodeRetired() : false));
-        } else {
             job = std::make_unique<lidspace::CompactionJob>(
                     config.getLidSpaceCompactionConfig(),
                     *lidHandler, opStorer, controller.masterThread(), bucketExecutor,
@@ -56,6 +48,14 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                     clusterStateChangedNotifier,
                     (calc ? calc->nodeRetired() : false),
                     bucketSpace);
+        } else {
+            job = std::make_unique<LidSpaceCompactionJob>(
+                    config.getLidSpaceCompactionConfig(),
+                    *lidHandler, opStorer, fbHandler,
+                    diskMemUsageNotifier,
+                    config.getBlockableJobConfig(),
+                    clusterStateChangedNotifier,
+                    (calc ? calc->nodeRetired() : false));
         }
         controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
     }
