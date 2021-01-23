@@ -195,7 +195,7 @@ public class LogFileHandlerTestCase {
 
         @Override
         public void write(String record, OutputStream outputStream) throws IOException {
-            outputStream.write((record + "\n").getBytes(StandardCharsets.UTF_8));
+            outputStream.write(record.getBytes(StandardCharsets.UTF_8));
         }
     }
 }
