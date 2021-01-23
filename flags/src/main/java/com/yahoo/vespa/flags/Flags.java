@@ -271,6 +271,13 @@ public class Flags {
             "Takes effect on (re)deployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
+            "use-bucket-executor-for-lid-space-compact", false,
+            List.of("baldersheim"), "2021-01-24", "2021-03-01",
+            "Wheter to use content-level bucket executor or legacy frozen buckets",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING = defineFeatureFlag(
             "use-power-of-two-choices-load-balancing", false,
             List.of("tokle"), "2020-12-02", "2021-02-01",

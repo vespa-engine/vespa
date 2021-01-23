@@ -165,6 +165,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean reconfigurableZookeeperServer;
         private final boolean enableJdiscConnectionLog;
         private final boolean enableZstdCompressionAccessLog;
+        private final boolean useBucketExecutorForLidSpaceCompact;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.enableAutomaticReindexing = flagValue(source, appId, Flags.ENABLE_AUTOMATIC_REINDEXING);
@@ -185,6 +186,7 @@ public class ModelContextImpl implements ModelContext {
             this.reconfigurableZookeeperServer = flagValue(source, appId, Flags.RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER);
             this.enableJdiscConnectionLog = flagValue(source, appId, Flags.ENABLE_JDISC_CONNECTION_LOG);
             this.enableZstdCompressionAccessLog = flagValue(source, appId, Flags.ENABLE_ZSTD_COMPRESSION_ACCESS_LOG);
+            this.useBucketExecutorForLidSpaceCompact = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT);
         }
 
         @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
@@ -205,6 +207,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
         @Override public boolean enableJdiscConnectionLog() { return enableJdiscConnectionLog; }
         @Override public boolean enableZstdCompressionAccessLog() { return enableZstdCompressionAccessLog; }
+        @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
