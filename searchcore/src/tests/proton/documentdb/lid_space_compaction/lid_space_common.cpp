@@ -97,13 +97,15 @@ MoveOperation::UP
 MyHandler::createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const {
     assert(document.lid > moveToLid);
     _moveFromLid = document.lid;
-    _moveToLid = moveToLid;
-    return std::make_unique<MoveOperation>();
+    auto op = std::make_unique<MoveOperation>();
+    op->setTargetLid(moveToLid);
+    return op;
 }
 
 void
-MyHandler::handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) {
+MyHandler::handleMove(const MoveOperation & op, IDestructorCallback::SP moveDoneCtx) {
     ++_handleMoveCnt;
+    _moveToLid = op.getTargetDbdId().getLid();
     if (_storeMoveDoneContexts) {
         _moveDoneContexts.push_back(std::move(moveDoneCtx));
     }
