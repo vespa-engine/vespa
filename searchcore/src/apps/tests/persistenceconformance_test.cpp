@@ -9,6 +9,7 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
+#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
@@ -168,6 +169,7 @@ private:
     mutable DummyWireService  _metricsWireService;
     mutable MemoryConfigStores _config_stores;
     vespalib::ThreadStackExecutor _summaryExecutor;
+    storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
 
 public:
     DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort);
@@ -206,6 +208,7 @@ public:
                                const_cast<DocumentDBFactory &>(*this),
                                _summaryExecutor,
                                _summaryExecutor,
+                               _bucketExecutor,
                                _tls,
                                _metricsWireService,
                                _fileHeaderContext,
@@ -225,7 +228,8 @@ DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsLis
       _queryLimiter(),
       _clock(),
       _metricsWireService(),
-      _summaryExecutor(8, 128 * 1024)
+      _summaryExecutor(8, 128 * 1024),
+      _bucketExecutor(2)
 {}
 DocumentDBFactory::~DocumentDBFactory()  = default;
 

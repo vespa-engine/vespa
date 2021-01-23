@@ -46,23 +46,27 @@ JobTestBase::init(uint32_t allowedLidBloat,
 {
     _handler = std::make_unique<MyHandler>(maxOutstandingMoveOps != MAX_OUTSTANDING_MOVE_OPS, useBucketDB());
     DocumentDBLidSpaceCompactionConfig compactCfg(interval, allowedLidBloat, allowedLidBloatFactor,
-                                                  REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false);
+                                                  REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false, useBucketDB());
     BlockableMaintenanceJobConfig blockableCfg(resourceLimitFactor, maxOutstandingMoveOps);
 
     if (useBucketDB()) {
+        _singleExecutor = std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
+        _master = std::make_unique<proton::ExecutorThreadService> (*_singleExecutor);
         _bucketExecutor = std::make_unique<storage::spi::dummy::DummyBucketExecutor>(4);
-        _job = std::make_unique<lidspace::CompactionJob>(compactCfg, *_handler, _storer, *_bucketExecutor, _diskMemUsageNotifier,
-                                                         blockableCfg, _clusterStateHandler, nodeRetired,
+        _job = std::make_unique<lidspace::CompactionJob>(compactCfg, *_handler, _storer, *_master, *_bucketExecutor,
+                                                         _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, nodeRetired,
                                                          document::BucketSpace::placeHolder());
     } else {
         _job = std::make_unique<LidSpaceCompactionJob>(compactCfg, *_handler, _storer, _frozenHandler, _diskMemUsageNotifier,
                                                        blockableCfg, _clusterStateHandler, nodeRetired);
     }
 }
+
 void
 JobTestBase::sync() const {
     if (_bucketExecutor) {
         _bucketExecutor->sync();
+        _master->sync();
     }
 }
 

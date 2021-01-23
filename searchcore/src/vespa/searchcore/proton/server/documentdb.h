@@ -45,6 +45,7 @@ namespace metrics {
     class UpdateHook;
     class MetricLockGuard;
 }
+namespace storage::spi { struct BucketExecutor; }
 
 namespace proton {
 class AttributeConfigInspector;
@@ -115,6 +116,7 @@ private:
     MonitoredRefCount             _refCount;
     bool                          _syncFeedViewEnabled;
     IDocumentDBOwner             &_owner;
+    storage::spi::BucketExecutor &_bucketExecutor;
     DDBState                      _state;
     DiskMemUsageForwarder         _dmUsageForwarder;
     AttributeUsageFilter          _writeFilter;
@@ -233,6 +235,7 @@ public:
                IDocumentDBOwner &owner,
                vespalib::SyncableThreadExecutor &warmupExecutor,
                vespalib::ThreadStackExecutorBase &sharedExecutor,
+               storage::spi::BucketExecutor & bucketExecutor,
                const search::transactionlog::WriterFactory &tlsWriterFactory,
                MetricsWireService &metricsWireService,
                const search::common::FileHeaderContext &fileHeaderContext,

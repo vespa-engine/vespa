@@ -4,6 +4,7 @@
 #include "heart_beat_job.h"
 #include "job_tracked_maintenance_job.h"
 #include "lid_space_compaction_job.h"
+#include "lid_space_compaction_job_take2.h"
 #include "maintenance_jobs_injector.h"
 #include "prune_session_cache_job.h"
 #include "pruneremoveddocumentsjob.h"
@@ -25,6 +26,7 @@ trackJob(const IJobTracker::SP &tracker, IMaintenanceJob::UP job)
 void
 injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              const DocumentDBMaintenanceConfig &config,
+                             storage::spi::BucketExecutor & bucketExecutor,
                              const ILidSpaceCompactionHandler::Vector &lscHandlers,
                              IOperationStorer &opStorer,
                              IFrozenBucketHandler &fbHandler,
@@ -34,15 +36,27 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              const std::shared_ptr<IBucketStateCalculator> &calc,
                              document::BucketSpace bucketSpace)
 {
-    (void) bucketSpace;
     for (auto &lidHandler : lscHandlers) {
-        IMaintenanceJob::UP job = std::make_unique<LidSpaceCompactionJob>(
-                config.getLidSpaceCompactionConfig(),
-                *lidHandler, opStorer, fbHandler,
-                diskMemUsageNotifier,
-                config.getBlockableJobConfig(),
-                clusterStateChangedNotifier,
-                (calc ? calc->nodeRetired() : false));
+
+        IMaintenanceJob::UP job;
+        if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
+            job = std::make_unique<LidSpaceCompactionJob>(
+                    config.getLidSpaceCompactionConfig(),
+                    *lidHandler, opStorer, fbHandler,
+                    diskMemUsageNotifier,
+                    config.getBlockableJobConfig(),
+                    clusterStateChangedNotifier,
+                    (calc ? calc->nodeRetired() : false));
+        } else {
+            job = std::make_unique<lidspace::CompactionJob>(
+                    config.getLidSpaceCompactionConfig(),
+                    *lidHandler, opStorer, controller.masterThread(), bucketExecutor,
+                    diskMemUsageNotifier,
+                    config.getBlockableJobConfig(),
+                    clusterStateChangedNotifier,
+                    (calc ? calc->nodeRetired() : false),
+                    bucketSpace);
+        }
         controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
     }
 }
@@ -82,6 +96,7 @@ injectBucketMoveJob(MaintenanceController &controller,
 void
 MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     const DocumentDBMaintenanceConfig &config,
+                                    storage::spi::BucketExecutor & bucketExecutor,
                                     IHeartBeatHandler &hbHandler,
                                     matching::ISessionCachePruner &scPruner,
                                     const ILidSpaceCompactionHandler::Vector &lscHandlers,
@@ -111,7 +126,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     controller.registerJobInMasterThread(
             trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob)));
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
-        injectLidSpaceCompactionJobs(controller, config, lscHandlers, opStorer, fbHandler,
+        injectLidSpaceCompactionJobs(controller, config, bucketExecutor, lscHandlers, opStorer, fbHandler,
                                      jobTrackers.getLidSpaceCompact(), diskMemUsageNotifier,
                                      clusterStateChangedNotifier, calc, bucketSpace);
     }
