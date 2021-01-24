@@ -130,7 +130,6 @@ public class ApplicationRepositoryTest {
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withFlagSource(flagSource)
                 .build();
-        tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
         tenantRepository.addTenant(tenant3);
@@ -265,9 +264,8 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogsForHostname() {
-        ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
-        deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
-        HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
+        deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId()).build());
+        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("localhost"), "");
         assertEquals(200, response.getStatus());
     }
 
@@ -280,7 +278,6 @@ public class ApplicationRepositoryTest {
         // Add file reference that is not in use, but should not be deleted (not older than 14 days)
         File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), Instant.now());
 
-        tenantRepository.addTenant(tenant1);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(provisioner)

@@ -216,6 +216,8 @@ public class TenantRepository {
     }
 
     public synchronized Tenant addTenant(TenantName tenantName) {
+        if (tenants.containsKey(tenantName)) throw new IllegalArgumentException("Tenant '" + tenantName + "' already exists");
+
         writeTenantPath(tenantName);
         return createTenant(tenantName, clock.instant());
     }

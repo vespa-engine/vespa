@@ -56,7 +56,6 @@ public class HttpGetConfigHandlerTest {
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        tenantRepository.addTenant(tenant);
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())

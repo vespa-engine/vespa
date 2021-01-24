@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.ConfigKey;
@@ -40,7 +39,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class HttpListConfigsHandlerTest {
 
-    private static final TenantName tenant = TenantName.from("default");
     private static final String baseUri = "http://foo.com:8080/config/v1/";
     private final static File testApp = new File("src/test/resources/deploy/validapp");
     private static final ApplicationId applicationId = ApplicationId.defaultId();
@@ -61,7 +59,6 @@ public class HttpListConfigsHandlerTest {
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        tenantRepository.addTenant(tenant);
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())

@@ -91,7 +91,6 @@ public class SessionRepositoryTest {
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withModelFactoryRegistry(modelFactoryRegistry)
                 .build();
-        tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())

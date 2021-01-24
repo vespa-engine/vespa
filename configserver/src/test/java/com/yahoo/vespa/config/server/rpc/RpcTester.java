@@ -89,7 +89,8 @@ public class RpcTester implements AutoCloseable {
                 .withHostRegistry(hostRegistry)
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        tenantRepository.addTenant(tenantName);
+        if (tenantRepository.getTenant(tenantName) == null)
+            tenantRepository.addTenant(tenantName);
         startRpcServer();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
