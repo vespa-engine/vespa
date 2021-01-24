@@ -395,7 +395,7 @@ lidspacecompaction.removebatchblockrate double default=0.5
 lidspacecompaction.removeblockrate double default=100.0
 
 ## Set to true to enable bucket locking via content layer
-lidspacecompaction.usebucketexecutor bool default=true
+lidspacecompaction.usebucketexecutor bool default=false
 
 ## This is the maximum value visibilitydelay you can have.
 ## A to higher value here will cost more memory while not improving too much.
