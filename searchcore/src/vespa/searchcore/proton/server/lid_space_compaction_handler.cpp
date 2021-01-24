@@ -14,6 +14,7 @@ using document::BucketId;
 using document::Document;
 using vespalib::IDestructorCallback;
 using search::LidUsageStats;
+using search::DocumentMetaData;
 using storage::spi::Timestamp;
 
 namespace proton {
@@ -53,6 +54,16 @@ IDocumentScanIterator::UP
 LidSpaceCompactionHandler::getIterator() const
 {
     return std::make_unique<DocumentScanIterator>(*_subDb.meta_store());
+}
+
+DocumentMetaData
+LidSpaceCompactionHandler::getMetaData(uint32_t lid) const {
+    if (_subDb.meta_store()->validLid(lid)) {
+        const RawDocumentMetaData &metaData = _subDb.meta_store()->getRawMetaData(lid);
+        return DocumentMetaData(lid, metaData.getTimestamp(),
+                                metaData.getBucketId(), metaData.getGid());
+    }
+    return DocumentMetaData();
 }
 
 MoveOperation::UP

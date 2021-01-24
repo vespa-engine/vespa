@@ -42,15 +42,17 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
 }
 
 void
-CompactionJob::moveDocument(const search::DocumentMetaData & metaThen, std::shared_ptr<IDestructorCallback> context) {
-    search::DocumentMetaData metaNow = _scanItr->getMetaData(metaThen.lid);
-    if (metaNow.lid != metaThen.lid) return;
-    if (metaNow.bucketId != metaThen.bucketId) return;
-
-    auto op = _handler.createMoveOperation(metaNow, 0); // The real lid must be sampled in the master thread.
+CompactionJob::moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> context) {
+    // The real lid must be sampled in the master thread.
+    //TODO remove target lid from createMoveOperation interface
+    auto op = _handler.createMoveOperation(meta, 0);
     if (!op) return;
 
-    _master.execute(makeLambdaTask([this, moveOp=std::move(op), onDone=std::move(context)]() {
+    _master.execute(makeLambdaTask([this, metaThen=meta, moveOp=std::move(op), onDone=std::move(context)]() {
+        search::DocumentMetaData metaNow = _handler.getMetaData(metaThen.lid);
+        if (metaNow.lid != metaThen.lid) return;
+        if (metaNow.bucketId != metaThen.bucketId) return;
+
         moveOp->setTargetLid(_handler.getLidStatus().getLowestFreeLid());
         _opStorer.appendOperation(*moveOp, onDone);
         _handler.handleMove(*moveOp, std::move(onDone));

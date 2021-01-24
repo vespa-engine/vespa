@@ -31,10 +31,6 @@ search::DocumentMetaData MyScanIterator::next(uint32_t compactLidLimit, bool ret
     return search::DocumentMetaData();
 }
 
-search::DocumentMetaData MyScanIterator::getMetaData(uint32_t lid) const {
-    return search::DocumentMetaData(lid, TIMESTAMP_1, createBucketId(lid), GID_1);
-}
-
 document::BucketId
 MyScanIterator::createBucketId(uint32_t lid) const {
     return _bucketIdEqualLid ? document::BucketId(lid) : BUCKET_ID_1;
@@ -91,6 +87,11 @@ IDocumentScanIterator::UP
 MyHandler::getIterator() const {
     assert(_iteratorCnt < _lids.size());
     return std::make_unique<MyScanIterator>(_lids[_iteratorCnt++], _bucketIdEqualLid);
+}
+
+search::DocumentMetaData
+MyHandler::getMetaData(uint32_t lid) const {
+    return search::DocumentMetaData(lid, TIMESTAMP_1, document::BucketId(lid), GID_1);
 }
 
 MoveOperation::UP

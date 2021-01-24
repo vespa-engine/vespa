@@ -55,6 +55,11 @@ struct ILidSpaceCompactionHandler
     virtual std::unique_ptr<IDocumentScanIterator> getIterator() const = 0;
 
     /**
+     * Return the meta data associated with the given lid
+     */
+    virtual search::DocumentMetaData getMetaData(uint32_t lid) const = 0;
+
+    /**
      * Creates a move operation for moving the given document to the given lid.
      */
     virtual std::unique_ptr<MoveOperation> createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const = 0;

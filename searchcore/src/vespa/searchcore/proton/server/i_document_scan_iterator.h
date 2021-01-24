@@ -30,8 +30,6 @@ struct IDocumentScanIterator
      * @param retry Whether we should start the scan with the previous returned document.
      */
     virtual search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) = 0;
-
-    virtual search::DocumentMetaData getMetaData(uint32_t lid) const = 0;
 };
 
 } // namespace proton
