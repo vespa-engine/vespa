@@ -110,13 +110,9 @@ class LogFileHandler <LOGTYPE> {
     void shutdown() {
         logThread.interrupt();
         try {
-            System.out.println(1);
             logThread.executor.shutdownNow();
-            System.out.println(2);
             logThread.executor.awaitTermination(600, TimeUnit.SECONDS);
-            System.out.println(3);
             logThread.join();
-            System.out.println(4);
         } catch (InterruptedException e) {
         }
     }
