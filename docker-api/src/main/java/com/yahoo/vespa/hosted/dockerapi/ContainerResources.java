@@ -28,7 +28,7 @@ public class ContainerResources {
     /** The maximum amount, in bytes, of memory the container can use. */
     private final long memoryBytes;
 
-    ContainerResources(double cpus, int cpuShares, long memoryBytes) {
+    public ContainerResources(double cpus, int cpuShares, long memoryBytes) {
         this.cpus = cpus;
         this.cpuShares = cpuShares;
         this.memoryBytes = memoryBytes;

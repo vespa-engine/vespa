@@ -393,12 +393,13 @@ public class NodeAgentImpl implements NodeAgent {
         return zone.getEnvironment() == Environment.dev || zone.getSystemName().isCd();
     }
 
-    private boolean downloadImageIfNeeded(NodeSpec node, Optional<Container> container) {
+    private boolean downloadImageIfNeeded(NodeAgentContext context, Optional<Container> container) {
+        NodeSpec node = context.node();
         if (node.wantedDockerImage().equals(container.map(c -> c.image))) return false;
 
         RegistryCredentials credentials = registryCredentialsProvider.get();
         return node.wantedDockerImage()
-                   .map(image -> containerOperations.pullImageAsyncIfNeeded(image, credentials))
+                   .map(image -> containerOperations.pullImageAsyncIfNeeded(context, image, credentials))
                    .orElse(false);
     }
 
@@ -454,7 +455,7 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.cleanDiskIfFull(context);
                 storageMaintainer.handleCoreDumpsForContainer(context, container);
 
-                if (downloadImageIfNeeded(node, container)) {
+                if (downloadImageIfNeeded(context, container)) {
                     context.log(logger, "Waiting for image to download " + context.node().wantedDockerImage().get().asString());
                     return;
                 }

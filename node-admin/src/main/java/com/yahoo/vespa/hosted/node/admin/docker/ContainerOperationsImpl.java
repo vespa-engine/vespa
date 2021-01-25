@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
+import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -211,7 +212,7 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(DockerImage dockerImage, RegistryCredentials registryCredentials) {
+    public boolean pullImageAsyncIfNeeded(TaskContext context, DockerImage dockerImage, RegistryCredentials registryCredentials) {
         return containerEngine.pullImageAsyncIfNeeded(dockerImage, registryCredentials);
     }
 
@@ -321,12 +322,12 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public boolean noManagedContainersRunning() {
+    public boolean noManagedContainersRunning(TaskContext context) {
         return containerEngine.noManagedContainersRunning(MANAGER_NAME);
     }
 
     @Override
-    public boolean retainManagedContainers(Set<ContainerName> containerNames) {
+    public boolean retainManagedContainers(TaskContext context, Set<ContainerName> containerNames) {
         return containerEngine.listManagedContainers(MANAGER_NAME).stream()
                 .filter(containerName -> ! containerNames.contains(containerName))
                 .peek(containerName -> {
