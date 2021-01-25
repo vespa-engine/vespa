@@ -75,8 +75,7 @@ DocumentBucketMover::setupForBucket(const BucketId &bucket,
 }
 
 
-namespace
-{
+namespace {
 
 class MoveKey
 {

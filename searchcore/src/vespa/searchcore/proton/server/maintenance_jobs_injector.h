@@ -46,10 +46,8 @@ struct MaintenanceJobsInjector
                            IPruneRemovedDocumentsHandler &prdHandler,
                            IDocumentMoveHandler &moveHandler,
                            IBucketModifiedHandler &bucketModifiedHandler,
-                           IClusterStateChangedNotifier &
-                           clusterStateChangedNotifier,
-                           IBucketStateChangedNotifier &
-                           bucketStateChangedNotifier,
+                           IClusterStateChangedNotifier & clusterStateChangedNotifier,
+                           IBucketStateChangedNotifier & bucketStateChangedNotifier,
                            const std::shared_ptr<IBucketStateCalculator> &calc,
                            IDiskMemUsageNotifier &diskMemUsageNotifier,
                            DocumentDBJobTrackers &jobTrackers,

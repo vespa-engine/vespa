@@ -69,8 +69,7 @@ ClusterStateHandler::performSetClusterState(const ClusterState *calc, IGenericRe
 }
 
 void
-ClusterStateHandler::performGetModifiedBuckets(
-        IBucketIdListResultHandler *resultHandler)
+ClusterStateHandler::performGetModifiedBuckets(IBucketIdListResultHandler *resultHandler)
 {
     storage::spi::BucketIdListResult::List modifiedBuckets;
     modifiedBuckets.resize(_modifiedBuckets.size());

@@ -2,16 +2,9 @@
 
 #pragma once
 
-namespace document
-{
+namespace document { class BucketId;}
 
-class BucketId;
-
-}
-
-namespace proton
-{
-
+namespace proton {
 
 class IBucketModifiedHandler
 {
@@ -20,6 +13,4 @@ public:
     virtual ~IBucketModifiedHandler() {}
 };
 
-
-} // namespace proton
-
+}
