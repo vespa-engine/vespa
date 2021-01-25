@@ -300,11 +300,7 @@ public class TenantRepository {
 
     // Creates tenant and all its dependencies. This also includes loading active applications
     private Tenant createTenant(TenantName tenantName, Instant created) {
-        if (tenants.containsKey(tenantName)) {
-            Tenant tenant = getTenant(tenantName);
-            createAndWriteTenantMetaData(tenant);
-            return tenant;
-        }
+        if (tenants.containsKey(tenantName)) return getTenant(tenantName);
 
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
