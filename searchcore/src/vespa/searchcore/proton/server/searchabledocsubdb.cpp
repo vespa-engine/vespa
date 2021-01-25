@@ -269,8 +269,8 @@ SearchableDocSubDB::reconfigureIndexSearchable()
     std::lock_guard<std::mutex> guard(_configMutex);
     // Create new views as needed.
     _configurer.reconfigureIndexSearchable();
-    // Activate new feed view at once
-    syncViews();
+    // Activate new search view at once
+    _iSearchView.set(_rSearchView.get());
 }
 
 IFlushTarget::List
