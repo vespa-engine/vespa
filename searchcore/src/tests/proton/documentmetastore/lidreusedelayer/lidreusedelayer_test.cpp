@@ -113,8 +113,7 @@ public:
         if (!EXPECT_EQUAL(expRemoveCompleteCount, _removeCompleteCount)) {
             return false;
         }
-        if (!EXPECT_EQUAL(expRemoveBatchCompleteCount,
-                          _removeBatchCompleteCount)) {
+        if (!EXPECT_EQUAL(expRemoveBatchCompleteCount, _removeBatchCompleteCount)) {
             return false;
         }
         if (!EXPECT_EQUAL(expRemoveCompleteLids, _removeCompleteLids)) {
@@ -152,9 +151,7 @@ public:
         test::runInMaster(_writeService, func);
     }
 
-    void
-    cycledLids(const std::vector<uint32_t> &lids)
-    {
+    void cycledLids(const std::vector<uint32_t> &lids) {
         if (lids.size() == 1) {
             _store.removeComplete(lids[0]);
         } else {
@@ -162,33 +159,23 @@ public:
         }
     }
 
-    void
-    performCycleLids(const std::vector<uint32_t> &lids)
-    {
-        _writeService.master().execute(
-                makeLambdaTask([this, lids]() { cycledLids(lids);}));
+    void performCycleLids(const std::vector<uint32_t> &lids) {
+        _writeService.master().execute(makeLambdaTask([this, lids]() { cycledLids(lids);}));
     }
 
-    void
-    cycleLids(const std::vector<uint32_t> &lids)
-    {
+    void cycleLids(const std::vector<uint32_t> &lids) {
         if (lids.empty())
             return;
-        _writeService.index().execute(
-                makeLambdaTask([this, lids]() { performCycleLids(lids);}));
+        _writeService.index().execute(makeLambdaTask([this, lids]() { performCycleLids(lids);}));
     }
 
-    bool
-    delayReuse(uint32_t lid)
-    {
+    bool delayReuse(uint32_t lid) {
         bool res = false;
         runInMaster([&] () { res = _lidReuseDelayer->delayReuse(lid); } );
         return res;
     }
 
-    bool
-    delayReuse(const std::vector<uint32_t> &lids)
-    {
+    bool delayReuse(const std::vector<uint32_t> &lids) {
         bool res = false;
         runInMaster([&] () { res = _lidReuseDelayer->delayReuse(lids); });
         return res;
@@ -198,25 +185,9 @@ public:
         runInMaster([&] () { cycleLids(_lidReuseDelayer->getReuseLids()); });
     }
 
-    void
-    sync()
-    {
-        _writeService.sync();
-    }
+    void sync() { _writeService.sync(); }
 
-    void
-    scheduleDelayReuseLid(uint32_t lid)
-    {
-        runInMaster([&] () { cycleLids({ lid }); });
-    }
-
-    void
-    scheduleDelayReuseLids(const std::vector<uint32_t> &lids)
-    {
-        runInMaster([&] () { cycleLids(lids); });
-    }
 };
-
 
 TEST_F("require that nothing happens before free list is active", Fixture)
 {
@@ -225,7 +196,6 @@ TEST_F("require that nothing happens before free list is active", Fixture)
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
     EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
 }
-
 
 TEST_F("require that reuse can be batched", Fixture)
 {
@@ -242,7 +212,6 @@ TEST_F("require that reuse can be batched", Fixture)
     EXPECT_TRUE(f._store.assertWork(0, 1, 4));
     EXPECT_TRUE(assertThreadObserver(6, 1, 0, f._writeService));
 }
-
 
 TEST_F("require that single element array is optimized", Fixture)
 {

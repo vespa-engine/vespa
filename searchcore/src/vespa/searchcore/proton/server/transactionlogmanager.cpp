@@ -4,7 +4,6 @@
 #include "transactionlogmanager.h"
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>

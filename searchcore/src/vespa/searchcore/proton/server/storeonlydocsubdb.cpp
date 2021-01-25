@@ -23,7 +23,6 @@
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
