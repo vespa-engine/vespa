@@ -43,16 +43,15 @@ class MaintainerTester {
                 .withClock(clock)
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true))
                 .withConfigserverConfig(configserverConfig)
-                .withCurator(curator)
                 .withModelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
                 .build();
         applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withOrchestrator(new OrchestratorMock())
+                .withLogRetriever(new MockLogRetriever())
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
-                .withLogRetriever(new MockLogRetriever())
-                .withOrchestrator(new OrchestratorMock())
-                .withProvisioner(provisioner)
-                .withTenantRepository(tenantRepository)
                 .build();
     }
 

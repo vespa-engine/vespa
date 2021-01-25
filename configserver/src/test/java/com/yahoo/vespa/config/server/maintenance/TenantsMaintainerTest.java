@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -34,11 +34,12 @@ public class TenantsMaintainerTest {
         ApplicationRepository applicationRepository = tester.applicationRepository();
         File applicationPackage = new File("src/test/apps/hosted");
 
-        TenantName shouldBeDeleted = TenantName.from("should-be-deleted");
+        TenantName shouldBeDeleted = TenantName.from("to-be-deleted");
         TenantName shouldNotBeDeleted = TenantName.from("should-not-be-deleted");
 
         tenantRepository.addTenant(shouldBeDeleted);
         tenantRepository.addTenant(shouldNotBeDeleted);
+        tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
 
         tester.deployApp(applicationPackage, prepareParams(shouldNotBeDeleted));
         assertNotNull(tenantRepository.getTenant(shouldBeDeleted));
@@ -47,15 +48,15 @@ public class TenantsMaintainerTest {
         clock.advance(TenantsMaintainer.defaultTtlForUnusedTenant.plus(Duration.ofDays(1)));
         new TenantsMaintainer(applicationRepository, tester.curator(), new InMemoryFlagSource(), Duration.ofDays(1), clock).run();
 
-        // One tenant should have been deleted
+        // One tenant should now have been deleted
         assertNull(tenantRepository.getTenant(shouldBeDeleted));
         assertNotNull(tenantRepository.getTenant(shouldNotBeDeleted));
 
-        // System tenants should not have been deleted
+        // System tenants should not be deleted
         assertNotNull(tenantRepository.getTenant(TenantName.defaultName()));
         assertNotNull(tenantRepository.getTenant(TenantRepository.HOSTED_VESPA_TENANT));
 
-        // Delete both apps, add tenant again and deploy
+        // Delete app, add tenant again and deploy
         tester.applicationRepository().delete(applicationId(shouldNotBeDeleted));
         tenantRepository.addTenant(shouldBeDeleted);
         tester.deployApp(applicationPackage, prepareParams(shouldBeDeleted));

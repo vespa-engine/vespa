@@ -216,10 +216,8 @@ public class TenantRepository {
     }
 
     public synchronized Tenant addTenant(TenantName tenantName) {
-        if (tenants.containsKey(tenantName)) throw new IllegalArgumentException("Tenant '" + tenantName + "' already exists");
-
         writeTenantPath(tenantName);
-        return getOrCreateTenant(tenantName, clock.instant());
+        return createTenant(tenantName, clock.instant());
     }
 
     public void createAndWriteTenantMetaData(Tenant tenant) {
@@ -288,7 +286,7 @@ public class TenantRepository {
     }
 
     // Use when bootstrapping an existing tenant based on ZooKeeper data
-    protected void bootstrapTenant(TenantName tenantName) {
+    protected synchronized void bootstrapTenant(TenantName tenantName) {
         createTenant(tenantName, readCreatedTimeFromZooKeeper(tenantName));
     }
 
@@ -300,18 +298,14 @@ public class TenantRepository {
             return clock.instant();
     }
 
-    private Tenant getOrCreateTenant(TenantName tenantName, Instant created) {
+    // Creates tenant and all its dependencies. This also includes loading active applications
+    private Tenant createTenant(TenantName tenantName, Instant created) {
         if (tenants.containsKey(tenantName)) {
             Tenant tenant = getTenant(tenantName);
             createAndWriteTenantMetaData(tenant);
             return tenant;
-        } else {
-            return createTenant(tenantName, created);
         }
-    }
 
-    // Creates tenant and all its dependencies. This also includes loading active applications
-    private Tenant createTenant(TenantName tenantName, Instant created) {
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
                                        curator,
@@ -501,7 +495,7 @@ public class TenantRepository {
             case CHILD_ADDED:
                 TenantName t1 = getTenantNameFromEvent(event);
                 if ( ! tenants.containsKey(t1))
-                    zkWatcherExecutor.execute(t1, () -> getOrCreateTenant(t1, readCreatedTimeFromZooKeeper(t1)));
+                    zkWatcherExecutor.execute(t1, () -> bootstrapTenant(t1));
                 break;
             case CHILD_REMOVED:
                 TenantName t2 = getTenantNameFromEvent(event);
