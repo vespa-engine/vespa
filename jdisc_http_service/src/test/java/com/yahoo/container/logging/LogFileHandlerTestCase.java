@@ -127,7 +127,7 @@ public class LogFileHandlerTestCase {
 
         String longMessage = formatter.format(new LogRecord(Level.INFO, "string which is way longer than the word test"));
         handler.publish(longMessage);
-        handler.waitDrained();
+        handler.flush();
         assertThat(Files.size(Paths.get(firstFile))).isEqualTo(31);
         final long expectedSecondFileLength = 72;
         long secondFileLength;
@@ -172,7 +172,7 @@ public class LogFileHandlerTestCase {
         for (int i = 0; i < logEntries; i++) {
             h.publish("test");
         }
-        h.waitDrained();
+        h.flush();
         String f1 = h.getFileName();
         assertThat(f1).startsWith(root.getAbsolutePath() + "/logfilehandlertest.");
         File uncompressed = new File(f1);
