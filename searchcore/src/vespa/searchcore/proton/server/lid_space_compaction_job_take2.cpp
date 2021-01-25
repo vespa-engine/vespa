@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/persistence/spi/bucket_tasks.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <cassert>
@@ -46,14 +47,19 @@ CompactionJob::moveDocument(const search::DocumentMetaData & meta, std::shared_p
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
     auto op = _handler.createMoveOperation(meta, 0);
-    if (!op) return;
+    if (!op || !op->getDocument()) return;
+    // Early detection and force md5 calculation outside of master thread
+    if (meta.gid != op->getDocument()->getId().getGlobalId()) return;
 
     _master.execute(makeLambdaTask([this, metaThen=meta, moveOp=std::move(op), onDone=std::move(context)]() {
         search::DocumentMetaData metaNow = _handler.getMetaData(metaThen.lid);
         if (metaNow.lid != metaThen.lid) return;
         if (metaNow.bucketId != metaThen.bucketId) return;
+        if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId()) return;
 
-        moveOp->setTargetLid(_handler.getLidStatus().getLowestFreeLid());
+        uint32_t lowestLid = _handler.getLidStatus().getLowestFreeLid();
+        if (lowestLid >= metaNow.lid) return;
+        moveOp->setTargetLid(lowestLid);
         _opStorer.appendOperation(*moveOp, onDone);
         _handler.handleMove(*moveOp, std::move(onDone));
     }));

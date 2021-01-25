@@ -2,11 +2,13 @@
 
 #include "lid_space_common.h"
 
-MyScanIterator::MyScanIterator(const LidVector &lids, bool bucketIdEqualLid)
-    : _lids(lids),
+using vespalib::make_string_short::fmt;
+
+MyScanIterator::MyScanIterator(const MyHandler & handler, const LidVector &lids)
+    : _handler(handler),
+      _lids(lids),
       _itr(_lids.begin()),
-      _validItr(true),
-      _bucketIdEqualLid(bucketIdEqualLid)
+      _validItr(true)
 {}
 MyScanIterator::~MyScanIterator() = default;
 
@@ -23,7 +25,7 @@ search::DocumentMetaData MyScanIterator::next(uint32_t compactLidLimit, bool ret
     if (_itr != _lids.end()) {
         uint32_t lid = *_itr;
         if (lid > compactLidLimit) {
-            return search::DocumentMetaData(lid, TIMESTAMP_1, createBucketId(lid), GID_1);
+            return _handler.getMetaData(lid);
         }
     } else {
         _validItr = false;
@@ -32,7 +34,7 @@ search::DocumentMetaData MyScanIterator::next(uint32_t compactLidLimit, bool ret
 }
 
 document::BucketId
-MyScanIterator::createBucketId(uint32_t lid) const {
+MyHandler::createBucketId(uint32_t lid) const {
     return _bucketIdEqualLid ? document::BucketId(lid) : BUCKET_ID_1;
 }
 
@@ -86,19 +88,24 @@ MyHandler::getLidStatus() const {
 IDocumentScanIterator::UP
 MyHandler::getIterator() const {
     assert(_iteratorCnt < _lids.size());
-    return std::make_unique<MyScanIterator>(_lids[_iteratorCnt++], _bucketIdEqualLid);
+    return std::make_unique<MyScanIterator>(*this, _lids[_iteratorCnt++]);
 }
 
 search::DocumentMetaData
 MyHandler::getMetaData(uint32_t lid) const {
-    return search::DocumentMetaData(lid, TIMESTAMP_1, document::BucketId(lid), GID_1);
+    if (lid < _docs.size()) {
+        return _docs[lid].first;
+    }
+    return search::DocumentMetaData();
 }
 
 MoveOperation::UP
 MyHandler::createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const {
     assert(document.lid > moveToLid);
     _moveFromLid = document.lid;
-    auto op = std::make_unique<MoveOperation>();
+    const auto & entry = _docs[document.lid];
+    auto op = std::make_unique<MoveOperation>(entry.first.bucketId, entry.first.timestamp, entry.second,
+                                              DbDocumentId(document.lid), 0);
     op->setTargetLid(moveToLid);
     return op;
 }
@@ -128,11 +135,17 @@ MyHandler::MyHandler(bool storeMoveDoneContexts, bool bucketIdEqualLid)
       _bucketIdEqualLid(bucketIdEqualLid),
       _moveDoneContexts(),
       _op_listener(),
-      _rm_listener()
-{}
+      _rm_listener(),
+      _docs()
+{
+    DocBuilder builder = DocBuilder(Schema());
+    for (uint32_t i(0); i < 10; i++) {
+        auto doc = builder.startDocument(fmt("%s%d", DOC_ID.c_str(), i)).endDocument();
+        _docs.emplace_back(DocumentMetaData(i, TIMESTAMP_1, createBucketId(i), doc->getId().getGlobalId()), std::move(doc));
+    }
+}
 
 MyHandler::~MyHandler() = default;
-
 
 void
 MyStorer::appendOperation(const FeedOperation &op, DoneCallback) {
