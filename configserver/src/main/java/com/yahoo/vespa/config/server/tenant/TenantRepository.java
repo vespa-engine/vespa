@@ -344,9 +344,9 @@ public class TenantRepository {
                                                                     tenantListener);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
-        notifyNewTenant(tenant);
-        tenants.putIfAbsent(tenantName, tenant);
         createAndWriteTenantMetaData(tenant);
+        tenants.putIfAbsent(tenantName, tenant);
+        notifyNewTenant(tenant);
         return tenant;
     }
 
