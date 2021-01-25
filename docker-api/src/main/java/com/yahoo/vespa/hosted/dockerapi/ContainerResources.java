@@ -6,6 +6,7 @@ import java.util.Objects;
 /**
  * @author valerijf
  */
+// TODO: Move this to node-admin when docker-api module can be removed
 public class ContainerResources {
 
     public static final ContainerResources UNLIMITED = ContainerResources.from(0, 0, 0);

@@ -8,6 +8,7 @@ import java.util.Objects;
 /**
  * @author stiankri
  */
+// TODO: Move this to node-admin when docker-api module can be removed
 public class Container {
     public final String hostname;
     public final DockerImage image;

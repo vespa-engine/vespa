@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
  *
  * @author bakksjo
  */
+// TODO: Move this to node-admin when docker-api module can be removed
 public class ContainerName {
     private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-]+$");
     private final String name;

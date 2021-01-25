@@ -41,6 +41,7 @@ import java.util.stream.Stream;
  *
  * @author Haakon Dybdahl
  */
+// TODO: Remove when Podman becomes the only implementation in use
 public class ContainerOperationsImpl implements ContainerOperations {
 
     private static final Logger logger = Logger.getLogger(ContainerOperationsImpl.class.getName());
