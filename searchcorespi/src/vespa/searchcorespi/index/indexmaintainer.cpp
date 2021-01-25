@@ -9,7 +9,7 @@
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
 #include <vespa/fastos/file.h>
-#include <vespa/searchcorespi/flush/closureflushtask.h>
+#include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/dirtraverse.h>
@@ -960,7 +960,7 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
         return FlushTask::UP();
     }
     SerialNum realSerialNum = args.flush_serial_num;
-    return makeFlushTask(makeClosure(this, &IndexMaintainer::doFlush, std::move(args)), realSerialNum);
+    return makeLambdaFlushTask([this, myargs=std::move(args)]() mutable { doFlush(std::move(myargs)); }, realSerialNum);
 }
 
 FusionSpec
