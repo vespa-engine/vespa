@@ -224,17 +224,10 @@ class IndexMaintainer : public IIndexManager,
         Schema::SP _prunedSchema;
         ISearchableIndexCollection::SP _old_source_list; // Delays destruction
 
-        FusionArgs()
-            : _new_fusion_id(0u),
-              _changeGens(),
-              _schema(),
-              _prunedSchema(),
-              _old_source_list()
-        { }
+        FusionArgs();
         ~FusionArgs();
     };
 
-    IFlushTarget::SP getFusionTarget();
     void scheduleFusion(const FlushIds &flushIds);
     bool canRunFusion(const FusionSpec &spec) const;
     bool doneFusion(FusionArgs *args, IDiskIndex::SP *new_index);
@@ -246,12 +239,7 @@ class IndexMaintainer : public IIndexManager,
         IMemoryIndex::SP _oldIndex;
         ISearchableIndexCollection::SP _oldSourceList; // Delays destruction
 
-        SetSchemaArgs(void)
-            : _newSchema(),
-              _oldSchema(),
-              _oldIndex(),
-              _oldSourceList()
-        { }
+        SetSchemaArgs();
         ~SetSchemaArgs();
     };
 
@@ -268,7 +256,7 @@ class IndexMaintainer : public IIndexManager,
      * result.
      */
     bool reconfigure(vespalib::Closure0<bool>::UP closure);
-    virtual void warmupDone(ISearchableIndexCollection::SP current) override;
+    void warmupDone(ISearchableIndexCollection::SP current) override;
     bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
     void scheduleCommit();
     void commit();
@@ -371,4 +359,3 @@ public:
 };
 
 }
-
