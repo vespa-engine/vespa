@@ -2,13 +2,6 @@
 
 package com.yahoo.container.logging;
 
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeUtils;
-import com.yahoo.slime.Type;
-import com.yahoo.yolean.Exceptions;
-
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -67,75 +60,6 @@ public class ConnectionLogEntry {
         this.sslHandshakeFailureException = builder.sslHandshakeFailureException;
         this.sslHandshakeFailureMessage = builder.sslHandshakeFailureMessage;
         this.sslHandshakeFailureType = builder.sslHandshakeFailureType;
-    }
-
-    public String toJson() {
-        Slime slime = new Slime();
-        Cursor cursor = slime.setObject();
-        cursor.setString("id", id.toString());
-        setTimestamp(cursor, timestamp, "timestamp");
-
-        setDouble(cursor, durationSeconds, "duration");
-        setString(cursor, peerAddress, "peerAddress");
-        setInteger(cursor, peerPort, "peerPort");
-        setString(cursor, localAddress, "localAddress");
-        setInteger(cursor, localPort, "localPort");
-        setString(cursor, remoteAddress, "remoteAddress");
-        setInteger(cursor, remotePort, "remotePort");
-        setLong(cursor, httpBytesReceived, "httpBytesReceived");
-        setLong(cursor, httpBytesSent, "httpBytesSent");
-        setLong(cursor, requests, "requests");
-        setLong(cursor, responses, "responses");
-        setString(cursor, sslProtocol, "ssl", "protocol");
-        setString(cursor, sslSessionId, "ssl", "sessionId");
-        setString(cursor, sslCipherSuite, "ssl", "cipherSuite");
-        setString(cursor, sslPeerSubject, "ssl", "peerSubject");
-        setTimestamp(cursor, sslPeerNotBefore, "ssl", "peerNotBefore");
-        setTimestamp(cursor, sslPeerNotAfter, "ssl", "peerNotAfter");
-        setString(cursor, sslSniServerName, "ssl", "sniServerName");
-        setString(cursor, sslHandshakeFailureException, "ssl", "handshake-failure", "exception");
-        setString(cursor, sslHandshakeFailureMessage, "ssl", "handshake-failure", "message");
-        setString(cursor, sslHandshakeFailureType, "ssl", "handshake-failure", "type");
-        return new String(Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(slime)), StandardCharsets.UTF_8);
-    }
-
-    private void setString(Cursor cursor, String value, String... keys) {
-        if(value != null) {
-            subCursor(cursor, keys).setString(keys[keys.length - 1], value);
-        }
-    }
-
-    private void setLong(Cursor cursor, Long value, String... keys) {
-        if (value != null) {
-            subCursor(cursor, keys).setLong(keys[keys.length - 1], value);
-        }
-    }
-
-    private void setInteger(Cursor cursor, Integer value, String... keys) {
-        if (value != null) {
-            subCursor(cursor, keys).setLong(keys[keys.length - 1], value);
-        }
-    }
-
-    private void setTimestamp(Cursor cursor, Instant timestamp, String... keys) {
-        if (timestamp != null) {
-            subCursor(cursor, keys).setString(keys[keys.length - 1], timestamp.toString());
-        }
-    }
-
-    private void setDouble(Cursor cursor, Double value, String... keys) {
-        if (value != null) {
-            subCursor(cursor, keys).setDouble(keys[keys.length - 1], value);
-        }
-    }
-
-    private static Cursor subCursor(Cursor cursor, String... keys) {
-        Cursor subCursor = cursor;
-        for (int i = 0; i < keys.length - 1; ++i) {
-            Cursor field = subCursor.field(keys[i]);
-            subCursor = field.type() != Type.NIX ? field : subCursor.setObject(keys[i]);
-        }
-        return subCursor;
     }
 
     public static Builder builder(UUID id, Instant timestamp) {
