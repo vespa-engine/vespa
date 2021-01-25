@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.configmodelview;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.path.Path;
 
 import java.io.File;
@@ -10,7 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * All models imported from the models/ directory in the application package.
@@ -21,10 +22,11 @@ import java.util.logging.Logger;
  */
 public class ImportedMlModels {
 
-    private static final Logger log = Logger.getLogger(ImportedMlModels.class.getName());
-
     /** All imported models, indexed by their names */
     private final Map<String, ImportedMlModel> importedModels;
+
+    /** Models that were not imported due to some error */
+    private final Map<String, String> skippedModels = new HashMap<>();
 
     /** Create a null imported models */
     public ImportedMlModels() {
@@ -35,7 +37,7 @@ public class ImportedMlModels {
         Map<String, ImportedMlModel> models = new HashMap<>();
 
         // Find all subdirectories recursively which contains a model we can read
-        importRecursively(modelsDirectory, models, importers);
+        importRecursively(modelsDirectory, models, importers, skippedModels);
         importedModels = Collections.unmodifiableMap(models);
     }
 
@@ -56,9 +58,14 @@ public class ImportedMlModels {
         return importedModels.values();
     }
 
+    public Map<String, String> getSkippedModels() {
+        return skippedModels;
+    }
+
     private static void importRecursively(File dir,
                                           Map<String, ImportedMlModel> models,
-                                          Collection<MlModelImporter> importers) {
+                                          Collection<MlModelImporter> importers,
+                                          Map<String, String> skippedModels) {
         if ( ! dir.isDirectory()) return;
 
         Arrays.stream(dir.listFiles()).sorted().forEach(child -> {
@@ -73,12 +80,11 @@ public class ImportedMlModels {
                     ImportedMlModel importedModel = importer.get().importModel(name, child);
                     models.put(name, importedModel);
                 } catch (RuntimeException e) {
-                    log.warning("Skipping import of model " + name + " as an exception occurred during import. " +
-                            "Error: " + e.getMessage());
+                    skippedModels.put(name, e.getMessage());
                 }
             }
             else {
-                importRecursively(child, models, importers);
+                importRecursively(child, models, importers, skippedModels);
             }
         });
     }
