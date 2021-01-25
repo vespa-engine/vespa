@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.configmodelview;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.path.Path;
 
 import java.io.File;
@@ -11,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 
 /**
  * All models imported from the models/ directory in the application package.
