@@ -42,20 +42,14 @@ public class LogFileHandlerTestCase {
 
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S";
         long[] rTimes = {1000, 2000, 10000};
-        Formatter formatter = new Formatter() {
-            public String format(LogRecord r) {
-                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
-                String timeStamp = df.format(new Date(r.getMillis()));
-                return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
-            }
-        };
         LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, pattern, rTimes, null, new StringLogWriter());
         long now = System.currentTimeMillis();
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
         long tomorrowMillis = tomorrowDays * millisPerDay;
-        assertThat(tomorrowMillis+1000).isEqualTo(h.getNextRotationTime(tomorrowMillis));
-        assertThat(tomorrowMillis+10000).isEqualTo(h.getNextRotationTime(tomorrowMillis+3000));
+
+        assertThat(tomorrowMillis+1000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis));
+        assertThat(tomorrowMillis+10000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis+3000));
         String message = "test";
         h.publish(message);
         h.publish( "another test");
