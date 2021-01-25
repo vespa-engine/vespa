@@ -42,20 +42,14 @@ public class LogFileHandlerTestCase {
 
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S";
         long[] rTimes = {1000, 2000, 10000};
-        Formatter formatter = new Formatter() {
-            public String format(LogRecord r) {
-                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
-                String timeStamp = df.format(new Date(r.getMillis()));
-                return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
-            }
-        };
         LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, pattern, rTimes, null, new StringLogWriter());
         long now = System.currentTimeMillis();
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
         long tomorrowMillis = tomorrowDays * millisPerDay;
-        assertThat(tomorrowMillis+1000).isEqualTo(h.getNextRotationTime(tomorrowMillis));
-        assertThat(tomorrowMillis+10000).isEqualTo(h.getNextRotationTime(tomorrowMillis+3000));
+
+        assertThat(tomorrowMillis+1000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis));
+        assertThat(tomorrowMillis+10000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis+3000));
         String message = "test";
         h.publish(message);
         h.publish( "another test");
@@ -127,7 +121,7 @@ public class LogFileHandlerTestCase {
 
         String longMessage = formatter.format(new LogRecord(Level.INFO, "string which is way longer than the word test"));
         handler.publish(longMessage);
-        handler.waitDrained();
+        handler.flush();
         assertThat(Files.size(Paths.get(firstFile))).isEqualTo(31);
         final long expectedSecondFileLength = 72;
         long secondFileLength;
@@ -172,7 +166,7 @@ public class LogFileHandlerTestCase {
         for (int i = 0; i < logEntries; i++) {
             h.publish("test");
         }
-        h.waitDrained();
+        h.flush();
         String f1 = h.getFileName();
         assertThat(f1).startsWith(root.getAbsolutePath() + "/logfilehandlertest.");
         File uncompressed = new File(f1);
