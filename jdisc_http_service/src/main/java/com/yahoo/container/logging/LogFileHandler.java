@@ -43,6 +43,8 @@ class LogFileHandler <LOGTYPE> {
     private final ArrayBlockingQueue<Operation<LOGTYPE>> logQueue = new ArrayBlockingQueue<>(100000);
     final LogThread<LOGTYPE> logThread;
 
+    @FunctionalInterface private interface Pollable<T> { Operation<T> poll() throws InterruptedException; }
+
     LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, LogWriter<LOGTYPE> logWriter) {
         this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, logWriter);
     }
@@ -53,17 +55,12 @@ class LogFileHandler <LOGTYPE> {
             long[] rotationTimes,
             String symlinkName,
             LogWriter<LOGTYPE> logWriter) {
-        this.logThread = new LogThread<>(logWriter, filePattern, compression, rotationTimes, symlinkName, this::poll);
+        this.logThread = new LogThread<LOGTYPE>(logWriter, filePattern, compression, rotationTimes, symlinkName, this::poll);
         this.logThread.start();
     }
 
-    private Operation<LOGTYPE> poll() {
-        try {
-            return logQueue.poll(100, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            // TODO: Handle interrupt
-            return null;
-        }
+    private Operation<LOGTYPE> poll() throws InterruptedException {
+        return logQueue.poll(100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -186,7 +183,7 @@ class LogFileHandler <LOGTYPE> {
      * Handle logging and file operations
      */
     static class LogThread<LOGTYPE> extends Thread {
-        private final Supplier<Operation<LOGTYPE>> operationProvider;
+        private final Pollable<LOGTYPE> operationProvider;
         long lastFlush = 0;
         private FileOutputStream currentOutputStream = null;
         private long nextRotationTime = 0;
@@ -206,7 +203,7 @@ class LogFileHandler <LOGTYPE> {
                   Compression compression,
                   long[] rotationTimes,
                   String symlinkName,
-                  Supplier<Operation<LOGTYPE>> operationProvider) {
+                  Pollable<LOGTYPE> operationProvider) {
             super("Logger");
             setDaemon(true);
             this.logWriter = logWriter;
@@ -231,7 +228,7 @@ class LogFileHandler <LOGTYPE> {
 
         private void storeLogRecords() throws InterruptedException {
             while (!isInterrupted()) {
-                Operation<LOGTYPE> r = operationProvider.get();
+                Operation<LOGTYPE> r = operationProvider.poll();
                 if (r != null) {
                     if (r.type == Operation.Type.flush) {
                         internalFlush();
