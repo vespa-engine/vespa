@@ -5,6 +5,7 @@ import com.yahoo.compress.ZstdOuputStream;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
+import com.yahoo.protect.Process;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.yolean.Exceptions;
 
@@ -217,16 +218,16 @@ class LogFileHandler <LOGTYPE> {
         @Override
         public void run() {
             try {
-                storeLogRecords();
+                handleLogOperations();
             } catch (InterruptedException e) {
             } catch (Exception e) {
-                com.yahoo.protect.Process.logAndDie("Failed storing log records", e);
+                Process.logAndDie("Failed storing log records", e);
             }
 
             internalFlush();
         }
 
-        private void storeLogRecords() throws InterruptedException {
+        private void handleLogOperations() throws InterruptedException {
             while (!isInterrupted()) {
                 Operation<LOGTYPE> r = operationProvider.poll();
                 if (r != null) {
