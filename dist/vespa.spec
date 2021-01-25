@@ -239,6 +239,7 @@ Summary: Vespa - The open big data serving engine - base
 Requires: java-11-openjdk-devel
 Requires: perl
 Requires: perl-Getopt-Long
+Requires: zstd # Required for zstd tools used for inspection of access log files
 Requires(pre): shadow-utils
 
 %description base
