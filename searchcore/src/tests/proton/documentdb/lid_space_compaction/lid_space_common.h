@@ -54,7 +54,6 @@ struct MyScanIterator : public IDocumentScanIterator {
     ~MyScanIterator() override;
     bool valid() const override;
     search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) override;
-    search::DocumentMetaData getMetaData(uint32_t lid) const override;
 
     document::BucketId createBucketId(uint32_t lid) const;
 };
@@ -83,6 +82,7 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     uint32_t getSubDbId() const override { return 2; }
     LidUsageStats getLidStatus() const override;
     IDocumentScanIterator::UP getIterator() const override;
+    search::DocumentMetaData getMetaData(uint32_t lid) const override;
     MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document,
                                           uint32_t moveToLid) const override;
     void handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) override;
