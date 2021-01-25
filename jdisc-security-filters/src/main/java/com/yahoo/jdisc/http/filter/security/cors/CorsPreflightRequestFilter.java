@@ -10,7 +10,6 @@ import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.yolean.chain.Provides;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
@@ -18,15 +17,14 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 /**
  * <p>
  * This filter makes sure we respond as quickly as possible to CORS pre-flight requests
- * which browsers transmit before the Hosted Vespa dashboard code is allowed to send a "real" request.
+ * which browsers transmit before the Hosted Vespa console code is allowed to send a "real" request.
  * </p>
  * <p>
  * An "Access-Control-Max-Age" header is added so that the browser will cache the result of this pre-flight request,
- * further improving the responsiveness of the Hosted Vespa dashboard application.
+ * further improving the responsiveness of the Hosted Vespa console.
  * </p>
  * <p>
- * Runs after all standard security request filters, but before BouncerFilter, as the browser does not send
- * credentials with pre-flight requests.
+ * Runs after before any security request filters to avoid CORS errors.
  * </p>
  *
  * @author andreer
@@ -39,18 +37,16 @@ public class CorsPreflightRequestFilter implements SecurityRequestFilter {
 
     @Inject
     public CorsPreflightRequestFilter(CorsFilterConfig config) {
-        this.allowedUrls = new HashSet<>(config.allowedUrls());
+        this.allowedUrls = Set.copyOf(config.allowedUrls());
     }
 
     @Override
     public void filter(DiscFilterRequest discFilterRequest, ResponseHandler responseHandler) {
-        String origin = discFilterRequest.getHeader("Origin");
-
         if (!discFilterRequest.getMethod().equals(OPTIONS.name()))
             return;
 
         HttpResponse response = HttpResponse.newInstance(Response.Status.OK);
-
+        String origin = discFilterRequest.getHeader("Origin");
         CorsLogic.createCorsPreflightResponseHeaders(origin, allowedUrls)
                 .forEach(response.headers()::put);
 
