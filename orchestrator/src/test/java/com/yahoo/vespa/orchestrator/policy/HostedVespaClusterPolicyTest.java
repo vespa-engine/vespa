@@ -51,10 +51,11 @@ public class HostedVespaClusterPolicyTest {
 
     @Test
     public void testStorageSuspensionLimit() {
+        when(clusterApi.serviceType()).thenReturn(ServiceType.STORAGE);
         when(clusterApi.clusterId()).thenReturn(new ClusterId("some-cluster-id"));
         when(clusterApi.isStorageCluster()).thenReturn(true);
-        assertEquals(ConcurrentSuspensionLimitForCluster.ONE_NODE,
-                policy.getConcurrentSuspensionLimit(clusterApi, false));
+        assertEquals(ConcurrentSuspensionLimitForCluster.ALL_NODES,
+                policy.getConcurrentSuspensionLimit(clusterApi, true));
     }
 
     @Test
