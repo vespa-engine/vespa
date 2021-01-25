@@ -16,7 +16,7 @@ struct IBucketStateCalculator
     virtual bool nodeUp() const = 0;
     virtual bool nodeInitializing() const = 0;
     virtual bool nodeRetired() const = 0;
-    virtual ~IBucketStateCalculator() {}
+    virtual ~IBucketStateCalculator() = default;
 };
 
 } // namespace proton

@@ -117,14 +117,14 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IAttributeManagerSP notReadyAttributeManager,
                                     std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector,
                                     std::shared_ptr<TransientMemoryUsageProvider> transient_memory_usage_provider,
-                                    AttributeUsageFilter &attributeUsageFilter) {
+                                    AttributeUsageFilter &attributeUsageFilter)
+{
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
     controller.registerJobInDefaultPool(std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
     auto pruneRDjob = std::make_unique<PruneRemovedDocumentsJob>(config.getPruneRemovedDocumentsConfig(), *mRemSubDB.meta_store(),
-                                                mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler);
-    controller.registerJobInMasterThread(
-            trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob)));
+                                                                 mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler);
+    controller.registerJobInMasterThread(trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob)));
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
         injectLidSpaceCompactionJobs(controller, config, bucketExecutor, lscHandlers, opStorer, fbHandler,
                                      jobTrackers.getLidSpaceCompact(), diskMemUsageNotifier,

@@ -33,7 +33,6 @@
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/metrics/updatehook.h>
 
