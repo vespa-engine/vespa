@@ -172,7 +172,7 @@ public class TenantRepository {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                              new DaemonThreadFactory("bootstrap tenants"));
+                                                              new DaemonThreadFactory("bootstrap-tenant-"));
         this.curator = curator;
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
@@ -302,6 +302,8 @@ public class TenantRepository {
     private Tenant createTenant(TenantName tenantName, Instant created) {
         if (tenants.containsKey(tenantName)) return getTenant(tenantName);
 
+        Instant start = Instant.now();
+        log.log(Level.FINE, "Adding tenant '" + tenantName);
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
                                        curator,
@@ -342,7 +344,8 @@ public class TenantRepository {
                                                                     modelFactoryRegistry,
                                                                     configDefinitionRepo,
                                                                     tenantListener);
-        log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created);
+        log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created +
+                            ". Bootstrapping in " + Duration.between(start, Instant.now()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
         createAndWriteTenantMetaData(tenant);
         tenants.putIfAbsent(tenantName, tenant);
