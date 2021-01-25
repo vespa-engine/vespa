@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Slime serialization of {@link Tenant} sub-types.
@@ -128,31 +127,31 @@ public class TenantSerializer {
         }
     }
 
-    public Tenant tenantFrom(Slime slime, Supplier<Instant> tenantCreateTimeSupplier) {
+    public Tenant tenantFrom(Slime slime) {
         Inspector tenantObject = slime.get();
         Tenant.Type type = typeOf(tenantObject.field(typeField).asString());
 
         switch (type) {
-            case athenz: return athenzTenantFrom(tenantObject, tenantCreateTimeSupplier);
-            case cloud:  return cloudTenantFrom(tenantObject, tenantCreateTimeSupplier);
+            case athenz: return athenzTenantFrom(tenantObject);
+            case cloud:  return cloudTenantFrom(tenantObject);
             default:     throw new IllegalArgumentException("Unexpected tenant type '" + type + "'.");
         }
     }
 
-    private AthenzTenant athenzTenantFrom(Inspector tenantObject, Supplier<Instant> tenantCreateTimeSupplier) {
+    private AthenzTenant athenzTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
         AthenzDomain domain = new AthenzDomain(tenantObject.field(athenzDomainField).asString());
         Property property = new Property(tenantObject.field(propertyField).asString());
         Optional<PropertyId> propertyId = SlimeUtils.optionalString(tenantObject.field(propertyIdField)).map(PropertyId::new);
         Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
-        Instant createdAt = SlimeUtils.optionalLong(tenantObject.field(createdAtField)).map(Instant::ofEpochMilli).orElseGet(tenantCreateTimeSupplier);
+        Instant createdAt = Instant.ofEpochMilli(tenantObject.field(createdAtField).asLong());
         LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
         return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
     }
 
-    private CloudTenant cloudTenantFrom(Inspector tenantObject, Supplier<Instant> tenantCreateTimeSupplier) {
+    private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
-        Instant createdAt = SlimeUtils.optionalLong(tenantObject.field(createdAtField)).map(Instant::ofEpochMilli).orElseGet(tenantCreateTimeSupplier);
+        Instant createdAt = Instant.ofEpochMilli(tenantObject.field(createdAtField).asLong());
         LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
         Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
