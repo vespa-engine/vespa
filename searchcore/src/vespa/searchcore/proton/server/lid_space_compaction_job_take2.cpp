@@ -77,6 +77,8 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
 {
 }
 
-CompactionJob::~CompactionJob() = default;
+CompactionJob::~CompactionJob() {
+    _bucketExecutor.sync();
+}
 
 } // namespace proton

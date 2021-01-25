@@ -49,6 +49,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
                                                   REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false, useBucketDB());
     BlockableMaintenanceJobConfig blockableCfg(resourceLimitFactor, maxOutstandingMoveOps);
 
+    _job.reset();
     if (useBucketDB()) {
         _singleExecutor = std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
         _master = std::make_unique<proton::ExecutorThreadService> (*_singleExecutor);
