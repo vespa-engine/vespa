@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -65,8 +66,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -164,8 +169,17 @@ public class SessionRepository {
     }
 
     private void loadSessions() {
-        loadLocalSessions();
-        loadRemoteSessions();
+        ExecutorService executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
+                                                                new DaemonThreadFactory("load-sessions-"));
+        loadLocalSessions(executor);
+        loadRemoteSessions(executor);
+        try {
+            executor.shutdown();
+            if ( ! executor.awaitTermination(1, TimeUnit.MINUTES))
+                log.log(Level.INFO, "Executor did not terminate");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     // ---------------- Local sessions ----------------------------------------------------------------
@@ -184,18 +198,23 @@ public class SessionRepository {
         return localSessionCache.values();
     }
 
-    private void loadLocalSessions() {
+    private void loadLocalSessions(ExecutorService executor) {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
         if (sessions == null) return;
 
+        List<Future<Long>> futures = new ArrayList<>();
         for (File session : sessions) {
-            try {
-                createSessionFromId(Long.parseLong(session.getName()));
-            } catch (IllegalArgumentException e) {
-                log.log(Level.WARNING, "Could not load session '" +
-                        session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
-            }
+            long sessionId = Long.parseLong(session.getName());
+            futures.add(executor.submit(() -> createSessionFromId(sessionId)));
         }
+        futures.forEach(f -> {
+            try {
+                long sessionId = f.get();
+                log.log(Level.INFO, () -> "Local session " + sessionId + " loaded");
+            } catch (ExecutionException | InterruptedException e) {
+                log.log(Level.WARNING, "Could not load session");
+            }
+        });
     }
 
     public ConfigChangeActions prepareLocalSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {
@@ -342,8 +361,19 @@ public class SessionRepository {
         return children.stream().map(Long::parseLong).collect(Collectors.toList());
     }
 
-    private void loadRemoteSessions() throws NumberFormatException {
-        getRemoteSessionsFromZooKeeper().forEach(this::sessionAdded);
+    private void loadRemoteSessions(ExecutorService executor) throws NumberFormatException {
+        List<Future<Long>> futures = new ArrayList<>();
+        for (long sessionId : getRemoteSessionsFromZooKeeper()) {
+            futures.add(executor.submit(() -> sessionAdded(sessionId)));
+        }
+        futures.forEach(f -> {
+            try {
+                long sessionId = f.get();
+                log.log(Level.INFO, () -> "Remote session " + sessionId + " loaded");
+            } catch (ExecutionException | InterruptedException e) {
+                log.log(Level.WARNING, "Could not load session");
+            }
+        });
     }
 
     /**
@@ -351,8 +381,8 @@ public class SessionRepository {
      *
      * @param sessionId session id for the new session
      */
-    public void sessionAdded(long sessionId) {
-        if (hasStatusDeleted(sessionId)) return;
+    public long sessionAdded(long sessionId) {
+        if (hasStatusDeleted(sessionId)) return sessionId;
 
         log.log(Level.FINE, () -> "Adding remote session " + sessionId);
         Session session = createRemoteSession(sessionId);
@@ -361,6 +391,7 @@ public class SessionRepository {
             confirmUpload(session);
         }
         createLocalSessionFromDistributedApplicationPackage(sessionId);
+        return sessionId;
     }
 
     private boolean hasStatusDeleted(long sessionId) {
@@ -666,10 +697,11 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    void createSessionFromId(long sessionId) {
+    long createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         createLocalSession(sessionId, applicationPackage);
+        return sessionId;
     }
 
     void createLocalSession(long sessionId, ApplicationPackage applicationPackage) {
