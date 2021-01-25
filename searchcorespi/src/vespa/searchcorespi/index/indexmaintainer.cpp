@@ -20,6 +20,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/time.h>
 #include <sstream>
 
@@ -36,6 +37,7 @@ using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
 using search::SerialNum;
 using vespalib::makeLambdaTask;
+using vespalib::makeLambdaCallback;
 using std::ostringstream;
 using vespalib::makeClosure;
 using vespalib::makeTask;
@@ -43,6 +45,7 @@ using vespalib::string;
 using vespalib::Closure0;
 using vespalib::Executor;
 using vespalib::Runnable;
+using vespalib::IDestructorCallback;
 
 namespace searchcorespi::index {
 
@@ -62,7 +65,7 @@ public:
           _closure(std::move(closure))
     { }
 
-    virtual void run() override {
+    void run() override {
         _result = _reconfigurer.reconfigure(std::move(_closure));
     }
 };
@@ -76,7 +79,7 @@ public:
         _reconfigurer(reconfigurer),
         _closure(std::move(closure))
     { }
-    virtual void run() override {
+    void run() override {
         _reconfigurer.reconfigure(std::move(_closure));
     }
 };
@@ -84,18 +87,18 @@ public:
 SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
 
 
-class DiskIndexWithDestructorClosure : public IDiskIndex {
+class DiskIndexWithDestructorCallback : public IDiskIndex {
 private:
-    vespalib::AutoClosureCaller _caller;
-    IDiskIndex::SP              _index;
+    std::shared_ptr<IDestructorCallback> _callback;
+    IDiskIndex::SP                       _index;
 
 public:
-    DiskIndexWithDestructorClosure(const IDiskIndex::SP &index,
-                                   vespalib::Closure::UP closure)
-        : _caller(std::move(closure)),
-          _index(index)
+    DiskIndexWithDestructorCallback(IDiskIndex::SP index,
+                                    std::shared_ptr<IDestructorCallback> callback) noexcept
+        : _callback(std::move(callback)),
+          _index(std::move(index))
     { }
-    ~DiskIndexWithDestructorClosure();
+    ~DiskIndexWithDestructorCallback() override;
     const IDiskIndex &getWrapped() const { return *_index; }
 
     /**
@@ -140,15 +143,22 @@ public:
 
 };
 
-DiskIndexWithDestructorClosure::~DiskIndexWithDestructorClosure() {}
+DiskIndexWithDestructorCallback::~DiskIndexWithDestructorCallback() = default;
 
 }  // namespace
 
-IndexMaintainer::FusionArgs::~FusionArgs() {
-}
+IndexMaintainer::FusionArgs::FusionArgs()
+    : _new_fusion_id(0u),
+      _changeGens(),
+      _schema(),
+      _prunedSchema(),
+      _old_source_list()
+{ }
 
-IndexMaintainer::SetSchemaArgs::~SetSchemaArgs() {
-}
+IndexMaintainer::FusionArgs::~FusionArgs() = default;
+
+IndexMaintainer::SetSchemaArgs::SetSchemaArgs() = default;
+IndexMaintainer::SetSchemaArgs::~SetSchemaArgs() = default;
 
 uint32_t
 IndexMaintainer::getNewAbsoluteId()
@@ -176,9 +186,8 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
     uint32_t count = coll.getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
         IndexSearchable &is = coll.getSearchable(i);
-        const DiskIndexWithDestructorClosure *const d =
-            dynamic_cast<const DiskIndexWithDestructorClosure *>(&is);
-        if (d == NULL) {
+        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCallback *>(&is);
+        if (d == nullptr) {
             continue;	// not a disk index
         }
         const string indexDir = d->getIndexDir();
@@ -215,11 +224,10 @@ IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
     uint32_t count = coll.getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
         IndexSearchable &is = coll.getSearchable(i);
-        const DiskIndexWithDestructorClosure *const d =
-            dynamic_cast<const DiskIndexWithDestructorClosure *>(&is);
-        if (d == NULL) {
+        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCallback *>(&is);
+        if (d == nullptr) {
             IMemoryIndex *const m = dynamic_cast<IMemoryIndex *>(&is);
-            if (m != NULL) {
+            if (m != nullptr) {
                 m->pruneRemovedFields(schema);
             }
             continue;
@@ -245,10 +253,10 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
             return;	// No active fusion
         if (!activeFusionPrunedSchema) {
             Schema::UP newSchema = Schema::intersect(*activeFusionSchema, schema);
-            newActiveFusionPrunedSchema.reset(newSchema.release());
+            newActiveFusionPrunedSchema = std::move(newSchema);
         } else {
             Schema::UP newSchema = Schema::intersect(*activeFusionPrunedSchema, schema);
-            newActiveFusionPrunedSchema.reset(newSchema.release());
+            newActiveFusionPrunedSchema = std::move(newSchema);
         }
         {
             LockGuard slock(_state_lock);
@@ -279,9 +287,9 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
     }
     vespalib::Timer timer;
     _active_indexes->setActive(indexDir);
-    IDiskIndex::SP retval(new DiskIndexWithDestructorClosure
-                          (_operations.loadDiskIndex(indexDir),
-                           makeClosure(this, &IndexMaintainer::deactivateDiskIndexes, indexDir)));
+    auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
+            _operations.loadDiskIndex(indexDir),
+            makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }));
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
@@ -298,11 +306,10 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
     }
     vespalib::Timer timer;
     _active_indexes->setActive(indexDir);
-    const IDiskIndex &wrappedDiskIndex =
-        (dynamic_cast<const DiskIndexWithDestructorClosure &>(oldIndex)).getWrapped();
-    IDiskIndex::SP retval(new DiskIndexWithDestructorClosure
-                          (_operations.reloadDiskIndex(wrappedDiskIndex),
-                           makeClosure(this, &IndexMaintainer::deactivateDiskIndexes, indexDir)));
+    const IDiskIndex &wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCallback &>(oldIndex)).getWrapped();
+    auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
+            _operations.reloadDiskIndex(wrappedDiskIndex),
+            makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }));
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
@@ -425,7 +432,7 @@ ISearchableIndexCollection::UP
 IndexMaintainer::createNewSourceCollection(const LockGuard &newSearchLock)
 {
     ISearchableIndexCollection::SP currentLeaf(getLeaf(newSearchLock, _source_list));
-    return ISearchableIndexCollection::UP(new IndexCollection(_selector, *currentLeaf));
+    return std::make_unique<IndexCollection>(_selector, *currentLeaf);
 }
 
 IndexMaintainer::FlushArgs::FlushArgs()
@@ -434,7 +441,7 @@ IndexMaintainer::FlushArgs::FlushArgs()
       old_source_list(),
       save_info(),
       flush_serial_num(),
-      stats(NULL),
+      stats(nullptr),
       _skippedEmptyLast(false),
       _extraIndexes(),
       _changeGens(),
@@ -508,7 +515,7 @@ IndexMaintainer::doFlush(FlushArgs args)
     }
 
     assert(!flushIds.empty());
-    if (args.stats != NULL) {
+    if (args.stats != nullptr) {
         updateFlushStats(args);
     }
 
@@ -665,7 +672,7 @@ IndexMaintainer::doneFusion(FusionArgs *args, IDiskIndex::SP *new_index)
         LockGuard lock(_index_update_lock);
 
         // make new source selector with shifted values.
-        _selector.reset(getSourceSelector().cloneAndSubtract(ost.str(), id_diff).release());
+        _selector = getSourceSelector().cloneAndSubtract(ost.str(), id_diff);
         _source_selector_changes = 0;
         _current_index_id -= id_diff;
         _last_fusion_id = args->_new_fusion_id;
@@ -720,7 +727,7 @@ IndexMaintainer::warmupDone(ISearchableIndexCollection::SP current)
     LockGuard lock(_new_search_lock);
     if (current == _source_list) {
         auto makeSure = makeClosure(this, &IndexMaintainer::makeSureAllRemainingWarmupIsDone, current);
-        Executor::Task::UP task(new ReconfigRunnableTask(_ctx.getReconfigurer(), std::move(makeSure)));
+        auto task = std::make_unique<ReconfigRunnableTask>(_ctx.getReconfigurer(), std::move(makeSure));
         _ctx.getThreadingService().master().execute(std::move(task));
     } else {
         LOG(warning, "There has arrived a new IndexCollection while replacing the active index. "
@@ -838,7 +845,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
                                  IIndexMaintainerOperations &operations)
     : _base_dir(config.getBaseDir()),
       _warmupConfig(config.getWarmup()),
-      _active_indexes(new ActiveDiskIndexes()),
+      _active_indexes(std::make_shared<ActiveDiskIndexes>()),
       _layout(config.getBaseDir()),
       _schema(config.getSchema()),
       _activeFusionSchema(),
@@ -885,10 +892,10 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
         _lastFlushTime = search::FileKit::getModificationTime(latest_index_dir);
         _current_serial_num = _flush_serial_num;
         const string selector = IndexDiskLayout::getSelectorFileName(latest_index_dir);
-        _selector.reset(FixedSourceSelector::load(selector, _next_id - 1).release());
+        _selector = FixedSourceSelector::load(selector, _next_id - 1);
     } else {
         _flush_serial_num = 0;
-        _selector.reset(new FixedSourceSelector(0, "sourceselector", 1));
+        _selector = std::make_shared<FixedSourceSelector>(0, "sourceselector", 1);
     }
     uint32_t baseId(_selector->getBaseId());
     if (_last_fusion_id != baseId) {
@@ -896,20 +903,22 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
         uint32_t id_diff = _last_fusion_id - baseId;
         ostringstream ost;
         ost << "sourceselector_fusion(" << _last_fusion_id << ")";
-        _selector.reset(getSourceSelector().cloneAndSubtract(ost.str(), id_diff).release());
+        _selector = getSourceSelector().cloneAndSubtract(ost.str(), id_diff);
         assert(_last_fusion_id == _selector->getBaseId());
     }
     _current_index_id = getNewAbsoluteId() - _last_fusion_id;
     assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
     _selector->setDefaultSource(_current_index_id);
-    ISearchableIndexCollection::UP sourceList(loadDiskIndexes(spec, ISearchableIndexCollection::UP(new IndexCollection(_selector))));
+    auto sourceList = loadDiskIndexes(spec, std::make_unique<IndexCollection>(_selector));
     _current_index = operations.createMemoryIndex(_schema, *sourceList, _current_serial_num);
     LOG(debug, "Index manager created with flushed serial num %" PRIu64, _flush_serial_num);
     sourceList->append(_current_index_id, _current_index);
     sourceList->setCurrentIndex(_current_index_id);
     _source_list = std::move(sourceList);
     _fusion_spec = spec;
-    _ctx.getThreadingService().master().execute(makeLambdaTask([this,&config]() {pruneRemovedFields(_schema, config.getSerialNum()); }));
+    _ctx.getThreadingService().master().execute(makeLambdaTask([this,&config]() {
+        pruneRemovedFields(_schema, config.getSerialNum());
+    }));
     _ctx.getThreadingService().master().sync();
 }
 
@@ -1014,7 +1023,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
     {
         LockGuard slock(_state_lock);
         LockGuard ilock(_index_update_lock);
-        _activeFusionSchema.reset(new Schema(_schema));
+        _activeFusionSchema = std::make_shared<Schema>(_schema);
         _activeFusionPrunedSchema.reset();
         args._schema = _schema;
     }
@@ -1234,10 +1243,9 @@ IndexMaintainer::getFlushTargets(void)
 {
     // Called by flush engine scheduler thread
     IFlushTarget::List ret;
-    IFlushTarget::SP indexFlush(new IndexFlushTarget(*this));
-    IFlushTarget::SP indexFusion(new IndexFusionTarget(*this));
-    ret.push_back(indexFlush);
-    ret.push_back(indexFusion);
+    ret.reserve(2);
+    ret.push_back(std::make_shared<IndexFlushTarget>(*this));
+    ret.push_back(std::make_shared<IndexFusionTarget>(*this));
     return ret;
 }
 
