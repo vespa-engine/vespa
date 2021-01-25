@@ -81,13 +81,27 @@ public class FleetControllerClusterTest {
 
     @Test
     public void min_node_ratio_per_group_is_implicitly_zero_when_omitted() {
-        FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
+        var config = getConfigForBasicCluster();
+        assertEquals(0.0, config.min_node_ratio_per_group(), 0.01);
+    }
+
+    @Test
+    public void default_cluster_feed_block_limits_are_set() {
+        var config = getConfigForBasicCluster();
+        var limits = config.cluster_feed_block_limit();
+        assertEquals(4, limits.size());
+        assertEquals(0.79, limits.get("memory"), 0.0001);
+        assertEquals(0.79, limits.get("disk"), 0.0001);
+        assertEquals(0.89, limits.get("attribute-enum-store"), 0.0001);
+        assertEquals(0.89, limits.get("attribute-multi-value"), 0.0001);
+    }
+
+    FleetcontrollerConfig getConfigForBasicCluster() {
+        var builder = new FleetcontrollerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>\n" +
                 "</cluster>").
                 getConfig(builder);
-
-        FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
-        assertEquals(0.0, config.min_node_ratio_per_group(), 0.01);
+        return new FleetcontrollerConfig(builder);
     }
 }

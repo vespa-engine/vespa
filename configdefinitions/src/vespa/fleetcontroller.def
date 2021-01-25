@@ -181,3 +181,19 @@ enable_two_phase_cluster_state_transitions bool default=false
 
 ## Deprecated - not used
 determine_buckets_from_bucket_space_metric bool default=true
+
+# If enabled, the cluster controller observes reported (categorized) resource usage from content nodes (via host info),
+# and decides whether external feed should be blocked (or unblocked) in the entire cluster.
+#
+# Each resource category has a limit, which is specified in cluster_feed_block_limit.
+# If one resource category from one content node is above the configured limit, feed is blocked.
+# This information is pushed to all distributor nodes via a new cluster state bundle.
+# The distributor nodes handle the actual feed blocking based on this information.
+enable_cluster_feed_block bool default=false
+
+# Contains all resource categories (key) with its corresponding feed block limit (value)
+# used when the cluster controller decides whether external feed should be blocked (or unblocked) in the entire cluster.
+#
+# The keys used must match the similar keys in the host info JSON structure.
+# All limits are numbers between 0.0 and 1.0.
+cluster_feed_block_limit{} double
