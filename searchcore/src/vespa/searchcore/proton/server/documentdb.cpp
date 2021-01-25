@@ -216,10 +216,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     // Forward changes of cluster state to bucket handler
     _clusterStateHandler.addClusterStateChangedHandler(&_bucketHandler);
 
-    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getReadySubDB(), _docTypeName.getName()));
-    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getRemSubDB(), _docTypeName.getName()));
-    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
-
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
 }
 
@@ -415,6 +411,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         LOG(error, "Applying config to closed document db");
         return;
     }
+    _maintenanceController.killJobs();
     ConfigComparisonResult cmpres;
     Schema::SP oldSchema;
     int64_t generation = configSnapshot->getGeneration();
@@ -482,9 +479,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         _state.clearDelayedConfig();
     }
     setActiveConfig(configSnapshot, generation);
-    if (params.shouldMaintenanceControllerChange()) {
-        forwardMaintenanceConfig();
-    }
+    forwardMaintenanceConfig();
     _writeFilter.setConfig(configSnapshot->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
     if (_subDBs.getReprocessingRunner().empty()) {
         _subDBs.pruneRemovedFields(serialNum);
@@ -698,9 +693,7 @@ DocumentDB::getAllowPrune() const
 void
 DocumentDB::start()
 {
-    LOG(debug,
-        "DocumentDB(%s): Database starting.",
-        _docTypeName.toString().c_str());
+    LOG(debug, "DocumentDB(%s): Database starting.", _docTypeName.toString().c_str());
 
     internalInit();
 }
@@ -933,6 +926,10 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
 {
     // Called by executor thread
     _maintenanceController.killJobs();
+    _lidSpaceCompactionHandlers.clear();
+    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getReadySubDB(), _docTypeName.getName()));
+    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getRemSubDB(), _docTypeName.getName()));
+    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
     MaintenanceJobsInjector::injectJobs(_maintenanceController,
             config,
             _bucketExecutor,
@@ -996,13 +993,11 @@ DocumentDB::forwardMaintenanceConfig()
     // Called by executor thread
     DocumentDBConfig::SP activeConfig = getActiveConfig();
     assert(activeConfig);
-    DocumentDBMaintenanceConfig::SP
-        maintenanceConfig(activeConfig->getMaintenanceConfigSP());
+    auto maintenanceConfig(activeConfig->getMaintenanceConfigSP());
     const auto &attributes_config = activeConfig->getAttributesConfig();
     auto attribute_config_inspector = std::make_unique<AttributeConfigInspector>(attributes_config);
     if (!_state.getClosed()) {
-        if (_maintenanceController.getStarted() &&
-            !_maintenanceController.getStopping()) {
+        if (_maintenanceController.getStarted() && !_maintenanceController.getStopping()) {
             injectMaintenanceJobs(*maintenanceConfig, std::move(attribute_config_inspector));
         }
         _maintenanceController.newConfig(maintenanceConfig);
