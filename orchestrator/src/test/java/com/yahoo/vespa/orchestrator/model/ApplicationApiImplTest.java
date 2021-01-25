@@ -95,7 +95,7 @@ public class ApplicationApiImplTest {
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
                                 "cluster-3",
-                                VespaModelUtil.STORAGENODE_SERVICE_TYPE,
+                                ServiceType.STORAGE,
                                 Arrays.asList(
                                     modelUtils.createServiceInstance("config-id-30", hostName1, ServiceStatus.UP),
                                     modelUtils.createServiceInstance("config-id-31", hostName2, ServiceStatus.UP)
@@ -103,7 +103,7 @@ public class ApplicationApiImplTest {
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-1",
-                                VespaModelUtil.STORAGENODE_SERVICE_TYPE,
+                                ServiceType.STORAGE,
                                 Arrays.asList(
                                         modelUtils.createServiceInstance("config-id-10", hostName3, ServiceStatus.DOWN),
                                         modelUtils.createServiceInstance("config-id-11", hostName4, ServiceStatus.UP)
@@ -121,7 +121,7 @@ public class ApplicationApiImplTest {
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-2",
-                                VespaModelUtil.STORAGENODE_SERVICE_TYPE,
+                                ServiceType.STORAGE,
                                 Arrays.asList(
                                         modelUtils.createServiceInstance("config-id-20", hostName6, ServiceStatus.DOWN),
                                         modelUtils.createServiceInstance("config-id-21", hostName7, ServiceStatus.UP)
@@ -176,7 +176,7 @@ public class ApplicationApiImplTest {
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
                                 "cluster-1",
-                                VespaModelUtil.STORAGENODE_SERVICE_TYPE,
+                                ServiceType.STORAGE,
                                 Arrays.asList(modelUtils.createServiceInstance("config-id-1", hostName1, serviceStatus))
                         )
                 ));
@@ -269,7 +269,7 @@ public class ApplicationApiImplTest {
                 modelUtils.createApplicationInstance(Arrays.asList(
                         modelUtils.createServiceCluster(
                                 "cluster-4",
-                                VespaModelUtil.STORAGENODE_SERVICE_TYPE,
+                                ServiceType.STORAGE,
                                 Arrays.asList(
                                         modelUtils.createServiceInstance("config-id-40", allowedToBeDownHost1, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-41", noRemarksHost2, ServiceStatus.DOWN)
@@ -285,7 +285,7 @@ public class ApplicationApiImplTest {
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-3",
-                                VespaModelUtil.STORAGENODE_SERVICE_TYPE,
+                                ServiceType.STORAGE,
                                 Arrays.asList(
                                         modelUtils.createServiceInstance("config-id-30", allowedToBeDownHost4, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-31", noRemarksHost5, ServiceStatus.UP)
@@ -293,7 +293,7 @@ public class ApplicationApiImplTest {
                         ),
                         modelUtils.createServiceCluster(
                                 "cluster-2",
-                                VespaModelUtil.STORAGENODE_SERVICE_TYPE,
+                                ServiceType.STORAGE,
                                 Arrays.asList(
                                         modelUtils.createServiceInstance("config-id-20", noRemarksHost6, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-21", allowedToBeDownHost7, ServiceStatus.UP)

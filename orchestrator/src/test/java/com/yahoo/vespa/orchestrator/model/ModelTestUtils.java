@@ -65,7 +65,7 @@ class ModelTestUtils {
             mock(Metric.class),
             new TestTimer(),
             new DummyAntiServiceMonitor());
-    private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory()),
+    private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clusterControllerClientFactory, applicationApiFactory()),
                                                                    clusterControllerClientFactory,
                                                                    statusService,
                                                                    serviceMonitor,

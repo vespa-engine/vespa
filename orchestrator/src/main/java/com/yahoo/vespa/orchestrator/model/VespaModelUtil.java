@@ -37,19 +37,12 @@ public class VespaModelUtil {
 
     public static final ClusterId ADMIN_CLUSTER_ID = new ClusterId("admin");
 
-    public static final ServiceType SLOBROK_SERVICE_TYPE = new ServiceType("slobrok");
-    public static final ServiceType CLUSTER_CONTROLLER_SERVICE_TYPE = new ServiceType("container-clustercontroller");
-    public static final ServiceType DISTRIBUTOR_SERVICE_TYPE = new ServiceType("distributor");
-    public static final ServiceType SEARCHNODE_SERVICE_TYPE = new ServiceType("searchnode");
-    public static final ServiceType STORAGENODE_SERVICE_TYPE = new ServiceType("storagenode");
-    public static final ServiceType METRICS_PROXY_SERVICE_TYPE = new ServiceType("metricsproxy-container");
-
     private static final Comparator<ServiceInstance> CLUSTER_CONTROLLER_INDEX_COMPARATOR =
             Comparator.comparing(serviceInstance -> VespaModelUtil.getClusterControllerIndex(serviceInstance.configId()));
 
     // @return true iff the service cluster refers to a cluster controller service cluster.
     public static boolean isClusterController(ServiceCluster cluster) {
-        return CLUSTER_CONTROLLER_SERVICE_TYPE.equals(cluster.serviceType());
+        return ServiceType.CLUSTER_CONTROLLER.equals(cluster.serviceType());
     }
 
     /**
@@ -59,18 +52,24 @@ public class VespaModelUtil {
      * @return true iff the service cluster consists of storage nodes (proton or vds).
      */
     public static boolean isStorage(ServiceCluster cluster) {
-        return STORAGENODE_SERVICE_TYPE.equals(cluster.serviceType());
+        return ServiceType.STORAGE.equals(cluster.serviceType());
     }
 
     /**
      * @return true iff the service cluster is a content service cluster.
      */
     public static boolean isContent(ServiceCluster cluster) {
-        return DISTRIBUTOR_SERVICE_TYPE.equals(cluster.serviceType()) ||
-                SEARCHNODE_SERVICE_TYPE.equals(cluster.serviceType()) ||
-                STORAGENODE_SERVICE_TYPE.equals(cluster.serviceType());
+        return isContent(cluster.serviceType());
     }
 
+    /**
+     * @return true iff the service type refers to a content service cluster.
+     */
+    public static boolean isContent(ServiceType serviceType) {
+        return ServiceType.DISTRIBUTOR.equals(serviceType) ||
+                ServiceType.SEARCH.equals(serviceType) ||
+                ServiceType.STORAGE.equals(serviceType);
+    }
     /**
      * @return The set of all Cluster Controller service instances for the application.
      */
