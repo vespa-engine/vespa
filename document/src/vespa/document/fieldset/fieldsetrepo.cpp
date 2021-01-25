@@ -119,7 +119,9 @@ FieldSetRepo::FieldSetRepo(const DocumentTypeRepo& repo)
     : _doumentTyperepo(repo),
       _configuredFieldSets()
 {
-    repo.forEachDocumentType(*vespalib::makeClosure(this, &FieldSetRepo::configureDocumentType));
+    repo.forEachDocumentType(*DocumentTypeRepo::makeLambda([&](const DocumentType &type) {
+        configureDocumentType(type);
+    }));
 }
 FieldSetRepo::~FieldSetRepo() = default;
 

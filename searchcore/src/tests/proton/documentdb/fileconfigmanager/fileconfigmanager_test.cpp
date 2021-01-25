@@ -43,12 +43,12 @@ makeBaseConfigSnapshot()
 
     DBCM dbcm(spec, "test");
     DocumenttypesConfigSP dtcfg(config::ConfigGetter<DocumenttypesConfig>::getConfig("", spec).release());
-    BootstrapConfig::SP b(new BootstrapConfig(1, dtcfg,
-                                              std::shared_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(*dtcfg)),
-                                              std::make_shared<ProtonConfig>(),
-                                              std::make_shared<FiledistributorrpcConfig>(),
-                                              std::make_shared<BucketspacesConfig>(),
-                                              std::make_shared<TuneFileDocumentDB>(), HwInfo()));
+    auto b = std::make_shared<BootstrapConfig>(1, dtcfg,
+                                               std::make_shared<DocumentTypeRepo>(*dtcfg),
+                                               std::make_shared<ProtonConfig>(),
+                                               std::make_shared<FiledistributorrpcConfig>(),
+                                               std::make_shared<BucketspacesConfig>(),
+                                               std::make_shared<TuneFileDocumentDB>(), HwInfo());
     dbcm.forwardConfig(b);
     dbcm.nextGeneration(0ms);
     DocumentDBConfig::SP snap = dbcm.getConfig();
@@ -71,8 +71,6 @@ makeEmptyConfigSnapshot()
     return test::DocumentDBConfigBuilder(0, std::make_shared<Schema>(), "client", "test").build();
 }
 
-void incInt(int *i, const DocumentType&) { ++*i; }
-
 void
 assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
 {
@@ -91,10 +89,12 @@ assertEqualSnapshot(const DocumentDBConfig &exp, const DocumentDBConfig &act)
 
     int expTypeCount = 0;
     int actTypeCount = 0;
-    exp.getDocumentTypeRepoSP()->forEachDocumentType(
-            *vespalib::makeClosure(incInt, &expTypeCount));
-    act.getDocumentTypeRepoSP()->forEachDocumentType(
-            *vespalib::makeClosure(incInt, &actTypeCount));
+    exp.getDocumentTypeRepoSP()->forEachDocumentType(*DocumentTypeRepo::makeLambda([&expTypeCount](const DocumentType &) {
+        expTypeCount++;
+    }));
+    act.getDocumentTypeRepoSP()->forEachDocumentType(*DocumentTypeRepo::makeLambda([&actTypeCount](const DocumentType &) {
+        actTypeCount++;
+    }));
     EXPECT_EQUAL(expTypeCount, actTypeCount);
     EXPECT_TRUE(*exp.getSchemaSP() == *act.getSchemaSP());
     EXPECT_EQUAL(expTypeCount, actTypeCount);
@@ -164,8 +164,7 @@ TEST_F("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", DocumentDBConf
 }
 
 
-TEST_F("requireThatVisibilityDelayIsPropagated",
-        DocumentDBConfig::SP(makeBaseConfigSnapshot()))
+TEST_F("requireThatVisibilityDelayIsPropagated", DocumentDBConfig::SP(makeBaseConfigSnapshot()))
 {
     saveBaseConfigSnapshot(*f, 80);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
@@ -177,8 +176,7 @@ TEST_F("requireThatVisibilityDelayIsPropagated",
         protonConfigBuilder.documentdb.push_back(ddb);
         protonConfigBuilder.maxvisibilitydelay = 100.0;
         FileConfigManager cm("out", myId, "dummy");
-        using ProtonConfigSP = BootstrapConfig::ProtonConfigSP;
-        cm.setProtonConfig(ProtonConfigSP(new ProtonConfig(protonConfigBuilder)));
+        cm.setProtonConfig(std::make_shared<ProtonConfig>(protonConfigBuilder));
         cm.loadConfig(*esnap, 70, esnap);
     }
     EXPECT_EQUAL(61s, esnap->getMaintenanceConfigSP()->getVisibilityDelay());
