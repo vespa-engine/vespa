@@ -35,7 +35,7 @@ constexpr double REMOVE_BATCH_BLOCK_RATE = 1.0 / 21.0;
 constexpr double REMOVE_BLOCK_RATE = 1.0 / 20.0;
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 constexpr uint32_t MAX_OUTSTANDING_MOVE_OPS = 10;
-const vespalib::string DOC_ID = "id:test:searchdocument::0";
+const vespalib::string DOC_ID = "id:test:searchdocument::";
 const BucketId BUCKET_ID_1(1);
 const BucketId BUCKET_ID_2(2);
 const Timestamp TIMESTAMP_1(1);
@@ -44,18 +44,17 @@ const GlobalId GID_1;
 using LidVector = std::vector<uint32_t>;
 using LidPair = std::pair<uint32_t, uint32_t>;
 using LidPairVector = std::vector<LidPair>;
+struct MyHandler;
 
 struct MyScanIterator : public IDocumentScanIterator {
+    const MyHandler & _handler;
     LidVector _lids;
     LidVector::const_iterator _itr;
     bool _validItr;
-    bool _bucketIdEqualLid;
-    explicit MyScanIterator(const LidVector &lids, bool bucketIdEqualLid);
+    explicit MyScanIterator(const MyHandler & handler, const LidVector &lids);
     ~MyScanIterator() override;
     bool valid() const override;
     search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) override;
-
-    document::BucketId createBucketId(uint32_t lid) const;
 };
 
 struct MyHandler : public ILidSpaceCompactionHandler {
@@ -71,6 +70,7 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     std::vector<IDestructorCallback::SP> _moveDoneContexts;
     documentmetastore::OperationListener::SP _op_listener;
     RemoveOperationsRateTracker* _rm_listener;
+    std::vector<std::pair<search::DocumentMetaData, std::shared_ptr<Document>>> _docs;
 
     explicit MyHandler(bool storeMoveDoneContexts, bool _bucketIdEqualLid);
     ~MyHandler() override;
@@ -87,6 +87,7 @@ struct MyHandler : public ILidSpaceCompactionHandler {
                                           uint32_t moveToLid) const override;
     void handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<IDestructorCallback>) override;
+    document::BucketId createBucketId(uint32_t lid) const;
 };
 
 struct MyStorer : public IOperationStorer {
