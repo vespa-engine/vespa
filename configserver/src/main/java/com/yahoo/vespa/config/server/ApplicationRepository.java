@@ -140,7 +140,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final TesterClient testerClient;
     private final Metric metric;
     private final ClusterReindexingStatusClient clusterReindexingStatusClient;
-    private final BooleanFlag waitForResourcesInPrepareFlag;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -193,7 +192,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
         this.clusterReindexingStatusClient = clusterReindexingStatusClient;
-        this.waitForResourcesInPrepareFlag = Flags.WAIT_FOR_RESOURCES_IN_PREPARE.bindTo(flagSource);
     }
 
     public static class Builder {
@@ -401,10 +399,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         SessionRepository sessionRepository = tenant.getSessionRepository();
         DeployLogger logger = new SilentDeployLogger();
         Session newSession = sessionRepository.createSessionFromExisting(activeSession, true, timeoutBudget);
-        boolean waitForResourcesInPrepare = waitForResourcesInPrepareFlag.value();
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
-                                                 false /* don't validate as this is already deployed */, bootstrap, waitForResourcesInPrepare));
+                                                 false /* don't validate as this is already deployed */, bootstrap));
     }
 
     @Override
