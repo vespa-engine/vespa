@@ -34,6 +34,8 @@ import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -153,9 +155,26 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     private void validateModelHosts(HostValidator<ApplicationId> hostValidator, ApplicationId applicationId, Model model) {
-        hostValidator.verifyHosts(applicationId, model.getHosts().stream()
-                .map(HostInfo::getHostname)
-                .collect(Collectors.toList()));
+        // Will retry here, since hosts used might not be in sync on all config servers (we wait for 2/3 servers
+        // to respond to deployments and deletions).
+        Instant end = Instant.now().plus(Duration.ofSeconds(1));
+        IllegalArgumentException exception;
+        do {
+            try {
+                hostValidator.verifyHosts(applicationId, model.getHosts().stream()
+                                                              .map(HostInfo::getHostname)
+                                                              .collect(Collectors.toList()));
+                return;
+            } catch (IllegalArgumentException e) {
+                exception = e;
+                log.log(Level.INFO, "Verifying hosts failed, will retry: " + e.getMessage());
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException interruptedException) {/* ignore */}
+            }
+        } while (Instant.now().isBefore(end));
+
+        throw exception;
     }
 
     /** The result of preparing a single model version */
