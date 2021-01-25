@@ -43,6 +43,7 @@ import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -178,7 +179,7 @@ public class SessionRepository {
             if ( ! executor.awaitTermination(1, TimeUnit.MINUTES))
                 log.log(Level.INFO, "Executor did not terminate");
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.log(Level.WARNING, "Shutdown of executor for loading sessions failed: " + Exceptions.toMessageString(e));
         }
     }
 
@@ -202,17 +203,17 @@ public class SessionRepository {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
         if (sessions == null) return;
 
-        List<Future<Long>> futures = new ArrayList<>();
+        Map<Long, Future<?>> futures = new HashMap<>();
         for (File session : sessions) {
             long sessionId = Long.parseLong(session.getName());
-            futures.add(executor.submit(() -> createSessionFromId(sessionId)));
+            futures.put(sessionId, executor.submit(() -> createSessionFromId(sessionId)));
         }
-        futures.forEach(f -> {
+        futures.forEach((sessionId, future) -> {
             try {
-                long sessionId = f.get();
+                future.get();
                 log.log(Level.INFO, () -> "Local session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
-                log.log(Level.WARNING, "Could not load session");
+                log.log(Level.WARNING, "Could not load session " + sessionId, e);
             }
         });
     }
@@ -362,16 +363,16 @@ public class SessionRepository {
     }
 
     private void loadRemoteSessions(ExecutorService executor) throws NumberFormatException {
-        List<Future<Long>> futures = new ArrayList<>();
+        Map<Long, Future<?>> futures = new HashMap<>();
         for (long sessionId : getRemoteSessionsFromZooKeeper()) {
-            futures.add(executor.submit(() -> sessionAdded(sessionId)));
+            futures.put(sessionId, executor.submit(() -> sessionAdded(sessionId)));
         }
-        futures.forEach(f -> {
+        futures.forEach((sessionId, future) -> {
             try {
-                long sessionId = f.get();
+                future.get();
                 log.log(Level.INFO, () -> "Remote session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
-                log.log(Level.WARNING, "Could not load session");
+                log.log(Level.WARNING, "Could not load session " + sessionId, e);
             }
         });
     }
@@ -381,8 +382,8 @@ public class SessionRepository {
      *
      * @param sessionId session id for the new session
      */
-    public long sessionAdded(long sessionId) {
-        if (hasStatusDeleted(sessionId)) return sessionId;
+    public void sessionAdded(long sessionId) {
+        if (hasStatusDeleted(sessionId)) return;
 
         log.log(Level.FINE, () -> "Adding remote session " + sessionId);
         Session session = createRemoteSession(sessionId);
@@ -391,7 +392,6 @@ public class SessionRepository {
             confirmUpload(session);
         }
         createLocalSessionFromDistributedApplicationPackage(sessionId);
-        return sessionId;
     }
 
     private boolean hasStatusDeleted(long sessionId) {
@@ -697,11 +697,10 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    long createSessionFromId(long sessionId) {
+    void createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
         createLocalSession(sessionId, applicationPackage);
-        return sessionId;
     }
 
     void createLocalSession(long sessionId, ApplicationPackage applicationPackage) {
