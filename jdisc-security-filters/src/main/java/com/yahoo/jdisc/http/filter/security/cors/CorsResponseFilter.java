@@ -8,7 +8,6 @@ import com.yahoo.jdisc.http.filter.RequestView;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilter;
 import com.yahoo.yolean.chain.Provides;
 
-import java.util.HashSet;
 import java.util.Set;
 
 
@@ -24,7 +23,7 @@ public class CorsResponseFilter extends AbstractResource implements SecurityResp
 
     @Inject
     public CorsResponseFilter(CorsFilterConfig config) {
-        this.allowedUrls = new HashSet<>(config.allowedUrls());
+        this.allowedUrls = Set.copyOf(config.allowedUrls());
     }
 
     @Override
