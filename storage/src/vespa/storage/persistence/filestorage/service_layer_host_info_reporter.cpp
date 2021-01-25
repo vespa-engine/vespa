@@ -13,6 +13,11 @@ namespace {
 
 constexpr double diff_slack = 0.01;
 
+const vespalib::string memory_label("memory");
+const vespalib::string disk_label("disk");
+const vespalib::string attribute_enum_store_label("attribute-enum-store");
+const vespalib::string attribute_multi_value_label("attribute-multi-value");
+
 void write_usage(vespalib::JsonStream& output, const vespalib::string &label, double value)
 {
     output << label << Object();
@@ -20,11 +25,21 @@ void write_usage(vespalib::JsonStream& output, const vespalib::string &label, do
     output << End();
 }
 
+void write_attribute_usage(vespalib::JsonStream& output, const vespalib::string &label, const spi::AttributeResourceUsage &usage)
+{
+    output << label << Object();
+    output << "usage" << usage.get_usage();
+    output << "name" << usage.get_name();
+    output << End();
+}
+
 bool want_immediate_report(const spi::ResourceUsage& old_resource_usage, const spi::ResourceUsage& resource_usage)
 {
     auto disk_usage_diff = fabs(resource_usage.get_disk_usage() - old_resource_usage.get_disk_usage());
     auto memory_usage_diff = fabs(resource_usage.get_memory_usage() - old_resource_usage.get_memory_usage());
-    return (disk_usage_diff > diff_slack || memory_usage_diff > diff_slack);
+    auto attribute_enum_store_diff = fabs(resource_usage.get_attribute_enum_store_usage().get_usage() - old_resource_usage.get_attribute_enum_store_usage().get_usage());
+    auto attribute_multivalue_diff = fabs(resource_usage.get_attribute_multivalue_usage().get_usage() - old_resource_usage.get_attribute_multivalue_usage().get_usage());
+    return (disk_usage_diff > diff_slack || memory_usage_diff > diff_slack || attribute_enum_store_diff > diff_slack || attribute_multivalue_diff > diff_slack);
 }
 
 }
@@ -67,8 +82,10 @@ ServiceLayerHostInfoReporter::report(vespalib::JsonStream& output)
     {
         std::lock_guard guard(_lock);
         auto& usage = get_usage();
-        write_usage(output, "memory", usage.get_memory_usage());
-        write_usage(output, "disk", usage.get_disk_usage());
+        write_usage(output, memory_label, usage.get_memory_usage());
+        write_usage(output, disk_label, usage.get_disk_usage());
+        write_attribute_usage(output, attribute_enum_store_label, usage.get_attribute_enum_store_usage());
+        write_attribute_usage(output, attribute_multi_value_label, usage.get_attribute_multivalue_usage());
     }
     output << End();
     output << End();
