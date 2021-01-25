@@ -254,14 +254,16 @@ public class StateHandler extends AbstractRequestHandler {
             } else {
                 throw new UnsupportedOperationException(tuple.val.getClass().getName());
             }
-            Iterator<Map.Entry<String, String>> it = tuple.dim.iterator();
-            if (it.hasNext() && includeDimensions) {
-                JSONObjectWithLegibleException jsonDim = new JSONObjectWithLegibleException();
-                while (it.hasNext()) {
-                    Map.Entry<String, String> entry = it.next();
-                    jsonDim.put(entry.getKey(), entry.getValue());
+            if (tuple.dim != null) {
+                Iterator<Map.Entry<String, String>> it = tuple.dim.iterator();
+                if (it.hasNext() && includeDimensions) {
+                    JSONObjectWithLegibleException jsonDim = new JSONObjectWithLegibleException();
+                    while (it.hasNext()) {
+                        Map.Entry<String, String> entry = it.next();
+                        jsonDim.put(entry.getKey(), entry.getValue());
+                    }
+                    jsonTuple.put("dimensions", jsonDim);
                 }
-                jsonTuple.put("dimensions", jsonDim);
             }
             jsonMetric.append("values", jsonTuple);
         }

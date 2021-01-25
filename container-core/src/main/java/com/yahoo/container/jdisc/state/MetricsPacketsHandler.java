@@ -173,6 +173,8 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     }
 
     private void addDimensions(MetricDimensions metricDimensions, JSONObjectWithLegibleException packet) throws JSONException {
+        if (metricDimensions == null) return;
+
         Iterator<Map.Entry<String, String>> dimensionsIterator = metricDimensions.iterator();
         if (dimensionsIterator.hasNext()) {
             JSONObject jsonDim = new JSONObjectWithLegibleException();
