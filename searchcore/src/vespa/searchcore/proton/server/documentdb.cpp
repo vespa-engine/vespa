@@ -411,7 +411,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         LOG(error, "Applying config to closed document db");
         return;
     }
-    _maintenanceController.killJobs();
+
     ConfigComparisonResult cmpres;
     Schema::SP oldSchema;
     int64_t generation = configSnapshot->getGeneration();
@@ -432,6 +432,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         cmpres.importedFieldsChanged = true;
     }
     const ReconfigParams params(cmpres);
+
     // Save config via config manager if replay is done.
     bool equalReplayConfig =
         *DocumentDBConfig::makeReplayConfig(configSnapshot) ==
@@ -453,6 +454,10 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1, std::make_shared<vespalib::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
         _writeService.sync();
     }
+    if (params.shouldMaintenanceControllerChange()) {
+        _maintenanceController.killJobs();
+    }
+
     if (_state.getState() >= DDBState::State::APPLY_LIVE_CONFIG) {
         _writeServiceConfig.update(configSnapshot->get_threading_service_config());
     }
@@ -479,7 +484,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         _state.clearDelayedConfig();
     }
     setActiveConfig(configSnapshot, generation);
-    forwardMaintenanceConfig();
+    if (params.shouldMaintenanceControllerChange() || _maintenanceController.getPaused()) {
+        forwardMaintenanceConfig();
+    }
     _writeFilter.setConfig(configSnapshot->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
     if (_subDBs.getReprocessingRunner().empty()) {
         _subDBs.pruneRemovedFields(serialNum);
@@ -997,7 +1004,7 @@ DocumentDB::forwardMaintenanceConfig()
     const auto &attributes_config = activeConfig->getAttributesConfig();
     auto attribute_config_inspector = std::make_unique<AttributeConfigInspector>(attributes_config);
     if (!_state.getClosed()) {
-        if (_maintenanceController.getStarted() && !_maintenanceController.getStopping()) {
+        if (_maintenanceController.getPaused()) {
             injectMaintenanceJobs(*maintenanceConfig, std::move(attribute_config_inspector));
         }
         _maintenanceController.newConfig(maintenanceConfig);

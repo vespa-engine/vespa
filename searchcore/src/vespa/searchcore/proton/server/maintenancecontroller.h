@@ -34,6 +34,7 @@ public:
     using DocumentDBMaintenanceConfigSP = std::shared_ptr<DocumentDBMaintenanceConfig>;
     using JobList = std::vector<std::shared_ptr<MaintenanceJobRunner>>;
     using UP = std::unique_ptr<MaintenanceController>;
+    enum class State {INITIALIZING, STARTED, PAUSED, STOPPING};
 
     MaintenanceController(IThreadService &masterThread, vespalib::SyncableThreadExecutor & defaultExecutor, const DocTypeName &docTypeName);
 
@@ -63,8 +64,9 @@ public:
     operator const IFrozenBucketHandler &() const { return _frozenBuckets; }
     operator IFrozenBucketHandler &() { return _frozenBuckets; }
 
-    bool  getStarted() const { return _started; }
-    bool getStopping() const { return _stopping; }
+    bool  getStarted() const { return _state >= State::STARTED; }
+    bool getStopping() const { return _state == State::STOPPING; }
+    bool getPaused() const { return _state == State::PAUSED; }
 
     const MaintenanceDocumentSubDB &    getReadySubDB() const { return _readySubDB; }
     const MaintenanceDocumentSubDB &      getRemSubDB() const { return _remSubDB; }
@@ -82,8 +84,7 @@ private:
     std::unique_ptr<vespalib::ScheduledExecutor>  _periodicTimer;
     DocumentDBMaintenanceConfigSP     _config;
     FrozenBuckets                     _frozenBuckets;
-    bool                              _started;
-    bool                              _stopping;
+    State                             _state;
     const DocTypeName                &_docTypeName;
     JobList                           _jobs;
     mutable Mutex                     _jobsLock;
@@ -95,6 +96,4 @@ private:
     void registerJob(vespalib::Executor & executor, IMaintenanceJob::UP job);
 };
 
-
 } // namespace proton
-
