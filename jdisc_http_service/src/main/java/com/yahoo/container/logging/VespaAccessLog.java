@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.core.AccessLogConfig;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.util.TimeZone;
  * @author Bjorn Borud
  * @author Oyvind Bakksjo
  */
-public final class VespaAccessLog implements RequestLogHandler, LogWriter<RequestLogEntry> {
+public final class VespaAccessLog extends AbstractComponent implements RequestLogHandler, LogWriter<RequestLogEntry> {
 
     private static final ThreadLocal<SimpleDateFormat> dateFormat = ThreadLocal.withInitial(VespaAccessLog::createDateFormat);
 
@@ -84,13 +85,7 @@ public final class VespaAccessLog implements RequestLogHandler, LogWriter<Reques
         sb.append(numbers);
     }
 
-    /**
-     * TODO: This is never called. We should have a DI provider and call this method from its deconstruct.
-     */
-    public void shutdown() {
-        if (logHandler!=null)
-            logHandler.shutdown();
-    }
+    @Override public void deconstruct() { logHandler.shutdown(); }
 
     @Override
     public void log(RequestLogEntry entry) {
