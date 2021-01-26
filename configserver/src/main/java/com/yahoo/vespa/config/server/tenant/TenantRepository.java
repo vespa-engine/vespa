@@ -286,7 +286,7 @@ public class TenantRepository {
     }
 
     // Use when bootstrapping an existing tenant based on ZooKeeper data
-    protected void bootstrapTenant(TenantName tenantName) {
+    protected synchronized void bootstrapTenant(TenantName tenantName) {
         createTenant(tenantName, readCreatedTimeFromZooKeeper(tenantName));
     }
 
