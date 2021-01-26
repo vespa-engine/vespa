@@ -41,7 +41,7 @@ class LogFileHandler <LOGTYPE> {
     enum Compression {NONE, GZIP, ZSTD}
 
     private final static Logger logger = Logger.getLogger(LogFileHandler.class.getName());
-    private final ArrayBlockingQueue<Operation<LOGTYPE>> logQueue = new ArrayBlockingQueue<>(10000);
+    private final ArrayBlockingQueue<Operation<LOGTYPE>> logQueue = new ArrayBlockingQueue<>(100000);
     final LogThread<LOGTYPE> logThread;
 
     @FunctionalInterface private interface Pollable<T> { Operation<T> poll() throws InterruptedException; }
