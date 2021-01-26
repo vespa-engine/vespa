@@ -8,7 +8,10 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -30,12 +33,14 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
+    private final StringFlag allocateOsRequirementFlag;
 
     public GroupPreparer(NodeRepository nodeRepository,
                          Optional<HostProvisioner> hostProvisioner,
                          FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
+        this.allocateOsRequirementFlag = Flags.ALLOCATE_OS_REQUIREMENT.bindTo(flagSource);
     }
 
     /**
@@ -121,10 +126,13 @@ public class GroupPreparer {
         LockedNodeList allNodes = nodeRepository.list(allocationLock);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
                 highestIndex, nodeRepository);
+        String allocateOsRequirement = allocateOsRequirementFlag
+                .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                .value();
         NodePrioritizer prioritizer = new NodePrioritizer(
                 allNodes, application, cluster, requestedNodes, wantedGroups,
                 nodeRepository.zone().getCloud().dynamicProvisioning(), nodeRepository.nameResolver(),
-                nodeRepository.resourcesCalculator(), nodeRepository.spareCount());
+                nodeRepository.resourcesCalculator(), nodeRepository.spareCount(), allocateOsRequirement);
         allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
     }
