@@ -237,16 +237,7 @@ public class Cookie {
     }
 
     public enum SameSite {
-        NONE("None"), STRICT("Strict"), LAX("Lax");
-
-        private final String value;
-        SameSite(String value) {
-            this.value = value;
-        }
-
-        public String getValue() {
-            return this.value;
-        }
+        NONE, STRICT, LAX;
 
         HttpCookie.SameSite jettySameSite() {
             return HttpCookie.SameSite.valueOf(name());
