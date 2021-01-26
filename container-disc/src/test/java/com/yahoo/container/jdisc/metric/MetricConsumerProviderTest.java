@@ -34,10 +34,4 @@ public class MetricConsumerProviderTest {
         Mockito.verify(bar, Mockito.times(1)).add("foo", 6, null);
     }
 
-    @Test
-    public void requireThatDefaultConsumerFactoryIsStateMetric() {
-        MetricConsumer consumer = MetricConsumerProviders.newDefaultInstance().newInstance();
-        assertEquals("StateMetricConsumer", consumer.getClass().getSimpleName());
-    }
-
 }
