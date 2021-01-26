@@ -2,6 +2,5 @@
 
 namespace=metrics
 
-## Sliding window means present the last n minutes of data, as opposed to
-## presenting the newest completed n minute interval.
+## TODO Vespa 8: remove
 slidingwindow bool default=true

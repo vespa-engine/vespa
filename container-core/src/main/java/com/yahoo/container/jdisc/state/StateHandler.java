@@ -63,11 +63,7 @@ public class StateHandler extends AbstractRequestHandler {
 
     static SnapshotProvider getSnapshotPreprocessor(ComponentRegistry<SnapshotProvider> preprocessors, MetricsPresentationConfig presentation) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();
-        if (presentation.slidingwindow() && allPreprocessors.size() > 0) {
-            return allPreprocessors.get(0);
-        } else {
-            return null;
-        }
+        return (allPreprocessors.size() > 0) ? allPreprocessors.get(0) : null;
     }
 
     @Override
