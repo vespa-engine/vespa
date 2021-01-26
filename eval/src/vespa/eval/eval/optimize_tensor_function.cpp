@@ -6,6 +6,7 @@
 
 #include <vespa/eval/instruction/dense_dot_product_function.h>
 #include <vespa/eval/instruction/mixed_inner_product_function.h>
+#include <vespa/eval/instruction/sum_max_dot_product_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
 #include <vespa/eval/instruction/dense_matmul_function.h>
 #include <vespa/eval/instruction/dense_multi_matmul_function.h>
@@ -44,6 +45,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &factory, c
         }
         while (!nodes.empty()) {
             const Child &child = nodes.back().get();
+            child.set(SumMaxDotProductFunction::optimize(child.get(), stash));
             child.set(DenseDotProductFunction::optimize(child.get(), stash));
             child.set(DenseXWProductFunction::optimize(child.get(), stash));
             child.set(DenseMatMulFunction::optimize(child.get(), stash));
