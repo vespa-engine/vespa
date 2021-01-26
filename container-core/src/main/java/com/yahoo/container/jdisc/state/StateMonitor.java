@@ -4,7 +4,6 @@ package com.yahoo.container.jdisc.state;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.jdisc.application.MetricConsumer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,11 +28,6 @@ public class StateMonitor extends AbstractComponent {
 
     public static StateMonitor createForTesting() {
         return new StateMonitor(new HealthMonitorConfig.Builder().build());
-    }
-
-    /** TODO: Remove */
-    public MetricConsumer newMetricConsumer() {
-        return new StateMetricConsumer();
     }
 
     public void status(Status status) {
