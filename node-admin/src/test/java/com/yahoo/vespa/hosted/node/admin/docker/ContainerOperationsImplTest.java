@@ -130,7 +130,7 @@ public class ContainerOperationsImplTest {
     public void retainContainersTest() {
         when(containerEngine.listManagedContainers(ContainerOperationsImpl.MANAGER_NAME))
                 .thenReturn(List.of(new ContainerName("cnt1"), new ContainerName("cnt2"), new ContainerName("cnt3")));
-        containerOperations.retainManagedContainers(Set.of(new ContainerName("cnt2"), new ContainerName("cnt4")));
+        containerOperations.retainManagedContainers(any(), Set.of(new ContainerName("cnt2"), new ContainerName("cnt4")));
 
         verify(containerEngine).stopContainer(eq(new ContainerName("cnt1")));
         verify(containerEngine).deleteContainer(eq(new ContainerName("cnt1")));

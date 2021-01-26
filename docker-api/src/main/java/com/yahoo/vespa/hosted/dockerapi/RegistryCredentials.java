@@ -8,6 +8,7 @@ import java.util.Objects;
  *
  * @author mpolden
  */
+// TODO: Move this to node-admin when docker-api module can be removed
 public class RegistryCredentials {
 
     public static final RegistryCredentials none = new RegistryCredentials("", "", "");

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import java.util.Objects;
 
+// TODO: Consider replacing usages of this with CommandResult when docker-api module can be removed
 public class ProcessResult {
     private final int exitStatus;
     private final String output;

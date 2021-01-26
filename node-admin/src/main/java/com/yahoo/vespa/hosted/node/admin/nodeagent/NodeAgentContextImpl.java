@@ -244,7 +244,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
-        public Builder dockerNetworking(ContainerNetworkMode containerNetworkMode) {
+        public Builder networkMode(ContainerNetworkMode containerNetworkMode) {
             this.containerNetworkMode = containerNetworkMode;
             return this;
         }
