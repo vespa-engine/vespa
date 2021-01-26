@@ -41,6 +41,7 @@ import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
 import com.yahoo.vespa.model.search.NamedSchema;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
@@ -54,6 +55,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * Contains various state during deploy that should be available in all builders of a {@link com.yahoo.config.model.ConfigModel}
@@ -138,8 +140,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.importedModels = new ImportedMlModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR),
-                                                   modelImporters);
+        this.importedModels = importMlModels(applicationPackage, modelImporters, deployLogger);
 
         ValidationOverrides suppliedValidationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
                                                                             .orElse(ValidationOverrides.empty);
@@ -204,6 +205,18 @@ public class DeployState implements ConfigDefinitionStore {
             });
         }
         return keyToRepo;
+    }
+
+    private static ImportedMlModels importMlModels(ApplicationPackage applicationPackage,
+                                                   Collection<MlModelImporter> modelImporters,
+                                                   DeployLogger deployLogger) {
+        File importFrom = applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR);
+        ImportedMlModels importedModels = new ImportedMlModels(importFrom, modelImporters);
+        for (var entry : importedModels.getSkippedModels().entrySet()) {
+            deployLogger.log(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
+                    "occurred during import. Error: " + entry.getValue());
+        }
+        return importedModels;
     }
 
     // Global registry of rank profiles.

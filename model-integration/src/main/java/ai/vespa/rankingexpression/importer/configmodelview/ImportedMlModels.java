@@ -23,6 +23,9 @@ public class ImportedMlModels {
     /** All imported models, indexed by their names */
     private final Map<String, ImportedMlModel> importedModels;
 
+    /** Models that were not imported due to some error */
+    private final Map<String, String> skippedModels = new HashMap<>();
+
     /** Create a null imported models */
     public ImportedMlModels() {
         importedModels = Collections.emptyMap();
@@ -32,7 +35,7 @@ public class ImportedMlModels {
         Map<String, ImportedMlModel> models = new HashMap<>();
 
         // Find all subdirectories recursively which contains a model we can read
-        importRecursively(modelsDirectory, models, importers);
+        importRecursively(modelsDirectory, models, importers, skippedModels);
         importedModels = Collections.unmodifiableMap(models);
     }
 
@@ -53,9 +56,14 @@ public class ImportedMlModels {
         return importedModels.values();
     }
 
+    public Map<String, String> getSkippedModels() {
+        return skippedModels;
+    }
+
     private static void importRecursively(File dir,
                                           Map<String, ImportedMlModel> models,
-                                          Collection<MlModelImporter> importers) {
+                                          Collection<MlModelImporter> importers,
+                                          Map<String, String> skippedModels) {
         if ( ! dir.isDirectory()) return;
 
         Arrays.stream(dir.listFiles()).sorted().forEach(child -> {
@@ -66,10 +74,15 @@ public class ImportedMlModels {
                 if (existing != null)
                     throw new IllegalArgumentException("The models in " + child + " and " + existing.source() +
                                                        " both resolve to the model name '" + name + "'");
-                models.put(name, importer.get().importModel(name, child));
+                try {
+                    ImportedMlModel importedModel = importer.get().importModel(name, child);
+                    models.put(name, importedModel);
+                } catch (RuntimeException e) {
+                    skippedModels.put(name, e.getMessage());
+                }
             }
             else {
-                importRecursively(child, models, importers);
+                importRecursively(child, models, importers, skippedModels);
             }
         });
     }
