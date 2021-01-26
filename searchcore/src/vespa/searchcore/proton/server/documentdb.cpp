@@ -911,6 +911,7 @@ DocumentDB::syncFeedView()
     IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
+    _maintenanceController.killJobs();
     _writeService.sync();
 
     _feedView.set(newFeedView);
