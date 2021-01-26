@@ -11,11 +11,11 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -353,72 +353,85 @@ class LogFileHandler <LOGTYPE> {
 
             nextRotationTime = 0; //figure it out later (lazy evaluation)
             if ((oldFileName != null)) {
-                File oldFile = new File(oldFileName);
-                if (oldFile.exists()) {
-                    if (compression != Compression.NONE) {
-                        executor.execute(() -> runCompression(oldFile, compression));
-                    } else {
-                        nativeIO.dropFileFromCache(oldFile);
-                    }
+                Path oldFile = Paths.get(oldFileName);
+                if (Files.exists(oldFile)) {
+                    executor.execute(() -> runCompression(nativeIO, oldFile, compression));
                 }
             }
         }
 
 
-        private static void runCompression(File oldFile, Compression compression) {
+        private static void runCompression(NativeIO nativeIO, Path oldFile, Compression compression) {
             switch (compression) {
                 case ZSTD:
-                    runCompressionZstd(oldFile.toPath());
+                    runCompressionZstd(nativeIO, oldFile);
                     break;
                 case GZIP:
-                    runCompressionGzip(oldFile);
+                    runCompressionGzip(nativeIO, oldFile);
+                    break;
+                case NONE:
+                    runCompressionNone(nativeIO, oldFile);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown compression " + compression);
             }
         }
 
-        private static void runCompressionZstd(Path oldFile) {
+        private static void runCompressionNone(NativeIO nativeIO, Path oldFile) {
+            nativeIO.dropFileFromCache(oldFile.toFile());
+        }
+
+        private static void runCompressionZstd(NativeIO nativeIO, Path oldFile) {
             try {
                 Path compressedFile = Paths.get(oldFile.toString() + ".zst");
                 Files.createFile(compressedFile);
                 int bufferSize = 0x400000; // 4M
-                byte[] buffer = new byte[bufferSize];
-                try (ZstdOuputStream out = new ZstdOuputStream(Files.newOutputStream(compressedFile), bufferSize);
-                     InputStream in = Files.newInputStream(oldFile)) {
-                    int read;
-                    while ((read = in.read(buffer)) >= 0) {
-                        out.write(buffer, 0, read);
-                    }
+                try (FileOutputStream fileOut = new FileOutputStream(compressedFile.toFile());
+                     ZstdOuputStream out = new ZstdOuputStream(fileOut, bufferSize);
+                     FileInputStream in = new FileInputStream(oldFile.toFile())) {
+                    pageFriendlyTransfer(nativeIO, out, fileOut.getFD(), in, bufferSize);
                     out.flush();
                 }
                 Files.delete(oldFile);
+                nativeIO.dropFileFromCache(compressedFile.toFile());
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Failed to compress log file with zstd: " + oldFile, e);
+            } finally {
+                nativeIO.dropFileFromCache(oldFile.toFile());
             }
         }
 
-        private static void runCompressionGzip(File oldFile) {
-            File gzippedFile = new File(oldFile.getPath() + ".gz");
-            NativeIO nativeIO = new NativeIO();
-            try (GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
-                 FileInputStream inputStream = new FileInputStream(oldFile)) {
-                byte[] buffer = new byte[0x400000]; // 4M buffer
-
-                long totalBytesRead = 0;
-                for (int read = inputStream.read(buffer); read > 0; read = inputStream.read(buffer)) {
-                    compressor.write(buffer, 0, read);
-                    nativeIO.dropPartialFileFromCache(inputStream.getFD(), totalBytesRead, read, false);
-                    totalBytesRead += read;
+        private static void runCompressionGzip(NativeIO nativeIO, Path oldFile) {
+            try {
+                Path gzippedFile = Paths.get(oldFile.toString() + ".gz");
+                try (FileOutputStream fileOut = new FileOutputStream(gzippedFile.toFile());
+                     GZIPOutputStream compressor = new GZIPOutputStream(fileOut, 0x100000);
+                     FileInputStream inputStream = new FileInputStream(oldFile.toFile())) {
+                    pageFriendlyTransfer(nativeIO, compressor, fileOut.getFD(), inputStream, 0x400000);
+                    compressor.finish();
+                    compressor.flush();
                 }
-                compressor.finish();
-                compressor.flush();
-
+                Files.delete(oldFile);
+                nativeIO.dropFileFromCache(gzippedFile.toFile());
             } catch (IOException e) {
-                logger.warning("Got '" + e + "' while compressing '" + oldFile.getPath() + "'.");
+                logger.log(Level.WARNING, "Failed to compress log file with gzip: " + oldFile, e);
+            } finally {
+                nativeIO.dropFileFromCache(oldFile.toFile());
             }
-            oldFile.delete();
-            nativeIO.dropFileFromCache(gzippedFile);
+        }
+
+        private static void pageFriendlyTransfer(NativeIO nativeIO, OutputStream out, FileDescriptor outDescriptor, FileInputStream in, int bufferSize) throws IOException {
+            int read;
+            long totalBytesRead = 0;
+            byte[] buffer = new byte[bufferSize];
+            while ((read = in.read(buffer)) >= 0) {
+                out.write(buffer, 0, read);
+                if (read > 0) {
+                    nativeIO.dropPartialFileFromCache(in.getFD(), totalBytesRead, read, false);
+                    nativeIO.dropPartialFileFromCache(outDescriptor, totalBytesRead, read, false);
+                }
+                totalBytesRead += read;
+            }
         }
 
         /**
