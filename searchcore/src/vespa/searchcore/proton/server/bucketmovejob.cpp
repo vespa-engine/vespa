@@ -6,6 +6,8 @@
 #include "iclusterstatechangednotifier.h"
 #include "maintenancedocumentsubdb.h"
 #include "i_disk_mem_usage_notifier.h"
+#include "ibucketmodifiedhandler.h"
+#include "move_operation_limiter.h"
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_notifier.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 
@@ -176,7 +178,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _modifiedHandler(modifiedHandler),
       _ready(ready),
       _notReady(notReady),
-      _mover(*_moveOpsLimiter),
+      _mover(getLimiter()),
       _doneScan(false),
       _scanPos(),
       _scanPass(FIRST_SCAN_PASS),
@@ -186,7 +188,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _delayedBucketsFrozen(),
       _frozenBuckets(frozenBuckets),
       _bucketCreateNotifier(bucketCreateNotifier),
-      _delayedMover(*_moveOpsLimiter),
+      _delayedMover(getLimiter()),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
       _diskMemUsageNotifier(diskMemUsageNotifier)
@@ -283,8 +285,7 @@ BucketMoveJob::changedCalculator()
 }
 
 bool
-BucketMoveJob::scanAndMove(size_t maxBucketsToScan,
-                           size_t maxDocsToMove)
+BucketMoveJob::scanAndMove(size_t maxBucketsToScan, size_t maxDocsToMove)
 {
     if (done()) {
         return true;
@@ -306,8 +307,7 @@ BucketMoveJob::scanAndMove(size_t maxBucketsToScan,
         size_t bucketsScanned = 0;
         for (;;) {
             if (_mover.bucketDone()) {
-                ScanResult res = scanBuckets(maxBucketsToScan -
-                                             bucketsScanned, bucketGuard);
+                ScanResult res = scanBuckets(maxBucketsToScan - bucketsScanned, bucketGuard);
                 bucketsScanned += res.first;
                 if (res.second) {
                     if (_scanPass == FIRST_SCAN_PASS &&
@@ -363,8 +363,7 @@ BucketMoveJob::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCa
 }
 
 void
-BucketMoveJob::notifyBucketStateChanged(const BucketId &bucketId,
-                                        BucketInfo::ActiveState newState)
+BucketMoveJob::notifyBucketStateChanged(const BucketId &bucketId, BucketInfo::ActiveState newState)
 {
     // Called by master write thread
     if (newState == BucketInfo::NOT_ACTIVE) {

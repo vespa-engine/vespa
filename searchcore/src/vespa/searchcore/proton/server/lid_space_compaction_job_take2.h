@@ -7,6 +7,7 @@
 
 namespace storage::spi { struct BucketExecutor;}
 namespace searchcorespi::index { class IThreadService; }
+namespace vespalib { class IDestructorCallback; }
 namespace proton {
     class IDiskMemUsageNotifier;
     class IClusterStateChangedNotifier;

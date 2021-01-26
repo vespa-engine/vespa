@@ -10,6 +10,7 @@
 #include <vespa/searchcore/proton/server/idocumentmovehandler.h>
 #include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
 #include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
+#include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
@@ -44,7 +45,6 @@ using BucketIdVector = BucketId::List;
 using DocumentVector = std::vector<Document::SP>;
 using MoveOperationVector = std::vector<MoveOperation>;
 using ScanItr = BucketMoveJob::ScanIterator;
-using ScanPos = BucketMoveJob::ScanPosition;
 
 namespace {
 
