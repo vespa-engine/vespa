@@ -411,7 +411,6 @@ StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const 
     assert(_writeService.master().isCurrentThread());
     reconfigure(newConfigSnapshot.getStoreConfig());
     initFeedView(newConfigSnapshot);
-    _owner.syncFeedView();
     return IReprocessingTask::List();
 }
 

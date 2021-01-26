@@ -274,7 +274,6 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
         _iFeedView.set(_fastAccessFeedView.get());
-        _owner.syncFeedView();
     }
     return tasks;
 }

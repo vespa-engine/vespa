@@ -472,6 +472,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
             // Changes applied while online should not trigger reprocessing
             assert(_subDBs.getReprocessingRunner().empty());
         }
+        syncFeedView();
     }
     if (params.shouldIndexManagerChange()) {
         setIndexSchema(*configSnapshot, serialNum);

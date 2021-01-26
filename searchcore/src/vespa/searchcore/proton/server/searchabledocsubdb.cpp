@@ -64,7 +64,6 @@ SearchableDocSubDB::syncViews()
 {
     _iSearchView.set(_rSearchView.get());
     _iFeedView.set(_rFeedView.get());
-    _owner.syncFeedView();
 }
 
 SerialNum
