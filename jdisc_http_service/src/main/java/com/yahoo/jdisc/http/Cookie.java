@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
+import org.eclipse.jetty.http.HttpCookie;
 import org.eclipse.jetty.server.CookieCutter;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -29,6 +31,7 @@ public class Cookie {
     private String value;
     private String domain;
     private String path;
+    private SameSite sameSite;
     private long maxAgeSeconds = Integer.MIN_VALUE;
     private boolean secure;
     private boolean httpOnly;
@@ -43,6 +46,7 @@ public class Cookie {
         value = cookie.value;
         domain = cookie.domain;
         path = cookie.path;
+        sameSite = cookie.sameSite;
         maxAgeSeconds = cookie.maxAgeSeconds;
         secure = cookie.secure;
         httpOnly = cookie.httpOnly;
@@ -90,6 +94,15 @@ public class Cookie {
         return this;
     }
 
+    public SameSite getSameSite() {
+        return sameSite;
+    }
+
+    public Cookie setSameSite(SameSite sameSite) {
+        this.sameSite = sameSite;
+        return this;
+    }
+
     public int getMaxAge(TimeUnit unit) {
         return (int)unit.convert(maxAgeSeconds, TimeUnit.SECONDS);
     }
@@ -126,6 +139,7 @@ public class Cookie {
                 secure == cookie.secure &&
                 httpOnly == cookie.httpOnly &&
                 discard == cookie.discard &&
+                sameSite == cookie.sameSite &&
                 Objects.equals(ports, cookie.ports) &&
                 Objects.equals(name, cookie.name) &&
                 Objects.equals(value, cookie.value) &&
@@ -135,7 +149,7 @@ public class Cookie {
 
     @Override
     public int hashCode() {
-        return Objects.hash(ports, name, value, domain, path, maxAgeSeconds, secure, httpOnly, discard);
+        return Objects.hash(ports, name, value, domain, path, sameSite, maxAgeSeconds, secure, httpOnly, discard);
     }
 
     @Override
@@ -193,7 +207,10 @@ public class Cookie {
                                      cookie.getPath(),
                                      cookie.getMaxAge(TimeUnit.SECONDS),
                                      cookie.isHttpOnly(),
-                                     cookie.isSecure()
+                                     cookie.isSecure(),
+                                     null, /* comment */
+                                     0, /* version */
+                                     Optional.ofNullable(cookie.getSameSite()).map(SameSite::jettySameSite).orElse(null)
                              ).getRFC6265SetCookie())
                 .collect(toList());
     }
@@ -219,4 +236,15 @@ public class Cookie {
                 .findFirst().get();
     }
 
+    public enum SameSite {
+        NONE, STRICT, LAX;
+
+        HttpCookie.SameSite jettySameSite() {
+            return HttpCookie.SameSite.valueOf(name());
+        }
+
+        static SameSite fromJettySameSite(HttpCookie.SameSite jettySameSite) {
+            return valueOf(jettySameSite.name());
+        }
+    }
 }

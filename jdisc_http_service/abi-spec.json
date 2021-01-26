@@ -377,6 +377,24 @@
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
+  "com.yahoo.jdisc.http.Cookie$SameSite": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.jdisc.http.Cookie$SameSite[] values()",
+      "public static com.yahoo.jdisc.http.Cookie$SameSite valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.jdisc.http.Cookie$SameSite NONE",
+      "public static final enum com.yahoo.jdisc.http.Cookie$SameSite STRICT",
+      "public static final enum com.yahoo.jdisc.http.Cookie$SameSite LAX"
+    ]
+  },
   "com.yahoo.jdisc.http.Cookie": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -395,6 +413,8 @@
       "public com.yahoo.jdisc.http.Cookie setDomain(java.lang.String)",
       "public java.lang.String getPath()",
       "public com.yahoo.jdisc.http.Cookie setPath(java.lang.String)",
+      "public com.yahoo.jdisc.http.Cookie$SameSite getSameSite()",
+      "public com.yahoo.jdisc.http.Cookie setSameSite(com.yahoo.jdisc.http.Cookie$SameSite)",
       "public int getMaxAge(java.util.concurrent.TimeUnit)",
       "public com.yahoo.jdisc.http.Cookie setMaxAge(int, java.util.concurrent.TimeUnit)",
       "public boolean isSecure()",
