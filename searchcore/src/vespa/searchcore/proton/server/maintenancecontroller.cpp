@@ -25,7 +25,7 @@ private:
     MaintenanceJobRunner *_job;
 public:
     JobWrapperTask(MaintenanceJobRunner *job) : _job(job) {}
-    virtual void run() override { _job->run(); }
+    void run() override { _job->run(); }
 };
 
 }
@@ -42,8 +42,7 @@ MaintenanceController::MaintenanceController(IThreadService &masterThread,
       _periodicTimer(),
       _config(),
       _frozenBuckets(masterThread),
-      _started(false),
-      _stopping(false),
+      _state(State::INITIALIZING),
       _docTypeName(docTypeName),
       _jobs(),
       _jobsLock()
@@ -83,6 +82,9 @@ MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
 void
 MaintenanceController::killJobs()
 {
+    if (_state == State::STARTED) {
+        _state = State::PAUSED;
+    }
     // Called by master write thread
     assert(_masterThread.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
@@ -116,7 +118,7 @@ void
 MaintenanceController::stop()
 {
     assert(!_masterThread.isCurrentThread());
-    _masterThread.execute(makeLambdaTask([this]() { _stopping = true; killJobs(); }));
+    _masterThread.execute(makeLambdaTask([this]() { _state = State::STOPPING; killJobs(); }));
     _masterThread.sync();  // Wait for killJobs()
     _masterThread.sync();  // Wait for already scheduled maintenance jobs and performHoldJobs
 }
@@ -134,9 +136,9 @@ void
 MaintenanceController::start(const DocumentDBMaintenanceConfig::SP &config)
 {
     // Called by master write thread
-    assert(!_started);
+    assert(_state == State::INITIALIZING);
     _config = config;
-    _started = true;
+    _state = State::STARTED;
     restart();
 }
 
@@ -145,7 +147,7 @@ void
 MaintenanceController::restart()
 {
     // Called by master write thread
-    if (!_started || _stopping || !_readySubDB.valid()) {
+    if (!getStarted() || getStopping() || !_readySubDB.valid()) {
         return;
     }
     _periodicTimer = std::make_unique<vespalib::ScheduledExecutor>();
@@ -207,7 +209,7 @@ MaintenanceController::syncSubDBs(const MaintenanceDocumentSubDB &readySubDB,
     _readySubDB = readySubDB;
     _remSubDB = remSubDB;
     _notReadySubDB = notReadySubDB;
-    if (!oldValid && _started) {
+    if (!oldValid && getStarted()) {
         restart();
     }
 }
