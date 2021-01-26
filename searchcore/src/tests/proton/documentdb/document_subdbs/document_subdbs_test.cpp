@@ -76,9 +76,6 @@ struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("cfg4"); } 
 
 struct MySubDBOwner : public IDocumentSubDBOwner
 {
-    uint32_t _syncCnt;
-    MySubDBOwner() : _syncCnt(0) {}
-    void syncFeedView() override { ++_syncCnt; }
     document::BucketSpace getBucketSpace() const override { return makeBucketSpace(); }
     vespalib::string getName() const override { return "owner"; }
     uint32_t getDistributionKey() const override { return -1; }
@@ -572,32 +569,6 @@ TEST_F("require that reconfigured attributes are accessible via feed view", Fast
 TEST_F("require that reconfigured attributes are accessible via feed view", SearchableFixture)
 {
     requireThatReconfiguredAttributesAreAccessibleViaFeedView(f);
-}
-
-template <typename Fixture>
-void
-requireThatOwnerIsNotifiedWhenFeedViewChanges(Fixture &f)
-{
-    EXPECT_EQUAL(0u, f.getOwner()._syncCnt);
-    f.basicReconfig(10);
-    EXPECT_EQUAL(1u, f.getOwner()._syncCnt);
-}
-
-TEST_F("require that owner is noticed when feed view changes", StoreOnlyFixture)
-{
-    requireThatOwnerIsNotifiedWhenFeedViewChanges(f);
-}
-
-TEST_F("require that owner is noticed when feed view changes", FastAccessFixture)
-{
-    requireThatOwnerIsNotifiedWhenFeedViewChanges(f);
-}
-
-TEST_F("require that owner is noticed when feed view changes", SearchableFixture)
-{
-    EXPECT_EQUAL(1u, f.getOwner()._syncCnt); // NOTE: init also notifies owner
-    f.basicReconfig(10);
-    EXPECT_EQUAL(2u, f.getOwner()._syncCnt);
 }
 
 template <typename Fixture>

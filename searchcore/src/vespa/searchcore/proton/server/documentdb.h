@@ -200,6 +200,8 @@ private:
      */
     void tearDownReferences();
 
+    void syncFeedView();
+
     template <typename FunctionType>
     inline void masterExecute(FunctionType &&function);
 
@@ -383,7 +385,6 @@ public:
     /*
      * Implements IDocumentSubDBOwner
      */
-    void syncFeedView() override;
     document::BucketSpace getBucketSpace() const override;
     vespalib::string getName() const override;
     uint32_t getDistributionKey() const override;
