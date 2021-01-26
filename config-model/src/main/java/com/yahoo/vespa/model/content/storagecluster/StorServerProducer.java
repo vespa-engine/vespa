@@ -15,7 +15,6 @@ public class StorServerProducer implements StorServerConfig.Producer {
             ModelElement tuning = element.child("tuning");
 
             StorServerProducer producer = new StorServerProducer(ContentCluster.getClusterId(element));
-            producer.setBucketDBStripeBits(properties.featureFlags().contentNodeBucketDBStripeBits());
             if (tuning == null) return producer;
 
             ModelElement merges = tuning.child("merges");

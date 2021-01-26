@@ -75,7 +75,7 @@ public class StorageClusterTest {
         StorServerConfig config = new StorServerConfig(builder);
         assertFalse(config.is_distributor());
         assertEquals("foofighters", config.cluster_name());
-        assertEquals(0, config.content_node_bucket_db_stripe_bits());
+        assertEquals(4, config.content_node_bucket_db_stripe_bits());
     }
     @Test
     public void testCommunicationManagerDefaults() {
@@ -94,14 +94,6 @@ public class StorageClusterTest {
         assertFalse(config.skip_thread());
         assertFalse(config.mbus().skip_request_thread());
         assertFalse(config.mbus().skip_reply_thread());
-    }
-
-    @Test
-    public void testBucketDBStripeBitsControl() {
-        StorServerConfig.Builder builder = new StorServerConfig.Builder();
-        simpleCluster(new TestProperties().setContentNodeBucketDBStripeBits(7)).getConfig(builder);
-        StorServerConfig config = new StorServerConfig(builder);
-        assertEquals(7, config.content_node_bucket_db_stripe_bits());
     }
 
     @Test
