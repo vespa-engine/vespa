@@ -3,8 +3,6 @@ package com.yahoo.jdisc.http;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -104,17 +102,19 @@ public class CookieTestCase {
     public void requireThatCookieCanBeEncoded() {
         assertEncodeCookie(
                 "foo.name=foo.value",
-                Collections.singletonList(newCookie("foo")));
+                List.of(newCookie("foo")));
         assertEncodeCookie(
                 "foo.name=foo.value;bar.name=bar.value",
-                Arrays.asList(newCookie("foo"), newCookie("bar")));
+                List.of(newCookie("foo"), newCookie("bar")));
     }
 
     @Test
     public void requireThatSetCookieCanBeEncoded() {
         assertEncodeSetCookie(
-                Collections.singletonList("foo.name=foo.value; Path=path; Domain=domain; Secure; HttpOnly"),
-                Collections.singletonList(newSetCookie("foo")));
+                List.of("foo.name=foo.value; Path=path; Domain=domain; Secure; HttpOnly",
+                        "foo.name=foo.value; Path=path; Domain=domain; Secure; HttpOnly; SameSite=None"),
+                List.of(newSetCookie("foo"),
+                        newSetCookie("foo").setSameSite(Cookie.SameSite.NONE)));
     }
 
     @Test
@@ -122,12 +122,12 @@ public class CookieTestCase {
         final Cookie foo = new Cookie();
         foo.setName("foo.name");
         foo.setValue("foo.value");
-        assertDecodeCookie(Collections.singletonList(newCookie("foo")), "foo.name=foo.value");
+        assertDecodeCookie(List.of(newCookie("foo")), "foo.name=foo.value");
 
         final Cookie bar = new Cookie();
         bar.setName("bar.name");
         bar.setValue("bar.value");
-        assertDecodeCookie(Arrays.asList(foo, bar),"foo.name=foo.value; bar.name=bar.value");
+        assertDecodeCookie(List.of(foo, bar),"foo.name=foo.value; bar.name=bar.value");
     }
 
     @Test
@@ -187,6 +187,17 @@ public class CookieTestCase {
                                    "U5NT0Q2UjY2Q0I1STY0R0tKSUdVQVlRRQFvawFaVzAtAXRpcAFMTlRUdkMBenoBVFhwM09CQTdF&af=QU" +
                                    "FBQ0FDQURBd0FCMUNCOUFJQUJBQ0FEQU1IME1nTWhNbiZ0cz0xMzIzMjEwMTk1JnBzPVA1d3NYakh0aVk" +
                                    "2UDMuUGZ6WkdTT2ctLQ--");
+    }
+
+    @Test
+    public void requireMappingBetweenSameSiteAndJettySameSite() {
+        for (var jdiscSameSite : Cookie.SameSite.values()) {
+            assertEquals(jdiscSameSite, Cookie.SameSite.fromJettySameSite(jdiscSameSite.jettySameSite()));
+        }
+
+        for (var jettySameSite : org.eclipse.jetty.http.HttpCookie.SameSite.values()) {
+            assertEquals(jettySameSite, Cookie.SameSite.fromJettySameSite(jettySameSite).jettySameSite());
+        }
     }
 
     private static void assertEncodeCookie(String expectedResult, List<Cookie> cookies) {
