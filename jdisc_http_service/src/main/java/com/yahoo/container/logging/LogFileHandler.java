@@ -9,11 +9,14 @@ import com.yahoo.protect.Process;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.yolean.Exceptions;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,7 +28,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
@@ -182,11 +184,10 @@ class LogFileHandler <LOGTYPE> {
     static class LogThread<LOGTYPE> extends Thread {
         private final Pollable<LOGTYPE> operationProvider;
         long lastFlush = 0;
-        private FileOutputStream currentOutputStream = null;
+        private PageCacheFriendlyFileOutputStream fileOutput = null;
         private long nextRotationTime = 0;
         private final String filePattern;  // default to current directory, ms time stamp
         private volatile String fileName;
-        private long lastDropPosition = 0;
         private final LogWriter<LOGTYPE> logWriter;
         private final Compression compression;
         private final long[] rotationTimes;
@@ -253,32 +254,25 @@ class LogFileHandler <LOGTYPE> {
             }
         }
 
-        private synchronized void internalFlush() {
+        private void internalFlush() {
             try {
-                FileOutputStream currentOut = this.currentOutputStream;
-                if (currentOut != null) {
-                    if (compression == Compression.GZIP) {
-                        long newPos = currentOut.getChannel().position();
-                        if (newPos > lastDropPosition + 102400) {
-                            nativeIO.dropPartialFileFromCache(currentOut.getFD(), lastDropPosition, newPos, true);
-                            lastDropPosition = newPos;
-                        }
-                    } else {
-                        currentOut.flush();
-                    }
+                if (fileOutput != null) {
+                    fileOutput.flush();
                 }
             } catch (IOException e) {
-                logger.warning("Failed dropping from cache : " + Exceptions.toMessageString(e));
+                logger.log(Level.WARNING, "Failed to flush file output: " + Exceptions.toMessageString(e), e);
             }
         }
 
         private void internalClose() {
             try {
-                internalFlush();
-                FileOutputStream currentOut = this.currentOutputStream;
-                if (currentOut != null) currentOut.close();
+                if (fileOutput != null) {
+                    fileOutput.flush();
+                    fileOutput.close();
+                    fileOutput = null;
+                }
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Got error while closing log file", e);
+                logger.log(Level.WARNING, "Got error while closing log file: " + e.getMessage(), e);
             }
         }
 
@@ -290,13 +284,12 @@ class LogFileHandler <LOGTYPE> {
             if (nextRotationTime <= 0) {
                 nextRotationTime = getNextRotationTime(now); // lazy initialization
             }
-            if (now > nextRotationTime || currentOutputStream == null) {
+            if (now > nextRotationTime || fileOutput == null) {
                 internalRotateNow();
             }
             try {
-                FileOutputStream out = this.currentOutputStream;
-                logWriter.write(r, out);
-                out.write('\n');
+                logWriter.write(r, fileOutput);
+                fileOutput.write('\n');
             } catch (IOException e) {
                 logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
             }
@@ -343,18 +336,14 @@ class LogFileHandler <LOGTYPE> {
         // isInterrupted() returns false after interruption in p.waitFor
         private void internalRotateNow() {
             // figure out new file name, then
-            // use super.setOutputStream to switch to a new file
 
             String oldFileName = fileName;
             long now = System.currentTimeMillis();
             fileName = LogFormatter.insertDate(filePattern, now);
-            internalFlush();
-
+            internalClose();
             try {
                 checkAndCreateDir(fileName);
-                FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
-                currentOutputStream = os;
-                lastDropPosition = 0;
+                fileOutput = new PageCacheFriendlyFileOutputStream(nativeIO, Paths.get(fileName), 4 * 1024 * 1024);
                 LogFileDb.nowLoggingTo(fileName);
             } catch (IOException e) {
                 throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
@@ -480,6 +469,38 @@ class LogFileHandler <LOGTYPE> {
         private Operation(Type type, Optional<LOGTYPE> log) {
             this.type = type;
             this.log = log;
+        }
+    }
+
+    /** File output stream that signals to kernel to drop previous pages after write */
+    private static class PageCacheFriendlyFileOutputStream extends OutputStream {
+
+        private final NativeIO nativeIO;
+        private final FileOutputStream fileOut;
+        private final BufferedOutputStream bufferedOut;
+        private final int bufferSize;
+        private long lastDropPosition = 0;
+
+        PageCacheFriendlyFileOutputStream(NativeIO nativeIO, Path file, int bufferSize) throws FileNotFoundException {
+            this.nativeIO = nativeIO;
+            this.fileOut = new FileOutputStream(file.toFile(), true);
+            this.bufferedOut = new BufferedOutputStream(fileOut, bufferSize);
+            this.bufferSize = bufferSize;
+        }
+
+        @Override public void write(byte[] b) throws IOException { bufferedOut.write(b); }
+        @Override public void write(byte[] b, int off, int len) throws IOException { bufferedOut.write(b, off, len); }
+        @Override public void write(int b) throws IOException { bufferedOut.write(b); }
+        @Override public void close() throws IOException { bufferedOut.close(); }
+
+        @Override
+        public void flush() throws IOException {
+            bufferedOut.flush();
+            long newPos = fileOut.getChannel().position();
+            if (newPos >= lastDropPosition + bufferSize) {
+                nativeIO.dropPartialFileFromCache(fileOut.getFD(), lastDropPosition, newPos, true);
+                lastDropPosition = newPos;
+            }
         }
     }
 }
