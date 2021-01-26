@@ -173,7 +173,8 @@ public class SessionRepository {
     public void addLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
         localSessionCache.put(sessionId, session);
-        remoteSessionCache.putIfAbsent(sessionId, createRemoteSession(sessionId));
+        if (remoteSessionCache.get(sessionId) == null)
+            createRemoteSession(sessionId);
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -295,10 +296,10 @@ public class SessionRepository {
     public RemoteSession createRemoteSession(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
-        remoteSessionCache.put(sessionId, session);
-        loadSessionIfActive(session);
-        updateSessionStateWatcher(sessionId, session);
-        return session;
+        RemoteSession newSession = loadSessionIfActive(session).orElse(session);
+        remoteSessionCache.put(sessionId, newSession);
+        updateSessionStateWatcher(sessionId, newSession);
+        return newSession;
     }
 
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
@@ -392,15 +393,16 @@ public class SessionRepository {
         }
     }
 
-    private void loadSessionIfActive(RemoteSession session) {
+    private Optional<RemoteSession> loadSessionIfActive(RemoteSession session) {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
                 applicationRepo.activateApplication(ensureApplicationLoaded(session), session.getSessionId());
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
-                return;
+                return Optional.ofNullable(remoteSessionCache.get(session.getSessionId()));
             }
         }
+        return Optional.empty();
     }
 
     void prepareRemoteSession(RemoteSession session) {
