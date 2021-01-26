@@ -42,6 +42,14 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundStringFlag ALLOCATE_OS_REQUIREMENT = defineStringFlag(
+            "allocate-os-requirement", "rhel7",
+            List.of("hakonhall"), "2021-01-26", "2021-07-26",
+            "Allocations of new nodes are limited to the given host OS.  Must be one of 'rhel7', " +
+            "'rhel8', or 'any'",
+            "Takes effect on next (re)deployment.",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag RETIRE_WITH_PERMANENTLY_DOWN = defineFeatureFlag(
             "retire-with-permanently-down", true,
             List.of("hakonhall"), "2020-12-02", "2021-02-01",
