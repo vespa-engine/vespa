@@ -94,7 +94,7 @@ private:
     void initFeedView(IAttributeWriter::SP attrWriter, const DocumentDBConfig &configSnapshot);
     void reconfigureMatchingMetrics(const vespa::config::search::RankProfilesConfig &config);
 
-    bool reconfigure(vespalib::Closure0<bool>::UP closure) override;
+    bool reconfigure(std::unique_ptr<Configure> configure) override;
     void reconfigureIndexSearchable();
     void syncViews();
     void applyFlushConfig(const DocumentDBFlushConfig &flushConfig);

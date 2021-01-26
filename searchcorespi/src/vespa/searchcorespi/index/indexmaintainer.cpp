@@ -8,7 +8,6 @@
 #include "indexmaintainer.h"
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
-#include <vespa/fastos/file.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -16,12 +15,11 @@
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/util/autoclosurecaller.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/fastos/file.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -39,48 +37,46 @@ using search::SerialNum;
 using vespalib::makeLambdaTask;
 using vespalib::makeLambdaCallback;
 using std::ostringstream;
-using vespalib::makeClosure;
-using vespalib::makeTask;
 using vespalib::string;
-using vespalib::Closure0;
 using vespalib::Executor;
 using vespalib::Runnable;
 using vespalib::IDestructorCallback;
 
 namespace searchcorespi::index {
 
+using Configure = IIndexManager::Configure;
+using Reconfigurer = IIndexManager::Reconfigurer;
+
 namespace {
 
 class ReconfigRunnable : public Runnable {
 public:
     bool &_result;
-    IIndexManager::Reconfigurer &_reconfigurer;
-    Closure0<bool>::UP _closure;
+    Reconfigurer &_reconfigurer;
+    std::unique_ptr<Configure>   _configure;
 
-    ReconfigRunnable(bool &result,
-                     IIndexManager::Reconfigurer &reconfigurer,
-                     Closure0<bool>::UP closure)
+    ReconfigRunnable(bool &result, Reconfigurer &reconfigurer, std::unique_ptr<Configure> configure)
         : _result(result),
           _reconfigurer(reconfigurer),
-          _closure(std::move(closure))
+          _configure(std::move(configure))
     { }
 
     void run() override {
-        _result = _reconfigurer.reconfigure(std::move(_closure));
+        _result = _reconfigurer.reconfigure(std::move(_configure));
     }
 };
 
 class ReconfigRunnableTask : public Executor::Task {
 private:
-    IIndexManager::Reconfigurer &_reconfigurer;
-    Closure0<bool>::UP _closure;
+    Reconfigurer &_reconfigurer;
+    std::unique_ptr<Configure>   _configure;
 public:
-    ReconfigRunnableTask(IIndexManager::Reconfigurer &reconfigurer, Closure0<bool>::UP closure) :
-        _reconfigurer(reconfigurer),
-        _closure(std::move(closure))
+    ReconfigRunnableTask(Reconfigurer &reconfigurer, std::unique_ptr<Configure> configure)
+        : _reconfigurer(reconfigurer),
+          _configure(std::move(configure))
     { }
     void run() override {
-        _reconfigurer.reconfigure(std::move(_closure));
+        _reconfigurer.reconfigure(std::move(_configure));
     }
 };
 
@@ -595,9 +591,10 @@ IndexMaintainer::reconfigureAfterFlush(FlushArgs &args, IDiskIndex::SP &diskInde
     // Called by a flush worker thread
     for (;;) {
         // Call reconfig closure for this change
-        Closure0<bool>::UP closure(makeClosure(this, &IndexMaintainer::doneFlush,
-                                               &args, &diskIndex));
-        if (reconfigure(std::move(closure))) {
+        auto configure = makeLambdaConfigure([this, argsP=&args, diskIndexP=&diskIndex]() {
+            return doneFlush(argsP, diskIndexP);
+        });
+        if (reconfigure(std::move(configure))) {
             return;
         }
         ChangeGens changeGens = getChangeGens();
@@ -726,7 +723,9 @@ IndexMaintainer::warmupDone(ISearchableIndexCollection::SP current)
     // Called by a search thread
     LockGuard lock(_new_search_lock);
     if (current == _source_list) {
-        auto makeSure = makeClosure(this, &IndexMaintainer::makeSureAllRemainingWarmupIsDone, current);
+        auto makeSure = makeLambdaConfigure([this, collection=std::move(current)]() {
+            return makeSureAllRemainingWarmupIsDone(std::move(collection));
+        });
         auto task = std::make_unique<ReconfigRunnableTask>(_ctx.getReconfigurer(), std::move(makeSure));
         _ctx.getThreadingService().master().execute(std::move(task));
     } else {
@@ -831,11 +830,11 @@ IndexMaintainer::getChangeGens(void)
 }
 
 bool
-IndexMaintainer::reconfigure(Closure0<bool>::UP closure)
+IndexMaintainer::reconfigure(std::unique_ptr<Configure> configure)
 {
     // Called by a flush engine worker thread
     bool result = false;
-    ReconfigRunnable runnable(result, _ctx.getReconfigurer(), std::move(closure));
+    ReconfigRunnable runnable(result, _ctx.getReconfigurer(), std::move(configure));
     _ctx.getThreadingService().master().run(runnable);
     return result;
 }
@@ -945,8 +944,10 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
     // Ensure that all index thread tasks accessing memory index have completed.
     _ctx.getThreadingService().sync();
     // Call reconfig closure for this change
-    Closure0<bool>::UP closure( makeClosure(this, &IndexMaintainer::doneInitFlush, &args, &new_index));
-    bool success = _ctx.getReconfigurer().reconfigure(std::move(closure));
+    auto configure = makeLambdaConfigure([this, argsP=&args, indexP=&new_index]() {
+        return doneInitFlush(argsP, indexP);
+    });
+    bool success = _ctx.getReconfigurer().reconfigure(std::move(configure));
     assert(success);
     (void) success;
     if (args._skippedEmptyLast && args._extraIndexes.empty()) {
@@ -1075,8 +1076,9 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
     args._prunedSchema = prunedSchema;
     for (;;) {
         // Call reconfig closure for this change
-        Closure0<bool>::UP closure( makeClosure(this, &IndexMaintainer::doneFusion, &args, &new_index));
-        bool success = reconfigure(std::move(closure));
+        bool success = reconfigure(makeLambdaConfigure([this,argsP=&args,indexP=&new_index]() {
+            return doneFusion(argsP, indexP);
+        }));
         if (success) {
             break;
         }
@@ -1196,8 +1198,7 @@ void
 IndexMaintainer::scheduleCommit()
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
-    _ctx.getThreadingService().index().
-        execute(makeTask(makeClosure<IndexMaintainer *, IndexMaintainer, void>(this, &IndexMaintainer::commit)));
+    _ctx.getThreadingService().index().execute(makeLambdaTask([this]() { commit(); }));
 }
 
 void
@@ -1206,8 +1207,7 @@ IndexMaintainer::commit()
     // only triggered via scheduleCommit()
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
-    _current_index->commit(std::shared_ptr<vespalib::IDestructorCallback>(),
-                           _current_serial_num);
+    _current_index->commit({}, _current_serial_num);
     // caller calls _ctx.getThreadingService().sync()
 }
 

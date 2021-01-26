@@ -243,7 +243,7 @@ SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter,
  * flush engine has not started.
  */
 bool
-SearchableDocSubDB::reconfigure(vespalib::Closure0<bool>::UP closure)
+SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure)
 {
     assert(_writeService.master().isCurrentThread());
 
@@ -255,8 +255,8 @@ SearchableDocSubDB::reconfigure(vespalib::Closure0<bool>::UP closure)
 
     bool ret = true;
 
-    if (closure)
-        ret = closure->call();  // Perform index manager reconfiguration now
+    if (configure)
+        ret = configure->configure();  // Perform index manager reconfiguration now
     reconfigureIndexSearchable();
     return ret;
 }
