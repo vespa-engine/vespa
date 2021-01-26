@@ -48,7 +48,6 @@ using std::make_shared;
 using CCR = DocumentDBConfig::ComparisonResult;
 using Configurer = SearchableDocSubDBConfigurer;
 using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
-using SummarySetup = SummaryManager::SummarySetup;
 using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
 
 const vespalib::string BASE_DIR("baseDir");
@@ -56,10 +55,10 @@ const vespalib::string DOC_TYPE("invalid");
 
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer
 {
-    bool reconfigure(vespalib::Closure0<bool>::UP closure) override {
+    bool reconfigure(std::unique_ptr<Configure> configure) override {
         bool ret = true;
-        if (closure)
-            ret = closure->call(); // Perform index manager reconfiguration now
+        if (configure)
+            ret = configure->configure(); // Perform index manager reconfiguration now
         return ret;
     }
 };

@@ -6,7 +6,6 @@
 #include <vespa/searchcorespi/flush/flushstats.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/util/closure.h>
 
 namespace vespalib { class IDestructorCallback; }
 namespace document { class Document; }
@@ -37,15 +36,41 @@ protected:
 
 public:
     using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
+
+    struct Configure {
+        virtual ~Configure() = default;
+        virtual bool configure() = 0;
+    };
+    template <class FunctionType>
+    class LambdaConfigure : public Configure {
+        FunctionType _func;
+
+    public:
+        LambdaConfigure(FunctionType &&func)
+            : _func(std::move(func))
+        {}
+        ~LambdaConfigure() override = default;
+        bool configure() override { return _func(); }
+    };
+
+    template <class FunctionType>
+    static std::unique_ptr<Configure>
+    makeLambdaConfigure(FunctionType &&function)
+    {
+        return std::make_unique<LambdaConfigure<std::decay_t<FunctionType>>>
+                (std::forward<FunctionType>(function));
+    }
+
     /**
      * Interface used to signal when index manager has been reconfigured.
      */
     struct Reconfigurer {
+        using Configure = searchcorespi::IIndexManager::Configure;
         virtual ~Reconfigurer();
         /**
          * Reconfigure index manager and infrastructure around it while system is in a quiescent state.
          */
-        virtual bool reconfigure(vespalib::Closure0<bool>::UP closure) = 0;
+        virtual bool reconfigure(std::unique_ptr<Configure> configure) = 0;
     };
 
     typedef std::unique_ptr<IIndexManager> UP;

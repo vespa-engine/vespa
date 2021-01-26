@@ -61,10 +61,10 @@ namespace {
 
 class IndexManagerDummyReconfigurer : public searchcorespi::IIndexManager::Reconfigurer {
 
-    virtual bool reconfigure(vespalib::Closure0<bool>::UP closure) override {
+    virtual bool reconfigure(std::unique_ptr<Configure> configure) override {
         bool ret = true;
-        if (closure.get() != nullptr) {
-            ret = closure->call(); // Perform index manager reconfiguration now
+        if (configure) {
+            ret = configure->configure(); // Perform index manager reconfiguration now
         }
         return ret;
     }

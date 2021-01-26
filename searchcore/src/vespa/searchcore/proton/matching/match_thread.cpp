@@ -10,7 +10,6 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>

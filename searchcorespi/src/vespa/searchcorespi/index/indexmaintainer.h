@@ -255,7 +255,7 @@ class IndexMaintainer : public IIndexManager,
      * reconfigure index manager with closure as argument.  Wait for
      * result.
      */
-    bool reconfigure(vespalib::Closure0<bool>::UP closure);
+    bool reconfigure(std::unique_ptr<Configure> configure);
     void warmupDone(ISearchableIndexCollection::SP current) override;
     bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
     void scheduleCommit();

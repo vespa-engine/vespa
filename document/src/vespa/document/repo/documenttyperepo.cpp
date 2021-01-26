@@ -25,7 +25,6 @@ using std::fstream;
 using std::make_pair;
 using std::pair;
 using std::vector;
-using vespalib::Closure1;
 using vespalib::Identifiable;
 using vespalib::IllegalArgumentException;
 using vespalib::hash_map;

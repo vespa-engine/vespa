@@ -18,7 +18,6 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/clock.h>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <mutex>
 

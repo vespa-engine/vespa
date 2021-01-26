@@ -87,7 +87,6 @@ private:
     InitializeThreads             _initializeThreads;
 
     typedef search::SerialNum      SerialNum;
-    typedef vespalib::Closure      Closure;
     typedef search::index::Schema  Schema;
     using lock_guard = std::lock_guard<std::mutex>;
     // variables related to reconfig

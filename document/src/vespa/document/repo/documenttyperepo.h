@@ -4,7 +4,6 @@
 
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/closure.h>
 
 namespace document {
 
