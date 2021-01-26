@@ -11,7 +11,7 @@ using End = vespalib::JsonStream::End;
 
 namespace {
 
-constexpr double diff_slack = 0.01;
+constexpr double diff_slack = 0.001;
 
 const vespalib::string memory_label("memory");
 const vespalib::string disk_label("disk");
