@@ -78,10 +78,10 @@ TEST_F(ServiceLayerHostInfoReporterTest, request_almost_immediate_node_state_as_
     EXPECT_EQ(1, requested_almost_immediate_replies());
     EXPECT_EQ(ResourceUsage(0.5, 0.4), get_old_usage());
     EXPECT_EQ(ResourceUsage(0.5, 0.4), get_usage());
-    notify(0.501, 0.401);
+    notify(0.5001, 0.4001);
     EXPECT_EQ(1, requested_almost_immediate_replies());
     EXPECT_EQ(ResourceUsage(0.5, 0.4), get_old_usage());
-    EXPECT_EQ(ResourceUsage(0.501, 0.401), get_usage());
+    EXPECT_EQ(ResourceUsage(0.5001, 0.4001), get_usage());
     notify(0.8, 0.4);
     EXPECT_EQ(2, requested_almost_immediate_replies());
     EXPECT_EQ(ResourceUsage(0.8, 0.4), get_old_usage());
@@ -90,10 +90,10 @@ TEST_F(ServiceLayerHostInfoReporterTest, request_almost_immediate_node_state_as_
     EXPECT_EQ(3, requested_almost_immediate_replies());
     EXPECT_EQ(ResourceUsage(0.8, 0.7), get_old_usage());
     EXPECT_EQ(ResourceUsage(0.8, 0.7), get_usage());
-    notify(0.799, 0.699);
+    notify(0.7999, 0.6999);
     EXPECT_EQ(3, requested_almost_immediate_replies());
     EXPECT_EQ(ResourceUsage(0.8, 0.7), get_old_usage());
-    EXPECT_EQ(ResourceUsage(0.799, 0.699), get_usage());
+    EXPECT_EQ(ResourceUsage(0.7999, 0.6999), get_usage());
     notify(0.8, 0.7, {0.1, attr_es_name}, {});
     EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_es_name}, {}), get_old_usage());
     EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_es_name}, {}), get_usage());
