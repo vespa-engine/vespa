@@ -7,7 +7,7 @@ Vespa is an engine for low-latency computation over large data sets.
 It stores and indexes your data and executes distributed queries including evaluation of
 machine-learned models over many data points in real time.
 
-Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vespa.svg?branch=master)](https://travis-ci.org/vespa-engine/vespa)
+Screwdriver build status: [![Build Status](https://cd.screwdriver.cd/pipelines/6386/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 ## Table of contents
 
