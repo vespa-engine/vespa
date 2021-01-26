@@ -14,7 +14,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     box.cpp
     child_process.cpp
     classname.cpp
-    closuretask.cpp
     compress.cpp
     compressor.cpp
     destructor_callbacks.cpp

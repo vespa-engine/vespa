@@ -56,11 +56,4 @@
  * vespalib::Utf8Reader
  * <BR> vespalib::Utf8Writer
  * <BR> vespalib::LowerCase
- *
- * Closures and closure handling
- *
- * vespalib::Closure0
- * <BR> vespalib::MemberClosure0_0
- * <BR> vespalib::ClosureTask
- * <BR> vespalib::AutoClosureCaller
  */
