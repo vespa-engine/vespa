@@ -27,7 +27,6 @@ vespa_define_module(
     src/tests/box
     src/tests/btree
     src/tests/child_process
-    src/tests/closure
     src/tests/component
     src/tests/compress
     src/tests/compression
