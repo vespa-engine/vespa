@@ -55,11 +55,11 @@ class ElasticSearchParser:
         for line in unparsed_mapping_file:
             data = json.loads(line)
             index = list(data.keys())[0]
-            mappings = data[index]["mappings"][type]["properties"]
+            mappings = data[index]["mappings"]["properties"]
 
             # Checking if some fields could be no-index
             try:
-                _all_enabled = data[index]["mappings"][type]["_all"]["enabled"]
+                _all_enabled = data[index]["mappings"]["_all"]["enabled"]
                 if not _all_enabled:
                     self._all = False
                     print(" > Not all fields in the document type '" + type + "' are searchable. Edit " + self.path + "schemas/" + type + ".sd to control which fields are searchable")
