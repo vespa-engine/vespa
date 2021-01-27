@@ -32,5 +32,6 @@ vespa_add_library(eval_instruction OBJECT
     pow_as_map_optimizer.cpp
     remove_trivial_dimension_optimizer.cpp
     replace_type_function.cpp
+    sum_max_dot_product_function.cpp
     vector_from_doubles_function.cpp
 )
