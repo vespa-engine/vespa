@@ -21,8 +21,11 @@ MaintenanceJobRunner::run()
 
 void
 MaintenanceJobRunner::stop() {
-    Guard guard(_lock);
-    _stopped = true;
+    {
+        Guard guard(_lock);
+        _stopped = true;
+    }
+    _job->onStop();
 }
 
 void
