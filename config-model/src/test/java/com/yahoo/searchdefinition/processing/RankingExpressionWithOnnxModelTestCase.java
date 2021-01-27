@@ -113,7 +113,7 @@ public class RankingExpressionWithOnnxModelTestCase {
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         ((RankProfilesConfig.Producer) db).getConfig(builder);
         RankProfilesConfig config = new RankProfilesConfig(builder);
-        assertEquals(8, config.rankprofile().size());
+        assertEquals(9, config.rankprofile().size());
 
         assertEquals("test_model_config", config.rankprofile(2).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(2).fef().property(0).name());
@@ -150,10 +150,14 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(6).fef().property(5).name());
         assertEquals("onnxModel(dynamic_model).my_output{d0:0, d1:2}", config.rankprofile(6).fef().property(5).value());
 
-        assertEquals("test_unbound_model", config.rankprofile(7).name());
-        assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(7).fef().property(0).name());
-        assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(7).fef().property(3).name());
-        assertEquals("onnxModel(unbound_model).my_output{d0:0, d1:1}", config.rankprofile(7).fef().property(3).value());
+        assertEquals("test_dynamic_model_with_transformer_tokens", config.rankprofile(7).name());
+        assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(7).fef().property(1).name());
+        assertEquals("tensor<float>(d0[1],d1[2])((if (d1 < rankingExpression(__token_length@-1993461420) + 2, 0, 1)))", config.rankprofile(7).fef().property(1).value());
+
+        assertEquals("test_unbound_model", config.rankprofile(8).name());
+        assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(8).fef().property(0).name());
+        assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(8).fef().property(3).name());
+        assertEquals("onnxModel(unbound_model).my_output{d0:0, d1:1}", config.rankprofile(8).fef().property(3).value());
 
 
     }

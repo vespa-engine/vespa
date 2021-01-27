@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
+import com.yahoo.searchdefinition.expressiontransforms.TokenTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -165,6 +166,12 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 return onnxFeatureType.get();
             }
 
+            // A reference to a feature for transformer token input?
+            Optional<TensorType> transformerTokensFeatureType = transformerTokensFeatureType(reference);
+            if (transformerTokensFeatureType.isPresent()) {
+                return transformerTokensFeatureType.get();
+            }
+
             // A reference to a feature which returns a tensor?
             Optional<TensorType> featureTensorType = tensorFeatureType(reference);
             if (featureTensorType.isPresent()) {
@@ -235,6 +242,19 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         }
 
         return Optional.of(featureTypes.get(reference));
+    }
+
+    private Optional<TensorType> transformerTokensFeatureType(Reference reference) {
+        if ( ! reference.name().equals("tokenTypeIds") &&
+                ! reference.name().equals("tokenInputIds") &&
+                ! reference.name().equals("tokenAttentionMask"))
+            return Optional.empty();
+
+        if ( ! (reference.arguments().size() > 1))
+            throw new IllegalArgumentException(reference.name() + " must have at least 2 arguments");
+
+        ExpressionNode size = reference.arguments().expressions().get(0);
+        return Optional.of(TokenTransformer.createTensorType(reference.name(), size));
     }
 
     /**
