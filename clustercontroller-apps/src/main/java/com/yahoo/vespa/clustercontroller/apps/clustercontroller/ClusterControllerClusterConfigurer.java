@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * When the cluster controller is reconfigured, a new instance of this is created, which will propagate configured
@@ -75,6 +76,8 @@ public class ClusterControllerClusterConfigurer {
         options.clusterHasGlobalDocumentTypes = config.cluster_has_global_document_types();
         options.minMergeCompletionRatio = config.min_merge_completion_ratio();
         options.enableTwoPhaseClusterStateActivation = config.enable_two_phase_cluster_state_transitions();
+        options.clusterFeedBlockEnabled = config.enable_cluster_feed_block();
+        options.clusterFeedBlockLimit = Map.copyOf(config.cluster_feed_block_limit());
     }
 
     private void configure(SlobroksConfig config) {

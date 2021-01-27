@@ -103,5 +103,15 @@
                 ]
             }
         ]
+    },
+    "content-node": {
+        "resource-usage": {
+            "memory": {
+                "usage": 0.85
+            },
+            "disk": {
+                "usage": 0.6
+            }
+        }
     }
 }

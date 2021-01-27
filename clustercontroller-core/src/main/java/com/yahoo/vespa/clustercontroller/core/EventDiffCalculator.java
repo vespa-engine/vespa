@@ -62,6 +62,8 @@ public class EventDiffCalculator {
         final Optional<String> bucketSpace;
         final AnnotatedClusterState fromState;
         final AnnotatedClusterState toState;
+        final ClusterStateBundle.FeedBlock feedBlockFrom;
+        final ClusterStateBundle.FeedBlock feedBlockTo;
         final long currentTime;
         final long maxMaintenanceGracePeriodTimeMs;
 
@@ -69,12 +71,16 @@ public class EventDiffCalculator {
                        Optional<String> bucketSpace,
                        AnnotatedClusterState fromState,
                        AnnotatedClusterState toState,
+                       ClusterStateBundle.FeedBlock feedBlockFrom,
+                       ClusterStateBundle.FeedBlock feedBlockTo,
                        long currentTime,
                        long maxMaintenanceGracePeriodTimeMs) {
             this.cluster = cluster;
             this.bucketSpace = bucketSpace;
             this.fromState = fromState;
             this.toState = toState;
+            this.feedBlockFrom = feedBlockFrom;
+            this.feedBlockTo = feedBlockTo;
             this.currentTime = currentTime;
             this.maxMaintenanceGracePeriodTimeMs = maxMaintenanceGracePeriodTimeMs;
         }
@@ -94,6 +100,8 @@ public class EventDiffCalculator {
                 Optional.empty(),
                 params.fromState.getBaselineAnnotatedState(),
                 params.toState.getBaselineAnnotatedState(),
+                params.fromState.getFeedBlockOrNull(),
+                params.toState.getFeedBlockOrNull(),
                 params.currentTime,
                 params.maxMaintenanceGracePeriodTimeMs);
     }
@@ -117,6 +125,19 @@ public class EventDiffCalculator {
                 events.add(createClusterEvent("Cluster is down", params));
             }
         }
+        // TODO should we emit any events when description changes?
+        if (feedBlockStateHasChanged(params)) {
+            if (params.feedBlockTo != null) {
+                events.add(createClusterEvent(String.format("Cluster feed blocked due to resource exhaustion: %s",
+                        params.feedBlockTo.getDescription()), params));
+            } else {
+                events.add(createClusterEvent("Cluster feed no longer blocked", params));
+            }
+        }
+    }
+
+    private static boolean feedBlockStateHasChanged(PerStateParams params) {
+        return ((params.feedBlockFrom == null) != (params.feedBlockTo == null));
     }
 
     private static ClusterEvent createClusterEvent(String description, PerStateParams params) {
@@ -228,6 +249,8 @@ public class EventDiffCalculator {
                 Optional.of(bucketSpace),
                 fromDerivedState,
                 toDerivedState,
+                null, // Not used in per-space event derivation
+                null, // Ditto
                 params.currentTime,
                 params.maxMaintenanceGracePeriodTimeMs);
     }

@@ -28,6 +28,7 @@ public class HostInfo {
     @JsonProperty("vtag") private Vtag vtag = new Vtag(null);
     @JsonProperty("distributor") private Distributor distributor = new Distributor();
     @JsonProperty("metrics") private Metrics metrics = new Metrics();
+    @JsonProperty("content-node") private ContentNode contentNode = new ContentNode();
 
     public Vtag getVtag() {
         return vtag;
@@ -35,6 +36,10 @@ public class HostInfo {
 
     public Distributor getDistributor() {
         return distributor;
+    }
+
+    public ContentNode getContentNode() {
+        return contentNode;
     }
 
     public Metrics getMetrics() {

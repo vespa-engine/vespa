@@ -219,11 +219,11 @@ public class ClusterFixture {
         return this.cluster;
     }
 
-    static Node storageNode(int index) {
+    public static Node storageNode(int index) {
         return new Node(NodeType.STORAGE, index);
     }
 
-    static Node distributorNode(int index) {
+    public static Node distributorNode(int index) {
         return new Node(NodeType.DISTRIBUTOR, index);
     }
 }

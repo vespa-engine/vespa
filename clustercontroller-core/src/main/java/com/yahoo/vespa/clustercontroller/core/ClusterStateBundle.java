@@ -243,6 +243,10 @@ public class ClusterStateBundle {
         return Optional.ofNullable(feedBlock);
     }
 
+    public FeedBlock getFeedBlockOrNull() {
+        return feedBlock;
+    }
+
     public boolean clusterFeedIsBlocked() {
         return (feedBlock != null && feedBlock.blockFeedInCluster());
     }

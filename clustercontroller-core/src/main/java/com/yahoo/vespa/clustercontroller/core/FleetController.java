@@ -336,7 +336,25 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     @Override
     public void handleUpdatedHostInfo(NodeInfo nodeInfo, HostInfo newHostInfo) {
         verifyInControllerThread();
+        triggerBundleRecomputationIfResourceExhaustionStateChanged(nodeInfo, newHostInfo);
         stateVersionTracker.handleUpdatedHostInfo(nodeInfo, newHostInfo);
+    }
+
+    private void triggerBundleRecomputationIfResourceExhaustionStateChanged(NodeInfo nodeInfo, HostInfo newHostInfo) {
+        if (!options.clusterFeedBlockEnabled) {
+            return;
+        }
+        // TODO hysteresis to prevent oscillations!
+        // TODO also ensure we trigger if CC options have changed
+        var calc = createResourceExhaustionCalculator();
+        // Important: nodeInfo contains the _current_ host info _prior_ to newHostInfo being applied.
+        boolean previouslyExhausted = !calc.enumerateNodeResourceExhaustions(nodeInfo).isEmpty();
+        boolean nowExhausted        = !calc.resourceExhaustionsFromHostInfo(nodeInfo.getNode(), newHostInfo).isEmpty();
+        if (previouslyExhausted != nowExhausted) {
+            log.fine(() -> String.format("Triggering state recomputation due to change in cluster feed block: %s -> %s",
+                                         previouslyExhausted, nowExhausted));
+            stateChangeHandler.setStateChangedFlag();
+        }
     }
 
     @Override
@@ -877,6 +895,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                     .bucketSpaces(configuredBucketSpaces)
                     .stateDeriver(createBucketSpaceStateDeriver())
                     .deferredActivation(options.enableTwoPhaseClusterStateActivation)
+                    .feedBlock(createResourceExhaustionCalculator()
+                            .inferContentClusterFeedBlockOrNull(cluster.getNodeInfo()))
                     .deriveAndBuild();
             stateVersionTracker.updateLatestCandidateStateBundle(candidateBundle);
             invokeCandidateStateListeners(candidateBundle);
@@ -913,6 +933,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } else {
             return createIdentityClonedBucketSpaceStateDeriver();
         }
+    }
+
+    private ResourceExhaustionCalculator createResourceExhaustionCalculator() {
+        return new ResourceExhaustionCalculator(options.clusterFeedBlockEnabled, options.clusterFeedBlockLimit);
     }
 
     private static ClusterStateDeriver createIdentityClonedBucketSpaceStateDeriver() {
@@ -1010,6 +1034,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 ClusterStateBundle previousBundle = database.getLatestClusterStateBundle();
                 database.loadStartTimestamps(cluster);
                 database.loadWantedStates(databaseContext);
+                // TODO determine if we need any specialized handling here if feed block is set in the loaded bundle
 
                 log.info(() -> String.format("Loaded previous cluster state bundle from ZooKeeper: %s", previousBundle));
                 stateVersionTracker.setClusterStateBundleRetrievedFromZooKeeper(previousBundle);

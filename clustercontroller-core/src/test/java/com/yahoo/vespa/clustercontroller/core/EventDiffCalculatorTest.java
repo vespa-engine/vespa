@@ -31,6 +31,8 @@ public class EventDiffCalculatorTest {
         AnnotatedClusterState.Builder baselineAfter = new AnnotatedClusterState.Builder();
         Map<String, AnnotatedClusterState.Builder> derivedBefore = new HashMap<>();
         Map<String, AnnotatedClusterState.Builder> derivedAfter = new HashMap<>();
+        ClusterStateBundle.FeedBlock feedBlockBefore = null;
+        ClusterStateBundle.FeedBlock feedBlockAfter = null;
         long currentTimeMs = 0;
         long maxMaintenanceGracePeriodTimeMs = 10_000;
 
@@ -86,6 +88,14 @@ public class EventDiffCalculatorTest {
             getBuilder(derivedAfter, bucketSpace).storageNodeReason(nodeIndex, reason);
             return this;
         }
+        EventFixture feedBlockBefore(ClusterStateBundle.FeedBlock feedBlock) {
+            this.feedBlockBefore = feedBlock;
+            return this;
+        }
+        EventFixture feedBlockAfter(ClusterStateBundle.FeedBlock feedBlock) {
+            this.feedBlockAfter = feedBlock;
+            return this;
+        }
         private static AnnotatedClusterState.Builder getBuilder(Map<String, AnnotatedClusterState.Builder> derivedStates, String bucketSpace) {
             return derivedStates.computeIfAbsent(bucketSpace, key -> new AnnotatedClusterState.Builder());
         }
@@ -94,8 +104,8 @@ public class EventDiffCalculatorTest {
             return EventDiffCalculator.computeEventDiff(
                     EventDiffCalculator.params()
                             .cluster(clusterFixture.cluster())
-                            .fromState(ClusterStateBundle.of(baselineBefore.build(), toDerivedStates(derivedBefore)))
-                            .toState(ClusterStateBundle.of(baselineAfter.build(), toDerivedStates(derivedAfter)))
+                            .fromState(ClusterStateBundle.of(baselineBefore.build(), toDerivedStates(derivedBefore), feedBlockBefore, false))
+                            .toState(ClusterStateBundle.of(baselineAfter.build(), toDerivedStates(derivedAfter), feedBlockAfter, false))
                             .currentTimeMs(currentTimeMs)
                             .maxMaintenanceGracePeriodTimeMs(maxMaintenanceGracePeriodTimeMs));
         }
@@ -442,6 +452,45 @@ public class EventDiffCalculatorTest {
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(0)),
                 nodeEventForBaseline())));
+    }
+
+    @Test
+    public void feed_block_engage_edge_emits_cluster_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(null)
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWithDescription("we're closed"));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Cluster feed blocked due to resource exhaustion: we're closed")));
+    }
+
+    @Test
+    public void feed_block_disengage_edge_emits_cluster_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWithDescription("we're closed"))
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(null);
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(clusterEventWithDescription("Cluster feed no longer blocked")));
+    }
+
+    @Test
+    public void feed_block_engaged_to_engaged_edge_does_not_emit_new_cluster_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWithDescription("we're closed"))
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWithDescription("yep yep, still closed"));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(0));
     }
 
 }
