@@ -6,7 +6,6 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
 import com.yahoo.protect.Process;
-import com.yahoo.system.ProcessExecuter;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.BufferedOutputStream;
@@ -21,7 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -439,18 +437,13 @@ class LogFileHandler <LOGTYPE> {
          */
         private void createSymlinkToCurrentFile() {
             if (symlinkName == null) return;
-            File f = new File(fileName);
-            File f2 = new File(f.getParent(), symlinkName);
-            String[] cmd = new String[]{"/bin/ln", "-sf", f.getName(), f2.getPath()};
+            Path target = Paths.get(fileName);
+            Path link = target.resolveSibling(symlinkName);
             try {
-                int retval = new ProcessExecuter().exec(cmd).getFirst();
-                // Detonator pattern: Think of all the fun we can have if ln isn't what we
-                // think it is, if it doesn't return, etc, etc
-                if (retval != 0) {
-                    logger.warning("Command '" + Arrays.toString(cmd) + "' + failed with exitcode=" + retval);
-                }
+                Files.deleteIfExists(link);
+                Files.createSymbolicLink(link, target.getFileName());
             } catch (IOException e) {
-                logger.warning("Got '" + e + "' while doing'" + Arrays.toString(cmd) + "'.");
+                logger.log(Level.WARNING, "Failed to create symbolic link to current log file: " + e.getMessage(), e);
             }
         }
 
