@@ -71,6 +71,6 @@ public interface ContainerOperations {
     boolean retainManagedContainers(TaskContext context, Set<ContainerName> containerNames);
 
     /** Deletes the local images that are currently not in use by any container and not recently used. */
-    boolean deleteUnusedContainerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
+    boolean deleteUnusedContainerImages(TaskContext context, List<DockerImage> excludes, Duration minImageAgeToDelete);
 
 }

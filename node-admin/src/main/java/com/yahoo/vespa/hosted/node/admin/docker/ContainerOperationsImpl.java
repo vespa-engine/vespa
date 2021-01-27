@@ -338,7 +338,7 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public boolean deleteUnusedContainerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+    public boolean deleteUnusedContainerImages(TaskContext context, List<DockerImage> excludes, Duration minImageAgeToDelete) {
         return containerEngine.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
     }
 
