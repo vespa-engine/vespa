@@ -2,7 +2,6 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.compress.ZstdOuputStream;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
 import com.yahoo.protect.Process;
@@ -194,7 +193,7 @@ class LogFileHandler <LOGTYPE> {
         private final Compression compression;
         private final long[] rotationTimes;
         private final String symlinkName;
-        private final ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
+        private final ExecutorService executor = createCompressionTaskExecutor();
         private final NativeIO nativeIO = new NativeIO();
 
 
@@ -212,6 +211,15 @@ class LogFileHandler <LOGTYPE> {
             this.rotationTimes = rotationTimes;
             this.symlinkName = (symlinkName != null && !symlinkName.isBlank()) ? symlinkName : null;
             this.operationProvider = operationProvider;
+        }
+
+        private static ExecutorService createCompressionTaskExecutor() {
+            return Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "logfilehandler.compression");
+                thread.setDaemon(true);
+                thread.setPriority(Thread.MIN_PRIORITY);
+                return thread;
+            });
         }
 
         @Override
