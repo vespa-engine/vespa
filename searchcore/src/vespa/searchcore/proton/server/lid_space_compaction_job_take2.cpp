@@ -83,7 +83,10 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
 {
 }
 
-CompactionJob::~CompactionJob() {
+CompactionJob::~CompactionJob() = default;
+
+void
+CompactionJob::onStop() {
     _bucketExecutor.sync();
 }
 

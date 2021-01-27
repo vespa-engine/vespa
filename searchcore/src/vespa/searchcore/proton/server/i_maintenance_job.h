@@ -38,6 +38,7 @@ public:
     virtual vespalib::duration getInterval() const { return _interval; }
     virtual bool isBlocked() const { return false; }
     virtual IBlockableMaintenanceJob *asBlockable() { return nullptr; }
+    virtual void onStop() {}
 
     /**
      * Register maintenance job runner, in case event passed to the
