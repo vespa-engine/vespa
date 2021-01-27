@@ -9,11 +9,14 @@ import com.yahoo.protect.Process;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.yolean.Exceptions;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,7 +28,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
@@ -182,11 +184,10 @@ class LogFileHandler <LOGTYPE> {
     static class LogThread<LOGTYPE> extends Thread {
         private final Pollable<LOGTYPE> operationProvider;
         long lastFlush = 0;
-        private FileOutputStream currentOutputStream = null;
+        private PageCacheFriendlyFileOutputStream fileOutput = null;
         private long nextRotationTime = 0;
         private final String filePattern;  // default to current directory, ms time stamp
         private volatile String fileName;
-        private long lastDropPosition = 0;
         private final LogWriter<LOGTYPE> logWriter;
         private final Compression compression;
         private final long[] rotationTimes;
@@ -253,32 +254,25 @@ class LogFileHandler <LOGTYPE> {
             }
         }
 
-        private synchronized void internalFlush() {
+        private void internalFlush() {
             try {
-                FileOutputStream currentOut = this.currentOutputStream;
-                if (currentOut != null) {
-                    if (compression == Compression.GZIP) {
-                        long newPos = currentOut.getChannel().position();
-                        if (newPos > lastDropPosition + 102400) {
-                            nativeIO.dropPartialFileFromCache(currentOut.getFD(), lastDropPosition, newPos, true);
-                            lastDropPosition = newPos;
-                        }
-                    } else {
-                        currentOut.flush();
-                    }
+                if (fileOutput != null) {
+                    fileOutput.flush();
                 }
             } catch (IOException e) {
-                logger.warning("Failed dropping from cache : " + Exceptions.toMessageString(e));
+                logger.log(Level.WARNING, "Failed to flush file output: " + Exceptions.toMessageString(e), e);
             }
         }
 
         private void internalClose() {
             try {
-                internalFlush();
-                FileOutputStream currentOut = this.currentOutputStream;
-                if (currentOut != null) currentOut.close();
+                if (fileOutput != null) {
+                    fileOutput.flush();
+                    fileOutput.close();
+                    fileOutput = null;
+                }
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Got error while closing log file", e);
+                logger.log(Level.WARNING, "Got error while closing log file: " + e.getMessage(), e);
             }
         }
 
@@ -290,13 +284,12 @@ class LogFileHandler <LOGTYPE> {
             if (nextRotationTime <= 0) {
                 nextRotationTime = getNextRotationTime(now); // lazy initialization
             }
-            if (now > nextRotationTime || currentOutputStream == null) {
+            if (now > nextRotationTime || fileOutput == null) {
                 internalRotateNow();
             }
             try {
-                FileOutputStream out = this.currentOutputStream;
-                logWriter.write(r, out);
-                out.write('\n');
+                logWriter.write(r, fileOutput);
+                fileOutput.write('\n');
             } catch (IOException e) {
                 logger.warning("Failed writing log record: " + Exceptions.toMessageString(e));
             }
@@ -343,18 +336,14 @@ class LogFileHandler <LOGTYPE> {
         // isInterrupted() returns false after interruption in p.waitFor
         private void internalRotateNow() {
             // figure out new file name, then
-            // use super.setOutputStream to switch to a new file
 
             String oldFileName = fileName;
             long now = System.currentTimeMillis();
             fileName = LogFormatter.insertDate(filePattern, now);
-            internalFlush();
-
+            internalClose();
             try {
                 checkAndCreateDir(fileName);
-                FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
-                currentOutputStream = os;
-                lastDropPosition = 0;
+                fileOutput = new PageCacheFriendlyFileOutputStream(nativeIO, Paths.get(fileName), 4 * 1024 * 1024);
                 LogFileDb.nowLoggingTo(fileName);
             } catch (IOException e) {
                 throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
@@ -364,72 +353,85 @@ class LogFileHandler <LOGTYPE> {
 
             nextRotationTime = 0; //figure it out later (lazy evaluation)
             if ((oldFileName != null)) {
-                File oldFile = new File(oldFileName);
-                if (oldFile.exists()) {
-                    if (compression != Compression.NONE) {
-                        executor.execute(() -> runCompression(oldFile, compression));
-                    } else {
-                        nativeIO.dropFileFromCache(oldFile);
-                    }
+                Path oldFile = Paths.get(oldFileName);
+                if (Files.exists(oldFile)) {
+                    executor.execute(() -> runCompression(nativeIO, oldFile, compression));
                 }
             }
         }
 
 
-        private static void runCompression(File oldFile, Compression compression) {
+        private static void runCompression(NativeIO nativeIO, Path oldFile, Compression compression) {
             switch (compression) {
                 case ZSTD:
-                    runCompressionZstd(oldFile.toPath());
+                    runCompressionZstd(nativeIO, oldFile);
                     break;
                 case GZIP:
-                    runCompressionGzip(oldFile);
+                    runCompressionGzip(nativeIO, oldFile);
+                    break;
+                case NONE:
+                    runCompressionNone(nativeIO, oldFile);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown compression " + compression);
             }
         }
 
-        private static void runCompressionZstd(Path oldFile) {
+        private static void runCompressionNone(NativeIO nativeIO, Path oldFile) {
+            nativeIO.dropFileFromCache(oldFile.toFile());
+        }
+
+        private static void runCompressionZstd(NativeIO nativeIO, Path oldFile) {
             try {
                 Path compressedFile = Paths.get(oldFile.toString() + ".zst");
                 Files.createFile(compressedFile);
                 int bufferSize = 0x400000; // 4M
-                byte[] buffer = new byte[bufferSize];
-                try (ZstdOuputStream out = new ZstdOuputStream(Files.newOutputStream(compressedFile), bufferSize);
-                     InputStream in = Files.newInputStream(oldFile)) {
-                    int read;
-                    while ((read = in.read(buffer)) >= 0) {
-                        out.write(buffer, 0, read);
-                    }
+                try (FileOutputStream fileOut = new FileOutputStream(compressedFile.toFile());
+                     ZstdOuputStream out = new ZstdOuputStream(fileOut, bufferSize);
+                     FileInputStream in = new FileInputStream(oldFile.toFile())) {
+                    pageFriendlyTransfer(nativeIO, out, fileOut.getFD(), in, bufferSize);
                     out.flush();
                 }
                 Files.delete(oldFile);
+                nativeIO.dropFileFromCache(compressedFile.toFile());
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Failed to compress log file with zstd: " + oldFile, e);
+            } finally {
+                nativeIO.dropFileFromCache(oldFile.toFile());
             }
         }
 
-        private static void runCompressionGzip(File oldFile) {
-            File gzippedFile = new File(oldFile.getPath() + ".gz");
-            NativeIO nativeIO = new NativeIO();
-            try (GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
-                 FileInputStream inputStream = new FileInputStream(oldFile)) {
-                byte[] buffer = new byte[0x400000]; // 4M buffer
-
-                long totalBytesRead = 0;
-                for (int read = inputStream.read(buffer); read > 0; read = inputStream.read(buffer)) {
-                    compressor.write(buffer, 0, read);
-                    nativeIO.dropPartialFileFromCache(inputStream.getFD(), totalBytesRead, read, false);
-                    totalBytesRead += read;
+        private static void runCompressionGzip(NativeIO nativeIO, Path oldFile) {
+            try {
+                Path gzippedFile = Paths.get(oldFile.toString() + ".gz");
+                try (FileOutputStream fileOut = new FileOutputStream(gzippedFile.toFile());
+                     GZIPOutputStream compressor = new GZIPOutputStream(fileOut, 0x100000);
+                     FileInputStream inputStream = new FileInputStream(oldFile.toFile())) {
+                    pageFriendlyTransfer(nativeIO, compressor, fileOut.getFD(), inputStream, 0x400000);
+                    compressor.finish();
+                    compressor.flush();
                 }
-                compressor.finish();
-                compressor.flush();
-
+                Files.delete(oldFile);
+                nativeIO.dropFileFromCache(gzippedFile.toFile());
             } catch (IOException e) {
-                logger.warning("Got '" + e + "' while compressing '" + oldFile.getPath() + "'.");
+                logger.log(Level.WARNING, "Failed to compress log file with gzip: " + oldFile, e);
+            } finally {
+                nativeIO.dropFileFromCache(oldFile.toFile());
             }
-            oldFile.delete();
-            nativeIO.dropFileFromCache(gzippedFile);
+        }
+
+        private static void pageFriendlyTransfer(NativeIO nativeIO, OutputStream out, FileDescriptor outDescriptor, FileInputStream in, int bufferSize) throws IOException {
+            int read;
+            long totalBytesRead = 0;
+            byte[] buffer = new byte[bufferSize];
+            while ((read = in.read(buffer)) >= 0) {
+                out.write(buffer, 0, read);
+                if (read > 0) {
+                    nativeIO.dropPartialFileFromCache(in.getFD(), totalBytesRead, read, false);
+                    nativeIO.dropPartialFileFromCache(outDescriptor, totalBytesRead, read, false);
+                }
+                totalBytesRead += read;
+            }
         }
 
         /**
@@ -480,6 +482,38 @@ class LogFileHandler <LOGTYPE> {
         private Operation(Type type, Optional<LOGTYPE> log) {
             this.type = type;
             this.log = log;
+        }
+    }
+
+    /** File output stream that signals to kernel to drop previous pages after write */
+    private static class PageCacheFriendlyFileOutputStream extends OutputStream {
+
+        private final NativeIO nativeIO;
+        private final FileOutputStream fileOut;
+        private final BufferedOutputStream bufferedOut;
+        private final int bufferSize;
+        private long lastDropPosition = 0;
+
+        PageCacheFriendlyFileOutputStream(NativeIO nativeIO, Path file, int bufferSize) throws FileNotFoundException {
+            this.nativeIO = nativeIO;
+            this.fileOut = new FileOutputStream(file.toFile(), true);
+            this.bufferedOut = new BufferedOutputStream(fileOut, bufferSize);
+            this.bufferSize = bufferSize;
+        }
+
+        @Override public void write(byte[] b) throws IOException { bufferedOut.write(b); }
+        @Override public void write(byte[] b, int off, int len) throws IOException { bufferedOut.write(b, off, len); }
+        @Override public void write(int b) throws IOException { bufferedOut.write(b); }
+        @Override public void close() throws IOException { bufferedOut.close(); }
+
+        @Override
+        public void flush() throws IOException {
+            bufferedOut.flush();
+            long newPos = fileOut.getChannel().position();
+            if (newPos >= lastDropPosition + bufferSize) {
+                nativeIO.dropPartialFileFromCache(fileOut.getFD(), lastDropPosition, newPos, true);
+                lastDropPosition = newPos;
+            }
         }
     }
 }
