@@ -9,6 +9,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.document.BucketId;
 
@@ -40,7 +41,6 @@ public class Distribution {
         private final boolean distributorAutoOwnershipTransferOnWholeGroupDown;
     }
 
-    private final int[] distributionBitMasks = new int[65];
     private ConfigSubscriber configSub;
     private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
 
@@ -52,67 +52,103 @@ public class Distribution {
         return config.getAcquire().redundancy;
     }
 
-    private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = new ConfigSubscriber.SingleSubscriber<>() {
-        private int[] getGroupPath(String path) {
-            if (path.equals("invalid")) { return new int[0]; }
-            StringTokenizer st = new StringTokenizer(path, ".");
-            int[] p = new int[st.countTokens()];
-            for (int i=0; i<p.length; ++i) {
-                p[i] = Integer.valueOf(st.nextToken());
-            }
-            return p;
+    private static int[] getGroupPath(String path) {
+        if (path.equals("invalid")) { return new int[0]; }
+        StringTokenizer st = new StringTokenizer(path, ".");
+        int[] p = new int[st.countTokens()];
+        for (int i=0; i<p.length; ++i) {
+            p[i] = Integer.valueOf(st.nextToken());
         }
+        return p;
+    }
 
-        @Override
-        public void configure(StorDistributionConfig config) {
-            try{
-                Group root = null;
-                for (int i=0; i<config.group().size(); ++i) {
-                    StorDistributionConfig.Group cg = config.group().get(i);
-                    int[] path = new int[0];
-                    if (root != null) {
-                        path = getGroupPath(cg.index());
-                    }
-                    boolean isLeafGroup = (cg.nodes().size() > 0);
-                    Group group;
-                    int index = (path.length == 0 ? 0 : path[path.length - 1]);
-                    if (isLeafGroup) {
-                        group = new Group(index, cg.name());
-                        List<ConfiguredNode> nodes = new ArrayList<>();
-                        for (StorDistributionConfig.Group.Nodes node : cg.nodes()) {
-                            nodes.add(new ConfiguredNode(node.index(), node.retired()));
-                        }
-                        group.setNodes(nodes);
-                    } else {
-                        group = new Group(index, cg.name(), new Group.Distribution(cg.partitions(), config.redundancy()));
-                    }
-                    group.setCapacity(cg.capacity());
-                    if (path.length == 0) {
-                        root = group;
-                    } else {
-                        Group parent = root;
-                        for (int j=0; j<path.length - 1; ++j) {
-                            parent = parent.getSubgroups().get(path[j]);
-                        }
-                        parent.addSubGroup(group);
-                    }
+    // NOTE: keep in sync with the below
+    private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = config -> {
+        try {
+            Group root = null;
+            for (int i=0; i<config.group().size(); ++i) {
+                StorDistributionConfig.Group cg = config.group(i);
+                int[] path = new int[0];
+                if (root != null) {
+                    path = getGroupPath(cg.index());
                 }
-                if (root == null)
-                    throw new IllegalStateException("Config does not specify a root group");
-                root.calculateDistributionHashValues();
-                Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
-            } catch (ParseException e) {
-                throw new IllegalStateException("Failed to parse config", e);
+                boolean isLeafGroup = (cg.nodes().size() > 0);
+                Group group;
+                int index = (path.length == 0 ? 0 : path[path.length - 1]);
+                if (isLeafGroup) {
+                    group = new Group(index, cg.name());
+                    List<ConfiguredNode> nodes = new ArrayList<>();
+                    for (StorDistributionConfig.Group.Nodes node : cg.nodes()) {
+                        nodes.add(new ConfiguredNode(node.index(), node.retired()));
+                    }
+                    group.setNodes(nodes);
+                } else {
+                    group = new Group(index, cg.name(), new Group.Distribution(cg.partitions(), config.redundancy()));
+                }
+                group.setCapacity(cg.capacity());
+                if (path.length == 0) {
+                    root = group;
+                } else {
+                    Group parent = root;
+                    for (int j=0; j<path.length - 1; ++j) {
+                        parent = parent.getSubgroups().get(path[j]);
+                    }
+                    parent.addSubGroup(group);
+                }
             }
+            if (root == null)
+                throw new IllegalStateException("Config does not specify a root group");
+            root.calculateDistributionHashValues();
+            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
+        } catch (ParseException e) {
+            throw new IllegalStateException("Failed to parse config", e);
         }
     };
 
-    public Distribution(String configId) {
-        int mask = 0;
-        for (int i=0; i<=64; ++i) {
-            distributionBitMasks[i] = mask;
-            mask = (mask << 1) | 1;
+    // TODO jonmv: De-dupe with this.configSubscriber once common config is used
+    private void configure(DistributionConfig.Cluster config) {
+        try {
+            Group root = null;
+            for (int i=0; i<config.group().size(); ++i) {
+                DistributionConfig.Cluster.Group cg = config.group(i);
+                int[] path = new int[0];
+                if (root != null) {
+                    path = getGroupPath(cg.index());
+                }
+                boolean isLeafGroup = (cg.nodes().size() > 0);
+                Group group;
+                int index = (path.length == 0 ? 0 : path[path.length - 1]);
+                if (isLeafGroup) {
+                    group = new Group(index, cg.name());
+                    List<ConfiguredNode> nodes = new ArrayList<>();
+                    for (DistributionConfig.Cluster.Group.Nodes node : cg.nodes()) {
+                        nodes.add(new ConfiguredNode(node.index(), node.retired()));
+                    }
+                    group.setNodes(nodes);
+                } else {
+                    group = new Group(index, cg.name(), new Group.Distribution(cg.partitions(), config.redundancy()));
+                }
+                group.setCapacity(cg.capacity());
+                if (path.length == 0) {
+                    root = group;
+                } else {
+                    Group parent = root;
+                    for (int j=0; j<path.length - 1; ++j) {
+                        parent = parent.getSubgroups().get(path[j]);
+                    }
+                    parent.addSubGroup(group);
+                }
+            }
+            if (root == null)
+                throw new IllegalStateException("Config does not specify a root group");
+            root.calculateDistributionHashValues();
+            Distribution.this.config.setRelease(new Config(root, config.redundancy(), true));
+        } catch (ParseException e) {
+            throw new IllegalStateException("Failed to parse config", e);
         }
+    }
+
+    public Distribution(String configId) {
         try {
             configSub = new ConfigSubscriber();
             configSub.subscribe(configSubscriber, StorDistributionConfig.class, configId);
@@ -123,12 +159,18 @@ public class Distribution {
     }
 
     public Distribution(StorDistributionConfig config) {
-        int mask = 0;
-        for (int i=0; i<=64; ++i) {
-            distributionBitMasks[i] = mask;
-            mask = (mask << 1) | 1;
-        }
         configSubscriber.configure(config);
+    }
+
+    public Distribution(DistributionConfig.Cluster config) {
+        configure(config);
+    }
+
+    private static long lastNBits(long value, int n) {
+        if (n < 0 || n > 63)
+            throw new IllegalArgumentException("n must be in [0, 63], but was " + n);
+
+        return value & ((1L << n) - 1);
     }
 
     public void close() {
@@ -140,22 +182,21 @@ public class Distribution {
     }
 
     private int getGroupSeed(BucketId bucket, ClusterState state, Group group) {
-        int seed = ((int) bucket.getRawId()) & distributionBitMasks[state.getDistributionBitCount()];
+        int seed = (int) lastNBits(bucket.getRawId(), state.getDistributionBitCount());
         seed ^= group.getDistributionHash();
         return seed;
     }
 
     private int getDistributorSeed(BucketId bucket, ClusterState state) {
-        return ((int) bucket.getRawId()) & distributionBitMasks[state.getDistributionBitCount()];
+        return (int) lastNBits(bucket.getRawId(), state.getDistributionBitCount());
     }
 
     private int getStorageSeed(BucketId bucket, ClusterState state) {
-        int seed = ((int) bucket.getRawId()) & distributionBitMasks[state.getDistributionBitCount()];
+        int seed = (int) lastNBits(bucket.getRawId(), state.getDistributionBitCount());
 
         if (bucket.getUsedBits() > 33) {
             int usedBits = bucket.getUsedBits() - 1;
-            seed ^= (distributionBitMasks[usedBits - 32]
-                    & (bucket.getRawId() >> 32)) << 6;
+            seed ^= lastNBits(bucket.getRawId() >> 32, usedBits - 32) << 6;
         }
         return seed;
     }
@@ -172,6 +213,7 @@ public class Distribution {
             return Double.compare(o.score, score);
         }
     }
+
     private static class ScoredNode {
         int index;
         int reliability;
@@ -179,6 +221,7 @@ public class Distribution {
 
         ScoredNode(int index, int reliability, double score) { this.index = index; this.reliability = reliability; this.score = score; }
     }
+
     private static boolean allDistributorsDown(Group g, ClusterState clusterState) {
         if (g.isLeafGroup()) {
             for (ConfiguredNode node : g.getNodes()) {
@@ -192,6 +235,7 @@ public class Distribution {
         }
         return true;
     }
+
     private Group getIdealDistributorGroup(boolean distributorAutoOwnershipTransferOnWholeGroupDown,
                                            BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
         if (parent.isLeafGroup()) {
@@ -220,6 +264,7 @@ public class Distribution {
         }
         return getIdealDistributorGroup(distributorAutoOwnershipTransferOnWholeGroupDown, bucket, clusterState, results.first().group, redundancyArray[0]);
     }
+
     private static class ResultGroup implements Comparable<ResultGroup> {
         Group group;
         int redundancy;
@@ -234,6 +279,7 @@ public class Distribution {
             return group.compareTo(o.group);
         }
     }
+
     private void getIdealGroups(BucketId bucketId, ClusterState clusterState, Group parent,
                                int redundancy, List<ResultGroup> results) {
         if (parent.isLeafGroup()) {
@@ -424,11 +470,13 @@ public class Distribution {
             super(message);
         }
     }
+
     public static class NoDistributorsAvailableException extends Exception {
         NoDistributorsAvailableException(String message) {
             super(message);
         }
     }
+
     public int getIdealDistributorNode(ClusterState state, BucketId bucket, String upStates) throws TooFewBucketBitsInUseException, NoDistributorsAvailableException {
         if (bucket.getUsedBits() < state.getDistributionBitCount()) {
             throw new TooFewBucketBitsInUseException("Cannot get ideal state for bucket " + bucket + " using " + bucket.getUsedBits()
@@ -474,6 +522,7 @@ public class Distribution {
         }
         return node.index;
     }
+
     private boolean visitGroups(GroupVisitor visitor, Map<Integer, Group> groups) {
         for (Group g : groups.values()) {
             if (!visitor.visitGroup(g)) return false;
@@ -485,12 +534,14 @@ public class Distribution {
         }
         return true;
     }
+
     public void visitGroups(GroupVisitor visitor) {
         Map<Integer, Group> groups = new TreeMap<>();
         Group nodeGraph = config.getAcquire().nodeGraph;
         groups.put(nodeGraph.getIndex(), nodeGraph);
         visitGroups(visitor, groups);
     }
+
     public Set<ConfiguredNode> getNodes() {
         final Set<ConfiguredNode> nodes = new HashSet<>();
         GroupVisitor visitor = new GroupVisitor() {
@@ -524,9 +575,11 @@ public class Distribution {
         sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
         return sb.toString();
     }
+
     public static String getSimpleGroupConfig(int redundancy, int nodeCount) {
         return getSimpleGroupConfig(redundancy, nodeCount, StorDistributionConfig.Disk_distribution.Enum.MODULO_BID);
     }
+
     private static String getSimpleGroupConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
         StringBuilder sb = new StringBuilder();
         sb.append("raw:redundancy ").append(redundancy).append("\n").append("group[4]\n");
@@ -561,6 +614,5 @@ public class Distribution {
         sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
         return sb.toString();
     }
+
 }
-
-

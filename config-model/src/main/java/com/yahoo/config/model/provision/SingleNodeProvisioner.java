@@ -10,7 +10,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.config.content.StorDistributionConfig;
 
 import java.util.ArrayList;
 import java.util.List;

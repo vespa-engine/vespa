@@ -9,6 +9,8 @@ import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.component.Version;
+import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.cloud.config.ModelConfig.Hosts;
 import com.yahoo.cloud.config.ModelConfig.Hosts.Services;
@@ -20,6 +22,7 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 import com.yahoo.vespa.documentmodel.DocumentModel;
@@ -41,6 +44,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 
 /**
@@ -165,6 +171,13 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     }
 
     @Override
+    public void getConfig(DocumentProtocolPoliciesConfig.Builder builder) {
+        if (routing != null) {
+            routing.getConfig(builder);
+        }
+    }
+
+    @Override
     public void getConfig(MessagebusConfig.Builder builder) {
         if (routing != null) {
             routing.getConfig(builder);
@@ -209,6 +222,13 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
             storage.name(cluster.getName());
             storage.configid(cluster.getConfigId());
             builder.storage(storage);
+        }
+    }
+
+    @Override
+    public void getConfig(DistributionConfig.Builder builder) {
+        for (ContentCluster cluster : ((VespaModel) getRoot()).getContentClusters().values()) {
+            cluster.getConfig(builder);
         }
     }
 
