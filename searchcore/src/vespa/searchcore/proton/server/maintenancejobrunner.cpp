@@ -19,16 +19,19 @@ MaintenanceJobRunner::run()
     addExecutorTask();
 }
 
+void
+MaintenanceJobRunner::stop() {
+    Guard guard(_lock);
+    _stopped = true;
+}
 
 void
 MaintenanceJobRunner::addExecutorTask()
 {
-    if (!_stopped && !_job->isBlocked()) {
-        Guard guard(_lock);
-        if (!_queued) {
-            _queued = true;
-            _executor.execute(makeLambdaTask([this]() { runJobInExecutor(); }));
-        }
+    Guard guard(_lock);
+    if (!_stopped && !_job->isBlocked() && !_queued) {
+        _queued = true;
+        _executor.execute(makeLambdaTask([this]() { runJobInExecutor(); }));
     }
 }
 
@@ -38,6 +41,9 @@ MaintenanceJobRunner::runJobInExecutor()
     {
         Guard guard(_lock);
         _queued = false;
+        if (_stopped) {
+            return;
+        }
         _running = true;
     }
     bool finished = _job->run();
