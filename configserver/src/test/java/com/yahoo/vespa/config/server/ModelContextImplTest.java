@@ -95,7 +95,7 @@ public class ModelContextImplTest {
         assertEquals(new Version(8), context.wantedNodeVespaVersion());
         assertEquals(1.0, context.properties().featureFlags().defaultTermwiseLimit(), 0.0);
         assertFalse(context.properties().featureFlags().useAsyncMessageHandlingOnSchedule());
-        assertEquals(0x400000, context.properties().featureFlags().mergeChunkSize());
+        assertEquals(0x2000000, context.properties().featureFlags().mergeChunkSize());
         assertEquals(0.5, context.properties().featureFlags().feedConcurrency(), 0.0);
     }
 
