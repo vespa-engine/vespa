@@ -56,9 +56,9 @@ public class ClusterControllerContainer extends Container implements
                    "/cluster/v2/*",
                    CLUSTERCONTROLLER_BUNDLE);
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog,
-                                            "controller",
-                                            deployState.isHosted(),
-                                            deployState.featureFlags().enableZstdCompressionAccessLog()));
+                AccessLogComponent.CompressionType.GZIP,
+                "controller",
+                deployState.isHosted()));
 
         // TODO: Why are bundles added here instead of in the cluster?
         addFileBundle("clustercontroller-apps");
