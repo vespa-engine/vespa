@@ -73,6 +73,10 @@ class LogFileHandler <LOGTYPE> {
         addOperation(new Operation<>(r));
     }
 
+    void publishAndWait(LOGTYPE r) {
+        addOperationAndWait(new Operation<>(r));
+    }
+
     public void flush() {
         addOperationAndWait(new Operation<>(Operation.Type.flush));
     }
