@@ -2,6 +2,7 @@
 #pragma once
 
 #include "i_lid_space_compaction_handler.h"
+#include "maintenancedocumentsubdb.h"
 
 namespace proton {
 
@@ -13,8 +14,8 @@ class MaintenanceDocumentSubDB;
 class LidSpaceCompactionHandler : public ILidSpaceCompactionHandler
 {
 private:
-    const MaintenanceDocumentSubDB& _subDb;
-    vespalib::string _docTypeName;
+    const MaintenanceDocumentSubDB _subDb;
+    const vespalib::string         _docTypeName;
 
 public:
     LidSpaceCompactionHandler(const MaintenanceDocumentSubDB& subDb,
