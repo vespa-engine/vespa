@@ -47,6 +47,7 @@ bool
 LidSpaceCompactionJobBase::scanDocumentsPost()
 {
     if (!_scanItr->valid()) {
+        sync();
         if (shouldRestartScanDocuments(_handler->getLidStatus())) {
             _scanItr = _handler->getIterator();
         } else {
