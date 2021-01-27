@@ -99,6 +99,15 @@ search test {
         }
     }
 
+    rank-profile test_dynamic_model_with_transformer_tokens {
+        function my_function() {
+            expression: tokenTypeIds(2, attribute(document_field))
+        }
+        first-phase {
+            expression: onnx(dynamic_model){d0:0,d1:1}
+        }
+    }
+
     rank-profile test_unbound_model {
         function my_function() {
             expression: tensor(d0[1],d1[2])(d1)
@@ -107,6 +116,5 @@ search test {
             expression: onnx(unbound_model){d0:0,d1:1}
         }
     }
-
 
 }

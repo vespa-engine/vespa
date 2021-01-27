@@ -186,7 +186,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
         }
     }
 
-    private TensorType createTensorType(String featureName, ExpressionNode argument) {
+    public static TensorType createTensorType(String featureName, ExpressionNode argument) {
         try {
             int length = Integer.parseInt(argument.toString());
             return new TensorType.Builder(TensorType.Value.FLOAT).indexed("d0", 1).indexed("d1", length).build();
