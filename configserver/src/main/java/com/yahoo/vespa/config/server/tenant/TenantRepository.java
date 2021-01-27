@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.concurrent.Lock;
+import com.yahoo.concurrent.Locks;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -91,6 +93,7 @@ public class TenantRepository {
     private static final Logger log = Logger.getLogger(TenantRepository.class.getName());
 
     private final Map<TenantName, Tenant> tenants = Collections.synchronizedMap(new LinkedHashMap<>());
+    private final Locks<TenantName> tenantLocks = new Locks<>(1, TimeUnit.MINUTES);
     private final HostRegistry hostRegistry;
     private final List<TenantListener> tenantListeners = Collections.synchronizedList(new ArrayList<>());
     private final Curator curator;
@@ -215,9 +218,11 @@ public class TenantRepository {
         }
     }
 
-    public synchronized Tenant addTenant(TenantName tenantName) {
-        writeTenantPath(tenantName);
-        return createTenant(tenantName, clock.instant());
+    public Tenant addTenant(TenantName tenantName) {
+        try (Lock lock = tenantLocks.lock(tenantName)) {
+            writeTenantPath(tenantName);
+            return createTenant(tenantName, clock.instant());
+        }
     }
 
     public void createAndWriteTenantMetaData(Tenant tenant) {
@@ -286,8 +291,10 @@ public class TenantRepository {
     }
 
     // Use when bootstrapping an existing tenant based on ZooKeeper data
-    protected synchronized void bootstrapTenant(TenantName tenantName) {
-        createTenant(tenantName, readCreatedTimeFromZooKeeper(tenantName));
+    protected void bootstrapTenant(TenantName tenantName) {
+        try (Lock lock = tenantLocks.lock(tenantName)) {
+            createTenant(tenantName, readCreatedTimeFromZooKeeper(tenantName));
+        }
     }
 
     public Instant readCreatedTimeFromZooKeeper(TenantName tenantName) {
@@ -358,8 +365,10 @@ public class TenantRepository {
      *
      * @return default tenant
      */
-    public synchronized Tenant defaultTenant() {
-        return tenants.get(DEFAULT_TENANT);
+    public Tenant defaultTenant() {
+        try (Lock lock = tenantLocks.lock(DEFAULT_TENANT)) {
+            return tenants.get(DEFAULT_TENANT);
+        }
     }
 
     private void removeUnusedApplications() {
@@ -383,7 +392,7 @@ public class TenantRepository {
      * already exists, as this is OK and might happen when several config servers start at the
      * same time and try to call this method.
      */
-    private synchronized void createSystemTenants(ConfigserverConfig configserverConfig) {
+    private void createSystemTenants(ConfigserverConfig configserverConfig) {
         List<TenantName> systemTenants = new ArrayList<>();
         systemTenants.add(DEFAULT_TENANT);
         if (configserverConfig.hostedVespa()) systemTenants.add(HOSTED_VESPA_TENANT);
@@ -405,11 +414,13 @@ public class TenantRepository {
      *
      * @param name name of the tenant
      */
-    private synchronized void writeTenantPath(TenantName name) {
-        curator.createAtomically(TenantRepository.getTenantPath(name),
-                                 TenantRepository.getSessionsPath(name),
-                                 TenantRepository.getApplicationsPath(name),
-                                 TenantRepository.getLocksPath(name));
+    private void writeTenantPath(TenantName name) {
+        try (Lock lock = tenantLocks.lock(name)) {
+            curator.createAtomically(TenantRepository.getTenantPath(name),
+                                     TenantRepository.getSessionsPath(name),
+                                     TenantRepository.getApplicationsPath(name),
+                                     TenantRepository.getLocksPath(name));
+        }
     }
 
     /**
@@ -417,7 +428,7 @@ public class TenantRepository {
      *
      * @param name name of the tenant
      */
-    public synchronized void deleteTenant(TenantName name) {
+    public void deleteTenant(TenantName name) {
         if (name.equals(DEFAULT_TENANT))
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
         if ( ! tenants.containsKey(name))
@@ -426,19 +437,23 @@ public class TenantRepository {
         log.log(Level.INFO, "Deleting tenant '" + name + "'");
         // Deletes the tenant tree from ZooKeeper (application and session status for the tenant)
         // and triggers Tenant.close().
-        Path path = tenants.get(name).getPath();
-        closeTenant(name);
-        curator.delete(path);
+        try (Lock lock = tenantLocks.lock(name)) {
+            Path path = tenants.get(name).getPath();
+            closeTenant(name);
+            curator.delete(path);
+        }
     }
 
-    private synchronized void closeTenant(TenantName name) {
-        Tenant tenant = tenants.remove(name);
-        if (tenant == null)
-            throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
+    private void closeTenant(TenantName name) {
+        try (Lock lock = tenantLocks.lock(name)) {
+            Tenant tenant = tenants.remove(name);
+            if (tenant == null)
+                throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
 
-        log.log(Level.INFO, "Closing tenant '" + name + "'");
-        notifyRemovedTenant(name);
-        tenant.close();
+            log.log(Level.INFO, "Closing tenant '" + name + "'");
+            notifyRemovedTenant(name);
+            tenant.close();
+        }
     }
 
     /**
