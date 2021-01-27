@@ -20,7 +20,7 @@ private:
 
 public:
     LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
-                          ILidSpaceCompactionHandler &handler,
+                          std::shared_ptr<ILidSpaceCompactionHandler> handler,
                           IOperationStorer &opStorer,
                           IFrozenBucketHandler &frozenHandler,
                           IDiskMemUsageNotifier &diskMemUsageNotifier,

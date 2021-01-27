@@ -936,9 +936,9 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
     // Called by executor thread
     _maintenanceController.killJobs();
     _lidSpaceCompactionHandlers.clear();
-    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getReadySubDB(), _docTypeName.getName()));
-    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getRemSubDB(), _docTypeName.getName()));
-    _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
+    _lidSpaceCompactionHandlers.push_back(std::make_shared<LidSpaceCompactionHandler>(_maintenanceController.getReadySubDB(), _docTypeName.getName()));
+    _lidSpaceCompactionHandlers.push_back(std::make_shared<LidSpaceCompactionHandler>(_maintenanceController.getRemSubDB(), _docTypeName.getName()));
+    _lidSpaceCompactionHandlers.push_back(std::make_shared<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
     MaintenanceJobsInjector::injectJobs(_maintenanceController,
             config,
             _bucketExecutor,

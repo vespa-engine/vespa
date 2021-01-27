@@ -26,13 +26,13 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
                 _retryFrozenDocument = true;
                 return true;
             } else {
-                auto op = _handler.createMoveOperation(document, stats.getLowestFreeLid());
+                auto op = _handler->createMoveOperation(document, stats.getLowestFreeLid());
                 if ( ! op ) {
                     return false;
                 }
                 vespalib::IDestructorCallback::SP context = _moveOpsLimiter->beginOperation();
                 _opStorer.appendOperation(*op, context);
-                _handler.handleMove(*op, std::move(context));
+                _handler->handleMove(*op, std::move(context));
                 if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
                     return true;
                 }
@@ -43,14 +43,14 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
 }
 
 LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
-                                             ILidSpaceCompactionHandler &handler,
+                                             std::shared_ptr<ILidSpaceCompactionHandler> handler,
                                              IOperationStorer &opStorer,
                                              IFrozenBucketHandler &frozenHandler,
                                              IDiskMemUsageNotifier &diskMemUsageNotifier,
                                              const BlockableMaintenanceJobConfig &blockableConfig,
                                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                                              bool nodeRetired)
-    : LidSpaceCompactionJobBase(config, handler, opStorer, diskMemUsageNotifier,
+    : LidSpaceCompactionJobBase(config, std::move(handler), opStorer, diskMemUsageNotifier,
                                 blockableConfig, clusterStateChangedNotifier, nodeRetired),
       _frozenHandler(frozenHandler),
       _retryFrozenDocument(false)

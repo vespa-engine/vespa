@@ -34,7 +34,7 @@ private:
 
 public:
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
-                  ILidSpaceCompactionHandler &handler,
+                  std::shared_ptr<ILidSpaceCompactionHandler> handler,
                   IOperationStorer &opStorer,
                   IThreadService & master,
                   BucketExecutor & bucketExecutor,
