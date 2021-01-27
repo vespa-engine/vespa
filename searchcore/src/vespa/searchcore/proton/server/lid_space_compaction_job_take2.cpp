@@ -46,27 +46,27 @@ void
 CompactionJob::moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> context) {
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
-    auto op = _handler.createMoveOperation(meta, 0);
+    auto op = _handler->createMoveOperation(meta, 0);
     if (!op || !op->getDocument()) return;
     // Early detection and force md5 calculation outside of master thread
     if (meta.gid != op->getDocument()->getId().getGlobalId()) return;
 
     _master.execute(makeLambdaTask([this, metaThen=meta, moveOp=std::move(op), onDone=std::move(context)]() {
-        search::DocumentMetaData metaNow = _handler.getMetaData(metaThen.lid);
+        search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
         if (metaNow.lid != metaThen.lid) return;
         if (metaNow.bucketId != metaThen.bucketId) return;
         if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId()) return;
 
-        uint32_t lowestLid = _handler.getLidStatus().getLowestFreeLid();
+        uint32_t lowestLid = _handler->getLidStatus().getLowestFreeLid();
         if (lowestLid >= metaNow.lid) return;
         moveOp->setTargetLid(lowestLid);
         _opStorer.appendOperation(*moveOp, onDone);
-        _handler.handleMove(*moveOp, std::move(onDone));
+        _handler->handleMove(*moveOp, std::move(onDone));
     }));
 }
 
 CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
-                             ILidSpaceCompactionHandler &handler,
+                             std::shared_ptr<ILidSpaceCompactionHandler> handler,
                              IOperationStorer &opStorer,
                              IThreadService & master,
                              BucketExecutor & bucketExecutor,
@@ -75,7 +75,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              bool nodeRetired,
                              document::BucketSpace bucketSpace)
-    : LidSpaceCompactionJobBase(config, handler, opStorer, diskMemUsageNotifier,
+    : LidSpaceCompactionJobBase(config, std::move(handler), opStorer, diskMemUsageNotifier,
                                 blockableConfig, clusterStateChangedNotifier, nodeRetired),
       _master(master),
       _bucketExecutor(bucketExecutor),

@@ -42,7 +42,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
         if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
             job = std::make_unique<lidspace::CompactionJob>(
                     config.getLidSpaceCompactionConfig(),
-                    *lidHandler, opStorer, controller.masterThread(), bucketExecutor,
+                    std::move(lidHandler), opStorer, controller.masterThread(), bucketExecutor,
                     diskMemUsageNotifier,
                     config.getBlockableJobConfig(),
                     clusterStateChangedNotifier,
@@ -51,7 +51,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
         } else {
             job = std::make_unique<LidSpaceCompactionJob>(
                     config.getLidSpaceCompactionConfig(),
-                    *lidHandler, opStorer, fbHandler,
+                    std::move(lidHandler), opStorer, fbHandler,
                     diskMemUsageNotifier,
                     config.getBlockableJobConfig(),
                     clusterStateChangedNotifier,

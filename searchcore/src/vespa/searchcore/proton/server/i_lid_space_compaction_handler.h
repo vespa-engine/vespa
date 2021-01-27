@@ -22,8 +22,8 @@ struct IDocumentScanIterator;
  */
 struct ILidSpaceCompactionHandler
 {
-    typedef std::unique_ptr<ILidSpaceCompactionHandler> UP;
-    typedef std::vector<UP> Vector;
+    typedef std::shared_ptr<ILidSpaceCompactionHandler> SP;
+    using Vector = std::vector<SP>;
 
     virtual ~ILidSpaceCompactionHandler() = default;
 

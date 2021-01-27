@@ -47,8 +47,8 @@ bool
 LidSpaceCompactionJobBase::scanDocumentsPost()
 {
     if (!_scanItr->valid()) {
-        if (shouldRestartScanDocuments(_handler.getLidStatus())) {
-            _scanItr = _handler.getIterator();
+        if (shouldRestartScanDocuments(_handler->getLidStatus())) {
+            _scanItr = _handler->getIterator();
         } else {
             _scanItr = IDocumentScanIterator::UP();
             _shouldCompactLidSpace = true;
@@ -61,12 +61,12 @@ void
 LidSpaceCompactionJobBase::compactLidSpace(const LidUsageStats &stats)
 {
     uint32_t wantedLidLimit = stats.getHighestUsedLid() + 1;
-    CompactLidSpaceOperation op(_handler.getSubDbId(), wantedLidLimit);
+    CompactLidSpaceOperation op(_handler->getSubDbId(), wantedLidLimit);
     vespalib::Gate gate;
     auto commit_result = _opStorer.appendAndCommitOperation(op, std::make_shared<vespalib::GateCallback>(gate));
     gate.await();
-    _handler.handleCompactLidSpace(op, std::make_shared<vespalib::KeepAlive<decltype(commit_result)>>(std::move(commit_result)));
-    EventLogger::lidSpaceCompactionComplete(_handler.getName(), wantedLidLimit);
+    _handler->handleCompactLidSpace(op, std::make_shared<vespalib::KeepAlive<decltype(commit_result)>>(std::move(commit_result)));
+    EventLogger::lidSpaceCompactionComplete(_handler->getName(), wantedLidLimit);
     _shouldCompactLidSpace = false;
 }
 
@@ -83,16 +83,16 @@ LidSpaceCompactionJobBase::remove_is_ongoing() const
 }
 
 LidSpaceCompactionJobBase::LidSpaceCompactionJobBase(const DocumentDBLidSpaceCompactionConfig &config,
-                                             ILidSpaceCompactionHandler &handler,
-                                             IOperationStorer &opStorer,
-                                             IDiskMemUsageNotifier &diskMemUsageNotifier,
-                                             const BlockableMaintenanceJobConfig &blockableConfig,
-                                             IClusterStateChangedNotifier &clusterStateChangedNotifier,
-                                             bool nodeRetired)
-    : BlockableMaintenanceJob("lid_space_compaction." + handler.getName(),
-            config.getDelay(), config.getInterval(), blockableConfig),
+                                                     std::shared_ptr<ILidSpaceCompactionHandler>  handler,
+                                                     IOperationStorer &opStorer,
+                                                     IDiskMemUsageNotifier &diskMemUsageNotifier,
+                                                     const BlockableMaintenanceJobConfig &blockableConfig,
+                                                     IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                                                     bool nodeRetired)
+    : BlockableMaintenanceJob("lid_space_compaction." + handler->getName(),
+                              config.getDelay(), config.getInterval(), blockableConfig),
       _cfg(config),
-      _handler(handler),
+      _handler(std::move(handler)),
       _opStorer(opStorer),
       _scanItr(),
       _diskMemUsageNotifier(diskMemUsageNotifier),
@@ -107,7 +107,7 @@ LidSpaceCompactionJobBase::LidSpaceCompactionJobBase(const DocumentDBLidSpaceCom
     if (nodeRetired) {
         setBlocked(BlockedReason::CLUSTER_STATE);
     }
-    handler.set_operation_listener(_ops_rate_tracker);
+    _handler->set_operation_listener(_ops_rate_tracker);
 }
 
 LidSpaceCompactionJobBase::~LidSpaceCompactionJobBase()
@@ -122,24 +122,24 @@ LidSpaceCompactionJobBase::run()
     if (isBlocked()) {
         return true; // indicate work is done since no work can be done
     }
-    LidUsageStats stats = _handler.getLidStatus();
+    LidUsageStats stats = _handler->getLidStatus();
     if (remove_batch_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
         LOG(info, "%s: Lid space compaction is disabled while remove batch (delete buckets) is ongoing",
-            _handler.getName().c_str());
+            _handler->getName().c_str());
         _is_disabled = true;
         return true;
     }
     if (remove_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
         LOG(info, "%s: Lid space compaction is disabled while remove operations are ongoing",
-            _handler.getName().c_str());
+            _handler->getName().c_str());
         _is_disabled = true;
         return true;
     }
     if (_is_disabled) {
         LOG(info, "%s: Lid space compaction is re-enabled as remove operations are no longer ongoing",
-            _handler.getName().c_str());
+            _handler->getName().c_str());
         _is_disabled = false;
     }
     if (_scanItr) {
@@ -148,7 +148,7 @@ LidSpaceCompactionJobBase::run()
         compactLidSpace(stats);
     } else if (hasTooMuchLidBloat(stats)) {
         assert(!_scanItr);
-        _scanItr = _handler.getIterator();
+        _scanItr = _handler->getIterator();
         return scanDocuments(stats);
     }
     return true;
@@ -168,11 +168,11 @@ LidSpaceCompactionJobBase::notifyClusterStateChanged(const IBucketStateCalculato
     bool nodeRetired = newCalc->nodeRetired();
     if (!nodeRetired) {
         if (isBlocked(BlockedReason::CLUSTER_STATE)) {
-            LOG(info, "%s: Lid space compaction is un-blocked as node is no longer retired", _handler.getName().c_str());
+            LOG(info, "%s: Lid space compaction is un-blocked as node is no longer retired", _handler->getName().c_str());
             unBlock(BlockedReason::CLUSTER_STATE);
         }
     } else {
-        LOG(info, "%s: Lid space compaction is blocked as node is retired", _handler.getName().c_str());
+        LOG(info, "%s: Lid space compaction is blocked as node is retired", _handler->getName().c_str());
         setBlocked(BlockedReason::CLUSTER_STATE);
     }
 }

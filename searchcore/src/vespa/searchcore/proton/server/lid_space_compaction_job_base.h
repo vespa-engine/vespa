@@ -33,9 +33,9 @@ class LidSpaceCompactionJobBase : public BlockableMaintenanceJob,
 private:
     const DocumentDBLidSpaceCompactionConfig _cfg;
 protected:
-    ILidSpaceCompactionHandler   &_handler;
-    IOperationStorer             &_opStorer;
-    std::unique_ptr<IDocumentScanIterator>     _scanItr;
+    std::shared_ptr<ILidSpaceCompactionHandler> _handler;
+    IOperationStorer                           &_opStorer;
+    std::unique_ptr<IDocumentScanIterator>      _scanItr;
 private:
     IDiskMemUsageNotifier        &_diskMemUsageNotifier;
     IClusterStateChangedNotifier &_clusterStateChangedNotifier;
@@ -55,7 +55,7 @@ protected:
     bool scanDocumentsPost();
 public:
     LidSpaceCompactionJobBase(const DocumentDBLidSpaceCompactionConfig &config,
-                              ILidSpaceCompactionHandler &handler,
+                              std::shared_ptr<ILidSpaceCompactionHandler> handler,
                               IOperationStorer &opStorer,
                               IDiskMemUsageNotifier &diskMemUsageNotifier,
                               const BlockableMaintenanceJobConfig &blockableConfig,
