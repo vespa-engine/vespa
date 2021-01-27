@@ -318,6 +318,14 @@ public class Flags {
             "Use EndpointCertificateMaintainer instead of EndpointCertificateManager cleanup thread to handle certificate refreshes and deletions",
             "Takes effect on next run of maintainer / next manager cleanup thread run");
 
+    public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
+            "enable-feed-block-in-distributor", false,
+            List.of("geirst"), "2021-01-27", "2021-04-01",
+            "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
