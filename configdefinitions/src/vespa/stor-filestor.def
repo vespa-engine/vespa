@@ -41,7 +41,7 @@ common_merge_chain_optimalization_minimum_size int default=64 restart
 ##
 ## Default is set to 4 MB.
 ## Note that this will gradually be increased to reach stor-distributormanager:splitsize which is currently at 32M
-bucket_merge_chunk_size int default=4190208 restart
+bucket_merge_chunk_size int default=33554432 restart
 
 ## When merging, it is possible to send more metadata than needed in order to
 ## let local nodes in merge decide which entries fits best to add this time

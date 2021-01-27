@@ -26,6 +26,7 @@ import java.util.zip.GZIPInputStream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author Bob Travis
@@ -106,43 +107,31 @@ public class LogFileHandlerTestCase {
                 Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", new StringLogWriter());
 
         String message = formatter.format(new LogRecord(Level.INFO, "test"));
-        handler.publish(message);
-        String firstFile;
-        do {
-             Thread.sleep(1);
-             firstFile = handler.getFileName();
-        } while (firstFile == null);
+        handler.publishAndWait(message);
+        String firstFile = handler.getFileName();
         handler.rotateNow();
-        String secondFileName;
-        do {
-            Thread.sleep(1);
-            secondFileName = handler.getFileName();
-        } while (firstFile.equals(secondFileName));
+        String secondFileName = handler.getFileName();
+        assertNotEquals(firstFile, secondFileName);
 
         String longMessage = formatter.format(new LogRecord(Level.INFO, "string which is way longer than the word test"));
         handler.publish(longMessage);
         handler.flush();
         assertThat(Files.size(Paths.get(firstFile))).isEqualTo(31);
         final long expectedSecondFileLength = 72;
-        long secondFileLength;
-        do {
-            Thread.sleep(1);
-            secondFileLength = Files.size(Paths.get(secondFileName));
-        } while (secondFileLength != expectedSecondFileLength);
 
         long symlinkFileLength = Files.size(root.toPath().resolve("symlink"));
         assertThat(symlinkFileLength).isEqualTo(expectedSecondFileLength);
         handler.shutdown();
     }
 
-    @Test
+    @Test(timeout = /*5 minutes*/300_000)
     public void testcompression_gzip() throws InterruptedException, IOException {
         testcompression(
                 Compression.GZIP, "gz",
                 (compressedFile, __) -> uncheck(() -> new String(new GZIPInputStream(Files.newInputStream(compressedFile)).readAllBytes())));
     }
 
-    @Test
+    @Test(timeout = /*5 minutes*/300_000)
     public void testcompression_zstd() throws InterruptedException, IOException {
         testcompression(
                 Compression.ZSTD, "zst",
