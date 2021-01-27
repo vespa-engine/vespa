@@ -3,8 +3,15 @@ package com.yahoo.documentapi.messagebus;
 
 import com.yahoo.documentapi.DocumentAccessParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.SourceSessionParams;
+import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
+import com.yahoo.vespa.config.content.DistributionConfig;
+
+import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Einar M R Rosenvinge
@@ -13,6 +20,8 @@ public class MessageBusParams extends DocumentAccessParams {
 
     private String routingConfigId = null;
     private String protocolConfigId = null;
+    private DocumentProtocolPoliciesConfig policiesConfig = null;
+    private DistributionConfig distributionConfig = null;
     private String route = "route:default";
     private String routeForGet = "route:default-get";
     private int traceLevel = 0;
@@ -76,6 +85,14 @@ public class MessageBusParams extends DocumentAccessParams {
      */
     public MessageBusParams setProtocolConfigId(String configId) {
         protocolConfigId = configId;
+        return this;
+    }
+
+    /** Sets the config used by the {@link DocumentProtocol} policies. */
+    public MessageBusParams setDocumentProtocolPoliciesConfig(DocumentProtocolPoliciesConfig policiesConfig,
+                                                              DistributionConfig distributionConfig) {
+        this.policiesConfig = requireNonNull(policiesConfig);
+        this.distributionConfig = requireNonNull(distributionConfig);
         return this;
     }
 
