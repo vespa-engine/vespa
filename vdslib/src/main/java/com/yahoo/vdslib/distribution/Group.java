@@ -196,7 +196,7 @@ public class Group implements Comparable<Group> {
 
     /**
      * The distribution class keeps precalculated arrays for distributions for all legal redundancies. The class is
-     * immutable, such that it can be returned safely out from the group object. (Actually, it's not immutable.)
+     * immutable, such that it can be returned safely out from the group object.
      */
     public static class Distribution {
 
