@@ -11,12 +11,10 @@ import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.Routable;
-import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.routing.RoutingNodeIterator;
 import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.text.Utf8String;
-import com.yahoo.vespa.config.content.DistributionConfig;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -25,8 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Implements the message bus protocol that is used by all components of Vespa.
@@ -247,36 +243,27 @@ public class DocumentProtocol implements Protocol {
         this(docMan, configId, new LoadTypeSet());
     }
 
-    public DocumentProtocol(DocumentTypeManager documentTypeManager, LoadTypeSet loadTypes,
-                            DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
-        this(requireNonNull(documentTypeManager), null, requireNonNull(loadTypes),
-        requireNonNull(policiesConfig), requireNonNull(distributionConfig));
-    }
-
     public DocumentProtocol(DocumentTypeManager docMan, String configId, LoadTypeSet set) {
-        this(docMan, configId == null ? "client" : configId, set, null, null);
-    }
-
-    private DocumentProtocol(DocumentTypeManager docMan, String configId, LoadTypeSet set,
-                             DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
-        if (docMan != null)
+        // Prepare config string for routing policy factories.
+        String cfg = (configId == null ? "client" : configId);
+        if (docMan != null) {
             this.docMan = docMan;
-        else {
+        } else {
             this.docMan = new DocumentTypeManager();
-            DocumentTypeManagerConfigurer.configure(this.docMan, configId);
+            DocumentTypeManagerConfigurer.configure(this.docMan, cfg);
         }
-        this.routableRepository = new RoutableRepository(set);
+        routableRepository = new RoutableRepository(set);
 
         // When adding factories to this list, please KEEP THEM ORDERED alphabetically like they are now.
         putRoutingPolicyFactory("AND", new RoutingPolicyFactories.AndPolicyFactory());
-        putRoutingPolicyFactory("Content", new RoutingPolicyFactories.ContentPolicyFactory(distributionConfig));
-        putRoutingPolicyFactory("DocumentRouteSelector", new RoutingPolicyFactories.DocumentRouteSelectorPolicyFactory(configId, policiesConfig));
+        putRoutingPolicyFactory("Content", new RoutingPolicyFactories.ContentPolicyFactory());
+        putRoutingPolicyFactory("DocumentRouteSelector", new RoutingPolicyFactories.DocumentRouteSelectorPolicyFactory(cfg));
         putRoutingPolicyFactory("Extern", new RoutingPolicyFactories.ExternPolicyFactory());
         putRoutingPolicyFactory("LocalService", new RoutingPolicyFactories.LocalServicePolicyFactory());
-        putRoutingPolicyFactory("MessageType", new RoutingPolicyFactories.MessageTypePolicyFactory(configId, policiesConfig));
+        putRoutingPolicyFactory("MessageType", new RoutingPolicyFactories.MessageTypePolicyFactory(cfg));
         putRoutingPolicyFactory("RoundRobin", new RoutingPolicyFactories.RoundRobinPolicyFactory());
         putRoutingPolicyFactory("LoadBalancer", new RoutingPolicyFactories.LoadBalancerPolicyFactory());
-        putRoutingPolicyFactory("Storage", new RoutingPolicyFactories.ContentPolicyFactory(distributionConfig));
+        putRoutingPolicyFactory("Storage", new RoutingPolicyFactories.ContentPolicyFactory());
         putRoutingPolicyFactory("SubsetService", new RoutingPolicyFactories.SubsetServicePolicyFactory());
 
         // Prepare version specifications to use when adding routable factories.

@@ -24,6 +24,11 @@ public interface RoutingPolicyFactory {
      * @param param The parameter to use when creating the policy.
      * @return The created routing policy.
      */
-    DocumentProtocolRoutingPolicy createPolicy(String param);
+    public DocumentProtocolRoutingPolicy createPolicy(String param);
 
+    /**
+     * Destroys this factory and frees up any resources it has held. Making further calls on a destroyed
+     * factory causes a runtime exception.
+     */
+    public void destroy();
 }
