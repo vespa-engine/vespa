@@ -11,7 +11,6 @@ import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.Routable;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.messagebus.routing.RoutingNodeIterator;
 import com.yahoo.messagebus.routing.RoutingPolicy;
