@@ -531,7 +531,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addDefaultSearchAccessLog(DeployState deployState) {
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, getName(), isHostedVespa, deployState.featureFlags().enableZstdCompressionAccessLog()));
+        var compressionType = isHostedVespa && deployState.featureFlags().enableZstdCompressionAccessLog()
+                ? AccessLogComponent.CompressionType.ZSTD
+                : AccessLogComponent.CompressionType.GZIP;
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, getName(), isHostedVespa));
     }
 
     @Override

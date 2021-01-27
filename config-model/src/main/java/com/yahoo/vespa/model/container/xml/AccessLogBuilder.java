@@ -7,6 +7,7 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType;
+import com.yahoo.vespa.model.container.component.AccessLogComponent.CompressionType;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
@@ -52,15 +53,15 @@ public class AccessLogBuilder {
         }
 
         @Override
-        protected AccessLogComponent doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
+        protected AccessLogComponent doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
             return new AccessLogComponent(
                     accessLogType,
+                    compressionType(spec, deployState, isHostedVespa),
                     fileNamePattern(spec),
                     rotationInterval(spec),
                     compressOnRotation(spec),
                     isHostedVespa,
-                    symlinkName(spec),
-                    deployState.featureFlags().enableZstdCompressionAccessLog());
+                    symlinkName(spec));
         }
 
         private String symlinkName(Element spec) {
@@ -79,6 +80,22 @@ public class AccessLogBuilder {
         private String fileNamePattern(Element spec) {
             return nullIfEmpty(spec.getAttribute("fileNamePattern"));
         }
+
+        private static CompressionType compressionType(Element spec, DeployState deployState, boolean isHostedVespa) {
+            return Optional.ofNullable(spec.getAttribute("compressionType"))
+                    .filter(value -> !value.isBlank())
+                    .map(value -> {
+                        switch (value) {
+                            case "gzip":
+                                return CompressionType.GZIP;
+                            case "zstd":
+                                return CompressionType.ZSTD;
+                            default:
+                                throw new IllegalArgumentException("Unknown compression type: " + value);
+                        }
+                    })
+                    .orElse(isHostedVespa && deployState.featureFlags().enableZstdCompressionAccessLog() ? CompressionType.ZSTD : CompressionType.GZIP);
+        }
     }
 
     private static AccessLogType logTypeFor(AccessLogTypeLiteral typeLiteral) {
@@ -94,7 +111,7 @@ public class AccessLogBuilder {
         }
     }
 
-    public static Optional<AccessLogComponent> buildIfNotDisabled(DeployState deployState, ContainerCluster cluster, Element accessLogSpec) {
+    public static Optional<AccessLogComponent> buildIfNotDisabled(DeployState deployState, ContainerCluster<?> cluster, Element accessLogSpec) {
         AccessLogTypeLiteral typeLiteral =
                 getOptionalAttribute(accessLogSpec, "type").
                         map(AccessLogTypeLiteral::fromAttributeValue).

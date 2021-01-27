@@ -14,21 +14,21 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 public final class AccessLogComponent extends SimpleComponent implements AccessLogConfig.Producer {
 
     public enum AccessLogType { queryAccessLog, yApacheAccessLog, jsonAccessLog }
+    public enum CompressionType { GZIP, ZSTD }
 
     private final String fileNamePattern;
     private final String rotationInterval;
     private final Boolean compression;
     private final boolean isHostedVespa;
     private final String symlinkName;
-    private final boolean enableZstdCompression;
+    private final CompressionType compressionType;
 
-    public AccessLogComponent(AccessLogType logType, String clusterName, boolean isHostedVespa, boolean enableZstdCompression)
+    public AccessLogComponent(AccessLogType logType, CompressionType compressionType, String clusterName, boolean isHostedVespa)
     {
-        this(logType,
+        this(logType, compressionType,
                 String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
                 null, null, isHostedVespa,
-                capitalize(logType.name()) + "." + clusterName,
-                enableZstdCompression);
+                capitalize(logType.name()) + "." + clusterName);
     }
 
     private static String capitalize(String name) {
@@ -36,12 +36,12 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     }
 
     public AccessLogComponent(AccessLogType logType,
+                              CompressionType compressionType,
                               String fileNamePattern,
                               String rotationInterval,
                               Boolean compressOnRotation,
                               boolean isHostedVespa,
-                              String symlinkName,
-                              boolean enableZstdCompression)
+                              String symlinkName)
     {
         super(new ComponentModel(accessLogClass(logType), null, "container-core", null));
         this.fileNamePattern = fileNamePattern;
@@ -49,7 +49,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.compression = compressOnRotation;
         this.isHostedVespa = isHostedVespa;
         this.symlinkName = symlinkName;
-        this.enableZstdCompression = enableZstdCompression;
+        this.compressionType = compressionType;
 
         if (fileNamePattern == null)
             throw new RuntimeException("File name pattern required when configuring access log.");
@@ -84,10 +84,16 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         } else if (isHostedVespa) {
             builder.compressOnRotation(true);
         }
-        if (enableZstdCompression) {
-            builder.compressionFormat(CompressionFormat.Enum.ZSTD);
+        switch (compressionType) {
+            case GZIP:
+                builder.compressionFormat(CompressionFormat.GZIP);
+                break;
+            case ZSTD:
+                builder.compressionFormat(CompressionFormat.ZSTD);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown compression type: " + compressionType);
         }
-
         return builder;
     }
 

@@ -80,6 +80,7 @@ AccessLog = element accesslog {
     attribute fileNamePattern { string }? &
     attribute compressOnRotation { xsd:boolean }? &
     attribute symlinkName { string }? &
+    attribute compressionType { string "gzip" | string "zstd" }? &
 
     attribute rotationInterval { string }?
 }

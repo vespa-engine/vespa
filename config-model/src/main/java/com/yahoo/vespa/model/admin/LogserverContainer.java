@@ -6,6 +6,8 @@ import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
+import com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType;
+import com.yahoo.vespa.model.container.component.AccessLogComponent.CompressionType;
 
 /**
  * Container that should be running on same host as the logserver. Sets up a handler for getting logs from logserver.
@@ -15,7 +17,7 @@ public class LogserverContainer extends Container {
 
     public LogserverContainer(AbstractConfigProducer parent, FeatureFlags featureFlags, boolean isHostedVespa) {
         super(parent, featureFlags, "" + 0, 0, isHostedVespa);
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, ((LogserverContainerCluster) parent).getName(), true, false));
+        addComponent(new AccessLogComponent(AccessLogType.jsonAccessLog, CompressionType.GZIP, ((LogserverContainerCluster) parent).getName(), true));
     }
 
     @Override
