@@ -52,6 +52,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean enableAutomaticReindexing = false;
     private boolean reconfigurableZookeeperServer = false;
     private boolean useBucketExecutorForLidSpaceCompact;
+    private boolean enableFeedBlockInDistributor = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -86,6 +87,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
     @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
     @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
+    @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -195,6 +197,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
+    public TestProperties enableFeedBlockInDistributor(boolean enabled) {
+        enableFeedBlockInDistributor = enabled;
+        return this;
+    }
 
     public static class Spec implements ConfigServerSpec {
 
