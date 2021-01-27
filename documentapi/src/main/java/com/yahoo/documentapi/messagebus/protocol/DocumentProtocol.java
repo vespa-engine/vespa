@@ -261,8 +261,10 @@ public class DocumentProtocol implements Protocol {
                              DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
         if (docMan != null)
             this.docMan = docMan;
-        else
-            DocumentTypeManagerConfigurer.configure(this.docMan = new DocumentTypeManager(), configId);
+        else {
+            this.docMan = new DocumentTypeManager();
+            DocumentTypeManagerConfigurer.configure(this.docMan, configId);
+        }
         this.routableRepository = new RoutableRepository(set);
 
         // When adding factories to this list, please KEEP THEM ORDERED alphabetically like they are now.

@@ -166,9 +166,9 @@ public class Distribution {
         configure(config);
     }
 
-    private long lastNBits(long value, int n) {
-        if (n < 0 || n > 64)
-            throw new IllegalArgumentException("n must be in [0, 64], but was " + n);
+    private static long lastNBits(long value, int n) {
+        if (n < 0 || n > 63)
+            throw new IllegalArgumentException("n must be in [0, 63], but was " + n);
 
         return value & ((1L << n) - 1);
     }

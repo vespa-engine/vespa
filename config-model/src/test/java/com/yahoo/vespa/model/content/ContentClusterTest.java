@@ -103,8 +103,11 @@ public class ContentClusterTest extends ContentBaseTest {
         DistributionConfig.Builder distributionBuilder = new DistributionConfig.Builder();
         cc.getConfig(distributionBuilder);
         DistributionConfig distributionConfig = distributionBuilder.build();
+        assertEquals(3, distributionConfig.cluster("storage").ready_copies());
+        assertEquals(15, distributionConfig.cluster("storage").initial_redundancy());
         assertEquals(15, distributionConfig.cluster("storage").redundancy());
         assertEquals(4, distributionConfig.cluster("storage").group().size());
+        assertEquals(1, distributionConfig.cluster().size());
 
         StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
         cc.getConfig(storBuilder);
@@ -143,6 +146,8 @@ public class ContentClusterTest extends ContentBaseTest {
         DistributionConfig.Builder distributionBuilder = new DistributionConfig.Builder();
         cc.getConfig(distributionBuilder);
         DistributionConfig distributionConfig = distributionBuilder.build();
+        assertEquals(3, distributionConfig.cluster("storage").ready_copies());
+        assertEquals(4, distributionConfig.cluster("storage").initial_redundancy());
         assertEquals(5, distributionConfig.cluster("storage").redundancy());
 
         StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
