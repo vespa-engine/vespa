@@ -4,25 +4,24 @@ package com.yahoo.config.model;
 import com.yahoo.cloud.config.ApplicationIdConfig;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.ModelConfig;
-import com.yahoo.cloud.config.SlobroksConfig;
-import com.yahoo.cloud.config.ZookeepersConfig;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.component.Version;
-import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
-import com.yahoo.vespa.config.content.DistributionConfig;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.cloud.config.ModelConfig.Hosts;
 import com.yahoo.cloud.config.ModelConfig.Hosts.Services;
 import com.yahoo.cloud.config.ModelConfig.Hosts.Services.Ports;
+import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
+import com.yahoo.component.Version;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
-import com.yahoo.vespa.config.content.StorDistributionConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
+import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 import com.yahoo.vespa.documentmodel.DocumentModel;
@@ -44,9 +43,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 
 /**

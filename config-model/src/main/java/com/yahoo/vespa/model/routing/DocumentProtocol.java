@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.routing;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.document.select.DocumentSelector;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
-import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.routing.ApplicationSpec;
 import com.yahoo.messagebus.routing.HopSpec;
 import com.yahoo.messagebus.routing.RouteSpec;

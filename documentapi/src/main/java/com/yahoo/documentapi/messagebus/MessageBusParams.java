@@ -4,12 +4,10 @@ package com.yahoo.documentapi.messagebus;
 import com.yahoo.documentapi.DocumentAccessParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.SourceSessionParams;
-import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.vespa.config.content.DistributionConfig;
-
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 

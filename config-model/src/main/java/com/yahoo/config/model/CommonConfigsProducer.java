@@ -2,7 +2,7 @@
 package com.yahoo.config.model;
 
 import com.yahoo.cloud.config.ApplicationIdConfig;
-import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.cloud.config.log.LogdConfig;

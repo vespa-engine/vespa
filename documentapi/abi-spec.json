@@ -1128,7 +1128,7 @@
       "public com.yahoo.documentapi.messagebus.MessageBusParams setRoutingConfigId(java.lang.String)",
       "public java.lang.String getProtocolConfigId()",
       "public com.yahoo.documentapi.messagebus.MessageBusParams setProtocolConfigId(java.lang.String)",
-      "public com.yahoo.documentapi.messagebus.MessageBusParams setDocumentProtocolPoliciesConfig(com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig, com.yahoo.vespa.config.content.DistributionConfig)",
+      "public com.yahoo.documentapi.messagebus.MessageBusParams setDocumentProtocolPoliciesConfig(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig, com.yahoo.vespa.config.content.DistributionConfig)",
       "public com.yahoo.documentapi.messagebus.MessageBusParams setRouteName(java.lang.String)",
       "public com.yahoo.documentapi.messagebus.MessageBusParams setRoute(java.lang.String)",
       "public com.yahoo.documentapi.messagebus.MessageBusParams setRouteNameForGet(java.lang.String)",
@@ -1807,7 +1807,7 @@
       "public static com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriorityByName(java.lang.String)",
       "public void <init>(com.yahoo.document.DocumentTypeManager)",
       "public void <init>(com.yahoo.document.DocumentTypeManager, java.lang.String)",
-      "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet, com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig, com.yahoo.vespa.config.content.DistributionConfig)",
+      "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet, com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig, com.yahoo.vespa.config.content.DistributionConfig)",
       "public void <init>(com.yahoo.document.DocumentTypeManager, java.lang.String, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocol putRoutingPolicyFactory(java.lang.String, com.yahoo.documentapi.messagebus.protocol.RoutingPolicyFactory)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocol putRoutableFactory(int, com.yahoo.documentapi.messagebus.protocol.RoutableFactory, com.yahoo.component.VersionSpecification)",
@@ -1930,7 +1930,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig)",
+      "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig)",
       "public void <init>(java.lang.String)",
       "public synchronized java.lang.String getError()",
       "public void configure(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig)",

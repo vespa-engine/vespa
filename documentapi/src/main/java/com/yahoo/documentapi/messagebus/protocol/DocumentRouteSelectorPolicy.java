@@ -7,7 +7,7 @@ import com.yahoo.document.select.DocumentSelector;
 import com.yahoo.document.select.Result;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.messagebus.Message;
-import com.yahoo.messagebus.documentapi.DocumentProtocolPoliciesConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 
