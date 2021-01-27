@@ -121,6 +121,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             dynamicProvisionerInterval = Duration.ofMinutes(5);
             failedExpirerInterval = Duration.ofMinutes(10);
             failGrace = Duration.ofMinutes(30);
+            inactiveExpiry = Duration.ofSeconds(2);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             metricsInterval = Duration.ofMinutes(1);
@@ -142,12 +143,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
-                inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(30);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
                 retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             } else {
-                inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
                 retiredInterval = Duration.ofMinutes(1);
                 dirtyExpiry = Duration.ofMinutes(30);
                 retiredExpiry = Duration.ofMinutes(20);
