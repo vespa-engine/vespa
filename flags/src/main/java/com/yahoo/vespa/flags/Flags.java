@@ -245,7 +245,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MERGE_CHUNK_SIZE = defineIntFlag(
-            "merge-chunk-size", 0x2000000,
+            "merge-chunk-size", 0x400000,
             List.of("baldersheim"), "2020-12-02", "2021-02-01",
             "Size of baldersheim buffer in service layer",
             "Takes effect at redeployment",
