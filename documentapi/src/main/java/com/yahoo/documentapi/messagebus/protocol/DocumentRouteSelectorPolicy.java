@@ -5,13 +5,14 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.DocumentGet;
 import com.yahoo.document.select.DocumentSelector;
 import com.yahoo.document.select.Result;
-import java.util.logging.Level;
+import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -29,6 +30,24 @@ public class DocumentRouteSelectorPolicy
     private Map<String, DocumentSelector> config;
     private String error = "Not configured.";
     private ConfigSubscriber subscriber;
+
+    /** This policy is constructed with the proper config at its time of creation. */
+    public DocumentRouteSelectorPolicy(DocumentProtocolPoliciesConfig config) {
+        Map<String, DocumentSelector> selectors = new HashMap<>();
+        config.cluster().forEach((name, cluster) -> {
+            try {
+                selectors.put(name, new DocumentSelector(cluster.selector()));
+            }
+            catch (ParseException e) {
+                throw new IllegalArgumentException("Error parsing selector '" +
+                                                   cluster.selector() +
+                                                   "' for route '" + name +"'",
+                                                   e);
+            }
+        });
+        this.config = Map.copyOf(selectors);
+        this.error = null;
+    }
 
     /**
      * This policy is constructed with a configuration identifier that can be subscribed to for the document selector
