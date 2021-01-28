@@ -232,7 +232,7 @@ public class StatisticsSearcher extends Searcher {
 
         incrQueryCount(metricContext);
         logQuery(query);
-        long start = System.currentTimeMillis(); // Start time, in millisecs.
+        long start_ns = System.nanoTime(); // Start time, in nanoseconds.
         qps(metricContext);
         Result result;
         //handle exceptions thrown below in searchers
@@ -243,14 +243,14 @@ public class StatisticsSearcher extends Searcher {
             throw e;
         }
 
-        long end = System.currentTimeMillis(); // Start time, in millisecs.
-        long latency = end - start;
-        if (latency >= 0) {
-            addLatency(latency, metricContext);
+        long end_ns = System.nanoTime(); // End time, in nanoseconds
+        long latency_ns = end_ns - start_ns;
+        if (latency_ns >= 0) {
+            addLatency(latency_ns, metricContext);
         } else {
             getLogger().log(Level.WARNING,
-                            "Apparently negative latency measure, start: " + start
-                            + ", end: " + end + ", for query: " + query.toString());
+                            "Apparently negative latency measure, start: " + start_ns
+                            + ", end: " + end_ns + ", for query: " + query.toString());
         }
         if (result.hits().getError() != null) {
             incrErrorCount(result, metricContext);
@@ -288,7 +288,8 @@ public class StatisticsSearcher extends Searcher {
         }
     }
 
-    private void addLatency(long latency, Metric.Context metricContext) {
+    private void addLatency(long latency_ns, Metric.Context metricContext) {
+        double latency = 0.000001 * latency_ns;
         //myStats.addLatency(latency);
         queryLatency.put(latency);
         metric.set(QUERY_LATENCY_METRIC, latency, metricContext);
