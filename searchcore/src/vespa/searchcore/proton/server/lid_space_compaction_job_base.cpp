@@ -25,37 +25,22 @@ namespace proton {
 bool
 LidSpaceCompactionJobBase::hasTooMuchLidBloat(const LidUsageStats &stats) const
 {
-    return (stats.getLidBloat() >= _cfg.getAllowedLidBloat() &&
-            stats.getLidBloatFactor() >= _cfg.getAllowedLidBloatFactor() &&
-            stats.getLidLimit() > stats.getLowestFreeLid());
+    return ((stats.getLidBloat() >= _cfg.getAllowedLidBloat()) &&
+            (stats.getLidBloatFactor() >= _cfg.getAllowedLidBloatFactor()) &&
+            (stats.getLidLimit() > stats.getLowestFreeLid()));
 }
 
 bool
 LidSpaceCompactionJobBase::shouldRestartScanDocuments(const LidUsageStats &stats) const
 {
-    return (stats.getUsedLids() + _cfg.getAllowedLidBloat()) < stats.getHighestUsedLid() &&
-        stats.getLowestFreeLid() < stats.getHighestUsedLid();
+    return ((stats.getUsedLids() + _cfg.getAllowedLidBloat()) < stats.getHighestUsedLid()) &&
+            (stats.getLowestFreeLid() < stats.getHighestUsedLid());
 }
 
 DocumentMetaData
 LidSpaceCompactionJobBase::getNextDocument(const LidUsageStats &stats, bool retryLastDocument)
 {
     return _scanItr->next(std::max(stats.getLowestFreeLid(), stats.getUsedLids()), retryLastDocument);
-}
-
-bool
-LidSpaceCompactionJobBase::scanDocumentsPost()
-{
-    if (!_scanItr->valid()) {
-        sync();
-        if (shouldRestartScanDocuments(_handler->getLidStatus())) {
-            _scanItr = _handler->getIterator();
-        } else {
-            _scanItr = IDocumentScanIterator::UP();
-            _shouldCompactLidSpace = true;
-        }
-    }
-    return false; // more work to do (scan documents or compact lid space)
 }
 
 void
@@ -143,6 +128,16 @@ LidSpaceCompactionJobBase::run()
             _handler->getName().c_str());
         _is_disabled = false;
     }
+
+    if (_scanItr && !_scanItr->valid()) {
+        if (shouldRestartScanDocuments(_handler->getLidStatus())) {
+            _scanItr = _handler->getIterator();
+        } else {
+            _scanItr = IDocumentScanIterator::UP();
+            _shouldCompactLidSpace = true;
+        }
+    }
+
     if (_scanItr) {
         return scanDocuments(stats);
     } else if (_shouldCompactLidSpace) {

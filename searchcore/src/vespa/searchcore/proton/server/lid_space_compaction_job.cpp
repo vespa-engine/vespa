@@ -39,7 +39,7 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
             }
         }
     }
-    return scanDocumentsPost();
+    return false;
 }
 
 LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,

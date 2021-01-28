@@ -39,7 +39,10 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
             }
         }
     }
-    return scanDocumentsPost();
+    if (!_scanItr->valid()) {
+        sync();
+    }
+    return false;
 }
 
 void

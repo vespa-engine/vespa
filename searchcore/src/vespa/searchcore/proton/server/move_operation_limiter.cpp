@@ -57,6 +57,13 @@ MoveOperationLimiter::isAboveLimit() const
     return (_outstandingOps >= _maxOutstandingOps);
 }
 
+bool
+MoveOperationLimiter::hasPending() const
+{
+    LockGuard guard(_mutex);
+    return (_outstandingOps > 0);
+}
+
 std::shared_ptr<vespalib::IDestructorCallback>
 MoveOperationLimiter::beginOperation()
 {

@@ -31,7 +31,7 @@ private:
     bool scanDocuments(const search::LidUsageStats &stats) override;
     void moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> onDone);
     void onStop() override;
-    void sync() override;
+    void sync();
 public:
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler,

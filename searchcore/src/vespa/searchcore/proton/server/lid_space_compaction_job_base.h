@@ -52,8 +52,6 @@ private:
     bool remove_is_ongoing() const;
 protected:
     search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats, bool retryLastDocument);
-    bool scanDocumentsPost();
-    virtual void sync() { }
 public:
     LidSpaceCompactionJobBase(const DocumentDBLidSpaceCompactionConfig &config,
                               std::shared_ptr<ILidSpaceCompactionHandler> handler,
