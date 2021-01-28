@@ -15,7 +15,6 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
-import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -68,8 +67,6 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * A content cluster.
  *
@@ -77,7 +74,6 @@ import static java.util.stream.Collectors.toList;
  * @author bratseth
  */
 public class ContentCluster extends AbstractConfigProducer implements
-                                                           DistributionConfig.Producer,
                                                            StorDistributionConfig.Producer,
                                                            StorDistributormanagerConfig.Producer,
                                                            FleetcontrollerConfig.Producer,
@@ -750,39 +746,6 @@ public class ContentCluster extends AbstractConfigProducer implements
             docTypeBuilder.bucketspace(bucketSpaceOfDocumentType(docType));
             builder.documenttype(docTypeBuilder);
         }
-    }
-
-    @Override
-    public void getConfig(DistributionConfig.Builder builder) {
-        DistributionConfig.Cluster.Builder clusterBuilder = new DistributionConfig.Cluster.Builder();
-        StorDistributionConfig.Builder storDistributionBuilder = new StorDistributionConfig.Builder();
-        getConfig(storDistributionBuilder);
-        StorDistributionConfig config = storDistributionBuilder.build();
-
-        clusterBuilder.active_per_leaf_group(config.active_per_leaf_group());
-        clusterBuilder.ready_copies(config.ready_copies());
-        clusterBuilder.redundancy(config.redundancy());
-        clusterBuilder.initial_redundancy(config.initial_redundancy());
-
-        for (StorDistributionConfig.Group group : config.group()) {
-            DistributionConfig.Cluster.Group.Builder groupBuilder = new DistributionConfig.Cluster.Group.Builder();
-            groupBuilder.index(group.index())
-                        .name(group.name())
-                        .capacity(group.capacity())
-                        .partitions(group.partitions());
-
-            for (var node : group.nodes()) {
-                DistributionConfig.Cluster.Group.Nodes.Builder nodesBuilder = new DistributionConfig.Cluster.Group.Nodes.Builder();
-                nodesBuilder.index(node.index())
-                            .retired(node.retired());
-
-                groupBuilder.nodes(nodesBuilder);
-            }
-
-            clusterBuilder.group(groupBuilder);
-        }
-
-        builder.cluster(getConfigId(), clusterBuilder);
     }
 
     /**

@@ -4,20 +4,10 @@ package com.yahoo.vespa.model.routing;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
+import com.yahoo.messagebus.routing.*;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
-import com.yahoo.messagebus.routing.ApplicationSpec;
-import com.yahoo.messagebus.routing.HopSpec;
-import com.yahoo.messagebus.routing.RouteSpec;
-import com.yahoo.messagebus.routing.RoutingSpec;
-import com.yahoo.messagebus.routing.RoutingTableSpec;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This is the routing plugin of the Vespa model. This class is responsible for parsing all routing information given
@@ -89,14 +79,6 @@ public class Routing extends ConfigModel {
         errors.clear();
         if (routing.verify(app, errors)) {
             this.derivedRouting=routing;
-        }
-    }
-
-    public void getConfig(DocumentProtocolPoliciesConfig.Builder builder) {
-        for (Protocol protocol : protocols) {
-            if (protocol instanceof DocumentProtocol) {
-                ((DocumentProtocol) protocol).getConfig(builder);
-            }
         }
     }
 

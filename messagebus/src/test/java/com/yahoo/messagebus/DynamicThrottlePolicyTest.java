@@ -101,7 +101,7 @@ public class DynamicThrottlePolicyTest {
             CustomTimer timer = new CustomTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
             int scaleFactor = (int) Math.pow(10, i);
-            long operations = 3_000L * scaleFactor;
+            long operations = 3_000 * scaleFactor;
             int workPerSuccess = 6;
             int numberOfWorkers = 1;
             int maximumTasksPerWorker = 100000;
@@ -124,7 +124,7 @@ public class DynamicThrottlePolicyTest {
             CustomTimer timer = new CustomTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
             int scaleFactor = (int) Math.pow(10, i);
-            long operations = 5_000L * scaleFactor;
+            long operations = 5_000 * scaleFactor;
             // workPerSuccess determines the latency of the simulated server, which again determines the impact of the
             // synthetic attractors of the algorithm, around latencies which give (close to) integer log10(1 / latency).
             // With a value of 5, the impact is that the algorithm is pushed upwards slightly above 10k window size,
@@ -319,6 +319,7 @@ public class DynamicThrottlePolicyTest {
                                              .collect(toUnmodifiableList());
         }
 
+        /** Performs a tick, and returns whether work was done. */
         void tick() {
             for (int i = 0; i < numberOfWorkers; i++)
                 tick(i);
