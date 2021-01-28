@@ -74,6 +74,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private boolean processingCycle = false;
     private boolean wantedStateChanged = false;
     private long cycleCount = 0;
+    private long lastMetricUpdateCycleCount = 0;
     private long nextStateSendTime = 0;
     private Long controllerThreadId = null;
 
@@ -384,12 +385,26 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         ClusterState baselineState = stateBundle.getBaselineClusterState();
         newStates.add(stateBundle);
         metricUpdater.updateClusterStateMetrics(cluster, baselineState);
+        lastMetricUpdateCycleCount = cycleCount;
         systemStateBroadcaster.handleNewClusterStates(stateBundle);
         // Iff master, always store new version in ZooKeeper _before_ publishing to any
         // nodes so that a cluster controller crash after publishing but before a successful
         // ZK store will not risk reusing the same version number.
         if (masterElectionHandler.isMaster()) {
             storeClusterStateMetaDataToZooKeeper(stateBundle);
+        }
+    }
+
+    private boolean maybePublishOldMetrics() {
+        verifyInControllerThread();
+        if (cycleCount > 300 + lastMetricUpdateCycleCount) {
+            ClusterStateBundle stateBundle = stateVersionTracker.getVersionedClusterStateBundle();
+            ClusterState baselineState = stateBundle.getBaselineClusterState();
+            metricUpdater.updateClusterStateMetrics(cluster, baselineState);
+            lastMetricUpdateCycleCount = cycleCount;
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -605,6 +620,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isRunning()) { return; }
             didWork |= processNextQueuedRemoteTask();
             didWork |= completeSatisfiedVersionDependentTasks();
+            didWork |= maybePublishOldMetrics();
 
             processingCycle = false;
             ++cycleCount;
