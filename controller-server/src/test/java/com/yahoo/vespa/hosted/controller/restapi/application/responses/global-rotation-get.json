@@ -1,6 +1,6 @@
 {
   "globalrotationoverride": [
-    "instance1.application1.tenant1.us-west-1.prod",
+    "foo.instance1.application1.tenant1.us-west-1.prod",
     {
       "status": "in",
       "reason": "",

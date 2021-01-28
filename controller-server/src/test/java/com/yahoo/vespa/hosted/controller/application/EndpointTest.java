@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -271,16 +272,16 @@ public class EndpointTest {
 
                 // With non-default cluster
                 "c1.a1.t1.us-north-1.prod",
-                Endpoint.of(app1).target(EndpointId.of("c1")).on(Port.tls(4443)).in(SystemName.main)
+                Endpoint.of(app1).target(EndpointId.of("ignored1"), ClusterSpec.Id.from("c1"), List.of(zone)).on(Port.tls(4443)).in(SystemName.main)
         );
         var tests2 = Map.of(
-                // With non-default instance
+                // With non-default instance and default cluster
                 "i2.a2.t2.us-north-1.prod",
-                Endpoint.of(app2).target(EndpointId.defaultId()).on(Port.tls(4443)).in(SystemName.main),
+                Endpoint.of(app2).target(EndpointId.defaultId(), ClusterSpec.Id.from("default"), List.of(zone)).on(Port.tls(4443)).in(SystemName.main),
 
                 // With non-default instance and cluster
                 "c2.i2.a2.t2.us-north-1.prod",
-                Endpoint.of(app2).target(EndpointId.of("c2")).on(Port.tls(4443)).in(SystemName.main)
+                Endpoint.of(app2).target(EndpointId.of("ignored2"), ClusterSpec.Id.from("c2"), List.of(zone)).on(Port.tls(4443)).in(SystemName.main)
         );
         tests1.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(new DeploymentId(app1, zone))));
         tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(new DeploymentId(app2, zone))));
