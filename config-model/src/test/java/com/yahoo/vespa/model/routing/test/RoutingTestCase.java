@@ -5,12 +5,20 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.messagebus.MessagebusConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +104,10 @@ public class RoutingTestCase {
             model.getConfig(drB, "");
             DocumentrouteselectorpolicyConfig dr = new DocumentrouteselectorpolicyConfig(drB);
             assertConfigFileContains(application, files, "documentrouteselectorpolicy.cfg", dr);
+
+            DocumentProtocolPoliciesConfig.Builder policies = new DocumentProtocolPoliciesConfig.Builder();
+            model.getConfig(policies, "");
+            assertConfigFileContains(application, files, "document-protocol-policies.cfg", policies.build());
         } else {
             StringBuilder msg = new StringBuilder();
             for (String error : errors) {

@@ -5,9 +5,12 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * @author baldersheim
@@ -17,6 +20,13 @@ public class MessageTypePolicy implements DocumentProtocolRoutingPolicy, ConfigS
     private final AtomicReference<Map<Integer, Route>> configRef = new AtomicReference<>();
     private ConfigSubscriber subscriber;
     private volatile Route defaultRoute;
+
+    MessageTypePolicy(DocumentProtocolPoliciesConfig.Cluster config) {
+        configRef.set(config.route().stream()
+                            .collect(toUnmodifiableMap(route -> route.messageType(),
+                                                       route -> Route.parse(route.name()))));
+        defaultRoute = Route.parse(config.defaultRoute());
+    }
 
     MessageTypePolicy(String configId) {
         subscriber = new ConfigSubscriber();

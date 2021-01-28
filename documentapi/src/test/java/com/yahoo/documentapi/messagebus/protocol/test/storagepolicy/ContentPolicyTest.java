@@ -5,6 +5,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 public class ContentPolicyTest extends Simulator {
+
     /**
      * Verify that a resent message with failures doesn't ruin overall performance. (By dumping the cached state too often
      * so other requests are sent to wrong target)
@@ -17,6 +18,7 @@ public class ContentPolicyTest extends Simulator {
                     + "Last correctnode 99, wrongnode 1, downnode 0, worked 92, failed 8",
                       new PersistentFailureTestParameters().addBadNode(new BadNode(3, FailureType.TRANSIENT_ERROR)));
     }
+
     /**
      * Verify that a resent message with failures doesn't ruin overall performance. (By dumping the cached state too often
      * so other requests are sent to wrong target)
@@ -29,6 +31,7 @@ public class ContentPolicyTest extends Simulator {
                     + "Last correctnode 99, wrongnode 1, downnode 0, worked 92, failed 8",
                       new PersistentFailureTestParameters().addBadNode(new BadNode(3, FailureType.FATAL_ERROR)));
     }
+
     /**
      * Verify that a node responding with old cluster state doesn't ruin overall performance (By dumping/switching cached
      * state too often)
@@ -41,6 +44,7 @@ public class ContentPolicyTest extends Simulator {
                     + "Last correctnode 100, wrongnode 0, downnode 0, worked 100, failed 0",
                       new PersistentFailureTestParameters().addBadNode(new BadNode(3, FailureType.OLD_CLUSTER_STATE).setDownInCurrentState()));
     }
+
     /**
      * Verify that a reset cluster state version doesn't keep sending requests to the wrong node.
      * We expect a few failures in first half. We should have detected the issue before second half, so there all should be fine.
@@ -52,6 +56,7 @@ public class ContentPolicyTest extends Simulator {
                     + "Last correctnode .*, wrongnode 0, downnode 0, worked .*, failed 0",
                       new PersistentFailureTestParameters().addBadNode(new BadNode(3, FailureType.RESET_CLUSTER_STATE).setDownInCurrentState()));
     }
+
     /**
      * Verify that a reset cluster state version doesn't keep sending requests to the wrong node.
      * We expect a few failures in first half. We should have detected the issue before second half, so there all should be fine.
@@ -70,6 +75,7 @@ public class ContentPolicyTest extends Simulator {
                     + "Last correctnode .*, wrongnode 100, downnode 100, worked 0, failed 100",
                       new PersistentFailureTestParameters().addBadNode(new BadNode(3, FailureType.RESET_CLUSTER_STATE_NO_GOOD_NODES).setDownInCurrentState()));
     }
+
     /**
      * Verify that a reset cluster state version doesn't keep sending requests to the wrong node.
      * We expect a few failures in first half. We should have detected the issue before second half, so there all should be fine.
@@ -86,6 +92,7 @@ public class ContentPolicyTest extends Simulator {
                     + "Last correctnode .*, wrongnode 91, downnode 0, worked 0, failed 100",
                       new PersistentFailureTestParameters().addBadNode(new BadNode(3, FailureType.RESET_CLUSTER_STATE_NO_GOOD_NODES)));
     }
+
     /**
      * Verify that a reset cluster state version doesn't keep sending requests to the wrong node.
      * Another scenario where we have a node coming up in correct state.
@@ -98,6 +105,7 @@ public class ContentPolicyTest extends Simulator {
                     + "Last correctnode .*, wrongnode 0, downnode 0, worked .*, failed 0",
                       new PersistentFailureTestParameters().newNodeAdded().addBadNode(new BadNode(3, FailureType.RESET_CLUSTER_STATE).setDownInCurrentState()));
     }
+
     /** Test node that is not in slobrok. Until fleetcontroller detects this, we expect 10% of the requests to go to wrong node. */
     @Test
     @Ignore // FIXME test has been implicitly disabled for ages, figure out and fix
