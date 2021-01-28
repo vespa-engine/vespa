@@ -2,7 +2,6 @@
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingContext;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
