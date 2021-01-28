@@ -87,6 +87,14 @@ public class MetricsProxyContainerTest {
     }
 
     @Test
+    public void preload_is_empty() {
+        VespaModel model = getModel(servicesWithContent(), self_hosted);
+        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
+
+        assertEquals("", container.getPreLoad());
+    }
+
+    @Test
     public void hosted_application_propagates_node_dimensions() {
         String services = servicesWithContent();
         VespaModel hostedModel = getModel(services, hosted);

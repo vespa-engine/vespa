@@ -144,4 +144,8 @@ public class MetricsProxyContainer extends Container implements
         addSimpleComponent(componentClass.getName(), null, METRICS_PROXY_BUNDLE_NAME);
     }
 
+    @Override
+    protected String defaultPreload() {
+        return "";
+    }
 }
