@@ -20,6 +20,8 @@ import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.messagebus.MessagebusConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 
 /**
@@ -39,9 +41,12 @@ public class VespaDocumentAccess extends DocumentAccess {
     VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig,
                         LoadTypeConfig loadTypeConfig,
                         SlobroksConfig slobroksConfig,
-                        MessagebusConfig messagebusConfig) {
+                        MessagebusConfig messagebusConfig,
+                        DocumentProtocolPoliciesConfig policiesConfig,
+                        DistributionConfig distributionConfig) {
         super(new DocumentAccessParams().setDocumentmanagerConfig(documentmanagerConfig));
-        this.parameters = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
+        this.parameters = new MessageBusParams(new LoadTypeSet(loadTypeConfig))
+                .setDocumentProtocolPoliciesConfig(policiesConfig, distributionConfig);
         this.parameters.setDocumentmanagerConfig(documentmanagerConfig);
         this.parameters.getRPCNetworkParams().setSlobroksConfig(slobroksConfig);
         this.parameters.getMessageBusParams().setMessageBusConfig(messagebusConfig);

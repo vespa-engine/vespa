@@ -7,6 +7,8 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 
 /**
@@ -19,10 +21,11 @@ public class DocumentAccessProvider extends AbstractComponent implements Provide
     private final VespaDocumentAccess access;
 
     @Inject
-    // TODO jonmv: Have Slobrok and RPC config injected as well.
     public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, LoadTypeConfig loadTypeConfig,
-                                  SlobroksConfig slobroksConfig, MessagebusConfig messagebusConfig) {
-        this.access = new VespaDocumentAccess(documentmanagerConfig, loadTypeConfig, slobroksConfig, messagebusConfig);
+                                  SlobroksConfig slobroksConfig, MessagebusConfig messagebusConfig,
+                                  DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
+        this.access = new VespaDocumentAccess(documentmanagerConfig, loadTypeConfig, slobroksConfig, messagebusConfig,
+                                              policiesConfig, distributionConfig);
     }
 
     @Override
