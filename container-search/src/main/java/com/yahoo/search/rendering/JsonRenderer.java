@@ -45,8 +45,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.tensor.Tensor;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -671,14 +669,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof FieldValue) {
                 // the null below is the field which has already been written
                 ((FieldValue) field).serialize(null, new JsonWriter(generator));
-            } else if (field instanceof JSONArray || field instanceof JSONObject) {
-                // org.json returns null if the object would not result in syntactically correct JSON
-                String s = field.toString();
-                if (s == null) {
-                    generator.writeNull();
-                } else {
-                    generator.writeRawValue(s);
-                }
             } else {
                 generator.writeString(field.toString());
             }

@@ -8,13 +8,11 @@ import ai.vespa.metricsproxy.metric.model.json.GenericApplicationModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
-import java.util.regex.Pattern;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -24,6 +22,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
@@ -48,6 +47,8 @@ import static org.junit.Assert.fail;
  */
 @SuppressWarnings("UnstableApiUsage")
 public class ApplicationMetricsHandlerTest {
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String HOST = "localhost";
     private static final String URI_BASE = "http://" + HOST;
@@ -102,16 +103,16 @@ public class ApplicationMetricsHandlerTest {
     @Test
     public void v1_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(METRICS_V1_URI).readAll();
-        JSONObject root = new JSONObject(response);
+        JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("resources"));
 
-        JSONArray resources = root.getJSONArray("resources");
-        assertEquals(2, resources.length());
+        ArrayNode resources = (ArrayNode) root.get("resources");
+        assertEquals(2, resources.size());
 
-        JSONObject valuesUrl = resources.getJSONObject(0);
-        assertEquals(METRICS_VALUES_URI, valuesUrl.getString("url"));
-        JSONObject prometheusUrl = resources.getJSONObject(1);
-        assertEquals(PROMETHEUS_VALUES_URI, prometheusUrl.getString("url"));
+        JsonNode valuesUrl = resources.get(0);
+        assertEquals(METRICS_VALUES_URI, valuesUrl.get("url").textValue());
+        JsonNode prometheusUrl = resources.get(1);
+        assertEquals(PROMETHEUS_VALUES_URI, prometheusUrl.get("url").textValue());
     }
 
     @Ignore
@@ -199,7 +200,7 @@ public class ApplicationMetricsHandlerTest {
     @Test
     public void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(METRICS_V1_URI + "/invalid").readAll();
-        JSONObject root = new JSONObject(response);
+        JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("error"));
     }
 

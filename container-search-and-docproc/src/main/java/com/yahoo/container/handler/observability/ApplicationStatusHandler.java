@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.observability;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
@@ -29,15 +34,11 @@ import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.processing.handler.ProcessingHandler;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.SearchChainRegistry;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -51,11 +52,13 @@ import java.util.Map;
  */
 public class ApplicationStatusHandler extends AbstractRequestHandler {
 
-    private final JSONObject applicationJson;
-    private final JSONArray clientsJson;
-    private final JSONArray serversJson;
-    private final JSONArray requestFiltersJson;
-    private final JSONArray responseFiltersJson;
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
+
+    private final JsonNode applicationJson;
+    private final JsonNode clientsJson;
+    private final JsonNode serversJson;
+    private final JsonNode requestFiltersJson;
+    private final JsonNode responseFiltersJson;
     private final JdiscBindingsConfig bindingsConfig;
 
     @Inject
@@ -78,7 +81,7 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
 
     @Override
     public ContentChannel handleRequest(com.yahoo.jdisc.Request request, ResponseHandler handler) {
-        JSONObject json = new StatusResponse(applicationJson, clientsJson, serversJson,
+        JsonNode json = new StatusResponse(applicationJson, clientsJson, serversJson,
                                              requestFiltersJson, responseFiltersJson, bindingsConfig)
                 .render();
 
@@ -91,62 +94,66 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
             }
         }.connect(handler));
 
-        writer.write(json.toString());
+        try {
+            writer.write(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(json));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Invalid JSON: " + e.getMessage(), e);
+        }
         writer.close();
 
         return new IgnoredContent();
     }
 
-    static JSONObject renderApplicationConfigs(ApplicationMetadataConfig metaConfig,
+    static JsonNode renderApplicationConfigs(ApplicationMetadataConfig metaConfig,
                                                ApplicationUserdataConfig userConfig) {
-        JSONObject vespa = new JSONObject();
-        putJson(vespa, "version", Vtag.currentVersion);
+        ObjectNode vespa = jsonMapper.createObjectNode();
+        vespa.put("version", Vtag.currentVersion.toString());
 
-        JSONObject meta = new JSONObject();
-        putJson(meta, "name", metaConfig.name());
-        putJson(meta, "user", metaConfig.user());
-        putJson(meta, "path", metaConfig.path());
-        putJson(meta, "generation", metaConfig.generation());
-        putJson(meta, "timestamp", metaConfig.timestamp());
-        putJson(meta, "date", new Date(metaConfig.timestamp()).toString());
-        putJson(meta, "checksum", metaConfig.checksum());
+        ObjectNode meta = jsonMapper.createObjectNode();
+        meta.put("name", metaConfig.name());
+        meta.put("user", metaConfig.user());
+        meta.put("path", metaConfig.path());
+        meta.put("generation", metaConfig.generation());
+        meta.put("timestamp", metaConfig.timestamp());
+        meta.put("date", new Date(metaConfig.timestamp()).toString());
+        meta.put("checksum", metaConfig.checksum());
 
-        JSONObject user = new JSONObject();
-        putJson(user, "version", userConfig.version());
+        ObjectNode user = jsonMapper.createObjectNode();
+        user.put("version", userConfig.version());
 
-        JSONObject application = new JSONObject();
-        putJson(application, "vespa", vespa);
-        putJson(application, "meta", meta);
-        putJson(application, "user", user);
+        ObjectNode application = jsonMapper.createObjectNode();
+        application.set("vespa", vespa);
+        application.set("meta", meta);
+        application.set("user", user);
         return application;
     }
 
-    static JSONArray renderObjectComponents(Map<ComponentId, ?> componentsById) {
-        JSONArray ret = new JSONArray();
+    static JsonNode renderObjectComponents(Map<ComponentId, ?> componentsById) {
+        ArrayNode ret = jsonMapper.createArrayNode();
 
         for (Map.Entry<ComponentId, ?> componentEntry : componentsById.entrySet()) {
-            JSONObject jc = renderComponent(componentEntry.getValue(), componentEntry.getKey());
-            ret.put(jc);
+            JsonNode jc = renderComponent(componentEntry.getValue(), componentEntry.getKey());
+            ret.add(jc);
         }
         return ret;
     }
 
-    static JSONArray renderRequestHandlers(JdiscBindingsConfig bindingsConfig,
+    static JsonNode renderRequestHandlers(JdiscBindingsConfig bindingsConfig,
                                            Map<ComponentId, ? extends RequestHandler> handlersById) {
-        JSONArray ret = new JSONArray();
+        ArrayNode ret = jsonMapper.createArrayNode();
 
         for (Map.Entry<ComponentId, ? extends RequestHandler> handlerEntry : handlersById.entrySet()) {
             String id = handlerEntry.getKey().stringValue();
             RequestHandler handler = handlerEntry.getValue();
 
-            JSONObject handlerJson = renderComponent(handler, handlerEntry.getKey());
+            ObjectNode handlerJson = renderComponent(handler, handlerEntry.getKey());
             addBindings(bindingsConfig, id, handlerJson);
-            ret.put(handlerJson);
+            ret.add(handlerJson);
         }
         return ret;
     }
 
-    private static void addBindings(JdiscBindingsConfig bindingsConfig, String id, JSONObject handlerJson) {
+    private static void addBindings(JdiscBindingsConfig bindingsConfig, String id, ObjectNode handlerJson) {
         List<String> serverBindings = new ArrayList<>();
         List<String> clientBindings = new ArrayList<>();
 
@@ -155,40 +162,40 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
             serverBindings = handlerConfig.serverBindings();
             clientBindings = handlerConfig.clientBindings();
         }
-        putJson(handlerJson, "serverBindings", renderBindings(serverBindings));
-        putJson(handlerJson, "clientBindings", renderBindings(clientBindings));
+        handlerJson.set("serverBindings", renderBindings(serverBindings));
+        handlerJson.set("clientBindings", renderBindings(clientBindings));
     }
 
-    private static JSONArray renderBindings(List<String> bindings) {
-        JSONArray ret = new JSONArray();
+    private static JsonNode renderBindings(List<String> bindings) {
+        ArrayNode ret = jsonMapper.createArrayNode();
 
         for (String binding : bindings)
-            ret.put(binding);
+            ret.add(binding);
 
         return ret;
     }
 
-    private static JSONArray renderAbstractComponents(List<? extends AbstractComponent> components) {
-        JSONArray ret = new JSONArray();
+    private static JsonNode renderAbstractComponents(List<? extends AbstractComponent> components) {
+        ArrayNode ret = jsonMapper.createArrayNode();
 
         for (AbstractComponent c : components) {
-            JSONObject jc = renderComponent(c, c.getId());
-            ret.put(jc);
+            JsonNode jc = renderComponent(c, c.getId());
+            ret.add(jc);
         }
         return ret;
     }
 
-    private static JSONObject renderComponent(Object component, ComponentId id) {
-        JSONObject jc = new JSONObject();
-        putJson(jc, "id", id.stringValue());
+    private static ObjectNode renderComponent(Object component, ComponentId id) {
+        ObjectNode jc = jsonMapper.createObjectNode();
+        jc.put("id", id.stringValue());
         addBundleInfo(jc, component);
         return jc;
     }
 
-    private static void addBundleInfo(JSONObject jsonObject, Object component) {
+    private static void addBundleInfo(ObjectNode jsonObject, Object component) {
         BundleInfo bundleInfo = bundleInfo(component);
-        putJson(jsonObject, "class", bundleInfo.className);
-        putJson(jsonObject, "bundle", bundleInfo.bundleName);
+        jsonObject.put("class", bundleInfo.className);
+        jsonObject.put("bundle", bundleInfo.bundleName);
 
     }
 
@@ -205,15 +212,6 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         }
     }
 
-    private static void putJson(JSONObject json, String key, Object value) {
-        try {
-            json.put(key, value);
-        } catch (JSONException e) {
-            // The original JSONException lacks key-value info.
-            throw new RuntimeException("Trying to add invalid JSON object with key '" + key + "' and value '" + value + "' - " + e.getMessage(), e);
-        }
-    }
-
     static final class BundleInfo {
         public final String className;
         public final String bundleName;
@@ -224,18 +222,18 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
     }
 
     static final class StatusResponse {
-        private final JSONObject applicationJson;
-        private final JSONArray clientsJson;
-        private final JSONArray serversJson;
-        private final JSONArray requestFiltersJson;
-        private final JSONArray responseFiltersJson;
+        private final JsonNode applicationJson;
+        private final JsonNode clientsJson;
+        private final JsonNode serversJson;
+        private final JsonNode requestFiltersJson;
+        private final JsonNode responseFiltersJson;
         private final JdiscBindingsConfig bindingsConfig;
 
-        StatusResponse(JSONObject applicationJson,
-                       JSONArray clientsJson,
-                       JSONArray serversJson,
-                       JSONArray requestFiltersJson,
-                       JSONArray responseFiltersJson,
+        StatusResponse(JsonNode applicationJson,
+                       JsonNode clientsJson,
+                       JsonNode serversJson,
+                       JsonNode requestFiltersJson,
+                       JsonNode responseFiltersJson,
                        JdiscBindingsConfig bindingsConfig) {
             this.applicationJson = applicationJson;
             this.clientsJson = clientsJson;
@@ -245,52 +243,52 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
             this.bindingsConfig = bindingsConfig;
         }
 
-        public JSONObject render() {
-            JSONObject root = new JSONObject();
+        public JsonNode render() {
+            ObjectNode root = jsonMapper.createObjectNode();
 
-            putJson(root, "application", applicationJson);
-            putJson(root, "abstractComponents",
+            root.set("application", applicationJson);
+            root.set("abstractComponents",
                     renderAbstractComponents(Container.get().getComponentRegistry().allComponents()));
 
-            putJson(root, "handlers",
+            root.set("handlers",
                     renderRequestHandlers(bindingsConfig, Container.get().getRequestHandlerRegistry().allComponentsById()));
-            putJson(root, "clients", clientsJson);
-            putJson(root, "servers", serversJson);
-            putJson(root, "httpRequestFilters", requestFiltersJson);
-            putJson(root, "httpResponseFilters", responseFiltersJson);
+            root.set("clients", clientsJson);
+            root.set("servers", serversJson);
+            root.set("httpRequestFilters", requestFiltersJson);
+            root.set("httpResponseFilters", responseFiltersJson);
 
-            putJson(root, "searchChains", renderSearchChains(Container.get()));
-            putJson(root, "docprocChains", renderDocprocChains(Container.get()));
-            putJson(root, "processingChains", renderProcessingChains(Container.get()));
+            root.set("searchChains", renderSearchChains(Container.get()));
+            root.set("docprocChains", renderDocprocChains(Container.get()));
+            root.set("processingChains", renderProcessingChains(Container.get()));
 
             return root;
         }
 
-        private static JSONObject renderSearchChains(Container container) {
+        private static JsonNode renderSearchChains(Container container) {
             for (RequestHandler h : container.getRequestHandlerRegistry().allComponents()) {
                 if (h instanceof SearchHandler) {
                     SearchChainRegistry scReg = ((SearchHandler) h).getSearchChainRegistry();
                     return renderChains(scReg);
                 }
             }
-            return new JSONObject();
+            return jsonMapper.createObjectNode();
         }
 
-        private static JSONObject renderDocprocChains(Container container) {
-            JSONObject ret = new JSONObject();
+        private static JsonNode renderDocprocChains(Container container) {
+            ObjectNode ret = jsonMapper.createObjectNode();
             for (RequestHandler h : container.getRequestHandlerRegistry().allComponents()) {
                 if (h instanceof DocumentProcessingHandler) {
                     ComponentRegistry<DocprocService> registry = ((DocumentProcessingHandler) h).getDocprocServiceRegistry();
                     for (DocprocService service : registry.allComponents()) {
-                        putJson(ret, service.getId().stringValue(), renderCalls(service.getCallStack().iterator()));
+                        ret.set(service.getId().stringValue(), renderCalls(service.getCallStack().iterator()));
                     }
                 }
             }
             return ret;
         }
 
-        private static JSONObject renderProcessingChains(Container container) {
-            JSONObject ret = new JSONObject();
+        private static JsonNode renderProcessingChains(Container container) {
+            JsonNode ret = jsonMapper.createObjectNode();
             for (RequestHandler h : container.getRequestHandlerRegistry().allComponents()) {
                 if (h instanceof ProcessingHandler) {
                     ChainRegistry<Processor> registry = ((ProcessingHandler) h).getChainRegistry();
@@ -301,20 +299,20 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         }
 
         // Note the generic param here! The key to make this work is '? extends Chain', but why?
-        static JSONObject renderChains(ComponentRegistry<? extends Chain<?>> chains) {
-            JSONObject ret = new JSONObject();
+        static JsonNode renderChains(ComponentRegistry<? extends Chain<?>> chains) {
+            ObjectNode ret = jsonMapper.createObjectNode();
             for (Chain<?> chain : chains.allComponents()) {
-                putJson(ret, chain.getId().stringValue(), renderAbstractComponents(chain.components()));
+                ret.set(chain.getId().stringValue(), renderAbstractComponents(chain.components()));
             }
             return ret;
         }
 
-        private static JSONArray renderCalls(Iterator<Call> components) {
-            JSONArray ret = new JSONArray();
+        private static JsonNode renderCalls(Iterator<Call> components) {
+            ArrayNode ret = jsonMapper.createArrayNode();
             while (components.hasNext()) {
                 Call c = components.next();
-                JSONObject jc = renderComponent(c.getDocumentProcessor(), c.getDocumentProcessor().getId());
-                ret.put(jc);
+                JsonNode jc = renderComponent(c.getDocumentProcessor(), c.getDocumentProcessor().getId());
+                ret.add(jc);
             }
             return ret;
         }

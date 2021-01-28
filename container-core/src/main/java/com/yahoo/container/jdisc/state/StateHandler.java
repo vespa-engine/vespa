@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Vtag;
@@ -16,21 +21,16 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.metrics.MetricsPresentationConfig;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.io.PrintStream;
-import java.io.ByteArrayOutputStream;
 
 /**
  * A handler which returns state (health) information from this container instance: Status, metrics and vespa version.
@@ -38,6 +38,8 @@ import java.io.ByteArrayOutputStream;
  * @author Simon Thoresen Hult
  */
 public class StateHandler extends AbstractRequestHandler {
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     public static final String STATE_API_ROOT = "/state/v1";
     private static final String METRICS_PATH = "metrics";
@@ -124,17 +126,16 @@ public class StateHandler extends AbstractRequestHandler {
             }
             base.append(STATE_API_ROOT);
             String uriBase = base.toString();
-            JSONArray linkList = new JSONArray();
+            ArrayNode linkList = jsonMapper.createArrayNode();
             for (String api : new String[] {METRICS_PATH, CONFIG_GENERATION_PATH, HEALTH_PATH, VERSION_PATH}) {
-                JSONObject resource = new JSONObject();
+                ObjectNode resource = jsonMapper.createObjectNode();
                 resource.put("url", uriBase + "/" + api);
-                linkList.put(resource);
+                linkList.add(resource);
             }
-            return new JSONObjectWithLegibleException()
-                    .put("resources", linkList)
-                    .toString(4).getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
-            throw new RuntimeException("Bad JSON construction.", e);
+            JsonNode resources = jsonMapper.createObjectNode().set("resources", linkList);
+            return toPrettyString(resources);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Bad JSON construction", e);
         }
     }
 
@@ -154,31 +155,31 @@ public class StateHandler extends AbstractRequestHandler {
 
     private static byte[] buildConfigOutput(ApplicationMetadataConfig config) {
         try {
-            return new JSONObjectWithLegibleException()
-                    .put(CONFIG_GENERATION_PATH, new JSONObjectWithLegibleException()
-                            .put("generation", config.generation())
-                            .put("container", new JSONObjectWithLegibleException()
-                                    .put("generation", config.generation())))
-                    .toString(4).getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
+            return toPrettyString(
+                    jsonMapper.createObjectNode()
+                            .set(CONFIG_GENERATION_PATH, jsonMapper.createObjectNode()
+                                    .put("generation", config.generation())
+                                    .set("container", jsonMapper.createObjectNode()
+                                            .put("generation", config.generation()))));
+        } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
         }
     }
 
     private static byte[] buildVersionOutput() {
         try {
-            return new JSONObjectWithLegibleException()
-                    .put("version", Vtag.currentVersion)
-                    .toString(4).getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
+            return toPrettyString(
+                    jsonMapper.createObjectNode()
+                            .put("version", Vtag.currentVersion.toString()));
+        } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
         }
     }
 
     private byte[] buildMetricOutput(String consumer) {
         try {
-            return buildJsonForConsumer(consumer).toString(4).getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
+            return toPrettyString(buildJsonForConsumer(consumer));
+        } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
         }
     }
@@ -191,11 +192,11 @@ public class StateHandler extends AbstractRequestHandler {
         return baos.toByteArray();
     }
 
-    private JSONObjectWithLegibleException buildJsonForConsumer(String consumer) throws JSONException {
-        JSONObjectWithLegibleException ret = new JSONObjectWithLegibleException();
+    private ObjectNode buildJsonForConsumer(String consumer) {
+        ObjectNode ret = jsonMapper.createObjectNode();
         ret.put("time", timer.currentTimeMillis());
-        ret.put("status", new JSONObjectWithLegibleException().put("code", getStatus().name()));
-        ret.put(METRICS_PATH, buildJsonForSnapshot(consumer, getSnapshot()));
+        ret.set("status", jsonMapper.createObjectNode().put("code", getStatus().name()));
+        ret.set(METRICS_PATH, buildJsonForSnapshot(consumer, getSnapshot()));
         return ret;
     }
 
@@ -212,12 +213,12 @@ public class StateHandler extends AbstractRequestHandler {
         return monitor.status();
     }
 
-    private JSONObjectWithLegibleException buildJsonForSnapshot(String consumer, MetricSnapshot metricSnapshot) throws JSONException {
+    private ObjectNode buildJsonForSnapshot(String consumer, MetricSnapshot metricSnapshot) {
         if (metricSnapshot == null) {
-            return new JSONObjectWithLegibleException();
+            return jsonMapper.createObjectNode();
         }
-        JSONObjectWithLegibleException jsonMetric = new JSONObjectWithLegibleException();
-        jsonMetric.put("snapshot", new JSONObjectWithLegibleException()
+        ObjectNode jsonMetric = jsonMapper.createObjectNode();
+        jsonMetric.set("snapshot", jsonMapper.createObjectNode()
                 .put("from", metricSnapshot.getFromTime(TimeUnit.MILLISECONDS) / 1000.0)
                 .put("to", metricSnapshot.getToTime(TimeUnit.MILLISECONDS) / 1000.0));
 
@@ -225,16 +226,16 @@ public class StateHandler extends AbstractRequestHandler {
         long periodInMillis = metricSnapshot.getToTime(TimeUnit.MILLISECONDS) -
                               metricSnapshot.getFromTime(TimeUnit.MILLISECONDS);
         for (Tuple tuple : collapseMetrics(metricSnapshot, consumer)) {
-            JSONObjectWithLegibleException jsonTuple = new JSONObjectWithLegibleException();
+            ObjectNode jsonTuple = jsonMapper.createObjectNode();
             jsonTuple.put("name", tuple.key);
             if (tuple.val instanceof CountMetric) {
                 CountMetric count = (CountMetric)tuple.val;
-                jsonTuple.put("values", new JSONObjectWithLegibleException()
+                jsonTuple.set("values", jsonMapper.createObjectNode()
                         .put("count", count.getCount())
                         .put("rate", (count.getCount() * 1000.0) / periodInMillis));
             } else if (tuple.val instanceof GaugeMetric) {
                 GaugeMetric gauge = (GaugeMetric) tuple.val;
-                JSONObjectWithLegibleException valueFields = new JSONObjectWithLegibleException();
+                ObjectNode valueFields = jsonMapper.createObjectNode();
                 valueFields.put("average", gauge.getAverage())
                         .put("sum", gauge.getSum())
                         .put("count", gauge.getCount())
@@ -247,22 +248,27 @@ public class StateHandler extends AbstractRequestHandler {
                         valueFields.put(prefixAndValue.first + "percentile", prefixAndValue.second.doubleValue());
                     }
                 }
-                jsonTuple.put("values", valueFields);
+                jsonTuple.set("values", valueFields);
             } else {
                 throw new UnsupportedOperationException(tuple.val.getClass().getName());
             }
             if (tuple.dim != null) {
                 Iterator<Map.Entry<String, String>> it = tuple.dim.iterator();
                 if (it.hasNext() && includeDimensions) {
-                    JSONObjectWithLegibleException jsonDim = new JSONObjectWithLegibleException();
+                    ObjectNode jsonDim = jsonMapper.createObjectNode();
                     while (it.hasNext()) {
                         Map.Entry<String, String> entry = it.next();
                         jsonDim.put(entry.getKey(), entry.getValue());
                     }
-                    jsonTuple.put("dimensions", jsonDim);
+                    jsonTuple.set("dimensions", jsonDim);
                 }
             }
-            jsonMetric.append("values", jsonTuple);
+            ArrayNode values = (ArrayNode) jsonMetric.get("values");
+            if (values == null) {
+                values = jsonMapper.createArrayNode();
+                jsonMetric.set("values", values);
+            }
+            values.add(jsonTuple);
         }
         return jsonMetric;
     }
@@ -314,6 +320,12 @@ public class StateHandler extends AbstractRequestHandler {
             }
         }
         return metrics;
+    }
+
+    private static byte[] toPrettyString(JsonNode resources) throws JsonProcessingException {
+        return jsonMapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(resources)
+                .getBytes();
     }
 
     static class Tuple {

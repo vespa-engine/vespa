@@ -98,37 +98,38 @@ public class StateHandlerTest extends StateHandlerTestBase {
         snapshotProvider.setSnapshot(snapshot);
         advanceToNextSnapshot();
         assertEquals("{\n" +
-                     "    \"metrics\": {\n" +
-                     "        \"snapshot\": {\n" +
-                     "            \"from\": 0,\n" +
-                     "            \"to\": 300\n" +
-                     "        },\n" +
-                     "        \"values\": [\n" +
-                     "            {\n" +
-                     "                \"name\": \"foo\",\n" +
-                     "                \"values\": {\n" +
-                     "                    \"count\": 1,\n" +
-                     "                    \"rate\": 0.0033333333333333335\n" +
-                     "                }\n" +
-                     "            },\n" +
-                     "            {\n" +
-                     "                \"dimensions\": {\"component\": \"test\"},\n" +
-                     "                \"name\": \"bar\",\n" +
-                     "                \"values\": {\n" +
-                     "                    \"average\": 3.5,\n" +
-                     "                    \"count\": 4,\n" +
-                     "                    \"last\": 5,\n" +
-                     "                    \"max\": 5,\n" +
-                     "                    \"min\": 2,\n" +
-                     "                    \"rate\": 0.013333333333333334,\n" +
-                     "                    \"sum\": 14\n" +
-                     "                }\n" +
-                     "            }\n" +
-                     "        ]\n" +
-                     "    },\n" +
-                     "    \"status\": {\"code\": \"up\"},\n" +
-                     "    \"time\": 300000\n" +
-                     "}",
+                        "  \"time\" : 300000,\n" +
+                        "  \"status\" : {\n" +
+                        "    \"code\" : \"up\"\n" +
+                        "  },\n" +
+                        "  \"metrics\" : {\n" +
+                        "    \"snapshot\" : {\n" +
+                        "      \"from\" : 0.0,\n" +
+                        "      \"to\" : 300.0\n" +
+                        "    },\n" +
+                        "    \"values\" : [ {\n" +
+                        "      \"name\" : \"foo\",\n" +
+                        "      \"values\" : {\n" +
+                        "        \"count\" : 1,\n" +
+                        "        \"rate\" : 0.0033333333333333335\n" +
+                        "      }\n" +
+                        "    }, {\n" +
+                        "      \"name\" : \"bar\",\n" +
+                        "      \"values\" : {\n" +
+                        "        \"average\" : 3.5,\n" +
+                        "        \"sum\" : 14.0,\n" +
+                        "        \"count\" : 4,\n" +
+                        "        \"last\" : 5.0,\n" +
+                        "        \"max\" : 5.0,\n" +
+                        "        \"min\" : 2.0,\n" +
+                        "        \"rate\" : 0.013333333333333334\n" +
+                        "      },\n" +
+                        "      \"dimensions\" : {\n" +
+                        "        \"component\" : \"test\"\n" +
+                        "      }\n" +
+                        "    } ]\n" +
+                        "  }\n" +
+                        "}",
                      requestAsString(V1_URI + "all"));
     }
 
