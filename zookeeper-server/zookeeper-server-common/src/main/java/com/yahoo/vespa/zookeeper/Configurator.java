@@ -135,7 +135,9 @@ public class Configurator {
             }
         }
         if (!found) {
-            throw new RuntimeException("No id in zookeeper server list (" + servers + ") that corresponds to my id(" + myid + ")");
+            throw new RuntimeException("No id in zookeeper server list (" +
+                                       servers.stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.joining(",")) +
+                                       ") that corresponds to my id(" + myid + ")");
         }
     }
 
