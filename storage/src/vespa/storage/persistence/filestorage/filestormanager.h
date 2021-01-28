@@ -77,6 +77,7 @@ class FileStorManager : public StorageLinkQueued,
     std::mutex _lock;
     std::unique_ptr<vespalib::IDestructorCallback> _bucketExecutorRegistration;
     ServiceLayerHostInfoReporter                   _host_info_reporter;
+    std::unique_ptr<vespalib::IDestructorCallback> _resource_usage_listener_registration;
 
 public:
     FileStorManager(const config::ConfigUri &, spi::PersistenceProvider&,

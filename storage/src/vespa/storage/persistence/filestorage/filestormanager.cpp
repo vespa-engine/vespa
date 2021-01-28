@@ -78,7 +78,8 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _metrics(std::make_unique<FileStorMetrics>()),
       _closed(false),
       _lock(),
-      _host_info_reporter(_component.getStateUpdater())
+      _host_info_reporter(_component.getStateUpdater()),
+      _resource_usage_listener_registration(provider.register_resource_usage_listener(_host_info_reporter))
 {
     _configFetcher.subscribe(configUri.getConfigId(), this);
     _configFetcher.start();
