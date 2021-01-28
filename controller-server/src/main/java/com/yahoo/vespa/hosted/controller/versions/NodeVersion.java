@@ -56,7 +56,7 @@ public class NodeVersion {
 
     /** Returns the duration of the change in this, measured relative to instant */
     public Duration changeDuration(Instant instant) {
-        if (!changing()) return Duration.ZERO;
+        if (!upgrading()) return Duration.ZERO;
         if (suspendedAt.isEmpty()) return Duration.ZERO; // Node hasn't suspended to apply the change yet
         return Duration.between(suspendedAt.get(), instant).abs();
     }
@@ -88,9 +88,9 @@ public class NodeVersion {
         return Objects.hash(hostname, zone, currentVersion, wantedVersion, suspendedAt);
     }
 
-    /** Returns whether this is changing (upgrading or downgrading) */
-    private boolean changing() {
-        return !currentVersion.equals(wantedVersion);
+    /** Returns whether this is upgrading */
+    private boolean upgrading() {
+        return currentVersion.isBefore(wantedVersion);
     }
 
 }
