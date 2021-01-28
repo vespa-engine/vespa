@@ -215,6 +215,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private FileSystem fileSystem = FileSystems.getDefault();
         private FlagSource flagSource;
         private double cpuSpeedUp = 1;
+        private Path containerStorage;
 
         public Builder(NodeSpec node) {
             this.nodeSpecBuilder = new NodeSpec.Builder(node);
@@ -280,6 +281,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
+        public Builder containerStorage(Path path) {
+            this.containerStorage = path;
+            return this;
+        }
+
         public NodeAgentContextImpl build() {
             return new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),
@@ -309,7 +315,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     }),
                     fileSystem,
                     Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
-                    fileSystem.getPath("/home/docker/container-storage"),
+                    Optional.ofNullable(containerStorage).orElseGet(() -> fileSystem.getPath("/home/docker/container-storage")),
                     fileSystem.getPath("/opt/vespa"),
                     Optional.ofNullable(vespaUser).orElse("vespa"),
                     Optional.ofNullable(vespaUserOnHost).orElse("container_vespa"),
