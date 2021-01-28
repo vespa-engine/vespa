@@ -38,6 +38,7 @@ public:
     ~MoveOperationLimiter();
     void clearJob();
     bool isAboveLimit() const;
+    bool hasPending() const;
     std::shared_ptr<vespalib::IDestructorCallback> beginOperation() override;
 };
 
