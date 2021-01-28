@@ -754,9 +754,9 @@ TEST_F(DocumentSelectParserTest, operators_5)
     PARSE("\"foo\".hash() == 123", *_doc[0], False);
     PARSEI("(234).hash() == 123", *_doc[0], False);
     PARSE("now() > 1311862500", *_doc[8], True);
-    PARSE("now() < 1611862500", *_doc[8], True);
+    PARSE("now() < 1911862500", *_doc[8], True);
     PARSE("now() < 1311862500", *_doc[8], False);
-    PARSE("now() > 1611862500", *_doc[8], False);
+    PARSE("now() > 1911862500", *_doc[8], False);
 
     // Arithmetics
     PARSEI("id.specific.hash() % 10 = 8", *_doc[0], True);
