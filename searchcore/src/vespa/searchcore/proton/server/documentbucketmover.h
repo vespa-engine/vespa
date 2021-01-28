@@ -4,7 +4,6 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/query/base.h>
 #include <persistence/spi/types.h>
 
 namespace proton {
@@ -32,7 +31,7 @@ private:
     document::GlobalId              _lastGid;
     bool                            _lastGidValid;
 
-    bool moveDocument(search::DocumentIdT lid,
+    bool moveDocument(uint32_t lid,
                       const document::GlobalId &gid,
                       storage::spi::Timestamp timestamp);
 

@@ -35,7 +35,7 @@ private:
 public:
     using SP = std::shared_ptr<MoveOperationLimiter>;
     MoveOperationLimiter(IBlockableMaintenanceJob *job, uint32_t maxOutstandingOps);
-    ~MoveOperationLimiter();
+    ~MoveOperationLimiter() override;
     void clearJob();
     bool isAboveLimit() const;
     bool hasPending() const;
