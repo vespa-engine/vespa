@@ -22,10 +22,12 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
+
 import org.junit.Test;
 
 import java.util.Collection;
 
+import static com.yahoo.vespa.model.container.ContainerCluster.G1GC;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_FILE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.zoneString;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.CLUSTER_CONFIG_ID;
@@ -81,7 +83,7 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());
         assertFalse(qrStartConfig.jvm().verbosegc());
-        assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
+        assertEquals(G1GC, qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
         assertEquals(32, qrStartConfig.jvm().compressedClassSpaceSize());
