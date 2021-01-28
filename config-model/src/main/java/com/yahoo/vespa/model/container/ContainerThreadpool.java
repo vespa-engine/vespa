@@ -22,8 +22,6 @@ public class ContainerThreadpool extends SimpleComponent implements ContainerThr
     private final String name;
     private final UserOptions userOptions;
 
-    public ContainerThreadpool(String name) { this(name, null); }
-
     public ContainerThreadpool(String name, UserOptions userOptions) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(
