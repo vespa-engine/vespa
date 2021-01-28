@@ -279,6 +279,6 @@ TEST_P(MaxOutstandingJobTest, job_is_blocked_if_it_has_too_many_outstanding_move
 
 VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(bool, JobTest, ::testing::Values(false, true));
 VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(bool, JobDisabledByRemoveOpsTest, ::testing::Values(false, true));
-VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(bool, MaxOutstandingJobTest, ::testing::Values(true));
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(bool, MaxOutstandingJobTest, ::testing::Values(false, true));
 
 GTEST_MAIN_RUN_ALL_TESTS()
