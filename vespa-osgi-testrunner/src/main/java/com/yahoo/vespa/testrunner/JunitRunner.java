@@ -90,19 +90,29 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         if (execution != null && !execution.isDone()) {
             throw new IllegalStateException("Test execution already in progress");
         }
-        testRuntimeProvider.initialize(testConfig);
-        Optional<Bundle> testBundle = findTestBundle();
-        if (testBundle.isEmpty()) {
-            throw new RuntimeException("No test bundle available");
-        }
+        try {
+            testRuntimeProvider.initialize(testConfig);
+            Optional<Bundle> testBundle = findTestBundle();
+            if (testBundle.isEmpty()) {
+                throw new RuntimeException("No test bundle available");
+            }
 
-        Optional<TestDescriptor> testDescriptor = loadTestDescriptor(testBundle.get());
-        if (testDescriptor.isEmpty()) {
-            throw new RuntimeException("Could not find test descriptor");
+            Optional<TestDescriptor> testDescriptor = loadTestDescriptor(testBundle.get());
+            if (testDescriptor.isEmpty()) {
+                throw new RuntimeException("Could not find test descriptor");
+            }
+            execution =  CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), category)));
+        } catch (Exception e) {
+            execution = createReportWithFailedInitialization(e);
         }
-        List<Class<?>> testClasses = loadClasses(testBundle.get(), testDescriptor.get(), category);
+    }
 
-        execution =  CompletableFuture.supplyAsync(() -> launchJunit(testClasses));
+    private static Future<TestReport> createReportWithFailedInitialization(Exception exception) {
+        TestReport.Failure failure = new TestReport.Failure("init", exception);
+        return CompletableFuture.completedFuture(
+                new TestReport.Builder()
+                        .withFailures(List.of(failure))
+                        .build());
     }
 
     @Override
