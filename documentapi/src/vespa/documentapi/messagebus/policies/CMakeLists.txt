@@ -16,5 +16,7 @@ vespa_add_library(documentapi_documentapipolicies OBJECT
     asyncinitializationpolicy.cpp
     DEPENDS
 )
+vespa_generate_config(documentapi_documentapipolicies ../../../../main/resources/configdefinitions/document-protocol-policies.def)
+install_config_definition(../../../../main/resources/configdefinitions/document-protocol-policies.def documentapi.messagebus.protocol.document-protocol-policies.def)
 vespa_generate_config(documentapi_documentapipolicies ../../../../main/resources/configdefinitions/documentrouteselectorpolicy.def)
 install_config_definition(../../../../main/resources/configdefinitions/documentrouteselectorpolicy.def documentapi.messagebus.protocol.documentrouteselectorpolicy.def)
