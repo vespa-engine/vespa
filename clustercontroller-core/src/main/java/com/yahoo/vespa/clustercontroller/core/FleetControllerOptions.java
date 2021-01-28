@@ -10,6 +10,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -131,6 +132,10 @@ public class FleetControllerOptions implements Cloneable {
     public double minMergeCompletionRatio = 1.0;
 
     public int maxDivergentNodesPrintedInTaskErrorMessages = 10;
+
+    public boolean clusterFeedBlockEnabled = false;
+    // Resource type -> limit in [0, 1]
+    public Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
 
     // TODO: Replace usage of this by usage where the nodes are explicitly passed (below)
     public FleetControllerOptions(String clusterName) {
