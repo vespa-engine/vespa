@@ -612,7 +612,6 @@ fi
 %{_prefix}/lib/jars/jackson-*.jar
 %{_prefix}/lib/jars/javassist-*.jar
 %{_prefix}/lib/jars/javax.*.jar
-%{_prefix}/lib/jars/jdisc-cloud-aws-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc_http_service-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
