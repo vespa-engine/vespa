@@ -22,9 +22,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
-
 import org.junit.Test;
-
 import java.util.Collection;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.G1GC;
