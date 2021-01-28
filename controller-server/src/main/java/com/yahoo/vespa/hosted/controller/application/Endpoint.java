@@ -136,7 +136,7 @@ public class Endpoint {
     public String upstreamIdOf(DeploymentId deployment) {
         if (scope != Scope.global) throw new IllegalArgumentException("Scope " + scope + " does not have upstream name");
         if (!routingMethod.isShared()) throw new IllegalArgumentException("Routing method " + routingMethod + " does not have upstream name");
-        return upstreamIdOf(name(), deployment.applicationId(), deployment.zoneId());
+        return upstreamIdOf(cluster.value(), deployment.applicationId(), deployment.zoneId());
     }
 
     @Override
