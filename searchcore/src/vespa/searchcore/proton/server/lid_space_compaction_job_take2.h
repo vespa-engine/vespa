@@ -6,7 +6,7 @@
 #include <vespa/document/bucket/bucketspace.h>
 
 namespace storage::spi { struct BucketExecutor;}
-namespace searchcorespi::index { class IThreadService; }
+namespace searchcorespi::index { struct IThreadService; }
 namespace vespalib { class IDestructorCallback; }
 namespace proton {
     class IDiskMemUsageNotifier;

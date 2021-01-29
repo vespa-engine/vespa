@@ -11,7 +11,7 @@ namespace proton {
 class BlockableMaintenanceJobConfig;
 class DiskMemUsageState;
 class IMaintenanceJobRunner;
-class IMoveOperationLimiter;
+struct IMoveOperationLimiter;
 
 /**
  * Implementation of a maintenance job that can be blocked and unblocked due to various external reasons.
