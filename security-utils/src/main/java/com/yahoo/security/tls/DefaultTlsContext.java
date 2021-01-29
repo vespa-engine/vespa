@@ -43,10 +43,6 @@ public class DefaultTlsContext implements TlsContext {
         this(sslContext, TlsContext.ALLOWED_CIPHER_SUITES, peerAuthentication);
     }
 
-    public DefaultTlsContext(SSLContext sslContext) {
-        this(sslContext, TlsContext.ALLOWED_CIPHER_SUITES, PeerAuthentication.NEED);
-    }
-
     DefaultTlsContext(SSLContext sslContext, Set<String> acceptedCiphers, PeerAuthentication peerAuthentication) {
         this.sslContext = sslContext;
         this.peerAuthentication = peerAuthentication;
