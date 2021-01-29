@@ -16,6 +16,7 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Attempts to validate the AWS Systems Manager Parameter Store settings to see if we can
@@ -25,6 +26,7 @@ import java.util.logging.Level;
  */
 public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
 
+    private static final Logger log = Logger.getLogger(AwsParameterStoreValidationHandler.class.getName());
     private final VespaAwsCredentialsProvider credentialsProvider;
 
     @Inject
@@ -56,20 +58,25 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
         var json = toSlime(request.getData());
         var settings = AwsSettings.fromSlime(json);
 
+        log.info("Received request: " + settings.name);
+
         var response = new Slime();
         var root = response.get();
-        settings.toSlime(response.get().setObject("settings"));
+        settings.toSlime(root.setObject("settings"));
 
         try {
             var store = new AwsParameterStore(this.credentialsProvider, settings.role, settings.externalId);
             store.getSecret("vespa-secret");
             root.setString("status", "ok");
+            log.info("Retrieving parameters was OK");
         } catch (RuntimeException e) {
             root.setString("status", "error");
             var error = root.setArray("errors").addObject();
             error.setString("message", Exceptions.toMessageString(e));
+            log.info("Retrieving parameters was failure");
         }
 
+        log.info("Exiting handle POST");
         return new SlimeJsonResponse(response);
     }
 
