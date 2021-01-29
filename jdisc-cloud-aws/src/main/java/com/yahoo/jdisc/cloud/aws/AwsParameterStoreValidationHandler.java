@@ -42,19 +42,14 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            switch (request.getMethod()) {
-                case GET: return handleGET();
-                case POST: return handlePOST(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+            if (request.getMethod() == com.yahoo.jdisc.http.HttpRequest.Method.POST) {
+                return handlePOST(request);
             }
+            return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
             return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
-    }
-
-    private HttpResponse handleGET() {
-        return new SlimeJsonResponse();
     }
 
     private HttpResponse handlePOST(HttpRequest request) {
