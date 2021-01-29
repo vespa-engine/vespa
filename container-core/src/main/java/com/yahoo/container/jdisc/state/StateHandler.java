@@ -63,11 +63,7 @@ public class StateHandler extends AbstractRequestHandler {
 
     static SnapshotProvider getSnapshotPreprocessor(ComponentRegistry<SnapshotProvider> preprocessors, MetricsPresentationConfig presentation) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();
-        if (presentation.slidingwindow() && allPreprocessors.size() > 0) {
-            return allPreprocessors.get(0);
-        } else {
-            return null;
-        }
+        return (allPreprocessors.size() > 0) ? allPreprocessors.get(0) : null;
     }
 
     @Override
@@ -205,7 +201,8 @@ public class StateHandler extends AbstractRequestHandler {
 
     private MetricSnapshot getSnapshot() {
         if (snapshotPreprocessor == null) {
-            return monitor.snapshot();
+            // TODO: throw exception in ctor instead
+            return new MetricSnapshot(0L, 0L, TimeUnit.MILLISECONDS);
         } else {
             return snapshotPreprocessor.latestSnapshot();
         }
@@ -254,14 +251,16 @@ public class StateHandler extends AbstractRequestHandler {
             } else {
                 throw new UnsupportedOperationException(tuple.val.getClass().getName());
             }
-            Iterator<Map.Entry<String, String>> it = tuple.dim.iterator();
-            if (it.hasNext() && includeDimensions) {
-                JSONObjectWithLegibleException jsonDim = new JSONObjectWithLegibleException();
-                while (it.hasNext()) {
-                    Map.Entry<String, String> entry = it.next();
-                    jsonDim.put(entry.getKey(), entry.getValue());
+            if (tuple.dim != null) {
+                Iterator<Map.Entry<String, String>> it = tuple.dim.iterator();
+                if (it.hasNext() && includeDimensions) {
+                    JSONObjectWithLegibleException jsonDim = new JSONObjectWithLegibleException();
+                    while (it.hasNext()) {
+                        Map.Entry<String, String> entry = it.next();
+                        jsonDim.put(entry.getKey(), entry.getValue());
+                    }
+                    jsonTuple.put("dimensions", jsonDim);
                 }
-                jsonTuple.put("dimensions", jsonDim);
             }
             jsonMetric.append("values", jsonTuple);
         }

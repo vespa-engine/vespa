@@ -22,15 +22,7 @@ class MetricConsumerProviders {
     }
 
     public static MetricConsumerProvider newInstance(MetricConsumerFactory... factories) {
-        return new MetricConsumerProvider(newComponentRegistry(factories),
-                                          new MetricsPresentationConfig(new MetricsPresentationConfig.Builder()),
-                                          StateMonitor.createForTesting());
-    }
-
-    public static MetricConsumerProvider newDefaultInstance() {
-        return new MetricConsumerProvider(newComponentRegistry(),
-                                          new MetricsPresentationConfig(new MetricsPresentationConfig.Builder()),
-                                          StateMonitor.createForTesting());
+        return new MetricConsumerProvider(newComponentRegistry(factories));
     }
 
     public static ComponentRegistry<MetricConsumerFactory> newComponentRegistry(MetricConsumerFactory... factories) {

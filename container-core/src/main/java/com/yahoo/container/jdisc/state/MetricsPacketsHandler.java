@@ -143,7 +143,8 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
     private MetricSnapshot getSnapshot() {
         if (snapshotPreprocessor == null) {
-            return monitor.snapshot();
+            // TODO: throw exception in ctor instead
+            return new MetricSnapshot(0L, 0L, TimeUnit.MILLISECONDS);
         } else {
             return snapshotPreprocessor.latestSnapshot();
         }
@@ -173,6 +174,8 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     }
 
     private void addDimensions(MetricDimensions metricDimensions, JSONObjectWithLegibleException packet) throws JSONException {
+        if (metricDimensions == null) return;
+
         Iterator<Map.Entry<String, String>> dimensionsIterator = metricDimensions.iterator();
         if (dimensionsIterator.hasNext()) {
             JSONObject jsonDim = new JSONObjectWithLegibleException();
