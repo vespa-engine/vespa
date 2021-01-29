@@ -29,6 +29,7 @@ public:
 
     double get_usage() const noexcept { return _usage; }
     const vespalib::string& get_name() const noexcept { return _name; }
+    bool valid() const noexcept { return !_name.empty(); }
 
     bool operator==(const AttributeResourceUsage& rhs) const noexcept {
         return ((_usage == rhs._usage) && (_name == rhs._name));
