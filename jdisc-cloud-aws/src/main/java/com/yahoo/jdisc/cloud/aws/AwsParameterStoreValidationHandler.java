@@ -1,11 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.cloud.aws;
 
-import com.amazonaws.auth.AWSCredentials;
+import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
@@ -14,7 +13,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
