@@ -350,7 +350,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         var calc = createResourceExhaustionCalculator();
         // Important: nodeInfo contains the _current_ host info _prior_ to newHostInfo being applied.
         boolean previouslyExhausted = !calc.enumerateNodeResourceExhaustions(nodeInfo).isEmpty();
-        boolean nowExhausted        = !calc.resourceExhaustionsFromHostInfo(nodeInfo.getNode(), newHostInfo).isEmpty();
+        boolean nowExhausted        = !calc.resourceExhaustionsFromHostInfo(nodeInfo, newHostInfo).isEmpty();
         if (previouslyExhausted != nowExhausted) {
             log.fine(() -> String.format("Triggering state recomputation due to change in cluster feed block: %s -> %s",
                                          previouslyExhausted, nowExhausted));

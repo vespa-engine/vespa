@@ -26,7 +26,10 @@ public class ResourceExhaustionCalculatorTest {
         if (highestIndex.isEmpty()) {
             throw new IllegalArgumentException("Can't have an empty cluster");
         }
-        var cf = ClusterFixture.forFlatCluster(highestIndex.getAsInt() + 1).bringEntireClusterUp();
+        var cf = ClusterFixture
+                .forFlatCluster(highestIndex.getAsInt() + 1)
+                .assignDummyRpcAddresses()
+                .bringEntireClusterUp();
         for (var nu : nodeAndUsages) {
             cf.cluster().getNodeInfo(storageNode(nu.index))
                     .setHostInfo(HostInfo.createHostInfo(createResourceUsageJson(nu.usages)));
@@ -51,18 +54,32 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 (0.510 > 0.500)", feedBlock.getDescription());
+        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.500)", feedBlock.getDescription());
     }
 
     @Test
     public void feed_block_description_can_contain_optional_name_component() {
         var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", "a-fancy-disk", 0.51), usage("memory", 0.79)),
-                forNode(2, usage("disk", 0.4), usage("memory", 0.6)));
+                                                 forNode(2, usage("disk", 0.4), usage("memory", 0.6)));
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk:a-fancy-disk on node 1 (0.510 > 0.500)", feedBlock.getDescription());
+        assertEquals("disk:a-fancy-disk on node 1 [storage.1.local] (0.510 > 0.500)", feedBlock.getDescription());
+    }
+
+    @Test
+    public void missing_or_malformed_rpc_addresses_are_emitted_as_unknown_hostnames() {
+        var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
+        var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.51), usage("memory", 0.79)),
+                                                 forNode(2, usage("disk", 0.4), usage("memory", 0.85)));
+        cf.cluster().getNodeInfo(storageNode(1)).setRpcAddress(null);
+        cf.cluster().getNodeInfo(storageNode(2)).setRpcAddress("max mekker");
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
+        assertNotNull(feedBlock);
+        assertTrue(feedBlock.blockFeedInCluster());
+        assertEquals("disk on node 1 [unknown hostname] (0.510 > 0.500), " +
+                     "memory on node 2 [unknown hostname] (0.850 > 0.800)", feedBlock.getDescription());
     }
 
     @Test
@@ -73,9 +90,9 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 (0.510 > 0.400), " +
-                     "memory on node 1 (0.850 > 0.800), " +
-                     "disk on node 2 (0.450 > 0.400)",
+        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.400), " +
+                     "memory on node 1 [storage.1.local] (0.850 > 0.800), " +
+                     "disk on node 2 [storage.2.local] (0.450 > 0.400)",
                      feedBlock.getDescription());
     }
 
@@ -88,9 +105,9 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 (0.510 > 0.400), " +
-                     "memory on node 1 (0.850 > 0.800), " +
-                     "disk on node 2 (0.450 > 0.400) (... and 2 more)",
+        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.400), " +
+                     "memory on node 1 [storage.1.local] (0.850 > 0.800), " +
+                     "disk on node 2 [storage.2.local] (0.450 > 0.400) (... and 2 more)",
                      feedBlock.getDescription());
     }
 
