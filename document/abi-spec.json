@@ -3164,6 +3164,8 @@
       "public void printXml(com.yahoo.document.serialization.XmlStream)",
       "public void clear()",
       "public void assign(java.lang.Object)",
+      "public void assignSerializedTensor(byte[])",
+      "public java.util.Optional getSerializedTensor()",
       "public void assignTensor(java.util.Optional)",
       "public void serialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldWriter)",
       "public void deserialize(com.yahoo.document.Field, com.yahoo.document.serialization.FieldReader)",
