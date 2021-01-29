@@ -29,7 +29,7 @@ GenSpec::type() const
     for (const auto &dim: _dims) {
         dim_types.push_back(dim.type());
     }
-    auto type = ValueType::make_type(_cells, dim_types);
+    auto type = ValueType::tensor_type(dim_types, _cells);
     assert(!type.is_error());
     return type;
 }

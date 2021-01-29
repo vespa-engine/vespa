@@ -52,19 +52,17 @@ TEST(GenSpec, default_spec) {
 
 //-----------------------------------------------------------------------------
 
-TensorSpec scalar_1   = TensorSpec("double").add({}, 1.0);
-TensorSpec scalar_1_f = TensorSpec("float").add({}, 1.0);
-TensorSpec scalar_5   = TensorSpec("double").add({}, 5.0);
-TensorSpec scalar_5_f = TensorSpec("float").add({}, 5.0);
+TensorSpec scalar_1 = TensorSpec("double").add({}, 1.0);
+TensorSpec scalar_5 = TensorSpec("double").add({}, 5.0);
 
 TEST(GenSpec, scalar_double) {
     EXPECT_EQ(GenSpec().gen(), scalar_1);
     EXPECT_EQ(GenSpec().seq_bias(5.0).gen(), scalar_5);
 }
 
-TEST(GenSpec, scalar_float) {
-    EXPECT_EQ(GenSpec().cells_float().gen(), scalar_1_f);
-    EXPECT_EQ(GenSpec().cells_float().seq_bias(5.0).gen(), scalar_5_f);
+TEST(GenSpec, not_scalar_float_just_yet) {
+    EXPECT_EQ(GenSpec().cells_float().gen(), scalar_1);
+    EXPECT_EQ(GenSpec().cells_float().seq_bias(5.0).gen(), scalar_5);
 }
 
 //-----------------------------------------------------------------------------
@@ -90,7 +88,7 @@ GenSpec dbl() { return GenSpec().cells_double(); }
 
 TEST(GenSpec, value_type) {
     EXPECT_EQ(dbl().type().to_spec(), "double");
-    EXPECT_EQ(flt().type().to_spec(), "float");
+    EXPECT_EQ(flt().type().to_spec(), "double"); // NB
     EXPECT_EQ(dbl().idx("x", 10).type().to_spec(), "tensor(x[10])");
     EXPECT_EQ(flt().idx("x", 10).type().to_spec(), "tensor<float>(x[10])");
     EXPECT_EQ(dbl().map("y", {}).type().to_spec(), "tensor(y{})");
