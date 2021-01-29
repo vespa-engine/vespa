@@ -17,8 +17,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.mapOf;
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.usage;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.createResourceUsageJson;
 import static org.junit.Assert.assertFalse;
@@ -89,7 +91,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         return options;
     }
 
-    private void reportResourceUsageFromNode(int nodeIndex, Map<String, Double> resourceUsages) throws Exception {
+    private void reportResourceUsageFromNode(int nodeIndex, Set<FeedBlockUtil.UsageDetails> resourceUsages) throws Exception {
         String hostInfo = createResourceUsageJson(resourceUsages);
         communicator.setNodeState(new Node(NodeType.STORAGE, nodeIndex), new NodeState(NodeType.STORAGE, State.UP), hostInfo);
         ctrl.tick();
@@ -102,17 +104,17 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
         // Too much cheese in use, must block feed!
-        reportResourceUsageFromNode(1, mapOf(usage("cheese", 0.8), usage("wine", 0.3)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.3)));
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
         // TODO check desc?
 
         // Wine usage has gone up too, we should remain blocked
-        reportResourceUsageFromNode(1, mapOf(usage("cheese", 0.8), usage("wine", 0.5)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.5)));
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
         // TODO check desc?
 
         // Back to normal wine and cheese levels
-        reportResourceUsageFromNode(1, mapOf(usage("cheese", 0.6), usage("wine", 0.3)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.6), usage("wine", 0.3)));
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
     }
 
@@ -121,7 +123,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         initialize(createOptions(mapOf(usage("cheese", 0.7), usage("wine", 0.4))));
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
-        reportResourceUsageFromNode(1, mapOf(usage("cheese", 0.8), usage("wine", 0.3)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.3)));
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
         // Increase cheese allowance. Should now automatically unblock since reported usage is lower.
