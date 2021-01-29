@@ -58,8 +58,6 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
         var json = toSlime(request.getData());
         var settings = AwsSettings.fromSlime(json);
 
-        log.info("Received request: " + settings.name);
-
         var response = new Slime();
         var root = response.setObject();
         settings.toSlime(root.setObject("settings"));
@@ -68,15 +66,13 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
             var store = new AwsParameterStore(this.credentialsProvider, settings.role, settings.externalId);
             store.getSecret("vespa-secret");
             root.setString("status", "ok");
-            log.info("Retrieving parameters was OK");
         } catch (RuntimeException e) {
             root.setString("status", "error");
             var error = root.setArray("errors").addObject();
+            error.setString("type", e.getClass().getSimpleName());
             error.setString("message", Exceptions.toMessageString(e));
-            log.info("Retrieving parameters was failure");
         }
 
-        log.info("Exiting handle POST");
         return new SlimeJsonResponse(response);
     }
 
