@@ -63,7 +63,8 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
         settings.toSlime(root.setObject("settings"));
 
         try {
-            var store = new AwsParameterStore(this.credentialsProvider, settings.role, settings.externalId);
+            var arn = "arn:aws:iam::" + settings.awsId + ":role/" + settings.role;
+            var store = new AwsParameterStore(this.credentialsProvider, arn, settings.externalId);
             store.getSecret("vespa-secret");
             root.setString("status", "ok");
         } catch (RuntimeException e) {
