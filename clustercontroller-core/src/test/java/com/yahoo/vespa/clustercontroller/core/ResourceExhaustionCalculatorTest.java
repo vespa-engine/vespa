@@ -10,6 +10,7 @@ import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.NodeAndUsages;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.forNode;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.mapOf;
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.usage;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.createResourceUsageJson;
 
@@ -51,6 +52,17 @@ public class ResourceExhaustionCalculatorTest {
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
         assertEquals("disk on node 1 (0.510 > 0.500)", feedBlock.getDescription());
+    }
+
+    @Test
+    public void feed_block_description_can_contain_optional_name_component() {
+        var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
+        var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", "a-fancy-disk", 0.51), usage("memory", 0.79)),
+                forNode(2, usage("disk", 0.4), usage("memory", 0.6)));
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
+        assertNotNull(feedBlock);
+        assertTrue(feedBlock.blockFeedInCluster());
+        assertEquals("disk:a-fancy-disk on node 1 (0.510 > 0.500)", feedBlock.getDescription());
     }
 
     @Test

@@ -110,7 +110,8 @@
                 "usage": 0.85
             },
             "disk": {
-                "usage": 0.6
+                "usage": 0.6,
+                "name": "a cool disk"
             }
         }
     }

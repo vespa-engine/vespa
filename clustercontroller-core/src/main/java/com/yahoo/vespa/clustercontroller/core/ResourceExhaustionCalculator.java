@@ -37,14 +37,20 @@ public class ResourceExhaustionCalculator {
         int maxDescriptions = 3;
         String description = exhaustions.stream()
                 .limit(maxDescriptions)
-                .map(n -> String.format("%s on node %s (%.3g > %.3g)",
-                        n.resourceType, n.node.getIndex(),
-                        n.resourceUsage.getUsage(), n.limit))
+                .map(ResourceExhaustionCalculator::formatNodeResourceExhaustion)
                 .collect(Collectors.joining(", "));
         if (exhaustions.size() > maxDescriptions) {
             description += String.format(" (... and %d more)", exhaustions.size() - maxDescriptions);
         }
         return ClusterStateBundle.FeedBlock.blockedWithDescription(description);
+    }
+
+    private static String formatNodeResourceExhaustion(NodeResourceExhaustion n) {
+        return String.format("%s%s on node %s (%.3g > %.3g)",
+                             n.resourceType,
+                             (n.resourceUsage.getName() != null ? ":" + n.resourceUsage.getName() : ""),
+                             n.node.getIndex(),
+                             n.resourceUsage.getUsage(), n.limit);
     }
 
     public List<NodeResourceExhaustion> resourceExhaustionsFromHostInfo(Node node, HostInfo hostInfo) {
