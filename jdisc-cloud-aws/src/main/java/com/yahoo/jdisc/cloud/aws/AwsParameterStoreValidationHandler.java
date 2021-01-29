@@ -61,7 +61,7 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
         log.info("Received request: " + settings.name);
 
         var response = new Slime();
-        var root = response.get();
+        var root = response.setObject();
         settings.toSlime(root.setObject("settings"));
 
         try {
