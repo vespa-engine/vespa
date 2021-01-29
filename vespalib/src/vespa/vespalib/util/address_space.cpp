@@ -16,7 +16,7 @@ AddressSpace::AddressSpace(size_t used_, size_t dead_, size_t limit_)
 
 std::ostream &operator << (std::ostream &out, const AddressSpace &rhs)
 {
-    return out << "used=" << rhs.used() << ", dead=" << rhs.dead() << ", limit=" << rhs.limit();
+    return out << "{used=" << rhs.used() << ", dead=" << rhs.dead() << ", limit=" << rhs.limit() << "}";
 }
 
 } // namespace vespalib

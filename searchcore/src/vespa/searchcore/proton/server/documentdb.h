@@ -416,6 +416,8 @@ public:
     IDiskMemUsageListener *diskMemUsageListener() { return &_dmUsageForwarder; }
     std::shared_ptr<const ITransientMemoryUsageProvider> transient_memory_usage_provider();
     ExecutorThreadingService & getWriteService() { return _writeService; }
+
+    void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
 };
 
 } // namespace proton

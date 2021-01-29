@@ -6,16 +6,17 @@
 #include "document_subdb_collection_explorer.h"
 #include "documentdb.h"
 #include "documentdbconfigscout.h"
+#include "feedhandler.h"
 #include "idocumentdbowner.h"
 #include "idocumentsubdb.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
-#include "feedhandler.h"
-#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/metrics/updatehook.h>
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
@@ -26,6 +27,7 @@
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -34,7 +36,6 @@
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/metrics/updatehook.h>
 
 #include <vespa/log/log.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
@@ -1111,6 +1112,12 @@ std::shared_ptr<const ITransientMemoryUsageProvider>
 DocumentDB::transient_memory_usage_provider()
 {
     return _transient_memory_usage_provider;
+}
+
+void
+DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener)
+{
+    _writeFilter.set_listener(std::move(listener));
 }
 
 } // namespace proton
