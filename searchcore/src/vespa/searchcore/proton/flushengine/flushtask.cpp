@@ -1,17 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "flushtask.h"
+#include "flushengine.h"
 
 namespace proton {
 
 FlushTask::FlushTask(uint32_t taskId,
                      FlushEngine &engine,
-                     const FlushContext::SP &ctx)
+                     std::shared_ptr<FlushContext> ctx)
     : _taskId(taskId),
       _engine(engine),
-      _context(ctx)
+      _context(std::move(ctx))
 {
-    assert(_context.get() != NULL);
+    assert(_context);
 }
 
 FlushTask::~FlushTask()

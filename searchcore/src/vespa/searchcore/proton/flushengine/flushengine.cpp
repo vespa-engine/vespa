@@ -220,7 +220,8 @@ FlushEngine::prune()
     return true;
 }
 
-bool FlushEngine::isFlushing(const std::lock_guard<std::mutex> & guard, const vespalib::string & name) const
+bool
+FlushEngine::isFlushing(const std::lock_guard<std::mutex> & guard, const vespalib::string & name) const
 {
     (void) guard;
     for(const auto & it : _flushing) {

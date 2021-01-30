@@ -39,9 +39,7 @@ private:
     bool saveDocumentMetaStore(); // not updating snap info.
 public:
     Flusher(DocumentMetaStoreFlushTarget &dmsft, uint64_t syncToken, AttributeDirectory::Writer &writer);
-    ~Flusher();
-    uint64_t getSyncToken() const { return _syncToken; }
-    bool saveSnapInfo();
+    ~Flusher() override;
     bool flush(AttributeDirectory::Writer &writer);
     void updateStats();
     bool cleanUp(AttributeDirectory::Writer &writer);
@@ -66,29 +64,23 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
     assert(_saver);
 }
 
-DocumentMetaStoreFlushTarget::Flusher::~Flusher()
-{
-    // empty
-}
+DocumentMetaStoreFlushTarget::Flusher::~Flusher() = default;
 
 bool
 DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
 {
     vespalib::mkdir(_flushDir, false);
-    SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext,
-                                                 _syncToken);
+    SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext, _syncToken);
     bool saveSuccess = false;
     if (_dmsft._hwInfo.disk().slow()) {
         search::AttributeMemorySaveTarget memorySaveTarget;
         saveSuccess = _saver->save(memorySaveTarget);
         _saver.reset();
         if (saveSuccess) {
-            saveSuccess = memorySaveTarget.writeToFile(_dmsft._tuneFileAttributes,
-                                                       fileHeaderContext);
+            saveSuccess = memorySaveTarget.writeToFile(_dmsft._tuneFileAttributes, fileHeaderContext);
         }
     } else {
-        search::AttributeFileSaveTarget saveTarget(_dmsft._tuneFileAttributes,
-                                                   fileHeaderContext);
+        search::AttributeFileSaveTarget saveTarget(_dmsft._tuneFileAttributes, fileHeaderContext);
         saveSuccess = _saver->save(saveTarget);
         _saver.reset();
     }

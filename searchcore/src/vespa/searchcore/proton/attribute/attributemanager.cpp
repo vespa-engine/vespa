@@ -328,7 +328,7 @@ AttributeManager::flushAll(SerialNum currentSerial)
     for (const auto &ft : flushTargets) {
         vespalib::Executor::Task::UP task;
         task = ft->initFlush(currentSerial, std::make_shared<search::FlushToken>());
-        if (task.get() != NULL) {
+        if (task) {
             task->run();
         }
     }

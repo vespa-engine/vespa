@@ -49,11 +49,9 @@ ThreadedFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::
 {
     std::promise<Task::UP> promise;
     std::future<Task::UP> future = promise.get_future();
-    _executor.execute(makeLambdaTask([&]()
-                      { promise.set_value(callInitFlush(_target.get(),
-                                                        currentSerial,
-                                                        &_getSerialNum,
-                                                        flush_token)); }));
+    _executor.execute(makeLambdaTask([&]() {
+        promise.set_value(callInitFlush(_target.get(), currentSerial, &_getSerialNum, flush_token));
+    }));
     return future.get();
 }
 

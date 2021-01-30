@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
-#include <vector>
 
 namespace proton {
 
@@ -35,7 +34,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IFlushHandler() { }
+    virtual ~IFlushHandler() = default;
 
     /**
      * Returns the unique name of this handler.
