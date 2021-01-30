@@ -77,10 +77,10 @@ FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const IFlushTarget::SP &targe
 }
 
 FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
-                         IFlushStrategy::SP strategy, uint32_t numThreads, uint32_t idleIntervalMS)
+                         IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval)
     : _closed(false),
       _maxConcurrent(numThreads),
-      _idleIntervalMS(idleIntervalMS),
+      _idleInterval(idleInterval),
       _taskId(0),
       _threadPool(128 * 1024),
       _strategy(std::move(strategy)),
@@ -151,11 +151,11 @@ FlushEngine::canFlushMore(const std::unique_lock<std::mutex> &guard) const
 }
 
 bool
-FlushEngine::wait(size_t minimumWaitTimeIfReady)
+FlushEngine::wait(vespalib::duration minimumWaitTimeIfReady)
 {
     std::unique_lock<std::mutex> guard(_lock);
-    if ( (minimumWaitTimeIfReady > 0) && canFlushMore(guard) && _pendingPrune.empty()) {
-        _cond.wait_for(guard, std::chrono::milliseconds(minimumWaitTimeIfReady));
+    if ( (minimumWaitTimeIfReady != vespalib::duration::zero()) && canFlushMore(guard) && _pendingPrune.empty()) {
+        _cond.wait_for(guard, minimumWaitTimeIfReady);
     }
     while ( ! canFlushMore(guard) && _pendingPrune.empty()) {
         _cond.wait_for(guard, 1s); // broadcast when flush done
@@ -168,7 +168,7 @@ FlushEngine::Run(FastOS_ThreadInterface *, void *)
 {
     bool shouldIdle = false;
     vespalib::string prevFlushName;
-    while (wait(shouldIdle ? _idleIntervalMS : 0)) {
+    while (wait(shouldIdle ? _idleInterval : vespalib::duration::zero())) {
         shouldIdle = false;
         if (prune()) {
             continue; // Prune attempted on one or more handlers
@@ -181,8 +181,8 @@ FlushEngine::Run(FastOS_ThreadInterface *, void *)
         } else {
             shouldIdle = true;
         }
-        LOG(debug, "Making another wait(idle=%s, timeMS=%d) last was '%s'",
-            shouldIdle ? "true" : "false", shouldIdle ? _idleIntervalMS : 0, prevFlushName.c_str());
+        LOG(debug, "Making another wait(idle=%s, timeS=%1.3f) last was '%s'",
+            shouldIdle ? "true" : "false", shouldIdle ? vespalib::to_s(_idleInterval) : 0, prevFlushName.c_str());
     }
     _executor.sync();
     prune();
@@ -307,7 +307,7 @@ FlushEngine::flushAll(const FlushContext::List &lst)
 {
     LOG(debug, "%ld targets to flush.", lst.size());
     for (const FlushContext::SP & ctx : lst) {
-        if (wait(0)) {
+        if (wait(vespalib::duration::zero())) {
             if (ctx->initFlush(get_flush_token(*ctx))) {
                 logTarget("initiated", *ctx);
                 _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx), *this, ctx));

@@ -304,7 +304,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::chdir(protonConfig.basedir);
     _tls->start();
     _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
-                                                 strategy, flush.maxconcurrent, flush.idleinterval*1000);
+                                                 strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval));
     _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
 
     char tmp[1024];
