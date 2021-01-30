@@ -79,7 +79,7 @@ private:
     uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
     bool canFlushMore(const std::unique_lock<std::mutex> &guard) const;
-    bool wait(vespalib::duration minimumWaitTimeIfReady);
+    bool wait(vespalib::duration minimumWaitTimeIfReady, bool considerPendingPrune);
     bool isFlushing(const std::lock_guard<std::mutex> &guard, const vespalib::string & name) const;
 
     friend class FlushTask;
