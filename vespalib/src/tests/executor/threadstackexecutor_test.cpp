@@ -147,9 +147,9 @@ TEST_MT_F("require that threads can wait for a specific task count", 7, WaitStat
             if (next_done < f1.block_task.size()) {
                 f1.block_task[f1.block_task.size() - 1 - next_done].countDown();
             }
-            EXPECT_TRUE(f1.wait_done[next_done].await(25000));
+            EXPECT_TRUE(f1.wait_done[next_done].await(25s));
             for (size_t i = 0; i < next_done; ++i) {
-                EXPECT_TRUE(!f1.wait_done[i].await(20));
+                EXPECT_TRUE(!f1.wait_done[i].await(20ms));
             }
         }
     } else {

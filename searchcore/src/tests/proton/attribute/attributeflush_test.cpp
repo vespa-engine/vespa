@@ -18,6 +18,7 @@
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributeflush_test");

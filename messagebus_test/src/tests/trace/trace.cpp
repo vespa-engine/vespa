@@ -19,6 +19,7 @@
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <iostream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("trace_test");

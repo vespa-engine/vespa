@@ -372,7 +372,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     }
     if (LOG_WOULD_LOG(event)) {
         FlushStats stats = ctx.getTarget()->getLastFlushStats();
-        EventLogger::flushComplete(ctx.getName(), vespalib::count_ms(duration), ctx.getTarget()->getFlushedSerialNum(),
+        EventLogger::flushComplete(ctx.getName(), duration, ctx.getTarget()->getFlushedSerialNum(),
                                    stats.getPath(), stats.getPathElementsToLog());
     }
     LOG(debug, "FlushEngine::flushDone(taskId='%d') took '%f' secs", taskId, vespalib::to_s(duration));

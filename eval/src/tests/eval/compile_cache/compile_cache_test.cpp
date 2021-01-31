@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/eval/eval/key_gen.h>
 #include <vespa/eval/eval/test/eval_spec.h>
@@ -7,7 +8,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <thread>
 #include <set>
 
 using namespace vespalib;

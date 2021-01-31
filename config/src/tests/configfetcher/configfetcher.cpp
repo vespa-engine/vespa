@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/exception.h>
 #include "config-my.h"
 #include <atomic>
+#include <thread>
 
 using namespace config;
 

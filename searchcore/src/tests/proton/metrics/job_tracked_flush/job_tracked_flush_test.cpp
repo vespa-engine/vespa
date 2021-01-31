@@ -27,8 +27,8 @@ struct MyFlushTask : public searchcorespi::FlushTask
     MyFlushTask(Gate &execGate) : _execGate(execGate) {}
 
     // Implements searchcorespi::FlushTask
-    virtual void run() override {
-        _execGate.await(5000);
+    void run() override {
+        _execGate.await(5s);
     }
     virtual search::SerialNum getFlushSerial() const override { return 5; }
 };
@@ -39,7 +39,7 @@ struct MyFlushTarget : public test::DummyFlushTarget
     SerialNum _initFlushSerial;
     Gate _execGate;
     Gate _initGate;
-    MyFlushTarget()
+    MyFlushTarget() noexcept
         : test::DummyFlushTarget("mytarget", Type::FLUSH, Component::OTHER),
           _initFlushSerial(0),
           _execGate(),
@@ -50,8 +50,8 @@ struct MyFlushTarget : public test::DummyFlushTarget
     FlushTask::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) override {
         if (currentSerial > 0) {
             _initFlushSerial = currentSerial;
-            _initGate.await(5000);
-            return FlushTask::UP(new MyFlushTask(_execGate));
+            _initGate.await(5s);
+            return std::make_unique<MyFlushTask>(_execGate);
         }
         return FlushTask::UP();
     }
@@ -66,8 +66,8 @@ struct Fixture
     Gate _taskGate;
     ThreadStackExecutor _exec;
     Fixture(uint32_t numJobTrackings = 1)
-        : _tracker(new SimpleJobTracker(numJobTrackings)),
-          _target(new MyFlushTarget()),
+        : _tracker(std::make_shared<SimpleJobTracker>(numJobTrackings)),
+          _target(std::make_shared<MyFlushTarget>()),
           _trackedFlush(_tracker, _target),
           _task(),
           _taskGate(),
@@ -95,12 +95,12 @@ TEST_F("require that flush task init is tracked", Fixture)
     EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
 
     f._exec.execute(makeLambdaTask([&]() {f.initFlush(FLUSH_SERIAL); }));
-    f._tracker->_started.await(5000);
+    f._tracker->_started.await(5s);
     EXPECT_EQUAL(0u, f._tracker->_started.getCount());
     EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
 
     f._target->_initGate.countDown();
-    f._taskGate.await(5000);
+    f._taskGate.await(5s);
     EXPECT_EQUAL(0u, f._tracker->_ended.getCount());
     {
         JobTrackedFlushTask *trackedTask = dynamic_cast<JobTrackedFlushTask *>(f._task.get());
@@ -114,18 +114,18 @@ TEST_F("require that flush task execution is tracked", Fixture(2))
 {
     f._exec.execute(makeLambdaTask([&]() { f.initFlush(FLUSH_SERIAL); }));
     f._target->_initGate.countDown();
-    f._taskGate.await(5000);
+    f._taskGate.await(5s);
 
     EXPECT_EQUAL(1u, f._tracker->_started.getCount());
     EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
 
     f._exec.execute(std::move(f._task));
-    f._tracker->_started.await(5000);
+    f._tracker->_started.await(5s);
     EXPECT_EQUAL(0u, f._tracker->_started.getCount());
     EXPECT_EQUAL(1u, f._tracker->_ended.getCount());
 
     f._target->_execGate.countDown();
-    f._tracker->_ended.await(5000);
+    f._tracker->_ended.await(5s);
     EXPECT_EQUAL(0u, f._tracker->_ended.getCount());
 }
 

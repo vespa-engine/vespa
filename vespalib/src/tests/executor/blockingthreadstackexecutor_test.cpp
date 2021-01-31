@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/backtrace.h>
@@ -8,7 +8,7 @@
 
 using namespace vespalib;
 
-constexpr int msWait = 30000;
+constexpr vespalib::duration waitTime = 30s;
 
 class MyTask : public Executor::Task
 {
@@ -21,8 +21,8 @@ public:
         : _entryGate(entryGate),
           _exitLatch(exitLatch)
     {}
-    virtual void run() override {
-        _entryGate.await(msWait);
+    void run() override {
+        _entryGate.await(waitTime);
         _exitLatch.countDown();
     }
     static Task::UP create(Gate &entryGate, CountDownLatch &exitLatch) {
@@ -64,14 +64,14 @@ struct Fixture
         workersEntryGate.countDown();
     }
     void waitForWorkers() {
-        workersExitLatch.await(msWait);
+        workersExitLatch.await(waitTime);
     }
     void assertExecuteIsBlocked() {
-        blockedExecuteGate.await(10);
+        blockedExecuteGate.await(10ms);
         EXPECT_EQUAL(1u, blockedExecuteGate.getCount());
     }
     void waitForExecuteIsFinished() {
-        blockedExecuteGate.await(msWait);
+        blockedExecuteGate.await(waitTime);
         EXPECT_EQUAL(0u, blockedExecuteGate.getCount());
     }
     ThreadUP blockedExecuteThread() {

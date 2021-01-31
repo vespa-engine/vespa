@@ -13,6 +13,7 @@
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <thread>
 
 using namespace mbus;
 

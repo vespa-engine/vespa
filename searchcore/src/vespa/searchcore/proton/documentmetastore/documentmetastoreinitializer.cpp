@@ -51,7 +51,7 @@ DocumentMetaStoreInitializer::run()
             } else {
                 _dms->commit(snap.syncToken, snap.syncToken);
             }
-            EventLogger::loadDocumentMetaStoreComplete(_subDbName, vespalib::count_ms(stopWatch.elapsed()));
+            EventLogger::loadDocumentMetaStoreComplete(_subDbName, stopWatch.elapsed());
         }
     } else {
         vespalib::mkdir(_baseDir, false);

@@ -13,6 +13,7 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/testserver.h>
+#include <thread>
 
 using namespace mbus;
 

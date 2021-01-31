@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "config-foo.h"
+#include "config-bar.h"
+#include "config-baz.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/config.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/common/exceptions.h>
-#include "config-foo.h"
-#include "config-bar.h"
-#include "config-baz.h"
+#include <thread>
 
 using namespace config;
 using namespace vespalib;

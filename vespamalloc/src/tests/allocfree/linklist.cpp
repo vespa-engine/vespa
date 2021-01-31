@@ -3,6 +3,8 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/util/callstack.h>
+#include <thread>
+
 #include <vespa/log/log.h>
 LOG_SETUP("linklist_test");
 

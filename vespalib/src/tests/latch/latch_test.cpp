@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/latch.h>
 
@@ -17,9 +18,9 @@ TEST("require that write then read works") {
 
 TEST_MT_FFF("require that read waits for write", 2, Latch<int>(), Gate(), TimeBomb(60)) {
     if (thread_id == 0) {
-        EXPECT_TRUE(!f2.await(10));
+        EXPECT_TRUE(!f2.await(10ms));
         f1.write(123);
-        EXPECT_TRUE(f2.await(60000));        
+        EXPECT_TRUE(f2.await(60s));
     } else {
         EXPECT_EQUAL(f1.read(), 123);
         f2.countDown();
@@ -32,9 +33,9 @@ TEST_MT_FFF("require that write waits for read", 2, Latch<int>(), Gate(), TimeBo
         f1.write(456);
         f2.countDown();
     } else {
-        EXPECT_TRUE(!f2.await(10));
+        EXPECT_TRUE(!f2.await(10ms));
         EXPECT_EQUAL(f1.read(), 123);
-        EXPECT_TRUE(f2.await(60000));        
+        EXPECT_TRUE(f2.await(60s));
         EXPECT_EQUAL(f1.read(), 456);
     }
 }

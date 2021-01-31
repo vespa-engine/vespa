@@ -11,7 +11,7 @@ struct SimpleJobTracker : public IJobTracker
     typedef std::shared_ptr<SimpleJobTracker> SP;
     vespalib::CountDownLatch _started;
     vespalib::CountDownLatch _ended;
-    SimpleJobTracker(uint32_t numJobTrackings)
+    SimpleJobTracker(uint32_t numJobTrackings) noexcept
         : _started(numJobTrackings),
           _ended(numJobTrackings)
     {}

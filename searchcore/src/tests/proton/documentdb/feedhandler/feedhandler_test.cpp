@@ -78,20 +78,20 @@ struct Rendezvous {
     vespalib::Gate gone;
     typedef std::unique_ptr<Rendezvous> UP;
     Rendezvous() : enter(), leave(), gone() {}
-    bool run(uint32_t timeout = 80000) {
+    bool run(vespalib::duration timeout = 80s) {
         enter.countDown();
         bool retval = leave.await(timeout);
         gone.countDown();
         return retval;
     }
-    bool waitForEnter(uint32_t timeout = 80000) {
+    bool waitForEnter(vespalib::duration timeout = 80s) {
         return enter.await(timeout);
     }
-    bool leaveAndWait(uint32_t timeout = 80000) {
+    bool leaveAndWait(vespalib::duration timeout = 80s) {
         leave.countDown();
         return gone.await(timeout);
     }
-    bool await(uint32_t timeout = 80000) {
+    bool await(vespalib::duration timeout = 80s) {
         if (waitForEnter(timeout)) {
             return leaveAndWait(timeout);
         }
@@ -373,7 +373,7 @@ struct FeedTokenContext {
 
     FeedTokenContext();
     ~FeedTokenContext();
-    bool await(uint32_t timeout = 80000) { return transport.gate.await(timeout); }
+    bool await(vespalib::duration timeout = 80s) { return transport.gate.await(timeout); }
     const Result *getResult() {
         if (transport.result.get()) {
             return transport.result.get();
@@ -398,36 +398,6 @@ struct PutContext {
         docCtx(docId, builder)
     {}
 };
-
-
-struct PutHandler {
-    FeedHandler &handler;
-    DocBuilder &builder;
-    Timestamp timestamp;
-    std::vector<PutContext::SP> puts;
-    PutHandler(FeedHandler &fh, DocBuilder &db) :
-        handler(fh),
-        builder(db),
-        timestamp(0),
-        puts()
-    {}
-    void put(const vespalib::string &docId) {
-        PutContext::SP pc(new PutContext(docId, builder));
-        FeedOperation::UP op(new PutOperation(pc->docCtx.bucketId, timestamp, pc->docCtx.doc));
-        handler.handleOperation(pc->tokenCtx.token, std::move(op));
-        timestamp = Timestamp(timestamp + 1);
-        puts.push_back(pc);
-    }
-    bool await(uint32_t timeout = 80000) {
-        for (const auto & put : puts) {
-            if (!put->tokenCtx.await(timeout)) {
-                return false;
-            }
-        }
-        return true;
-    }
-};
-
 
 struct MyTlsWriter : TlsWriter {
     int store_count;

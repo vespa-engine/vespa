@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <algorithm>
 #include <iostream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("configure_test");
