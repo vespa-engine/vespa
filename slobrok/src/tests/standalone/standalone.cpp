@@ -3,6 +3,7 @@
 #include <vespa/slobrok/server/slobrokserver.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
+#include <thread>
 
 //-----------------------------------------------------------------------------
 

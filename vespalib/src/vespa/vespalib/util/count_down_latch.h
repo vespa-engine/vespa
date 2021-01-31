@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "time.h"
 #include <mutex>
 #include <condition_variable>
-#include <chrono>
 
 namespace vespalib {
 
@@ -71,10 +71,9 @@ public:
      * @param maxwait the maximum number of milliseconds to wait
      * @return true if the counter reached 0, false if we timed out
      **/
-    bool await(int maxwait) {
-        auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(maxwait);
+    bool await(vespalib::duration maxwait) {
         std::unique_lock<std::mutex> guard(_lock);
-        return _cond.wait_until(guard, deadline, [this]() { return (_count == 0); });
+        return _cond.wait_for(guard, maxwait, [this]() { return (_count == 0); });
     }
 
     /**

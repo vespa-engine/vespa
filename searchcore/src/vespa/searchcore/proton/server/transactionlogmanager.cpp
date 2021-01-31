@@ -20,7 +20,7 @@ void
 TransactionLogManager::doLogReplayComplete(const vespalib::string &domainName,
                                            vespalib::duration elapsedTime) const
 {
-    EventLogger::transactionLogReplayComplete(domainName, vespalib::count_ms(elapsedTime));
+    EventLogger::transactionLogReplayComplete(domainName, elapsedTime);
 }
 
 

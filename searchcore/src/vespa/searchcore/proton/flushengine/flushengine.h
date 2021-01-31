@@ -102,7 +102,7 @@ public:
      * @param idleInterval The interval between when flushes are checked whne there are no one progressing.
      */
     FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
-                IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleIntervalMS);
+                IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval);
 
     /**
      * Destructor. Waits for all pending tasks to complete.

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/transport_thread.h>
 #include <vespa/fnet/simplepacketstreamer.h>
@@ -13,7 +14,7 @@
 
 using namespace vespalib;
 
-int short_time = 20; // ms
+constexpr vespalib::duration short_time = 20ms;
 
 struct BlockingHostResolver : public AsyncResolver::HostResolver {
     AsyncResolver::SimpleHostResolver resolver;

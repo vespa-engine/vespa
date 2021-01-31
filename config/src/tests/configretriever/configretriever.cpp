@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "config-bootstrap.h"
+#include "config-foo.h"
+#include "config-bar.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/config/print.h>
@@ -11,9 +14,7 @@
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/exceptions.h>
-#include "config-bootstrap.h"
-#include "config-foo.h"
-#include "config-bar.h"
+#include <thread>
 #include <atomic>
 
 using namespace config;

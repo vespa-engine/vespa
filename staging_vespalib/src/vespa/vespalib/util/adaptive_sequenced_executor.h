@@ -6,7 +6,6 @@
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/eventbarrier.hpp>
-#include <vespa/vespalib/util/gate.h>
 #include <vespa/fastos/thread.h>
 #include <mutex>
 #include <condition_variable>

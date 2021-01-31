@@ -8,6 +8,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <sstream>
 #include <algorithm>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("registerapi_test");

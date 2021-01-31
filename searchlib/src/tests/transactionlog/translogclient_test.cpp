@@ -6,6 +6,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/fastos/file.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("translogclient_test");

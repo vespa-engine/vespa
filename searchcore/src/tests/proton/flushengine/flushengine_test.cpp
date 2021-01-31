@@ -14,7 +14,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <mutex>
-#include <chrono>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("flushengine_test");
@@ -31,8 +31,8 @@ using searchcorespi::IFlushTarget;
 using searchcorespi::FlushTask;
 using vespalib::Slime;
 
-constexpr long LONG_TIMEOUT = 66666;
-constexpr long SHORT_TIMEOUT = 1;
+constexpr vespalib::duration LONG_TIMEOUT = 66666ms;
+constexpr vespalib::duration SHORT_TIMEOUT = 1ms;
 constexpr vespalib::duration IINTERVAL = 1s;
 
 class SimpleExecutor : public vespalib::Executor {

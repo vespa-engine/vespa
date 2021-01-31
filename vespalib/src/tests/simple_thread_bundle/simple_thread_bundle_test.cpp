@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/box.h>
+#include <thread>
 
 using namespace vespalib;
 using namespace vespalib::fixed_thread_bundle;
@@ -112,9 +113,9 @@ TEST_MT_FFF("require that bundle run waits for all targets", 2, SimpleThreadBund
         f2.check(Box<size_t>().add(1).add(1).add(1));
         f3.done.countDown();
     } else {
-        EXPECT_FALSE(f3.done.await(20));
+        EXPECT_FALSE(f3.done.await(20ms));
         f3.start.countDown();
-        EXPECT_TRUE(f3.done.await(10000));
+        EXPECT_TRUE(f3.done.await(10s));
     }
 }
 

@@ -37,12 +37,12 @@ TEST("test gate dropping below zero") {
 TEST("test gate non blocking await return correct states") {
     Gate gate;
     EXPECT_EQUAL(gate.getCount(), 1u);
-    EXPECT_EQUAL(gate.await(0), false);
-    EXPECT_EQUAL(gate.await(10), false);
+    EXPECT_EQUAL(gate.await(0ms), false);
+    EXPECT_EQUAL(gate.await(10ms), false);
     gate.countDown();
     EXPECT_EQUAL(gate.getCount(), 0u);
-    EXPECT_EQUAL(gate.await(0), true);
-    EXPECT_EQUAL(gate.await(10), true);
+    EXPECT_EQUAL(gate.await(0ms), true);
+    EXPECT_EQUAL(gate.await(10ms), true);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
