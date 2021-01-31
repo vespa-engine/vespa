@@ -14,17 +14,12 @@ namespace flushengine { class TlsStatsMap; }
  */
 class IFlushStrategy {
 public:
-    /**
-     * Convenience typedefs.
-     */
     typedef std::shared_ptr<IFlushStrategy> SP;
 
     IFlushStrategy(const IFlushStrategy &) = delete;
     IFlushStrategy & operator = (const IFlushStrategy &) = delete;
-    /**
-     * Virtual destructor required for inheritance.
-     */
-    virtual ~IFlushStrategy() { }
+
+    virtual ~IFlushStrategy() = default;
 
     /**
      * Takes an input of targets that are candidates for flush and returns
@@ -34,11 +29,10 @@ public:
      * @return A prioritized list of targets to flush.
      */
     virtual FlushContext::List getFlushTargets(const FlushContext::List & targetList,
-                                               const flushengine::TlsStatsMap &
-                                               tlsStatsMap) const = 0;
+                                               const flushengine::TlsStatsMap & tlsStatsMap) const = 0;
 protected:
     IFlushStrategy() = default;
 };
 
-} // namespace proton
+}
 

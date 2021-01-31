@@ -31,9 +31,9 @@ using searchcorespi::IFlushTarget;
 using searchcorespi::FlushTask;
 using vespalib::Slime;
 
-const long LONG_TIMEOUT = 66666;
-const long SHORT_TIMEOUT = 1;
-const uint32_t IINTERVAL = 1000;
+constexpr long LONG_TIMEOUT = 66666;
+constexpr long SHORT_TIMEOUT = 1;
+constexpr vespalib::duration IINTERVAL = 1s;
 
 class SimpleExecutor : public vespalib::Executor {
 public:
@@ -426,15 +426,15 @@ struct Fixture
     SimpleStrategy::SP strategy;
     FlushEngine engine;
 
-    Fixture(uint32_t numThreads, uint32_t idleIntervalMS, SimpleStrategy::SP strategy_)
+    Fixture(uint32_t numThreads, vespalib::duration idleInterval, SimpleStrategy::SP strategy_)
         : tlsStatsFactory(std::make_shared<SimpleTlsStatsFactory>()),
           strategy(strategy_),
-          engine(tlsStatsFactory, strategy, numThreads, idleIntervalMS)
+          engine(tlsStatsFactory, strategy, numThreads, idleInterval)
     {
     }
 
-    Fixture(uint32_t numThreads, uint32_t idleIntervalMS)
-        : Fixture(numThreads, idleIntervalMS, std::make_shared<SimpleStrategy>())
+    Fixture(uint32_t numThreads, vespalib::duration idleInterval)
+        : Fixture(numThreads, idleInterval, std::make_shared<SimpleStrategy>())
     {
     }
 
@@ -488,12 +488,12 @@ TEST_F("require that strategy controls flush target", Fixture(1, IINTERVAL))
     EXPECT_EQUAL("bar", order[1]);
 }
 
-TEST_F("require that zero handlers does not core", Fixture(2, 50))
+TEST_F("require that zero handlers does not core", Fixture(2, 50ms))
 {
     f.engine.start();
 }
 
-TEST_F("require that zero targets does not core", Fixture(2, 50))
+TEST_F("require that zero targets does not core", Fixture(2, 50ms))
 {
     f.putFlushHandler("foo", std::make_shared<SimpleHandler>(Targets(), "foo"));
     f.putFlushHandler("bar", std::make_shared<SimpleHandler>(Targets(), "bar"));
@@ -692,7 +692,7 @@ assertThatHandlersInCurrentSet(FlushEngine & engine, const std::vector<const cha
     }
 }
 
-TEST_F("require that concurrency works", Fixture(2, 1))
+TEST_F("require that concurrency works", Fixture(2, 1ms))
 {
     auto target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto target2 = std::make_shared<SimpleTarget>("target2", 2, false);
@@ -713,7 +713,7 @@ TEST_F("require that concurrency works", Fixture(2, 1))
     target2->_proceed.countDown();
 }
 
-TEST_F("require that state explorer can list flush targets", Fixture(1, 1))
+TEST_F("require that state explorer can list flush targets", Fixture(1, 1ms))
 {
     auto target = std::make_shared<SimpleTarget>("target1", 100, false);
     f.putFlushHandler("handler",
@@ -744,7 +744,7 @@ TEST_F("require that state explorer can list flush targets", Fixture(1, 1))
     target->_taskDone.await(LONG_TIMEOUT);
 }
 
-TEST_F("require that oldest serial is updated when closing engine", Fixture(1, 100))
+TEST_F("require that oldest serial is updated when closing engine", Fixture(1, 100ms))
 {
     auto target1 = std::make_shared<SimpleTarget>("target1", 10, false);
     auto handler = f.addSimpleHandler({ target1 });
@@ -754,7 +754,7 @@ TEST_F("require that oldest serial is updated when closing engine", Fixture(1, 1
     EXPECT_EQUAL(20u, handler->_oldestSerial);
 }
 
-TEST_F("require that oldest serial is updated when finishing priority flush strategy", Fixture(1, 100, std::make_shared<NoFlushStrategy>()))
+TEST_F("require that oldest serial is updated when finishing priority flush strategy", Fixture(1, 100ms, std::make_shared<NoFlushStrategy>()))
 {
     auto target1 = std::make_shared<SimpleTarget>("target1", 10, true);
     auto handler = f.addSimpleHandler({ target1 });

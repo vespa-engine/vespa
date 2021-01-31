@@ -50,7 +50,7 @@ private:
     typedef HandlerMap<IFlushHandler> FlushHandlerMap;
     bool                           _closed;
     const uint32_t                 _maxConcurrent;
-    const uint32_t                 _idleIntervalMS;
+    const vespalib::duration       _idleInterval;
     uint32_t                       _taskId;    
     FastOS_ThreadPool              _threadPool;
     IFlushStrategy::SP             _strategy;
@@ -79,7 +79,7 @@ private:
     uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
     bool canFlushMore(const std::unique_lock<std::mutex> &guard) const;
-    bool wait(size_t minimumWaitTimeIfReady);
+    bool wait(vespalib::duration minimumWaitTimeIfReady);
     bool isFlushing(const std::lock_guard<std::mutex> &guard, const vespalib::string & name) const;
 
     friend class FlushTask;
@@ -102,7 +102,7 @@ public:
      * @param idleInterval The interval between when flushes are checked whne there are no one progressing.
      */
     FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
-                IFlushStrategy::SP strategy, uint32_t numThreads, uint32_t idleIntervalMS);
+                IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleIntervalMS);
 
     /**
      * Destructor. Waits for all pending tasks to complete.

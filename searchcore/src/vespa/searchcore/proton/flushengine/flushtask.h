@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/proton/flushengine/flushengine.h>
+#include <memory>
+#include <vespa/vespalib/util/executor.h>
 
 namespace proton {
 
+class FlushEngine;
+class FlushContext;
 /**
  * This class decorates a task returned by initFlush() in IFlushTarget so that
  * the appropriate callback is invoked on the running FlushEngine.
@@ -14,7 +17,7 @@ class FlushTask : public vespalib::Executor::Task
 private:
     uint32_t                          _taskId;
     FlushEngine                      &_engine;
-    FlushContext::SP                  _context;
+    std::shared_ptr<FlushContext>     _context;
 
 public:
     FlushTask(const FlushTask &) = delete;
@@ -26,15 +29,14 @@ public:
      * @param engine The running flush engine.
      * @param ctx    The context of the flush to perform.
      */
-    FlushTask(uint32_t taskId, FlushEngine &engine, const FlushContext::SP &ctx);
+    FlushTask(uint32_t taskId, FlushEngine &engine, std::shared_ptr<FlushContext> ctx);
 
     /**
      * Destructor. Notifies the engine that the flush is done to prevent the
      * engine from locking targets because of a glitch.
      */
-    ~FlushTask();
+    ~FlushTask() override;
 
-    // Implements Executor::Task.
     void run() override;
 };
 
