@@ -114,7 +114,8 @@ public class CloudSubscriberFactory implements SubscriberFactory {
                 catch (IllegalArgumentException e) {
                     numExceptions++;
                     log.log(Level.WARNING, "Got exception from the config system (ignore if you just removed a " +
-                                           "component from your application that used the mentioned config): ", e);
+                                           "component from your application that used the mentioned config) Subscriber info: " +
+                                           subscriber.toString(), e);
                     if (numExceptions >= 5)
                         throw new IllegalArgumentException("Failed retrieving the next config generation", e);
                 }
