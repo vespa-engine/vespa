@@ -72,7 +72,9 @@ class FileStorManager : public StorageLinkQueued,
     std::shared_ptr<FileStorMetrics> _metrics;
     std::unique_ptr<FileStorHandler> _filestorHandler;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequencedExecutor;
-    mutable std::mutex         _executeLock;
+    std::mutex                 _executeLock;
+    std::condition_variable    _syncCond;
+    bool                       _notifyAfterExecute;
     size_t                     _executeCount;
     vespalib::hash_set<size_t> _tasksInExecute;
 
@@ -82,7 +84,6 @@ class FileStorManager : public StorageLinkQueued,
     std::unique_ptr<vespalib::IDestructorCallback> _bucketExecutorRegistration;
     ServiceLayerHostInfoReporter                   _host_info_reporter;
     std::unique_ptr<vespalib::IDestructorCallback> _resource_usage_listener_registration;
-    bool areTaskCompleteUntil(size_t serialNum) const;
     class TrackExecutedTasks;
 public:
     FileStorManager(const config::ConfigUri &, spi::PersistenceProvider&,

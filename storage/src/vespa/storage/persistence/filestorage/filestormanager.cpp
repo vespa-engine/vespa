@@ -82,6 +82,8 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _filestorHandler(),
       _sequencedExecutor(),
       _executeLock(),
+      _syncCond(),
+      _notifyAfterExecute(false),
       _executeCount(0),
       _tasksInExecute(),
       _closed(false),
@@ -1003,6 +1005,9 @@ void
 FileStorManager::TrackExecutedTasks::run() {
     std::lock_guard guard(_manager._executeLock);
     _manager._tasksInExecute.erase(_serialNum);
+    if (_manager._notifyAfterExecute) {
+        _manager._syncCond.notify_all();
+    }
 }
 
 std::unique_ptr<spi::BucketTask>
@@ -1016,28 +1021,26 @@ FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketT
     return task;
 }
 
+namespace {
 bool
-FileStorManager::areTaskCompleteUntil(size_t limit) const
-{
-    std::lock_guard guard(_executeLock);
-    for (size_t serial : _tasksInExecute) {
+areTasksCompleteUntil(const vespalib::hash_set<size_t> &inFlight, size_t limit) {
+    for (size_t serial : inFlight) {
         if (serial < limit) {
             return false;
         }
     }
     return true;
 }
+}
 
 void
 FileStorManager::sync() {
-    size_t serialNumLimit;
-    {
-        std::lock_guard guard(_executeLock);
-        serialNumLimit = _executeCount;
-    }
-    while ( ! areTaskCompleteUntil(serialNumLimit)) {
-        std::this_thread::sleep_for(100us);
-    }
+    std::unique_lock guard(_executeLock);
+    _notifyAfterExecute = true;
+    _syncCond.wait(guard, [this, limit=_executeCount]() {
+        return areTasksCompleteUntil(_tasksInExecute, limit);
+    });
+    _notifyAfterExecute = false;
 }
 
 } // storage

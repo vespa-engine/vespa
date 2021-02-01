@@ -482,6 +482,7 @@ TEST_F(FileStorManagerTest, sync_waits_for_already_started_tasks) {
         executor->sync();
         syncComplete = true;
     });
+    std::this_thread::sleep_for(100us);
     EXPECT_FALSE(syncComplete);
     gate.countDown();
     thread.join();
