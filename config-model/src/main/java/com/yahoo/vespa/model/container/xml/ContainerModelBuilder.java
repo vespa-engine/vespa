@@ -147,6 +147,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         this.httpServerEnabled = networking == Networking.enable;
     }
 
+    protected boolean isConfigserver() { return false; }
+
     @Override
     public List<ConfigModelId> handlesElements() {
         return configModelIds;
@@ -342,7 +344,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<Element> accessLogElements = getAccessLogElements(spec);
 
         for (Element accessLog : accessLogElements) {
-            AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
+            AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog, isConfigserver()).ifPresent(cluster::addComponent);
         }
 
         if (accessLogElements.isEmpty() && deployState.getAccessLoggingEnabledByDefault())

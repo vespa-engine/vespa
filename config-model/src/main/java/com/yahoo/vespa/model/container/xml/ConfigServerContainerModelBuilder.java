@@ -22,6 +22,8 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
         this.options = options;
     }
 
+    @Override protected boolean isConfigserver() { return true; }
+
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
         ConfigserverCluster cluster = new ConfigserverCluster(modelContext.getParentProducer(), "configserver",
