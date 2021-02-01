@@ -76,10 +76,10 @@ TensorSpec perform_generic_concat(const TensorSpec &a, const TensorSpec &b,
 void test_generic_concat_with(const ValueBuilderFactory &factory) {
     ASSERT_TRUE((concat_layouts.size() % 2) == 0);
     for (size_t i = 0; i < concat_layouts.size(); i += 2) {
-        auto l = concat_layouts[i];
-        auto r = concat_layouts[i+1].seq(N_16ths);
-        for (TensorSpec lhs : { l.gen(), l.cells_double().gen() }) {
-            for (TensorSpec rhs : { r.gen(), r.cells_double().gen() }) {
+        const auto &l = concat_layouts[i];
+        const auto &r = concat_layouts[i+1].seq(N_16ths);
+        for (TensorSpec lhs : { l.gen(), l.cpy().cells_double().gen() }) {
+            for (TensorSpec rhs : { r.gen(), r.cpy().cells_double().gen() }) {
                 SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
                 auto actual = perform_generic_concat(lhs, rhs, "y", factory);
                 auto expect = ReferenceOperations::concat(lhs, rhs, "y");

@@ -105,10 +105,10 @@ TEST(GenericJoinTest, dense_join_plan_can_be_executed) {
 TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
     ASSERT_TRUE((join_layouts.size() % 2) == 0);
     for (size_t i = 0; i < join_layouts.size(); i += 2) {
-        auto l = join_layouts[i];
-        auto r = join_layouts[i+1];
-        for (TensorSpec lhs : { l.gen(), l.cells_double().gen() }) {
-            for (TensorSpec rhs : { r.gen(), r.cells_double().gen() }) {
+        const auto &l = join_layouts[i];
+        const auto &r = join_layouts[i+1];
+        for (TensorSpec lhs : { l.gen(), l.cpy().cells_double().gen() }) {
+            for (TensorSpec rhs : { r.gen(), r.cpy().cells_double().gen() }) {
                 for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
                     SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
                     auto expect = ReferenceOperations::join(lhs, rhs, fun);

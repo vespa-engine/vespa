@@ -48,10 +48,10 @@ TensorSpec perform_generic_merge(const TensorSpec &a, const TensorSpec &b, join_
 void test_generic_merge_with(const ValueBuilderFactory &factory) {
     ASSERT_TRUE((merge_layouts.size() % 2) == 0);
     for (size_t i = 0; i < merge_layouts.size(); i += 2) {
-        auto l = merge_layouts[i];
-        auto r = merge_layouts[i+1].seq(N_16ths);
-        for (TensorSpec lhs : { l.gen(), l.cells_double().gen() }) {
-            for (TensorSpec rhs : { r.gen(), r.cells_double().gen() }) {
+        const auto &l = merge_layouts[i];
+        const auto &r = merge_layouts[i+1].seq(N_16ths);
+        for (TensorSpec lhs : { l.gen(), l.cpy().cells_double().gen() }) {
+            for (TensorSpec rhs : { r.gen(), r.cpy().cells_double().gen() }) {
                 SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
                 for (auto fun: {operation::Add::f, operation::Mul::f, operation::Sub::f, operation::Max::f}) {
                     auto expect = ReferenceOperations::merge(lhs, rhs, fun);
