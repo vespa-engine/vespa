@@ -820,6 +820,13 @@ FileStorManager::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
 void FileStorManager::onClose()
 {
     LOG(debug, "Start closing");
+    std::unique_ptr<vespalib::IDestructorCallback> toDestruct;
+    {
+        std::lock_guard guard(_executeLock);
+        toDestruct = std::move(_bucketExecutorRegistration);
+    }
+    toDestruct.reset();
+    _resource_usage_listener_registration.reset();
     // Avoid getting config during shutdown
     _configFetcher.close();
     LOG(debug, "Closed _configFetcher.");
@@ -985,18 +992,18 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
 
 class FileStorManager::TrackExecutedTasks : public vespalib::Executor::Task {
 public:
-    TrackExecutedTasks(FileStorManager & manager);
+    TrackExecutedTasks(std::lock_guard<std::mutex> & guard, FileStorManager & manager);
     void run() override;
 private:
     FileStorManager & _manager;
     size_t            _serialNum;
 };
 
-FileStorManager::TrackExecutedTasks::TrackExecutedTasks(FileStorManager & manager)
+FileStorManager::TrackExecutedTasks::TrackExecutedTasks(std::lock_guard<std::mutex> & guard, FileStorManager & manager)
     : _manager(manager),
       _serialNum(0)
 {
-    std::lock_guard guard(_manager._executeLock);
+    (void) guard;
     _serialNum = _manager._executeCount++;
     _manager._tasksInExecute.insert(_serialNum);
 }
@@ -1015,8 +1022,16 @@ FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketT
     StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
             bucket.getBucketId(), "FileStorManager::execute"));
     if (entry.exist()) {
-        auto trackBuckets = std::make_unique<TrackExecutedTasks>(*this);
-        _filestorHandler->schedule(std::make_shared<RunTaskCommand>(bucket, std::move(trackBuckets), std::move(task)));
+        std::unique_ptr<TrackExecutedTasks> trackTasks;
+        {
+            std::lock_guard guard(_executeLock);
+            if (_bucketExecutorRegistration) {
+                trackTasks = std::make_unique<TrackExecutedTasks>(guard, *this);
+            }
+        }
+        if (trackTasks) {
+            _filestorHandler->schedule(std::make_shared<RunTaskCommand>(bucket, std::move(trackTasks), std::move(task)));
+        }
     }
     return task;
 }
@@ -1036,6 +1051,7 @@ areTasksCompleteUntil(const vespalib::hash_set<size_t> &inFlight, size_t limit) 
 void
 FileStorManager::sync() {
     std::unique_lock guard(_executeLock);
+    if ( ! _bucketExecutorRegistration) return;
     _notifyAfterExecute = true;
     _syncCond.wait(guard, [this, limit=_executeCount]() {
         return areTasksCompleteUntil(_tasksInExecute, limit);
