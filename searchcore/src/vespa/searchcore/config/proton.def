@@ -306,6 +306,12 @@ documentdb[].allocation.amortizecount int default=10000
 ## used in multi-value attribute vectors to store underlying values.
 documentdb[].allocation.multivaluegrowfactor double default=0.2
 
+## The ratio of used bytes that can be dead before attempting to perform compaction.
+documentdb[].allocation.max_dead_bytes_ratio double default=0.2 restart
+
+## The ratio of used address space that can be dead before attempting to perform compaction.
+documentdb[].allocation.max_dead_address_space_ratio double default=0.2 restart
+
 ## The interval of when periodic tasks should be run
 periodic.interval double default=3600.0
 

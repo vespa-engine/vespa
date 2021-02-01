@@ -28,6 +28,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlydocsubdb");
 
+using search::CompactionStrategy;
 using search::GrowStrategy;
 using search::AttributeGuard;
 using search::AttributeVector;
@@ -57,12 +58,14 @@ IIndexWriter::SP nullIndexWriter;
 StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName, const vespalib::string &subName,
                                   const vespalib::string &baseDir,
                                   const search::GrowStrategy &attributeGrow, size_t attributeGrowNumDocs,
+                                  const search::CompactionStrategy& attribute_compaction_strategy,
                                   uint32_t subDbId, SubDbType subDbType)
     : _docTypeName(docTypeName),
       _subName(subName),
       _baseDir(baseDir + "/" + subName),
       _attributeGrow(attributeGrow),
       _attributeGrowNumDocs(attributeGrowNumDocs),
+      _attribute_compaction_strategy(attribute_compaction_strategy),
       _subDbId(subDbId),
       _subDbType(subDbType)
 { }
@@ -101,6 +104,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _metaStoreCtx(),
       _attributeGrow(cfg._attributeGrow),
       _attributeGrowNumDocs(cfg._attributeGrowNumDocs),
+      _attribute_compaction_strategy(cfg._attribute_compaction_strategy),
       _flushedDocumentMetaStoreSerialNum(0u),
       _flushedDocumentStoreSerialNum(0u),
       _dms(),

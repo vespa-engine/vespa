@@ -77,13 +77,23 @@ makeGrowStrategy(uint32_t docsInitialCapacity, const Allocation &allocCfg)
     return GrowStrategy(docsInitialCapacity, allocCfg.growfactor, allocCfg.growbias, allocCfg.multivaluegrowfactor);
 }
 
+
+CompactionStrategy
+make_compaction_strategy(const Allocation& alloc_cfg)
+{
+    double max_dead_bytes_ratio = alloc_cfg.maxDeadBytesRatio;
+    double max_dead_address_space_ratio = alloc_cfg.maxDeadAddressSpaceRatio;
+    return CompactionStrategy(max_dead_bytes_ratio, max_dead_address_space_ratio);
+}
+
 DocumentSubDBCollection::Config
 makeSubDBConfig(const ProtonConfig::Distribution & distCfg, const Allocation & allocCfg, size_t numSearcherThreads) {
     size_t initialNumDocs(allocCfg.initialnumdocs);
     GrowStrategy searchableGrowth = makeGrowStrategy(initialNumDocs * distCfg.searchablecopies, allocCfg);
     GrowStrategy removedGrowth = makeGrowStrategy(std::max(1024ul, initialNumDocs/100), allocCfg);
     GrowStrategy notReadyGrowth = makeGrowStrategy(initialNumDocs * (distCfg.redundancy - distCfg.searchablecopies), allocCfg);
-    return DocumentSubDBCollection::Config(searchableGrowth, notReadyGrowth, removedGrowth, allocCfg.amortizecount, numSearcherThreads);
+    CompactionStrategy compaction_strategy = make_compaction_strategy(allocCfg);
+    return DocumentSubDBCollection::Config(searchableGrowth, notReadyGrowth, removedGrowth, allocCfg.amortizecount, compaction_strategy, numSearcherThreads);
 }
 
 index::IndexConfig

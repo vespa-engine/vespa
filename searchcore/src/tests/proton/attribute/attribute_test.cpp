@@ -535,7 +535,7 @@ public:
     AttributeCollectionSpecFactory _factory;
     AttributeCollectionSpecTest(bool fastAccessOnly)
         : _builder(),
-          _factory(search::GrowStrategy(), 100, fastAccessOnly)
+          _factory(search::GrowStrategy(), 100, search::CompactionStrategy(), fastAccessOnly)
     {
         addAttribute("a1", false);
         addAttribute("a2", true);

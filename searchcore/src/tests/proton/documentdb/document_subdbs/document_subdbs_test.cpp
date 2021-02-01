@@ -124,7 +124,7 @@ struct MyStoreOnlyConfig
               SUB_NAME,
               BASE_DIR,
               search::GrowStrategy(),
-              0, 0, SubDbType::READY)
+              0, search::CompactionStrategy(), 0, SubDbType::READY)
     {
     }
 };

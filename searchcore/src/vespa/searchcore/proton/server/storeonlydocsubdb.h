@@ -87,12 +87,15 @@ public:
         const vespalib::string _baseDir;
         const search::GrowStrategy _attributeGrow;
         const size_t _attributeGrowNumDocs;
+        const search::CompactionStrategy _attribute_compaction_strategy;
         const uint32_t _subDbId;
         const SubDbType _subDbType;
 
         Config(const DocTypeName &docTypeName, const vespalib::string &subName,
-               const vespalib::string &baseDir, const search::GrowStrategy &attributeGrow,
-               size_t attributeGrowNumDocs, uint32_t subDbId, SubDbType subDbType);
+               const vespalib::string &baseDir,
+               const search::GrowStrategy &attributeGrow, size_t attributeGrowNumDocs,
+               const search::CompactionStrategy& attribute_compaction_strategy,
+               uint32_t subDbId, SubDbType subDbType);
         ~Config();
     };
 
@@ -132,6 +135,7 @@ protected:
     IDocumentMetaStoreContext::SP _metaStoreCtx;
     const search::GrowStrategy    _attributeGrow;
     const size_t                  _attributeGrowNumDocs;
+    const search::CompactionStrategy _attribute_compaction_strategy;
     // The following two serial numbers reflect state at program startup
     // and are used by replay logic.
     SerialNum                     _flushedDocumentMetaStoreSerialNum;
