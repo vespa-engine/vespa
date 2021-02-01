@@ -90,8 +90,8 @@ TensorSpec perform_generic_create(const TensorSpec &a, const ValueBuilderFactory
 }
 
 void test_generic_create_with(const ValueBuilderFactory &factory) {
-    for (auto layout : create_layouts) {
-        for (TensorSpec full : { layout.gen(), layout.cells_double().gen() }) {
+    for (const auto &layout : create_layouts) {
+        for (TensorSpec full : { layout.gen(), layout.cpy().cells_double().gen() }) {
             auto actual = perform_generic_create(full, factory);
             auto expect = reference_create(full).normalize();
             EXPECT_EQ(actual, expect);

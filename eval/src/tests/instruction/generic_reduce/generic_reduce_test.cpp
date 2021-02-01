@@ -69,8 +69,8 @@ TEST(GenericReduceTest, sparse_reduce_plan_can_be_created) {
 }
 
 void test_generic_reduce_with(const ValueBuilderFactory &factory) {
-    for (auto layout: layouts) {
-        for (TensorSpec input : { layout.gen(), layout.cells_double().gen() }) {
+    for (const auto &layout: layouts) {
+        for (TensorSpec input : { layout.gen(), layout.cpy().cells_double().gen() }) {
             SCOPED_TRACE(fmt("tensor type: %s, num_cells: %zu", input.type().c_str(), input.cells().size()));
             for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
                 SCOPED_TRACE(fmt("aggregator: %s", AggrNames::name_of(aggr)->c_str()));

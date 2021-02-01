@@ -193,8 +193,8 @@ void fill_dims_and_check(const TensorSpec &input,
 }
 
 void test_generic_peek_with(const ValueBuilderFactory &factory) {
-    for (auto layout : peek_layouts) {
-        for (TensorSpec input : { layout.gen(), layout.cells_double().gen() }) {
+    for (const auto &layout : peek_layouts) {
+        for (TensorSpec input : { layout.gen(), layout.cpy().cells_double().gen() }) {
             ValueType input_type = ValueType::from_spec(input.type());
             const auto &dims = input_type.dimensions();
             PeekSpec spec;

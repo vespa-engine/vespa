@@ -20,6 +20,11 @@ DimSpec::make_dict(size_t size, size_t stride, const vespalib::string &prefix)
     return dict;
 }
 
+GenSpec::GenSpec(GenSpec &&other) = default;
+GenSpec::GenSpec(const GenSpec &other) = default;
+GenSpec &GenSpec::operator=(GenSpec &&other) = default;
+GenSpec &GenSpec::operator=(const GenSpec &other) = default;
+
 GenSpec::~GenSpec() = default;
 
 ValueType

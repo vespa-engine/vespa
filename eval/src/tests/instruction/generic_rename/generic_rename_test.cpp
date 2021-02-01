@@ -109,8 +109,8 @@ TensorSpec perform_generic_rename(const TensorSpec &a,
 }
 
 void test_generic_rename_with(const ValueBuilderFactory &factory) {
-    for (auto layout : rename_layouts) {
-        for (TensorSpec lhs : { layout.gen(), layout.cells_double().gen() }) {
+    for (const auto &layout : rename_layouts) {
+        for (TensorSpec lhs : { layout.gen(), layout.cpy().cells_double().gen() }) {
             ValueType lhs_type = ValueType::from_spec(lhs.type());
             for (const auto & from_to : rename_from_to) {
                 ValueType renamed_type = lhs_type.rename(from_to.from, from_to.to);
