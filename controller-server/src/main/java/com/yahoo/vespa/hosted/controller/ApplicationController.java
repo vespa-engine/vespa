@@ -406,7 +406,7 @@ public class ApplicationController {
                 // Provision application roles if enabled for the zone
                 if (provisionApplicationRoles.with(FetchVector.Dimension.ZONE_ID, zone.value()).value()) {
                     try {
-                        applicationRoles = controller.serviceRegistry().applicationRoleService().createApplicationRoles(instance.id());
+                        applicationRoles = controller.serviceRegistry().roleService().createApplicationRoles(instance.id());
                     } catch (Exception e) {
                         log.log(Level.SEVERE, "Exception creating application roles for application: " + instance.id(), e);
                         throw new RuntimeException("Unable to provision iam roles for application");

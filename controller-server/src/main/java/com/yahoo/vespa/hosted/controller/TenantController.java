@@ -101,6 +101,7 @@ public class TenantController {
             requireNonExistent(tenantSpec.tenant());
             TenantId.validate(tenantSpec.tenant().value());
             curator.writeTenant(accessControl.createTenant(tenantSpec, controller.clock().instant(), credentials, asList()));
+            controller.serviceRegistry().roleService().createTenantRole(tenantSpec.tenant());
         }
     }
 
