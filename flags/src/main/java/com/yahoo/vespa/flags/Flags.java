@@ -252,13 +252,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_AUTOMATIC_REINDEXING = defineFeatureFlag(
-            "enable-automatic-reindexing", true,
-            List.of("bjorncs", "jonmv"), "2020-12-02", "2021-02-01",
-            "Whether to automatically trigger reindexing from config change",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
     public static final UnboundDoubleFlag REINDEXER_WINDOW_SIZE_INCREMENT = defineDoubleFlag(
             "reindexer-window-size-increment", 0.2,
             List.of("jonmv"), "2020-12-09", "2021-02-07",
