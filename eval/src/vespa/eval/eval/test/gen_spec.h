@@ -66,6 +66,7 @@ private:
     static double default_seq(size_t idx) { return (idx + 1.0); }
 public:
     GenSpec() : _dims(), _cells(CellType::DOUBLE), _seq(default_seq) {}
+    GenSpec(const GenSpec &other);
     ~GenSpec();
     std::vector<DimSpec> dims() const { return _dims; }
     CellType cells() const { return _cells; }
@@ -100,5 +101,7 @@ public:
     ValueType type() const;
     TensorSpec gen() const;
 };
+
+GenSpec::GenSpec(const GenSpec &other) = default;
 
 } // namespace
