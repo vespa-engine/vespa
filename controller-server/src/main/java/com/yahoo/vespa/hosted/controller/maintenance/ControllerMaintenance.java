@@ -118,13 +118,13 @@ public class ControllerMaintenance extends AbstractComponent {
             this.outstandingChangeDeployer = duration(3, MINUTES);
             this.versionStatusUpdater = duration(3, MINUTES);
             this.readyJobsTrigger = duration(1, MINUTES);
-            this.deploymentMetricsMaintainer = duration(5, MINUTES);
+            this.deploymentMetricsMaintainer = duration(6, MINUTES);
             this.applicationOwnershipConfirmer = duration(12, HOURS);
-            this.systemUpgrader = duration(1, MINUTES);
-            this.jobRunner = duration(90, SECONDS);
+            this.systemUpgrader = duration(90, SECONDS);
+            this.jobRunner = duration(105, SECONDS);
             this.osUpgrader = duration(1, MINUTES);
             this.contactInformationMaintainer = duration(12, HOURS);
-            this.nameServiceDispatcher = duration(10, SECONDS);
+            this.nameServiceDispatcher = duration(30, SECONDS);
             this.costReportMaintainer = duration(2, HOURS);
             this.resourceMeterMaintainer = duration(1, MINUTES);
             this.cloudEventReporter = duration(30, MINUTES);
