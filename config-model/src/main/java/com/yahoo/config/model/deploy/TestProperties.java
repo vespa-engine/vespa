@@ -47,7 +47,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Quota quota = Quota.unlimited();
     private boolean useAccessControlTlsHandshakeClientAuth;
     private boolean useAsyncMessageHandlingOnSchedule = false;
-    private int mergeChunkSize = 0x400000 - 0x1000; // 4M -4k
     private double feedConcurrency = 0.5;
     private boolean enableAutomaticReindexing = false;
     private boolean reconfigurableZookeeperServer = false;
@@ -82,7 +81,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Quota quota() { return quota; }
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
-    @Override public int mergeChunkSize() { return mergeChunkSize; }
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
     @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
@@ -91,11 +89,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
-        return this;
-    }
-
-    public TestProperties setMergeChunkSize(int size) {
-        mergeChunkSize = size;
         return this;
     }
 

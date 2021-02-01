@@ -287,19 +287,6 @@ public class StorageClusterTest {
         assertEquals(StorFilestorConfig.Response_sequencer_type.THROUGHPUT, config.response_sequencer_type());
     }
 
-    private void verifyMergeChunkSize(int expected, int value) {
-        StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-        simpleCluster(new TestProperties().setMergeChunkSize(value)).getConfig(builder);
-        StorFilestorConfig config = new StorFilestorConfig(builder);
-        assertEquals(expected, config.bucket_merge_chunk_size());
-    }
-
-    @Test
-    public void testFeatureFlagControlOfMergeChunkSize() {
-        verifyMergeChunkSize(0x200000, 13);
-        verifyMergeChunkSize(0x1600000, 0x1500000);
-    }
-
     private void verifyAsyncMessageHandlingOnSchedule(boolean expected, boolean value) {
         StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
         simpleCluster(new TestProperties().setAsyncMessageHandlingOnSchedule(value)).getConfig(builder);
