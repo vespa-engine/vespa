@@ -147,7 +147,6 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
-        private final boolean enableAutomaticReindexing;
         private final double reindexerWindowSizeIncrement;
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
@@ -168,7 +167,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableFeedBlockInDistributor;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
-            this.enableAutomaticReindexing = flagValue(source, appId, Flags.ENABLE_AUTOMATIC_REINDEXING);
             this.reindexerWindowSizeIncrement = flagValue(source, appId, Flags.REINDEXER_WINDOW_SIZE_INCREMENT);
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
             this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
@@ -189,7 +187,6 @@ public class ModelContextImpl implements ModelContext {
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
         }
 
-        @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
         @Override public double reindexerWindowSizeIncrement() { return reindexerWindowSizeIncrement; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }

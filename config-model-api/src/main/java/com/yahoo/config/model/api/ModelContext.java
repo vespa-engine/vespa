@@ -64,8 +64,8 @@ public interface ModelContext {
      *  - Remove below method once all config-model versions in hosted production include changes from 1)
      */
     interface FeatureFlags {
-        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}) default boolean enableAutomaticReindexing() { return false; }
-        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}) default double reindexerWindowSizeIncrement() { return 0.2; }
+        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.352") default boolean enableAutomaticReindexing() { return true; }
+        @ModelFeatureFlag(owners = {"jonmv"}) default double reindexerWindowSizeIncrement() { return 0.2; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2021") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
