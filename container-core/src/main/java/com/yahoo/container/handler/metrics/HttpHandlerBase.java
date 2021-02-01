@@ -1,14 +1,13 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.metrics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.Path;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URI;
 import java.util.List;
@@ -26,8 +25,6 @@ import static java.util.logging.Level.WARNING;
  * @author gjoranv
  */
 public abstract class HttpHandlerBase extends ThreadedHttpRequestHandler {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     protected HttpHandlerBase(Executor executor) {
         super(executor);
@@ -52,14 +49,15 @@ public abstract class HttpHandlerBase extends ThreadedHttpRequestHandler {
     protected JsonResponse resourceListResponse(URI requestUri, List<String> resources) {
         try {
             return new JsonResponse(OK, resourceList(requestUri, resources));
-        } catch (JsonProcessingException e) {
+        } catch (JSONException e) {
             log.log(WARNING, "Bad JSON construction in generated resource list for " + requestUri.getPath(), e);
             return new ErrorResponse(INTERNAL_SERVER_ERROR,
                                      "An error occurred when generating the list of api resources.");
         }
     }
 
-    private static String resourceList(URI requestUri, List<String> resources) throws JsonProcessingException {
+    // TODO: Use jackson with a "Resources" class instead of JSONObject
+    private static String resourceList(URI requestUri, List<String> resources) throws JSONException {
         int port = requestUri.getPort();
         String host = requestUri.getHost();
         StringBuilder base = new StringBuilder("http://");
@@ -68,14 +66,13 @@ public abstract class HttpHandlerBase extends ThreadedHttpRequestHandler {
             base.append(":").append(port);
         }
         String uriBase = base.toString();
-        ArrayNode linkList = jsonMapper.createArrayNode();
+        JSONArray linkList = new JSONArray();
         for (String api : resources) {
-            ObjectNode resource = jsonMapper.createObjectNode();
+            JSONObject resource = new JSONObject();
             resource.put("url", uriBase + api);
-            linkList.add(resource);
+            linkList.put(resource);
         }
-        return jsonMapper.writerWithDefaultPrettyPrinter()
-                .writeValueAsString(jsonMapper.createObjectNode().set("resources", linkList));
+        return new JSONObject().put("resources", linkList).toString(4);
     }
 
 }

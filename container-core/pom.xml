@@ -42,7 +42,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <!-- TODO Vespa 8: stop providing org.json:json -->
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
     </dependency>

@@ -5,18 +5,17 @@ import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.service.VespaService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
@@ -40,8 +39,6 @@ import static org.junit.Assert.assertTrue;
  * @author gjoranv
  */
 public class RpcMetricsTest {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String METRICS_RESPONSE = getFileContents("metrics-storage-simple.json").trim();
     private static final String EXTRA_APP = "extra";
@@ -70,9 +67,9 @@ public class RpcMetricsTest {
                 String allServicesResponse = getMetricsForYamas(ALL_SERVICES, rpcClient).trim();
 
                 // Verify that application is used as serviceId, and that metric exists.
-                JsonNode extraMetrics = findExtraMetricsObject(allServicesResponse);
-                assertThat(extraMetrics.get("metrics").get("foo.count").intValue(), is(3));
-                assertThat(extraMetrics.get("dimensions").get("role").textValue(), is("extra-role"));
+                JSONObject extraMetrics = findExtraMetricsObject(allServicesResponse);
+                assertThat(extraMetrics.getJSONObject("metrics").getInt("foo.count"), is(3));
+                assertThat(extraMetrics.getJSONObject("dimensions").getString("role"), is("extra-role"));
             }
         }
     }
@@ -88,7 +85,7 @@ public class RpcMetricsTest {
 
                 // Verify that no extra metrics exists
                 String allServicesResponse = getMetricsForYamas(ALL_SERVICES, rpcClient).trim();
-                JsonNode extraMetrics = findExtraMetricsObject(allServicesResponse);
+                JSONObject extraMetrics = findExtraMetricsObject(allServicesResponse);
                 assertEquals(extraMetrics.toString(), "{}");
             }
         }
@@ -133,28 +130,28 @@ public class RpcMetricsTest {
         }
     }
 
-    private static void verifyMetricsFromRpcRequest(VespaService service, RpcClient client) throws IOException {
+    private static void verifyMetricsFromRpcRequest(VespaService service, RpcClient client) throws JSONException {
         String jsonResponse = getMetricsForYamas(service.getMonitoringName(), client).trim();
-        ArrayNode metrics = (ArrayNode) jsonMapper.readTree(jsonResponse).get("metrics");
-        assertThat("Expected 3 metric messages", metrics.size(), is(3));
-        for (int i = 0; i < metrics.size() - 1; i++) { // The last "metric message" contains only status code/message
-            JsonNode jsonObject = metrics.get(i);
+        JSONArray metrics = new JSONObject(jsonResponse).getJSONArray("metrics");
+        assertThat("Expected 3 metric messages", metrics.length(), is(3));
+        for (int i = 0; i < metrics.length() - 1; i++) { // The last "metric message" contains only status code/message
+            JSONObject jsonObject = metrics.getJSONObject(i);
             assertFalse(jsonObject.has("status_code"));
             assertFalse(jsonObject.has("status_msg"));
-            assertThat(jsonObject.get("dimensions").get("foo").textValue(), is("bar"));
-            assertThat(jsonObject.get("dimensions").get("bar").textValue(), is("foo"));
-            assertThat(jsonObject.get("dimensions").get("serviceDim").textValue(), is("serviceDimValue"));
-            assertThat(jsonObject.get("routing").get("yamas").get("namespaces").size(), is(1));
-            if (jsonObject.get("metrics").has("foo_count")) {
-                assertThat(jsonObject.get("metrics").get("foo_count").intValue(), is(1));
-                assertThat(jsonObject.get("routing").get("yamas").get("namespaces").get(0).textValue(), is(vespaMetricsConsumerId.id));
+            assertThat(jsonObject.getJSONObject("dimensions").getString("foo"), is("bar"));
+            assertThat(jsonObject.getJSONObject("dimensions").getString("bar"), is("foo"));
+            assertThat(jsonObject.getJSONObject("dimensions").getString("serviceDim"), is("serviceDimValue"));
+            assertThat(jsonObject.getJSONObject("routing").getJSONObject("yamas").getJSONArray("namespaces").length(), is(1));
+            if (jsonObject.getJSONObject("metrics").has("foo_count")) {
+                assertThat(jsonObject.getJSONObject("metrics").getInt("foo_count"), is(1));
+                assertThat(jsonObject.getJSONObject("routing").getJSONObject("yamas").getJSONArray("namespaces").get(0), is(vespaMetricsConsumerId.id));
             } else {
-                assertThat(jsonObject.get("metrics").get("foo.count").intValue(), is(1));
-                assertThat(jsonObject.get("routing").get("yamas").get("namespaces").get(0).textValue(), is(CUSTOM_CONSUMER_ID.id));
+                assertThat(jsonObject.getJSONObject("metrics").getInt("foo.count"), is(1));
+                assertThat(jsonObject.getJSONObject("routing").getJSONObject("yamas").getJSONArray("namespaces").get(0), is(CUSTOM_CONSUMER_ID.id));
             }
         }
 
-        verifyStatusMessage(metrics.get(metrics.size() - 1));
+        verifyStatusMessage(metrics.getJSONObject(metrics.length() - 1));
     }
 
     private void verfiyMetricsFromServiceObject(VespaService service) {
@@ -169,15 +166,15 @@ public class RpcMetricsTest {
         assertThat("Metric foo did not contain correct dimension for key = bar", foo.getDimensions().get(toDimensionId("bar")), is("foo"));
     }
 
-    private void verifyMetricsFromRpcRequestForAllServices(RpcClient client) throws IOException {
+    private void verifyMetricsFromRpcRequestForAllServices(RpcClient client) throws JSONException {
         // Verify that metrics for all services can be retrieved in one request.
         String allServicesResponse = getMetricsForYamas(ALL_SERVICES, client).trim();
-        ArrayNode allServicesMetrics = (ArrayNode) jsonMapper.readTree(allServicesResponse).get("metrics");
-        assertThat(allServicesMetrics.size(), is(5));
+        JSONArray allServicesMetrics = new JSONObject(allServicesResponse).getJSONArray("metrics");
+        assertThat(allServicesMetrics.length(), is(5));
     }
 
     @Test
-    public void testGetAllMetricNames() {
+    public void testGetAllMetricNames() throws Exception {
         try (IntegrationTester tester = new IntegrationTester()) {
 
             tester.httpServer().setResponse(METRICS_RESPONSE);
@@ -208,14 +205,14 @@ public class RpcMetricsTest {
         invoke(req, rpcClient, false);
     }
 
-    private JsonNode findExtraMetricsObject(String jsonResponse) throws IOException {
-        ArrayNode metrics = (ArrayNode) jsonMapper.readTree(jsonResponse).get("metrics");
-        for (int i = 0; i <  metrics.size(); i++) {
-            JsonNode jsonObject = metrics.get(i);
+    private JSONObject findExtraMetricsObject(String jsonResponse) throws JSONException {
+        JSONArray metrics = new JSONObject(jsonResponse).getJSONArray("metrics");
+        for (int i = 0; i <  metrics.length(); i++) {
+            JSONObject jsonObject = metrics.getJSONObject(i);
             assertTrue(jsonObject.has("application"));
-            if (jsonObject.get("application").textValue().equals(EXTRA_APP)) return jsonObject;
+            if (jsonObject.getString("application").equals(EXTRA_APP)) return jsonObject;
         }
-        return jsonMapper.createObjectNode();
+        return new JSONObject();
     }
 
     private static String getMetricsForYamas(String service, RpcClient client) {
@@ -253,12 +250,12 @@ public class RpcMetricsTest {
         return returnValue;
     }
 
-    private static void verifyStatusMessage(JsonNode jsonObject) {
-        assertThat(jsonObject.get("status_code").intValue(), is(0));
-        assertThat(jsonObject.get("status_msg").textValue(), notNullValue());
-        assertThat(jsonObject.get("application").textValue(), notNullValue());
-        assertThat(jsonObject.get("routing"), notNullValue());
-        assertThat(jsonObject.size(), is(4));
+    private static void verifyStatusMessage(JSONObject jsonObject) throws JSONException {
+        assertThat(jsonObject.getInt("status_code"), is(0));
+        assertThat(jsonObject.getString("status_msg"), notNullValue());
+        assertThat(jsonObject.getString("application"), notNullValue());
+        assertThat(jsonObject.getString("routing"), notNullValue());
+        assertThat(jsonObject.length(), is(4));
     }
 
 }
