@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.jrt.Spec;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 
@@ -46,14 +47,26 @@ public class ResourceExhaustionCalculator {
     }
 
     private static String formatNodeResourceExhaustion(NodeResourceExhaustion n) {
-        return String.format("%s%s on node %s (%.3g > %.3g)",
+        return String.format("%s%s on node %d [%s] (%.3g > %.3g)",
                              n.resourceType,
                              (n.resourceUsage.getName() != null ? ":" + n.resourceUsage.getName() : ""),
                              n.node.getIndex(),
+                             inferHostnameFromRpcAddress(n.rpcAddress),
                              n.resourceUsage.getUsage(), n.limit);
     }
 
-    public List<NodeResourceExhaustion> resourceExhaustionsFromHostInfo(Node node, HostInfo hostInfo) {
+    private static String inferHostnameFromRpcAddress(String rpcAddress) {
+        if (rpcAddress == null) {
+            return "unknown hostname";
+        }
+        var spec = new Spec(rpcAddress);
+        if (spec.malformed()) {
+            return "unknown hostname";
+        }
+        return spec.host();
+    }
+
+    public List<NodeResourceExhaustion> resourceExhaustionsFromHostInfo(NodeInfo nodeInfo, HostInfo hostInfo) {
         List<NodeResourceExhaustion> exceedingLimit = null;
         for (var usage : hostInfo.getContentNode().getResourceUsage().entrySet()) {
             double limit = feedBlockLimits.getOrDefault(usage.getKey(), 1.0);
@@ -61,7 +74,8 @@ public class ResourceExhaustionCalculator {
                 if (exceedingLimit == null) {
                     exceedingLimit = new ArrayList<>();
                 }
-                exceedingLimit.add(new NodeResourceExhaustion(node, usage.getKey(), usage.getValue(), limit));
+                exceedingLimit.add(new NodeResourceExhaustion(nodeInfo.getNode(), usage.getKey(), usage.getValue(),
+                                                              limit, nodeInfo.getRpcAddress()));
             }
         }
         return (exceedingLimit != null) ? exceedingLimit : Collections.emptyList();
@@ -71,7 +85,7 @@ public class ResourceExhaustionCalculator {
         if (!nodeInfo.isStorage()) {
             return Collections.emptyList();
         }
-        return resourceExhaustionsFromHostInfo(nodeInfo.getNode(), nodeInfo.getHostInfo());
+        return resourceExhaustionsFromHostInfo(nodeInfo, nodeInfo.getHostInfo());
     }
 
     // Returns 0-n entries per content node in the cluster, where n is the number of exhausted

@@ -150,7 +150,11 @@ public class ClusterFixture {
     }
 
     public ClusterFixture assignDummyRpcAddresses() {
-        cluster.getNodeInfo().forEach(ni -> ni.setRpcAddress("tcp/localhost:0"));
+        cluster.getNodeInfo().forEach(ni -> {
+            ni.setRpcAddress(String.format("tcp/%s.%d.local:0",
+                    ni.isStorage() ? "storage" : "distributor",
+                    ni.getNodeIndex()));
+        });
         return this;
     }
 
