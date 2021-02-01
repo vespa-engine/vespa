@@ -1,18 +1,17 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.metrics;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Executors;
@@ -34,8 +33,6 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class MetricsV2HandlerTest {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String URI_BASE = "http://localhost";
 
@@ -82,29 +79,29 @@ public class MetricsV2HandlerTest {
     @Test
     public void v2_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(V2_URI).readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JSONObject root = new JSONObject(response);
         assertTrue(root.has("resources"));
 
-        ArrayNode resources = (ArrayNode) root.get("resources");
-        assertEquals(1, resources.size());
+        JSONArray resources = root.getJSONArray("resources");
+        assertEquals(1, resources.length());
 
-        JsonNode valuesUri = resources.get(0);
-        assertEquals(VALUES_URI, valuesUri.get("url").textValue());
+        JSONObject valuesUri = resources.getJSONObject(0);
+        assertEquals(VALUES_URI, valuesUri.getString("url"));
     }
 
     @Ignore
     @Test
-    public void visually_inspect_values_response() {
-        JsonNode responseJson = getResponseAsJson(null);
-        System.out.println(responseJson);
+    public void visually_inspect_values_response() throws Exception {
+        JSONObject responseJson = getResponseAsJson(null);
+        System.out.println(responseJson.toString(4));
     }
 
     @Test
     public void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(V2_URI + "/invalid").readAll();
-        JsonNode root = jsonMapper.readTree(response);
+        JSONObject root = new JSONObject(response);
         assertTrue(root.has("error"));
-        assertTrue(root.get("error" ).textValue().startsWith("No content"));
+        assertTrue(root.getString("error" ).startsWith("No content"));
     }
 
     @Test
@@ -114,23 +111,23 @@ public class MetricsV2HandlerTest {
     }
 
     @Test
-    public void consumer_is_propagated_to_metrics_proxy_api() {
-        JsonNode responseJson = getResponseAsJson(CUSTOM_CONSUMER);
+    public void consumer_is_propagated_to_metrics_proxy_api() throws JSONException {
+        JSONObject responseJson = getResponseAsJson(CUSTOM_CONSUMER);
 
-        JsonNode firstNodeMetricsValues =
-                responseJson.get("nodes").get(0)
-                        .get("node")
-                        .get("metrics").get(0)
-                        .get("values");
+        JSONObject firstNodeMetricsValues =
+                responseJson.getJSONArray("nodes").getJSONObject(0)
+                        .getJSONObject("node")
+                        .getJSONArray("metrics").getJSONObject(0)
+                        .getJSONObject("values");
 
         assertTrue(firstNodeMetricsValues.has(REPLACED_CPU_METRIC));
     }
 
-    private JsonNode getResponseAsJson(String consumer) {
+    private JSONObject getResponseAsJson(String consumer) {
         String response = testDriver.sendRequest(VALUES_URI + consumerQuery(consumer)).readAll();
         try {
-            return jsonMapper.readTree(response);
-        } catch (IOException e) {
+            return new JSONObject(response);
+        } catch (JSONException e) {
             fail("Failed to create json object: " + e.getMessage());
             throw new RuntimeException(e);
         }

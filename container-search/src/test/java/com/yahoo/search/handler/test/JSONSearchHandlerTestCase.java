@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler.test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.Container;
 import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
 import com.yahoo.container.jdisc.HttpRequest;
+
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.protect.Error;
 import com.yahoo.io.IOUtils;
@@ -16,8 +13,8 @@ import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.test.json.JsonTestHelper;
-import org.assertj.core.api.Assertions;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -26,19 +23,13 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Tests submitting the query as JSON.
@@ -46,8 +37,6 @@ import static org.junit.Assert.assertTrue;
  * @author henrhoi
  */
 public class JSONSearchHandlerTestCase {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String testDir = "src/test/java/com/yahoo/search/handler/test/config";
     private static final String myHostnameHeader = "my-hostname-header";
@@ -108,8 +97,8 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testFailing() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testFailing() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "test");
         json.put("searchChain", "classLoadingError");
         assertTrue(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll().contains("NoClassDefFoundError"));
@@ -117,16 +106,16 @@ public class JSONSearchHandlerTestCase {
 
 
     @Test
-    public synchronized void testPluginError() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public synchronized void testPluginError() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "test");
         json.put("searchChain", "exceptionInPlugin");
         assertTrue(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll().contains("NullPointerException"));
     }
 
     @Test
-    public synchronized void testWorkingReconfiguration() throws IOException {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public synchronized void testWorkingReconfiguration() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "abc");
         assertJsonResult(json, driver);
 
@@ -146,7 +135,7 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testInvalidYqlQuery() throws IOException {
+    public void testInvalidYqlQuery() throws Exception {
         IOUtils.copyDirectory(new File(testDir, "config_yql"), new File(tempDir), 1);
         generateComponentsConfigForActive();
         configurer.reloadConfig();
@@ -154,7 +143,7 @@ public class JSONSearchHandlerTestCase {
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
         assertTrue("Do I have a new instance of the search handler?", searchHandler != newSearchHandler);
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
-            ObjectNode json = jsonMapper.createObjectNode();
+            JSONObject json = new JSONObject();
             json.put("yql", "select * from foo where bar > 1453501295");
             RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
             responseHandler.readAll();
@@ -164,14 +153,14 @@ public class JSONSearchHandlerTestCase {
 
     // Query handling takes a different code path when a query profile is active, so we test both paths.
     @Test
-    public void testInvalidQueryParamWithQueryProfile() throws IOException {
+    public void testInvalidQueryParamWithQueryProfile() throws Exception {
         try (RequestHandlerTestDriver newDriver = driverWithConfig("config_invalid_param")) {
             testInvalidQueryParam(newDriver);
         }
     }
 
-    private void testInvalidQueryParam(final RequestHandlerTestDriver testDriver) {
-        ObjectNode json = jsonMapper.createObjectNode();
+    private void testInvalidQueryParam(final RequestHandlerTestDriver testDriver) throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "status_code:0");
         json.put("hits", 20);
         json.put("offset", -20);
@@ -184,16 +173,16 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testNormalResultJsonAliasRendering() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testNormalResultJsonAliasRendering() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("format", "json");
         json.put("query", "abc");
         assertJsonResult(json, driver);
     }
 
     @Test
-    public void testNullQuery() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testNullQuery() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("format", "xml");
 
         assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
@@ -206,8 +195,8 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testWebServiceStatus() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testWebServiceStatus() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "web_service_status_code");
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
                 driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
@@ -217,39 +206,39 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testNormalResultImplicitDefaultRendering() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testNormalResultImplicitDefaultRendering() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "abc");
         assertJsonResult(json, driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRendering() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testNormalResultExplicitDefaultRendering() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "abc");
         json.put("format", "default");
         assertJsonResult(json, driver);
     }
 
     @Test
-    public void testNormalResultXmlAliasRendering() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testNormalResultXmlAliasRendering() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "abc");
         json.put("format", "xml");
         assertXmlResult(json, driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRenderingFullRendererName1() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testNormalResultExplicitDefaultRenderingFullRendererName1() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "abc");
         json.put("format", "XmlRenderer");
         assertXmlResult(json, driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRenderingFullRendererName2() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testNormalResultExplicitDefaultRenderingFullRendererName2() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "abc");
         json.put("format", "JsonRenderer");
         assertJsonResult(json, driver);
@@ -264,7 +253,7 @@ public class JSONSearchHandlerTestCase {
                     "  </hit>\n" +
                     "</result>\n";
 
-    private void assertXmlResult(JsonNode json, RequestHandlerTestDriver driver) {
+    private void assertXmlResult(JSONObject json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), xmlResult);
     }
 
@@ -274,7 +263,7 @@ public class JSONSearchHandlerTestCase {
             + "{\"id\":\"testHit\",\"relevance\":1.0,\"fields\":{\"uri\":\"testHit\"}}"
             + "]}}";
 
-    private void assertJsonResult(JsonNode json, RequestHandlerTestDriver driver) {
+    private void assertJsonResult(JSONObject json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), jsonResult);
 
     }
@@ -299,7 +288,7 @@ public class JSONSearchHandlerTestCase {
     }
 
 
-    private RequestHandlerTestDriver driverWithConfig(String configDirectory) throws IOException {
+    private RequestHandlerTestDriver driverWithConfig(String configDirectory) throws Exception {
         IOUtils.copyDirectory(new File(testDir, configDirectory), new File(tempDir), 1);
         generateComponentsConfigForActive();
         configurer.reloadConfig();
@@ -310,44 +299,44 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testSelectParameters() throws IOException {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testSelectParameters() throws Exception {
+        JSONObject json = new JSONObject();
 
-        ObjectNode select = jsonMapper.createObjectNode();
+        JSONObject select = new JSONObject();
 
-        ObjectNode where = jsonMapper.createObjectNode();
+        JSONObject where = new JSONObject();
         where.put("where", "where");
 
-        ObjectNode grouping = jsonMapper.createObjectNode();
+        JSONObject grouping = new JSONObject();
         grouping.put("grouping", "grouping");
 
-        select.set("where", where);
-        select.set("grouping", grouping);
+        select.put("where", where);
+        select.put("grouping", grouping);
 
-        json.set("select", select);
+        json.put("select", select);
 
-        Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes(StandardCharsets.UTF_8)).get();
+        Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes("utf-8")).get();
         Map<String, String> map = new HashMap<>();
         searchHandler.createRequestMapping(inspector, map, "");
 
-        JsonNode processedWhere = jsonMapper.readTree(map.get("select.where"));
-        JsonTestHelper.assertJsonEquals(where.toString(), processedWhere.toString());
+        JSONObject processedWhere = new JSONObject(map.get("select.where"));
+        assertEquals(where.toString(), processedWhere.toString());
 
-        JsonNode processedGrouping = jsonMapper.readTree(map.get("select.grouping"));
-        JsonTestHelper.assertJsonEquals(grouping.toString(), processedGrouping.toString());
+        JSONObject processedGrouping = new JSONObject(map.get("select.grouping"));
+        assertEquals(grouping.toString(), processedGrouping.toString());
     }
 
     @Test
-    public void testJsonQueryWithSelectWhere() {
-        ObjectNode root = jsonMapper.createObjectNode();
-        ObjectNode select = jsonMapper.createObjectNode();
-        ObjectNode where = jsonMapper.createObjectNode();
-        ArrayNode term = jsonMapper.createArrayNode();
-        term.add("default");
-        term.add("bad");
-        where.set("contains", term);
-        select.set("where", where);
-        root.set("select", select);
+    public void testJsonQueryWithSelectWhere() throws Exception {
+        JSONObject root = new JSONObject();
+        JSONObject select = new JSONObject();
+        JSONObject where = new JSONObject();
+        JSONArray term = new JSONArray();
+        term.put("default");
+        term.put("bad");
+        where.put("contains", term);
+        select.put("where", where);
+        root.put("select", select);
 
         // Run query
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, root.toString(), JSON_CONTENT_TYPE).readAll();
@@ -404,8 +393,8 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testJsonQueryWithYQL() {
-        ObjectNode root = jsonMapper.createObjectNode();
+    public void testJsonQueryWithYQL() throws Exception {
+        JSONObject root = new JSONObject();
         root.put("yql", "select * from sources * where default contains 'bad';");
 
         // Run query
@@ -415,10 +404,10 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
-    public void testRequestMapping() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testRequestMapping() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("yql", "select * from sources * where sddocname contains \"blog_post\" limit 0 | all(group(date) max(3) order(-count())each(output(count())));");
-        json.put("hits", 10);
+        json.put("hits", 10.0);
         json.put("offset", 5);
         json.put("queryProfile", "foo");
         json.put("nocache", false);
@@ -428,7 +417,7 @@ public class JSONSearchHandlerTestCase {
         json.put("select", "_all");
 
 
-        ObjectNode model = jsonMapper.createObjectNode();
+        JSONObject model = new JSONObject();
         model.put("defaultIndex", 1);
         model.put("encoding", "json");
         model.put("filter", "default");
@@ -438,9 +427,9 @@ public class JSONSearchHandlerTestCase {
         model.put("searchPath", "node1");
         model.put("sources", "source1,source2");
         model.put("type", "yql");
-        json.set("model", model);
+        json.put("model", model);
 
-        ObjectNode ranking = jsonMapper.createObjectNode();
+        JSONObject ranking = new JSONObject();
         ranking.put("location", "123789.89123N;128123W");
         ranking.put("features", "none");
         ranking.put("listFeatures", false);
@@ -450,61 +439,61 @@ public class JSONSearchHandlerTestCase {
         ranking.put("freshness", "0.05");
         ranking.put("queryCache", false);
 
-        ObjectNode matchPhase = jsonMapper.createObjectNode();
+        JSONObject matchPhase = new JSONObject();
         matchPhase.put("maxHits", "100");
         matchPhase.put("attribute", "title");
         matchPhase.put("ascending", true);
 
-        ObjectNode diversity = jsonMapper.createObjectNode();
+        JSONObject diversity = new JSONObject();
         diversity.put("attribute", "title");
         diversity.put("minGroups", 1);
-        matchPhase.set("diversity", diversity);
-        ranking.set("matchPhase", matchPhase);
-        json.set("ranking", ranking);
+        matchPhase.put("diversity", diversity);
+        ranking.put("matchPhase", matchPhase);
+        json.put("ranking", ranking);
 
-        ObjectNode presentation = jsonMapper.createObjectNode();
+        JSONObject presentation = new JSONObject();
         presentation.put("bolding", true);
         presentation.put("format", "json");
         presentation.put("summary", "none");
         presentation.put("template", "json");
         presentation.put("timing", false);
-        json.set("presentation", presentation);
+        json.put("presentation", presentation);
 
-        ObjectNode collapse = jsonMapper.createObjectNode();
+        JSONObject collapse = new JSONObject();
         collapse.put("field", "none");
         collapse.put("size", 2);
         collapse.put("summary", "default");
-        json.set("collapse", collapse);
+        json.put("collapse", collapse);
 
-        ObjectNode trace = jsonMapper.createObjectNode();
+        JSONObject trace = new JSONObject();
         trace.put("level", 1);
         trace.put("timestamps", false);
         trace.put("rules", "none");
-        json.set("trace", trace);
+        json.put("trace", trace);
 
-        ObjectNode pos = jsonMapper.createObjectNode();
+        JSONObject pos = new JSONObject();
         pos.put("ll", "1263123N;1231.9W");
         pos.put("radius", "71234m");
         pos.put("bb", "1237123W;123218N");
         pos.put("attribute", "default");
-        json.set("pos", pos);
+        json.put("pos", pos);
 
-        ObjectNode streaming = jsonMapper.createObjectNode();
+        JSONObject streaming = new JSONObject();
         streaming.put("userid", 123);
         streaming.put("groupname", "abc");
         streaming.put("selection", "none");
         streaming.put("priority", 10);
         streaming.put("maxbucketspervisitor", 5);
-        json.set("streaming", streaming);
+        json.put("streaming", streaming);
 
-        ObjectNode rules = jsonMapper.createObjectNode();
+        JSONObject rules = new JSONObject();
         rules.put("off", false);
         rules.put("rulebase", "default");
-        json.set("rules", rules);
+        json.put("rules", rules);
 
-        ObjectNode metrics = jsonMapper.createObjectNode();
+        JSONObject metrics = new JSONObject();
         metrics.put("ignore", "_all");
-        json.set("metrics", metrics);
+        json.put("metrics", metrics);
 
         json.put("recall", "none");
         json.put("user", 123);
@@ -512,7 +501,7 @@ public class JSONSearchHandlerTestCase {
         json.put("hitcountestimate", true);
 
         // Create mapping
-        Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes(StandardCharsets.UTF_8)).get();
+        Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes("utf-8")).get();
         Map<String, String> map = new HashMap<>();
         searchHandler.createRequestMapping(inspector, map, "");
 
@@ -529,12 +518,12 @@ public class JSONSearchHandlerTestCase {
 
         // Get mapping
         Map<String, String> propertyMap = request.propertyMap();
-        Assertions.assertThat(propertyMap).isEqualTo(map);
+        assertEquals("Should have same mapping for properties", map, propertyMap);
     }
 
     @Test
-    public void testContentTypeParsing() {
-        ObjectNode json = jsonMapper.createObjectNode();
+    public void testContentTypeParsing() throws Exception {
+        JSONObject json = new JSONObject();
         json.put("query", "abc");
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), "Application/JSON; charset=utf-8"), jsonResult);
     }

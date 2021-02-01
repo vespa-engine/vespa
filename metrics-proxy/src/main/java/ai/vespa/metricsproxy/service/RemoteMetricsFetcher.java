@@ -4,9 +4,9 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -22,8 +22,6 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
  * @author Jo Kristian Bergum
  */
 public class RemoteMetricsFetcher extends HttpMetricFetcher {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     final static String METRICS_PATH = STATE_PATH + "metrics";
 
@@ -59,21 +57,21 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
         return remoteMetrics;
     }
 
-    private Metrics parse(String data) throws IOException {
-        JsonNode o = jsonMapper.readTree(data);
+    private Metrics parse(String data) throws JSONException {
+        JSONObject o = new JSONObject(data);
         if (!(o.has("metrics"))) {
             return new Metrics(); //empty
         }
 
-        JsonNode metrics = o.get("metrics");
-        ArrayNode values;
+        JSONObject metrics = o.getJSONObject("metrics");
+        JSONArray values;
         long timestamp;
 
         try {
-            JsonNode snapshot = metrics.get("snapshot");
-            timestamp = (long) snapshot.get("to").doubleValue();
-            values = (ArrayNode) metrics.get("values");
-        } catch (Exception e) {
+            JSONObject snapshot = metrics.getJSONObject("snapshot");
+            timestamp = (long) snapshot.getDouble("to");
+            values = metrics.getJSONArray("values");
+        } catch (JSONException e) {
             // snapshot might not have been produced. Do not throw exception into log
             return new Metrics();
         }
@@ -83,29 +81,29 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
 
         Map<DimensionId, String> noDims = Collections.emptyMap();
         Map<String, Map<DimensionId, String>> uniqueDimensions = new HashMap<>();
-        for (int i = 0; i < values.size(); i++) {
-            JsonNode metric = values.get(i);
-            String name = metric.get("name").textValue();
+        for (int i = 0; i < values.length(); i++) {
+            JSONObject metric = values.getJSONObject(i);
+            String name = metric.getString("name");
             String description = "";
 
             if (metric.has("description")) {
-                description = metric.get("description").textValue();
+                description = metric.getString("description");
             }
 
             Map<DimensionId, String> dim = noDims;
             if (metric.has("dimensions")) {
-                JsonNode dimensions = metric.get("dimensions");
+                JSONObject dimensions = metric.getJSONObject("dimensions");
                 StringBuilder sb = new StringBuilder();
-                for (Iterator<?> it = dimensions.fieldNames(); it.hasNext(); ) {
+                for (Iterator<?> it = dimensions.keys(); it.hasNext(); ) {
                     String k = (String) it.next();
-                    String v = dimensions.get(k).textValue();
+                    String v = dimensions.getString(k);
                     sb.append(toDimensionId(k)).append(v);
                 }
                 if ( ! uniqueDimensions.containsKey(sb.toString())) {
                     dim = new HashMap<>();
-                    for (Iterator<?> it = dimensions.fieldNames(); it.hasNext(); ) {
+                    for (Iterator<?> it = dimensions.keys(); it.hasNext(); ) {
                         String k = (String) it.next();
-                        String v = dimensions.get(k).textValue();
+                        String v = dimensions.getString(k);
                         dim.put(toDimensionId(k), v);
                     }
                     uniqueDimensions.put(sb.toString(), Collections.unmodifiableMap(dim));
@@ -113,11 +111,10 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
                 dim = uniqueDimensions.get(sb.toString());
             }
 
-            JsonNode aggregates = metric.get("values");
-            for (Iterator<?> it = aggregates.fieldNames(); it.hasNext(); ) {
+            JSONObject aggregates = metric.getJSONObject("values");
+            for (Iterator<?> it = aggregates.keys(); it.hasNext(); ) {
                 String aggregator = (String) it.next();
-                Number value = aggregates.get(aggregator).numberValue();
-                if (value == null) throw new IllegalArgumentException("Value for aggregator '" + aggregator + "' is missing");
+                Number value = (Number) aggregates.get(aggregator);
                 StringBuilder metricName = (new StringBuilder()).append(name).append(".").append(aggregator);
                 m.add(new Metric(metricName.toString(), value, timestamp, dim, description));
             }

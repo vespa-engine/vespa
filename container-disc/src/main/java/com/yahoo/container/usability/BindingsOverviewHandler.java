@@ -1,13 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.usability;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.Container;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
@@ -19,11 +15,16 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -31,8 +32,6 @@ import java.util.Map;
  * @author gjoranv
  */
 public class BindingsOverviewHandler extends AbstractRequestHandler {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private final JdiscBindingsConfig bindingsConfig;
 
@@ -43,7 +42,7 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
 
     @Override
     public ContentChannel handleRequest(com.yahoo.jdisc.Request request, ResponseHandler handler) {
-        JsonNode json;
+        JSONObject json;
         int statusToReturn;
 
         if (request instanceof HttpRequest && ((HttpRequest) request).getMethod() != Method.GET) {
@@ -64,9 +63,7 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
         }.connect(handler));
 
         try {
-            writer.write(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(json));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            writer.write(json.toString());
         } finally {
             writer.close();
         }
@@ -74,58 +71,63 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
         return new IgnoredContent();
     }
 
-    private static JsonNode errorMessageInJson() {
-        ObjectNode error = jsonMapper.createObjectNode();
-        error.put("error", "This API, "
-                + BindingsOverviewHandler.class.getSimpleName()
-                + ", only supports HTTP GET."
-                + " You are probably looking for another API/path.");
+    private JSONObject errorMessageInJson() {
+        JSONObject error = new JSONObject();
+        try {
+            error.put("error", "This API, "
+                    + this.getClass().getSimpleName()
+                    + ", only supports HTTP GET."
+                    + " You are probably looking for another API/path.");
+        } catch (org.json.JSONException e) {
+            // just ignore it
+        }
         return error;
     }
 
-    static ArrayNode renderRequestHandlers(JdiscBindingsConfig bindingsConfig,
+    static JSONArray renderRequestHandlers(JdiscBindingsConfig bindingsConfig,
                                            Map<ComponentId, ? extends RequestHandler> handlersById) {
-        ArrayNode ret = jsonMapper.createArrayNode();
+        JSONArray ret = new JSONArray();
 
         for (Map.Entry<ComponentId, ? extends RequestHandler> handlerEntry : handlersById.entrySet()) {
             String id = handlerEntry.getKey().stringValue();
             RequestHandler handler = handlerEntry.getValue();
 
-            ObjectNode handlerJson = renderComponent(handler, handlerEntry.getKey());
+            JSONObject handlerJson = renderComponent(handler, handlerEntry.getKey());
             addBindings(bindingsConfig, id, handlerJson);
-            ret.add(handlerJson);
+            ret.put(handlerJson);
         }
         return ret;
     }
 
-    private static void addBindings(JdiscBindingsConfig bindingsConfig, String id, ObjectNode handlerJson) {
+    private static void addBindings(JdiscBindingsConfig bindingsConfig, String id, JSONObject handlerJson) {
         List<String> serverBindings = new ArrayList<>();
 
         JdiscBindingsConfig.Handlers handlerConfig = bindingsConfig.handlers(id);
         if (handlerConfig != null) {
             serverBindings = handlerConfig.serverBindings();
         }
-        handlerJson.set("serverBindings", renderBindings(serverBindings));
+        putJson(handlerJson, "serverBindings", renderBindings(serverBindings));
     }
 
-    private static JsonNode renderBindings(List<String> bindings) {
-        ArrayNode array = jsonMapper.createArrayNode();
+    private static JSONArray renderBindings(List<String> bindings) {
+        JSONArray array = new JSONArray();
         for (String binding : bindings)
-            array.add(binding);
+            array.put(binding);
         return array;
     }
 
-    private static ObjectNode renderComponent(Object component, ComponentId id) {
-        ObjectNode jc = jsonMapper.createObjectNode();
-        jc.put("id", id.stringValue());
+    private static JSONObject renderComponent(Object component, ComponentId id) {
+        JSONObject jc = new JSONObject();
+        putJson(jc, "id", id.stringValue());
         addBundleInfo(jc, component);
         return jc;
     }
 
-    private static void addBundleInfo(ObjectNode jsonObject, Object component) {
+    private static void addBundleInfo(JSONObject jsonObject, Object component) {
         BundleInfo bundleInfo = bundleInfo(component);
-        jsonObject.put("class", bundleInfo.className);
-        jsonObject.put("bundle", bundleInfo.bundleName);
+        putJson(jsonObject, "class", bundleInfo.className);
+        putJson(jsonObject, "bundle", bundleInfo.bundleName);
+
     }
 
     private static BundleInfo bundleInfo(Object component) {
@@ -138,6 +140,15 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
             return new BundleInfo(component.getClass().getName(), bundleName);
         } catch (Exception | NoClassDefFoundError e) {
             return new BundleInfo("Unavailable, reconfiguration in progress.", "");
+        }
+    }
+
+    private static void putJson(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException e) {
+            // The original JSONException lacks key-value info.
+            throw new RuntimeException("Trying to add invalid JSON object with key '" + key + "' and value '" + value + "' - " + e.getMessage(), e);
         }
     }
 
@@ -161,10 +172,10 @@ public class BindingsOverviewHandler extends AbstractRequestHandler {
             this.bindingsConfig = bindingsConfig;
         }
 
-        public JsonNode render() {
-            ObjectNode root = jsonMapper.createObjectNode();
+        public JSONObject render() {
+            JSONObject root = new JSONObject();
 
-            root.set("handlers",
+            putJson(root, "handlers",
                     renderRequestHandlers(bindingsConfig, Container.get().getRequestHandlerRegistry().allComponentsById()));
 
             return root;

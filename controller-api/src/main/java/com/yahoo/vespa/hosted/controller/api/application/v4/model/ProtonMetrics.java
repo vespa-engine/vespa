@@ -1,18 +1,13 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class ProtonMetrics {
-
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final Logger logger = LogManager.getLogManager().getLogger(ProtonMetrics.class.getName());
 
@@ -50,19 +45,19 @@ public class ProtonMetrics {
         return this;
     }
 
-    public JsonNode toJson() {
+    public JSONObject toJson() {
         try {
-            ObjectNode protonMetrics = jsonMapper.createObjectNode();
+            JSONObject protonMetrics = new JSONObject();
             protonMetrics.put("clusterId", clusterId);
-            ObjectNode jsonMetrics = jsonMapper.createObjectNode();
+            JSONObject jsonMetrics = new JSONObject();
             for (Map.Entry<String, Double> entry : metrics.entrySet()) {
                 jsonMetrics.put(entry.getKey(), entry.getValue());
             }
-            protonMetrics.set("metrics", jsonMetrics);
+            protonMetrics.put("metrics", jsonMetrics);
             return protonMetrics;
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Unable to convert Proton Metrics to JSON Object: " + e.getMessage(), e);
+        } catch (JSONException e) {
+            logger.severe("Unable to convert Proton Metrics to JSON Object");
         }
-        return jsonMapper.createObjectNode();
+        return new JSONObject();
     }
 }

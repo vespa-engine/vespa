@@ -9,11 +9,13 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.service.SystemPollerProvider;
 import ai.vespa.metricsproxy.service.VespaServices;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.state.CoredumpGatherer;
 import com.yahoo.container.jdisc.state.FileWrapper;
 import com.yahoo.container.jdisc.state.HostLifeGatherer;
+import com.yahoo.yolean.Exceptions;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -52,10 +54,10 @@ public class NodeMetricGatherer {
         List<MetricsPacket.Builder> metricPacketBuilders = new ArrayList<>();
         metricPacketBuilders.addAll(gatherServiceHealthMetrics(vespaServices));
 
-        JsonNode coredumpPacket = CoredumpGatherer.gatherCoredumpMetrics(fileWrapper);
+        JSONObject coredumpPacket = CoredumpGatherer.gatherCoredumpMetrics(fileWrapper);
         addObjectToBuilders(metricPacketBuilders, coredumpPacket);
         if (SystemPollerProvider.runningOnLinux()) {
-            JsonNode packet = HostLifeGatherer.getHostLifePacket(fileWrapper);
+            JSONObject packet = HostLifeGatherer.getHostLifePacket(fileWrapper);
             addObjectToBuilders(metricPacketBuilders, packet);
         }
 
@@ -67,20 +69,24 @@ public class NodeMetricGatherer {
         ).collect(Collectors.toList());
     }
 
-    protected static void addObjectToBuilders(List<MetricsPacket.Builder> builders, JsonNode object)  {
-        MetricsPacket.Builder builder = new MetricsPacket.Builder(ServiceId.toServiceId(object.get("application").textValue()));
-        builder.timestamp(object.get("timestamp").longValue());
-        if (object.has("status_code")) builder.statusCode(object.get("status_code").intValue());
-        if (object.has("status_msg")) builder.statusMessage(object.get("status_msg").textValue());
-        if (object.has("metrics")) {
-            JsonNode metrics = object.get("metrics");
-            Iterator<?> keys = metrics.fieldNames();
-            while(keys.hasNext()) {
-                String key = (String) keys.next();
-                builder.putMetric(MetricId.toMetricId(key), metrics.get(key).longValue());
+    protected static void addObjectToBuilders(List<MetricsPacket.Builder> builders, JSONObject object)  {
+        try {
+            MetricsPacket.Builder builder = new MetricsPacket.Builder(ServiceId.toServiceId(object.getString("application")));
+            builder.timestamp(object.getLong("timestamp"));
+            if (object.has("status_code")) builder.statusCode(object.getInt("status_code"));
+            if (object.has("status_msg")) builder.statusMessage(object.getString("status_msg"));
+            if (object.has("metrics")) {
+                JSONObject metrics = object.getJSONObject("metrics");
+                Iterator<?> keys = metrics.keys();
+                while(keys.hasNext()) {
+                    String key = (String) keys.next();
+                    builder.putMetric(MetricId.toMetricId(key), metrics.getLong(key));
+                }
             }
+            builders.add(builder);
+        } catch (JSONException e) {
+            Exceptions.toMessageString(e);
         }
-        builders.add(builder);
     }
 
 }
