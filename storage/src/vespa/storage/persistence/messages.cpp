@@ -192,7 +192,11 @@ RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket,
       _bucket(bucket)
 { }
 
-RunTaskCommand::~RunTaskCommand() = default;
+RunTaskCommand::~RunTaskCommand() {
+    if (_afterRun) {
+        _afterRun->run();
+    }
+}
 
 void
 RunTaskCommand::run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete)
@@ -202,6 +206,7 @@ RunTaskCommand::run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestr
     }
     if (_afterRun) {
         _afterRun->run();
+        _afterRun.reset();
     }
 }
 
