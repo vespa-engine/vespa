@@ -130,14 +130,14 @@ public class Flags {
 
     public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
             "tls-for-zookeeper-client-server-communication", "OFF",
-            List.of("hmusum"), "2020-12-02", "2021-02-01",
+            List.of("hmusum"), "2020-12-02", "2021-04-01",
             "How to setup TLS for ZooKeeper client/server communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
             "Takes effect on restart of config server",
             NODE_TYPE, HOSTNAME);
 
     public static final UnboundBooleanFlag USE_TLS_FOR_ZOOKEEPER_CLIENT = defineFeatureFlag(
             "use-tls-for-zookeeper-client", false,
-            List.of("hmusum"), "2020-12-02", "2021-02-01",
+            List.of("hmusum"), "2020-12-02", "2021-04-01",
             "Whether to use TLS for ZooKeeper clients",
             "Takes effect on restart of process",
             NODE_TYPE, HOSTNAME);
