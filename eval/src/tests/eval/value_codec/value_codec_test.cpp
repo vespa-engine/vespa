@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -15,28 +15,28 @@ using namespace vespalib::eval::test;
 
 const ValueBuilderFactory &factory = SimpleValueBuilderFactory::get();
 
-std::vector<Layout> layouts = {
-    {},
-    {x(3)},
-    {x(3),y(5)},
-    {x(3),y(5),z(7)},
-    float_cells({x(3),y(5),z(7)}),
-    {x({"a","b","c"})},
-    {x({"a","b","c"}),y({"foo","bar"})},
-    {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
-    {x(3),y({"foo", "bar"}),z(7)},
-    {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
+GenSpec G() { return GenSpec().cells_float(); }
+
+std::vector<GenSpec> layouts = {
+    G(),
+    G().idx("x", 3),
+    G().idx("x", 3).idx("y", 5),
+    G().idx("x", 3).idx("y", 5).idx("z", 7),
+    G().map("x", {"a","b","c"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {"foo", "bar"}).idx("z", 7),
+    G().map("x", {"a","b","c"}).idx("y", 5).map("z", {"i","j","k","l"})
 };
 
 
 TEST(ValueCodecTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
-        TensorSpec expect = spec(layout, N());
-        std::unique_ptr<Value> value = value_from_spec(expect, factory);
-        TensorSpec actual = spec_from_value(*value);
-        EXPECT_EQ(actual, expect);
+        for (TensorSpec expect : { layout.gen(), layout.cpy().cells_double().gen() }) {
+            std::unique_ptr<Value> value = value_from_spec(expect, factory);
+            TensorSpec actual = spec_from_value(*value);
+            EXPECT_EQ(actual, expect);
+        }
     }
 }
 
@@ -66,8 +66,8 @@ TEST(ValueCodecTest, simple_values_can_be_built_using_tensor_spec) {
         .add({{"w", "yyy"}, {"x", 1}, {"y", "yyy"}, {"z", 0}}, 0.0)
         .add({{"w", "yyy"}, {"x", 1}, {"y", "yyy"}, {"z", 1}}, 4.0);
     Value::UP full_tensor = value_from_spec(full_spec, factory);
-    EXPECT_EQUAL(full_spec, spec_from_value(*tensor));
-    EXPECT_EQUAL(full_spec, spec_from_value(*full_tensor));
+    EXPECT_EQ(full_spec, spec_from_value(*tensor));
+    EXPECT_EQ(full_spec, spec_from_value(*full_tensor));
 };
 
 //-----------------------------------------------------------------------------
@@ -324,6 +324,18 @@ struct BadSparseTensorExample : TensorExample {
         encode_inner<float>(dst);
     }
 };
+
+#define EXPECT_EXCEPTION(TRY_BLOCK, EXCEPTION_TYPE, MESSAGE) \
+do {                                                                      \
+    try {                                                                 \
+        do { TRY_BLOCK; } while (0);                                      \
+        FAIL() << "exception '" << MESSAGE << "' not thrown at all!";     \
+    } catch(const EXCEPTION_TYPE& e) {                                    \
+        EXPECT_TRUE(contains(stringref(e.what()), stringref(MESSAGE)));   \
+    } catch(...) {                                                        \
+        FAIL() << "wrong exception type thrown";                          \
+    }                                                                     \
+} while(0)
 
 TEST(ValueCodecTest, bad_sparse_tensors_are_caught) {
     BadSparseTensorExample bad;
