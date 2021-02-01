@@ -79,6 +79,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                          (_hasAttributes ? configSnapshot.getAttributesConfig() : AttributesConfig()),
                                                          _attributeGrow,
                                                          _attributeGrowNumDocs,
+                                                         _attribute_compaction_strategy,
                                                          _fastAccessAttributesOnly,
                                                          _writeService.master(),
                                                          attrMgrResult);
@@ -105,7 +106,7 @@ FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, SerialN
 {
     uint32_t docIdLimit(_dms->getCommittedDocIdLimit());
     AttributeCollectionSpecFactory factory(_attributeGrow,
-            _attributeGrowNumDocs, _fastAccessAttributesOnly);
+            _attributeGrowNumDocs, _attribute_compaction_strategy, _fastAccessAttributesOnly);
     return factory.create(attrCfg, docIdLimit, serialNum);
 }
 

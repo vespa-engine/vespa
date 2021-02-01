@@ -11,9 +11,11 @@ namespace proton {
 AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(
         const search::GrowStrategy &growStrategy,
         size_t growNumDocs,
+        const search::CompactionStrategy& compaction_strategy,
         bool fastAccessOnly)
     : _growStrategy(growStrategy),
       _growNumDocs(growNumDocs),
+      _compaction_strategy(compaction_strategy),
       _fastAccessOnly(fastAccessOnly)
 {
 }
@@ -35,6 +37,7 @@ AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
         }
         grow.setDocsGrowDelta(grow.getDocsGrowDelta() + skew);
         cfg.setGrowStrategy(grow);
+        cfg.setCompactionStrategy(_compaction_strategy);
         attrs.push_back(AttributeSpec(attr.name, cfg));
     }
     return std::make_unique<AttributeCollectionSpec>(attrs, docIdLimit, serialNum);

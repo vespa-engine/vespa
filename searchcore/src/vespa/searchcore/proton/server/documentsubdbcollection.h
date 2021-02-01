@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
+#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -61,18 +62,23 @@ public:
     using SerialNum = search::SerialNum;
     class Config {
     public:
+        using CompactionStrategy = search::CompactionStrategy;
         using GrowStrategy = search::GrowStrategy;
         Config(GrowStrategy ready, GrowStrategy notReady, GrowStrategy removed,
-               size_t fixedAttributeTotalSkew, size_t numSearchThreads);
+               size_t fixedAttributeTotalSkew,
+               CompactionStrategy compaction_strategy,
+               size_t numSearchThreads);
         GrowStrategy getReadyGrowth() const { return _readyGrowth; }
         GrowStrategy getNotReadyGrowth() const { return _notReadyGrowth; }
         GrowStrategy getRemovedGrowth() const { return _removedGrowth; }
+        CompactionStrategy get_compaction_strategy() const { return _compaction_strategy; }
         size_t getNumSearchThreads() const { return _numSearchThreads; }
         size_t getFixedAttributeTotalSkew() const { return _fixedAttributeTotalSkew; }
     private:
         const GrowStrategy _readyGrowth;
         const GrowStrategy _notReadyGrowth;
         const GrowStrategy _removedGrowth;
+        const CompactionStrategy _compaction_strategy;
         const size_t       _fixedAttributeTotalSkew;
         const size_t       _numSearchThreads;
     };

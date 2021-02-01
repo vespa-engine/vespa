@@ -7,6 +7,7 @@
 #include <future>
 
 using search::AttributeVector;
+using search::CompactionStrategy;
 using search::GrowStrategy;
 using search::SerialNum;
 using vespa::config::search::AttributesConfig;
@@ -135,7 +136,7 @@ AttributeCollectionSpec::UP
 AttributeManagerInitializer::createAttributeSpec() const
 {
     uint32_t docIdLimit = 1; // The real docIdLimit is used after attributes are loaded to pad them
-    AttributeCollectionSpecFactory factory(_attributeGrow, _attributeGrowNumDocs, _fastAccessAttributesOnly);
+    AttributeCollectionSpecFactory factory(_attributeGrow, _attributeGrowNumDocs, _compaction_strategy, _fastAccessAttributesOnly);
     return factory.create(_attrCfg, docIdLimit, _configSerialNum);
 }
 
@@ -146,6 +147,7 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
                                                          const AttributesConfig &attrCfg,
                                                          const GrowStrategy &attributeGrow,
                                                          size_t attributeGrowNumDocs,
+                                                         const CompactionStrategy& compaction_strategy,
                                                          bool fastAccessAttributesOnly,
                                                          searchcorespi::index::IThreadService &master,
                                                          std::shared_ptr<AttributeManager::SP> attrMgrResult)
@@ -155,6 +157,7 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
       _attrCfg(attrCfg),
       _attributeGrow(attributeGrow),
       _attributeGrowNumDocs(attributeGrowNumDocs),
+      _compaction_strategy(compaction_strategy),
       _fastAccessAttributesOnly(fastAccessAttributesOnly),
       _master(master),
       _attributesResult(),
