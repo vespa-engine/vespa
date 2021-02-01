@@ -46,17 +46,19 @@ public class AccessLogBuilder {
     private static class DomBuilder extends VespaDomBuilder.DomConfigProducerBuilder<AccessLogComponent> {
         private final AccessLogType accessLogType;
         private final boolean isHostedVespa;
+        private final boolean isConfigserver;
 
-        public DomBuilder(AccessLogType accessLogType, boolean isHostedVespa) {
+        public DomBuilder(AccessLogType accessLogType, boolean isHostedVespa, boolean isConfigserver) {
             this.accessLogType = accessLogType;
             this.isHostedVespa = isHostedVespa;
+            this.isConfigserver = isConfigserver;
         }
 
         @Override
         protected AccessLogComponent doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
             return new AccessLogComponent(
                     accessLogType,
-                    compressionType(spec, deployState, isHostedVespa),
+                    compressionType(spec, deployState, isHostedVespa, isConfigserver),
                     fileNamePattern(spec),
                     rotationInterval(spec),
                     compressOnRotation(spec),
@@ -81,7 +83,14 @@ public class AccessLogBuilder {
             return nullIfEmpty(spec.getAttribute("fileNamePattern"));
         }
 
-        private static CompressionType compressionType(Element spec, DeployState deployState, boolean isHostedVespa) {
+        private static CompressionType compressionType(Element spec, DeployState deployState, boolean isHostedVespa, boolean isConfigserver) {
+            CompressionType fallback;
+            if (isHostedVespa && (isConfigserver || deployState.featureFlags().enableZstdCompressionAccessLog())) {
+                fallback = CompressionType.ZSTD;
+            } else {
+                fallback = CompressionType.GZIP;
+            }
+            if (isConfigserver && isHostedVespa) return CompressionType.ZSTD;
             return Optional.ofNullable(spec.getAttribute("compressionType"))
                     .filter(value -> !value.isBlank())
                     .map(value -> {
@@ -94,7 +103,7 @@ public class AccessLogBuilder {
                                 throw new IllegalArgumentException("Unknown compression type: " + value);
                         }
                     })
-                    .orElse(isHostedVespa && deployState.featureFlags().enableZstdCompressionAccessLog() ? CompressionType.ZSTD : CompressionType.GZIP);
+                    .orElse(fallback);
         }
     }
 
@@ -111,7 +120,7 @@ public class AccessLogBuilder {
         }
     }
 
-    public static Optional<AccessLogComponent> buildIfNotDisabled(DeployState deployState, ContainerCluster<?> cluster, Element accessLogSpec) {
+    public static Optional<AccessLogComponent> buildIfNotDisabled(DeployState deployState, ContainerCluster<?> cluster, Element accessLogSpec, boolean isConfigserver) {
         AccessLogTypeLiteral typeLiteral =
                 getOptionalAttribute(accessLogSpec, "type").
                         map(AccessLogTypeLiteral::fromAttributeValue).
@@ -121,6 +130,9 @@ public class AccessLogBuilder {
             return Optional.empty();
         }
         boolean hosted = cluster.isHostedVespa();
-        return Optional.of(new DomBuilder(logType, hosted).build(deployState, cluster, accessLogSpec));
+        if (hosted && isConfigserver && logType != AccessLogType.jsonAccessLog) {
+            return Optional.empty(); // Only enable JSON access logging for hosted configserver/controller
+        }
+        return Optional.of(new DomBuilder(logType, hosted, isConfigserver).build(deployState, cluster, accessLogSpec));
     }
 }
