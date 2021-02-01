@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
@@ -33,6 +34,8 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.Gauge;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,6 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -198,8 +202,7 @@ public class DockerEngine implements ContainerEngine {
         try {
             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
             statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
-
-            return statsCallback.stats.map(ContainerStats::new);
+            return statsCallback.stats.map(DockerEngine::containerStatsFrom);
         } catch (NotFoundException ignored) {
             return Optional.empty();
         } catch (RuntimeException | InterruptedException e) {
@@ -437,4 +440,39 @@ public class DockerEngine implements ContainerEngine {
         return DockerClientImpl.getInstance(dockerClientConfig)
                 .withDockerCmdExecFactory(dockerFactory);
     }
+
+    private static ContainerStats containerStatsFrom(Statistics statistics) {
+        return new ContainerStats(Optional.ofNullable(statistics.getNetworks()).orElseGet(Map::of)
+                                          .entrySet().stream()
+                                          .collect(Collectors.toMap(
+                                                  Map.Entry::getKey,
+                                                  e -> new ContainerStats.NetworkStats(e.getValue().getRxBytes(), e.getValue().getRxDropped(),
+                                                                                       e.getValue().getRxErrors(), e.getValue().getTxBytes(),
+                                                                                       e.getValue().getTxDropped(), e.getValue().getTxErrors()),
+                                                  (u, v) -> {
+                                                      throw new IllegalStateException();
+                                                  },
+                                                  TreeMap::new)),
+                                  new ContainerStats.MemoryStats(statistics.getMemoryStats().getStats().getCache(),
+                                                                 statistics.getMemoryStats().getUsage(),
+                                                                 statistics.getMemoryStats().getLimit()),
+                                  new ContainerStats.CpuStats(statistics.getCpuStats().getCpuUsage().getPercpuUsage().size(),
+                                                              statistics.getCpuStats().getSystemCpuUsage(),
+                                                              statistics.getCpuStats().getCpuUsage().getTotalUsage(),
+                                                              statistics.getCpuStats().getCpuUsage().getUsageInKernelmode(),
+                                                              statistics.getCpuStats().getThrottlingData().getThrottledTime(),
+                                                              statistics.getCpuStats().getThrottlingData().getPeriods(),
+                                                              statistics.getCpuStats().getThrottlingData().getThrottledPeriods()));
+    }
+
+    // For testing only, create ContainerStats from JSON returned by docker daemon stats API
+    public static ContainerStats statsFromJson(String json) {
+        try {
+            Statistics statistics = new ObjectMapper().readValue(json, Statistics.class);
+            return containerStatsFrom(statistics);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
 }
