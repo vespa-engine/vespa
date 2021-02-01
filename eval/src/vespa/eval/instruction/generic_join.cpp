@@ -308,6 +308,17 @@ SparseJoinPlan::SparseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_t
                  [](const auto &a, const auto &b){ return (a.name < b.name); });
 }
 
+SparseJoinPlan::SparseJoinPlan(size_t num_mapped_dims)
+    : sources(num_mapped_dims, Source::BOTH), lhs_overlap(), rhs_overlap()
+{
+    lhs_overlap.reserve(num_mapped_dims);
+    rhs_overlap.reserve(num_mapped_dims);
+    for (size_t i = 0; i < num_mapped_dims; ++i) {
+        lhs_overlap.push_back(i);
+        rhs_overlap.push_back(i);
+    }
+}
+
 bool
 SparseJoinPlan::should_forward_lhs_index() const
 {
