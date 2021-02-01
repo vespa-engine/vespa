@@ -1051,7 +1051,6 @@ areTasksCompleteUntil(const vespalib::hash_set<size_t> &inFlight, size_t limit) 
 void
 FileStorManager::sync() {
     std::unique_lock guard(_executeLock);
-    if ( ! _bucketExecutorRegistration) return;
     _notifyAfterExecute = true;
     _syncCond.wait(guard, [this, limit=_executeCount]() {
         return areTasksCompleteUntil(_tasksInExecute, limit);
