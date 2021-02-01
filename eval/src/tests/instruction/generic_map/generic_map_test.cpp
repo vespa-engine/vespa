@@ -6,7 +6,7 @@
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -17,18 +17,20 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-std::vector<Layout> map_layouts = {
-    {x(3)},
-    {x(3),y(5)},
-    {x(3),y(5),z(7)},
-    float_cells({x(3),y(5),z(7)}),
-    {x({"a","b","c"})},
-    {x({"a","b","c"}),y({"foo","bar"})},
-    {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
-    {x(3),y({"foo", "bar"}),z(7)},
-    {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
+GenSpec::seq_t N_16ths = [] (size_t i) { return (i + 1.0) / 16.0; };
+
+GenSpec G() { return GenSpec().cells_float().seq(N_16ths); }
+
+std::vector<GenSpec> map_layouts = {
+    G(),
+    G().idx("x", 3),
+    G().idx("x", 3).idx("y", 5),
+    G().idx("x", 3).idx("y", 5).idx("z", 7),
+    G().map("x", {"a","b","c"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {"foo", "bar"}).idx("z", 7),
+    G().map("x", {"a","b","c"}).idx("y", 5).map("z", {"i","j","k","l"})
 };
 
 TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueBuilderFactory &factory)
@@ -40,14 +42,14 @@ TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueB
 }
 
 void test_generic_map_with(const ValueBuilderFactory &factory) {
-    for (const auto & layout : map_layouts) {
-        TensorSpec lhs = spec(layout, Div16(N()));
-        ValueType lhs_type = ValueType::from_spec(lhs.type());
-        for (auto func : {operation::Floor::f, operation::Fabs::f, operation::Square::f, operation::Inv::f}) {
-            SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
-            auto expect = ReferenceOperations::map(lhs, func);
-            auto actual = perform_generic_map(lhs, func, factory);
-            EXPECT_EQ(actual, expect);
+    for (const auto &layout : map_layouts) {
+        for (TensorSpec lhs : { layout.gen(), layout.cpy().cells_double().gen() }) {
+            for (auto func : {operation::Floor::f, operation::Fabs::f, operation::Square::f, operation::Inv::f}) {
+                SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
+                auto expect = ReferenceOperations::map(lhs, func);
+                auto actual = perform_generic_map(lhs, func, factory);
+                EXPECT_EQ(actual, expect);
+            }
         }
     }
 }

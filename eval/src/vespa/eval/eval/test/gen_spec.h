@@ -66,10 +66,15 @@ private:
     static double default_seq(size_t idx) { return (idx + 1.0); }
 public:
     GenSpec() : _dims(), _cells(CellType::DOUBLE), _seq(default_seq) {}
+    GenSpec(GenSpec &&other);
+    GenSpec(const GenSpec &other);
+    GenSpec &operator=(GenSpec &&other);
+    GenSpec &operator=(const GenSpec &other);
     ~GenSpec();
     std::vector<DimSpec> dims() const { return _dims; }
     CellType cells() const { return _cells; }
     seq_t seq() const { return _seq; }
+    GenSpec cpy() const { return *this; }
     GenSpec &idx(const vespalib::string &name, size_t size) {
         _dims.emplace_back(name, size);
         return *this;
