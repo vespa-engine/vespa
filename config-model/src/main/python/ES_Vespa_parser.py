@@ -32,7 +32,7 @@ class ElasticSearchParser:
         self.application_name = args.application_name
 
     def main(self):
-        self.path = os.getcwd() + "/application/"
+        self.path = os.getcwd() + "/" + self.application_name + "/"
         try:
             os.mkdir(self.path, 0o777)
             print(" > Created folder '" + self.path + "'")
