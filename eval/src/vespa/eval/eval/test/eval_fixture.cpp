@@ -28,7 +28,10 @@ NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
     std::vector<ValueType> param_types;
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
-        ASSERT_TRUE(pos != param_repo.map.end());
+        if (pos == param_repo.map.end()) {
+            TEST_STATE(fmt("param name: '%s'", function.param_name(i).data()).c_str());
+            ASSERT_TRUE(pos != param_repo.map.end());
+        }
         param_types.push_back(ValueType::from_spec(pos->second.value.type()));
         ASSERT_TRUE(!param_types.back().is_error());
     }
