@@ -184,6 +184,23 @@ EvalFixture::ParamRepo::add_dense(const std::vector<std::pair<vespalib::string, 
     return *this;
 }
 
+// produce 4 variants: float/double * mutable/const
+EvalFixture::ParamRepo &
+EvalFixture::ParamRepo::add_variants(const vespalib::string &name_base,
+                                     const GenSpec &spec)
+{
+    auto name_f = name_base + "_f";
+    auto name_m = "@" + name_base;
+    auto name_m_f = "@" + name_base + "_f";
+    auto dbl_ts = spec.cpy().cells_double().gen();
+    auto flt_ts = spec.cpy().cells_float().gen();
+    add(name_base, dbl_ts);
+    add(name_f, flt_ts);
+    add_mutable(name_m, dbl_ts);
+    add_mutable(name_m_f, flt_ts);
+    return *this;
+}
+
 void
 EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const
 {
