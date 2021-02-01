@@ -3,7 +3,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/mixed_map_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
@@ -13,14 +13,18 @@ using namespace vespalib::eval::tensor_function;
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
+TensorSpec spec(double v) { return TensorSpec("double").add({}, v); }
+TensorSpec sparse_spec = GenSpec().map("x", {"a"}).gen();
+TensorSpec mixed_spec = GenSpec().map("x", {"a"}).idx("y", 5).gen();
+
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("a", spec(1.5))
         .add("b", spec(2.5))
-        .add("sparse", spec({x({"a"})}, N()))
-        .add("mixed", spec({x({"a"}),y(5)}, N()))
-        .add_mutable("@sparse", spec({x({"a"})}, N()))
-        .add_mutable("@mixed", spec({x({"a"}),y(5)}, N()))
+        .add("sparse", sparse_spec)
+        .add("mixed", mixed_spec)
+        .add_mutable("@sparse", sparse_spec)
+        .add_mutable("@mixed", mixed_spec)
         .add_matrix("x", 5, "y", 3);
 }
 EvalFixture::ParamRepo param_repo = make_params();
