@@ -1682,11 +1682,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         controller.jobController().deploy(id, type, version, applicationPackage);
         RunId runId = controller.jobController().last(id, type).get().id();
+        DeploymentId deploymentId = new DeploymentId(id, type.zone(controller.system()));
+
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
         rootObject.setString("message", "Deployment started in " + runId +
                                         ". This may take about 15 minutes the first time.");
         rootObject.setLong("run", runId.number());
+        var endpointArray = rootObject.setArray("endpoints");
+        EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId)
+                .scope(Endpoint.Scope.zone)
+                .not().legacy();
+        for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
+            toSlime(endpoint, endpointArray.addObject());
+        }
         return new SlimeJsonResponse(slime);
     }
 
