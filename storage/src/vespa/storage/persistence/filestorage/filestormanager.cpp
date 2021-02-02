@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "filestormanager.h"
 #include "filestorhandlerimpl.h"
+#include "filestormanager.h"
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
@@ -14,7 +14,6 @@
 #include <vespa/storage/persistence/persistencethread.h>
 #include <vespa/storage/persistence/persistencehandler.h>
 #include <vespa/storage/persistence/provider_error_wrapper.h>
-#include <vespa/persistence/spi/bucket_tasks.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -24,8 +23,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
-#include <vespa/vespalib/util/count_down_latch.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <thread>
 
 #include <vespa/log/bufferedlogger.h>
@@ -79,13 +76,6 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _configFetcher(configUri.getContext()),
       _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>()),
-      _filestorHandler(),
-      _sequencedExecutor(),
-      _executeLock(),
-      _syncCond(),
-      _notifyAfterExecute(false),
-      _executeCount(0),
-      _tasksInExecute(),
       _closed(false),
       _lock(),
       _host_info_reporter(_component.getStateUpdater()),
@@ -820,13 +810,6 @@ FileStorManager::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
 void FileStorManager::onClose()
 {
     LOG(debug, "Start closing");
-    std::unique_ptr<vespalib::IDestructorCallback> toDestruct;
-    {
-        std::lock_guard guard(_executeLock);
-        toDestruct = std::move(_bucketExecutorRegistration);
-    }
-    toDestruct.reset();
-    _resource_usage_listener_registration.reset();
     // Avoid getting config during shutdown
     _configFetcher.close();
     LOG(debug, "Closed _configFetcher.");
@@ -990,70 +973,18 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
     _init_handler.notifyDoneInitializing();
 }
 
-class FileStorManager::TrackExecutedTasks : public vespalib::IDestructorCallback {
-public:
-    TrackExecutedTasks(std::lock_guard<std::mutex> & guard, FileStorManager & manager);
-    ~TrackExecutedTasks() override;
-private:
-    FileStorManager & _manager;
-    size_t            _serialNum;
-};
-
-FileStorManager::TrackExecutedTasks::TrackExecutedTasks(std::lock_guard<std::mutex> & guard, FileStorManager & manager)
-    : _manager(manager),
-      _serialNum(_manager._executeCount++)
-{
-    (void) guard;
-    _manager._tasksInExecute.insert(_serialNum);
-}
-
-FileStorManager::TrackExecutedTasks::~TrackExecutedTasks() {
-    std::lock_guard guard(_manager._executeLock);
-    _manager._tasksInExecute.erase(_serialNum);
-    if (_manager._notifyAfterExecute) {
-        _manager._syncCond.notify_all();
-    }
-}
-
 std::unique_ptr<spi::BucketTask>
 FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) {
     StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
             bucket.getBucketId(), "FileStorManager::execute"));
     if (entry.exist()) {
-        std::unique_ptr<TrackExecutedTasks> trackTasks;
-        {
-            std::lock_guard guard(_executeLock);
-            if (_bucketExecutorRegistration) {
-                trackTasks = std::make_unique<TrackExecutedTasks>(guard, *this);
-            }
-        }
-        if (trackTasks) {
-            _filestorHandler->schedule(std::make_shared<RunTaskCommand>(bucket, std::move(trackTasks), std::move(task)));
-        }
+        _filestorHandler->schedule(std::make_shared<RunTaskCommand>(bucket, std::move(task)));
     }
     return task;
 }
 
-namespace {
-bool
-areTasksCompleteUntil(const vespalib::hash_set<size_t> &inFlight, size_t limit) {
-    for (size_t serial : inFlight) {
-        if (serial < limit) {
-            return false;
-        }
-    }
-    return true;
-}
-}
-
 void
 FileStorManager::sync() {
-    std::unique_lock guard(_executeLock);
-    _notifyAfterExecute = true;
-    _syncCond.wait(guard, [this, limit=_executeCount]() {
-        return areTasksCompleteUntil(_tasksInExecute, limit);
-    });
-    _notifyAfterExecute = false;
 }
 
 } // storage

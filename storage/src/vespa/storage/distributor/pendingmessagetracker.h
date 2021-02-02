@@ -196,6 +196,18 @@ private:
     // to be present for that exact purpose.
     mutable std::mutex _lock;
 
+    /**
+     * Increment latency and operation count stats for the node the message
+     * was sent towards based on the registered send time and the current time.
+     *
+     * In the event that system time has moved backwards across sending a
+     * command and reciving its reply, the latency will not be recorded but
+     * the total number of messages will increase.
+     *
+     * _lock MUST be held upon invocation.
+     */
+    void updateNodeStatsOnReply(const MessageEntry& entry);
+
     void getStatusStartPage(std::ostream& out) const;
     void getStatusPerNode(std::ostream& out) const;
     void getStatusPerBucket(std::ostream& out) const;

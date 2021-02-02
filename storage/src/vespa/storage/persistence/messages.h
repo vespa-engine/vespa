@@ -244,20 +244,19 @@ public:
 class RunTaskCommand : public api::InternalCommand {
 public:
     static constexpr uint32_t ID = 1011;
-    RunTaskCommand(const spi::Bucket &bucket,
-                   std::unique_ptr<vespalib::IDestructorCallback> afterRun,
-                   std::unique_ptr<spi::BucketTask> task);
+    RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task);
     ~RunTaskCommand();
 
     document::Bucket getBucket() const override { return _bucket.getBucket(); }
     std::unique_ptr<api::StorageReply> makeReply() override;
-    void run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete);
+    spi::BucketTask & task() & {
+        return *_task;
+    }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 private:
-    std::unique_ptr<spi::BucketTask>               _task;
-    std::unique_ptr<vespalib::IDestructorCallback> _afterRun;
-    spi::Bucket                                    _bucket;
+    std::unique_ptr<spi::BucketTask> _task;
+    spi::Bucket                      _bucket;
 };
 
 // Simple reply for matching the RunTaskCommand
