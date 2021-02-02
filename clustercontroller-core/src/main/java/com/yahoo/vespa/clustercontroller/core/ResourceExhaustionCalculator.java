@@ -8,8 +8,10 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +45,10 @@ public class ResourceExhaustionCalculator {
         if (exhaustions.size() > maxDescriptions) {
             description += String.format(" (... and %d more)", exhaustions.size() - maxDescriptions);
         }
-        return ClusterStateBundle.FeedBlock.blockedWithDescription(description);
+        // FIXME we currently will trigger a cluster state recomputation even if the number of
+        // exhaustions is greater than what is returned as part of the description. Though at
+        // that point, cluster state recomputations will be the least of your worries...!
+        return ClusterStateBundle.FeedBlock.blockedWith(description, exhaustions);
     }
 
     private static String formatNodeResourceExhaustion(NodeResourceExhaustion n) {
@@ -66,34 +71,34 @@ public class ResourceExhaustionCalculator {
         return spec.host();
     }
 
-    public List<NodeResourceExhaustion> resourceExhaustionsFromHostInfo(NodeInfo nodeInfo, HostInfo hostInfo) {
-        List<NodeResourceExhaustion> exceedingLimit = null;
+    public Set<NodeResourceExhaustion> resourceExhaustionsFromHostInfo(NodeInfo nodeInfo, HostInfo hostInfo) {
+        Set<NodeResourceExhaustion> exceedingLimit = null;
         for (var usage : hostInfo.getContentNode().getResourceUsage().entrySet()) {
             double limit = feedBlockLimits.getOrDefault(usage.getKey(), 1.0);
             if (usage.getValue().getUsage() > limit) {
                 if (exceedingLimit == null) {
-                    exceedingLimit = new ArrayList<>();
+                    exceedingLimit = new LinkedHashSet<>();
                 }
                 exceedingLimit.add(new NodeResourceExhaustion(nodeInfo.getNode(), usage.getKey(), usage.getValue(),
                                                               limit, nodeInfo.getRpcAddress()));
             }
         }
-        return (exceedingLimit != null) ? exceedingLimit : Collections.emptyList();
+        return (exceedingLimit != null) ? exceedingLimit : Collections.emptySet();
     }
 
-    public List<NodeResourceExhaustion> enumerateNodeResourceExhaustions(NodeInfo nodeInfo) {
+    public Set<NodeResourceExhaustion> enumerateNodeResourceExhaustions(NodeInfo nodeInfo) {
         if (!nodeInfo.isStorage()) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
         return resourceExhaustionsFromHostInfo(nodeInfo, nodeInfo.getHostInfo());
     }
 
     // Returns 0-n entries per content node in the cluster, where n is the number of exhausted
     // resource types on any given node.
-    public List<NodeResourceExhaustion> enumerateNodeResourceExhaustionsAcrossAllNodes(Collection<NodeInfo> nodeInfos) {
+    public Set<NodeResourceExhaustion> enumerateNodeResourceExhaustionsAcrossAllNodes(Collection<NodeInfo> nodeInfos) {
         return nodeInfos.stream()
                 .flatMap(info -> enumerateNodeResourceExhaustions(info).stream())
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
 }
