@@ -16,7 +16,6 @@ import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -67,7 +66,6 @@ public class EndpointCertificateManager {
     private final Clock clock;
     private final BooleanFlag validateEndpointCertificates;
     private final StringFlag deleteUnusedEndpointCertificates;
-    private final BooleanFlag endpointCertInSharedRouting;
     private final BooleanFlag useEndpointCertificateMaintainer;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
@@ -82,7 +80,6 @@ public class EndpointCertificateManager {
         this.clock = clock;
         this.validateEndpointCertificates = Flags.VALIDATE_ENDPOINT_CERTIFICATES.bindTo(flagSource);
         this.deleteUnusedEndpointCertificates = Flags.DELETE_UNUSED_ENDPOINT_CERTIFICATES.bindTo(flagSource);
-        this.endpointCertInSharedRouting = Flags.ENDPOINT_CERT_IN_SHARED_ROUTING.bindTo(flagSource);
         this.useEndpointCertificateMaintainer = Flags.USE_ENDPOINT_CERTIFICATE_MAINTAINER.bindTo(flagSource);
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             try {
@@ -105,10 +102,6 @@ public class EndpointCertificateManager {
 
     @NotNull
     private Optional<EndpointCertificateMetadata> getOrProvision(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
-        boolean endpointCertInSharedRouting = this.endpointCertInSharedRouting.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value();
-        if (!zoneRegistry.zones().directlyRouted().ids().contains(zone) && !endpointCertInSharedRouting)
-            return Optional.empty();
-
         final var currentCertificateMetadata = curator.readEndpointCertificateMetadata(instance.id());
 
         if (currentCertificateMetadata.isEmpty()) {

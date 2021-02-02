@@ -166,12 +166,6 @@ public class Flags {
             "Override the default dist host for yum.",
             "Takes effect on next tick or on host-admin restart (may vary where used).");
 
-    public static final UnboundBooleanFlag ENDPOINT_CERT_IN_SHARED_ROUTING = defineFeatureFlag(
-            "endpoint-cert-in-shared-routing", false,
-            List.of("andreer"), "2020-12-02", "2021-02-01",
-            "Whether to provision and use endpoint certs for apps in shared routing zones",
-            "Takes effect on next deployment of the application", APPLICATION_ID);
-
     public static final UnboundBooleanFlag PROVISION_APPLICATION_ROLES = defineFeatureFlag(
             "provision-application-roles", false,
             List.of("tokle"), "2020-12-02", "2021-04-01",
