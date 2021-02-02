@@ -10,7 +10,8 @@ enum class SubDbType;
 
 /*
  * Class representing allocation config for proton which can be used
- * to make an allocation strategy.
+ * to make an allocation strategy for large data structures owned by a 
+ * document sub db (e.g. attribute vectors, document meta store).
  */
 class AllocConfig
 {

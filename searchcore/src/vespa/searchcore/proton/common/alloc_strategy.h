@@ -9,7 +9,8 @@
 namespace proton {
 
 /*
- * Class representing allocation strategy
+ * Class representing allocation strategy for large data structures
+ * owned by a document sub db (e.g. attribute vectors, document meta store).
  */
 class AllocStrategy
 {
