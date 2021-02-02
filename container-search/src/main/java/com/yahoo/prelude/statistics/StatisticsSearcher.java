@@ -77,6 +77,7 @@ public class StatisticsSearcher extends Searcher {
     private final Value peakQPS; // peak 1s QPS
     private final Counter emptyResults; // number of results containing no concrete hits
     private final Value hitsPerQuery; // mean number of hits per query
+    private final Value hitsPerQueryBuckets;
 
     private final PeakQpsReporter peakQpsReporter;
 
@@ -137,8 +138,12 @@ public class StatisticsSearcher extends Searcher {
         queryLatencyBuckets = Value.buildValue(QUERY_LATENCY_METRIC, manager, null);
         peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
         hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
+        hitsPerQueryBuckets = Value.buildValue(HITS_PER_QUERY_METRIC, manager, null);
+
         emptyResults = new Counter(EMPTY_RESULTS_METRIC, manager, false);
         metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
+        metricReceiver.declareGauge(HITS_PER_QUERY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
+
 
         scheduler.schedule(peakQpsReporter, 1000, 1000);
     }
@@ -266,8 +271,10 @@ public class StatisticsSearcher extends Searcher {
             metric.add(DOCS_TOTAL_METRIC, queryCoverage.getActive(), metricContext);
         }
         int hitCount = result.getConcreteHitCount();
-        hitsPerQuery.put((double) hitCount);
+        hitsPerQuery.put(hitCount);
+        hitsPerQueryBuckets.put(hitCount);
         metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
+
         metric.set(TOTALHITS_PER_QUERY_METRIC, (double) result.getTotalHitCount(), metricContext);
         metric.set(QUERY_OFFSET_METRIC, (double) (query.getHits() + query.getOffset()), metricContext);
         if (hitCount == 0) {
