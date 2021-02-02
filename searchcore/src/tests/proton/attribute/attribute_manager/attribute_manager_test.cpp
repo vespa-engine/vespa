@@ -232,9 +232,7 @@ struct ParallelAttributeManager
     InitializerTask::SP documentMetaStoreInitTask;
     BucketDBOwner::SP bucketDbOwner;
     DocumentMetaStore::SP documentMetaStore;
-    search::GrowStrategy attributeGrow;
-    size_t attributeGrowNumDocs;
-    search::CompactionStrategy attribute_compaction_strategy;
+    AllocStrategy        alloc_strategy;
     bool fastAccessAttributesOnly;
     std::shared_ptr<AttributeManager::SP> mgr;
     vespalib::ThreadStackExecutor masterExecutor;
@@ -251,16 +249,14 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
     : documentMetaStoreInitTask(std::make_shared<DummyInitializerTask>()),
       bucketDbOwner(std::make_shared<BucketDBOwner>()),
       documentMetaStore(std::make_shared<DocumentMetaStore>(bucketDbOwner)),
-      attributeGrow(),
-      attributeGrowNumDocs(1),
-      attribute_compaction_strategy(),
+      alloc_strategy(),
       fastAccessAttributesOnly(false),
       mgr(std::make_shared<AttributeManager::SP>()),
       masterExecutor(1, 128 * 1024),
       master(masterExecutor),
       initializer(std::make_shared<AttributeManagerInitializer>(configSerialNum, documentMetaStoreInitTask,
                                                                 documentMetaStore, baseAttrMgr, attrCfg,
-                                                                attributeGrow, attributeGrowNumDocs, attribute_compaction_strategy,
+                                                                alloc_strategy,
                                                                 fastAccessAttributesOnly, master, mgr))
 {
     documentMetaStore->setCommittedDocIdLimit(docIdLimit);

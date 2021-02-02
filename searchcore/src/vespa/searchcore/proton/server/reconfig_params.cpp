@@ -27,7 +27,8 @@ ReconfigParams::configHasChanged() const
             _res.tuneFileDocumentDBChanged ||
             _res.schemaChanged ||
             _res.maintenanceChanged ||
-            _res.storeChanged;
+            _res.storeChanged ||
+            _res.alloc_config_changed;
 }
 
 bool
@@ -51,7 +52,7 @@ ReconfigParams::shouldIndexManagerChange() const
 bool
 ReconfigParams::shouldAttributeManagerChange() const
 {
-    return _res.attributesChanged || _res.importedFieldsChanged || _res.visibilityDelayChanged;
+    return _res.attributesChanged || _res.importedFieldsChanged || _res.visibilityDelayChanged || _res.alloc_config_changed;
 }
 
 bool

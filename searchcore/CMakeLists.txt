@@ -69,6 +69,7 @@ vespa_define_module(
     src/tests/proton/attribute/imported_attributes_repo
     src/tests/proton/bucketdb/bucketdb
     src/tests/proton/common
+    src/tests/proton/common/alloc_config
     src/tests/proton/common/attribute_updater
     src/tests/proton/common/document_type_inspector
     src/tests/proton/common/hw_info_sampler

@@ -3,6 +3,7 @@
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
 #include "threading_service_config.h"
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
@@ -252,6 +253,19 @@ build_threading_service_config(const ProtonConfig &proton_config,
                                       hw_info.cpu()));
 }
 
+std::shared_ptr<const AllocConfig>
+build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
+{
+    auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
+    auto& alloc_config = document_db_config_entry.allocation;
+    auto& distribution_config = proton_config.distribution;
+    search::GrowStrategy grow_strategy(alloc_config.initialnumdocs, alloc_config.growfactor, alloc_config.growbias, alloc_config.multivaluegrowfactor);
+    search::CompactionStrategy compaction_strategy(alloc_config.maxDeadBytesRatio, alloc_config.maxDeadAddressSpaceRatio);
+    return std::make_shared<const AllocConfig>
+        (AllocStrategy(grow_strategy, compaction_strategy, alloc_config.amortizecount),
+         distribution_config.redundancy, distribution_config.searchablecopies);
+}
+
 }
 
 void
@@ -275,6 +289,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     MaintenanceConfigSP oldMaintenanceConfig;
     MaintenanceConfigSP newMaintenanceConfig;
     std::shared_ptr<const ThreadingServiceConfig> old_threading_service_config;
+    std::shared_ptr<const AllocConfig> old_alloc_config;
 
     if (!_ignoreForwardedConfig) {
         if (!(_bootstrapConfig->getDocumenttypesConfigSP() &&
@@ -299,6 +314,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newIndexschemaConfig = current->getIndexschemaConfigSP();
         oldMaintenanceConfig = current->getMaintenanceConfigSP();
         old_threading_service_config = current->get_threading_service_config_shared_ptr();
+        old_alloc_config = current->get_alloc_config_shared_ptr();
         currentGeneration = current->getGeneration();
     }
 
@@ -382,6 +398,10 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         (*new_threading_service_config == *old_threading_service_config)) {
         new_threading_service_config = old_threading_service_config;
     }
+    auto new_alloc_config = build_alloc_config(_bootstrapConfig->getProtonConfig(), _docTypeName);
+    if (new_alloc_config && old_alloc_config &&(*new_alloc_config == *old_alloc_config)) {
+        new_alloc_config = old_alloc_config;
+    }
     auto newSnapshot = std::make_shared<DocumentDBConfig>(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
@@ -399,6 +419,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  newMaintenanceConfig,
                                  storeConfig,
                                  new_threading_service_config,
+                                 new_alloc_config,
                                  _configId,
                                  _docTypeName);
     assert(newSnapshot->valid());

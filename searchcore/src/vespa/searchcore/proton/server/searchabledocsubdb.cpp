@@ -7,6 +7,7 @@
 #include "i_document_subdb_owner.h"
 #include "ibucketstatecalculator.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -143,7 +144,8 @@ IReprocessingTask::List
 SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
 {
-    StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig());
+    AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
+    StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     IReprocessingTask::List tasks;
     applyFlushConfig(newConfigSnapshot.getMaintenanceConfigSP()->getFlushConfig());
     if (params.shouldMatchersChange() && _addMetrics) {
@@ -152,7 +154,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
     if (params.shouldAttributeManagerChange()) {
         proton::IAttributeManager::SP oldMgr = getAttributeManager();
         AttributeCollectionSpec::UP attrSpec =
-            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
+            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
                 _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec, params, resolver);
         if (initializer && initializer->hasReprocessors()) {
