@@ -14,12 +14,10 @@ using namespace vespalib::eval;
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
-TensorSpec spec(double v) { return TensorSpec("double").add({}, v); }
-
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", spec(1.5))
-        .add("b", spec(2.5))
+        .add("a", GenSpec().seq_bias(1.5).gen())
+        .add("b", GenSpec().seq_bias(2.5).gen())
         .add("sparse", GenSpec().map("x", {"a","b"}).gen())
         .add("mixed", GenSpec().map("x", {"a"}).idx("y", 5).gen())
         .add_variants("x5y3", GenSpec().idx("x", 5).idx("y", 3));

@@ -18,11 +18,11 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-GenSpec G() { return GenSpec().cells_float(); }
+GenSpec G() { return GenSpec(); }
 
 GenSpec::seq_t N_16ths = [] (size_t i) { return (i + 1.0) / 16.0; };
 
-std::vector<GenSpec> concat_layouts = {
+const std::vector<GenSpec> concat_layouts = {
     G(),                                                         G(),
     G(),                                                         G().idx("y", 5),
     G().idx("y", 5),                                             G(),
@@ -76,10 +76,14 @@ TensorSpec perform_generic_concat(const TensorSpec &a, const TensorSpec &b,
 void test_generic_concat_with(const ValueBuilderFactory &factory) {
     ASSERT_TRUE((concat_layouts.size() % 2) == 0);
     for (size_t i = 0; i < concat_layouts.size(); i += 2) {
-        const auto &l = concat_layouts[i];
-        const auto &r = concat_layouts[i+1].seq(N_16ths);
-        for (TensorSpec lhs : { l.gen(), l.cpy().cells_double().gen() }) {
-            for (TensorSpec rhs : { r.gen(), r.cpy().cells_double().gen() }) {
+        const auto l = concat_layouts[i];
+        const auto r = concat_layouts[i+1].cpy().seq(N_16ths);
+        for (TensorSpec lhs : { l.cpy().cells_float().gen(),
+                                l.cpy().cells_double().gen() })
+        {
+            for (TensorSpec rhs : { r.cpy().cells_float().gen(),
+                                    r.cpy().cells_double().gen() })
+            {
                 SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
                 auto actual = perform_generic_concat(lhs, rhs, "y", factory);
                 auto expect = ReferenceOperations::concat(lhs, rhs, "y");

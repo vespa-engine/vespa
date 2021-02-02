@@ -52,16 +52,16 @@ GenSpec DocGen(size_t y_size, size_t z_size) { return GenSpec().cells_float().ma
 GenSpec Que() { return QueGen(3, 5); }
 GenSpec Doc() { return DocGen(6, 5); }
 
-GenSpec QueX0() { return QueGen(0, 5); }
-GenSpec DocX0() { return DocGen(0, 5); }
+GenSpec QueEmptyX() { return QueGen(0, 5); }
+GenSpec DocEmptyX() { return DocGen(0, 5); }
 
-GenSpec QueZ1() { return QueGen(3, 1); }
-GenSpec DocZ1() { return DocGen(6, 1); }
+GenSpec QueTrivialZ() { return QueGen(3, 1); }
+GenSpec DocTrivialZ() { return DocGen(6, 1); }
 
 auto query = Que().gen();
 auto document = Doc().gen();
-auto empty_query = QueX0().gen();
-auto empty_document = DocX0().gen();
+auto empty_query = QueEmptyX().gen();
+auto empty_document = DocEmptyX().gen();
 
 TEST(SumMaxDotProduct, expressions_can_be_optimized)
 {
@@ -81,8 +81,8 @@ TEST(SumMaxDotProduct, double_cells_are_not_optimized) {
 }
 
 TEST(SumMaxDotProduct, trivial_dot_product_is_not_optimized) {
-    auto trivial_query = QueZ1().gen();
-    auto trivial_document = DocZ1().gen();
+    auto trivial_query = QueTrivialZ().gen();
+    auto trivial_document = DocTrivialZ().gen();
     assert_not_optimized(trivial_query, trivial_document);
 }
 

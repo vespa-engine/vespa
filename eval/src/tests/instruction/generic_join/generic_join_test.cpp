@@ -19,9 +19,9 @@ using vespalib::make_string_short::fmt;
 
 GenSpec::seq_t N_16ths = [] (size_t i) { return (i + 1.0) / 16.0; };
 
-GenSpec G() { return GenSpec().cells_float().seq(N_16ths); }
+GenSpec G() { return GenSpec().seq(N_16ths); }
 
-std::vector<GenSpec> join_layouts = {
+const std::vector<GenSpec> join_layouts = {
     G(),                                                         G(),
     G().idx("x", 5),                                             G().idx("x", 5),
     G().idx("x", 5),                                             G().idx("y", 5),
@@ -107,8 +107,12 @@ TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
     for (size_t i = 0; i < join_layouts.size(); i += 2) {
         const auto &l = join_layouts[i];
         const auto &r = join_layouts[i+1];
-        for (TensorSpec lhs : { l.gen(), l.cpy().cells_double().gen() }) {
-            for (TensorSpec rhs : { r.gen(), r.cpy().cells_double().gen() }) {
+        for (TensorSpec lhs : { l.cpy().cells_float().gen(),
+                                l.cpy().cells_double().gen() })
+        {
+            for (TensorSpec rhs : { r.cpy().cells_float().gen(),
+                                    r.cpy().cells_double().gen() })
+            {
                 for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
                     SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
                     auto expect = ReferenceOperations::join(lhs, rhs, fun);

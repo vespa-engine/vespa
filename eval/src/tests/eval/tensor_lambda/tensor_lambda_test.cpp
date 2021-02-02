@@ -23,12 +23,10 @@ using namespace vespalib::eval::tensor_function;
 const ValueBuilderFactory &simple_factory = SimpleValueBuilderFactory::get();
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
-TensorSpec spec(double v) { return TensorSpec("double").add({}, v); }
-
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", spec(1))
-        .add("b", spec(2))
+        .add("a", GenSpec().seq_bias(1).gen())
+        .add("b", GenSpec().seq_bias(2).gen())
         .add("x3", GenSpec().idx("x", 3).gen())
         .add("x3f", GenSpec().idx("x", 3).cells_float().gen())
         .add("x3m", GenSpec().map("x", 3).gen())

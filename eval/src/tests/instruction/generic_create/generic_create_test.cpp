@@ -19,9 +19,9 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-GenSpec G() { return GenSpec().cells_float(); }
+GenSpec G() { return GenSpec(); }
 
-std::vector<GenSpec> create_layouts = {
+const std::vector<GenSpec> create_layouts = {
     G().idx("x", 3),
     G().idx("x", 3).idx("y", 5),
     G().idx("x", 3).idx("y", 5).idx("z", 7),
@@ -91,7 +91,9 @@ TensorSpec perform_generic_create(const TensorSpec &a, const ValueBuilderFactory
 
 void test_generic_create_with(const ValueBuilderFactory &factory) {
     for (const auto &layout : create_layouts) {
-        for (TensorSpec full : { layout.gen(), layout.cpy().cells_double().gen() }) {
+        for (TensorSpec full : { layout.cpy().cells_float().gen(),
+                                 layout.cpy().cells_double().gen() })
+        {
             auto actual = perform_generic_create(full, factory);
             auto expect = reference_create(full).normalize();
             EXPECT_EQ(actual, expect);
