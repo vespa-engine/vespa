@@ -4,8 +4,7 @@
 
 #include "attribute_collection_spec.h"
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/searchcommon/common/compaction_strategy.h>
-#include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/searchcore/proton/common/alloc_strategy.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/config-attributes.h>
 
@@ -20,15 +19,11 @@ class AttributeCollectionSpecFactory
 private:
     typedef vespa::config::search::AttributesConfig AttributesConfig;
 
-    const search::GrowStrategy _growStrategy;
-    const size_t               _growNumDocs;
-    const search::CompactionStrategy _compaction_strategy;
+    const AllocStrategy        _alloc_strategy;
     const bool                 _fastAccessOnly;
 
 public:
-    AttributeCollectionSpecFactory(const search::GrowStrategy &growStrategy,
-                                   size_t growNumDocs,
-                                   const search::CompactionStrategy& compaction_strategy,
+    AttributeCollectionSpecFactory(const AllocStrategy& alloc_strategy,
                                    bool fastAccessOnly);
 
     AttributeCollectionSpec::UP create(const AttributesConfig &attrCfg,

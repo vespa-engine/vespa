@@ -177,10 +177,14 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
             auto shrinker = wrap->getShrinker();
             assert(shrinker);
             addAttribute(AttributeWrap::normalAttribute(av), shrinker);
+            auto id = _attributeFieldWriter.getExecutorIdFromName(av->getNamePrefix());
+            auto cfg = aspec.getConfig();
+            _attributeFieldWriter.execute(id, [av, cfg]() { av->update_config(cfg); });
         } else {
             toBeAdded.push_back(aspec);
         }
     }
+    _attributeFieldWriter.sync();
 }
 
 void

@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/util/logutil.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");
@@ -767,6 +768,31 @@ AttributeVector::logEnumStoreEvent(const char *reason, const char *stage)
     jstr.endObject();
     vespalib::string eventName(make_string("%s.attribute.enumstore.%s", reason, stage));
     EV_STATE(eventName.c_str(), jstr.toString().data());
+}
+
+void
+AttributeVector::drain_hold(uint64_t hold_limit)
+{
+    incGeneration();
+    for (int retry = 0; ; ++retry) {
+        removeAllOldGenerations();
+        updateStat(true);
+        if (_status.getOnHold() <= hold_limit) {
+            return;
+        }
+        std::this_thread::sleep_for(retry < 20 ? 20ms : 100ms);
+    }
+}
+
+void
+AttributeVector::update_config(const Config& cfg)
+{
+    commit(true);
+    drain_hold(1024 * 1024); // Wait until 1MiB or less on hold
+    _config.setGrowStrategy(cfg.getGrowStrategy());
+    _config.setCompactionStrategy(cfg.getCompactionStrategy());
+    commit(); // might trigger compaction if compaction strategy changed
+    drain_hold(1024 * 1024); // Wait until 1MiB or less on hold
 }
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);

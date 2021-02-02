@@ -136,7 +136,7 @@ AttributeCollectionSpec::UP
 AttributeManagerInitializer::createAttributeSpec() const
 {
     uint32_t docIdLimit = 1; // The real docIdLimit is used after attributes are loaded to pad them
-    AttributeCollectionSpecFactory factory(_attributeGrow, _attributeGrowNumDocs, _compaction_strategy, _fastAccessAttributesOnly);
+    AttributeCollectionSpecFactory factory(_alloc_strategy, _fastAccessAttributesOnly);
     return factory.create(_attrCfg, docIdLimit, _configSerialNum);
 }
 
@@ -145,9 +145,7 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
                                                          DocumentMetaStore::SP documentMetaStore,
                                                          AttributeManager::SP baseAttrMgr,
                                                          const AttributesConfig &attrCfg,
-                                                         const GrowStrategy &attributeGrow,
-                                                         size_t attributeGrowNumDocs,
-                                                         const CompactionStrategy& compaction_strategy,
+                                                         const AllocStrategy& alloc_strategy,
                                                          bool fastAccessAttributesOnly,
                                                          searchcorespi::index::IThreadService &master,
                                                          std::shared_ptr<AttributeManager::SP> attrMgrResult)
@@ -155,9 +153,7 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
       _documentMetaStore(documentMetaStore),
       _attrMgr(),
       _attrCfg(attrCfg),
-      _attributeGrow(attributeGrow),
-      _attributeGrowNumDocs(attributeGrowNumDocs),
-      _compaction_strategy(compaction_strategy),
+      _alloc_strategy(alloc_strategy),
       _fastAccessAttributesOnly(fastAccessAttributesOnly),
       _master(master),
       _attributesResult(),

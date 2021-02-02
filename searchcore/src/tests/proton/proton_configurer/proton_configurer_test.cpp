@@ -9,6 +9,7 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
@@ -103,6 +104,7 @@ struct DBConfigFixture {
              std::make_shared<DocumentDBMaintenanceConfig>(),
              search::LogDocumentStore::Config(),
              std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1)),
+             std::make_shared<const AllocConfig>(),
              configId,
              docTypeName);
     }

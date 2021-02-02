@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/growstrategy.h>
 #include <cstdint>
+#include <iosfwd>
 
 namespace search {
 
@@ -53,6 +54,8 @@ public:
         return !(operator==(rhs));
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const GrowStrategy& grow_strategy);
 
 }
 

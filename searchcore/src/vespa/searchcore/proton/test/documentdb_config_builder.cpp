@@ -10,6 +10,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/config-imported-fields.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 
 using document::DocumenttypesConfig;
@@ -47,6 +48,7 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _maintenance(std::make_shared<DocumentDBMaintenanceConfig>()),
       _store(),
       _threading_service_config(std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1))),
+      _alloc_config(std::make_shared<const AllocConfig>()),
       _configId(configId),
       _docTypeName(docTypeName)
 { }
@@ -70,6 +72,7 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
       _maintenance(cfg.getMaintenanceConfigSP()),
       _store(cfg.getStoreConfig()),
       _threading_service_config(cfg.get_threading_service_config_shared_ptr()),
+      _alloc_config(cfg.get_alloc_config_shared_ptr()),
       _configId(cfg.getConfigId()),
       _docTypeName(cfg.getDocTypeName())
 {}
@@ -97,6 +100,7 @@ DocumentDBConfigBuilder::build()
             _maintenance,
             _store,
             _threading_service_config,
+            _alloc_config,
             _configId,
             _docTypeName);
 }

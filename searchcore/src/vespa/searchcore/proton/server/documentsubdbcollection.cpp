@@ -19,16 +19,8 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DocumentSubDBCollection::Config::Config(GrowStrategy ready, GrowStrategy notReady, GrowStrategy removed,
-                                        size_t fixedAttributeTotalSkew,
-                                        CompactionStrategy compaction_strategy,
-                                        size_t numSearchThreads)
-    : _readyGrowth(ready),
-      _notReadyGrowth(notReady),
-      _removedGrowth(removed),
-      _compaction_strategy(compaction_strategy),
-      _fixedAttributeTotalSkew(fixedAttributeTotalSkew),
-      _numSearchThreads(numSearchThreads)
+DocumentSubDBCollection::Config::Config(size_t numSearchThreads)
+    : _numSearchThreads(numSearchThreads)
 { }
 
 DocumentSubDBCollection::DocumentSubDBCollection(
@@ -69,7 +61,6 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                 SearchableDocSubDB::Config(
                     FastAccessDocSubDB::Config(
                             StoreOnlyDocSubDB::Config(docTypeName, "0.ready", baseDir,
-                                    cfg.getReadyGrowth(), cfg.getFixedAttributeTotalSkew(), cfg.get_compaction_strategy(),
                                     _readySubDbId, SubDbType::READY),
                             true, true, false),
                     cfg.getNumSearchThreads()),
@@ -79,15 +70,14 @@ DocumentSubDBCollection::DocumentSubDBCollection(
 
     _subDBs.push_back
         (new StoreOnlyDocSubDB(
-                StoreOnlyDocSubDB::Config(docTypeName, "1.removed", baseDir, cfg.getRemovedGrowth(),
-                        cfg.getFixedAttributeTotalSkew(), cfg.get_compaction_strategy(), _remSubDbId, SubDbType::REMOVED),
+                StoreOnlyDocSubDB::Config(docTypeName, "1.removed", baseDir,
+               _remSubDbId, SubDbType::REMOVED),
                 context));
 
     _subDBs.push_back
         (new FastAccessDocSubDB(
                 FastAccessDocSubDB::Config(
                         StoreOnlyDocSubDB::Config(docTypeName, "2.notready", baseDir,
-                                cfg.getNotReadyGrowth(), cfg.getFixedAttributeTotalSkew(), cfg.get_compaction_strategy(),
                                 _notReadySubDbId, SubDbType::NOTREADY),
                         true, true, true),
                 FastAccessDocSubDB::Context(context, metrics.notReady.attributes, metricsWireService)));
