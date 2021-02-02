@@ -87,6 +87,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -420,14 +421,14 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
      * Enqueues the given request and operation, or responds with "overload" if the queue is full,
      * and then attempts to dispatch an enqueued operation from the head of the queue.
      */
-    private void enqueueAndDispatch(HttpRequest request, ResponseHandler handler, Supplier<Supplier<Boolean>> operationParser) {
+    private void enqueueAndDispatch(HttpRequest request, ResponseHandler handler, Supplier<BooleanSupplier> operationParser) {
         if (enqueued.incrementAndGet() > maxThrottled) {
             enqueued.decrementAndGet();
             overload(request, "Rejecting execution due to overload: " + maxThrottled + " requests already enqueued", handler);
             return;
         }
         operations.offer(new Operation(request, handler) {
-            @Override Supplier<Boolean> parse() { return operationParser.get(); }
+            @Override BooleanSupplier parse() { return operationParser.get(); }
         });
         dispatchFirst();
     }
@@ -636,7 +637,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final Lock lock = new ReentrantLock();
         private final HttpRequest request;
         private final ResponseHandler handler;
-        private Supplier<Boolean> operation;
+        private BooleanSupplier operation;
 
         Operation(HttpRequest request, ResponseHandler handler) {
             this.request = request;
@@ -659,7 +660,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 if (operation == null)
                     operation = parse();
 
-                return operation.get();
+                return operation.getAsBoolean();
             }
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
@@ -673,7 +674,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return true;
         }
 
-        abstract Supplier<Boolean> parse();
+        abstract BooleanSupplier parse();
 
     }
 
