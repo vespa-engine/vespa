@@ -166,17 +166,17 @@ namespace {
             uint64_t active;
             uint64_t ready;
 
-            Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
+            Count() : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
         };
 
         Count    count;
         uint32_t lowestUsedBit;
 
-        MetricsUpdater() noexcept
+        MetricsUpdater()
             : count(), lowestUsedBit(58) {}
 
         void operator()(document::BucketId::Type bucketId,
-                        const StorBucketDatabase::Entry& data) noexcept
+                        const StorBucketDatabase::Entry& data)
         {
             document::BucketId bucket(
                     document::BucketId::keyToBucketId(bucketId));
@@ -198,7 +198,7 @@ namespace {
             }
         };
 
-        void add(const MetricsUpdater& rhs) noexcept {
+        void add(const MetricsUpdater& rhs) {
             auto& d = count;
             auto& s = rhs.count;
             d.buckets += s.buckets;
