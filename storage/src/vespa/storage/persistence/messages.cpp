@@ -201,9 +201,7 @@ RunTaskCommand::run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestr
     if (_task) {
         _task->run(bucket, std::move(onComplete));
     }
-    if (_afterRun) {
-        _afterRun.reset();
-    }
+    _afterRun.reset();
 }
 
 void
