@@ -119,7 +119,7 @@ TEST(StreamedValueTest, streamed_value_can_be_built_and_inspected) {
     EXPECT_EQ(result["bb"], 3);
 }
 
-GenSpec::seq_t N_16ths = [] (size_t i) { return (i + 1.0) / 16.0; };
+GenSpec::seq_t N_16ths = [] (size_t i) noexcept { return (i + 1.0) / 16.0; };
 
 TEST(StreamedValueTest, new_generic_join_works_for_streamed_values) {
     ASSERT_TRUE((join_layouts.size() % 2) == 0);

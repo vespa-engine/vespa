@@ -131,7 +131,7 @@ TEST(GenSpec, generating_float_vector) {
 }
 
 TEST(GenSpec, generating_custom_vector) {
-    GenSpec::seq_t my_seq = [](size_t idx){ return (5.0 - idx); };
+    GenSpec::seq_t my_seq = [](size_t idx) noexcept { return (5.0 - idx); };
     EXPECT_EQ(GenSpec().idx("a", 5).seq(my_seq).gen(), custom_vector);
 }
 

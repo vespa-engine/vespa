@@ -18,7 +18,7 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-GenSpec::seq_t N_16ths = [] (size_t i) { return (i + 1.0) / 16.0; };
+GenSpec::seq_t N_16ths = [] (size_t i) noexcept { return (i + 1.0) / 16.0; };
 
 GenSpec G() { return GenSpec().cells_float().seq(N_16ths); }
 
