@@ -1,15 +1,11 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.metrics;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.stream.Collectors;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -26,12 +22,13 @@ import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery
 import static com.yahoo.container.handler.metrics.MetricsV2HandlerTest.getFileContents;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
  */
 public class PrometheusV1HandlerTest {
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String URI_BASE = "http://localhost";
 
@@ -79,14 +76,14 @@ public class PrometheusV1HandlerTest {
     @Test
     public void v1_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(V1_URI).readAll();
-        JSONObject root = new JSONObject(response);
+        JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("resources"));
 
-        JSONArray resources = root.getJSONArray("resources");
-        assertEquals(1, resources.length());
+        ArrayNode resources = (ArrayNode) root.get("resources");
+        assertEquals(1, resources.size());
 
-        JSONObject valuesUri = resources.getJSONObject(0);
-        assertEquals(VALUES_URI, valuesUri.getString("url"));
+        JsonNode valuesUri = resources.get(0);
+        assertEquals(VALUES_URI, valuesUri.get("url").asText());
     }
 
     @Ignore
@@ -99,9 +96,9 @@ public class PrometheusV1HandlerTest {
     @Test
     public void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(V1_URI + "/invalid").readAll();
-        JSONObject root = new JSONObject(response);
+        JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("error"));
-        assertTrue(root.getString("error" ).startsWith("No content"));
+        assertTrue(root.get("error" ).textValue().startsWith("No content"));
     }
 
     @Test

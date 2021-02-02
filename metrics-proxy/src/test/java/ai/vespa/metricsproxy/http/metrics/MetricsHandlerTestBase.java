@@ -6,9 +6,9 @@ import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
 import ai.vespa.metricsproxy.service.DownService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -31,6 +31,8 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase {
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     static String rootUri;
     static String valuesUri;
@@ -56,21 +58,21 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
     @Test
     public void invalid_path_yields_error_response() throws Exception {
         String response = testDriver.sendRequest(rootUri + "/invalid").readAll();
-        JSONObject root = new JSONObject(response);
+        JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("error"));
     }
 
     @Test
     public void root_response_contains_values_uri() throws Exception {
         String response = testDriver.sendRequest(rootUri).readAll();
-        JSONObject root = new JSONObject(response);
+        JsonNode root = jsonMapper.readTree(response);
         assertTrue(root.has("resources"));
 
-        JSONArray resources = root.getJSONArray("resources");
-        assertEquals(1, resources.length());
+        ArrayNode resources = (ArrayNode) root.get("resources");
+        assertEquals(1, resources.size());
 
-        JSONObject valuesUrl = resources.getJSONObject(0);
-        assertEquals(valuesUri, valuesUrl.getString("url"));
+        JsonNode valuesUrl = resources.get(0);
+        assertEquals(valuesUri, valuesUrl.get("url").textValue());
     }
 
     @Ignore
