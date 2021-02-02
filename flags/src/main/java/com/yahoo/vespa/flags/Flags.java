@@ -148,12 +148,6 @@ public class Flags {
             "Whether endpoint certificates should be validated before use",
             "Takes effect on the next deployment of the application");
 
-    public static final UnboundBooleanFlag USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER = defineFeatureFlag(
-            "use-alternative-endpoint-certificate-provider", false,
-            List.of("andreer"), "2020-12-02", "2021-02-01",
-            "Whether to use an alternative CA when provisioning new certificates",
-            "Takes effect only on initial application deployment - not on later certificate refreshes!");
-
     public static final UnboundStringFlag YUM_DIST_HOST = defineStringFlag(
             "yum-dist-host", "",
             List.of("aressem"), "2020-12-02", "2021-03-01",
