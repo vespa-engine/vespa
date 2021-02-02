@@ -8,7 +8,7 @@ namespace storage::distributor::dbtransition {
 
 struct Entry {
     Entry(const document::BucketId& bid,
-          const BucketCopy& copy_) noexcept
+          const BucketCopy& copy_)
         : bucket_key(bid.toKey()),
           copy(copy_)
     {}

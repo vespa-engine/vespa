@@ -456,40 +456,6 @@ TEST_F(FileStorManagerTest, running_task_against_existing_bucket_works) {
     EXPECT_EQ(1, numInvocations);
 }
 
-TEST_F(FileStorManagerTest, sync_waits_for_already_started_tasks) {
-    TestFileStorComponents c(*this);
-
-    setClusterState("storage:3 distributor:3");
-    EXPECT_TRUE(getDummyPersistence().getClusterState().nodeUp());
-
-    auto executor = getDummyPersistence().get_bucket_executor();
-    ASSERT_TRUE(executor);
-
-    spi::Bucket b1 = makeSpiBucket(document::BucketId(1));
-
-    createBucket(b1.getBucketId());
-
-    std::atomic<size_t> numInvocations(0);
-    vespalib::Gate gate;
-    auto response = executor->execute(b1, spi::makeBucketTask([&numInvocations, &gate](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
-        gate.await();
-        numInvocations++;
-    }));
-    EXPECT_FALSE(response);
-    EXPECT_EQ(0, numInvocations);
-    std::atomic<bool> syncComplete(false);
-    std::thread thread([&syncComplete, &executor]() {
-        executor->sync();
-        syncComplete = true;
-    });
-    std::this_thread::sleep_for(100us);
-    EXPECT_FALSE(syncComplete);
-    gate.countDown();
-    thread.join();
-    EXPECT_TRUE(syncComplete);
-    EXPECT_EQ(1, numInvocations);
-}
-
 TEST_F(FileStorManagerTest, state_change) {
     TestFileStorComponents c(*this);
 
