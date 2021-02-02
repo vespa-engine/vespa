@@ -24,7 +24,7 @@ AllocStrategy make_alloc_strategy(uint32_t initial_docs) {
 
 };
 
-TEST(AllocConfigTest, hello_world)
+TEST(AllocConfigTest, can_make_allocation_strategy_for_sub_dbs)
 {
     AllocConfig config(make_alloc_strategy(10000000), 5, 2);
     EXPECT_EQ(make_alloc_strategy(20000000), config.make_alloc_strategy(SubDbType::READY));
