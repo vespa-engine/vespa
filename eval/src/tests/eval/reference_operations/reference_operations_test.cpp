@@ -1,13 +1,11 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <iostream>
 
 using namespace vespalib;
 using namespace vespalib::eval;
-using namespace vespalib::eval::test;
 
 TensorSpec dense_2d_some_cells(bool square) {
     return TensorSpec("tensor(a[3],d[5])")

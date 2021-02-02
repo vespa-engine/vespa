@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/mixed_simple_join_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -43,26 +43,28 @@ std::ostream &operator<<(std::ostream &os, Overlap overlap)
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
+TensorSpec spec(double v) { return TensorSpec("double").add({}, v); }
+
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("a", spec(1.5))
         .add("b", spec(2.5))
-        .add("sparse", spec({x({"a", "b", "c"})}, N()))
-        .add("mixed", spec({x({"a", "b", "c"}),y(5),z(3)}, N()))
-        .add("empty_mixed", spec({x({}),y(5),z(3)}, N()))
-        .add_mutable("@mixed", spec({x({"a", "b", "c"}),y(5),z(3)}, N()))
-        .add_cube("a", 1, "b", 1, "c", 1)
-        .add_cube("x", 1, "y", 1, "z", 1)
-        .add_cube("x", 3, "y", 5, "z", 3)
-        .add_vector("z", 3)
-        .add_dense({{"c", 5}, {"d", 1}})
-        .add_dense({{"b", 1}, {"c", 5}})
-        .add_matrix("x", 3, "y", 5, [](size_t idx) noexcept { return double((idx * 2) + 3); })
-        .add_matrix("x", 3, "y", 5, [](size_t idx) noexcept { return double((idx * 3) + 2); })
-        .add_vector("y", 5, [](size_t idx) noexcept { return double((idx * 2) + 3); })
-        .add_vector("y", 5, [](size_t idx) noexcept { return double((idx * 3) + 2); })
-        .add_matrix("y", 5, "z", 3, [](size_t idx) noexcept { return double((idx * 2) + 3); })
-        .add_matrix("y", 5, "z", 3, [](size_t idx) noexcept { return double((idx * 3) + 2); });
+        .add("sparse", GenSpec().map("x", {"a", "b", "c"}).gen())
+        .add("mixed", GenSpec().map("x", {"a", "b", "c"}).idx("y", 5).idx("z", 3).gen())
+        .add("empty_mixed", GenSpec().map("x", {}).idx("y", 5).idx("z", 3).gen())
+        .add_mutable("@mixed", GenSpec().map("x", {"a", "b", "c"}).idx("y", 5).idx("z", 3).gen())
+        .add_variants("a1b1c1", GenSpec().idx("a", 1).idx("b", 1).idx("c", 1))
+        .add_variants("x1y1z1", GenSpec().idx("x", 1).idx("y", 1).idx("z", 1))
+        .add_variants("x3y5z3", GenSpec().idx("x", 3).idx("y", 5).idx("z", 3))
+        .add_variants("z3", GenSpec().idx("z", 3))
+        .add_variants("c5d1", GenSpec().idx("c", 5).idx("d", 1))
+        .add_variants("b1c5", GenSpec().idx("b", 1).idx("c", 5))
+        .add_variants("x3y5", GenSpec().idx("x", 3).idx("y", 5).seq([](size_t idx) noexcept { return double((idx * 2) + 3); }))
+        .add_variants("x3y5$2", GenSpec().idx("x", 3).idx("y", 5).seq([](size_t idx) noexcept { return double((idx * 3) + 2); }))
+        .add_variants("y5", GenSpec().idx("y", 5).seq([](size_t idx) noexcept { return double((idx * 2) + 3); }))
+        .add_variants("y5$2", GenSpec().idx("y", 5).seq([](size_t idx) noexcept { return double((idx * 3) + 2); }))
+        .add_variants("y5z3", GenSpec().idx("y", 5).idx("z", 3).seq([](size_t idx) noexcept { return double((idx * 2) + 3); }))
+        .add_variants("y5z3$2", GenSpec().idx("y", 5).idx("z", 3).seq([](size_t idx) noexcept { return double((idx * 3) + 2); }));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -149,11 +151,11 @@ vespalib::string adjust_param(const vespalib::string &str, bool float_cells, boo
     if (mut_cells) {
         result = "@" + result;
     }
-    if (float_cells) {
-        result += "f";
-    }
     if (is_rhs) {
         result += "$2";
+    }
+    if (float_cells) {
+        result += "_f";
     }
     return result;
 }
