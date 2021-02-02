@@ -628,7 +628,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
-    // ---------------------------------------------Document Operations ----------------------------------------
+    // -------------------------------------------- Document Operations ----------------------------------------
 
     private static abstract class Operation {
 
@@ -644,7 +644,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         /**
          * Attempts to dispatch this operation to the document API, and returns whether this completed or not.
-         * This return {@code} true if dispatch was successful, or if it failed fatally; or {@code false} if
+         * Returns {@code} true if dispatch was successful, or if it failed fatally; or {@code false} if
          * dispatch should be retried at a later time.
          */
         boolean dispatch() {
@@ -676,7 +676,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     }
 
-    /** Attempts to send the given document operation, returning false if thes needs to be retried. */
+    /** Attempts to send the given document operation, returning false if this needs to be retried. */
     private static boolean dispatchOperation(Supplier<Result> documentOperation) {
         Result result = documentOperation.get();
         if (result.type() == Result.ResultType.TRANSIENT_ERROR)
@@ -889,6 +889,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     // ------------------------------------------------ Helpers ------------------------------------------------
 
+    /** Returns the last property with the given name, if present, or throws if this is empty or blank. */
     private static Optional<String> getProperty(HttpRequest request, String name) {
         if ( ! request.parameters().containsKey(name))
             return Optional.empty();

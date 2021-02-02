@@ -33,7 +33,7 @@ public class DocumentParser {
 
     /**
      * Parses a single document and returns it.
-     * Returns empty is we have reached the end of the stream.
+     * Returns empty if we have reached the end of the stream.
      */
     public Optional<DocumentParseInfo> parse(Optional<DocumentId> documentIdArg) throws IOException {
         indentLevel = 0;
