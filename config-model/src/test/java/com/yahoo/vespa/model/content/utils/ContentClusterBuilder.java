@@ -26,6 +26,8 @@ public class ContentClusterBuilder {
     private Optional<String> dispatchXml = Optional.empty();
     private Optional<Double> protonDiskLimit = Optional.empty();
     private Optional<Double> protonMemoryLimit = Optional.empty();
+    private Optional<Double> clusterControllerDiskLimit = Optional.empty();
+    private Optional<Double> clusterControllerMemoryLimit = Optional.empty();
 
     public ContentClusterBuilder() {
     }
@@ -67,13 +69,23 @@ public class ContentClusterBuilder {
         return this;
     }
 
-    public ContentClusterBuilder protonDiskLimit(double diskLimit) {
-        protonDiskLimit = Optional.of(diskLimit);
+    public ContentClusterBuilder protonDiskLimit(double limit) {
+        protonDiskLimit = Optional.of(limit);
         return this;
     }
 
-    public ContentClusterBuilder protonMemoryLimit(double memoryLimit) {
-        protonMemoryLimit = Optional.of(memoryLimit);
+    public ContentClusterBuilder protonMemoryLimit(double limit) {
+        protonMemoryLimit = Optional.of(limit);
+        return this;
+    }
+
+    public ContentClusterBuilder clusterControllerDiskLimit(double limit) {
+        clusterControllerDiskLimit = Optional.of(limit);
+        return this;
+    }
+
+    public ContentClusterBuilder clusterControllerMemoryLimit(double limit) {
+        clusterControllerMemoryLimit = Optional.of(limit);
         return this;
     }
 
@@ -88,14 +100,17 @@ public class ContentClusterBuilder {
                "  <engine>",
                "    <proton>",
                "      <searchable-copies>" + searchableCopies + "</searchable-copies>",
-               getResourceLimitsXml("      "),
+               getProtonResourceLimitsXml("      "),
                "    </proton>",
                "  </engine>");
         if (dispatchXml.isPresent()) {
             xml += dispatchXml.get();
         }
-        return xml + groupXml +
-               "</content>";
+        xml += groupXml;
+        xml += joinLines("  <tuning>",
+               getTuningResourceLimitsXml("    "),
+               "  </tuning>");
+        return xml + "</content>";
     }
 
     private static String getSimpleGroupXml() {
@@ -104,11 +119,19 @@ public class ContentClusterBuilder {
                 "  </group>");
     }
 
-    private String getResourceLimitsXml(String indent) {
-        if (protonDiskLimit.isPresent() || protonMemoryLimit.isPresent()) {
+    private String getProtonResourceLimitsXml(String indent) {
+        return getResourceLimitsXml(indent, protonDiskLimit, protonMemoryLimit);
+    }
+
+    private String getTuningResourceLimitsXml(String indent) {
+        return getResourceLimitsXml(indent, clusterControllerDiskLimit, clusterControllerMemoryLimit);
+    }
+
+    private String getResourceLimitsXml(String indent, Optional<Double> diskLimit, Optional<Double> memoryLimit) {
+        if (diskLimit.isPresent() || memoryLimit.isPresent()) {
             String xml = joinLines(indent + "<resource-limits>",
-                    getXmlLine("disk", protonDiskLimit, indent + "  "),
-                    getXmlLine("memory", protonMemoryLimit, indent + "  "),
+                    getXmlLine("disk", diskLimit, indent + "  "),
+                    getXmlLine("memory", memoryLimit, indent + "  "),
                     indent + "</resource-limits>");
             return xml;
         }
