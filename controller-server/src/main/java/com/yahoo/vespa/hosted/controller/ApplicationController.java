@@ -131,7 +131,6 @@ public class ApplicationController {
     private final ApplicationPackageValidator applicationPackageValidator;
     private final EndpointCertificateManager endpointCertificateManager;
     private final StringFlag dockerImageRepoFlag;
-    private final BooleanFlag provisionApplicationRoles;
     private final BillingController billingController;
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
@@ -145,7 +144,6 @@ public class ApplicationController {
         this.artifactRepository = controller.serviceRegistry().artifactRepository();
         this.applicationStore = controller.serviceRegistry().applicationStore();
         this.dockerImageRepoFlag = PermanentFlags.DOCKER_IMAGE_REPO.bindTo(flagSource);
-        this.provisionApplicationRoles = Flags.PROVISION_APPLICATION_ROLES.bindTo(flagSource);
         this.billingController = billingController;
 
         deploymentTrigger = new DeploymentTrigger(controller, clock);
@@ -403,15 +401,6 @@ public class ApplicationController {
 
                 endpoints = controller.routing().registerEndpointsInDns(application.get(), job.application().instance(), zone);
 
-                // Provision application roles if enabled for the zone
-                if (provisionApplicationRoles.with(FetchVector.Dimension.ZONE_ID, zone.value()).value()) {
-                    try {
-                        applicationRoles = controller.serviceRegistry().roleService().createApplicationRoles(instance.id());
-                    } catch (Exception e) {
-                        log.log(Level.SEVERE, "Exception creating application roles for application: " + instance.id(), e);
-                        throw new RuntimeException("Unable to provision iam roles for application");
-                    }
-                }
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.

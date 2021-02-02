@@ -3,6 +3,10 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
@@ -37,11 +41,15 @@ public class TenantController {
     private final Controller controller;
     private final CuratorDb curator;
     private final AccessControl accessControl;
+    private final BooleanFlag provisionTenantRoles;
 
-    public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl) {
+
+    public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl, FlagSource flagSource) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
         this.accessControl = accessControl;
+        this.provisionTenantRoles = Flags.PROVISION_TENANT_ROLES.bindTo(flagSource);
+
 
         // Update serialization format of all tenants
         Once.after(Duration.ofMinutes(1), () -> {
@@ -101,7 +109,16 @@ public class TenantController {
             requireNonExistent(tenantSpec.tenant());
             TenantId.validate(tenantSpec.tenant().value());
             curator.writeTenant(accessControl.createTenant(tenantSpec, controller.clock().instant(), credentials, asList()));
-            controller.serviceRegistry().roleService().createTenantRole(tenantSpec.tenant());
+
+            // Provision tenant role if enabled
+            if (provisionTenantRoles.with(FetchVector.Dimension.TENANT_ID, tenantSpec.tenant().value()).value()) {
+                try {
+                    controller.serviceRegistry().roleService().createTenantRole(tenantSpec.tenant());
+                } catch (Exception e) {
+                    throw new RuntimeException("Unable to create tenant role for tenant: " + tenantSpec.tenant());
+                }
+            }
+
         }
     }
 
