@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
+import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -65,6 +66,10 @@ public class ContainerTester {
                              .addRoleMember(action, identity);
     }
 
+    public void assertJsonResponse(Supplier<Request> request, File responseFile) {
+        assertResponse(request.get(), responseFile, 200, false, true);
+    }
+
     public void assertResponse(Supplier<Request> request, File responseFile) {
         assertResponse(request.get(), responseFile);
     }
@@ -82,6 +87,10 @@ public class ContainerTester {
     }
 
     public void assertResponse(Request request, File responseFile, int expectedStatusCode, boolean removeWhitespace) {
+        assertResponse(request, responseFile, expectedStatusCode, removeWhitespace, false);
+    }
+
+    private void assertResponse(Request request, File responseFile, int expectedStatusCode, boolean removeWhitespace, boolean compareJson) {
         String expectedResponse = readTestFile(responseFile.toString());
         expectedResponse = include(expectedResponse);
         if (removeWhitespace) expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
@@ -106,7 +115,11 @@ public class ContainerTester {
                         expectedResponsePattern, responseString);
             }
         } else {
-            assertEquals(responseFile.toString(), expectedResponse, responseString);
+            if (compareJson) {
+                JsonTestHelper.assertJsonEquals(expectedResponse, responseString);
+            } else {
+                assertEquals(responseFile.toString(), expectedResponse, responseString);
+            }
         }
         assertEquals("Status code", expectedStatusCode, response.getStatus());
     }

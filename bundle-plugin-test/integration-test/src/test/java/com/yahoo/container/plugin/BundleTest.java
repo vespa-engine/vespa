@@ -91,7 +91,6 @@ public class BundleTest {
 
         // From SimpleSearcher
         assertThat(importPackage, containsString("com.yahoo.prelude.hitfield"));
-        assertThat(importPackage, containsString("org.json"));
 
         // From SimpleSearcher2
         assertThat(importPackage, containsString("com.yahoo.processing"));
