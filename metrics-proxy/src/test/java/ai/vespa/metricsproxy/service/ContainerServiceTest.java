@@ -2,7 +2,6 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metric;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -37,7 +36,7 @@ public class ContainerServiceTest {
     }
 
     @Test
-    public void testMultipleQueryDimensions() throws JSONException {
+    public void testMultipleQueryDimensions() {
         int count = 0;
         VespaService service = VespaService.create("service1", "id", httpServer.port());
         for (Metric m : service.getMetrics().getMetrics()) {
