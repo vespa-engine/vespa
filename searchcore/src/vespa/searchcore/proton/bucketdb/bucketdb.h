@@ -31,7 +31,7 @@ private:
     void checkEmpty() const;
 public:
     BucketDB();
-    virtual ~BucketDB();
+    ~BucketDB();
 
     const BucketState & add(const GlobalId &gid,
                             const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize,
