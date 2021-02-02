@@ -6,7 +6,9 @@
 #include <vespa/searchcore/proton/server/proton_config_fetcher.h>
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -41,6 +43,8 @@ using document::DocumenttypesConfigBuilder;
 using search::TuneFileDocumentDB;
 using std::map;
 using vespalib::VarHolder;
+using search::GrowStrategy;
+using search::CompactionStrategy;
 
 struct DoctypeFixture {
     using UP = std::unique_ptr<DoctypeFixture>;
@@ -387,6 +391,32 @@ TEST_FF("require that docstore config computes cachesize automatically if unset"
     f1.protonBuilder.summary.cache.maxbytes = -700;
     config = getDocumentDBConfig(f1, f2, hwInfo);
     EXPECT_EQUAL(500000ul, config->getStoreConfig().getMaxCacheBytes());
+}
+
+TEST_FF("require that allocation config is propagated",
+        ConfigTestFixture("test"),
+        DocumentDBConfigManager(f1.configId + "/test", "test"))
+{
+    f1.protonBuilder.distribution.redundancy = 5;
+    f1.protonBuilder.distribution.searchablecopies = 2;
+    f1.addDocType("test");
+    {
+        auto& allocation = f1.protonBuilder.documentdb.back().allocation;
+        allocation.initialnumdocs = 10000000;
+        allocation.growfactor = 0.1;
+        allocation.growbias = 1;
+        allocation.amortizecount = 10000;
+        allocation.multivaluegrowfactor = 0.15;
+        allocation.maxDeadBytesRatio = 0.25;
+        allocation.maxDeadAddressSpaceRatio = 0.3;
+    }
+    auto config = getDocumentDBConfig(f1, f2);
+    {
+        auto& alloc_config = config->get_alloc_config();
+        EXPECT_EQUAL(AllocStrategy(GrowStrategy(20000000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::READY));
+        EXPECT_EQUAL(AllocStrategy(GrowStrategy(100000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::REMOVED));
+        EXPECT_EQUAL(AllocStrategy(GrowStrategy(30000000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::NOTREADY));
+    }
 }
 
 TEST("test HwInfo equality") {
