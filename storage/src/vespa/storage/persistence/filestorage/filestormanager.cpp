@@ -978,7 +978,10 @@ FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketT
     StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
             bucket.getBucketId(), "FileStorManager::execute"));
     if (entry.exist()) {
-        _filestorHandler->schedule(std::make_shared<RunTaskCommand>(bucket, std::move(task)));
+        auto cmd = std::make_shared<RunTaskCommand>(bucket, std::move(task));
+        if ( ! _filestorHandler->schedule(cmd) ) {
+            task = cmd->stealTask();
+        }
     }
     return task;
 }

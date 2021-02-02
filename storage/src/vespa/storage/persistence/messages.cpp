@@ -187,9 +187,7 @@ RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::B
     : api::InternalCommand(ID),
       _task(std::move(task)),
       _bucket(bucket)
-{
-    assert(_task);
-}
+{ }
 
 RunTaskCommand::~RunTaskCommand() = default;
 
@@ -200,6 +198,14 @@ RunTaskCommand::print(std::ostream& out, bool verbose, const std::string& indent
     if (verbose) {
         out << " : ";
         InternalCommand::print(out, true, indent);
+    }
+}
+
+void
+RunTaskCommand::run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete)
+{
+    if (_task) {
+        _task->run(bucket, std::move(onComplete));
     }
 }
 
