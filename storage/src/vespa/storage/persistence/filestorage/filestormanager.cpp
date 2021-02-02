@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "filestorhandlerimpl.h"
 #include "filestormanager.h"
+#include "filestorhandlerimpl.h"
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
@@ -76,6 +76,8 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _configFetcher(configUri.getContext()),
       _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>()),
+      _filestorHandler(),
+      _sequencedExecutor(),
       _closed(false),
       _lock(),
       _host_info_reporter(_component.getStateUpdater()),
@@ -810,6 +812,8 @@ FileStorManager::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
 void FileStorManager::onClose()
 {
     LOG(debug, "Start closing");
+    _bucketExecutorRegistration.reset();
+    _resource_usage_listener_registration.reset();
     // Avoid getting config during shutdown
     _configFetcher.close();
     LOG(debug, "Closed _configFetcher.");
