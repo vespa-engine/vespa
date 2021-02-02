@@ -37,7 +37,7 @@ class BucketId
 {
 public:
     struct hash {
-        size_t operator () (const BucketId& g) const noexcept {
+        size_t operator () (const BucketId& g) const {
             return g.getId();
         }
     };
@@ -55,23 +55,23 @@ public:
     /** Create a bucket id using a set of bits from a raw unchecked value. */
     BucketId(uint32_t useBits, Type id) noexcept : _id(createUsedBits(useBits, id)) { }
 
-    bool operator<(const BucketId& id) const noexcept {
+    bool operator<(const BucketId& id) const {
         return getId() < id.getId();
     }
-    bool operator==(const BucketId& id) const noexcept { return getId() == id.getId(); }
-    bool operator!=(const BucketId& id) const noexcept { return getId() != id.getId(); }
+    bool operator==(const BucketId& id) const { return getId() == id.getId(); }
+    bool operator!=(const BucketId& id) const { return getId() != id.getId(); }
 
     vespalib::string toString() const;
 
-    bool valid() const noexcept {
+    bool valid() const {
         return validUsedBits(getUsedBits());
     }
 
-    static bool validUsedBits(uint32_t usedBits) noexcept {
+    static bool validUsedBits(uint32_t usedBits) {
         return (usedBits >= minNumBits) && (usedBits <= maxNumBits);
     }
 
-    bool isSet() const noexcept {
+    bool isSet() const {
         return _id != 0u;
     }
     /**
@@ -79,14 +79,14 @@ public:
      * verify that two different documents belong to the same bucket given some
      * level of bucket splitting, use this to ignore the unused bits.
      */
-    BucketId stripUnused() const noexcept { return BucketId(getUsedBits(), getId());    }
+    BucketId stripUnused() const { return BucketId(getUsedBits(), getId());    }
 
     /**
      * Checks whether the given bucket is contained within this bucket. That is,
      * if it is the same bucket, or if it is a bucket using more bits, which is
      * identical to this one if set to use as many bits as this one.
      */
-    bool contains(const BucketId& id) const noexcept;
+    bool contains(const BucketId& id) const;
 
 // Functions exposing internals we want to make users independent of
 
@@ -97,7 +97,7 @@ public:
     static constexpr uint32_t maxNumBits = (8 * sizeof(Type) - CountBits);
     static constexpr uint32_t minNumBits = 1u;   // See comment above.
 
-    uint32_t getUsedBits() const noexcept { return _id >> maxNumBits; }
+    uint32_t getUsedBits() const { return _id >> maxNumBits; }
 
     void setUsedBits(uint32_t used) {
         uint32_t availBits = maxNumBits;
@@ -113,22 +113,22 @@ public:
     }
 
     /** Get the bucket id value stripped of the bits that are not in use. */
-    Type getId() const noexcept { return (_id & getStripMask()); }
+    Type getId() const { return (_id & getStripMask()); }
 
     /**
      * Get the bucket id value stripped of the count bits plus the bits that
      * are not in use.
      */
-    Type withoutCountBits() const noexcept { return (_id & getUsedMask()); }
+    Type withoutCountBits() const { return (_id & getUsedMask()); }
 
-    Type getRawId() const noexcept { return _id; }
+    Type getRawId() const { return _id; }
 
     /**
      * Reverses the bits in the given number, except the countbits part.
      * Used for sorting in the bucket database as we want related buckets
      * to be sorted next to each other.
      */
-    static Type bucketIdToKey(Type id) noexcept {
+    static Type bucketIdToKey(Type id) {
         Type retVal = reverse(id);
 
         Type usedCountLSB = id >> maxNumBits;
@@ -139,39 +139,39 @@ public:
         return retVal;
     }
 
-    static Type keyToBucketId(Type key) noexcept ;
+    static Type keyToBucketId(Type key);
 
     /**
      * Reverses the bucket id bitwise, except the countbits part,
      * and returns the value,
      */
-    Type toKey() const noexcept { return bucketIdToKey(getId()); };
+    Type toKey() const { return bucketIdToKey(getId()); };
 
     /**
      * Reverses the order of the bits in the bucket id.
      */
-    static Type reverse(Type id) noexcept;
+    static Type reverse(Type id);
 
     /**
      * Returns the value of the Nth bit, counted in the reverse order of the
      * bucket id.
      */
-    uint8_t getBit(uint32_t n) const noexcept {
+    uint8_t getBit(uint32_t n) const {
         return (_id & ((Type)1 << n)) == 0 ? 0 : 1;
     }
 
-    static void initialize() noexcept;
+    static void initialize();
 private:
     static Type _usedMasks[maxNumBits+1];
     static Type _stripMasks[maxNumBits+1];
 
     Type _id;
 
-    Type getUsedMask() const noexcept {
+    Type getUsedMask() const {
         return _usedMasks[getUsedBits()];
     }
 
-    Type getStripMask() const noexcept {
+    Type getStripMask() const {
         return _stripMasks[getUsedBits()];
     }
 

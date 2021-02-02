@@ -71,7 +71,7 @@ Initialize _initializeUsedMasks;
 
 }
 
-void BucketId::initialize() noexcept {
+void BucketId::initialize() {
     fillUsedMasks(BucketId::_usedMasks, BucketId::maxNumBits);
     fillStripMasks(BucketId::_stripMasks, BucketId::maxNumBits);
 }
@@ -91,7 +91,7 @@ void BucketId::throwFailedSetUsedBits(uint32_t used, uint32_t availBits) {
 }
 
 BucketId::Type
-BucketId::reverse(Type id) noexcept
+BucketId::reverse(Type id)
 {
     id = ((id & 0x5555555555555555l) << 1) | ((id & 0xaaaaaaaaaaaaaaaal) >> 1);
     id = ((id & 0x3333333333333333l) << 2) | ((id & 0xccccccccccccccccl) >> 2);
@@ -100,7 +100,7 @@ BucketId::reverse(Type id) noexcept
 }
 
 BucketId::Type
-BucketId::keyToBucketId(Type key) noexcept
+BucketId::keyToBucketId(Type key)
 {
     Type retVal = reverse(key);
 
@@ -113,7 +113,7 @@ BucketId::keyToBucketId(Type key) noexcept
 }
 
 bool
-BucketId::contains(const BucketId& id) const noexcept
+BucketId::contains(const BucketId& id) const
 {
     if (id.getUsedBits() < getUsedBits()) {
         return false;
