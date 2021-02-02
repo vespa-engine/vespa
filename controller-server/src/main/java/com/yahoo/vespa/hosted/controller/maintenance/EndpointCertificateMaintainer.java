@@ -29,7 +29,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates
+ * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates.
+ *
+ * See also EndpointCertificateManager, which provisions, reprovisions and validates certificates on deploy
  *
  * @author andreer
  */

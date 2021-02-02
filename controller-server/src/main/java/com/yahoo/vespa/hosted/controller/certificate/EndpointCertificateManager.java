@@ -44,6 +44,8 @@ import java.util.stream.Collectors;
  * Looks up stored endpoint certificate metadata, provisions new certificates if none is found,
  * re-provisions if zone is not covered, and uses refreshed certificates if a newer version is available.
  *
+ * See also EndpointCertificateMaintainer, which handles refreshes, deletions and triggers deployments
+ *
  * @author andreer
  */
 public class EndpointCertificateManager {
