@@ -2,8 +2,12 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
+import com.yahoo.vespa.model.container.component.AccessLogComponent;
+import com.yahoo.vespa.model.container.component.ConnectionLogComponent;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import org.w3c.dom.Element;
@@ -22,8 +26,6 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
         this.options = options;
     }
 
-    @Override protected boolean isConfigserver() { return true; }
-
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
         ConfigserverCluster cluster = new ConfigserverCluster(modelContext.getParentProducer(), "configserver",
@@ -36,7 +38,22 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     // in ConfigModelContext.DeployState.properties are not set)
     @Override
     protected void addStatusHandlers(ApplicationContainerCluster cluster, boolean isHostedVespa) {
-        super.addStatusHandlers(cluster, options.hostedVespa().orElse(Boolean.FALSE));
+        super.addStatusHandlers(cluster, isHosted());
     }
 
+    // Override access log configuration for hosted configserver/controller
+    @Override
+    protected void addAccessLogs(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
+        if (isHosted()){
+            cluster.addComponent(
+                    new AccessLogComponent(
+                            AccessLogComponent.AccessLogType.jsonAccessLog, AccessLogComponent.CompressionType.ZSTD,
+                            "logs/vespa/configserver/access-json.log.%Y%m%d%H%M%S", null, true, true, "access-json.log"));
+            cluster.addComponent(new ConnectionLogComponent(FileConnectionLog.class, cluster.getName()));
+        } else {
+            super.addAccessLogs(deployState, cluster, spec);
+        }
+    }
+
+    private boolean isHosted() { return options.hostedVespa().orElse(Boolean.FALSE); }
 }
