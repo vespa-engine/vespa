@@ -148,12 +148,6 @@ public class Flags {
             "Whether endpoint certificates should be validated before use",
             "Takes effect on the next deployment of the application");
 
-    public static final UnboundStringFlag DELETE_UNUSED_ENDPOINT_CERTIFICATES = defineStringFlag(
-            "delete-unused-endpoint-certificates", "disable",
-            List.of("andreer"), "2020-12-02", "2021-02-01",
-            "Whether the endpoint certificate maintainer should delete unused certificates in cameo/zk",
-            "Takes effect on next scheduled run of maintainer - set to \"disable\", \"dryrun\" or \"enable\"");
-
     public static final UnboundBooleanFlag USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER = defineFeatureFlag(
             "use-alternative-endpoint-certificate-provider", false,
             List.of("andreer"), "2020-12-02", "2021-02-01",
