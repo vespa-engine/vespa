@@ -25,7 +25,6 @@ import com.yahoo.documentapi.DocumentAccessParams;
 import com.yahoo.documentapi.DocumentIdResponse;
 import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.DocumentResponse;
-import com.yahoo.documentapi.DumpVisitorDataHandler;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response;
 import com.yahoo.documentapi.Result;
@@ -40,6 +39,7 @@ import com.yahoo.documentapi.VisitorDestinationSession;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorResponse;
 import com.yahoo.documentapi.VisitorSession;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
@@ -59,11 +59,13 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -174,6 +176,7 @@ public class DocumentV1ApiTest {
     @Test
     public void testResponses() throws ExecutionException, InterruptedException {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
+        List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null));
         // GET at non-existent path returns 404 with available paths
         var response = driver.sendRequest("http://localhost/document/v1/not-found");
         assertSameJson("{" +
@@ -191,6 +194,7 @@ public class DocumentV1ApiTest {
         assertEquals(404, response.getStatus());
 
         // GET at root is a visit. Numeric parameters have an upper bound.
+        access.expect(tokens);
         access.expect(parameters -> {
             assertEquals("[Content:cluster=content]", parameters.getRoute().toString());
             assertEquals("default", parameters.getBucketSpace());
@@ -200,9 +204,9 @@ public class DocumentV1ApiTest {
             assertEquals("(all the things)", parameters.getDocumentSelection());
             assertEquals(1000, parameters.getSessionTimeoutMs());
             // Put some documents in the response
-            ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc1, 0);
-            ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc2, 0);
-            ((DumpVisitorDataHandler) parameters.getLocalDataHandler()).onDocument(doc3, 0);
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
             VisitorStatistics statistics = new VisitorStatistics();
             statistics.setBucketsVisited(1);
             parameters.getControlHandler().onVisitorStatistics(statistics);
@@ -542,6 +546,7 @@ public class DocumentV1ApiTest {
     static class MockDocumentAccess extends DocumentAccess {
 
         private final AtomicReference<Consumer<VisitorParameters>> expectations = new AtomicReference<>();
+        private final Set<AckToken> outstanding = new CopyOnWriteArraySet<>();
         private final MockAsyncSession session = new MockAsyncSession();
 
         MockDocumentAccess(DocumentmanagerConfig config) {
@@ -560,18 +565,24 @@ public class DocumentV1ApiTest {
 
         @Override
         public VisitorSession createVisitorSession(VisitorParameters parameters) {
-            expectations.get().accept(parameters);
-            return new VisitorSession() {
+            VisitorSession visitorSession = new VisitorSession() {
+                {
+                    parameters.getControlHandler().setSession(this);
+                    if (parameters.getLocalDataHandler() != null)
+                        parameters.getLocalDataHandler().setSession(this);
+                }
                 @Override public boolean isDone() { return false; }
                 @Override public ProgressToken getProgress() { return null; }
                 @Override public Trace getTrace() { return null; }
                 @Override public boolean waitUntilDone(long timeoutMs) { return false; }
-                @Override public void ack(AckToken token) { }
+                @Override public void ack(AckToken token) { assertTrue(outstanding.remove(token)); }
                 @Override public void abort() { }
                 @Override public VisitorResponse getNext() { return null; }
                 @Override public VisitorResponse getNext(int timeoutMilliseconds) { return null; }
-                @Override public void destroy() { }
+                @Override public void destroy() { assertEquals(Set.of(), outstanding); }
             };
+            expectations.get().accept(parameters);
+            return visitorSession;
         }
 
         @Override
@@ -591,6 +602,10 @@ public class DocumentV1ApiTest {
 
         public void expect(Consumer<VisitorParameters> expectations) {
             this.expectations.set(expectations);
+        }
+
+        public void expect(Collection<AckToken> tokens) {
+            outstanding.addAll(tokens);
         }
 
     }
