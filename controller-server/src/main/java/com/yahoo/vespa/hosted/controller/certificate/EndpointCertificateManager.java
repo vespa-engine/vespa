@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.controller.certificate;
 
-import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
@@ -14,18 +13,15 @@ import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,17 +30,12 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -65,8 +56,6 @@ public class EndpointCertificateManager {
     private final EndpointCertificateProvider endpointCertificateProvider;
     private final Clock clock;
     private final BooleanFlag validateEndpointCertificates;
-    private final StringFlag deleteUnusedEndpointCertificates;
-    private final BooleanFlag useEndpointCertificateMaintainer;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
                                       CuratorDb curator,
@@ -79,15 +68,6 @@ public class EndpointCertificateManager {
         this.endpointCertificateProvider = endpointCertificateProvider;
         this.clock = clock;
         this.validateEndpointCertificates = Flags.VALIDATE_ENDPOINT_CERTIFICATES.bindTo(flagSource);
-        this.deleteUnusedEndpointCertificates = Flags.DELETE_UNUSED_ENDPOINT_CERTIFICATES.bindTo(flagSource);
-        this.useEndpointCertificateMaintainer = Flags.USE_ENDPOINT_CERTIFICATE_MAINTAINER.bindTo(flagSource);
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
-            try {
-                this.deleteUnusedCertificates();
-            } catch (Throwable t) {
-                log.log(Level.INFO, "Unexpected Throwable caught while deleting unused endpoint certificates", t);
-            }
-        }, 1, 10, TimeUnit.MINUTES);
     }
 
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
@@ -123,72 +103,8 @@ public class EndpointCertificateManager {
             return Optional.of(reprovisionedCertificateMetadata);
         }
 
-        if (!useEndpointCertificateMaintainer.value()) {
-            // Look for and use refreshed certificate
-            var latestAvailableVersion = latestVersionInSecretStore(currentCertificateMetadata.get());
-            if (latestAvailableVersion.isPresent() && latestAvailableVersion.getAsInt() > currentCertificateMetadata.get().version()) {
-                var refreshedCertificateMetadata = currentCertificateMetadata.get()
-                        .withVersion(latestAvailableVersion.getAsInt())
-                        .withLastRefreshed(clock.instant().getEpochSecond());
-                validateEndpointCertificate(refreshedCertificateMetadata, instance, zone);
-                curator.writeEndpointCertificateMetadata(instance.id(), refreshedCertificateMetadata);
-                return Optional.of(refreshedCertificateMetadata);
-            }
-        }
-
         validateEndpointCertificate(currentCertificateMetadata.get(), instance, zone);
         return currentCertificateMetadata;
-    }
-
-    enum CleanupMode {
-        DISABLE,
-        DRYRUN,
-        ENABLE
-    }
-
-    private void deleteUnusedCertificates() {
-        CleanupMode mode = CleanupMode.valueOf(deleteUnusedEndpointCertificates.value().toUpperCase());
-        if (mode == CleanupMode.DISABLE || useEndpointCertificateMaintainer.value()) return;
-
-        var oneMonthAgo = clock.instant().minus(30, ChronoUnit.DAYS);
-        curator.readAllEndpointCertificateMetadata().forEach((applicationId, storedMetaData) -> {
-            var lastRequested = Instant.ofEpochSecond(storedMetaData.lastRequested());
-            if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(applicationId)) {
-                try (Lock lock = lock(applicationId)) {
-                    if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
-                        log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
-                                + " has not been requested in a month and app has no deployments"
-                                + (mode == CleanupMode.ENABLE ? ", deleting from provider and ZK" : ""));
-                        if (mode == CleanupMode.ENABLE) {
-                            endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData);
-                            curator.deleteEndpointCertificateMetadata(applicationId);
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    private Lock lock(ApplicationId applicationId) {
-        return curator.lock(TenantAndApplicationId.from(applicationId));
-    }
-
-    private boolean hasNoDeployments(ApplicationId applicationId) {
-        var deployments = curator.readApplication(TenantAndApplicationId.from(applicationId))
-                .flatMap(app -> app.get(applicationId.instance()))
-                .map(Instance::deployments);
-
-        return deployments.isEmpty() || deployments.get().size() == 0;
-    }
-
-    private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
-        try {
-            var certVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.certName()));
-            var keyVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.keyName()));
-            return Sets.intersection(certVersions, keyVersions).stream().mapToInt(Integer::intValue).max();
-        } catch (SecretNotFoundException s) {
-            return OptionalInt.empty(); // Likely because the certificate is very recently provisioned - keep current version
-        }
     }
 
     private EndpointCertificateMetadata provisionEndpointCertificate(Instance instance, Optional<EndpointCertificateMetadata> currentMetadata, ZoneId deploymentZone, Optional<DeploymentInstanceSpec> instanceSpec) {
