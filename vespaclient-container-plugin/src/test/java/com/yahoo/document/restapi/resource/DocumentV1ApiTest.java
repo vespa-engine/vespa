@@ -27,6 +27,7 @@ import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.DocumentResponse;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response;
+import com.yahoo.documentapi.ResponseHandler;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.SubscriptionParameters;
 import com.yahoo.documentapi.SubscriptionSession;
@@ -69,6 +70,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -174,7 +176,7 @@ public class DocumentV1ApiTest {
     }
 
     @Test
-    public void testResponses() throws ExecutionException, InterruptedException {
+    public void testResponses() {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
         List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null));
         // GET at non-existent path returns 404 with available paths
@@ -247,6 +249,102 @@ public class DocumentV1ApiTest {
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"," +
                        "  \"message\": \"parse failure\"" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
+        // POST with namespace and document type is a restricted visit with a required remote data handler ("destination")
+        access.expect(parameters -> {
+            fail("Not supposed to run");
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid", POST);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
+                       "  \"message\": \"Missing required property 'destination'\"" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
+        // POST with namespace and document type is a restricted visit with a require remote data handler ("destination")
+        access.expect(parameters -> {
+            assertEquals("zero", parameters.getRemoteDataHandler());
+            assertEquals("music:[document]", parameters.fieldSet());
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destination=zero", POST);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid\"" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
+
+        // PUT with namespace and document type is a restricted visit with a required partial update to apply to visited documents.
+        access.expect(tokens.subList(2, 3));
+        access.expect(parameters -> {
+            assertEquals("(true) and (music) and (id.namespace=='space')", parameters.getDocumentSelection());
+            assertEquals("[id]", parameters.fieldSet());
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "Huzzah!");
+        });
+        access.session.expect((update, parameters) -> {
+            DocumentUpdate expectedUpdate = new DocumentUpdate(doc3.getDataType(), doc3.getId());
+            expectedUpdate.addFieldUpdate(FieldUpdate.createAssign(doc3.getField("artist"), new StringFieldValue("Lisa Ekdahl")));
+            expectedUpdate.setCondition(new TestAndSetCondition("(true) and (music) and (id.namespace=='space')"));
+            assertEquals(expectedUpdate, update);
+            parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
+            assertEquals(parameters().withRoute("zero"), parameters);
+            return new Result(Result.ResultType.SUCCESS, null);
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&destination=zero", PUT,
+                                      "{" +
+                                      "  \"fields\": {" +
+                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
+                                      "  }" +
+                                      "}");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid\"" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
+
+        // PUT with namespace, document type and group is also a restricted visit which requires a selection.
+        access.expect(parameters -> {
+            fail("Not supposed to run");
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/troupe", PUT);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/group/troupe\"," +
+                       "  \"message\": \"Missing required property 'selection'\"" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
+        // DELETE with namespace and document type is a restricted visit which deletes visited documents.
+        access.expect(tokens.subList(0, 1));
+        access.expect(parameters -> {
+            assertEquals("(false) and (music) and (id.namespace=='space')", parameters.getDocumentSelection());
+            assertEquals("[id]", parameters.fieldSet());
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(0));
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "Huzzah?");
+        });
+        access.session.expect((remove, parameters) -> {
+            DocumentRemove expectedRemove = new DocumentRemove(doc2.getId());
+            expectedRemove.setCondition(new TestAndSetCondition("(false) and (music) and (id.namespace=='space')"));
+            assertEquals(new DocumentRemove(doc2.getId()), remove);
+            assertEquals(parameters().withRoute("zero"), parameters);
+            parameters.responseHandler().get().handleResponse(new DocumentIdResponse(0, doc2.getId(), "boom", Response.Outcome.ERROR));
+            return new Result(Result.ResultType.SUCCESS, null);
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=false&destination=zero", DELETE);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
+                       "  \"message\": \"boom\"" +
+                       "}", response.readAll());
+        assertEquals(500, response.getStatus());
+
+        // DELETE at the root is also a deletion visit. These require a selection.
+        access.expect(parameters -> {
+            fail("Not supposed to run");
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid", DELETE);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
+                       "  \"message\": \"Missing required property 'selection'\"" +
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
@@ -423,7 +521,7 @@ public class DocumentV1ApiTest {
             DocumentRemove expectedRemove = new DocumentRemove(doc2.getId());
             expectedRemove.setCondition(new TestAndSetCondition("false"));
             assertEquals(new DocumentRemove(doc2.getId()), remove);
-            assertEquals(parameters.withRoute("route"), parameters);
+            assertEquals(parameters().withRoute("route"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentIdResponse(0, doc2.getId()));
             return new Result(Result.ResultType.SUCCESS, null);
         });
@@ -517,27 +615,20 @@ public class DocumentV1ApiTest {
                        "}", response2.readAll());
         assertEquals(500, response2.getStatus());
 
-        // Request timeout is dispatched after timeout has passed.
-        CountDownLatch latch = new CountDownLatch(1);
-        var assertions = Executors.newSingleThreadExecutor().submit(() -> {
-            access.session.expect((id, parameters) -> {
-                try {
-                    latch.await();
-                }
-                catch (InterruptedException e) {
-                    fail("Not supposed to be interrupted");
-                }
-                return new Result(Result.ResultType.SUCCESS, null);
-            });
-            var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=1ms");
-            assertSameJson("{" +
-                           "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
-                           "  \"message\": \"Request timeout after 1ms\"" +
-                           "}", response4.readAll());
-            assertEquals(504, response4.getStatus());
+        // Request response does not arrive before timeout has passed.
+        AtomicReference<ResponseHandler> handler = new AtomicReference<>();
+        access.session.expect((id, parameters) -> {
+            handler.set(parameters.responseHandler().get());
+            return new Result(Result.ResultType.SUCCESS, null);
         });
-        latch.countDown();
-        assertions.get();
+        var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?timeout=1ms");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
+                       "  \"message\": \"Request timeout after 1ms\"" +
+                       "}", response4.readAll());
+        assertEquals(504, response4.getStatus());
+        if (handler.get() != null)                          // Timeout may have occurred before dispatch, or ...
+            handler.get().handleResponse(new Response(0));  // response may eventually arrive, but too late.
 
         driver.close();
     }
