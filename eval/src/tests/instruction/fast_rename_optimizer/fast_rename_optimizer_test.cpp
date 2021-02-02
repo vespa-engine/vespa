@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/replace_type_function.h>
 #include <vespa/eval/instruction/fast_rename_optimizer.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
@@ -19,13 +19,13 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("x5", spec({x(5)}, N()))
-        .add("x5f", spec(float_cells({x(5)}), N()))
-        .add("x_m", spec({x({"a", "b", "c"})}, N()))
-        .add("xy_mm", spec({x({"a", "b", "c"}),y({"d","e"})}, N()))
-        .add("x5y3z_m", spec({x(5),y(3),z({"a","b"})}, N()))
-        .add("x5yz_m", spec({x(5),y({"a","b"}),z({"d","e"})}, N()))
-        .add("x5y3", spec({x(5),y(3)}, N()));
+        .add("x5", GenSpec().idx("x", 5).gen())
+        .add("x5f", GenSpec().idx("x", 5).cells_float().gen())
+        .add("x_m", GenSpec().map("x", {"a", "b", "c"}).gen())
+        .add("xy_mm", GenSpec().map("x", {"a", "b", "c"}).map("y", {"d","e"}).gen())
+        .add("x5y3z_m", GenSpec().idx("x", 5).idx("y", 3).map("z", {"a","b"}).gen())
+        .add("x5yz_m", GenSpec().idx("x", 5).map("y", {"a","b"}).map("z", {"d","e"}).gen())
+        .add("x5y3", GenSpec().idx("x", 5).idx("y", 3).gen());
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
