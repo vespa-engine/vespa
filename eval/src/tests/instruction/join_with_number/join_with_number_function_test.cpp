@@ -4,8 +4,7 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
-#include <vespa/eval/eval/test/param_variants.h>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/instruction/join_with_number_function.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
@@ -34,15 +33,16 @@ std::ostream &operator<<(std::ostream &os, Primary primary)
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
+TensorSpec spec(double v) { return TensorSpec("double").add({}, v); }
+
 EvalFixture::ParamRepo make_params() {
     auto repo = EvalFixture::ParamRepo()
         .add("a", spec(1.5))
         .add("number", spec(2.5))        
-        .add("dense", spec({y(5)}, N()))
-        .add_matrix("x", 3, "y", 5);
-    
-    add_variants(repo, "mixed", {x({"a"}),y(5),z({"d","e"})}, N());
-    add_variants(repo, "sparse", {x({"a","b","c"}),z({"d","e","f"})}, N());
+        .add("dense", GenSpec().idx("y", 5).gen())
+        .add_variants("x3y5", GenSpec().idx("x", 3).idx("y", 5))
+        .add_variants("mixed", GenSpec().map("x", {"a"}).idx("y", 5).map("z", {"d","e"}))
+        .add_variants("sparse", GenSpec().map("x", {"a","b","c"}).map("z", {"d","e","f"}));
     return repo;
 }
 
@@ -81,22 +81,22 @@ void verify_not_optimized(const vespalib::string &expr) {
 TEST("require that dense number join can be optimized") {
     TEST_DO(verify_optimized("x3y5+a", Primary::LHS, false));
     TEST_DO(verify_optimized("a+x3y5", Primary::RHS, false));
-    TEST_DO(verify_optimized("x3y5f*a", Primary::LHS, false));
-    TEST_DO(verify_optimized("a*x3y5f", Primary::RHS, false));
+    TEST_DO(verify_optimized("x3y5_f*a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a*x3y5_f", Primary::RHS, false));
 }
 
 TEST("require that dense number join can be inplace") {
     TEST_DO(verify_optimized("@x3y5*a", Primary::LHS, true));
     TEST_DO(verify_optimized("a*@x3y5", Primary::RHS, true));
-    TEST_DO(verify_optimized("@x3y5f+a", Primary::LHS, true));
-    TEST_DO(verify_optimized("a+@x3y5f", Primary::RHS, true));
+    TEST_DO(verify_optimized("@x3y5_f+a", Primary::LHS, true));
+    TEST_DO(verify_optimized("a+@x3y5_f", Primary::RHS, true));
 }
 
 TEST("require that asymmetric operations work") {
     TEST_DO(verify_optimized("x3y5/a", Primary::LHS, false));
     TEST_DO(verify_optimized("a/x3y5", Primary::RHS, false));
-    TEST_DO(verify_optimized("x3y5f-a", Primary::LHS, false));
-    TEST_DO(verify_optimized("a-x3y5f", Primary::RHS, false));
+    TEST_DO(verify_optimized("x3y5_f-a", Primary::LHS, false));
+    TEST_DO(verify_optimized("a-x3y5_f", Primary::RHS, false));
 }
 
 TEST("require that sparse number join can be optimized") {
