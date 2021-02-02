@@ -28,9 +28,9 @@ public:
     {
     }
 
-    bool trusted() const { return _flags & TRUSTED; }
+    bool trusted() const noexcept { return _flags & TRUSTED; }
 
-    BucketCopy& setTrusted(bool val = true) {
+    BucketCopy& setTrusted(bool val = true) noexcept {
         if (!val) {
             clearTrusted();
         } else {
@@ -40,46 +40,44 @@ public:
         return *this;
     }
 
-    void clearTrusted() { _flags &= ~TRUSTED; }
+    void clearTrusted() noexcept { _flags &= ~TRUSTED; }
 
-    bool valid() const { return getBucketInfo().valid(); }
-    bool empty() const { return getBucketInfo().empty(); }
-    bool wasRecentlyCreated() const {
+    bool valid() const noexcept { return getBucketInfo().valid(); }
+    bool empty() const noexcept { return getBucketInfo().empty(); }
+    bool wasRecentlyCreated() const noexcept {
         return (getChecksum() == 1
                 && getDocumentCount() == 0
                 && getTotalDocumentSize() == 0);
     }
 
-    static BucketCopy recentlyCreatedCopy(uint64_t timestamp, uint16_t nodeIdx)
-    {
+    static BucketCopy recentlyCreatedCopy(uint64_t timestamp, uint16_t nodeIdx) noexcept {
         return BucketCopy(timestamp, nodeIdx, api::BucketInfo(1, 0, 0, 0, 0));
     }
 
-    uint16_t getNode() const { return _node; }
-    uint64_t getTimestamp() const { return _timestamp; }
+    uint16_t getNode() const noexcept { return _node; }
+    uint64_t getTimestamp() const noexcept { return _timestamp; }
 
-    uint32_t getChecksum() const { return _info.getChecksum(); }
-    uint32_t getDocumentCount() const { return _info.getDocumentCount(); }
-    uint32_t getTotalDocumentSize() const
-            { return _info.getTotalDocumentSize(); }
-    uint32_t getMetaCount() const { return _info.getMetaCount(); }
-    uint32_t getUsedFileSize() const { return _info.getUsedFileSize(); }
-    bool active() const { return _info.isActive(); }
-    bool ready() const { return _info.isReady(); }
+    uint32_t getChecksum() const noexcept { return _info.getChecksum(); }
+    uint32_t getDocumentCount() const noexcept { return _info.getDocumentCount(); }
+    uint32_t getTotalDocumentSize() const noexcept { return _info.getTotalDocumentSize(); }
+    uint32_t getMetaCount() const noexcept { return _info.getMetaCount(); }
+    uint32_t getUsedFileSize() const noexcept { return _info.getUsedFileSize(); }
+    bool active() const noexcept { return _info.isActive(); }
+    bool ready() const noexcept { return _info.isReady(); }
 
-    const api::BucketInfo& getBucketInfo() const { return _info; }
+    const api::BucketInfo& getBucketInfo() const noexcept { return _info; }
 
-    void setBucketInfo(uint64_t timestamp, const api::BucketInfo& bInfo) {
+    void setBucketInfo(uint64_t timestamp, const api::BucketInfo& bInfo) noexcept {
         _info = bInfo;
         _timestamp = timestamp;
     }
 
-    void setActive(bool setactive) {
+    void setActive(bool setactive) noexcept {
         _info.setActive(setactive);
     }
 
     bool consistentWith(const BucketCopy& other,
-                        bool countInvalidAsConsistent = false) const
+                        bool countInvalidAsConsistent = false) const noexcept
     {
         // If both are valid, check checksum and doc count.
         if (valid() && other.valid()) {
@@ -94,7 +92,7 @@ public:
 
     std::string toString() const;
 
-    bool operator==(const BucketCopy& other) const {
+    bool operator==(const BucketCopy& other) const noexcept {
         return
             getBucketInfo() == other.getBucketInfo() &&
             _flags == other._flags;

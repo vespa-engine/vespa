@@ -21,12 +21,12 @@ public:
     explicit Bucket(const document::Bucket& b) noexcept
         : _bucket(b) {}
 
-    const document::Bucket &getBucket() const { return _bucket; }
-    document::BucketId getBucketId() const { return _bucket.getBucketId(); }
-    document::BucketSpace getBucketSpace() const { return _bucket.getBucketSpace(); }
+    const document::Bucket &getBucket() const noexcept { return _bucket; }
+    document::BucketId getBucketId() const noexcept { return _bucket.getBucketId(); }
+    document::BucketSpace getBucketSpace() const noexcept { return _bucket.getBucketSpace(); }
 
     /** Convert easily to a document bucket id to make class easy to use. */
-    operator document::BucketId() const { return _bucket.getBucketId(); }
+    operator document::BucketId() const noexcept { return _bucket.getBucketId(); }
 
     bool operator==(const Bucket& o) const noexcept {
         return (_bucket == o._bucket);

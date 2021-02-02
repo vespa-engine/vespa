@@ -42,37 +42,37 @@ public:
                uint32_t metaCount, uint32_t usedFileSize,
                bool ready, bool active, Timestamp lastModified) noexcept;
 
-    Timestamp getLastModified() const { return _lastModified; }
-    uint32_t getChecksum() const { return _checksum; }
-    uint32_t getDocumentCount() const { return _docCount; }
-    uint32_t getTotalDocumentSize() const { return _totDocSize; }
-    uint32_t getMetaCount() const { return _metaCount; }
-    uint32_t getUsedFileSize() const { return _usedFileSize; }
-    bool isReady() const { return _ready; }
-    bool isActive() const { return _active; }
+    Timestamp getLastModified() const noexcept { return _lastModified; }
+    uint32_t getChecksum() const noexcept { return _checksum; }
+    uint32_t getDocumentCount() const noexcept { return _docCount; }
+    uint32_t getTotalDocumentSize() const noexcept { return _totDocSize; }
+    uint32_t getMetaCount() const noexcept { return _metaCount; }
+    uint32_t getUsedFileSize() const noexcept { return _usedFileSize; }
+    bool isReady() const noexcept { return _ready; }
+    bool isActive() const noexcept { return _active; }
 
-    void setChecksum(uint32_t crc) { _checksum = crc; }
-    void setDocumentCount(uint32_t count) { _docCount = count; }
-    void setTotalDocumentSize(uint32_t size) { _totDocSize = size; }
-    void setMetaCount(uint32_t count) { _metaCount = count; }
-    void setUsedFileSize(uint32_t size) { _usedFileSize = size; }
-    void setReady(bool ready = true) { _ready = ready; }
-    void setActive(bool active = true) { _active = active; }
-    void setLastModified(Timestamp lastModified) { _lastModified = lastModified; }
+    void setChecksum(uint32_t crc) noexcept { _checksum = crc; }
+    void setDocumentCount(uint32_t count) noexcept { _docCount = count; }
+    void setTotalDocumentSize(uint32_t size) noexcept { _totDocSize = size; }
+    void setMetaCount(uint32_t count) noexcept { _metaCount = count; }
+    void setUsedFileSize(uint32_t size) noexcept { _usedFileSize = size; }
+    void setReady(bool ready = true) noexcept { _ready = ready; }
+    void setActive(bool active = true) noexcept { _active = active; }
+    void setLastModified(Timestamp lastModified) noexcept { _lastModified = lastModified; }
 
     /**
      * Only compare checksum, total document count and document
      * size, not meta count or used file size.
      */
-    bool equalDocumentInfo(const BucketInfo& other) const {
+    bool equalDocumentInfo(const BucketInfo& other) const noexcept {
         return (_checksum == other._checksum
                 && _docCount == other._docCount
                 && _totDocSize == other._totDocSize);
     }
 
-    bool operator==(const BucketInfo& info) const;
-    bool valid() const { return (_docCount > 0 || _totDocSize == 0); }
-    bool empty() const {
+    bool operator==(const BucketInfo& info) const noexcept;
+    bool valid() const noexcept { return (_docCount > 0 || _totDocSize == 0); }
+    bool empty() const noexcept {
         return _metaCount == 0 && _usedFileSize == 0 && _checksum == 0;
     }
     vespalib::string toString() const;

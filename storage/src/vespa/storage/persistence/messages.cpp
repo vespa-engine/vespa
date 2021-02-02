@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "messages.h"
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <ostream>
 #include <cassert>
 
@@ -183,15 +184,27 @@ RunTaskCommand::makeReply() {
     return std::make_unique<RunTaskReply>(*this);
 }
 
-RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task)
+RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket,
+                               std::unique_ptr<vespalib::IDestructorCallback> afterRun,
+                               std::unique_ptr<spi::BucketTask> task)
     : api::InternalCommand(ID),
       _task(std::move(task)),
+      _afterRun(std::move(afterRun)),
       _bucket(bucket)
-{
-    assert(_task);
-}
+{ }
 
 RunTaskCommand::~RunTaskCommand() = default;
+
+void
+RunTaskCommand::run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete)
+{
+    if (_task) {
+        _task->run(bucket, std::move(onComplete));
+    }
+    if (_afterRun) {
+        _afterRun.reset();
+    }
+}
 
 void
 RunTaskCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
