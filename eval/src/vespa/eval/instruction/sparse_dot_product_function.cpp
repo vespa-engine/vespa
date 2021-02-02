@@ -35,7 +35,9 @@ void my_sparse_dot_product_op(InterpretedFunction::State &state, uint64_t num_ma
     const LCT *lhs_cells = state.peek(1).cells().typify<LCT>().cbegin();
     const RCT *rhs_cells = state.peek(0).cells().typify<RCT>().cbegin();
     if (auto indexes = detect_type<FastValueIndex>(lhs_idx, rhs_idx)) {
+#if __has_cpp_attribute(likely)
         [[likely]];
+#endif
         const auto &lhs_fast = indexes.get<0>();
         const auto &rhs_fast = indexes.get<1>();
         double result = (rhs_fast.map.size() < lhs_fast.map.size())
@@ -43,7 +45,9 @@ void my_sparse_dot_product_op(InterpretedFunction::State &state, uint64_t num_ma
                         : my_fast_sparse_dot_product(lhs_fast, rhs_fast, lhs_cells, rhs_cells);
         state.pop_pop_push(state.stash.create<ScalarValue<double>>(result));
     } else {
+#if __has_cpp_attribute(unlikely)
         [[unlikely]];
+#endif
         double result = 0.0;
         SparseJoinPlan plan(num_mapped_dims);
         SparseJoinState sparse(plan, lhs_idx, rhs_idx);
