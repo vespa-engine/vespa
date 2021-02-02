@@ -5,17 +5,17 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.ResourceLimits;
 
 /**
- * Builder for resource limits for a content cluster with engine proton.
+ * Builder for feed block resource limits.
  *
  * @author geirst
  */
 public class DomResourceLimitsBuilder {
 
-    public static ResourceLimits build(ModelElement contentXml) {
+    public static ResourceLimits.Builder createBuilder(ModelElement contentXml) {
         ResourceLimits.Builder builder = new ResourceLimits.Builder();
         ModelElement resourceLimits = contentXml.child("resource-limits");
         if (resourceLimits == null) {
-            return builder.build();
+            return builder;
         }
         if (resourceLimits.child("disk") != null) {
             builder.setDiskLimit(resourceLimits.childAsDouble("disk"));
@@ -23,7 +23,7 @@ public class DomResourceLimitsBuilder {
         if (resourceLimits.child("memory") != null) {
             builder.setMemoryLimit(resourceLimits.childAsDouble("memory"));
         }
-        return builder.build();
+        return builder;
     }
 
 }
