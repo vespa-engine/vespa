@@ -161,7 +161,7 @@ public class CapacityChecker {
 
             int timesHostCanBeRemoved = 0;
             Optional<Node> unallocatedNode;
-            while (timesHostCanBeRemoved < 1000) { // Arbitrary upper bound
+            while (timesHostCanBeRemoved < 100) { // Arbitrary upper bound
                 unallocatedNode = tryAllocateNodes(nodeChildren.get(host), hosts, resourceMap, containedAllocations);
                 if (unallocatedNode.isEmpty()) {
                     timesHostCanBeRemoved++;
