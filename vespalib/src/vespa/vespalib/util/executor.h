@@ -20,7 +20,7 @@ public:
     struct Task {
         typedef std::unique_ptr<Task> UP;
         virtual void run() = 0;
-        virtual ~Task() {}
+        virtual ~Task() = default;
     };
 
     enum class OptimizeFor {LATENCY, THROUGHPUT, ADAPTIVE};
@@ -41,7 +41,7 @@ public:
      * In case you have a lazy executor that naps inbetween.
      **/
     virtual void wakeup() = 0;
-    virtual ~Executor() =default;
+    virtual ~Executor() = default;
 };
 
 } // namespace vespalib
