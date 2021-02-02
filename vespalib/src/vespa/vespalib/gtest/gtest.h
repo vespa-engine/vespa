@@ -26,3 +26,16 @@ main(int argc, char* argv[])                \
 #else
 #define VESPA_GTEST_TYPED_TEST_SUITE TYPED_TEST_CASE
 #endif
+
+#define VESPA_EXPECT_EXCEPTION(TRY_BLOCK, EXCEPTION_TYPE, MESSAGE) \
+    try {                                                                 \
+        TRY_BLOCK;                                                        \
+        FAIL() << "exception '" << MESSAGE << "' not thrown at all!";     \
+    } catch(EXCEPTION_TYPE& e) {                                          \
+        EXPECT_TRUE(contains(stringref(e.what()), stringref(MESSAGE))) << \
+            " e.what(): " << e.what() << "\n";                            \
+    } catch(...) {                                                        \
+        FAIL() << "wrong exception type thrown";                          \
+        throw;                                                            \
+    }
+
