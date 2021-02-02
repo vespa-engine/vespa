@@ -6,6 +6,7 @@
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/vespalib/util/shared_string_repo.h>
+#include <typeindex>
 
 namespace vespalib::eval {
 
@@ -135,9 +136,9 @@ struct FastIterateView : public Value::Index::View {
 //-----------------------------------------------------------------------------
 
 using JoinAddrSource = instruction::SparseJoinPlan::Source;
+
 // This is the class instructions will look for when optimizing sparse
 // operations by calling inline functions directly.
-
 struct FastValueIndex final : Value::Index {
     FastAddrMap map;
     FastValueIndex(size_t num_mapped_dims_in, const std::vector<string_id> &labels, size_t expected_subspaces_in)
@@ -163,6 +164,18 @@ struct FastValueIndex final : Value::Index {
     size_t size() const override { return map.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 };
+
+inline bool is_fast(const Value::Index &index) {
+    return (std::type_index(typeid(index)) == std::type_index(typeid(FastValueIndex)));
+}
+
+inline bool are_fast(const Value::Index &a, const Value::Index &b) {
+    return (is_fast(a) && is_fast(b));
+}
+
+constexpr const FastValueIndex &as_fast(const Value::Index &index) {
+    return static_cast<const FastValueIndex &>(index);
+}
 
 //-----------------------------------------------------------------------------
 

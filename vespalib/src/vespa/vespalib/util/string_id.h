@@ -31,6 +31,7 @@ public:
     constexpr string_id &operator=(const string_id &) noexcept = default;
     constexpr string_id &operator=(string_id &&) noexcept = default;
     constexpr uint32_t hash() const noexcept { return _id; }
+    constexpr uint32_t value() const noexcept { return _id; }
     // NB: not lexical sorting order, but can be used in maps
     constexpr bool operator<(const string_id &rhs) const noexcept { return (_id < rhs._id); }
     constexpr bool operator==(const string_id &rhs) const noexcept { return (_id == rhs._id); }

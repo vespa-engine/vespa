@@ -21,8 +21,8 @@ class FastAddrMap
 {
 public:
     // label hasing functions
-    static constexpr uint32_t hash_label(string_id label) { return label.hash(); }
-    static constexpr uint32_t hash_label(const string_id *label) { return label->hash(); }
+    static constexpr uint32_t hash_label(string_id label) { return label.value(); }
+    static constexpr uint32_t hash_label(const string_id *label) { return label->value(); }
     static constexpr uint32_t combine_label_hash(uint32_t full_hash, uint32_t next_hash) {
         return ((full_hash * 31) + next_hash);
     }
@@ -71,6 +71,7 @@ public:
         template <typename T>
         constexpr uint32_t operator()(const AltKey<T> &key) const { return key.hash; }
         constexpr uint32_t operator()(const Entry &entry) const { return entry.hash; }
+        constexpr uint32_t operator()(string_id label) const { return label.value(); }
     };
 
     // equality functor for sparse hash set
@@ -81,10 +82,14 @@ public:
         static constexpr bool eq_labels(string_id a, const string_id *b) { return (a == *b); }
         template <typename T>
         bool operator()(const Entry &a, const AltKey<T> &b) const {
-            if ((a.hash != b.hash) || (b.key.size() != label_view.addr_size)) {
+            if (a.hash != b.hash) {
                 return false;
             }
+            if (label_view.addr_size == 1) {
+                return true;
+            }
             auto a_key = label_view.get_addr(a.tag.idx);
+            assert(a_key.size() == b.key.size());
             for (size_t i = 0; i < a_key.size(); ++i) {
                 if (!eq_labels(a_key[i], b.key[i])) {
                     return false;
@@ -92,6 +97,7 @@ public:
             }
             return true;
         }
+        bool operator()(const Entry &a, string_id b) const { return (a.hash == b.value()); }
     };
 
     using HashType = hashtable<Entry, Entry, Hash, Equal, Identity, hashtable_base::and_modulator>;
@@ -101,8 +107,8 @@ private:
     HashType _map;
 
 public:
-    FastAddrMap(size_t num_mapped_dims, const std::vector<string_id> &labels, size_t expected_subspaces)
-        : _labels(num_mapped_dims, labels),
+    FastAddrMap(size_t num_mapped_dims, const std::vector<string_id> &labels_in, size_t expected_subspaces)
+        : _labels(num_mapped_dims, labels_in),
           _map(expected_subspaces * 2, Hash(), Equal(_labels)) {}
     ~FastAddrMap();
     FastAddrMap(const FastAddrMap &) = delete;
@@ -113,6 +119,7 @@ public:
     ConstArrayRef<string_id> get_addr(size_t idx) const { return _labels.get_addr(idx); }
     size_t size() const { return _map.size(); }
     constexpr size_t addr_size() const { return _labels.addr_size; }
+    const std::vector<string_id> &labels() const { return _labels.labels; }
     template <typename T>
     size_t lookup(ConstArrayRef<T> addr, uint32_t hash) const {
         AltKey<T> key{addr, hash};
@@ -122,6 +129,11 @@ public:
     template <typename T>
     size_t lookup(ConstArrayRef<T> addr) const {
         return lookup(addr, hash_labels(addr));
+    }
+    size_t lookup_singledim(string_id addr) const {
+        // assert(addr_size() == 1);
+        auto pos = _map.find(addr);
+        return (pos == _map.end()) ? npos() : pos->tag.idx;
     }
     void add_mapping(uint32_t hash) {
         uint32_t idx = _map.size();

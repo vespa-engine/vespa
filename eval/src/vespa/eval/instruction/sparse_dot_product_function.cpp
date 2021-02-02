@@ -2,8 +2,8 @@
 
 #include "sparse_dot_product_function.h"
 #include "generic_join.h"
-#include "detect_type.h"
 #include <vespa/eval/eval/fast_value.hpp>
+#include <vespa/vespalib/util/typify.h>
 
 namespace vespalib::eval {
 
@@ -13,41 +13,45 @@ using namespace instruction;
 
 namespace {
 
-template <typename SCT, typename BCT>
-double my_fast_sparse_dot_product(const FastValueIndex &small_idx, const FastValueIndex &big_idx,
-                                  const SCT *small_cells, const BCT *big_cells)
+template <typename CT, bool single_dim>
+double my_fast_sparse_dot_product(const FastValueIndex *small_idx, const FastValueIndex *big_idx,
+                                  const CT *small_cells, const CT *big_cells)
 {
     double result = 0.0;
-    small_idx.map.each_map_entry([&](auto small_subspace, auto hash) {
-                auto small_addr = small_idx.map.get_addr(small_subspace);
-                auto big_subspace = big_idx.map.lookup(small_addr, hash);
-                if (big_subspace != FastAddrMap::npos()) {
-                    result += (small_cells[small_subspace] * big_cells[big_subspace]);
-                }
-            });
+    if (big_idx->map.size() < small_idx->map.size()) {
+        std::swap(small_idx, big_idx);
+        std::swap(small_cells, big_cells);
+    }
+    if (single_dim) {
+        const auto &labels = small_idx->map.labels();
+        for (size_t i = 0; i < labels.size(); ++i) {
+            auto big_subspace = big_idx->map.lookup_singledim(labels[i]);
+            if (big_subspace != FastAddrMap::npos()) {
+                result += (small_cells[i] * big_cells[big_subspace]);
+            }
+        }
+    } else {
+        small_idx->map.each_map_entry([&](auto small_subspace, auto hash) {
+                    auto small_addr = small_idx->map.get_addr(small_subspace);
+                    auto big_subspace = big_idx->map.lookup(small_addr, hash);
+                    if (big_subspace != FastAddrMap::npos()) {
+                        result += (small_cells[small_subspace] * big_cells[big_subspace]);
+                    }
+                });
+    }
     return result;
 }
 
-template <typename LCT, typename RCT>
+template <typename CT, bool single_dim>
 void my_sparse_dot_product_op(InterpretedFunction::State &state, uint64_t num_mapped_dims) {
     const auto &lhs_idx = state.peek(1).index();
     const auto &rhs_idx = state.peek(0).index();
-    const LCT *lhs_cells = state.peek(1).cells().typify<LCT>().cbegin();
-    const RCT *rhs_cells = state.peek(0).cells().typify<RCT>().cbegin();
-    if (auto indexes = detect_type<FastValueIndex>(lhs_idx, rhs_idx)) {
-#if __has_cpp_attribute(likely)
-        [[likely]];
-#endif
-        const auto &lhs_fast = indexes.get<0>();
-        const auto &rhs_fast = indexes.get<1>();
-        double result = (rhs_fast.map.size() < lhs_fast.map.size())
-                        ? my_fast_sparse_dot_product(rhs_fast, lhs_fast, rhs_cells, lhs_cells)
-                        : my_fast_sparse_dot_product(lhs_fast, rhs_fast, lhs_cells, rhs_cells);
+    const CT *lhs_cells = state.peek(1).cells().typify<CT>().cbegin();
+    const CT *rhs_cells = state.peek(0).cells().typify<CT>().cbegin();
+    if (__builtin_expect(are_fast(lhs_idx, rhs_idx), true)) {
+        double result = my_fast_sparse_dot_product<CT,single_dim>(&as_fast(lhs_idx), &as_fast(rhs_idx), lhs_cells, rhs_cells);
         state.pop_pop_push(state.stash.create<ScalarValue<double>>(result));
     } else {
-#if __has_cpp_attribute(unlikely)
-        [[unlikely]];
-#endif
         double result = 0.0;
         SparseJoinPlan plan(num_mapped_dims);
         SparseJoinState sparse(plan, lhs_idx, rhs_idx);
@@ -65,9 +69,11 @@ void my_sparse_dot_product_op(InterpretedFunction::State &state, uint64_t num_ma
 }
 
 struct MyGetFun {
-    template <typename LCT, typename RCT>
-    static auto invoke() { return my_sparse_dot_product_op<LCT,RCT>; }
+    template <typename CT, typename SINGLE_DIM>
+    static auto invoke() { return my_sparse_dot_product_op<CT,SINGLE_DIM::value>; }
 };
+
+using MyTypify = TypifyValue<TypifyCellType,TypifyBool>;
 
 } // namespace <unnamed>
 
@@ -80,15 +86,18 @@ SparseDotProductFunction::SparseDotProductFunction(const TensorFunction &lhs_in,
 InterpretedFunction::Instruction
 SparseDotProductFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
-    auto op = typify_invoke<2,TypifyCellType,MyGetFun>(lhs().result_type().cell_type(), rhs().result_type().cell_type());
-    return InterpretedFunction::Instruction(op, lhs().result_type().count_mapped_dimensions());
+    size_t num_dims = lhs().result_type().count_mapped_dimensions();
+    auto op = typify_invoke<2,MyTypify,MyGetFun>(lhs().result_type().cell_type(),
+                                                 (num_dims == 1));
+    return InterpretedFunction::Instruction(op, num_dims);
 }
 
 bool
 SparseDotProductFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
 {
     return (res.is_scalar() && (res.cell_type() == CellType::DOUBLE) &&
-            lhs.is_sparse() && (rhs.dimensions() == lhs.dimensions()));
+            lhs.is_sparse() && (rhs.dimensions() == lhs.dimensions()) &&
+            lhs.cell_type() == rhs.cell_type());
 }
 
 const TensorFunction &
