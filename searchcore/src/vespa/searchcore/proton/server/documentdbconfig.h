@@ -90,6 +90,7 @@ public:
             return *this;
         }
         ComparisonResult &set_threading_service_config_changed(bool val) { threading_service_config_changed = val; return *this; }
+        ComparisonResult &set_alloc_config_changed(bool val) { alloc_config_changed = val; return *this; }
     };
 
     using SP = std::shared_ptr<DocumentDBConfig>;
