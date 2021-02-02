@@ -30,8 +30,6 @@ public interface ContainerOperations {
 
     void removeContainer(NodeAgentContext context, Container container);
 
-    void updateContainer(NodeAgentContext context, ContainerResources containerResources);
-
     Optional<Container> getContainer(NodeAgentContext context);
 
     boolean pullImageAsyncIfNeeded(TaskContext context, DockerImage dockerImage, RegistryCredentials registryCredentials);

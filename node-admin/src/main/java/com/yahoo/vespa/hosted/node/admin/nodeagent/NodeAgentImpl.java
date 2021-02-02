@@ -323,9 +323,9 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         ContainerResources wantedContainerResources = getContainerResources(context);
-        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
-            reasons.add("Container should be running with different memory allocation, wanted: " +
-                    wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
+        if (!wantedContainerResources.equals(existingContainer.resources)) {
+            reasons.add("Container should be running with different resources, wanted: " +
+                        wantedContainerResources + ", actual: " + existingContainer.resources);
         }
 
         if (containerState == STARTING)
@@ -356,25 +356,6 @@ public class NodeAgentImpl implements NodeAgent {
         containerOperations.removeContainer(context, existingContainer);
         containerState = ABSENT;
         context.log(logger, "Container successfully removed, new containerState is " + containerState);
-    }
-
-
-    private Container updateContainerIfNeeded(NodeAgentContext context, Container existingContainer) {
-        ContainerResources wantedContainerResources = getContainerResources(context);
-
-        if (healthChecker.isPresent() && firstSuccessfulHealthCheckInstant
-                .map(clock.instant().minus(warmUpDuration(context.zone()))::isBefore)
-                .orElse(true))
-            return existingContainer;
-
-        if (wantedContainerResources.equalsCpu(existingContainer.resources)) return existingContainer;
-        context.log(logger, "Container should be running with different CPU allocation, wanted: %s, current: %s",
-                wantedContainerResources.toStringCpu(), existingContainer.resources.toStringCpu());
-
-        // Only update CPU resources
-        containerOperations.updateContainer(context, wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
-        return containerOperations.getContainer(context).orElseThrow(() ->
-                new ConvergenceException("Did not find container that was just updated"));
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
@@ -465,8 +446,6 @@ public class NodeAgentImpl implements NodeAgent {
                     containerState = STARTING;
                     container = Optional.of(startContainer(context));
                     containerState = UNKNOWN;
-                } else {
-                    container = Optional.of(updateContainerIfNeeded(context, container.get()));
                 }
 
                 aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));

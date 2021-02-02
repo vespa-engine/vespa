@@ -8,7 +8,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
@@ -52,6 +51,7 @@ import static org.mockito.Mockito.when;
  * @author Øyvind Bakksjø
  */
 public class NodeAgentImplTest {
+
     private static final NodeResources resources = new NodeResources(2, 16, 250, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local);
     private static final Version vespaVersion = Version.fromString("1.2.3");
     private static final String hostName = "host1.test.yahoo.com";
@@ -67,7 +67,6 @@ public class NodeAgentImplTest {
     private final CredentialsMaintainer credentialsMaintainer = mock(CredentialsMaintainer.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ManualClock clock = new ManualClock(Instant.now());
-
 
     @Test
     public void upToDateContainerIsUntouched() {
@@ -200,54 +199,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsUpdatedIfCpuChanged() {
-        NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
-                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
-                .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
-                .orchestratorStatus(OrchestratorStatus.NO_REMARKS);
-
-        NodeAgentContext firstContext = createContext(specBuilder.build());
-        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
-
-        when(containerOperations.pullImageAsyncIfNeeded(any(), any(), any())).thenReturn(true);
-
-        InOrder inOrder = inOrder(orchestrator, containerOperations);
-
-        nodeAgent.doConverge(firstContext);
-        inOrder.verify(orchestrator, never()).resume(any(String.class));
-
-        NodeAgentContext secondContext = createContext(specBuilder.diskGb(200).build());
-        nodeAgent.doConverge(secondContext);
-        inOrder.verify(orchestrator, never()).resume(any(String.class));
-
-        NodeAgentContext thirdContext = new NodeAgentContextImpl.Builder(specBuilder.vcpu(5).build()).cpuSpeedUp(1.25).build();
-        nodeAgent.doConverge(thirdContext);
-        ContainerResources resourcesAfterThird = ContainerResources.from(0, 4, 16);
-        mockGetContainer(dockerImage, resourcesAfterThird, true);
-
-        inOrder.verify(orchestrator, never()).suspend(any());
-        inOrder.verify(containerOperations).updateContainer(eq(thirdContext), eq(resourcesAfterThird));
-        inOrder.verify(containerOperations, never()).removeContainer(any(), any());
-        inOrder.verify(containerOperations, never()).startContainer(any());
-        inOrder.verify(orchestrator, never()).resume(any());
-
-        // No changes
-        nodeAgent.converge(thirdContext);
-        inOrder.verify(orchestrator, never()).suspend(any());
-        inOrder.verify(containerOperations, never()).updateContainer(eq(thirdContext), any());
-        inOrder.verify(containerOperations, never()).removeContainer(any(), any());
-        inOrder.verify(orchestrator, never()).resume(any());
-
-        // Set the feature flag
-        flagSource.withDoubleFlag(PermanentFlags.CONTAINER_CPU_CAP.id(), 2.3);
-
-        nodeAgent.doConverge(thirdContext);
-        inOrder.verify(containerOperations).updateContainer(eq(thirdContext), eq(ContainerResources.from(9.2, 4, 16)));
-        inOrder.verify(orchestrator, never()).resume(any());
-    }
-
-    @Test
-    public void containerIsRecreatedIfMemoryChanged() {
+    public void containerIsRecreatedOnResourceChange() {
         NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
                 .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
                 .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
@@ -259,21 +211,19 @@ public class NodeAgentImplTest {
         when(containerOperations.pullImageAsyncIfNeeded(any(), any(), any())).thenReturn(true);
 
         nodeAgent.doConverge(firstContext);
-        NodeAgentContext secondContext = createContext(specBuilder.memoryGb(20).build());
+        NodeAgentContext secondContext = createContext(specBuilder.memoryGb(20).vcpu(5).build());
         nodeAgent.doConverge(secondContext);
-        ContainerResources resourcesAfterThird = ContainerResources.from(0, 2, 20);
+        ContainerResources resourcesAfterThird = ContainerResources.from(0, 5, 20);
         mockGetContainer(dockerImage, resourcesAfterThird, true);
 
         InOrder inOrder = inOrder(orchestrator, containerOperations, nodeRepository);
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(containerOperations).removeContainer(eq(secondContext), any());
-        inOrder.verify(containerOperations, never()).updateContainer(any(), any());
         inOrder.verify(containerOperations, never()).restartVespa(any());
         inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withRestartGeneration(2)));
 
         nodeAgent.doConverge(secondContext);
         inOrder.verify(orchestrator).resume(any(String.class));
-        inOrder.verify(containerOperations, never()).updateContainer(any(), any());
         inOrder.verify(containerOperations, never()).removeContainer(any(), any());
     }
 
@@ -640,23 +590,21 @@ public class NodeAgentImplTest {
             assertEquals("Refusing to resume until warm up period ends (in PT30S)", e.getMessage());
         }
         inOrder.verify(orchestrator, never()).resume(any());
-        inOrder.verify(orchestrator, never()).suspend(any());
-        inOrder.verify(containerOperations, never()).updateContainer(any(), any());
+        inOrder.verify(orchestrator, times(3)).suspend(any());
 
-
+        // Recreates container with CPU cap after warmup
         clock.advance(Duration.ofSeconds(31));
+        ContainerResources resourcesWithCpuCap = ContainerResources.from(0, resources.vcpu(), resources.memoryGb());
+        mockGetContainer(dockerImage, resourcesWithCpuCap, true);
         nodeAgent.doConverge(context);
-
         inOrder.verify(orchestrator, never()).suspend(any());
-        inOrder.verify(containerOperations).updateContainer(eq(context), eq(ContainerResources.from(0, 2, 16)));
-        inOrder.verify(containerOperations, never()).removeContainer(any(), any());
-        inOrder.verify(containerOperations, never()).startContainer(any());
-        inOrder.verify(orchestrator, never()).resume(any());
+        inOrder.verify(containerOperations).removeContainer(eq(context), any());
+        inOrder.verify(containerOperations).startContainer(eq(context));
+        inOrder.verify(orchestrator).resume(eq(hostName));
 
-        // No changes
+        // No further changes
         nodeAgent.converge(context);
         inOrder.verify(orchestrator, never()).suspend(any());
-        inOrder.verify(containerOperations, never()).updateContainer(eq(context), any());
         inOrder.verify(containerOperations, never()).removeContainer(any(), any());
         inOrder.verify(orchestrator, never()).resume(any());
     }
@@ -678,7 +626,6 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge(context);
         inOrder.verify(orchestrator, never()).suspend(any(String.class));
-        inOrder.verify(containerOperations, never()).updateContainer(eq(context), any());
         inOrder.verify(containerOperations, never()).removeContainer(any(), any());
         inOrder.verify(orchestrator, never()).resume(any(String.class));
     }
@@ -726,13 +673,6 @@ public class NodeAgentImplTest {
             return null;
         }).when(containerOperations).createContainer(any(), any(), any());
 
-        doAnswer(invoc -> {
-            NodeAgentContext context = invoc.getArgument(0, NodeAgentContext.class);
-            ContainerResources resources = invoc.getArgument(1, ContainerResources.class);
-            mockGetContainer(context.node().wantedDockerImage().get(), resources, true);
-            return null;
-        }).when(containerOperations).updateContainer(any(), any());
-
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations,
                                  () -> RegistryCredentials.none, storageMaintainer, flagSource,
                                  Optional.of(credentialsMaintainer), Optional.of(aclMaintainer),
@@ -767,4 +707,5 @@ public class NodeAgentImplTest {
     private NodeSpec.Builder nodeBuilder(NodeState state) {
         return NodeSpec.Builder.testSpec(hostName, state).resources(resources);
     }
+
 }

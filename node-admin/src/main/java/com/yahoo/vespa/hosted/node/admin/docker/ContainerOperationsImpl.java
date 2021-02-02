@@ -203,11 +203,6 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public void updateContainer(NodeAgentContext context, ContainerResources containerResources) {
-        containerEngine.updateContainer(context.containerName(), containerResources);
-    }
-
-    @Override
     public Optional<Container> getContainer(NodeAgentContext context) {
         return containerEngine.getContainer(context.containerName());
     }
