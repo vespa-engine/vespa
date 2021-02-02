@@ -290,10 +290,10 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
-        if (value.getTensor().isPresent()) {
-            byte[] encodedTensor = TypedBinaryFormat.encode(value.getTensor().get());
-            buf.putInt1_4Bytes(encodedTensor.length);
-            buf.put(encodedTensor);
+        var encodedTensor = value.getSerializedTensor();
+        if (encodedTensor.isPresent()) {
+            buf.putInt1_4Bytes(encodedTensor.get().length);
+            buf.put(encodedTensor.get());
         } else {
             buf.putInt1_4Bytes(0);
         }
