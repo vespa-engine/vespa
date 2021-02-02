@@ -866,14 +866,10 @@ DummyPersistence::register_resource_usage_listener(IResourceUsageListener &liste
 
 namespace {
 
-class SyncExecutorOnDestruction : public vespalib::IDestructorCallback {
+class ExecutorRegistration : public vespalib::IDestructorCallback {
 public:
-    explicit SyncExecutorOnDestruction(std::shared_ptr<BucketExecutor> executor) : _executor(std::move(executor)) { }
-    ~SyncExecutorOnDestruction() override {
-        if (_executor) {
-            _executor->sync();
-        }
-    }
+    explicit ExecutorRegistration(std::shared_ptr<BucketExecutor> executor) : _executor(std::move(executor)) { }
+    ~ExecutorRegistration() override = default;
 private:
     std::shared_ptr<BucketExecutor> _executor;
 };
@@ -885,7 +881,7 @@ DummyPersistence::register_executor(std::shared_ptr<BucketExecutor> executor)
 {
     assert(_bucket_executor.expired());
     _bucket_executor = executor;
-    return std::make_unique<SyncExecutorOnDestruction>(executor);
+    return std::make_unique<ExecutorRegistration>(executor);
 }
 
 std::string

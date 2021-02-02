@@ -741,14 +741,10 @@ PersistenceEngine::getWLock() const
 
 namespace {
 
-class SyncExecutorOnDestruction : public vespalib::IDestructorCallback {
+class ExecutorRegistration : public vespalib::IDestructorCallback {
 public:
-    explicit SyncExecutorOnDestruction(std::shared_ptr<BucketExecutor> executor) : _executor(std::move(executor)) { }
-    ~SyncExecutorOnDestruction() override {
-        if (_executor) {
-            _executor->sync();
-        }
-    }
+    explicit ExecutorRegistration(std::shared_ptr<BucketExecutor> executor) : _executor(std::move(executor)) { }
+    ~ExecutorRegistration() override = default;
 private:
     std::shared_ptr<BucketExecutor> _executor;
 };
@@ -760,7 +756,7 @@ PersistenceEngine::register_executor(std::shared_ptr<BucketExecutor> executor)
 {
     assert(_bucket_executor.expired());
     _bucket_executor = executor;
-    return std::make_unique<SyncExecutorOnDestruction>(executor);
+    return std::make_unique<ExecutorRegistration>(executor);
 }
 
 std::unique_ptr<BucketTask>
@@ -770,13 +766,6 @@ PersistenceEngine::execute(const storage::spi::Bucket &bucket, std::unique_ptr<B
         bucketExecutor->execute(bucket, std::move(task));
     }
     return task;
-}
-
-void PersistenceEngine::sync() {
-    auto bucketExecutor = get_bucket_executor();
-    if (bucketExecutor) {
-        bucketExecutor->sync();
-    }
 }
 
 } // storage

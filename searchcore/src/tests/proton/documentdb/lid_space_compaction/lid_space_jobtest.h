@@ -5,8 +5,9 @@
 #include <vespa/persistence/spi/bucketexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+namespace storage::spi::dummy { class DummyBucketExecutor; }
 struct JobTestBase : public ::testing::TestWithParam<bool> {
-    std::unique_ptr<storage::spi::BucketExecutor> _bucketExecutor;
+    std::unique_ptr<storage::spi::dummy::DummyBucketExecutor> _bucketExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _singleExecutor;
     std::unique_ptr<searchcorespi::index::IThreadService> _master;
     std::shared_ptr<MyHandler> _handler;
@@ -54,7 +55,7 @@ struct JobTest : public JobTestBase {
     std::unique_ptr<IMaintenanceJobRunner> _jobRunner;
 
     JobTest();
-    ~JobTest();
+    ~JobTest() override;
     void init(uint32_t allowedLidBloat,
               double allowedLidBloatFactor,
               double resourceLimitFactor = RESOURCE_LIMIT_FACTOR,
@@ -68,7 +69,7 @@ struct JobTest : public JobTestBase {
 class JobDisabledByRemoveOpsTest : public JobTest {
 public:
     JobDisabledByRemoveOpsTest();
-    ~JobDisabledByRemoveOpsTest();
+    ~JobDisabledByRemoveOpsTest() override;
 
     void job_is_disabled_while_remove_ops_are_ongoing(bool remove_batch);
     void job_becomes_disabled_if_remove_ops_starts(bool remove_batch);
@@ -80,7 +81,7 @@ struct MyCountJobRunner;
 struct MaxOutstandingJobTest : public JobTest {
     std::unique_ptr<MyCountJobRunner> runner;
     MaxOutstandingJobTest();
-    ~MaxOutstandingJobTest();
+    ~MaxOutstandingJobTest() override;
     void init(uint32_t maxOutstandingMoveOps);
     void assertRunToBlocked();
     void assertRunToNotBlocked();

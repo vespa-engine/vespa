@@ -130,7 +130,6 @@ public:
     WriteGuard getWLock() const;
     ResourceUsageTracker &get_resource_usage_tracker() noexcept { return *_resource_usage_tracker; }
     std::unique_ptr<BucketTask> execute(const Bucket &bucket, std::unique_ptr<BucketTask> task) override;
-    void sync() override;
 };
 
 }

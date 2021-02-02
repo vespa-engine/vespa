@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <cassert>
+#include <thread>
 
 using search::DocumentMetaData;
 using search::LidUsageStats;
@@ -34,19 +35,19 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
                 moveDocument(meta, std::make_shared<DoneContext>(std::make_pair(std::move(opsTracker), std::move(onDone))));
             }));
             if (failed) return false;
+            _startedCount.fetch_add(1, std::memory_order_relaxed);
             if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
                 return true;
             }
         }
-    }
-    if (!_scanItr->valid()) {
-        sync();
     }
     return false;
 }
 
 void
 CompactionJob::moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> context) {
+    _executedCount.fetch_add(1, std::memory_order_relaxed);
+    if (_stopped.load(std::memory_order_relaxed)) return;
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
     auto op = _handler->createMoveOperation(meta, 0);
@@ -55,6 +56,7 @@ CompactionJob::moveDocument(const search::DocumentMetaData & meta, std::shared_p
     if (meta.gid != op->getDocument()->getId().getGlobalId()) return;
 
     _master.execute(makeLambdaTask([this, metaThen=meta, moveOp=std::move(op), onDone=std::move(context)]() {
+        if (_stopped.load(std::memory_order_relaxed)) return;
         search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
         if (metaNow.lid != metaThen.lid) return;
         if (metaNow.bucketId != metaThen.bucketId) return;
@@ -82,20 +84,25 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                                 blockableConfig, clusterStateChangedNotifier, nodeRetired),
       _master(master),
       _bucketExecutor(bucketExecutor),
-      _bucketSpace(bucketSpace)
-{
-}
+      _bucketSpace(bucketSpace),
+      _stopped(false),
+      _startedCount(0),
+      _executedCount(0)
+{ }
 
 CompactionJob::~CompactionJob() = default;
 
-void
-CompactionJob::sync() {
-    _bucketExecutor.sync();
+bool
+CompactionJob::inSync() const {
+    return _executedCount == _startedCount;
 }
 
 void
 CompactionJob::onStop() {
-    sync();
+    _stopped = true;
+    while ( ! inSync() ) {
+        std::this_thread::sleep_for(10us);
+    }
 }
 
 } // namespace proton

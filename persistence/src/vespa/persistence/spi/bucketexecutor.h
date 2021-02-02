@@ -29,7 +29,6 @@ public:
 struct BucketExecutor {
     virtual ~BucketExecutor() = default;
     virtual std::unique_ptr<BucketTask> execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) = 0;
-    virtual void sync() = 0;
 };
 
 }
