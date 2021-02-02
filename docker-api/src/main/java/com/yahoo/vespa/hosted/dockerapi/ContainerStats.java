@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -17,13 +19,13 @@ public class ContainerStats {
     private final CpuStats cpuStats;
 
     public ContainerStats(Map<String, NetworkStats> networkStatsByInterface, MemoryStats memoryStats, CpuStats cpuStats) {
-        this.networkStatsByInterface = Map.copyOf(Objects.requireNonNull(networkStatsByInterface));
+        this.networkStatsByInterface = new LinkedHashMap<>(Objects.requireNonNull(networkStatsByInterface));
         this.memoryStats = Objects.requireNonNull(memoryStats);
         this.cpuStats = Objects.requireNonNull(cpuStats);
     }
 
     public Map<String, NetworkStats> getNetworks() {
-        return networkStatsByInterface;
+        return Collections.unmodifiableMap(networkStatsByInterface);
     }
 
     public MemoryStats getMemoryStats() {
