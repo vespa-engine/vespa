@@ -13,27 +13,49 @@ using namespace instruction;
 
 namespace {
 
+template <typename CT>
+double my_sparse_dot_product_fallback(const Value::Index &lhs_idx, const Value::Index &rhs_idx,
+                                      const CT *lhs_cells, const CT *rhs_cells, size_t num_mapped_dims) __attribute__((noinline));
+template <typename CT>
+double my_sparse_dot_product_fallback(const Value::Index &lhs_idx, const Value::Index &rhs_idx,
+                                      const CT *lhs_cells, const CT *rhs_cells, size_t num_mapped_dims)
+{
+    double result = 0.0;
+    SparseJoinPlan plan(num_mapped_dims);
+    SparseJoinState sparse(plan, lhs_idx, rhs_idx);
+    auto outer = sparse.first_index.create_view({});
+    auto inner = sparse.second_index.create_view(sparse.second_view_dims);
+    outer->lookup({});
+    while (outer->next_result(sparse.first_address, sparse.first_subspace)) {
+        inner->lookup(sparse.address_overlap);
+        if (inner->next_result(sparse.second_only_address, sparse.second_subspace)) {
+            result += (lhs_cells[sparse.lhs_subspace] * rhs_cells[sparse.rhs_subspace]);
+        }
+    }
+    return result;
+}
+
 template <typename CT, bool single_dim>
-double my_fast_sparse_dot_product(const FastValueIndex *small_idx, const FastValueIndex *big_idx,
+double my_fast_sparse_dot_product(const FastAddrMap *small_map, const FastAddrMap *big_map,
                                   const CT *small_cells, const CT *big_cells)
 {
     double result = 0.0;
-    if (big_idx->map.size() < small_idx->map.size()) {
-        std::swap(small_idx, big_idx);
+    if (big_map->size() < small_map->size()) {
+        std::swap(small_map, big_map);
         std::swap(small_cells, big_cells);
     }
-    if (single_dim) {
-        const auto &labels = small_idx->map.labels();
+    if constexpr (single_dim) {
+        const auto &labels = small_map->labels();
         for (size_t i = 0; i < labels.size(); ++i) {
-            auto big_subspace = big_idx->map.lookup_singledim(labels[i]);
+            auto big_subspace = big_map->lookup_singledim(labels[i]);
             if (big_subspace != FastAddrMap::npos()) {
                 result += (small_cells[i] * big_cells[big_subspace]);
             }
         }
     } else {
-        small_idx->map.each_map_entry([&](auto small_subspace, auto hash) {
-                    auto small_addr = small_idx->map.get_addr(small_subspace);
-                    auto big_subspace = big_idx->map.lookup(small_addr, hash);
+        small_map->each_map_entry([&](auto small_subspace, auto hash) {
+                    auto small_addr = small_map->get_addr(small_subspace);
+                    auto big_subspace = big_map->lookup(small_addr, hash);
                     if (big_subspace != FastAddrMap::npos()) {
                         result += (small_cells[small_subspace] * big_cells[big_subspace]);
                     }
@@ -48,24 +70,10 @@ void my_sparse_dot_product_op(InterpretedFunction::State &state, uint64_t num_ma
     const auto &rhs_idx = state.peek(0).index();
     const CT *lhs_cells = state.peek(1).cells().typify<CT>().cbegin();
     const CT *rhs_cells = state.peek(0).cells().typify<CT>().cbegin();
-    if (__builtin_expect(are_fast(lhs_idx, rhs_idx), true)) {
-        double result = my_fast_sparse_dot_product<CT,single_dim>(&as_fast(lhs_idx), &as_fast(rhs_idx), lhs_cells, rhs_cells);
-        state.pop_pop_push(state.stash.create<ScalarValue<double>>(result));
-    } else {
-        double result = 0.0;
-        SparseJoinPlan plan(num_mapped_dims);
-        SparseJoinState sparse(plan, lhs_idx, rhs_idx);
-        auto outer = sparse.first_index.create_view({});
-        auto inner = sparse.second_index.create_view(sparse.second_view_dims);
-        outer->lookup({});
-        while (outer->next_result(sparse.first_address, sparse.first_subspace)) {
-            inner->lookup(sparse.address_overlap);
-            if (inner->next_result(sparse.second_only_address, sparse.second_subspace)) {
-                result += (lhs_cells[sparse.lhs_subspace] * rhs_cells[sparse.rhs_subspace]);
-            }
-        }
-        state.pop_pop_push(state.stash.create<ScalarValue<double>>(result));
-    }
+    double result = __builtin_expect(are_fast(lhs_idx, rhs_idx), true)
+                    ? my_fast_sparse_dot_product<CT,single_dim>(&as_fast(lhs_idx).map, &as_fast(rhs_idx).map, lhs_cells, rhs_cells)
+                    : my_sparse_dot_product_fallback<CT>(lhs_idx, rhs_idx, lhs_cells, rhs_cells, num_mapped_dims);
+    state.pop_pop_push(state.stash.create<ScalarValue<double>>(result));
 }
 
 struct MyGetFun {
