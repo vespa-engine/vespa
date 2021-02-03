@@ -42,6 +42,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/thread.h>
 #include <unistd.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("maintenancecontroller_test");

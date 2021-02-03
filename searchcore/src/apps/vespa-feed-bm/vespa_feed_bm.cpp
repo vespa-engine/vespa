@@ -76,6 +76,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <getopt.h>
 #include <iostream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-feed-bm");
