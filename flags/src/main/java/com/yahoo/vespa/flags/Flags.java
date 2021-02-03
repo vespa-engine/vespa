@@ -12,11 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.*;
 
 /**
  * Definitions of feature flags.
@@ -140,19 +136,19 @@ public class Flags {
             "Override the default dist host for yum.",
             "Takes effect on next tick or on host-admin restart (may vary where used).");
 
-    public static final UnboundBooleanFlag PROVISION_APPLICATION_ROLES = defineFeatureFlag(
-            "provision-application-roles", false,
+    public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
+            "provision-tenant-roles", false,
             List.of("tokle"), "2020-12-02", "2021-04-01",
-            "Whether application roles should be provisioned",
+            "Whether tenant roles should be provisioned",
             "Takes effect on next deployment (controller)",
-            ZONE_ID);
+            TENANT_ID);
 
-    public static final UnboundBooleanFlag APPLICATION_IAM_ROLE = defineFeatureFlag(
+    public static final UnboundBooleanFlag TENANT_IAM_ROLE = defineFeatureFlag(
             "application-iam-roles", false,
             List.of("tokle"), "2020-12-02", "2021-04-01",
             "Allow separate iam roles when provisioning/assigning hosts",
             "Takes effect immediately on new hosts, on next redeploy for applications",
-            APPLICATION_ID);
+            TENANT_ID);
 
     public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
             "max-trial-tenants", -1,

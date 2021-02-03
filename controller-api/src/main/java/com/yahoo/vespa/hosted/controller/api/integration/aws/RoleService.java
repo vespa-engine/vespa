@@ -2,12 +2,19 @@
 package com.yahoo.vespa.hosted.controller.api.integration.aws;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 
 import java.util.Optional;
 
 /**
  * @author mortent
  */
-public interface ApplicationRoleService {
+public interface RoleService {
+
     Optional<ApplicationRoles> createApplicationRoles(ApplicationId applicationId);
+
+    String createTenantRole(TenantName tenant);
+
+    String createTenantPolicy(TenantName tenant, String policyName, String awsId, String role);
+
 }
