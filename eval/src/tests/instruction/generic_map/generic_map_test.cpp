@@ -19,9 +19,9 @@ using vespalib::make_string_short::fmt;
 
 GenSpec::seq_t N_16ths = [] (size_t i) noexcept { return (i + 1.0) / 16.0; };
 
-GenSpec G() { return GenSpec().cells_float().seq(N_16ths); }
+GenSpec G() { return GenSpec().seq(N_16ths); }
 
-std::vector<GenSpec> map_layouts = {
+const std::vector<GenSpec> map_layouts = {
     G(),
     G().idx("x", 3),
     G().idx("x", 3).idx("y", 5),
@@ -43,7 +43,9 @@ TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueB
 
 void test_generic_map_with(const ValueBuilderFactory &factory) {
     for (const auto &layout : map_layouts) {
-        for (TensorSpec lhs : { layout.gen(), layout.cpy().cells_double().gen() }) {
+        for (TensorSpec lhs : { layout.cpy().cells_float().gen(),
+                                layout.cpy().cells_double().gen() })
+        {
             for (auto func : {operation::Floor::f, operation::Fabs::f, operation::Square::f, operation::Inv::f}) {
                 SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
                 auto expect = ReferenceOperations::map(lhs, func);

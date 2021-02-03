@@ -33,12 +33,10 @@ std::ostream &operator<<(std::ostream &os, Primary primary)
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
-TensorSpec spec(double v) { return TensorSpec("double").add({}, v); }
-
 EvalFixture::ParamRepo make_params() {
     auto repo = EvalFixture::ParamRepo()
-        .add("a", spec(1.5))
-        .add("number", spec(2.5))        
+        .add("a", GenSpec().seq_bias(1.5).gen())
+        .add("number", GenSpec().seq_bias(2.5).gen())
         .add("dense", GenSpec().idx("y", 5).gen())
         .add_variants("x3y5", GenSpec().idx("x", 3).idx("y", 5))
         .add_variants("mixed", GenSpec().map("x", {"a"}).idx("y", 5).map("z", {"d","e"}))

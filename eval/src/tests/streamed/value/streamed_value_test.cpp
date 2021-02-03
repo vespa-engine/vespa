@@ -23,9 +23,9 @@ using Handle = SharedStringRepo::Handle;
 
 vespalib::string as_str(string_id label) { return Handle::string_from_id(label); }
 
-GenSpec G() { return GenSpec().cells_float(); }
+GenSpec G() { return GenSpec(); }
 
-std::vector<GenSpec> layouts = {
+const std::vector<GenSpec> layouts = {
     G(),
     G().idx("x", 3),
     G().idx("x", 3).idx("y", 5),
@@ -37,7 +37,7 @@ std::vector<GenSpec> layouts = {
     G().map("x", {"a","b","c"}).idx("y", 5).map("z", {"i","j","k","l"})
 };
 
-std::vector<GenSpec> join_layouts = {
+const std::vector<GenSpec> join_layouts = {
     G(),                                                      G(),
     G().idx("x", 5),                                          G().idx("x", 5),
     G().idx("x", 5),                                          G().idx("y", 5),
@@ -67,7 +67,9 @@ TensorSpec streamed_value_join(const TensorSpec &a, const TensorSpec &b, join_fu
 
 TEST(StreamedValueTest, streamed_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
-        for (TensorSpec expect : { layout.gen(), layout.cpy().cells_double().gen() }) {
+        for (TensorSpec expect : { layout.cpy().cells_float().gen(),
+                                   layout.cpy().cells_double().gen() })
+        {
             std::unique_ptr<Value> value = value_from_spec(expect, StreamedValueBuilderFactory::get());
             TensorSpec actual = spec_from_value(*value);
             EXPECT_EQ(actual, expect);
@@ -77,7 +79,9 @@ TEST(StreamedValueTest, streamed_values_can_be_converted_from_and_to_tensor_spec
 
 TEST(StreamedValueTest, streamed_values_can_be_copied) {
     for (const auto &layout: layouts) {
-        for (TensorSpec expect : { layout.gen(), layout.cpy().cells_double().gen() }) {
+        for (TensorSpec expect : { layout.cpy().cells_float().gen(),
+                                   layout.cpy().cells_double().gen() })
+        {
             std::unique_ptr<Value> value = value_from_spec(expect, StreamedValueBuilderFactory::get());
             std::unique_ptr<Value> copy = StreamedValueBuilderFactory::get().copy(*value);
             TensorSpec actual = spec_from_value(*copy);
@@ -124,10 +128,14 @@ GenSpec::seq_t N_16ths = [] (size_t i) noexcept { return (i + 1.0) / 16.0; };
 TEST(StreamedValueTest, new_generic_join_works_for_streamed_values) {
     ASSERT_TRUE((join_layouts.size() % 2) == 0);
     for (size_t i = 0; i < join_layouts.size(); i += 2) {
-        const auto l = join_layouts[i].seq(N_16ths);
-        const auto r = join_layouts[i + 1].seq(N_16ths);
-        for (TensorSpec lhs : { l.gen(), l.cpy().cells_double().gen() }) {
-            for (TensorSpec rhs : { r.gen(), r.cpy().cells_double().gen() }) {
+        const auto l = join_layouts[i].cpy().seq(N_16ths);
+        const auto r = join_layouts[i + 1].cpy().seq(N_16ths);
+        for (TensorSpec lhs : { l.cpy().cells_float().gen(),
+                                l.cpy().cells_double().gen() })
+        {
+            for (TensorSpec rhs : { r.cpy().cells_float().gen(),
+                                    r.cpy().cells_double().gen() })
+            {
                 for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Max::f}) {
                     SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
                     auto expect = ReferenceOperations::join(lhs, rhs, fun);

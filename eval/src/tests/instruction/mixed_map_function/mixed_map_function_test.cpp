@@ -13,19 +13,13 @@ using namespace vespalib::eval::tensor_function;
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
-TensorSpec spec(double v) { return TensorSpec("double").add({}, v); }
-TensorSpec sparse_spec = GenSpec().map("x", {"a"}).gen();
-TensorSpec mixed_spec = GenSpec().map("x", {"a"}).idx("y", 5).gen();
-
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", spec(1.5))
-        .add("b", spec(2.5))
-        .add("sparse", sparse_spec)
-        .add("mixed", mixed_spec)
-        .add_mutable("@sparse", sparse_spec)
-        .add_mutable("@mixed", mixed_spec)
-        .add_matrix("x", 5, "y", 3);
+        .add("a", GenSpec().seq_bias(1.5).gen())
+        .add("b", GenSpec().seq_bias(2.5).gen())
+        .add_variants("sparse", GenSpec().map("x", {"a"}))
+        .add_variants("mixed", GenSpec().map("x", {"a"}).idx("y", 5))
+        .add_variants("x5y3", GenSpec().idx("x", 5).idx("y", 3));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -57,12 +51,12 @@ void verify_not_optimized(const vespalib::string &expr) {
 
 TEST(MapTest, dense_map_is_optimized) {
     verify_optimized("map(x5y3,f(x)(x+10))", false);
-    verify_optimized("map(x5y3f,f(x)(x+10))", false);
+    verify_optimized("map(x5y3_f,f(x)(x+10))", false);
 }
 
 TEST(MapTest, simple_dense_map_can_be_inplace) {
     verify_optimized("map(@x5y3,f(x)(x+10))", true);
-    verify_optimized("map(@x5y3f,f(x)(x+10))", true);
+    verify_optimized("map(@x5y3_f,f(x)(x+10))", true);
 }
 
 TEST(MapTest, scalar_map_is_not_optimized) {

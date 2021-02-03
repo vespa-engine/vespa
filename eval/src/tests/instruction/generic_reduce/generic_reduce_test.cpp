@@ -20,9 +20,9 @@ using vespalib::make_string_short::fmt;
 
 GenSpec::seq_t N_16ths = [] (size_t i) noexcept { return (i + 1.0) / 16.0; };
 
-GenSpec G() { return GenSpec().cells_float().seq(N_16ths); }
+GenSpec G() { return GenSpec().seq(N_16ths); }
 
-std::vector<GenSpec> layouts = {
+const std::vector<GenSpec> layouts = {
     G(),
     G().idx("x", 3),
     G().idx("x", 3).idx("y", 5),
@@ -70,7 +70,9 @@ TEST(GenericReduceTest, sparse_reduce_plan_can_be_created) {
 
 void test_generic_reduce_with(const ValueBuilderFactory &factory) {
     for (const auto &layout: layouts) {
-        for (TensorSpec input : { layout.gen(), layout.cpy().cells_double().gen() }) {
+        for (TensorSpec input : { layout.cpy().cells_float().gen(),
+                                  layout.cpy().cells_double().gen() })
+        {
             SCOPED_TRACE(fmt("tensor type: %s, num_cells: %zu", input.type().c_str(), input.cells().size()));
             for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
                 SCOPED_TRACE(fmt("aggregator: %s", AggrNames::name_of(aggr)->c_str()));
