@@ -772,8 +772,8 @@ public class MessageBusVisitorSession implements VisitorSession {
     }
 
     private void handleMessageProcessingException(Reply reply, Exception e, String what) {
-        final String errorDesc = formatProcessingException(e, what);
-        final String fullMsg = formatIdentifyingVisitorErrorString(errorDesc);
+        String errorDesc = formatProcessingException(e, what);
+        String fullMsg = formatIdentifyingVisitorErrorString(errorDesc);
         log.log(Level.SEVERE, fullMsg, e);
         int errorCode;
         synchronized (progress.getToken()) {

@@ -552,6 +552,7 @@
     "methods": [
       "public void <init>(com.yahoo.document.DocumentType, com.yahoo.document.DocumentId)",
       "public void <init>(com.yahoo.document.serialization.DocumentUpdateReader)",
+      "public void <init>(com.yahoo.document.DocumentUpdate)",
       "public void <init>(com.yahoo.document.DocumentType, java.lang.String)",
       "public com.yahoo.document.DocumentId getId()",
       "public void setId(com.yahoo.document.DocumentId)",
@@ -3479,7 +3480,6 @@
       "public"
     ],
     "methods": [
-      "public static java.lang.String replaceType(java.lang.String, java.lang.String)",
       "public static long makeLocation(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
       "public long getLocation()",

@@ -109,9 +109,4 @@ public class IdIdStringTest {
         }
     }
 
-    @Test
-    public void requireThatIdIdStringCanReplaceType() {
-        String type = IdIdString.replaceType("id:namespace:type::foo", "newType");
-        assertEquals("id:namespace:newType::foo", type);
-    }
 }

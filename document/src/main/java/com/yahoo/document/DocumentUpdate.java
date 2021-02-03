@@ -76,6 +76,16 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         reader.read(this);
     }
 
+    /** Creates a new document update which is a copy of the argument. */
+    public DocumentUpdate(DocumentUpdate update) {
+        super(update);
+        docId = update.docId;
+        documentType = update.documentType;
+        id2FieldUpdates = new HashMap<>(update.id2FieldUpdates);
+        fieldPathUpdates = new ArrayList<>(update.fieldPathUpdates);
+        createIfNonExistent = update.createIfNonExistent;
+    }
+
     /**
      * Creates a DocumentUpdate.
      *
