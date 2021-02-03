@@ -30,6 +30,8 @@ import java.util.concurrent.TimeoutException;
  * Processors producing Responses should not create subclasses but should instead
  * create additional instances/subclasses of Data. Such Processors should always create Response instances by calling
  * execution.process(request), which will return an empty Response if there are no further processors in the chain.
+ * <p>
+ * Do not cache this as it may hold references to objects that should be garbage collected.
  *
  * @author bratseth
  */
