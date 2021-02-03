@@ -106,6 +106,18 @@
       "public static final int DEGRADED_BY_ADAPTIVE_TIMEOUT"
     ]
   },
+  "com.yahoo.container.handler.FilterBackingRequestHandler": {
+    "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.concurrent.Executor)",
+      "public com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.handler.LogHandler": {
     "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
     "interfaces": [],
