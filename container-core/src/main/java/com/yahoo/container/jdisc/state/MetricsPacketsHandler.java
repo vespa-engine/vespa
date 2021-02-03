@@ -146,12 +146,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     }
 
     private MetricSnapshot getSnapshot() {
-        if (snapshotProvider == null) {
-            // TODO: throw exception in ctor instead
-            return new MetricSnapshot(0L, 0L, TimeUnit.MILLISECONDS);
-        } else {
-            return snapshotProvider.latestSnapshot();
-        }
+        return snapshotProvider.latestSnapshot();
     }
 
     private List<JsonNode> getPacketsForSnapshot(MetricSnapshot metricSnapshot, String application, long timestamp) {

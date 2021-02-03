@@ -206,12 +206,7 @@ public class StateHandler extends AbstractRequestHandler {
     }
 
     private MetricSnapshot getSnapshot() {
-        if (snapshotProvider == null) {
-            // TODO: throw exception in ctor instead
-            return new MetricSnapshot(0L, 0L, TimeUnit.MILLISECONDS);
-        } else {
-            return snapshotProvider.latestSnapshot();
-        }
+        return snapshotProvider.latestSnapshot();
     }
 
     private StateMonitor.Status getStatus() {
