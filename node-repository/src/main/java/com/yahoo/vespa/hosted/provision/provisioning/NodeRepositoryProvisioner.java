@@ -17,10 +17,7 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -59,7 +56,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Activator activator;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
     private final NodeResourceLimits nodeResourceLimits;
-    private final IntFlag tenantNodeQuota;
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, Zone zone,
@@ -76,7 +72,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                      provisionServiceProvider.getHostProvisioner(),
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
-        this.tenantNodeQuota = Flags.TENANT_NODE_QUOTA.bindTo(flagSource);
     }
 
 
@@ -91,10 +86,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                   " for application " + application + ", cluster " + cluster);
 
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
-
-        if ( ! hasQuota(application, requested.maxResources().nodes()))
-            throw new IllegalArgumentException(requested + " requested for " + cluster +
-                                               ". Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/pricing");
 
         nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), cluster);
         nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), cluster);
@@ -192,15 +183,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (zone.environment().isManuallyDeployed() && actualNodes < targetNodes)
             logger.log(Level.INFO, "Requested " + targetNodes + " nodes for " + cluster +
                                    ", downscaling to " + actualNodes + " nodes in " + zone.environment());
-    }
-
-    private boolean hasQuota(ApplicationId application, int requestedNodes) {
-        if ( ! this.zone.system().isPublic()) return true; // no quota management
-
-        if (application.tenant().value().hashCode() == 3857)        return requestedNodes <= 60;
-        if (application.tenant().value().hashCode() == -1271827001) return requestedNodes <= 75;
-
-        return requestedNodes <= tenantNodeQuota.with(FetchVector.Dimension.APPLICATION_ID, application.tenant().value()).value();
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes, NodeResources requestedResources) {

@@ -633,35 +633,6 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void out_of_quota() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.Public,
-                                                                                   Environment.prod,
-                                                                                   RegionName.from("us-east"))).build();
-
-        tester.makeReadyHosts(13, defaultResources).activateTenantHosts();
-        ApplicationId application = ProvisioningTester.applicationId();
-        try {
-            prepare(application, 2, 2, 6, 3, defaultResources, tester);
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("6 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 4.0 Gbps] requested for content cluster 'content0' 6.42. Max value exceeds your quota. Resolve this at https://cloud.vespa.ai/pricing",
-                         e.getMessage());
-        }
-    }
-
-    @Test
-    public void no_out_of_quota_outside_public() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.main,
-                                                                                   Environment.prod,
-                                                                                   RegionName.from("us-east"))).build();
-
-        tester.makeReadyHosts(13, defaultResources).activateTenantHosts();
-        ApplicationId application = ProvisioningTester.applicationId();
-        prepare(application, 2, 2, 6, 3, defaultResources, tester);
-    }
-
-    @Test
     public void out_of_capacity_but_cannot_fail() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
