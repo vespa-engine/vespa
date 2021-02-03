@@ -77,9 +77,7 @@ public class StatisticsSearcher extends Searcher {
     private final Value peakQPS; // peak 1s QPS
     private final Counter emptyResults; // number of results containing no concrete hits
     private final Value hitsPerQuery; // mean number of hits per query
-    private final Value hitsPerQueryBuckets;
     private final Value totalHitsPerQuery;
-    private final Value totalHitsPerQueryBuckets;
 
     private final PeakQpsReporter peakQpsReporter;
 
@@ -140,9 +138,7 @@ public class StatisticsSearcher extends Searcher {
         queryLatencyBuckets = Value.buildValue(QUERY_LATENCY_METRIC, manager, null);
         peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
         hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        hitsPerQueryBuckets = Value.buildValue(HITS_PER_QUERY_METRIC, manager, null);
         totalHitsPerQuery = new Value(TOTALHITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        totalHitsPerQueryBuckets = Value.buildValue(TOTALHITS_PER_QUERY_METRIC, manager, null);
 
         emptyResults = new Counter(EMPTY_RESULTS_METRIC, manager, false);
         metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
@@ -276,12 +272,10 @@ public class StatisticsSearcher extends Searcher {
         }
         int hitCount = result.getConcreteHitCount();
         hitsPerQuery.put(hitCount);
-        hitsPerQueryBuckets.put(hitCount);
         metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
 
         long totalHitCount = result.getTotalHitCount();
         totalHitsPerQuery.put(totalHitCount);
-        totalHitsPerQueryBuckets.put(totalHitCount);
         metric.set(TOTALHITS_PER_QUERY_METRIC, (double) totalHitCount, metricContext);
 
         metric.set(QUERY_OFFSET_METRIC, (double) (query.getHits() + query.getOffset()), metricContext);
