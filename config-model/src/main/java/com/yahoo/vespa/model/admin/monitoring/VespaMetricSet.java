@@ -290,6 +290,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("hits_per_query.sum"));
         metrics.add(new Metric("hits_per_query.count"));
         metrics.add(new Metric("hits_per_query.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("hits_per_query.95percentile"));
+        metrics.add(new Metric("hits_per_query.99percentile"));
         metrics.add(new Metric("query_hit_offset.max"));
         metrics.add(new Metric("query_hit_offset.sum"));
         metrics.add(new Metric("query_hit_offset.count"));
@@ -302,6 +304,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("totalhits_per_query.sum"));
         metrics.add(new Metric("totalhits_per_query.count"));
         metrics.add(new Metric("totalhits_per_query.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("totalhits_per_query.95percentile"));
+        metrics.add(new Metric("totalhits_per_query.99percentile"));
         metrics.add(new Metric("empty_results.rate"));
         metrics.add(new Metric("requestsOverQuota.rate"));
         metrics.add(new Metric("requestsOverQuota.count"));
