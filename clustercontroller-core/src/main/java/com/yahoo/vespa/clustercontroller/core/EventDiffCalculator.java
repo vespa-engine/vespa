@@ -9,9 +9,11 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Responsible for inferring the difference between two cluster states and their
@@ -159,6 +161,29 @@ public class EventDiffCalculator {
                 final Node n = new Node(nodeType, node.index());
                 emitSingleNodeEvents(params, events, cluster, fromState, toState, n);
             }
+        }
+        emitNodeResourceExhaustionEvents(params, events, cluster);
+    }
+
+    // Returns a - b as a set operation
+    private static <T> Set<T> setSubtraction(Set<T> a, Set<T> b) {
+        var ret = new HashSet<>(a);
+        ret.removeAll(b);
+        return ret;
+    }
+
+    private static void emitNodeResourceExhaustionEvents(PerStateParams params, List<Event> events, ContentCluster cluster) {
+        // Feed block events are not ordered by node
+        Set<NodeResourceExhaustion> fromBlockSet = params.feedBlockFrom != null ? params.feedBlockFrom.getConcreteExhaustions() : Collections.emptySet();
+        Set<NodeResourceExhaustion> toBlockSet   = params.feedBlockTo   != null ? params.feedBlockTo.getConcreteExhaustions()   : Collections.emptySet();
+
+        for (var ex : setSubtraction(toBlockSet, fromBlockSet)) {
+            var info = cluster.getNodeInfo(ex.node);
+            events.add(createNodeEvent(info, String.format("Added resource exhaustion: %s", ex.toExhaustionAddedDescription()), params));
+        }
+        for (var ex : setSubtraction(fromBlockSet, toBlockSet)) {
+            var info = cluster.getNodeInfo(ex.node);
+            events.add(createNodeEvent(info, String.format("Removed resource exhaustion: %s", ex.toExhaustionRemovedDescription()), params));
         }
     }
 

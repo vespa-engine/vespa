@@ -1,6 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.ResourceUsage;
+
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -77,5 +81,14 @@ public class FeedBlockUtil {
                 .collect(Collectors.joining(","));
         return String.format("{\"content-node\":{\"resource-usage\":{%s}}}", usageInnerJson);
     }
+
+    static NodeResourceExhaustion exhaustion(int index, String type) {
+        return new NodeResourceExhaustion(new Node(NodeType.STORAGE, index), type, new ResourceUsage(0.8, null), 0.7, "foo");
+    }
+
+    static Set<NodeResourceExhaustion> setOf(NodeResourceExhaustion... exhaustions) {
+        return Arrays.stream(exhaustions).collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
 
 }
