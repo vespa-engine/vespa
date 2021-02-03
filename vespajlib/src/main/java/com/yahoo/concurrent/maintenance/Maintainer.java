@@ -88,7 +88,7 @@ public abstract class Maintainer implements Runnable {
         try (var lock = jobControl.lockJob(name())) {
             if (maintain()) jobMetrics.recordSuccessOf(name());
         } catch (Throwable e) {
-            log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);
+            log.log(Level.WARNING, this + " failed. Will retry in " + interval, e);
         } finally {
             jobMetrics.forward(name());
         }
