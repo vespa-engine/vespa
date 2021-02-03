@@ -20,7 +20,11 @@ namespace vespalib::eval {
 class FastAddrMap
 {
 public:
-    // label hasing functions
+    // label extracting functions
+    static constexpr string_id self(string_id label) { return label; }
+    static constexpr string_id self(const string_id *label) { return *label; }
+
+    // label hashing functions
     static constexpr uint32_t hash_label(string_id label) { return label.value(); }
     static constexpr uint32_t hash_label(const string_id *label) { return label->value(); }
     static constexpr uint32_t combine_label_hash(uint32_t full_hash, uint32_t next_hash) {
@@ -78,20 +82,14 @@ public:
     struct Equal {
         const LabelView &label_view;
         Equal(const LabelView &label_view_in) : label_view(label_view_in) {}
-        static constexpr bool eq_labels(string_id a, string_id b) { return (a == b); }
-        static constexpr bool eq_labels(string_id a, const string_id *b) { return (a == *b); }
         template <typename T>
         bool operator()(const Entry &a, const AltKey<T> &b) const {
             if (a.hash != b.hash) {
                 return false;
             }
-            if (label_view.addr_size == 1) {
-                return true;
-            }
             auto a_key = label_view.get_addr(a.tag.idx);
-            assert(a_key.size() == b.key.size());
             for (size_t i = 0; i < a_key.size(); ++i) {
-                if (!eq_labels(a_key[i], b.key[i])) {
+                if (a_key[i] != self(b.key[i])) {
                     return false;
                 }
             }
@@ -122,18 +120,21 @@ public:
     const std::vector<string_id> &labels() const { return _labels.labels; }
     template <typename T>
     size_t lookup(ConstArrayRef<T> addr, uint32_t hash) const {
+        // assert(addr_size() == addr.size());
         AltKey<T> key{addr, hash};
         auto pos = _map.find(key);
         return (pos == _map.end()) ? npos() : pos->tag.idx;
-    }
-    template <typename T>
-    size_t lookup(ConstArrayRef<T> addr) const {
-        return lookup(addr, hash_labels(addr));
     }
     size_t lookup_singledim(string_id addr) const {
         // assert(addr_size() == 1);
         auto pos = _map.find(addr);
         return (pos == _map.end()) ? npos() : pos->tag.idx;
+    }
+    template <typename T>
+    size_t lookup(ConstArrayRef<T> addr) const {
+        return (addr.size() == 1)
+            ? lookup_singledim(self(addr[0]))
+            : lookup(addr, hash_labels(addr));
     }
     void add_mapping(uint32_t hash) {
         uint32_t idx = _map.size();
