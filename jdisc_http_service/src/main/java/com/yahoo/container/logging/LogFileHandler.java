@@ -20,10 +20,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,13 +41,13 @@ class LogFileHandler <LOGTYPE> {
     enum Compression {NONE, GZIP, ZSTD}
 
     private final static Logger logger = Logger.getLogger(LogFileHandler.class.getName());
-    private final ArrayBlockingQueue<Operation<LOGTYPE>> logQueue = new ArrayBlockingQueue<>(10000);
+    private final BlockingQueue<Operation<LOGTYPE>> logQueue;
     final LogThread<LOGTYPE> logThread;
 
     @FunctionalInterface private interface Pollable<T> { Operation<T> poll() throws InterruptedException; }
 
-    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, logWriter);
+    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, int queueSize, LogWriter<LOGTYPE> logWriter) {
+        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, logWriter);
     }
 
     LogFileHandler(
@@ -54,7 +55,9 @@ class LogFileHandler <LOGTYPE> {
             String filePattern,
             long[] rotationTimes,
             String symlinkName,
+            int queueSize,
             LogWriter<LOGTYPE> logWriter) {
+        this.logQueue = new LinkedBlockingQueue<>(queueSize);
         this.logThread = new LogThread<LOGTYPE>(logWriter, filePattern, compression, rotationTimes, symlinkName, this::poll);
         this.logThread.start();
     }

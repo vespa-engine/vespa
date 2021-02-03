@@ -43,7 +43,7 @@ public class LogFileHandlerTestCase {
 
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S";
         long[] rTimes = {1000, 2000, 10000};
-        LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, pattern, rTimes, null, new StringLogWriter());
+        LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, pattern, rTimes, null, 2048, new StringLogWriter());
         long now = System.currentTimeMillis();
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
@@ -65,7 +65,7 @@ public class LogFileHandlerTestCase {
         File logFile = temporaryFolder.newFile("testLogFileG1.txt");
 
       //create logfilehandler
-      LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, new StringLogWriter());
+      LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, new StringLogWriter());
 
       //write log
       h.publish("testDeleteFileFirst1");
@@ -78,7 +78,7 @@ public class LogFileHandlerTestCase {
       File logFile = temporaryFolder.newFile("testLogFileG2.txt");
 
       //create logfilehandler
-       LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, new StringLogWriter());
+       LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, new StringLogWriter());
 
       //write log
       h.publish("testDeleteFileDuringLogging1");
@@ -104,7 +104,7 @@ public class LogFileHandlerTestCase {
             }
         };
         LogFileHandler<String> handler = new LogFileHandler<>(
-                Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", new StringLogWriter());
+                Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, new StringLogWriter());
 
         String message = formatter.format(new LogRecord(Level.INFO, "test"));
         handler.publishAndWait(message);
@@ -150,7 +150,7 @@ public class LogFileHandlerTestCase {
         File root = temporaryFolder.newFolder("testcompression" + compression.name());
 
         LogFileHandler<String> h = new LogFileHandler<>(
-                compression, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, new StringLogWriter());
+                compression, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, 2048, new StringLogWriter());
         int logEntries = 10000;
         for (int i = 0; i < logEntries; i++) {
             h.publish("test");

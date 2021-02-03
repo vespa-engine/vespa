@@ -3,9 +3,6 @@ package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
 
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-
 /**
  * @author Bjorn Borud
  */
@@ -14,7 +11,7 @@ class AccessLogHandler {
     private final LogFileHandler<RequestLogEntry> logFileHandler;
 
     AccessLogHandler(AccessLogConfig.FileHandler config, LogWriter<RequestLogEntry> logWriter) {
-        logFileHandler = new LogFileHandler<>(toCompression(config), config.pattern(), config.rotation(), config.symlink(), logWriter);
+        logFileHandler = new LogFileHandler<>(toCompression(config), config.pattern(), config.rotation(), config.symlink(), config.queueSize(), logWriter);
     }
 
     public void log(RequestLogEntry entry) {
