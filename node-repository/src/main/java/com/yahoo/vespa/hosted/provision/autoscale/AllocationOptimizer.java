@@ -114,9 +114,10 @@ public class AllocationOptimizer {
         return nonScaled.withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
     }
 
-    /** Returns a copy of the given limits where the minimum nodes are at least the given value */
-    private Limits atLeast(int nodes, Limits limits) {
-        return limits.withMin(limits.min().withNodes(Math.max(nodes, limits.min().nodes())));
+    /** Returns a copy of the given limits where the minimum nodes are at least the given value when allowed */
+    private Limits atLeast(int min, Limits limits) {
+        if (limits.max().nodes() < min) return limits; // not allowed
+        return limits.withMin(limits.min().withNodes(Math.max(min, limits.min().nodes())));
     }
 
 }
