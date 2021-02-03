@@ -85,7 +85,8 @@ public class GroupPreparer {
              Mutex allocationLock = nodeRepository.lockUnallocated()) {
 
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                    highestIndex, wantedGroups, allocationLock, allocateOsRequirement);
+                                                          highestIndex, wantedGroups, allocationLock,
+                                                          allocateOsRequirement);
 
             if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
                 final Version osVersion;

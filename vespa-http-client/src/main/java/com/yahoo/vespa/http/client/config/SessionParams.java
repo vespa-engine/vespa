@@ -21,7 +21,7 @@ public final class SessionParams {
     /**
      * Interface for handling serious errors with connection.
      */
-    public interface  ErrorReporter {
+    public interface ErrorReporter {
         void onSessionError(Endpoint endpoint, String oldSessionID, String newSessionId);
     }
 
@@ -139,7 +139,7 @@ public final class SessionParams {
     private final ConnectionParams connectionParams;
     private final int clientQueueSize;
     private final ErrorReporter errorReport;
-    private int throttlerMinSize;
+    private final int throttlerMinSize;
 
     private SessionParams(Collection<Cluster> clusters,
                           FeedParams feedParams,

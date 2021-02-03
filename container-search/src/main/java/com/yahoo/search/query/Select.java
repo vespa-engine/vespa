@@ -132,7 +132,7 @@ public class Select implements Cloneable {
 
     @Override
     public String toString() {
-        return "where: [" + where + "], grouping: [" + grouping+ "]";
+        return "where: [" + where + "], grouping: [" + grouping + "]";
     }
 
     @Override

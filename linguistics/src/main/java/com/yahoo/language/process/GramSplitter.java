@@ -153,7 +153,7 @@ public class GramSplitter {
      */
     public static final class Gram {
 
-        private int start, codePointCount;
+        private final int start, codePointCount;
 
         public Gram(int start, int codePointCount) {
             this.start = start;
