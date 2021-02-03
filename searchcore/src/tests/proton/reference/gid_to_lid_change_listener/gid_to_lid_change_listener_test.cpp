@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_listener.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <map>
 #include <vespa/log/log.h>

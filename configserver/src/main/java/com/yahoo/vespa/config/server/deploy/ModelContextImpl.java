@@ -147,7 +147,6 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
-        private final boolean enableAutomaticReindexing;
         private final double reindexerWindowSizeIncrement;
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
@@ -159,7 +158,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean skipMbusReplyThread;
         private final boolean useAccessControlTlsHandshakeClientAuth;
         private final boolean useAsyncMessageHandlingOnSchedule;
-        private final int mergeChunkSize;
         private final double feedConcurrency;
         private final boolean reconfigurableZookeeperServer;
         private final boolean enableJdiscConnectionLog;
@@ -168,7 +166,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableFeedBlockInDistributor;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
-            this.enableAutomaticReindexing = flagValue(source, appId, Flags.ENABLE_AUTOMATIC_REINDEXING);
             this.reindexerWindowSizeIncrement = flagValue(source, appId, Flags.REINDEXER_WINDOW_SIZE_INCREMENT);
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
             this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
@@ -180,7 +177,6 @@ public class ModelContextImpl implements ModelContext {
             this.skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
             this.useAccessControlTlsHandshakeClientAuth = flagValue(source, appId, Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION);
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
-            this.mergeChunkSize = flagValue(source, appId, Flags.MERGE_CHUNK_SIZE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
             this.reconfigurableZookeeperServer = flagValue(source, appId, Flags.RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER);
             this.enableJdiscConnectionLog = flagValue(source, appId, Flags.ENABLE_JDISC_CONNECTION_LOG);
@@ -189,7 +185,6 @@ public class ModelContextImpl implements ModelContext {
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
         }
 
-        @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
         @Override public double reindexerWindowSizeIncrement() { return reindexerWindowSizeIncrement; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
@@ -201,7 +196,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
-        @Override public int mergeChunkSize() { return mergeChunkSize; }
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
         @Override public boolean enableJdiscConnectionLog() { return enableJdiscConnectionLog; }

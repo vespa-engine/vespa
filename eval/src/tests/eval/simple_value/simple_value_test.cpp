@@ -5,7 +5,7 @@
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -23,45 +23,36 @@ using Handle = SharedStringRepo::Handle;
 
 vespalib::string as_str(string_id label) { return Handle::string_from_id(label); }
 
-std::vector<Layout> layouts = {
-    {},
-    {x(3)},
-    {x(3),y(5)},
-    {x(3),y(5),z(7)},
-    float_cells({x(3),y(5),z(7)}),
-    {x({"a","b","c"})},
-    {x({"a","b","c"}),y({"foo","bar"})},
-    {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
-    {x(3),y({"foo", "bar"}),z(7)},
-    {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
+GenSpec G() { return GenSpec(); }
+
+const std::vector<GenSpec> layouts = {
+    G(),
+    G().idx("x", 3),
+    G().idx("x", 3).idx("y", 5),
+    G().idx("x", 3).idx("y", 5).idx("z", 7),
+    G().map("x", {"a","b","c"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {"foo", "bar"}).idx("z", 7),
+    G().map("x", {"a","b","c"}).idx("y", 5).map("z", {"i","j","k","l"})
 };
 
-std::vector<Layout> join_layouts = {
-    {},                                                 {},
-    {x(5)},                                             {x(5)},
-    {x(5)},                                             {y(5)},
-    {x(5)},                                             {x(5),y(5)},
-    {y(3)},                                             {x(2),z(3)},
-    {x(3),y(5)},                                        {y(5),z(7)},
-    float_cells({x(3),y(5)}),                           {y(5),z(7)},
-    {x(3),y(5)},                                        float_cells({y(5),z(7)}),
-    float_cells({x(3),y(5)}),                           float_cells({y(5),z(7)}),
-    {x({"a","b","c"})},                                 {x({"a","b","c"})},
-    {x({"a","b","c"})},                                 {x({"a","b"})},
-    {x({"a","b","c"})},                                 {y({"foo","bar","baz"})},
-    {x({"a","b","c"})},                                 {x({"a","b","c"}),y({"foo","bar","baz"})},
-    {x({"a","b"}),y({"foo","bar","baz"})},              {x({"a","b","c"}),y({"foo","bar"})},
-    {x({"a","b"}),y({"foo","bar","baz"})},              {y({"foo","bar"}),z({"i","j","k","l"})},
-    float_cells({x({"a","b"}),y({"foo","bar","baz"})}), {y({"foo","bar"}),z({"i","j","k","l"})},
-    {x({"a","b"}),y({"foo","bar","baz"})},              float_cells({y({"foo","bar"}),z({"i","j","k","l"})}),
-    float_cells({x({"a","b"}),y({"foo","bar","baz"})}), float_cells({y({"foo","bar"}),z({"i","j","k","l"})}),
-    {x(3),y({"foo", "bar"})},                           {y({"foo", "bar"}),z(7)},
-    {x({"a","b","c"}),y(5)},                            {y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5)}),               {y(5),z({"i","j","k","l"})},
-    {x({"a","b","c"}),y(5)},                            float_cells({y(5),z({"i","j","k","l"})}),
-    float_cells({x({"a","b","c"}),y(5)}),               float_cells({y(5),z({"i","j","k","l"})})
+const std::vector<GenSpec> join_layouts = {
+    G(),                                                      G(),
+    G().idx("x", 5),                                          G().idx("x", 5),
+    G().idx("x", 5),                                          G().idx("y", 5),
+    G().idx("x", 5),                                          G().idx("x", 5).idx("y", 5),
+    G().idx("y", 3),                                          G().idx("x", 2).idx("z", 3),
+    G().idx("x", 3).idx("y", 5),                              G().idx("y", 5).idx("z", 7),
+    G().map("x", {"a","b","c"}),                              G().map("x", {"a","b","c"}),
+    G().map("x", {"a","b","c"}),                              G().map("x", {"a","b"}),
+    G().map("x", {"a","b","c"}),                              G().map("y", {"foo","bar","baz"}),
+    G().map("x", {"a","b","c"}),                              G().map("x", {"a","b","c"}).map("y", {"foo","bar","baz"}),
+    G().map("x", {"a","b"}).map("y", {"foo","bar","baz"}),    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}),
+    G().map("x", {"a","b"}).map("y", {"foo","bar","baz"}),    G().map("y", {"foo","bar"}).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {"foo", "bar"}),                 G().map("y", {"foo","bar"}).idx("z", 7),
+    G().map("x", {"a","b","c"}).idx("y", 5),                  G().idx("y", 5).map("z", {"i","j","k","l"})
+
 };
 
 TensorSpec simple_value_join(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
@@ -76,20 +67,26 @@ TensorSpec simple_value_join(const TensorSpec &a, const TensorSpec &b, join_fun_
 
 TEST(SimpleValueTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
-        TensorSpec expect = spec(layout, N());
-        std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
-        TensorSpec actual = spec_from_value(*value);
-        EXPECT_EQ(actual, expect);
+        for (TensorSpec expect : { layout.cpy().cells_float().gen(),
+                                   layout.cpy().cells_double().gen() })
+        {
+            std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
+            TensorSpec actual = spec_from_value(*value);
+            EXPECT_EQ(actual, expect);
+        }
     }
 }
 
 TEST(SimpleValueTest, simple_values_can_be_copied) {
     for (const auto &layout: layouts) {
-        TensorSpec expect = spec(layout, N());
-        std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
-        std::unique_ptr<Value> copy = SimpleValueBuilderFactory::get().copy(*value);
-        TensorSpec actual = spec_from_value(*copy);
-        EXPECT_EQ(actual, expect);
+        for (TensorSpec expect : { layout.cpy().cells_float().gen(),
+                                   layout.cpy().cells_double().gen() })
+        {
+            std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
+            std::unique_ptr<Value> copy = SimpleValueBuilderFactory::get().copy(*value);
+            TensorSpec actual = spec_from_value(*copy);
+            EXPECT_EQ(actual, expect);
+        }
     }
 }
 
@@ -126,16 +123,26 @@ TEST(SimpleValueTest, simple_value_can_be_built_and_inspected) {
     EXPECT_EQ(result["bb"], 3);
 }
 
+GenSpec::seq_t N_16ths = [] (size_t i) noexcept { return (i + 1.0) / 16.0; };
+
 TEST(SimpleValueTest, new_generic_join_works_for_simple_values) {
     ASSERT_TRUE((join_layouts.size() % 2) == 0);
     for (size_t i = 0; i < join_layouts.size(); i += 2) {
-        TensorSpec lhs = spec(join_layouts[i], Div16(N()));
-        TensorSpec rhs = spec(join_layouts[i + 1], Div16(N()));
-        for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
-            SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-            auto expect = ReferenceOperations::join(lhs, rhs, fun);
-            auto actual = simple_value_join(lhs, rhs, fun);
-            EXPECT_EQ(actual, expect);
+        const auto l = join_layouts[i].cpy().seq(N_16ths);
+        const auto r = join_layouts[i + 1].cpy().seq(N_16ths);
+        for (TensorSpec lhs : { l.cpy().cells_float().gen(),
+                                l.cpy().cells_double().gen() })
+        {
+            for (TensorSpec rhs : { r.cpy().cells_float().gen(),
+                                    r.cpy().cells_double().gen() })
+            {
+                for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
+                    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+                    auto expect = ReferenceOperations::join(lhs, rhs, fun);
+                    auto actual = simple_value_join(lhs, rhs, fun);
+                    EXPECT_EQ(actual, expect);
+                }
+            }
         }
     }
 }

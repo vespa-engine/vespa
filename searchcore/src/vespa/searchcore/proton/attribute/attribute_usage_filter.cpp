@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_usage_filter.h"
+#include "i_attribute_usage_listener.h"
 #include <sstream>
 
 namespace proton {
@@ -85,7 +86,8 @@ AttributeUsageFilter::AttributeUsageFilter()
       _attributeStats(),
       _config(),
       _state(),
-      _acceptWrite(true)
+      _acceptWrite(true),
+      _listener()
 {
 }
 
@@ -97,6 +99,9 @@ AttributeUsageFilter::setAttributeStats(AttributeUsageStats attributeStats_in)
     Guard guard(_lock);
     _attributeStats = attributeStats_in;
     recalcState(guard);
+    if (_listener) {
+        _listener->notify_attribute_usage(_attributeStats);
+    }
 }
 
 AttributeUsageStats
@@ -112,6 +117,13 @@ AttributeUsageFilter::setConfig(Config config_in)
     Guard guard(_lock);
     _config = config_in;
     recalcState(guard);
+}
+
+void
+AttributeUsageFilter::set_listener(std::unique_ptr<IAttributeUsageListener> listener)
+{
+    Guard guard(_lock);
+    _listener = std::move(listener);
 }
 
 double

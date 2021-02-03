@@ -10,6 +10,7 @@
 #include "storeonlydocsubdb.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
 #include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreinitializer.h>
@@ -28,6 +29,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlydocsubdb");
 
+using search::CompactionStrategy;
 using search::GrowStrategy;
 using search::AttributeGuard;
 using search::AttributeVector;
@@ -56,13 +58,10 @@ IIndexWriter::SP nullIndexWriter;
 
 StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName, const vespalib::string &subName,
                                   const vespalib::string &baseDir,
-                                  const search::GrowStrategy &attributeGrow, size_t attributeGrowNumDocs,
                                   uint32_t subDbId, SubDbType subDbType)
     : _docTypeName(docTypeName),
       _subName(subName),
       _baseDir(baseDir + "/" + subName),
-      _attributeGrow(attributeGrow),
-      _attributeGrowNumDocs(attributeGrowNumDocs),
       _subDbId(subDbId),
       _subDbType(subDbType)
 { }
@@ -99,8 +98,6 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _bucketDB(ctx._bucketDB),
       _bucketDBHandlerInitializer(ctx._bucketDBHandlerInitializer),
       _metaStoreCtx(),
-      _attributeGrow(cfg._attributeGrow),
-      _attributeGrowNumDocs(cfg._attributeGrowNumDocs),
       _flushedDocumentMetaStoreSerialNum(0u),
       _flushedDocumentStoreSerialNum(0u),
       _dms(),
@@ -222,11 +219,12 @@ StoreOnlyDocSubDB::getNewestFlushedSerial()
 initializer::InitializerTask::SP
 StoreOnlyDocSubDB::
 createSummaryManagerInitializer(const search::LogDocumentStore::Config & storeCfg,
+                                const AllocStrategy& alloc_strategy,
                                 const search::TuneFileSummary &tuneFile,
                                 search::IBucketizer::SP bucketizer,
                                 std::shared_ptr<SummaryManager::SP> result) const
 {
-    GrowStrategy grow = _attributeGrow;
+    GrowStrategy grow = alloc_strategy.get_grow_strategy();
     vespalib::string baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>
         (grow, baseDir, getSubDbName(), _docTypeName, _writeService.shared(),
@@ -245,12 +243,13 @@ StoreOnlyDocSubDB::setupSummaryManager(SummaryManager::SP summaryManager)
 
 InitializerTask::SP
 StoreOnlyDocSubDB::
-createDocumentMetaStoreInitializer(const search::TuneFileAttributes &tuneFile,
+createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
+                                   const search::TuneFileAttributes &tuneFile,
                                    std::shared_ptr<DocumentMetaStoreInitializerResult::SP> result) const
 {
-    GrowStrategy grow = _attributeGrow;
+    GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
-    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + _attributeGrowNumDocs);
+    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
     vespalib::string baseDir(_baseDir + "/documentmetastore");
     vespalib::string name = DocumentMetaStore::getFixedName();
     vespalib::string attrFileName = baseDir + "/" + name; // XXX: Wrong
@@ -292,10 +291,13 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
 {
     auto result = std::make_unique<DocumentSubDbInitializer>(const_cast<StoreOnlyDocSubDB &>(*this),
                                                              _writeService.master());
-    auto dmsInitTask = createDocumentMetaStoreInitializer(configSnapshot.getTuneFileDocumentDBSP()->_attr,
+    AllocStrategy alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
+    auto dmsInitTask = createDocumentMetaStoreInitializer(alloc_strategy,
+                                                          configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                           result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
     auto summaryTask = createSummaryManagerInitializer(configSnapshot.getStoreConfig(),
+                                                       alloc_strategy,
                                                        configSnapshot.getTuneFileDocumentDBSP()->_summary,
                                                        result->result().documentMetaStore()->documentMetaStore(),
                                                        result->writableResult().writableSummaryManager());
@@ -409,14 +411,22 @@ StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const 
     (void) params;
     (void) resolver;
     assert(_writeService.master().isCurrentThread());
-    reconfigure(newConfigSnapshot.getStoreConfig());
+    AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
+    reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     initFeedView(newConfigSnapshot);
     return IReprocessingTask::List();
 }
 
 void
-StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config)
+StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, const AllocStrategy& alloc_strategy)
 {
+    auto cfg = _dms->getConfig();
+    GrowStrategy grow = alloc_strategy.get_grow_strategy();
+    // Amortize memory spike cost over N docs
+    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
+    cfg.setGrowStrategy(grow);
+    cfg.setCompactionStrategy(alloc_strategy.get_compaction_strategy());
+    _dms->update_config(cfg); // Update grow and compaction config
     _rSummaryMgr->reconfigure(config);
 }
 

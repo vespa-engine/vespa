@@ -6,7 +6,7 @@
 #include <vespa/eval/instruction/generic_create.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <stdlib.h>
@@ -19,18 +19,17 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-std::vector<Layout> create_layouts = {
-    {x(3)},
-    {x(3),y(5)},
-    {x(3),y(5),z(7)},
-    float_cells({x(3),y(5),z(7)}),
-    {x({"a","b","c"})},
-    {x({"a","b","c"}),y({"foo","bar"})},
-    {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
-    {x(3),y({"foo", "bar"}),z(7)},
-    {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
+GenSpec G() { return GenSpec(); }
+
+const std::vector<GenSpec> create_layouts = {
+    G().idx("x", 3),
+    G().idx("x", 3).idx("y", 5),
+    G().idx("x", 3).idx("y", 5).idx("z", 7),
+    G().map("x", {"a","b","c"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {"foo", "bar"}).idx("z", 7),
+    G().map("x", {"a","b","c"}).idx("y", 5).map("z", {"i","j","k","l"})
 };
 
 TensorSpec remove_each(const TensorSpec &a, size_t n) {
@@ -91,16 +90,19 @@ TensorSpec perform_generic_create(const TensorSpec &a, const ValueBuilderFactory
 }
 
 void test_generic_create_with(const ValueBuilderFactory &factory) {
-    for (const auto & layout : create_layouts) {
-        TensorSpec full = spec(layout, N());
-        auto actual = perform_generic_create(full, factory);
-        auto expect = reference_create(full).normalize();
-        EXPECT_EQ(actual, expect);
-        for (size_t n : {2, 3, 4, 5}) {
-            TensorSpec partial = remove_each(full, n);
-            actual = perform_generic_create(partial, factory);
-            expect = reference_create(partial).normalize();
+    for (const auto &layout : create_layouts) {
+        for (TensorSpec full : { layout.cpy().cells_float().gen(),
+                                 layout.cpy().cells_double().gen() })
+        {
+            auto actual = perform_generic_create(full, factory);
+            auto expect = reference_create(full).normalize();
             EXPECT_EQ(actual, expect);
+            for (size_t n : {2, 3, 4, 5}) {
+                TensorSpec partial = remove_each(full, n);
+                actual = perform_generic_create(partial, factory);
+                expect = reference_create(partial).normalize();
+                EXPECT_EQ(actual, expect);
+            }
         }
     }
 }

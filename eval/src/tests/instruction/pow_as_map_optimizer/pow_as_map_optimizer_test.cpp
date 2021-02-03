@@ -3,7 +3,7 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval::operation;
@@ -16,11 +16,11 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", spec(1.5))
-        .add("b", spec(2.5))
-        .add("sparse", spec({x({"a","b"})}, N()))
-        .add("mixed", spec({x({"a"}),y(5)}, N()))
-        .add_matrix("x", 5, "y", 3);
+        .add("a", GenSpec().seq_bias(1.5).gen())
+        .add("b", GenSpec().seq_bias(2.5).gen())
+        .add("sparse", GenSpec().map("x", {"a","b"}).gen())
+        .add("mixed", GenSpec().map("x", {"a"}).idx("y", 5).gen())
+        .add_variants("x5y3", GenSpec().idx("x", 5).idx("y", 3));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -55,9 +55,9 @@ TEST(PowAsMapTest, squared_dense_tensor_is_optimized) {
     verify_optimized("pow(x5y3,2.0)", Square::f);
     verify_optimized("join(x5y3,2.0,f(x,y)(x^y))", Square::f);
     verify_optimized("join(x5y3,2.0,f(x,y)(pow(x,y)))", Square::f);
-    verify_optimized("join(x5y3f,2.0,f(x,y)(pow(x,y)))", Square::f);
+    verify_optimized("join(x5y3_f,2.0,f(x,y)(pow(x,y)))", Square::f);
     verify_optimized("join(@x5y3,2.0,f(x,y)(pow(x,y)))", Square::f, true);
-    verify_optimized("join(@x5y3f,2.0,f(x,y)(pow(x,y)))", Square::f, true);
+    verify_optimized("join(@x5y3_f,2.0,f(x,y)(pow(x,y)))", Square::f, true);
 }
 
 TEST(PowAsMapTest, cubed_dense_tensor_is_optimized) {
@@ -65,9 +65,9 @@ TEST(PowAsMapTest, cubed_dense_tensor_is_optimized) {
     verify_optimized("pow(x5y3,3.0)", Cube::f);
     verify_optimized("join(x5y3,3.0,f(x,y)(x^y))", Cube::f);
     verify_optimized("join(x5y3,3.0,f(x,y)(pow(x,y)))", Cube::f);
-    verify_optimized("join(x5y3f,3.0,f(x,y)(pow(x,y)))", Cube::f);
+    verify_optimized("join(x5y3_f,3.0,f(x,y)(pow(x,y)))", Cube::f);
     verify_optimized("join(@x5y3,3.0,f(x,y)(pow(x,y)))", Cube::f, true);
-    verify_optimized("join(@x5y3f,3.0,f(x,y)(pow(x,y)))", Cube::f, true);
+    verify_optimized("join(@x5y3_f,3.0,f(x,y)(pow(x,y)))", Cube::f, true);
 }
 
 TEST(PowAsMapTest, hypercubed_dense_tensor_is_not_optimized) {

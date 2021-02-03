@@ -6,7 +6,7 @@
 #include <vespa/eval/instruction/generic_reduce.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <optional>
@@ -18,22 +18,23 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-std::vector<Layout> layouts = {
-    {},
-    {x(3)},
-    {x(3),y(5)},
-    {x(3),y(5),z(7)},
-    float_cells({x(3),y(5),z(7)}),
-    {x({"a","b","c"})},
-    {x({})},
-    {x({}),y(10)},
-    {x({"a","b","c"}),y({"foo","bar"})},
-    {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
-    {x(3),y({"foo", "bar"}),z(7)},
-    {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})}),
-    {x(3),y({}),z(7)}
+GenSpec::seq_t N_16ths = [] (size_t i) noexcept { return (i + 1.0) / 16.0; };
+
+GenSpec G() { return GenSpec().seq(N_16ths); }
+
+const std::vector<GenSpec> layouts = {
+    G(),
+    G().idx("x", 3),
+    G().idx("x", 3).idx("y", 5),
+    G().idx("x", 3).idx("y", 5).idx("z", 7),
+    G().map("x", {"a","b","c"}),
+    G().map("x", {}),
+    G().map("x", {}).idx("y", 10),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {"foo", "bar"}).idx("z", 7),
+    G().map("x", {"a","b","c"}).idx("y", 5).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {}).idx("z", 7)
 };
 
 TensorSpec perform_generic_reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims,
@@ -68,19 +69,23 @@ TEST(GenericReduceTest, sparse_reduce_plan_can_be_created) {
 }
 
 void test_generic_reduce_with(const ValueBuilderFactory &factory) {
-    for (const Layout &layout: layouts) {
-        TensorSpec input = spec(layout, Div16(N()));
-        SCOPED_TRACE(fmt("tensor type: %s, num_cells: %zu", input.type().c_str(), input.cells().size()));
-        for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
-            SCOPED_TRACE(fmt("aggregator: %s", AggrNames::name_of(aggr)->c_str()));
-            for (const Domain &domain: layout) {
-                auto expect = ReferenceOperations::reduce(input, aggr, {domain.dimension}).normalize();
-                auto actual = perform_generic_reduce(input, aggr, {domain.dimension}, factory);
+    for (const auto &layout: layouts) {
+        for (TensorSpec input : { layout.cpy().cells_float().gen(),
+                                  layout.cpy().cells_double().gen() })
+        {
+            SCOPED_TRACE(fmt("tensor type: %s, num_cells: %zu", input.type().c_str(), input.cells().size()));
+            for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
+                SCOPED_TRACE(fmt("aggregator: %s", AggrNames::name_of(aggr)->c_str()));
+                auto t = layout.type();
+                for (const auto & dim: t.dimensions()) {
+                    auto expect = ReferenceOperations::reduce(input, aggr, {dim.name}).normalize();
+                    auto actual = perform_generic_reduce(input, aggr, {dim.name}, factory);
+                    EXPECT_EQ(actual, expect);
+                }
+                auto expect = ReferenceOperations::reduce(input, aggr, {}).normalize();
+                auto actual = perform_generic_reduce(input, aggr, {}, factory);
                 EXPECT_EQ(actual, expect);
             }
-            auto expect = ReferenceOperations::reduce(input, aggr, {}).normalize();
-            auto actual = perform_generic_reduce(input, aggr, {}, factory);
-            EXPECT_EQ(actual, expect);
         }
     }
 }

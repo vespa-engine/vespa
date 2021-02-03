@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/box.h>
+#include <thread>
 
 using namespace vespalib;
 

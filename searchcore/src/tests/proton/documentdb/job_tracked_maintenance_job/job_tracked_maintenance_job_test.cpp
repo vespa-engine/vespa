@@ -24,7 +24,7 @@ getGateVector(size_t size)
 {
     GateVector retval;
     for (size_t i = 0; i < size; ++i) {
-        retval.push_back(GateUP(new Gate()));
+        retval.push_back(std::make_unique<Gate>());
     }
     return retval;
 }
@@ -46,7 +46,7 @@ struct MyMaintenanceJob : public IBlockableMaintenanceJob
     void unBlock(BlockedReason) override { _blocked = false; }
     bool isBlocked() const override { return _blocked; }
     bool run() override {
-        _runGates[_runIdx++]->await(5000);
+        _runGates[_runIdx++]->await(5s);
         return _runIdx == _runGates.size();
     }
 };
@@ -82,10 +82,10 @@ struct Fixture
     }
     void runJobAndWait(size_t runIdx, size_t startedGateCount, size_t endedGateCount) {
         _exec.execute(vespalib::makeLambdaTask([this]() { runJob(); }));
-        _tracker->_started.await(5000);
+        _tracker->_started.await(5s);
         assertTracker(startedGateCount, endedGateCount);
         _myJob->_runGates[runIdx]->countDown();
-        _runGates[runIdx]->await(5000);
+        _runGates[runIdx]->await(5s);
     }
 };
 

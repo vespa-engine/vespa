@@ -199,7 +199,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
         return false;
     } else {
         attr->commit(serialNum, serialNum);
-        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), vespalib::count_ms(timer.elapsed()));
+        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), timer.elapsed());
     }
     return true;
 }

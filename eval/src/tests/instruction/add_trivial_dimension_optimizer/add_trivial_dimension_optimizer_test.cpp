@@ -5,7 +5,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/replace_type_function.h>
 #include <vespa/eval/instruction/fast_rename_optimizer.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
@@ -20,11 +20,11 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("x5", spec({x(5)}, N()))
-        .add("x5f", spec(float_cells({x(5)}), N()))
-        .add("x5y1", spec({x(5),y(1)}, N()))
-        .add("y1z1", spec({y(1),z(1)}, N()))
-        .add("x_m", spec({x({"a"})}, N()));
+        .add("x5", GenSpec().idx("x", 5).gen())
+        .add("x5f", GenSpec().idx("x", 5).cells_float().gen())
+        .add("x5y1", GenSpec().idx("x", 5).idx("y", 1).gen())
+        .add("y1z1", GenSpec().idx("y", 5).idx("z", 1).gen())
+        .add("x_m", GenSpec().map("x", {"a"}).gen());
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

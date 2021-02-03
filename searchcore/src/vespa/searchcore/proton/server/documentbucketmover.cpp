@@ -12,7 +12,6 @@
 using document::BucketId;
 using document::Document;
 using document::GlobalId;
-using search::DocumentIdT;
 using storage::spi::Timestamp;
 
 namespace proton {
@@ -20,9 +19,7 @@ namespace proton {
 typedef IDocumentMetaStore::Iterator Iterator;
 
 bool
-DocumentBucketMover::moveDocument(DocumentIdT lid,
-                                  const document::GlobalId &gid,
-                                  Timestamp timestamp)
+DocumentBucketMover::moveDocument(uint32_t lid, const document::GlobalId &gid, Timestamp timestamp)
 {
     if ( _source->lidNeedsCommit(lid) ) {
         return false;
@@ -80,13 +77,11 @@ namespace {
 class MoveKey
 {
 public:
-    DocumentIdT _lid;
+    uint32_t _lid;
     document::GlobalId _gid;
     Timestamp _timestamp;
 
-    MoveKey(DocumentIdT lid,
-            const document::GlobalId &gid,
-            Timestamp timestamp)
+    MoveKey(uint32_t lid, const document::GlobalId &gid, Timestamp timestamp)
         : _lid(lid),
           _gid(gid),
           _timestamp(timestamp)
@@ -115,7 +110,7 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove)
     typedef std::vector<MoveKey> MoveVec;
     MoveVec toMove;
     for (; itr != end && docsMoved < maxDocsToMove; ++itr) {
-        DocumentIdT lid = itr.getKey().get_lid();
+        uint32_t lid = itr.getKey().get_lid();
         const RawDocumentMetaData &metaData = _source->meta_store()->getRawMetaData(lid);
         if (metaData.getBucketUsedBits() != _bucket.getUsedBits()) {
             ++docsSkipped;

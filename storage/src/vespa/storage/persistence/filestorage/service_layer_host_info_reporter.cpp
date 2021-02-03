@@ -1,8 +1,13 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "service_layer_host_info_reporter.h"
+#include <vespa/persistence/spi/resource_usage.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <cmath>
+#include <sstream>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".persistence.filestor.service_layer_host_info_reporter");
 
 namespace storage {
 
@@ -33,13 +38,22 @@ void write_attribute_usage(vespalib::JsonStream& output, const vespalib::string 
     output << End();
 }
 
-bool want_immediate_report(const spi::ResourceUsage& old_resource_usage, const spi::ResourceUsage& resource_usage)
+bool want_immediate_report(const spi::ResourceUsage& old_usage, const spi::ResourceUsage& new_usage)
 {
-    auto disk_usage_diff = fabs(resource_usage.get_disk_usage() - old_resource_usage.get_disk_usage());
-    auto memory_usage_diff = fabs(resource_usage.get_memory_usage() - old_resource_usage.get_memory_usage());
-    auto attribute_enum_store_diff = fabs(resource_usage.get_attribute_enum_store_usage().get_usage() - old_resource_usage.get_attribute_enum_store_usage().get_usage());
-    auto attribute_multivalue_diff = fabs(resource_usage.get_attribute_multivalue_usage().get_usage() - old_resource_usage.get_attribute_multivalue_usage().get_usage());
-    return (disk_usage_diff > diff_slack || memory_usage_diff > diff_slack || attribute_enum_store_diff > diff_slack || attribute_multivalue_diff > diff_slack);
+    auto disk_usage_diff = fabs(new_usage.get_disk_usage() - old_usage.get_disk_usage());
+    auto memory_usage_diff = fabs(new_usage.get_memory_usage() - old_usage.get_memory_usage());
+    auto enum_store_diff = fabs(new_usage.get_attribute_enum_store_usage().get_usage() - old_usage.get_attribute_enum_store_usage().get_usage());
+    auto multivalue_diff = fabs(new_usage.get_attribute_multivalue_usage().get_usage() - old_usage.get_attribute_multivalue_usage().get_usage());
+    bool enum_store_got_valid = !old_usage.get_attribute_enum_store_usage().valid() &&
+            new_usage.get_attribute_enum_store_usage().valid();
+    bool multivalue_got_valid = !old_usage.get_attribute_multivalue_usage().valid() &&
+            new_usage.get_attribute_multivalue_usage().valid();
+    return ((disk_usage_diff > diff_slack) ||
+            (memory_usage_diff > diff_slack) ||
+            (enum_store_diff > diff_slack) ||
+            (multivalue_diff > diff_slack) ||
+            enum_store_got_valid ||
+            multivalue_got_valid);
 }
 
 }
@@ -58,10 +72,25 @@ ServiceLayerHostInfoReporter::~ServiceLayerHostInfoReporter()
     spi::ResourceUsageListener::reset(); // detach
 }
 
+namespace {
+
+vespalib::string
+to_string(const spi::ResourceUsage& usage)
+{
+    std::ostringstream oss;
+    oss << usage;
+    return oss.str();
+}
+
+}
+
 void
 ServiceLayerHostInfoReporter::update_resource_usage(const spi::ResourceUsage& resource_usage)
 {
     bool immediate_report = want_immediate_report(_old_resource_usage, resource_usage);
+    LOG(debug, "update_resource_usage(): immediate_report=%s, old_usage=%s, new_usage=%s",
+        (immediate_report ? "true" : "false"), to_string(_old_resource_usage).c_str(),
+        to_string(resource_usage).c_str());
     if (immediate_report) {
         _old_resource_usage = resource_usage;
     }
@@ -82,6 +111,7 @@ ServiceLayerHostInfoReporter::report(vespalib::JsonStream& output)
     {
         std::lock_guard guard(_lock);
         auto& usage = get_usage();
+        LOG(debug, "report(): usage=%s", to_string(usage).c_str());
         write_usage(output, memory_label, usage.get_memory_usage());
         write_usage(output, disk_label, usage.get_disk_usage());
         write_attribute_usage(output, attribute_enum_store_label, usage.get_attribute_enum_store_usage());

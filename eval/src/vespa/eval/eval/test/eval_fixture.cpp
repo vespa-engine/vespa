@@ -28,7 +28,10 @@ NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
     std::vector<ValueType> param_types;
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
-        ASSERT_TRUE(pos != param_repo.map.end());
+        if (pos == param_repo.map.end()) {
+            TEST_STATE(fmt("param name: '%s'", function.param_name(i).data()).c_str());
+            ASSERT_TRUE(pos != param_repo.map.end());
+        }
         param_types.push_back(ValueType::from_spec(pos->second.value.type()));
         ASSERT_TRUE(!param_types.back().is_error());
     }
@@ -178,6 +181,23 @@ EvalFixture::ParamRepo::add_dense(const std::vector<std::pair<vespalib::string, 
     add(name + "f" + suffix, make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, gen));
     add_mutable("@" + name + suffix, make_dense(fmt("tensor(%s)", type.c_str()), dims, gen));
     add_mutable("@" + name + "f" + suffix, make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, gen));
+    return *this;
+}
+
+// produce 4 variants: float/double * mutable/const
+EvalFixture::ParamRepo &
+EvalFixture::ParamRepo::add_variants(const vespalib::string &name_base,
+                                     const GenSpec &spec)
+{
+    auto name_f = name_base + "_f";
+    auto name_m = "@" + name_base;
+    auto name_m_f = "@" + name_base + "_f";
+    auto dbl_ts = spec.cpy().cells_double().gen();
+    auto flt_ts = spec.cpy().cells_float().gen();
+    add(name_base, dbl_ts);
+    add(name_f, flt_ts);
+    add_mutable(name_m, dbl_ts);
+    add_mutable(name_m_f, flt_ts);
     return *this;
 }
 

@@ -79,13 +79,15 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         private final Map<String, NewDocumentType> documentDefinitions;
         private final Set<NewDocumentType> globallyDistributedDocuments;
         private final boolean combined;
+        private final ResourceLimits resourceLimits;
 
         public Builder(Map<String, NewDocumentType> documentDefinitions,
                        Set<NewDocumentType> globallyDistributedDocuments,
-                       boolean combined) {
+                       boolean combined, ResourceLimits resourceLimits) {
             this.documentDefinitions = documentDefinitions;
             this.globallyDistributedDocuments = globallyDistributedDocuments;
             this.combined = combined;
+            this.resourceLimits = resourceLimits;
         }
 
         @Override
@@ -106,10 +108,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             if (tuning != null) {
                 search.setTuning(new DomSearchTuningBuilder().build(deployState, search, tuning.getXml()));
             }
-            ModelElement protonElem = clusterElem.childByPath("engine.proton");
-            if (protonElem != null) {
-                search.setResourceLimits(DomResourceLimitsBuilder.build(protonElem));
-            }
+            search.setResourceLimits(resourceLimits);
 
             buildAllStreamingSearchClusters(deployState, clusterElem, clusterName, search);
             buildIndexedSearchCluster(deployState, clusterElem, clusterName, search);

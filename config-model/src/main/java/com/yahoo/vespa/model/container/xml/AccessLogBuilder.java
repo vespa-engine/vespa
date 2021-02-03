@@ -82,6 +82,12 @@ public class AccessLogBuilder {
         }
 
         private static CompressionType compressionType(Element spec, DeployState deployState, boolean isHostedVespa) {
+            CompressionType fallback;
+            if (isHostedVespa && deployState.featureFlags().enableZstdCompressionAccessLog()) {
+                fallback = CompressionType.ZSTD;
+            } else {
+                fallback = CompressionType.GZIP;
+            }
             return Optional.ofNullable(spec.getAttribute("compressionType"))
                     .filter(value -> !value.isBlank())
                     .map(value -> {
@@ -94,7 +100,7 @@ public class AccessLogBuilder {
                                 throw new IllegalArgumentException("Unknown compression type: " + value);
                         }
                     })
-                    .orElse(isHostedVespa && deployState.featureFlags().enableZstdCompressionAccessLog() ? CompressionType.ZSTD : CompressionType.GZIP);
+                    .orElse(fallback);
         }
     }
 

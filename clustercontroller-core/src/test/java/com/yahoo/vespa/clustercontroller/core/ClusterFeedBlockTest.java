@@ -17,10 +17,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.mapOf;
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.usage;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.createResourceUsageJson;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -89,7 +92,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         return options;
     }
 
-    private void reportResourceUsageFromNode(int nodeIndex, Map<String, Double> resourceUsages) throws Exception {
+    private void reportResourceUsageFromNode(int nodeIndex, Set<FeedBlockUtil.UsageDetails> resourceUsages) throws Exception {
         String hostInfo = createResourceUsageJson(resourceUsages);
         communicator.setNodeState(new Node(NodeType.STORAGE, nodeIndex), new NodeState(NodeType.STORAGE, State.UP), hostInfo);
         ctrl.tick();
@@ -102,17 +105,17 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
         // Too much cheese in use, must block feed!
-        reportResourceUsageFromNode(1, mapOf(usage("cheese", 0.8), usage("wine", 0.3)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.3)));
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
         // TODO check desc?
 
         // Wine usage has gone up too, we should remain blocked
-        reportResourceUsageFromNode(1, mapOf(usage("cheese", 0.8), usage("wine", 0.5)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.5)));
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
         // TODO check desc?
 
         // Back to normal wine and cheese levels
-        reportResourceUsageFromNode(1, mapOf(usage("cheese", 0.6), usage("wine", 0.3)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.6), usage("wine", 0.3)));
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
     }
 
@@ -121,7 +124,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         initialize(createOptions(mapOf(usage("cheese", 0.7), usage("wine", 0.4))));
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
-        reportResourceUsageFromNode(1, mapOf(usage("cheese", 0.8), usage("wine", 0.3)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.3)));
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
         // Increase cheese allowance. Should now automatically unblock since reported usage is lower.
@@ -129,6 +132,41 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         ctrl.tick(); // Options propagation
         ctrl.tick(); // State recomputation
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
+    }
+
+    @Test
+    public void cluster_feed_block_state_is_recomputed_when_resource_block_set_differs() throws Exception {
+        initialize(createOptions(mapOf(usage("cheese", 0.7), usage("wine", 0.4))));
+        assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
+
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.3)));
+        var bundle = ctrl.getClusterStateBundle();
+        assertTrue(bundle.clusterFeedIsBlocked());
+        assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700)", bundle.getFeedBlock().get().getDescription());
+
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.5)));
+        bundle = ctrl.getClusterStateBundle();
+        assertTrue(bundle.clusterFeedIsBlocked());
+        assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700), " +
+                     "wine on node 1 [unknown hostname] (0.500 > 0.400)",
+                     bundle.getFeedBlock().get().getDescription());
+    }
+
+    @Test
+    public void cluster_feed_block_state_is_not_recomputed_when_only_resource_usage_levels_differ() throws Exception {
+        initialize(createOptions(mapOf(usage("cheese", 0.7), usage("wine", 0.4))));
+        assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
+
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.3)));
+        var bundle = ctrl.getClusterStateBundle();
+        assertTrue(bundle.clusterFeedIsBlocked());
+        assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700)", bundle.getFeedBlock().get().getDescription());
+
+        // 80% -> 90%, should not trigger new state.
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.9), usage("wine", 0.4)));
+        bundle = ctrl.getClusterStateBundle();
+        assertTrue(bundle.clusterFeedIsBlocked());
+        assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700)", bundle.getFeedBlock().get().getDescription());
     }
 
 }

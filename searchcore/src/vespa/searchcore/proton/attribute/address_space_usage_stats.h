@@ -7,8 +7,8 @@
 
 namespace proton {
 
-/*
- * class representing usage of a single address space (enum store or
+/**
+ * Class representing usage of a single address space (enum store or
  * multi value) and the most largest attribute in that respect, relative
  * to the limit.
  */
@@ -28,6 +28,14 @@ public:
     const vespalib::AddressSpace &getUsage() const { return _usage; }
     const vespalib::string &getAttributeName() const { return _attributeName; }
     const vespalib::string &getSubDbName() const { return _subDbName; }
+
+    bool operator==(const AddressSpaceUsageStats& rhs) const {
+        return (_usage == rhs._usage) &&
+                (_attributeName == rhs._attributeName) &&
+                (_subDbName == rhs._subDbName);
+    }
 };
+
+std::ostream& operator<<(std::ostream &out, const AddressSpaceUsageStats& rhs);
 
 } // namespace proton

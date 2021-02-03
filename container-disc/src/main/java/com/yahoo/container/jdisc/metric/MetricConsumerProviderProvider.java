@@ -20,10 +20,8 @@ public class MetricConsumerProviderProvider implements Provider<MetricConsumerPr
     private final MetricConsumerProvider provided;
 
     @Inject
-    public MetricConsumerProviderProvider(ComponentRegistry<MetricConsumerFactory> factoryRegistry,
-                                          MetricsPresentationConfig presentationConfig,
-                                          StateMonitor stateMonitor) {
-        provided = new MetricConsumerProvider(factoryRegistry, presentationConfig, stateMonitor);
+    public MetricConsumerProviderProvider(ComponentRegistry<MetricConsumerFactory> factoryRegistry) {
+        provided = new MetricConsumerProvider(factoryRegistry);
     }
 
     @Override

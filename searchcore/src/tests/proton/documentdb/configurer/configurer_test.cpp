@@ -613,6 +613,12 @@ TEST("require that attribute manager (imported attributes) should change when vi
     EXPECT_TRUE(params.shouldAttributeManagerChange());
 }
 
+TEST("require that attribute manager should change when alloc config has changed")
+{
+    ReconfigParams params(CCR().set_alloc_config_changed(true));
+    EXPECT_TRUE(params.shouldAttributeManagerChange());
+}
+
 void
 assertMaintenanceControllerShouldNotChange(DocumentDBConfig::ComparisonResult result)
 {
@@ -684,6 +690,7 @@ TEST("require that subdbs should change if relevant config changed")
     TEST_DO(assertSubDbsShouldChange(CCR().setRankingConstantsChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setOnnxModelsChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setSchemaChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().set_alloc_config_changed(true)));
 }
 
 TEST_MAIN()

@@ -97,7 +97,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
     final public DocumentTypeManager getDocumentTypeManager() { return manager; }
 
     public void read(Document document) {
-         read(null, document);
+        read(null, document);
     }
 
     @SuppressWarnings("deprecation")
@@ -243,8 +243,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         int encodedTensorLength = buf.getInt1_4Bytes();
         if (encodedTensorLength > 0) {
             byte[] encodedTensor = getBytes(null, encodedTensorLength);
-            value.assign(TypedBinaryFormat.decode(value.getTensorType(),
-                                                  GrowableByteBuffer.wrap(encodedTensor)));
+            value.assignSerializedTensor(encodedTensor);
         } else {
             value.clear();
         }
@@ -374,9 +373,9 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             Integer f_id = fieldIdsAndLengths.get(i).first;
             Field structField = priType.getField(f_id);
             if (structField != null) {
-              FieldValue value = structField.getDataType().createFieldValue();
-              value.deserialize(structField, this);
-              primary.setFieldValue(structField, value);
+                FieldValue value = structField.getDataType().createFieldValue();
+                value.deserialize(structField, this);
+                primary.setFieldValue(structField, value);
             }
             //jump to beginning of next field:
             position(posBefore + fieldIdsAndLengths.get(i).second.intValue());

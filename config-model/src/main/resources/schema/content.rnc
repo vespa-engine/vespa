@@ -98,7 +98,8 @@ ClusterTuning = element tuning {
    ClusterControllerTuning? &
    Maintenance? &
    PersistenceThreads? &
-   MinNodeRatioPerGroup?
+   MinNodeRatioPerGroup? &
+   ResourceLimits?
 }
 
 Content = element content {

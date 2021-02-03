@@ -7,7 +7,7 @@
 
 namespace proton {
 
-/*
+/**
  * Class representing aggregated attribute usage, with info about
  * the most bloated attributes with regards to enum store and
  * multivalue mapping.
@@ -23,10 +23,15 @@ public:
                const vespalib::string &attributeName,
                const vespalib::string &subDbName);
 
-    const AddressSpaceUsageStats &
-    enumStoreUsage() const { return _enumStoreUsage; }
-    const AddressSpaceUsageStats &
-    multiValueUsage() const { return _multiValueUsage; }
+    const AddressSpaceUsageStats& enumStoreUsage() const { return _enumStoreUsage; }
+    const AddressSpaceUsageStats& multiValueUsage() const { return _multiValueUsage; }
+
+    bool operator==(const AttributeUsageStats& rhs) const {
+        return (_enumStoreUsage == rhs._enumStoreUsage) &&
+                (_multiValueUsage == rhs._multiValueUsage);
+    }
 };
+
+std::ostream& operator<<(std::ostream& out, const AttributeUsageStats& rhs);
 
 } // namespace proton

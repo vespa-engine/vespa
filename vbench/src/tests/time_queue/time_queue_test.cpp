@@ -16,8 +16,8 @@ TEST_MT_FFF("time queue", 2, TimeQueue<int>(10.0, 5.0), vespalib::Gate(), vespal
     } else {
         double delay;
         std::vector<std::unique_ptr<int> > list;
-        EXPECT_TRUE(f2.await(20000));
-        EXPECT_FALSE(f3.await(20));
+        EXPECT_TRUE(f2.await(20s));
+        EXPECT_FALSE(f3.await(20ms));
         {
             f1.extract(1.5, list, delay);
             ASSERT_EQUAL(1u, list.size());
@@ -38,7 +38,7 @@ TEST_MT_FFF("time queue", 2, TimeQueue<int>(10.0, 5.0), vespalib::Gate(), vespal
             EXPECT_EQUAL(0u, list.size());
             EXPECT_EQUAL(5.0, delay);
         }
-        EXPECT_TRUE(f3.await(20000));
+        EXPECT_TRUE(f3.await(20s));
         {
             f1.extract(99.25, list, delay);
             EXPECT_EQUAL(0u, list.size());

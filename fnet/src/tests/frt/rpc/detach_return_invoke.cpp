@@ -5,6 +5,7 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <thread>
 
 struct Receptor : public FRT_IRequestWait
 {

@@ -338,7 +338,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec, "server");
     }
 
-    private void addAccessLogs(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
+    protected void addAccessLogs(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         List<Element> accessLogElements = getAccessLogElements(spec);
 
         for (Element accessLog : accessLogElements) {

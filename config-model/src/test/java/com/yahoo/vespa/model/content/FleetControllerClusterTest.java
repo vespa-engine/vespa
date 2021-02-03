@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 
 public class FleetControllerClusterTest {
@@ -19,8 +20,11 @@ public class FleetControllerClusterTest {
         var deployState = new DeployState.Builder().properties(
                 new TestProperties().enableFeedBlockInDistributor(enableFeedBlockInDistributor)).build();
         MockRoot root = new MockRoot("", deployState);
-        return new ClusterControllerConfig.Builder("storage", new ModelElement(doc.getDocumentElement())).build(root.getDeployState(), root,
-                new ModelElement(doc.getDocumentElement()).getXml());
+        var clusterElement = new ModelElement(doc.getDocumentElement());
+        return new ClusterControllerConfig.Builder("storage",
+                clusterElement,
+                new ClusterResourceLimits.Builder().build(clusterElement).getClusterControllerLimits()).
+                build(root.getDeployState(), root, clusterElement.getXml());
     }
 
     private ClusterControllerConfig parse(String xml) {
@@ -94,15 +98,43 @@ public class FleetControllerClusterTest {
         assertEquals(0.0, config.min_node_ratio_per_group(), 0.01);
     }
 
+
     @Test
     public void default_cluster_feed_block_limits_are_set() {
-        var config = getConfigForBasicCluster();
+        assertLimits(0.79, 0.79, getConfigForBasicCluster());
+    }
+
+    @Test
+    public void resource_limits_can_be_set_in_tuning() {
+        assertLimits(0.6, 0.7, getConfigForResourceLimitsTuning(0.6, 0.7));
+        assertLimits(0.6, 0.79, getConfigForResourceLimitsTuning(0.6, null));
+        assertLimits(0.79, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
+    }
+
+    private static double DELTA = 0.00001;
+
+    private void assertLimits(double expDisk, double expMemory, FleetcontrollerConfig config) {
         var limits = config.cluster_feed_block_limit();
         assertEquals(4, limits.size());
-        assertEquals(0.79, limits.get("memory"), 0.0001);
-        assertEquals(0.79, limits.get("disk"), 0.0001);
-        assertEquals(0.89, limits.get("attribute-enum-store"), 0.0001);
-        assertEquals(0.89, limits.get("attribute-multi-value"), 0.0001);
+        assertEquals(expDisk, limits.get("disk"), DELTA);
+        assertEquals(expMemory, limits.get("memory"), DELTA);
+        assertEquals(0.89, limits.get("attribute-enum-store"), DELTA);
+        assertEquals(0.89, limits.get("attribute-multi-value"), DELTA);
+    }
+
+    private FleetcontrollerConfig getConfigForResourceLimitsTuning(Double diskLimit, Double memoryLimit) {
+        FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
+        parse(joinLines("<cluster id=\"test\">",
+                "<documents/>",
+                "<tuning>",
+                "  <resource-limits>",
+                (diskLimit != null ? ("    <disk>" + diskLimit + "</disk>") : ""),
+                (memoryLimit != null ? ("    <memory>" + memoryLimit + "</memory>") : ""),
+                "  </resource-limits>",
+                "</tuning>" +
+                "</cluster>")).
+                getConfig(builder);
+        return new FleetcontrollerConfig(builder);
     }
 
     @Test

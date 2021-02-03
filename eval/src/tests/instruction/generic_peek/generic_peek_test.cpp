@@ -7,7 +7,7 @@
 #include <vespa/eval/instruction/generic_peek.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -22,17 +22,16 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-std::vector<Layout> peek_layouts = {
-    {x(4)},
-    {x(4),y(5)},
-    {x(4),y(5),z(3)},
-    float_cells({x(4),y(5),z(3)}),
-    {x({"-1","0","2"})},
-    {x({"-1","0","2"}),y({"-2","0","1"}),z({"-2","-1","0","1","2"})},
-    float_cells({x({"-1","0","2"}),y({"-2","0","1"})}),
-    {x(4),y({"-2","0","1"}),z(3)},
-    {x({"-1","0","2"}),y(5),z({"-2","-1","0","1","2"})},
-    float_cells({x({"-1","0","2"}),y(5),z({"-2","-1","0","1","2"})})
+GenSpec G() { return GenSpec(); }
+
+const std::vector<GenSpec> peek_layouts = {
+    G().idx("x", 4),
+    G().idx("x", 4).idx("y", 5),
+    G().idx("x", 4).idx("y", 5).idx("z", 3),
+    G().map("x", {"-1","0","2"}),
+    G().map("x", {"-1","0","2"}).map("y", {"-2","0","1"}).map("z", {"-2","-1","0","1","2"}),
+    G().idx("x", 4).map("y", {"-2","0","1"}).idx("z", 3),
+    G().map("x", {"-1","0","2"}).idx("y", 5).map("z", {"-2","-1","0","1","2"})
 };
 
 using PeekSpec = GenericPeek::SpecMap;
@@ -194,12 +193,15 @@ void fill_dims_and_check(const TensorSpec &input,
 }
 
 void test_generic_peek_with(const ValueBuilderFactory &factory) {
-    for (const auto & layout : peek_layouts) {
-        TensorSpec input = spec(layout, N());
-        ValueType input_type = ValueType::from_spec(input.type());
-        const auto &dims = input_type.dimensions();
-        PeekSpec spec;
-        fill_dims_and_check(input, spec, dims, factory);
+    for (const auto &layout : peek_layouts) {
+        for (TensorSpec input : { layout.cpy().cells_float().gen(),
+                                  layout.cpy().cells_double().gen() })
+        {
+            ValueType input_type = ValueType::from_spec(input.type());
+            const auto &dims = input_type.dimensions();
+            PeekSpec spec;
+            fill_dims_and_check(input, spec, dims, factory);
+        }
     }
 }
 

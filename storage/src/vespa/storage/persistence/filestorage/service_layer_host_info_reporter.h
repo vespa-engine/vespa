@@ -25,7 +25,7 @@ public:
 
     ServiceLayerHostInfoReporter(const ServiceLayerHostInfoReporter&) = delete;
     ServiceLayerHostInfoReporter& operator=(const ServiceLayerHostInfoReporter&) = delete;
-    ~ServiceLayerHostInfoReporter();
+    ~ServiceLayerHostInfoReporter() override;
 
     void report(vespalib::JsonStream& output) override;
     const spi::ResourceUsage &get_old_resource_usage() noexcept { return _old_resource_usage; }

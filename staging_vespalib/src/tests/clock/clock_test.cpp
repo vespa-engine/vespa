@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/clock.h>
 #include <vespa/fastos/thread.h>
+#include <thread>
 
 using vespalib::Clock;
 using vespalib::duration;

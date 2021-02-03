@@ -11,7 +11,7 @@ namespace proton {
  * Interface used to limit the number of outstanding move operations a blockable maintenance job can have.
  */
 struct IMoveOperationLimiter {
-    virtual ~IMoveOperationLimiter() {}
+    virtual ~IMoveOperationLimiter() = default;
     virtual std::shared_ptr<vespalib::IDestructorCallback> beginOperation() = 0;
 };
 

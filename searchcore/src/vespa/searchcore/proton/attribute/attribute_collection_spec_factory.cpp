@@ -9,11 +9,9 @@ using search::GrowStrategy;
 namespace proton {
 
 AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(
-        const search::GrowStrategy &growStrategy,
-        size_t growNumDocs,
+        const AllocStrategy &alloc_strategy,
         bool fastAccessOnly)
-    : _growStrategy(growStrategy),
-      _growNumDocs(growNumDocs),
+    : _alloc_strategy(alloc_strategy),
       _fastAccessOnly(fastAccessOnly)
 {
 }
@@ -25,8 +23,8 @@ AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
 {
     AttributeCollectionSpec::AttributeList attrs;
     // Amortize memory spike cost over N docs
-    const size_t skew = _growNumDocs/(attrCfg.attribute.size()+1);
-    GrowStrategy grow = _growStrategy;
+    const size_t skew = _alloc_strategy.get_amortize_count()/(attrCfg.attribute.size()+1);
+    GrowStrategy grow = _alloc_strategy.get_grow_strategy();
     grow.setDocsInitialCapacity(std::max(grow.getDocsInitialCapacity(),docIdLimit));
     for (const auto &attr : attrCfg.attribute) {
         search::attribute::Config cfg = ConfigConverter::convert(attr);
@@ -35,6 +33,7 @@ AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
         }
         grow.setDocsGrowDelta(grow.getDocsGrowDelta() + skew);
         cfg.setGrowStrategy(grow);
+        cfg.setCompactionStrategy(_alloc_strategy.get_compaction_strategy());
         attrs.push_back(AttributeSpec(attr.name, cfg));
     }
     return std::make_unique<AttributeCollectionSpec>(attrs, docIdLimit, serialNum);

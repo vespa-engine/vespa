@@ -4,10 +4,7 @@ package com.yahoo.container.jdisc.metric;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.MetricConsumerFactory;
-import com.yahoo.container.jdisc.metric.state.StateMetricConsumerFactory;
-import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.jdisc.application.MetricConsumer;
-import com.yahoo.metrics.MetricsPresentationConfig;
 
 
 /**
@@ -27,17 +24,9 @@ public class MetricConsumerProvider {
     private final MetricConsumerFactory[] factories;
 
     @Inject
-    public MetricConsumerProvider(ComponentRegistry<MetricConsumerFactory> factoryRegistry,
-                                  MetricsPresentationConfig presentationConfig,
-                                  StateMonitor stateMonitor) {
-        MetricConsumerFactory[] factories;
-        if (factoryRegistry.getComponentCount() == 0 || ! presentationConfig.slidingwindow()) {
-            factories = new MetricConsumerFactory[1];
-            factories[0] = new StateMetricConsumerFactory(stateMonitor);
-        } else {
-            factories = new MetricConsumerFactory[factoryRegistry.getComponentCount()];
-            factoryRegistry.allComponents().toArray(factories);
-        }
+    public MetricConsumerProvider(ComponentRegistry<MetricConsumerFactory> factoryRegistry) {
+        MetricConsumerFactory[] factories = new MetricConsumerFactory[factoryRegistry.getComponentCount()];
+        factoryRegistry.allComponents().toArray(factories);
         this.factories = factories;
     }
 

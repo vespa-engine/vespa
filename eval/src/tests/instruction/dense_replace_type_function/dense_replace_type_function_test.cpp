@@ -5,7 +5,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/instruction/replace_type_function.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 
 using namespace vespalib::eval::tensor_function;
 using namespace vespalib::eval::test;
@@ -33,7 +33,7 @@ struct Fixture {
     std::vector<TensorFunction::Child::CREF> children;
     InterpretedFunction::State               state;
     Fixture()
-        : my_value(value_from_spec(spec({x(10)}, N()), prod_factory)),
+        : my_value(value_from_spec(GenSpec().idx("x", 10).gen(), prod_factory)),
           new_type(ValueType::from_spec("tensor(x[5],y[2])")),
           mock_child(my_value->type()),
           my_fun(new_type, mock_child),

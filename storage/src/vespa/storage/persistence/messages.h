@@ -249,11 +249,10 @@ public:
 
     document::Bucket getBucket() const override { return _bucket.getBucket(); }
     std::unique_ptr<api::StorageReply> makeReply() override;
-    spi::BucketTask & task() & {
-        return *_task;
-    }
+    void run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete);
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    std::unique_ptr<spi::BucketTask> stealTask() { return std::move(_task); }
 private:
     std::unique_ptr<spi::BucketTask> _task;
     spi::Bucket                      _bucket;

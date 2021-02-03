@@ -61,12 +61,17 @@ public class GroupPreparer {
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups) {
 
+        String allocateOsRequirement = allocateOsRequirementFlag
+                .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                .value();
+
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
         // can return nodes previously allocated.
         {
             MutableInteger probePrepareHighestIndex = new MutableInteger(highestIndex.get());
             NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                               probePrepareHighestIndex, wantedGroups, PROBE_LOCK);
+                                                               probePrepareHighestIndex, wantedGroups, PROBE_LOCK,
+                                                               allocateOsRequirement);
             if (probeAllocation.fulfilledAndNoChanges()) {
                 List<Node> acceptedNodes = probeAllocation.finalNodes();
                 surplusActiveNodes.removeAll(acceptedNodes);
@@ -80,10 +85,16 @@ public class GroupPreparer {
              Mutex allocationLock = nodeRepository.lockUnallocated()) {
 
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                    highestIndex, wantedGroups, allocationLock);
+                    highestIndex, wantedGroups, allocationLock, allocateOsRequirement);
 
             if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
-                Version osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
+                final Version osVersion;
+                if (allocateOsRequirement.equals("rhel8")) {
+                    osVersion = new Version(8);
+                } else {
+                    osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
+                }
+
                 List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
                         .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
                                                                              deficit.getFlavor(),
@@ -122,13 +133,10 @@ public class GroupPreparer {
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups,
-                                             Mutex allocationLock) {
+                                             Mutex allocationLock, String allocateOsRequirement) {
         LockedNodeList allNodes = nodeRepository.list(allocationLock);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
                 highestIndex, nodeRepository);
-        String allocateOsRequirement = allocateOsRequirementFlag
-                .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                .value();
         NodePrioritizer prioritizer = new NodePrioritizer(
                 allNodes, application, cluster, requestedNodes, wantedGroups,
                 nodeRepository.zone().getCloud().dynamicProvisioning(), nodeRepository.nameResolver(),

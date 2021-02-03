@@ -4,6 +4,7 @@
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/messagebus/network/rpcservice.h>
+#include <thread>
 
 using namespace mbus;
 

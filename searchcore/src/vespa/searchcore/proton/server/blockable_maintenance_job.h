@@ -2,7 +2,7 @@
 #pragma once
 
 #include "i_blockable_maintenance_job.h"
-#include "move_operation_limiter.h"
+#include "i_move_operation_limiter.h"
 #include <mutex>
 #include <unordered_set>
 
@@ -11,6 +11,7 @@ namespace proton {
 class BlockableMaintenanceJobConfig;
 class DiskMemUsageState;
 class IMaintenanceJobRunner;
+struct IMoveOperationLimiter;
 
 /**
  * Implementation of a maintenance job that can be blocked and unblocked due to various external reasons.
@@ -27,12 +28,10 @@ private:
     bool                   _blocked;
     IMaintenanceJobRunner *_runner;
     double                 _resourceLimitFactor;
+    std::shared_ptr<IMoveOperationLimiter> _moveOpsLimiter;
 
     void updateBlocked(const LockGuard &guard);
-
 protected:
-    MoveOperationLimiter::SP _moveOpsLimiter;
-
     void internalNotifyDiskMemUsage(const DiskMemUsageState &state);
 
 public:
@@ -54,6 +53,7 @@ public:
     void unBlock(BlockedReason reason) override;
     bool isBlocked() const override;
     void registerRunner(IMaintenanceJobRunner *runner) override { _runner = runner; }
+    IMoveOperationLimiter & getLimiter() { return *_moveOpsLimiter; }
 
 };
 

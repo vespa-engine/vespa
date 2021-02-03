@@ -3,7 +3,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/mixed_map_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
@@ -15,13 +15,11 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", spec(1.5))
-        .add("b", spec(2.5))
-        .add("sparse", spec({x({"a"})}, N()))
-        .add("mixed", spec({x({"a"}),y(5)}, N()))
-        .add_mutable("@sparse", spec({x({"a"})}, N()))
-        .add_mutable("@mixed", spec({x({"a"}),y(5)}, N()))
-        .add_matrix("x", 5, "y", 3);
+        .add("a", GenSpec().seq_bias(1.5).gen())
+        .add("b", GenSpec().seq_bias(2.5).gen())
+        .add_variants("sparse", GenSpec().map("x", {"a"}))
+        .add_variants("mixed", GenSpec().map("x", {"a"}).idx("y", 5))
+        .add_variants("x5y3", GenSpec().idx("x", 5).idx("y", 3));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -53,12 +51,12 @@ void verify_not_optimized(const vespalib::string &expr) {
 
 TEST(MapTest, dense_map_is_optimized) {
     verify_optimized("map(x5y3,f(x)(x+10))", false);
-    verify_optimized("map(x5y3f,f(x)(x+10))", false);
+    verify_optimized("map(x5y3_f,f(x)(x+10))", false);
 }
 
 TEST(MapTest, simple_dense_map_can_be_inplace) {
     verify_optimized("map(@x5y3,f(x)(x+10))", true);
-    verify_optimized("map(@x5y3f,f(x)(x+10))", true);
+    verify_optimized("map(@x5y3_f,f(x)(x+10))", true);
 }
 
 TEST(MapTest, scalar_map_is_not_optimized) {

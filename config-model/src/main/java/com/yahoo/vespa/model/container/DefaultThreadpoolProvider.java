@@ -5,6 +5,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.ThreadPoolProvider;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 /**
@@ -25,11 +26,18 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
         this.cluster = cluster;
     }
 
+    private int defaultThreadsByClusterType() {
+        if (cluster instanceof MetricsProxyContainerCluster) {
+            return 4;
+        }
+        return 10;
+    }
+
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
         if (!(cluster instanceof ApplicationContainerCluster)) {
             // Container clusters such as logserver, metricsproxy and clustercontroller
-            int defaultWorkerThreads = 10;
+            int defaultWorkerThreads = defaultThreadsByClusterType();
             builder.maxthreads(defaultWorkerThreads);
             builder.corePoolSize(defaultWorkerThreads);
             builder.queueSize(50);

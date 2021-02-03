@@ -6,7 +6,7 @@
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -17,33 +17,25 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-std::vector<Layout> join_layouts = {
-    {},                                                 {},
-    {x(5)},                                             {x(5)},
-    {x(5)},                                             {y(5)},
-    {x(5)},                                             {x(5),y(5)},
-    {y(3)},                                             {x(2),z(3)},
-    {x(3),y(5)},                                        {y(5),z(7)},
-    float_cells({x(3),y(5)}),                           {y(5),z(7)},
-    {x(3),y(5)},                                        float_cells({y(5),z(7)}),
-    float_cells({x(3),y(5)}),                           float_cells({y(5),z(7)}),
-    {x({"a","b","c"})},                                 {x({"a","b","c"})},
-    {x({"a","b","c"})},                                 {x({"a","b"})},
-    {x({"a","b","c"})},                                 {y({"foo","bar","baz"})},
-    {x({"a","b","c"})},                                 {x({"a","b","c"}),y({"foo","bar","baz"})},
-    {x({"a","b"}),y({"foo","bar","baz"})},              {x({"a","b","c"}),y({"foo","bar"})},
-    {x({"a","b"}),y({"foo","bar","baz"})},              {y({"foo","bar"}),z({"i","j","k","l"})},
-    float_cells({x({"a","b"}),y({"foo","bar","baz"})}), {y({"foo","bar"}),z({"i","j","k","l"})},
-    {x({"a","b"}),y({"foo","bar","baz"})},              float_cells({y({"foo","bar"}),z({"i","j","k","l"})}),
-    float_cells({x({"a","b"}),y({"foo","bar","baz"})}), float_cells({y({"foo","bar"}),z({"i","j","k","l"})}),
-    {x(3),y({"foo", "bar"})},                           {y({"foo", "bar"}),z(7)},
-    {x({"a","b","c"}),y(5)},                            {y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5)}),               {y(5),z({"i","j","k","l"})},
-    {x({"a","b","c"}),y(5)},                            float_cells({y(5),z({"i","j","k","l"})}),
-    float_cells({x({"a","b","c"}),y(5)}),               float_cells({y(5),z({"i","j","k","l"})}),
-    {x({"a","b","c"}),y(5)},                            float_cells({y(5)}),
-    {y(5)},                                             float_cells({x({"a","b","c"}),y(5)}),
-    {x({}),y(5)},                                       float_cells({y(5)})
+GenSpec::seq_t N_16ths = [] (size_t i) noexcept { return (i + 1.0) / 16.0; };
+
+GenSpec G() { return GenSpec().seq(N_16ths); }
+
+const std::vector<GenSpec> join_layouts = {
+    G(),                                                         G(),
+    G().idx("x", 5),                                             G().idx("x", 5),
+    G().idx("x", 5),                                             G().idx("y", 5),
+    G().idx("x", 5),                                             G().idx("x", 5).idx("y", 5),
+    G().idx("y", 3),                                             G().idx("x", 2).idx("z", 3),
+    G().idx("x", 3).idx("y", 5),                                 G().idx("y", 5).idx("z", 7),
+    G().map("x", {"a","b","c"}),                                 G().map("x", {"a","b","c"}),
+    G().map("x", {"a","b","c"}),                                 G().map("x", {"a","b"}),
+    G().map("x", {"a","b","c"}),                                 G().map("y", {"foo","bar","baz"}),
+    G().map("x", {"a","b","c"}),                                 G().map("x", {"a","b","c"}).map("y", {"foo","bar","baz"}),
+    G().map("x", {"a","b"}).map("y", {"foo","bar","baz"}),       G().map("x", {"a","b","c"}).map("y", {"foo","bar"}),
+    G().map("x", {"a","b"}).map("y", {"foo","bar","baz"}),       G().map("y", {"foo","bar"}).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {"foo", "bar"}),                    G().map("y", {"foo", "bar"}).idx("z", 7),
+    G().map("x", {"a","b","c"}).idx("y", 5),                     G().idx("y", 5).map("z", {"i","j","k","l"})
 };
 
 bool join_address(const TensorSpec::Address &a, const TensorSpec::Address &b, TensorSpec::Address &addr) {
@@ -113,15 +105,23 @@ TEST(GenericJoinTest, dense_join_plan_can_be_executed) {
 TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
     ASSERT_TRUE((join_layouts.size() % 2) == 0);
     for (size_t i = 0; i < join_layouts.size(); i += 2) {
-        TensorSpec lhs = spec(join_layouts[i], Div16(N()));
-        TensorSpec rhs = spec(join_layouts[i + 1], Div16(N()));
-        for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
-            SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
-            auto expect = ReferenceOperations::join(lhs, rhs, fun);
-            auto simple = perform_generic_join(lhs, rhs, fun, SimpleValueBuilderFactory::get());
-            auto fast = perform_generic_join(lhs, rhs, fun, FastValueBuilderFactory::get());
-            EXPECT_EQ(simple, expect);
-            EXPECT_EQ(fast, expect);
+        const auto &l = join_layouts[i];
+        const auto &r = join_layouts[i+1];
+        for (TensorSpec lhs : { l.cpy().cells_float().gen(),
+                                l.cpy().cells_double().gen() })
+        {
+            for (TensorSpec rhs : { r.cpy().cells_float().gen(),
+                                    r.cpy().cells_double().gen() })
+            {
+                for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
+                    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+                    auto expect = ReferenceOperations::join(lhs, rhs, fun);
+                    auto simple = perform_generic_join(lhs, rhs, fun, SimpleValueBuilderFactory::get());
+                    auto fast = perform_generic_join(lhs, rhs, fun, FastValueBuilderFactory::get());
+                    EXPECT_EQ(simple, expect);
+                    EXPECT_EQ(fast, expect);
+                }
+            }
         }
     }
 }

@@ -1,6 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -13,9 +18,6 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.metrics.MetricsPresentationConfig;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
 import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotPreprocessor;
 
 /**
@@ -43,6 +46,8 @@ import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotPreprocess
  * @author gjoranv
  */
 public class MetricsPacketsHandler extends AbstractRequestHandler {
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     static final String APPLICATION_KEY = "application";
     static final String TIMESTAMP_KEY   = "timestamp";
@@ -97,19 +102,19 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
             }
             String output = jsonToString(getStatusPacket()) + getAllMetricsPackets() + "\n";
             return output.getBytes(StandardCharsets.UTF_8);
-        } catch (JSONException e) {
+        } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
         }
     }
 
-    private byte[] getMetricsArray() throws JSONException {
-        JSONObject root = new JSONObject();
-        JSONArray jsonArray = new JSONArray();
-        jsonArray.put(getStatusPacket());
+    private byte[] getMetricsArray() throws JsonProcessingException {
+        ObjectNode root = jsonMapper.createObjectNode();
+        ArrayNode jsonArray = jsonMapper.createArrayNode();
+        jsonArray.add(getStatusPacket());
         getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis())
-                .forEach(jsonArray::put);
-        MetricGatherer.getAdditionalMetrics().forEach(jsonArray::put);
-        root.put("metrics", jsonArray);
+                .forEach(jsonArray::add);
+        MetricGatherer.getAdditionalMetrics().forEach(jsonArray::add);
+        root.set("metrics", jsonArray);
         return jsonToString(root)
                 .getBytes(StandardCharsets.UTF_8);
     }
@@ -117,8 +122,8 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     /**
      * Exactly one status packet is added to the response.
      */
-    private JSONObject getStatusPacket() throws JSONException {
-        JSONObject packet = new JSONObjectWithLegibleException();
+    private JsonNode getStatusPacket() {
+        ObjectNode packet = jsonMapper.createObjectNode();
         packet.put(APPLICATION_KEY, applicationName);
 
         StateMonitor.Status status = monitor.status();
@@ -127,14 +132,15 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         return packet;
     }
 
-    private String jsonToString(JSONObject jsonObject) throws JSONException {
-        return jsonObject.toString(4);
+    private static String jsonToString(JsonNode jsonObject) throws JsonProcessingException {
+        return jsonMapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(jsonObject);
     }
 
-    private String getAllMetricsPackets() throws JSONException {
+    private String getAllMetricsPackets() throws JsonProcessingException {
         StringBuilder ret = new StringBuilder();
-        List<JSONObject> metricsPackets = getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis());
-        for (JSONObject packet : metricsPackets) {
+        List<JsonNode> metricsPackets = getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis());
+        for (JsonNode packet : metricsPackets) {
             ret.append(PACKET_SEPARATOR); // For legibility and parsing in unit tests
             ret.append(jsonToString(packet));
         }
@@ -143,22 +149,23 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
     private MetricSnapshot getSnapshot() {
         if (snapshotPreprocessor == null) {
-            return monitor.snapshot();
+            // TODO: throw exception in ctor instead
+            return new MetricSnapshot(0L, 0L, TimeUnit.MILLISECONDS);
         } else {
             return snapshotPreprocessor.latestSnapshot();
         }
     }
 
-    private List<JSONObject> getPacketsForSnapshot(MetricSnapshot metricSnapshot, String application, long timestamp) throws JSONException {
+    private List<JsonNode> getPacketsForSnapshot(MetricSnapshot metricSnapshot, String application, long timestamp) {
         if (metricSnapshot == null) return Collections.emptyList();
 
-        List<JSONObject> packets = new ArrayList<>();
+        List<JsonNode> packets = new ArrayList<>();
 
         for (Map.Entry<MetricDimensions, MetricSet> snapshotEntry : metricSnapshot) {
             MetricDimensions metricDimensions = snapshotEntry.getKey();
             MetricSet metricSet = snapshotEntry.getValue();
 
-            JSONObjectWithLegibleException packet = new JSONObjectWithLegibleException();
+            ObjectNode packet = jsonMapper.createObjectNode();
             addMetaData(timestamp, application, packet);
             addDimensions(metricDimensions, packet);
             addMetrics(metricSet, packet);
@@ -167,25 +174,27 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         return packets;
     }
 
-    private void addMetaData(long timestamp, String application, JSONObjectWithLegibleException packet) {
+    private void addMetaData(long timestamp, String application, ObjectNode packet) {
         packet.put(APPLICATION_KEY, application);
         packet.put(TIMESTAMP_KEY, TimeUnit.MILLISECONDS.toSeconds(timestamp));
     }
 
-    private void addDimensions(MetricDimensions metricDimensions, JSONObjectWithLegibleException packet) throws JSONException {
+    private void addDimensions(MetricDimensions metricDimensions, ObjectNode packet) {
+        if (metricDimensions == null) return;
+
         Iterator<Map.Entry<String, String>> dimensionsIterator = metricDimensions.iterator();
         if (dimensionsIterator.hasNext()) {
-            JSONObject jsonDim = new JSONObjectWithLegibleException();
-            packet.put(DIMENSIONS_KEY, jsonDim);
+            ObjectNode jsonDim = jsonMapper.createObjectNode();
+            packet.set(DIMENSIONS_KEY, jsonDim);
             for (Map.Entry<String, String> dimensionEntry : metricDimensions) {
                 jsonDim.put(dimensionEntry.getKey(), dimensionEntry.getValue());
             }
         }
     }
 
-    private void addMetrics(MetricSet metricSet, JSONObjectWithLegibleException packet) throws JSONException {
-        JSONObjectWithLegibleException metrics = new JSONObjectWithLegibleException();
-        packet.put(METRICS_KEY, metrics);
+    private void addMetrics(MetricSet metricSet, ObjectNode packet) {
+        ObjectNode metrics = jsonMapper.createObjectNode();
+        packet.set(METRICS_KEY, metrics);
         for (Map.Entry<String, MetricValue> metric : metricSet) {
             String name = metric.getKey();
             MetricValue value = metric.getValue();
@@ -193,9 +202,9 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 metrics.put(name + ".count", ((CountMetric) value).getCount());
             } else if (value instanceof GaugeMetric) {
                 GaugeMetric gauge = (GaugeMetric) value;
-                metrics.put(name + ".average", gauge.getAverage())
-                        .put(name + ".last", gauge.getLast())
-                        .put(name + ".max", gauge.getMax());
+                metrics.put(name + ".average", sanitizeDouble(gauge.getAverage()))
+                        .put(name + ".last", sanitizeDouble(gauge.getLast()))
+                        .put(name + ".max", sanitizeDouble(gauge.getMax()));
                 if (gauge.getPercentiles().isPresent()) {
                     for (Tuple2<String, Double> prefixAndValue : gauge.getPercentiles().get()) {
                         metrics.put(name + "." + prefixAndValue.first + "percentile", prefixAndValue.second.doubleValue());

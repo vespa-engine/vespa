@@ -27,7 +27,7 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
         DocumentMetaData document = getNextDocument(stats, false);
         if (document.valid()) {
             Bucket metaBucket(document::Bucket(_bucketSpace, document.bucketId));
-            IDestructorCallback::SP context = _moveOpsLimiter->beginOperation();
+            IDestructorCallback::SP context = getLimiter().beginOperation();
             auto failed = _bucketExecutor.execute(metaBucket, makeBucketTask([this, meta=document, opsTracker=std::move(context)] (const Bucket & bucket, std::shared_ptr<IDestructorCallback> onDone) {
                 assert(bucket.getBucketId() == meta.bucketId);
                 using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;

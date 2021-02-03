@@ -75,6 +75,7 @@ public class HostInfoTest {
         assertEquals(resourceUsage.size(), 2);
         assertEquals(Optional.ofNullable(resourceUsage.get("memory")).map(ResourceUsage::getUsage).orElse(0.0), 0.85, 0.00001);
         assertEquals(Optional.ofNullable(resourceUsage.get("disk")).map(ResourceUsage::getUsage).orElse(0.0), 0.6, 0.00001);
+        assertEquals(Optional.ofNullable(resourceUsage.get("disk")).map(ResourceUsage::getName).orElse("missing"), "a cool disk");
         assertNull(resourceUsage.get("flux-capacitor"));
     }
 

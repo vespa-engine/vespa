@@ -20,6 +20,7 @@
 
 namespace proton {
 
+class AllocStrategy;
 struct DocumentDBTaggedMetrics;
 class DocumentMetaStoreInitializerResult;
 class FeedHandler;
@@ -85,14 +86,12 @@ public:
         const DocTypeName _docTypeName;
         const vespalib::string _subName;
         const vespalib::string _baseDir;
-        const search::GrowStrategy _attributeGrow;
-        const size_t _attributeGrowNumDocs;
         const uint32_t _subDbId;
         const SubDbType _subDbType;
 
         Config(const DocTypeName &docTypeName, const vespalib::string &subName,
-               const vespalib::string &baseDir, const search::GrowStrategy &attributeGrow,
-               size_t attributeGrowNumDocs, uint32_t subDbId, SubDbType subDbType);
+               const vespalib::string &baseDir,
+               uint32_t subDbId, SubDbType subDbType);
         ~Config();
     };
 
@@ -130,8 +129,6 @@ protected:
     BucketDBOwner::SP             _bucketDB;
     bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
     IDocumentMetaStoreContext::SP _metaStoreCtx;
-    const search::GrowStrategy    _attributeGrow;
-    const size_t                  _attributeGrowNumDocs;
     // The following two serial numbers reflect state at program startup
     // and are used by replay logic.
     SerialNum                     _flushedDocumentMetaStoreSerialNum;
@@ -164,6 +161,7 @@ protected:
 
     std::shared_ptr<initializer::InitializerTask>
     createSummaryManagerInitializer(const search::LogDocumentStore::Config & protonSummaryCfg,
+                                    const AllocStrategy& alloc_strategy,
                                     const search::TuneFileSummary &tuneFile,
                                     search::IBucketizer::SP bucketizer,
                                     std::shared_ptr<SummaryManager::SP> result) const;
@@ -171,7 +169,8 @@ protected:
     void setupSummaryManager(SummaryManager::SP summaryManager);
 
     std::shared_ptr<initializer::InitializerTask>
-    createDocumentMetaStoreInitializer(const search::TuneFileAttributes &tuneFile,
+    createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
+                                       const search::TuneFileAttributes &tuneFile,
                                        std::shared_ptr<std::shared_ptr<DocumentMetaStoreInitializerResult>> result) const;
 
     void setupDocumentMetaStore(std::shared_ptr<DocumentMetaStoreInitializerResult> dmsResult);
@@ -181,7 +180,8 @@ protected:
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
     vespalib::string getSubDbName() const;
 
-    void reconfigure(const search::LogDocumentStore::Config & protonConfig);
+    void reconfigure(const search::LogDocumentStore::Config & protonConfig,
+                     const AllocStrategy& alloc_strategy);
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
     ~StoreOnlyDocSubDB() override;

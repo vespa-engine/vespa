@@ -1,14 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/socket_utils.h>
 #include <vespa/vespalib/portal/reactor.h>
 #include <vespa/vespalib/util/gate.h>
-
-#include <thread>
-#include <chrono>
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -150,9 +147,9 @@ TEST_MT_FFFF("require that reactor token destruction waits for io event handling
     if (thread_id == 0) {
         f2.enter_callback.await();
         TEST_BARRIER(); // #1
-        EXPECT_TRUE(!f3.await(20));
+        EXPECT_TRUE(!f3.await(20ms));
         f2.exit_callback.countDown();
-        EXPECT_TRUE(f3.await(60000));
+        EXPECT_TRUE(f3.await(60s));
     } else {
         TEST_BARRIER(); // #1
         f2.token.reset();

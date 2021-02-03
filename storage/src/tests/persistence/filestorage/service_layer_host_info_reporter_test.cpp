@@ -102,6 +102,28 @@ TEST_F(ServiceLayerHostInfoReporterTest, request_almost_immediate_node_state_as_
     EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_es_name}, {0.2, attr_mv_name}), get_usage());
 }
 
+TEST_F(ServiceLayerHostInfoReporterTest,
+       first_valid_attribute_enum_store_sample_triggers_immediate_node_state_when_below_slack_diff)
+{
+    // TODO: Assert this is below slack diff when that becomes configurable.
+    constexpr double usage_below_slack_diff = 0.00001;
+    notify(0.0, 0.0, {usage_below_slack_diff, attr_es_name}, {});
+    EXPECT_EQ(1, requested_almost_immediate_replies());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_slack_diff, attr_es_name}, {}), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_slack_diff, attr_es_name}, {}), get_usage());
+}
+
+TEST_F(ServiceLayerHostInfoReporterTest,
+       first_valid_attribute_multi_value_sample_triggers_immediate_node_state_when_below_slack_diff)
+{
+    // TODO: Assert this is below slack diff when that becomes configurable.
+    constexpr double usage_below_slack_diff = 0.00001;
+    notify(0.0, 0.0, {}, {usage_below_slack_diff, attr_mv_name});
+    EXPECT_EQ(1, requested_almost_immediate_replies());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {}, {usage_below_slack_diff, attr_mv_name}), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {}, {usage_below_slack_diff, attr_mv_name}), get_usage());
+}
+
 TEST_F(ServiceLayerHostInfoReporterTest, json_report_generated)
 {
     EXPECT_EQ(ResourceUsage(0.0, 0.0), get_slime_usage());

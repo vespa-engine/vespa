@@ -6,9 +6,14 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.ResourceUsage;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,6 +55,12 @@ public class ClusterStateBundleTest {
     private static ClusterStateBundle createTestBundleWithFeedBlock(String description) {
         return createTestBundleBuilder(false)
                 .feedBlock(ClusterStateBundle.FeedBlock.blockedWithDescription(description))
+                .deriveAndBuild();
+    }
+
+    private static ClusterStateBundle createTestBundleWithFeedBlock(String description, Set<NodeResourceExhaustion> concreteExhaustions) {
+        return createTestBundleBuilder(false)
+                .feedBlock(ClusterStateBundle.FeedBlock.blockedWith(description, concreteExhaustions))
                 .deriveAndBuild();
     }
 
@@ -107,6 +118,29 @@ public class ClusterStateBundleTest {
         assertTrue(blockingBundle.similarTo(blockingBundle));
         // We currently consider different descriptions with same blocking status to be similar
         assertTrue(blockingBundle.similarTo(blockingBundleWithOtherDesc));
+    }
+
+    static NodeResourceExhaustion createDummyExhaustion(String type) {
+        return new NodeResourceExhaustion(new Node(NodeType.STORAGE, 1), type, new ResourceUsage(0.8, null), 0.7, "foo");
+    }
+
+    static Set<NodeResourceExhaustion> exhaustionsOf(String... types) {
+        return Arrays.stream(types)
+                .map(t -> createDummyExhaustion(t))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    @Test
+    public void similarity_test_considers_cluster_feed_block_concrete_exhaustion_set() {
+        var blockingBundleNoSet = createTestBundleWithFeedBlock("foo");
+        var blockingBundleWithSet = createTestBundleWithFeedBlock("bar", exhaustionsOf("beer", "wine"));
+        var blockingBundleWithOtherSet = createTestBundleWithFeedBlock("bar", exhaustionsOf("beer", "soda"));
+
+        assertTrue(blockingBundleNoSet.similarTo(blockingBundleNoSet));
+        assertTrue(blockingBundleWithSet.similarTo(blockingBundleWithSet));
+        assertFalse(blockingBundleWithSet.similarTo(blockingBundleWithOtherSet));
+        assertFalse(blockingBundleNoSet.similarTo(blockingBundleWithSet));
+        assertFalse(blockingBundleNoSet.similarTo(blockingBundleWithOtherSet));
     }
 
     @Test

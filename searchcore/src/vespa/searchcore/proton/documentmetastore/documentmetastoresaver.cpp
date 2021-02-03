@@ -83,7 +83,7 @@ DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
 }
 
 
-DocumentMetaStoreSaver::~DocumentMetaStoreSaver() { }
+DocumentMetaStoreSaver::~DocumentMetaStoreSaver() = default;
 
 
 bool

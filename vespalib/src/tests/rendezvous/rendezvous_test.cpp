@@ -149,13 +149,13 @@ TEST_MT_FFFF("require that mingle is not called until all threads are present", 
     for (bool ext_id: {false, true}) {
         CountDownLatch &latch = ext_id ? f4 : f2;
         if (thread_id == 0) {
-            EXPECT_FALSE(latch.await(20));
+            EXPECT_FALSE(latch.await(20ms));
             if (ext_id) {
                 EXPECT_EQUAL(3u, f3.rendezvous(thread_id, thread_id).first);
             } else {
                 EXPECT_EQUAL(3u, f1.rendezvous(thread_id).first);
             }
-            EXPECT_TRUE(latch.await(25000));
+            EXPECT_TRUE(latch.await(25s));
         } else {
             if (ext_id) {
                 EXPECT_EQUAL(3u, f3.rendezvous(thread_id, thread_id).first);
@@ -183,7 +183,7 @@ TEST_MT_FF("require that rendezvous can be run with additional threads", 100, Ad
         EXPECT_EQUAL(4950u, f1.rendezvous(res.first).first);
         f2.countDown();
     }
-    EXPECT_TRUE(f2.await(25000));
+    EXPECT_TRUE(f2.await(25s));
 }
 
 TEST_MT_FF("require that mingle can modify its own copy of input values", 10, Modify<false>(num_threads), Modify<true>(num_threads)) {

@@ -18,14 +18,16 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/metrics/updatehook.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
+#include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
-#include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
@@ -36,7 +38,6 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/random.h>
-#include <vespa/metrics/updatehook.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -303,7 +304,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::chdir(protonConfig.basedir);
     _tls->start();
     _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
-                                                 strategy, flush.maxconcurrent, flush.idleinterval*1000);
+                                                 strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval));
     _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
 
     char tmp[1024];
@@ -630,6 +631,8 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         }
         // TODO: Fix race with new cluster state setting.
         _persistenceEngine->putHandler(persistenceWGuard, bucketSpace, docTypeName, persistenceHandler);
+        ret->set_attribute_usage_listener(
+                _persistenceEngine->get_resource_usage_tracker().make_attribute_usage_listener(docTypeName.getName()));
     }
     auto searchHandler = std::make_shared<SearchHandlerProxy>(ret);
     _summaryEngine->putSearchHandler(docTypeName, searchHandler);

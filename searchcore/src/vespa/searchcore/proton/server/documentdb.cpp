@@ -6,16 +6,17 @@
 #include "document_subdb_collection_explorer.h"
 #include "documentdb.h"
 #include "documentdbconfigscout.h"
+#include "feedhandler.h"
 #include "idocumentdbowner.h"
 #include "idocumentsubdb.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
-#include "feedhandler.h"
-#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/metrics/updatehook.h>
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
@@ -26,6 +27,7 @@
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -34,7 +36,6 @@
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/metrics/updatehook.h>
 
 #include <vespa/log/log.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
@@ -69,37 +70,9 @@ namespace proton {
 namespace {
 constexpr uint32_t indexing_thread_stack_size = 128 * 1024;
 
-using Allocation = ProtonConfig::Documentdb::Allocation;
-GrowStrategy
-makeGrowStrategy(uint32_t docsInitialCapacity, const Allocation &allocCfg)
-{
-    return GrowStrategy(docsInitialCapacity, allocCfg.growfactor, allocCfg.growbias, allocCfg.multivaluegrowfactor);
-}
-
-DocumentSubDBCollection::Config
-makeSubDBConfig(const ProtonConfig::Distribution & distCfg, const Allocation & allocCfg, size_t numSearcherThreads) {
-    size_t initialNumDocs(allocCfg.initialnumdocs);
-    GrowStrategy searchableGrowth = makeGrowStrategy(initialNumDocs * distCfg.searchablecopies, allocCfg);
-    GrowStrategy removedGrowth = makeGrowStrategy(std::max(1024ul, initialNumDocs/100), allocCfg);
-    GrowStrategy notReadyGrowth = makeGrowStrategy(initialNumDocs * (distCfg.redundancy - distCfg.searchablecopies), allocCfg);
-    return DocumentSubDBCollection::Config(searchableGrowth, notReadyGrowth, removedGrowth, allocCfg.amortizecount, numSearcherThreads);
-}
-
 index::IndexConfig
 makeIndexConfig(const ProtonConfig::Index & cfg) {
     return index::IndexConfig(WarmupConfig(vespalib::from_s(cfg.warmup.time), cfg.warmup.unpack), cfg.maxflushed, cfg.cache.size);
-}
-
-ProtonConfig::Documentdb _G_defaultProtonDocumentDBConfig;
-
-const ProtonConfig::Documentdb *
-findDocumentDB(const ProtonConfig::DocumentdbVector & documentDBs, const vespalib::string & docType) {
-    for (const auto & dbCfg : documentDBs) {
-        if (dbCfg.inputdoctypename == docType) {
-            return & dbCfg;
-        }
-    }
-    return &_G_defaultProtonDocumentDBConfig;
 }
 
 class MetricsUpdateHook : public metrics::UpdateHook {
@@ -182,9 +155,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
-              makeSubDBConfig(protonCfg.distribution,
-                              findDocumentDB(protonCfg.documentdb, docTypeName.getName())->allocation,
-                              protonCfg.numsearcherthreads),
+              DocumentSubDBCollection::Config(protonCfg.numsearcherthreads),
               hwInfo),
       _maintenanceController(_writeService.master(), sharedExecutor, _docTypeName),
       _lidSpaceCompactionHandlers(),
@@ -1111,6 +1082,12 @@ std::shared_ptr<const ITransientMemoryUsageProvider>
 DocumentDB::transient_memory_usage_provider()
 {
     return _transient_memory_usage_provider;
+}
+
+void
+DocumentDB::set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener)
+{
+    _writeFilter.set_listener(std::move(listener));
 }
 
 } // namespace proton

@@ -72,8 +72,7 @@ using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 typedef BucketId::List BucketIdVector;
 typedef std::set<BucketId> BucketIdSet;
 
-constexpr int TIMEOUT_MS = 60000;
-constexpr vespalib::duration TIMEOUT_SEC = 60s;
+constexpr vespalib::duration TIMEOUT = 60s;
 
 namespace {
 
@@ -947,14 +946,14 @@ TEST_F("require that bucket move controller is active", MaintenanceControllerFix
     EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
     EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
     f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(0u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(0u, f._ready.getDocumentCount());
     EXPECT_EQUAL(10u, f._notReady.getNumUsedLids());
     EXPECT_EQUAL(10u, f._notReady.getDocumentCount());
     f._calc->addReady(bucketId1);
     f.notifyClusterStateChanged();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(3u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(3u, f._ready.getDocumentCount());
     EXPECT_EQUAL(7u, f._notReady.getNumUsedLids());
@@ -963,13 +962,13 @@ TEST_F("require that bucket move controller is active", MaintenanceControllerFix
     f._calc->addReady(bucketId2);
     f._calc->addReady(bucketId4);
     f.notifyClusterStateChanged();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(6u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(6u, f._ready.getDocumentCount());
     EXPECT_EQUAL(4u, f._notReady.getNumUsedLids());
     EXPECT_EQUAL(4u, f._notReady.getDocumentCount());
     frozen2.reset();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(8u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(8u, f._ready.getDocumentCount());
     EXPECT_EQUAL(2u, f._notReady.getNumUsedLids());
@@ -997,14 +996,14 @@ TEST_F("require that document pruner is active", MaintenanceControllerFixture)
     EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
     EXPECT_EQUAL(10u, f._removed.getDocumentCount());
     f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
     EXPECT_EQUAL(10u, f._removed.getDocumentCount());
     MyFrozenBucket::UP frozen3(new MyFrozenBucket(f._mc, bucketId3));
     f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(200ms, 900s));
     for (uint32_t i = 0; i < 6; ++i) {
         std::this_thread::sleep_for(100ms);
-        ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+        ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
         if (f._removed.getNumUsedLids() != 10u)
             break;
     }
@@ -1013,7 +1012,7 @@ TEST_F("require that document pruner is active", MaintenanceControllerFixture)
     frozen3.reset();
     for (uint32_t i = 0; i < 600; ++i) {
         std::this_thread::sleep_for(100ms);
-        ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+        ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
         if (f._removed.getNumUsedLids() != 10u)
             break;
     }
@@ -1075,7 +1074,7 @@ TEST_F("require that active bucket is not moved until de-activated", Maintenance
     EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
 
     f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(5u, f._ready.getDocumentCount());
     EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
@@ -1084,7 +1083,7 @@ TEST_F("require that active bucket is not moved until de-activated", Maintenance
     // de-activate bucket 1
     f._ready.setBucketState(readyDocs.getBucket(1), false);
     f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::NOT_ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(2u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(2u, f._ready.getDocumentCount());
     EXPECT_EQUAL(8u, f._notReady.getNumUsedLids());
@@ -1093,7 +1092,7 @@ TEST_F("require that active bucket is not moved until de-activated", Maintenance
     // re-activate bucket 1
     f._ready.setBucketState(readyDocs.getBucket(1), true);
     f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(5u, f._ready.getDocumentCount());
     EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
@@ -1102,7 +1101,7 @@ TEST_F("require that active bucket is not moved until de-activated", Maintenance
     // de-activate bucket 1
     f._ready.setBucketState(readyDocs.getBucket(1), false);
     f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::NOT_ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(2u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(2u, f._ready.getDocumentCount());
     EXPECT_EQUAL(8u, f._notReady.getNumUsedLids());
@@ -1111,7 +1110,7 @@ TEST_F("require that active bucket is not moved until de-activated", Maintenance
     // re-activate bucket 1
     f._ready.setBucketState(readyDocs.getBucket(1), true);
     f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
+    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
     EXPECT_EQUAL(5u, f._ready.getDocumentCount());
     EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
@@ -1125,19 +1124,19 @@ TEST_F("require that a simple maintenance job is executed", MaintenanceControlle
     f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
-    bool done = myJob._latch.await(TIMEOUT_MS);
+    bool done = myJob._latch.await(TIMEOUT);
     EXPECT_TRUE(done);
     EXPECT_EQUAL(0u, myJob._latch.getCount());
 }
 
 TEST_F("require that a split maintenance job is executed", MaintenanceControllerFixture)
 {
-    auto job = std::make_unique<MySplitJob>(200ms, TIMEOUT_SEC * 2, 3);
+    auto job = std::make_unique<MySplitJob>(200ms, TIMEOUT * 2, 3);
     MySplitJob &myJob = *job;
     f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
-    bool done = myJob._latch.await(TIMEOUT_MS);
+    bool done = myJob._latch.await(TIMEOUT);
     EXPECT_TRUE(done);
     EXPECT_EQUAL(0u, myJob._latch.getCount());
 }
@@ -1145,9 +1144,9 @@ TEST_F("require that a split maintenance job is executed", MaintenanceController
 TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
         MaintenanceControllerFixture)
 {
-    auto job1 = std::make_unique<MySimpleJob>(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 1);
+    auto job1 = std::make_unique<MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 1);
     MySimpleJob &myJob1 = *job1;
-    auto job2 = std::make_unique< MySimpleJob>(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 0);
+    auto job2 = std::make_unique< MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 0);
     MySimpleJob &myJob2 = *job2;
     f._mc.registerJobInMasterThread(std::move(job1));
     f._mc.registerJobInMasterThread(std::move(job2));
@@ -1169,7 +1168,7 @@ TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
     f._executor.sync();
     EXPECT_FALSE(myJob1.isBlocked());
     EXPECT_FALSE(myJob2.isBlocked());
-    bool done1 = myJob1._latch.await(TIMEOUT_MS);
+    bool done1 = myJob1._latch.await(TIMEOUT);
     EXPECT_TRUE(done1);
     std::this_thread::sleep_for(2s);
     EXPECT_EQUAL(0u, myJob2._runCnt);
@@ -1190,14 +1189,14 @@ TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixtur
 TEST_F("require that maintenance controller state list jobs", MaintenanceControllerFixture)
 {
     {
-        IMaintenanceJob::UP job1(new MySimpleJob(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 0));
-        IMaintenanceJob::UP job2(new MyLongRunningJob(200ms, 200ms));
+        auto job1 = std::make_unique<MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 0);
+        auto job2 = std::make_unique<MyLongRunningJob>(200ms, 200ms);
         auto &longRunningJob = dynamic_cast<MyLongRunningJob &>(*job2);
         f._mc.registerJobInMasterThread(std::move(job1));
         f._mc.registerJobInMasterThread(std::move(job2));
         f._injectDefaultJobs = false;
         f.startMaintenance();
-        longRunningJob._firstRun.await(TIMEOUT_MS);
+        longRunningJob._firstRun.await(TIMEOUT);
     }
 
     MaintenanceControllerExplorer explorer(f._mc.getJobList());

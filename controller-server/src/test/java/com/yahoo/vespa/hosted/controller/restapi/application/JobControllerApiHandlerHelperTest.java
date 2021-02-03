@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -12,8 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -180,12 +179,10 @@ public class JobControllerApiHandlerHelperTest {
                        "jobs-direct-deployment.json");
     }
 
-    private void compare(HttpResponse response, String expected) throws JSONException, IOException {
+    private void compare(HttpResponse response, String expected) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        JSONObject actualJSON = new JSONObject(new String(baos.toByteArray()));
-        JSONObject expectedJSON = new JSONObject(expected);
-        assertEquals(expectedJSON.toString(), actualJSON.toString());
+        JsonTestHelper.assertJsonEquals(expected, baos.toString());
     }
 
     private void assertResponse(HttpResponse response, String fileName) {

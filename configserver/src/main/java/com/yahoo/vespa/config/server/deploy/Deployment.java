@@ -81,8 +81,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Tenant tenant, DeployLogger logger,
-                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap, boolean waitForResourcesInPrepare) {
-        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false, waitForResourcesInPrepare);
+                                        Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
+        Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, isBootstrap, !validate, false, true);
         return new Deployment(session, applicationRepository, params, provisioner, tenant, logger, clock, true, false);
     }
 

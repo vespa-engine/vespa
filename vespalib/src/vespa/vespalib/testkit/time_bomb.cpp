@@ -10,14 +10,14 @@ namespace {
 
 void bomb(Gate &gate, size_t seconds) {    
     if (seconds > 5) {
-        if (gate.await((seconds - 5) * 1000)) {
+        if (gate.await(from_s(seconds - 5))) {
             return;
         }
     }
     size_t countdown = std::min(seconds, size_t(5));
     while (countdown > 0) {
         fprintf(stderr, "...%zu...\n", countdown--);
-        if (gate.await(1000)) {
+        if (gate.await(1s)) {
             return;
         }
     }

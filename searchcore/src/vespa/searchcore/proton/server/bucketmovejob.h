@@ -6,22 +6,21 @@
 #include "documentbucketmover.h"
 #include "i_disk_mem_usage_listener.h"
 #include "ibucketfreezelistener.h"
-#include "ibucketmodifiedhandler.h"
-#include "ibucketstatecalculator.h"
 #include "ibucketstatechangedhandler.h"
 #include "iclusterstatechangedhandler.h"
 #include "ifrozenbuckethandler.h"
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <set>
 
-namespace proton
-{
+namespace proton {
 
 class BlockableMaintenanceJobConfig;
 class IBucketStateChangedNotifier;
 class IClusterStateChangedNotifier;
 class IDiskMemUsageNotifier;
+class IBucketModifiedHandler;
+
 namespace bucketdb { class IBucketCreateNotifier; }
 
 /**
@@ -35,65 +34,24 @@ class BucketMoveJob : public BlockableMaintenanceJob,
                       public IBucketStateChangedHandler,
                       public IDiskMemUsageListener
 {
-public:
-    struct ScanPosition
-    {
-        document::BucketId _lastBucket;
-
-        ScanPosition() : _lastBucket() { }
-        ScanPosition(document::BucketId lastBucket) : _lastBucket(lastBucket) { }
-        bool validBucket() const { return _lastBucket.isSet(); }
-    };
-
-    typedef BucketDB::ConstMapIterator BucketIterator;
-
-    class ScanIterator
-    {
-    private:
-        BucketDBOwner::Guard _db;
-        BucketIterator       _itr;
-        BucketIterator       _end;
-
-    public:
-        ScanIterator(BucketDBOwner::Guard db,
-                     uint32_t pass,
-                     document::BucketId lastBucket,
-                     document::BucketId endBucket);
-
-        ScanIterator(BucketDBOwner::Guard db, document::BucketId bucket);
-
-        ScanIterator(const ScanIterator &) = delete;
-        ScanIterator(ScanIterator &&rhs);
-        ScanIterator &operator=(const ScanIterator &) = delete;
-        ScanIterator &operator=(ScanIterator &&rhs) = delete;
-
-        bool                   valid() const { return _itr != _end; }
-        bool                isActive() const { return _itr->second.isActive(); }
-        document::BucketId getBucket() const { return _itr->first; }
-        bool      hasReadyBucketDocs() const { return _itr->second.getReadyCount() != 0; }
-        bool   hasNotReadyBucketDocs() const { return _itr->second.getNotReadyCount() != 0; }
-
-        ScanIterator & operator++() {
-            ++_itr;
-            return *this;
-        }
-    };
-
 private:
-    typedef std::pair<size_t, bool> ScanResult;
-    IBucketStateCalculator::SP         _calc;
-    IDocumentMoveHandler              &_moveHandler;
-    IBucketModifiedHandler            &_modifiedHandler;
-    const MaintenanceDocumentSubDB    &_ready;
-    const MaintenanceDocumentSubDB    &_notReady;
-    DocumentBucketMover                _mover;
-    bool                               _doneScan;
-    ScanPosition                       _scanPos;
-    uint32_t                           _scanPass;
-    ScanPosition                       _endPos;
-    document::BucketSpace              _bucketSpace;
+    using ScanPosition = bucketdb::ScanPosition;
+    using ScanIterator = bucketdb::ScanIterator;
+    using ScanPass = ScanIterator::Pass;
+    using ScanResult = std::pair<size_t, bool>;
+    std::shared_ptr<IBucketStateCalculator>   _calc;
+    IDocumentMoveHandler                     &_moveHandler;
+    IBucketModifiedHandler                   &_modifiedHandler;
+    const MaintenanceDocumentSubDB           &_ready;
+    const MaintenanceDocumentSubDB           &_notReady;
+    DocumentBucketMover                       _mover;
+    bool                                      _doneScan;
+    ScanPosition                              _scanPos;
+    ScanPass                                  _scanPass;
+    ScanPosition                              _endPos;
+    document::BucketSpace                    _bucketSpace;
 
-    typedef std::set<document::BucketId>    DelayedBucketSet;
+    using DelayedBucketSet = std::set<document::BucketId>;
 
     // Delayed buckets that are no longer frozen or active that can be considered for moving.
     DelayedBucketSet                   _delayedBuckets;
@@ -185,4 +143,3 @@ public:
 };
 
 } // namespace proton
-

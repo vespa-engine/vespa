@@ -15,13 +15,16 @@ public class NodeResourceExhaustion {
     public final String resourceType;
     public final ResourceUsage resourceUsage;
     public final double limit;
+    public final String rpcAddress;
 
     public NodeResourceExhaustion(Node node, String resourceType,
-                                  ResourceUsage resourceUsage, double limit) {
+                                  ResourceUsage resourceUsage, double limit,
+                                  String rpcAddress) {
         this.node = node;
         this.resourceType = resourceType;
         this.resourceUsage = resourceUsage;
         this.limit = limit;
+        this.rpcAddress = rpcAddress;
     }
 
     @Override
@@ -32,11 +35,12 @@ public class NodeResourceExhaustion {
         return Double.compare(that.limit, limit) == 0 &&
                 Objects.equals(node, that.node) &&
                 Objects.equals(resourceType, that.resourceType) &&
-                Objects.equals(resourceUsage, that.resourceUsage);
+                Objects.equals(resourceUsage, that.resourceUsage) &&
+                Objects.equals(rpcAddress, that.rpcAddress);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(node, resourceType, resourceUsage, limit);
+        return Objects.hash(node, resourceType, resourceUsage, limit, rpcAddress);
     }
 }
