@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
  * @author ogronnesby
  */
 public class QuotaValidator extends Validator {
+    private static final Logger log = Logger.getLogger(QuotaValidator.class.getName());
+
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         var quota = deployState.getProperties().quota();
@@ -33,9 +36,13 @@ public class QuotaValidator extends Validator {
                 .mapToDouble(clusterCapacity -> clusterCapacity.nodeResources().cost() * clusterCapacity.nodes())
                 .sum();
 
-        if (budget.doubleValue() < spend) {
-            throwBudgetExceeded(spend, budget, systemName);
+        if (Math.abs(spend) < 0.01) {
+            log.warning("Deploying application " + model.applicationPackage().getApplicationId() + " with zero budget use.  This is suspicious, but not blocked");
+            return;
         }
+
+        throwIfBudgetNegative(spend, budget, systemName);
+        throwIfBudgetExceeded(spend, budget, systemName);
     }
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */
@@ -57,8 +64,20 @@ public class QuotaValidator extends Validator {
         }
     }
 
-    private void throwBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
-        var message = String.format(Locale.US, "Hourly spend for maximum specified resources ($%.2f) exceeds budget from quota ($%.2f)!", spend, budget);
+    private void throwIfBudgetNegative(double spend, BigDecimal budget, SystemName systemName) {
+        if (budget.doubleValue() < 0) {
+            throwBudgetException("Please free up some quota! This deployment's quota use is ($%.2f) and reserved quota is below zero! ($%.2f)", spend, budget, systemName);
+        }
+    }
+
+    private void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
+        if (budget.doubleValue() < spend) {
+            throwBudgetException("Please free up some quota! This deployment's quota use ($%.2f) exceeds reserved quota ($%.2f)!", spend, budget, systemName);
+        }
+    }
+
+    private void throwBudgetException(String formatMessage, double spend, BigDecimal budget, SystemName systemName) {
+        var message = String.format(Locale.US, formatMessage, spend, budget);
         var messageWithSystem = (systemName.equals(SystemName.Public) ? "" : systemName.value() + ": ") + message;
         throw new IllegalArgumentException(messageWithSystem);
     }
