@@ -25,7 +25,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
     private final ContainerCluster<?> cluster;
     private final boolean isHostedVespa;
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
-    private final boolean enableJdiscConnectionLog;
+    private volatile boolean enableJdiscConnectionLog;
 
     public JettyHttpServer(ComponentId id, ContainerCluster<?> cluster, ModelContext.FeatureFlags featureFlags, boolean isHostedVespa) {
         super(new ComponentModel(
@@ -53,6 +53,8 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         removeChild(connectorFactory);
         connectorFactories.remove(connectorFactory);
     }
+
+    public void enableConnectionLog(boolean enabled) { this.enableJdiscConnectionLog = enabled; }
 
     public List<ConnectorFactory> getConnectorFactories() {
         return Collections.unmodifiableList(connectorFactories);
