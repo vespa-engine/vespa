@@ -440,7 +440,25 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void test_node_limits_only() {
+    public void test_node_limits_only_container() {
+        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .flavors(List.of(hostFlavor))
+                                                                    .build();
+        tester.makeReadyHosts(4, hostFlavor.resources()).activateTenantHosts();
+
+        ApplicationId app1 = ProvisioningTester.applicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, NodeResources.unspecified()),
+                                                      new ClusterResources(4, 1, NodeResources.unspecified())));
+        tester.assertNodes("Initial allocation at min with default resources",
+                           2, 1, 1.5, 8, 50, 0.3,
+                           app1, cluster1);
+    }
+
+    @Test
+    public void test_node_limits_only_content() {
         Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(hostFlavor))
@@ -452,8 +470,8 @@ public class ProvisioningTest {
 
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, NodeResources.unspecified()),
                                                       new ClusterResources(4, 1, NodeResources.unspecified())));
-        tester.assertNodes("Initial allocation at min with default resources",
-                           2, 1, 1.5, 8, 50, 0.3,
+        tester.assertNodes("Initial allocation at (allowable) min with default resources",
+                           3, 1, 1.5, 8, 50, 0.3,
                            app1, cluster1);
     }
 

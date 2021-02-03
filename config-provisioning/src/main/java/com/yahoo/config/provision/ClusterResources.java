@@ -31,6 +31,7 @@ public class ClusterResources {
     public NodeResources nodeResources() { return nodeResources; }
 
     public ClusterResources with(NodeResources resources) { return new ClusterResources(nodes, groups, resources); }
+    public ClusterResources withNodes(int nodes) { return new ClusterResources(nodes, groups, nodeResources); }
     public ClusterResources withGroups(int groups) { return new ClusterResources(nodes, groups, nodeResources); }
 
     /** Returns true if this is smaller than the given resources in any dimension */
