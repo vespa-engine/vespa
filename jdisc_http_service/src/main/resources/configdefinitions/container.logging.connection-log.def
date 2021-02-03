@@ -4,4 +4,4 @@ namespace=container.logging
 cluster             string
 
 # Max queue length of file handler
-queueSize int default=2048
+queueSize int default=10000

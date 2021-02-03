@@ -66,7 +66,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         if (cluster == null) return OptionalInt.empty();
         double vcpu = cluster.vcpu().orElse(0);
         if (vcpu <= 0) return OptionalInt.empty();
-        return OptionalInt.of((int) Math.max(512, Math.ceil(vcpu * 64.0)));
+        return OptionalInt.of((int) Math.max(4096, Math.ceil(vcpu * 256.0)));
     }
 
     private static String accessLogClass(AccessLogType logType) {
