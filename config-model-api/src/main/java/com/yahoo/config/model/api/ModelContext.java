@@ -84,6 +84,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default boolean enableJdiscConnectionLog() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle", "baldersheim"}) default boolean enableZstdCompressionAccessLog() { return false; }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default double maxDeadBytesRatio() { return 0.2; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

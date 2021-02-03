@@ -164,6 +164,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableZstdCompressionAccessLog;
         private final boolean useBucketExecutorForLidSpaceCompact;
         private final boolean enableFeedBlockInDistributor;
+        private final double maxDeadBytesRatio;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.reindexerWindowSizeIncrement = flagValue(source, appId, Flags.REINDEXER_WINDOW_SIZE_INCREMENT);
@@ -183,6 +184,7 @@ public class ModelContextImpl implements ModelContext {
             this.enableZstdCompressionAccessLog = flagValue(source, appId, Flags.ENABLE_ZSTD_COMPRESSION_ACCESS_LOG);
             this.useBucketExecutorForLidSpaceCompact = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
+            this.maxDeadBytesRatio = flagValue(source, appId, Flags.MAX_DEAD_BYTES_RATIO);
         }
 
         @Override public double reindexerWindowSizeIncrement() { return reindexerWindowSizeIncrement; }
@@ -202,6 +204,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableZstdCompressionAccessLog() { return enableZstdCompressionAccessLog; }
         @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
+        @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

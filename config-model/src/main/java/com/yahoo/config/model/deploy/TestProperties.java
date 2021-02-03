@@ -52,6 +52,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean reconfigurableZookeeperServer = false;
     private boolean useBucketExecutorForLidSpaceCompact;
     private boolean enableFeedBlockInDistributor = false;
+    private double maxDeadBytesRatio = 0.2;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -86,6 +87,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
     @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
+    @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -192,6 +194,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties enableFeedBlockInDistributor(boolean enabled) {
         enableFeedBlockInDistributor = enabled;
+        return this;
+    }
+
+    public TestProperties maxDeadBytesRatio(double ratio) {
+        maxDeadBytesRatio = ratio;
         return this;
     }
 
