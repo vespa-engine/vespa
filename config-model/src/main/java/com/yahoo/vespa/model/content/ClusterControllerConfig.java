@@ -19,12 +19,14 @@ import org.w3c.dom.Element;
 public class ClusterControllerConfig extends AbstractConfigProducer<ClusterControllerConfig> implements FleetcontrollerConfig.Producer {
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ClusterControllerConfig> {
-        String clusterName;
-        ModelElement clusterElement;
+        private final String clusterName;
+        private final ModelElement clusterElement;
+        private final ResourceLimits resourceLimits;
 
-        public Builder(String clusterName, ModelElement clusterElement) {
+        public Builder(String clusterName, ModelElement clusterElement, ResourceLimits resourceLimits) {
             this.clusterName = clusterName;
             this.clusterElement = clusterElement;
+            this.resourceLimits = resourceLimits;
         }
 
         @Override
@@ -51,27 +53,29 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
                         tuning.childAsDouble("min-storage-up-ratio"),
                         bucketSplittingMinimumBits,
                         minNodeRatioPerGroup,
-                        enableClusterFeedBlock);
+                        enableClusterFeedBlock,
+                        resourceLimits);
             } else {
                 return new ClusterControllerConfig(ancestor, clusterName,
                         null, null, null, null, null, null,
                         bucketSplittingMinimumBits,
                         minNodeRatioPerGroup,
-                        enableClusterFeedBlock);
+                        enableClusterFeedBlock, resourceLimits);
             }
         }
     }
 
-    String clusterName;
-    Duration initProgressTime;
-    Duration transitionTime;
-    Long maxPrematureCrashes;
-    Duration stableStateTimePeriod;
-    Double minDistributorUpRatio;
-    Double minStorageUpRatio;
-    Integer minSplitBits;
-    private Double minNodeRatioPerGroup;
-    private boolean enableClusterFeedBlock = false;
+    private final String clusterName;
+    private final Duration initProgressTime;
+    private final Duration transitionTime;
+    private final Long maxPrematureCrashes;
+    private final Duration stableStateTimePeriod;
+    private final Double minDistributorUpRatio;
+    private final Double minStorageUpRatio;
+    private final Integer minSplitBits;
+    private final Double minNodeRatioPerGroup;
+    private final boolean enableClusterFeedBlock;
+    private final ResourceLimits resourceLimits;
 
     // TODO refactor; too many args
     private ClusterControllerConfig(AbstractConfigProducer parent,
@@ -84,7 +88,8 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
                                     Double minStorageUpRatio,
                                     Integer minSplitBits,
                                     Double minNodeRatioPerGroup,
-                                    boolean enableClusterFeedBlock) {
+                                    boolean enableClusterFeedBlock,
+                                    ResourceLimits resourceLimits) {
         super(parent, "fleetcontroller");
 
         this.clusterName = clusterName;
@@ -97,6 +102,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
         this.minSplitBits = minSplitBits;
         this.minNodeRatioPerGroup = minNodeRatioPerGroup;
         this.enableClusterFeedBlock = enableClusterFeedBlock;
+        this.resourceLimits = resourceLimits;
     }
 
     @Override
@@ -139,18 +145,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
             builder.min_node_ratio_per_group(minNodeRatioPerGroup);
         }
         builder.enable_cluster_feed_block(enableClusterFeedBlock);
-        setDefaultClusterFeedBlockLimits(builder);
+        resourceLimits.getConfig(builder);
     }
 
-    private static void setDefaultClusterFeedBlockLimits(FleetcontrollerConfig.Builder builder) {
-        // TODO: Override these based on resource-limits in services.xml (if they are specified).
-        // TODO: Choose other defaults when this is default enabled.
-        // Note: The resource categories must match the ones used in host info reporting
-        // between content nodes and cluster controller:
-        // storage/src/vespa/storage/persistence/filestorage/service_layer_host_info_reporter.cpp
-        builder.cluster_feed_block_limit.put("memory", 0.79);
-        builder.cluster_feed_block_limit.put("disk", 0.79);
-        builder.cluster_feed_block_limit.put("attribute-enum-store", 0.89);
-        builder.cluster_feed_block_limit.put("attribute-multi-value", 0.89);
-    }
 }

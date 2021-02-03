@@ -44,14 +44,28 @@ public class ClusterStateBundle {
     public static class FeedBlock {
         private final boolean blockFeedInCluster;
         private final String description;
+        private final Set<NodeResourceExhaustion> concreteExhaustions;
 
         public FeedBlock(boolean blockFeedInCluster, String description) {
             this.blockFeedInCluster = blockFeedInCluster;
             this.description = description;
+            this.concreteExhaustions = Collections.emptySet();
+        }
+
+        public FeedBlock(boolean blockFeedInCluster, String description,
+                         Set<NodeResourceExhaustion> concreteExhaustions)
+        {
+            this.blockFeedInCluster = blockFeedInCluster;
+            this.description = description;
+            this.concreteExhaustions = concreteExhaustions;
         }
 
         public static FeedBlock blockedWithDescription(String desc) {
             return new FeedBlock(true, desc);
+        }
+
+        public static FeedBlock blockedWith(String description, Set<NodeResourceExhaustion> concreteExhaustions) {
+            return new FeedBlock(true, description, concreteExhaustions);
         }
 
         public boolean blockFeedInCluster() {
@@ -62,18 +76,31 @@ public class ClusterStateBundle {
             return description;
         }
 
+        public Set<NodeResourceExhaustion> getConcreteExhaustions() {
+            return concreteExhaustions;
+        }
+
+        public boolean similarTo(FeedBlock other) {
+            // We check everything _but_ the description, as that includes current usage
+            // as floating point and we don't care about reporting changes in that. We do
+            // however care about reporting changes to the actual set of exhaustions.
+            return (blockFeedInCluster == other.blockFeedInCluster &&
+                    Objects.equals(concreteExhaustions, other.concreteExhaustions));
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             FeedBlock feedBlock = (FeedBlock) o;
-            return (blockFeedInCluster == feedBlock.blockFeedInCluster &&
-                    Objects.equals(description, feedBlock.description));
+            return blockFeedInCluster == feedBlock.blockFeedInCluster &&
+                    Objects.equals(description, feedBlock.description) &&
+                    Objects.equals(concreteExhaustions, feedBlock.concreteExhaustions);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(blockFeedInCluster, description);
+            return Objects.hash(blockFeedInCluster, description, concreteExhaustions);
         }
     }
 
@@ -227,6 +254,9 @@ public class ClusterStateBundle {
             return false;
         }
         if (clusterFeedIsBlocked() != other.clusterFeedIsBlocked()) {
+            return false;
+        }
+        if (clusterFeedIsBlocked() && !feedBlock.similarTo(other.feedBlock)) {
             return false;
         }
         // FIXME we currently treat mismatching bucket space sets as unchanged to avoid breaking some tests

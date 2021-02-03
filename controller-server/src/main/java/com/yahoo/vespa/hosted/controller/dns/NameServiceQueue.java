@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -82,7 +83,7 @@ public class NameServiceQueue {
                 request.dispatchTo(nameService);
                 queue.requests.poll();
             } catch (Exception e) {
-                log.log(Level.WARNING, "Failed to execute " + request + ": " + e.getMessage() +
+                log.log(Level.WARNING, "Failed to execute " + request + ": " + Exceptions.toMessageString(e) +
                                           ", request will be retried");
             }
         }

@@ -1,6 +1,6 @@
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
-[![#Vespa](https://vespa.ai/img/VespaLogoBlack.png)](https://vespa.ai)
+[![#Vespa](https://vespa.ai/assets/vespa-logo-color.png)](https://vespa.ai)
 
 The big data serving engine - Store, search, rank and organize big data at user serving time.
 Vespa is an engine for low-latency computation over large data sets.

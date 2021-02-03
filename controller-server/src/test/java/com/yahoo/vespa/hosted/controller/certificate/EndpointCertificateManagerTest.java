@@ -146,27 +146,6 @@ public class EndpointCertificateManagerTest {
     }
 
     @Test
-    public void uses_refreshed_certificate_when_available_and_valid() {
-        secretStore.setSecret(testKeyName, "secret-key", 7);
-        secretStore.setSecret(testCertName, "cert", 7);
-        secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 8);
-        secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 9);
-        secretStore.setSecret(testCertName, X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 8);
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, 7, 0, "request_id",
-                List.of("vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa.oath.cloud",
-                        "default.default.global.vespa.oath.cloud",
-                        "*.default.default.global.vespa.oath.cloud",
-                        "default.default.aws-us-east-1a.vespa.oath.cloud",
-                        "*.default.default.aws-us-east-1a.vespa.oath.cloud"),
-                "issuer", Optional.empty(), Optional.empty()));
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
-        assertTrue(endpointCertificateMetadata.isPresent());
-        assertEquals(testKeyName, endpointCertificateMetadata.get().keyName());
-        assertEquals(testCertName, endpointCertificateMetadata.get().certName());
-        assertEquals(8, endpointCertificateMetadata.get().version());
-    }
-
-    @Test
     public void reprovisions_certificate_when_necessary() {
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);

@@ -44,14 +44,8 @@ using BucketIdSet = std::set<BucketId>;
 using BucketIdVector = BucketId::List;
 using DocumentVector = std::vector<Document::SP>;
 using MoveOperationVector = std::vector<MoveOperation>;
-using ScanItr = BucketMoveJob::ScanIterator;
-
-namespace {
-
-const uint32_t FIRST_SCAN_PASS = 1;
-const uint32_t SECOND_SCAN_PASS = 2;
-
-}
+using ScanItr = bucketdb::ScanIterator;
+using ScanPass = ScanItr::Pass;
 
 struct MyMoveOperationLimiter : public IMoveOperationLimiter {
     uint32_t beginOpCount;
@@ -346,9 +340,8 @@ struct ScanFixtureBase
         return ScanItr(_bucketDB->takeGuard(), BucketId());
     }
 
-    ScanItr getItr(BucketId bucket, BucketId endBucket = BucketId(), uint32_t pass = FIRST_SCAN_PASS) {
-        return ScanItr(_bucketDB->takeGuard(), pass,
-                       bucket, endBucket);
+    ScanItr getItr(BucketId bucket, BucketId endBucket = BucketId(), ScanPass pass = ScanPass::FIRST) {
+        return ScanItr(_bucketDB->takeGuard(), pass, bucket, endBucket);
     }
 };
 
@@ -451,12 +444,12 @@ TEST_F("require that we can iterate from the middle of not ready buckets", ScanF
 {
     BucketId bucket = f._notReady.bucket(2);
     {
-        ScanItr itr = f.getItr(bucket, bucket, FIRST_SCAN_PASS);
+        ScanItr itr = f.getItr(bucket, bucket, ScanPass::FIRST);
         assertEquals(BucketVector().
                      add(f._notReady.bucket(4)), itr, SubDbType::NOTREADY);
     }
     {
-        ScanItr itr = f.getItr(BucketId(), bucket, SECOND_SCAN_PASS);
+        ScanItr itr = f.getItr(BucketId(), bucket, ScanPass::SECOND);
         assertEquals(BucketVector().
                      add(f._notReady.bucket(2)), itr, SubDbType::NOTREADY);
     }
@@ -478,12 +471,12 @@ TEST_F("require that we can iterate from the middle of ready buckets", ScanFixtu
                      add(f._notReady.bucket(4)), itr, SubDbType::NOTREADY);
     }
     {
-        ScanItr itr = f.getItr(bucket, bucket, FIRST_SCAN_PASS);
+        ScanItr itr = f.getItr(bucket, bucket, ScanPass::FIRST);
         assertEquals(BucketVector().
                      add(f._ready.bucket(8)), itr, SubDbType::READY);
     }
     {
-        ScanItr itr = f.getItr(BucketId(), bucket, SECOND_SCAN_PASS);
+        ScanItr itr = f.getItr(BucketId(), bucket, ScanPass::SECOND);
         assertEquals(BucketVector().
                      add(f._ready.bucket(6)), itr, SubDbType::READY);
     }

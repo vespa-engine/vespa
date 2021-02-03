@@ -2,15 +2,12 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -32,11 +29,6 @@ public class EndpointCertificateMaintainerTest {
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
     private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1));
     private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty());
-
-    @Before
-    public void setUp() throws Exception {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.USE_ENDPOINT_CERTIFICATE_MAINTAINER.id(), true);
-    }
 
     @Test
     public void old_and_unused_cert_is_deleted() {

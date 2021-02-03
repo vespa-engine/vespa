@@ -38,6 +38,7 @@
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/metrics/config-metricsmanager.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -198,6 +199,7 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
             std::make_shared<DocumentDBMaintenanceConfig>(),
             search::LogDocumentStore::Config(),
             std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1)),
+            std::make_shared<const AllocConfig>(),
             "client",
             doc_type_name.getName());
 }

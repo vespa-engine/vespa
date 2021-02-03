@@ -1,23 +1,26 @@
 {
-  "metrics": [{
-    "clusterId": "content/doc/",
-    "metrics": {
-      "resourceMemoryUsageAverage": 0.103482,
-      "documentsReadyCount": 11430,
-      "documentDiskUsage": 44021,
-      "resourceDiskUsageAverage": 0.0168421,
-      "documentsTotalCount": 11430,
-      "documentsActiveCount": 11430
+  "metrics": [
+    {
+      "clusterId": "content/doc/",
+      "metrics": {
+        "resourceMemoryUsageAverage": 0.103482,
+        "documentsReadyCount": 11430.0,
+        "documentDiskUsage": 44021.0,
+        "resourceDiskUsageAverage": 0.0168421,
+        "documentsTotalCount": 11430.0,
+        "documentsActiveCount": 11430.0
+      }
+    },
+    {
+      "clusterId": "content/music/",
+      "metrics": {
+        "resourceMemoryUsageAverage": 0.00912,
+        "documentsReadyCount": 32000.0,
+        "documentDiskUsage": 90113.0,
+        "resourceDiskUsageAverage": 0.23912,
+        "documentsTotalCount": 32210.0,
+        "documentsActiveCount": 32210.0
+      }
     }
-  }, {
-    "clusterId": "content/music/",
-    "metrics": {
-      "resourceMemoryUsageAverage": 0.00912,
-      "documentsReadyCount": 32000,
-      "documentDiskUsage": 90113,
-      "resourceDiskUsageAverage": 0.23912,
-      "documentsTotalCount": 32210,
-      "documentsActiveCount": 32210
-    }
-  }]
+  ]
 }

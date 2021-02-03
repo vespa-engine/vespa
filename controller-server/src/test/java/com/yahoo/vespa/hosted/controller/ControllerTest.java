@@ -736,8 +736,8 @@ public class ControllerTest {
                                                                 .map(prefix -> prefix + "app1.tenant1." + zone.region().value() +
                                                                                (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
                                                                                ".vespa.oath.cloud")))
-                           .collect(Collectors.toUnmodifiableList()),
-                     tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(context1.instanceId()));
+                           .collect(Collectors.toUnmodifiableSet()),
+                     Set.copyOf(tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(context1.instanceId())));
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();
@@ -751,7 +751,7 @@ public class ControllerTest {
         tester.controller().applications().deploy(context2.instanceId(), devZone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
                    tester.configServer().application(context2.instanceId(), devZone).get().activated());
-        assertFalse("Does not provision certificate in zones with routing layer", certificate.apply(context2.instance()).isPresent());
+        assertTrue("Provisions certificate also in zone with routing layer", certificate.apply(context2.instance()).isPresent());
     }
 
     @Test

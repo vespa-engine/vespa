@@ -13,6 +13,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -145,6 +146,7 @@ public:
                         std::make_shared<DocumentDBMaintenanceConfig>(),
                         search::LogDocumentStore::Config(),
                         std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1)),
+                        std::make_shared<const AllocConfig>(),
                         "client",
                         docTypeName.getName());
     }

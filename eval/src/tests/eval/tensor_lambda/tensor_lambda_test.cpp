@@ -8,7 +8,7 @@
 #include <vespa/eval/instruction/dense_cell_range_function.h>
 #include <vespa/eval/instruction/dense_lambda_peek_function.h>
 #include <vespa/eval/instruction/fast_rename_optimizer.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/tensor_nodes.h>
 
@@ -25,15 +25,15 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", spec(1))
-        .add("b", spec(2))
-        .add("x3", spec({x(3)}, N()))
-        .add("x3f", spec(float_cells({x(3)}), N()))
-        .add("x3m", spec({x({"0", "1", "2"})}, N()))
-        .add("x3y5", spec({x(3), y(5)}, N()))
-        .add("x3y5f", spec(float_cells({x(3), y(5)}), N()))
-        .add("x15", spec({x(15)}, N()))
-        .add("x15f", spec(float_cells({x(15)}), N()));
+        .add("a", GenSpec().seq_bias(1).gen())
+        .add("b", GenSpec().seq_bias(2).gen())
+        .add("x3", GenSpec().idx("x", 3).gen())
+        .add("x3f", GenSpec().idx("x", 3).cells_float().gen())
+        .add("x3m", GenSpec().map("x", 3).gen())
+        .add("x3y5", GenSpec().idx("x", 3).idx("y", 5).gen())
+        .add("x3y5f", GenSpec().idx("x", 3).idx("y", 5).cells_float().gen())
+        .add("x15", GenSpec().idx("x", 15).gen())
+        .add("x15f", GenSpec().idx("x", 15).cells_float().gen());
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

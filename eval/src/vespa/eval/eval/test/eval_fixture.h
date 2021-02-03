@@ -10,6 +10,7 @@
 #include <vespa/vespalib/util/stash.h>
 #include <set>
 #include <functional>
+#include "gen_spec.h"
 
 namespace vespalib::eval::test {
 
@@ -40,6 +41,10 @@ public:
         ParamRepo &add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, gen_fun_t gen = gen_N);
         ParamRepo &add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, gen_fun_t gen = gen_N);
         ParamRepo &add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, gen_fun_t gen = gen_N);
+
+        // produce 4 variants: float/double * mutable/const
+        ParamRepo &add_variants(const vespalib::string &name_base,
+                                const GenSpec &spec);
         ~ParamRepo() {}
     };
 

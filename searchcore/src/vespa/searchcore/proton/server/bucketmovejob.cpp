@@ -21,35 +21,8 @@ namespace proton {
 
 namespace {
 
-const uint32_t FIRST_SCAN_PASS = 1;
-const uint32_t SECOND_SCAN_PASS = 2;
-
 const char * bool2str(bool v) { return (v ? "T" : "F"); }
 
-}
-
-BucketMoveJob::ScanIterator::
-ScanIterator(BucketDBOwner::Guard db, uint32_t pass, BucketId lastBucket, BucketId endBucket)
-    : _db(std::move(db)),
-      _itr(lastBucket.isSet() ? _db->upperBound(lastBucket) : _db->begin()),
-      _end(pass == SECOND_SCAN_PASS && endBucket.isSet() ?
-           _db->upperBound(endBucket) : _db->end())
-{
-}
-
-BucketMoveJob::ScanIterator::
-ScanIterator(BucketDBOwner::Guard db, BucketId bucket)
-    : _db(std::move(db)),
-      _itr(_db->lowerBound(bucket)),
-      _end(_db->end())
-{
-}
-
-BucketMoveJob::ScanIterator::ScanIterator(ScanIterator &&rhs)
-    : _db(std::move(rhs._db)),
-      _itr(rhs._itr),
-      _end(rhs._end)
-{
 }
 
 void
@@ -181,7 +154,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _mover(getLimiter()),
       _doneScan(false),
       _scanPos(),
-      _scanPass(FIRST_SCAN_PASS),
+      _scanPass(ScanPass::FIRST),
       _endPos(),
       _bucketSpace(bucketSpace),
       _delayedBuckets(),
@@ -279,7 +252,7 @@ BucketMoveJob::changedCalculator()
         _endPos = _scanPos;
     }
     _doneScan = false;
-    _scanPass = FIRST_SCAN_PASS;
+    _scanPass = ScanPass::FIRST;
     maybeCancelMover(_mover);
     maybeCancelMover(_delayedMover);
 }
@@ -287,9 +260,6 @@ BucketMoveJob::changedCalculator()
 bool
 BucketMoveJob::scanAndMove(size_t maxBucketsToScan, size_t maxDocsToMove)
 {
-    if (done()) {
-        return true;
-    }
     IFrozenBucketHandler::ExclusiveBucketGuard::UP bucketGuard;
     // Look for delayed bucket to be processed now
     while (!_delayedBuckets.empty() && _delayedMover.bucketDone()) {
@@ -310,10 +280,10 @@ BucketMoveJob::scanAndMove(size_t maxBucketsToScan, size_t maxDocsToMove)
                 ScanResult res = scanBuckets(maxBucketsToScan - bucketsScanned, bucketGuard);
                 bucketsScanned += res.first;
                 if (res.second) {
-                    if (_scanPass == FIRST_SCAN_PASS &&
+                    if (_scanPass == ScanPass::FIRST &&
                         _endPos.validBucket()) {
                         _scanPos = ScanPosition();
-                        _scanPass = SECOND_SCAN_PASS;
+                        _scanPass = ScanPass::SECOND;
                     } else {
                         _doneScan = true;
                         break;
@@ -334,7 +304,7 @@ BucketMoveJob::scanAndMove(size_t maxBucketsToScan, size_t maxDocsToMove)
 bool
 BucketMoveJob::run()
 {
-    if (isBlocked()) {
+    if (isBlocked() || done()) {
         return true; // indicate work is done, since node state is bad
     }
     /// Returning false here will immediately post the job back on the executor. This will give a busy loop,

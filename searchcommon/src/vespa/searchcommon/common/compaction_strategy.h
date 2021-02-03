@@ -3,6 +3,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <iosfwd>
 
 namespace search {
 
@@ -33,5 +34,7 @@ public:
     }
     bool operator!=(const CompactionStrategy & rhs) const { return !(operator==(rhs)); }
 };
+
+std::ostream& operator<<(std::ostream& os, const CompactionStrategy& compaction_strategy);
 
 } // namespace search

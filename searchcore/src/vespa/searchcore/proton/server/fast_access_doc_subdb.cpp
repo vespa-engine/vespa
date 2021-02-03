@@ -13,6 +13,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/document_reprocessing_handler.h>
@@ -62,6 +63,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                       DocumentMetaStore::SP documentMetaStore,
                                                       std::shared_ptr<AttributeManager::SP> attrMgrResult) const
 {
+    AllocStrategy alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     IAttributeFactory::SP attrFactory = std::make_shared<AttributeFactory>();
     AttributeManager::SP baseAttrMgr =
             std::make_shared<AttributeManager>(_baseDir + "/attribute",
@@ -77,9 +79,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                          documentMetaStore,
                                                          baseAttrMgr,
                                                          (_hasAttributes ? configSnapshot.getAttributesConfig() : AttributesConfig()),
-                                                         _attributeGrow,
-                                                         _attributeGrowNumDocs,
-                                                         _attribute_compaction_strategy,
+                                                         alloc_strategy,
                                                          _fastAccessAttributesOnly,
                                                          _writeService.master(),
                                                          attrMgrResult);
@@ -102,11 +102,10 @@ FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 
 
 AttributeCollectionSpec::UP
-FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, SerialNum serialNum) const
+FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, SerialNum serialNum) const
 {
     uint32_t docIdLimit(_dms->getCommittedDocIdLimit());
-    AttributeCollectionSpecFactory factory(_attributeGrow,
-            _attributeGrowNumDocs, _attribute_compaction_strategy, _fastAccessAttributesOnly);
+    AttributeCollectionSpecFactory factory(alloc_strategy, _fastAccessAttributesOnly);
     return factory.create(attrCfg, docIdLimit, serialNum);
 }
 
@@ -247,7 +246,8 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
 {
     (void) resolver;
 
-    reconfigure(newConfigSnapshot.getStoreConfig());
+    AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
+    reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     IReprocessingTask::List tasks;
     /*
      * If attribute manager should change then document retriever
@@ -263,7 +263,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
                 std::make_unique<AttributeWriterFactory>(), getSubDbName());
         proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastAccessFeedView.get());
         AttributeCollectionSpec::UP attrSpec =
-            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
+            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
                 configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec);
         if (initializer->hasReprocessors()) {

@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.Signatures;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -100,9 +102,6 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.yolean.Exceptions;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
@@ -150,6 +149,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  */
 @SuppressWarnings("unused") // created by injection
 public class ApplicationApiHandler extends LoggingRequestHandler {
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private static final String OPTIONAL_PREFIX = "/api";
 
@@ -789,15 +790,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private JsonResponse buildResponseFromProtonMetrics(List<ProtonMetrics> protonMetrics) {
         try {
-            var jsonObject = new JSONObject();
-            var jsonArray = new JSONArray();
+            var jsonObject = jsonMapper.createObjectNode();
+            var jsonArray = jsonMapper.createArrayNode();
             for (ProtonMetrics metrics : protonMetrics) {
-                jsonArray.put(metrics.toJson());
+                jsonArray.add(metrics.toJson());
             }
-            jsonObject.put("metrics", jsonArray);
-            return new JsonResponse(200, jsonObject.toString());
-        } catch (JSONException e) {
-            log.severe("Unable to build JsonResponse with Proton data");
+            jsonObject.set("metrics", jsonArray);
+            return new JsonResponse(200, jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject));
+        } catch (JsonProcessingException e) {
+            log.log(Level.SEVERE, "Unable to build JsonResponse with Proton data: " + e.getMessage(), e);
             return new JsonResponse(500, "");
         }
     }
@@ -1682,11 +1683,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         controller.jobController().deploy(id, type, version, applicationPackage);
         RunId runId = controller.jobController().last(id, type).get().id();
+        DeploymentId deploymentId = new DeploymentId(id, type.zone(controller.system()));
+
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
         rootObject.setString("message", "Deployment started in " + runId +
                                         ". This may take about 15 minutes the first time.");
         rootObject.setLong("run", runId.number());
+        var endpointArray = rootObject.setArray("endpoints");
+        EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId)
+                .scope(Endpoint.Scope.zone)
+                .not().legacy();
+        for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
+            toSlime(endpoint, endpointArray.addObject());
+        }
         return new SlimeJsonResponse(slime);
     }
 

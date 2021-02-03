@@ -19,8 +19,7 @@ BucketInfo::BucketInfo() noexcept
       _active(false)
 {}
 
-BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
-                       uint32_t totDocSize) noexcept
+BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize) noexcept
     : _lastModified(0),
       _checksum(checksum),
       _docCount(docCount),
@@ -73,7 +72,7 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
 {}
 
 bool
-BucketInfo::operator==(const BucketInfo& info) const
+BucketInfo::operator==(const BucketInfo& info) const noexcept
 {
     return (_checksum == info._checksum &&
             _docCount == info._docCount &&

@@ -22,9 +22,9 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-GenSpec G() { return GenSpec().cells_float(); }
+GenSpec G() { return GenSpec(); }
 
-std::vector<GenSpec> peek_layouts = {
+const std::vector<GenSpec> peek_layouts = {
     G().idx("x", 4),
     G().idx("x", 4).idx("y", 5),
     G().idx("x", 4).idx("y", 5).idx("z", 3),
@@ -194,7 +194,9 @@ void fill_dims_and_check(const TensorSpec &input,
 
 void test_generic_peek_with(const ValueBuilderFactory &factory) {
     for (const auto &layout : peek_layouts) {
-        for (TensorSpec input : { layout.gen(), layout.cpy().cells_double().gen() }) {
+        for (TensorSpec input : { layout.cpy().cells_float().gen(),
+                                  layout.cpy().cells_double().gen() })
+        {
             ValueType input_type = ValueType::from_spec(input.type());
             const auto &dims = input_type.dimensions();
             PeekSpec spec;

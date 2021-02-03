@@ -8,8 +8,6 @@ import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
@@ -27,12 +25,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates
+ * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates.
+ *
+ * See also EndpointCertificateManager, which provisions, reprovisions and validates certificates on deploy
  *
  * @author andreer
  */
@@ -45,7 +44,6 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final CuratorDb curator;
     private final SecretStore secretStore;
     private final EndpointCertificateProvider endpointCertificateProvider;
-    private final BooleanFlag useEndpointCertificateMaintainer;
 
     public EndpointCertificateMaintainer(Controller controller, Duration interval) {
         super(controller, interval, null, SystemName.all());
@@ -54,15 +52,10 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         this.secretStore = controller.secretStore();
         this.curator = controller().curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
-        this.useEndpointCertificateMaintainer = Flags.USE_ENDPOINT_CERTIFICATE_MAINTAINER.bindTo(controller().flagSource());
     }
 
     @Override
     protected boolean maintain() {
-
-        if (!useEndpointCertificateMaintainer.value())
-            return true; // handled by EndpointCertificateManager for now
-
         try {
             // In order of importance
             deployRefreshedCertificates();

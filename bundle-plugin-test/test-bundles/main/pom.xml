@@ -16,11 +16,6 @@
   <packaging>container-plugin</packaging>
   <dependencies>
     <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jrt</artifactId>
       <version>${project.version}</version>

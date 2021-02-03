@@ -17,9 +17,9 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-GenSpec G() { return GenSpec().cells_float(); }
+GenSpec G() { return GenSpec(); }
 
-std::vector<GenSpec> rename_layouts = {
+const std::vector<GenSpec> rename_layouts = {
     G().idx("x", 3),
     G().idx("x", 3).idx("y", 5),
     G().idx("x", 3).idx("y", 5).idx("z", 7),
@@ -110,7 +110,9 @@ TensorSpec perform_generic_rename(const TensorSpec &a,
 
 void test_generic_rename_with(const ValueBuilderFactory &factory) {
     for (const auto &layout : rename_layouts) {
-        for (TensorSpec lhs : { layout.gen(), layout.cpy().cells_double().gen() }) {
+        for (TensorSpec lhs : { layout.cpy().cells_float().gen(),
+                                layout.cpy().cells_double().gen() })
+        {
             ValueType lhs_type = ValueType::from_spec(lhs.type());
             for (const auto & from_to : rename_from_to) {
                 ValueType renamed_type = lhs_type.rename(from_to.from, from_to.to);

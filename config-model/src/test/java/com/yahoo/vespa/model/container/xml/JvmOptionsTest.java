@@ -78,11 +78,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
-        verifyIgnoreJvmGCOptionsIfJvmArgs("jvmargs", ContainerCluster.G1GC);
-        verifyIgnoreJvmGCOptionsIfJvmArgs( "jvm-options", "-XX:+UseG1GC");
+        verifyIgnoreJvmGCOptionsIfJvmArgs("jvmargs", ContainerCluster.G1GC, isHosted);
+        verifyIgnoreJvmGCOptionsIfJvmArgs( "jvm-options", "-XX:+UseG1GC", isHosted);
 
     }
-    private static void verifyIgnoreJvmGCOptionsIfJvmArgs(String jvmOptionsName, String expectedGC) throws IOException, SAXException {
+    private static void verifyIgnoreJvmGCOptionsIfJvmArgs(String jvmOptionsName, String expectedGC, boolean isHosted) throws IOException, SAXException {
         String servicesXml =
                 "<container version='1.0'>" +
                         "  <nodes jvm-gc-options='-XX:+UseG1GC' " + jvmOptionsName + "='-XX:+UseParNewGC'>" +
@@ -95,6 +95,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
+                .properties(new TestProperties().setHostedVespa(isHosted))
                 .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "container/container.0");

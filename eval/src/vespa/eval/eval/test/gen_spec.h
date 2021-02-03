@@ -99,7 +99,7 @@ public:
     }
     GenSpec &seq_n() { return seq(default_seq); }
     GenSpec &seq_bias(double bias) {
-        seq_t fun = [bias](size_t idx) { return (idx + bias); };
+        seq_t fun = [bias](size_t idx) noexcept { return (idx + bias); };
         return seq(fun);
     }
     ValueType type() const;

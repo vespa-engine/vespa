@@ -393,6 +393,7 @@ public:
     /** Return the fixed length of the attribute. If 0 then you must inquire each document. */
     size_t getFixedWidth() const override { return _config.basicType().fixedSize(); }
     const Config &getConfig() const { return _config; }
+    void update_config(const Config& cfg);
     BasicType getInternalBasicType() const { return _config.basicType(); }
     CollectionType getInternalCollectionType() const { return _config.collectionType(); }
     const BaseName & getBaseFileName() const { return _baseFileName; }
@@ -667,6 +668,8 @@ public:
     static bool isEnumerated(const vespalib::GenericHeader &header);
 
     virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const;
+
+    void drain_hold(uint64_t hold_limit);
 };
 
 }

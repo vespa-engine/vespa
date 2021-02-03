@@ -38,6 +38,7 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.content.ClusterControllerConfig;
+import com.yahoo.vespa.model.content.ClusterResourceLimits;
 import com.yahoo.vespa.model.content.ContentSearch;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.DistributionBitCalculator;
@@ -134,11 +135,14 @@ public class ContentCluster extends AbstractConfigProducer implements
             ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterId(contentElement), documentDefinitions,
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState.zone(), deployState.isHosted());
-            c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement), contentElement).build(deployState, c, contentElement.getXml());
+            var resourceLimits = new ClusterResourceLimits.Builder().build(contentElement);
+            c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement),
+                    contentElement,
+                    resourceLimits.getClusterControllerLimits()).build(deployState, c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions,
-                                                        globallyDistributedDocuments,
-                                                        isCombined(getClusterId(contentElement), containers))
-                               .build(deployState, c, contentElement.getXml());
+                    globallyDistributedDocuments,
+                    isCombined(getClusterId(contentElement), containers),
+                    resourceLimits.getContentNodeLimits()).build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);

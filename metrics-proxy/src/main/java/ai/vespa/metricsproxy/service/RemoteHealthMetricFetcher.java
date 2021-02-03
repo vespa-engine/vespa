@@ -2,9 +2,10 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.HealthMetric;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.logging.Level;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
  * @author Jo Kristian Bergum
  */
 public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
     private final static Logger log = Logger.getLogger(RemoteHealthMetricFetcher.class.getPackage().getName());
 
     private final static String HEALTH_PATH = STATE_PATH + "health";
@@ -54,16 +56,16 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
             return HealthMetric.getUnknown("Empty response from status page");
         }
         try {
-            JSONObject o = new JSONObject(data);
-            JSONObject status = o.getJSONObject("status");
-            String code = status.getString("code");
+            JsonNode o = jsonMapper.readTree(data);
+            JsonNode status = o.get("status");
+            String code = status.get("code").asText();
             String message = "";
             if (status.has("message")) {
-                message = status.getString("message");
+                message = status.get("message").textValue();
             }
             return HealthMetric.get(code, message);
 
-        } catch (JSONException e) {
+        } catch (IOException e) {
             log.log(Level.FINE, "Failed to parse json response from metrics page:" + e + ":" + data);
             return HealthMetric.getUnknown("Not able to parse json from status page");
         }

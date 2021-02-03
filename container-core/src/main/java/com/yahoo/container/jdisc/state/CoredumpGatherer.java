@@ -1,17 +1,16 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.vespa.defaults.Defaults;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -19,19 +18,17 @@ import java.util.stream.Stream;
  */
 public class CoredumpGatherer {
 
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
+
     private static final Path COREDUMP_PATH = Path.of(Defaults.getDefaults().underVespaHome("var/crash/processing"));
 
-    public static JSONObject gatherCoredumpMetrics(FileWrapper fileWrapper) {
+    public static JsonNode gatherCoredumpMetrics(FileWrapper fileWrapper) {
         int coredumps = getNumberOfCoredumps(fileWrapper);
-        JSONObject packet = new JSONObject();
-
-        try {
-            packet.put("status_code", coredumps == 0 ? 0 : 1);
-            packet.put("status_msg", coredumps == 0 ? "OK" : String.format("Found %d coredump(s)", coredumps));
-            packet.put("timestamp", Instant.now().getEpochSecond());
-            packet.put("application", "system-coredumps-processing");
-
-        } catch (JSONException e) {}
+        ObjectNode packet = jsonMapper.createObjectNode();
+        packet.put("status_code", coredumps == 0 ? 0 : 1);
+        packet.put("status_msg", coredumps == 0 ? "OK" : String.format("Found %d coredump(s)", coredumps));
+        packet.put("timestamp", Instant.now().getEpochSecond());
+        packet.put("application", "system-coredumps-processing");
         return packet;
     }
 

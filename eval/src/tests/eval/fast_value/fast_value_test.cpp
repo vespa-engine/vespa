@@ -3,7 +3,7 @@
 #include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
@@ -142,29 +142,31 @@ TEST(FastValueBuilderTest, mixed_add_subspace_robustness) {
     }
 }
 
-std::vector<Layout> layouts = {
-    {},
-    {x(3)},
-    {x(3),y(5)},
-    {x(3),y(5),z(7)},
-    float_cells({x(3),y(5),z(7)}),
-    {x({"a","b","c"})},
-    {x({"a","b","c"}),y({"foo","bar"})},
-    {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
-    {x(3),y({"foo", "bar"}),z(7)},
-    {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-    float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
+GenSpec G() { return GenSpec(); }
+
+const std::vector<GenSpec> layouts = {
+    G(),
+    G().idx("x", 3),
+    G().idx("x", 3).idx("y", 5),
+    G().idx("x", 3).idx("y", 5).idx("z", 7),
+    G().map("x", {"a","b","c"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}),
+    G().map("x", {"a","b","c"}).map("y", {"foo","bar"}).map("z", {"i","j","k","l"}),
+    G().idx("x", 3).map("y", {"foo", "bar"}).idx("z", 7),
+    G().map("x", {"a","b","c"}).idx("y", 5).map("z", {"i","j","k","l"})
 };
 
 TEST(FastValueBuilderFactoryTest, fast_values_can_be_copied) {
     auto factory = FastValueBuilderFactory::get();
     for (const auto &layout: layouts) {
-        TensorSpec expect = spec(layout, N());
-        std::unique_ptr<Value> value = value_from_spec(expect, factory);
-        std::unique_ptr<Value> copy = factory.copy(*value);
-        TensorSpec actual = spec_from_value(*copy);
-        EXPECT_EQ(actual, expect);
+        for (TensorSpec expect : { layout.cpy().cells_float().gen(),
+                                   layout.cpy().cells_double().gen() })
+        {
+            std::unique_ptr<Value> value = value_from_spec(expect, factory);
+            std::unique_ptr<Value> copy = factory.copy(*value);
+            TensorSpec actual = spec_from_value(*copy);
+            EXPECT_EQ(actual, expect);
+        }
     }
 }
 
