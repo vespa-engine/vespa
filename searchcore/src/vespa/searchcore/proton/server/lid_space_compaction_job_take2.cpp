@@ -44,9 +44,20 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
     return false;
 }
 
+namespace {
+    class IncOnDestruct {
+    public:
+        IncOnDestruct(std::atomic<size_t> & count) : _count(count) {}
+        ~IncOnDestruct() {
+            _count.fetch_add(1, std::memory_order_relaxed);
+        }
+    private:
+        std::atomic<size_t> & _count;
+    };
+}
 void
 CompactionJob::moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> context) {
-    _executedCount.fetch_add(1, std::memory_order_relaxed);
+    IncOnDestruct countGuard(_executedCount);
     if (_stopped.load(std::memory_order_relaxed)) return;
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
@@ -101,7 +112,7 @@ void
 CompactionJob::onStop() {
     _stopped = true;
     while ( ! inSync() ) {
-        std::this_thread::sleep_for(10us);
+        std::this_thread::sleep_for(1ms);
     }
 }
 
