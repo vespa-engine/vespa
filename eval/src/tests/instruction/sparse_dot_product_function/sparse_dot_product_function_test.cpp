@@ -17,10 +17,8 @@ const ValueBuilderFactory &test_factory = SimpleValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("v1_x",   GenSpec().map("x", 32, 1).seq_bias(3.0).gen())
-        .add("v1_x_f", GenSpec().map("x", 32, 1).seq_bias(3.0).cells_float().gen())
-        .add("v2_x",   GenSpec().map("x", 16, 2).seq_bias(7.0).gen())
-        .add("v2_x_f", GenSpec().map("x", 16, 2).seq_bias(7.0).cells_float().gen())
+        .add_variants("v1_x", GenSpec().map("x", 32, 1).seq_bias(3.0))
+        .add_variants("v2_x", GenSpec().map("x", 16, 2).seq_bias(7.0))
         .add("v3_y",   GenSpec().map("y", 10, 1).gen())
         .add("v4_xd",  GenSpec().idx("x", 10).gen())
         .add("m1_xy",  GenSpec().map("x", 32, 1).map("y", 16, 2).seq_bias(3.0).gen())
@@ -53,8 +51,6 @@ TEST(SparseDotProduct, expression_can_be_optimized)
 {
     assert_optimized("reduce(v1_x*v2_x,sum,x)");
     assert_optimized("reduce(v2_x*v1_x,sum)");
-    assert_optimized("reduce(v1_x*v2_x_f,sum)");
-    assert_optimized("reduce(v1_x_f*v2_x,sum)");
     assert_optimized("reduce(v1_x_f*v2_x_f,sum)");
 }
 
@@ -78,6 +74,12 @@ TEST(SparseDotProduct, similar_expressions_are_not_optimized)
     assert_not_optimized("reduce(v2_x+v1_x,sum)");
     assert_not_optimized("reduce(v4_xd*v4_xd,sum)");
     assert_not_optimized("reduce(m3_xym*m3_xym,sum)");
+}
+
+TEST(SparseDotProduct, mixed_cell_types_are_not_optimized)
+{
+    assert_not_optimized("reduce(v1_x*v2_x_f,sum)");
+    assert_not_optimized("reduce(v1_x_f*v2_x,sum)");
 }
 
 //-----------------------------------------------------------------------------

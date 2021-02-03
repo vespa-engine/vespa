@@ -361,6 +361,8 @@ TEST("require that basic handle usage works") {
     TEST_DO(verify_not_eq(empty, bar));
     TEST_DO(verify_not_eq(foo, bar));
 
+    EXPECT_EQUAL(empty.id().hash(), 0u);
+    EXPECT_EQUAL(empty.id().value(), 0u);
     EXPECT_TRUE(empty.id() == string_id());
     EXPECT_TRUE(empty2.id() == string_id());
     EXPECT_EQUAL(empty.as_string(), vespalib::string(""));
@@ -415,9 +417,11 @@ TEST("require that handle can be self-assigned") {
 
 //-----------------------------------------------------------------------------
 
-void verify_direct(const vespalib::string &str) {
+void verify_direct(const vespalib::string &str, size_t value) {
     size_t before = SharedStringRepo::stats().active_entries;
     Handle handle(str);
+    EXPECT_EQUAL(handle.id().hash(), value + 1);
+    EXPECT_EQUAL(handle.id().value(), value + 1);
     EXPECT_EQUAL(SharedStringRepo::stats().active_entries, before);
     EXPECT_EQUAL(handle.as_string(), str);
 }
@@ -425,14 +429,15 @@ void verify_direct(const vespalib::string &str) {
 void verify_not_direct(const vespalib::string &str) {
     size_t before = SharedStringRepo::stats().active_entries;
     Handle handle(str);
+    EXPECT_EQUAL(handle.id().hash(), handle.id().value());
     EXPECT_EQUAL(SharedStringRepo::stats().active_entries, before + 1);
     EXPECT_EQUAL(handle.as_string(), str);
 }
 
 TEST("require that direct handles work as expected") {
-    TEST_DO(verify_direct(""));
+    TEST_DO(verify_direct("", -1));
     for (size_t i = 0; i < 100000; ++i) {
-        verify_direct(fmt("%zu", i));
+        verify_direct(fmt("%zu", i), i);
     }
     TEST_DO(verify_not_direct(" "));
     TEST_DO(verify_not_direct(" 5"));
