@@ -67,11 +67,10 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     public MetricsPacketsHandler(StateMonitor monitor,
                                  Timer timer,
                                  ComponentRegistry<SnapshotProvider> preprocessors,
-                                 MetricsPresentationConfig presentation,
                                  MetricsPacketsHandlerConfig config) {
         this.monitor = monitor;
         this.timer = timer;
-        snapshotPreprocessor = getSnapshotPreprocessor(preprocessors, presentation);
+        snapshotPreprocessor = getSnapshotPreprocessor(preprocessors);
         applicationName = config.application();
     }
 

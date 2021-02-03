@@ -25,7 +25,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
     @Before
     public void setupHandler() {
-        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry , metricsPresentationConfig);
+        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry);
         testDriver = new RequestHandlerTestDriver(stateHandler);
     }
 

@@ -58,14 +58,14 @@ public class StateHandler extends AbstractRequestHandler {
 
     @Inject
     public StateHandler(StateMonitor monitor, Timer timer, ApplicationMetadataConfig config,
-                        ComponentRegistry<SnapshotProvider> preprocessors, MetricsPresentationConfig presentation) {
+                        ComponentRegistry<SnapshotProvider> preprocessors) {
         this.monitor = monitor;
         this.timer = timer;
         this.config = buildConfigOutput(config);
-        snapshotPreprocessor = getSnapshotPreprocessor(preprocessors, presentation);
+        snapshotPreprocessor = getSnapshotPreprocessor(preprocessors);
     }
 
-    static SnapshotProvider getSnapshotPreprocessor(ComponentRegistry<SnapshotProvider> preprocessors, MetricsPresentationConfig presentation) {
+    static SnapshotProvider getSnapshotPreprocessor(ComponentRegistry<SnapshotProvider> preprocessors) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();
         return (allPreprocessors.size() > 0) ? allPreprocessors.get(0) : null;
     }
