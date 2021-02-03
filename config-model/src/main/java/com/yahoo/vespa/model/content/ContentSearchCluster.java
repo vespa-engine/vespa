@@ -189,7 +189,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
     }
 
-    private ContentSearchCluster(AbstractConfigProducer parent,
+    private ContentSearchCluster(AbstractConfigProducer<?> parent,
                                  String clusterName,
                                  ModelContext.FeatureFlags featureFlags,
                                  Map<String, NewDocumentType> documentDefinitions,
@@ -232,8 +232,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             NamedSchema searchDefinition =
                     schemaDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSchemas());
             if (searchDefinition == null)
-                throw new RuntimeException("Search definition parsing error or file does not exist: '" +
-                                           schemaDefinitionXMLHandler.getName() + "'");
+                throw new RuntimeException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
+                                           this + " does not exist");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
             sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(searchDefinition,
@@ -444,4 +444,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     public IndexedSearchCluster getIndexed() { return indexedCluster; }
     public boolean hasIndexedCluster()       { return indexedCluster != null; }
     public String getClusterName() { return clusterName; }
+
+    @Override
+    public String toString() { return "content cluster '" + clusterName + "'"; }
+
 }

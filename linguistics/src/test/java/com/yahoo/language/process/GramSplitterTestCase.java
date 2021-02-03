@@ -167,6 +167,25 @@ public class GramSplitterTestCase {
         assertFalse(grams.hasNext());
     }
 
+    @Test
+    public void testChineseComma() {
+        String text = "我喜欢红色、蓝色和紫色";
+        Iterator<GramSplitter.Gram> grams = gramSplitter.split(text, 2);
+        for (;  grams.hasNext(); ) {
+            System.out.println(grams.next().extractFrom(text));
+        }
+    }
+
+    @Test
+    public void testEnglishComma() {
+        String text = "我喜欢红色,蓝色和紫色";
+        Iterator<GramSplitter.Gram> grams = gramSplitter.split(text, 2);
+        for (;  grams.hasNext(); ) {
+            System.out.println(grams.next().extractFrom(text));
+        }
+    }
+
+
     private void assertGramSplits(String input, int gramSize, String ... expected) {
         assertEquals(Arrays.asList(expected), gramSplitter.split(input, gramSize).toExtractedList());
     }

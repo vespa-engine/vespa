@@ -12,8 +12,7 @@ import com.yahoo.search.query.Sorting.FieldOrder;
 import com.yahoo.search.searchchain.Execution;
 
 /**
- * Avoid doing relevance calculations if sorting only
- * on attributes.
+ * Avoid doing relevance calculations if sorting only on attributes.
  *
  * @author Steinar Knutsen
  */

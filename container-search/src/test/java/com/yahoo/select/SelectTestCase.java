@@ -20,6 +20,12 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.request.AllOperation;
+import com.yahoo.search.grouping.request.AttributeValue;
+import com.yahoo.search.grouping.request.CountAggregator;
+import com.yahoo.search.grouping.request.EachOperation;
+import com.yahoo.search.grouping.request.MaxAggregator;
+import com.yahoo.search.grouping.request.MinAggregator;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.SelectParser;
@@ -766,6 +772,32 @@ public class SelectTestCase {
 
         Query clone = query.clone();
         assertEquals(clone.getSelect().getGroupingExpressionString(), query.getSelect().getGroupingExpressionString());
+    }
+
+    @Test
+    public void testProgrammaticBuilding() {
+        String expected =
+                "all(group(myfield) max(10000) each(" +
+                  "output(min(foo), max(bar)) " +
+                  "all(group(foo) max(10000) output(count()))" +
+                "))";
+        Query query = new Query();
+        GroupingRequest grouping = GroupingRequest.newInstance(query);
+        AllOperation root = new AllOperation();
+        root.setGroupBy(new AttributeValue("myfield"));
+        root.setMax(10000);
+        EachOperation each = new EachOperation();
+        each.addOutput(new MinAggregator(new AttributeValue("foo")));
+        each.addOutput(new MaxAggregator(new AttributeValue("bar")));
+        AllOperation all = new AllOperation();
+        all.setGroupBy(new AttributeValue("foo"));
+        all.setMax(10000);
+        all.addOutput(new CountAggregator());
+        each.addChild(all);
+        root.addChild(each);
+        grouping.setRootOperation(root);
+
+        assertEquals(expected, query.getSelect().getGrouping().get(0).toString());
     }
 
     //------------------------------------------------------------------- Assert methods
