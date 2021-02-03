@@ -25,6 +25,7 @@
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <map>
+#include <thread>
 
 using namespace config;
 using namespace proton;
