@@ -47,9 +47,9 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
         if (isHosted()){
             cluster.addComponent(
                     new AccessLogComponent(
-                            AccessLogComponent.AccessLogType.jsonAccessLog, AccessLogComponent.CompressionType.ZSTD,
+                            cluster, AccessLogComponent.AccessLogType.jsonAccessLog, AccessLogComponent.CompressionType.ZSTD,
                             "logs/vespa/configserver/access-json.log.%Y%m%d%H%M%S", null, true, true, "access-json.log"));
-            cluster.addComponent(new ConnectionLogComponent(FileConnectionLog.class, cluster.getName()));
+            cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class));
         } else {
             super.addAccessLogs(deployState, cluster, spec);
         }

@@ -2,21 +2,19 @@
 
 package com.yahoo.container.logging;
 
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-
 /**
  * @author mortent
  */
 class ConnectionLogHandler {
     private final LogFileHandler<ConnectionLogEntry> logFileHandler;
 
-    public ConnectionLogHandler(String clusterName, LogWriter<ConnectionLogEntry> logWriter) {
+    public ConnectionLogHandler(String clusterName, int queueSize, LogWriter<ConnectionLogEntry> logWriter) {
         logFileHandler = new LogFileHandler<>(
                 LogFileHandler.Compression.ZSTD,
                 String.format("logs/vespa/qrs/ConnectionLog.%s.%s", clusterName, "%Y%m%d%H%M%S"),
                 "0 60 ...",
                 String.format("ConnectionLog.%s", clusterName),
+                queueSize,
                 logWriter);
     }
 

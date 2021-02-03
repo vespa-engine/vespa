@@ -534,7 +534,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         var compressionType = isHostedVespa && deployState.featureFlags().enableZstdCompressionAccessLog()
                 ? AccessLogComponent.CompressionType.ZSTD
                 : AccessLogComponent.CompressionType.GZIP;
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, getName(), isHostedVespa));
+        addComponent(new AccessLogComponent(this, AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, getName(), isHostedVespa));
     }
 
     @Override

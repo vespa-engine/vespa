@@ -15,9 +15,11 @@ import com.yahoo.vespa.model.container.component.AccessLogComponent.CompressionT
  */
 public class LogserverContainer extends Container {
 
-    public LogserverContainer(AbstractConfigProducer parent, FeatureFlags featureFlags, boolean isHostedVespa) {
+    public LogserverContainer(AbstractConfigProducer<?> parent, FeatureFlags featureFlags, boolean isHostedVespa) {
         super(parent, featureFlags, "" + 0, 0, isHostedVespa);
-        addComponent(new AccessLogComponent(AccessLogType.jsonAccessLog, CompressionType.GZIP, ((LogserverContainerCluster) parent).getName(), true));
+        LogserverContainerCluster cluster = (LogserverContainerCluster) parent;
+        addComponent(new AccessLogComponent(
+                cluster, AccessLogType.jsonAccessLog, CompressionType.GZIP, cluster.getName(), true));
     }
 
     @Override

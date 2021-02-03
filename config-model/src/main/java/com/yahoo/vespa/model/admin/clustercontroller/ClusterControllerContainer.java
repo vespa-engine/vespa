@@ -55,7 +55,7 @@ public class ClusterControllerContainer extends Container implements
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler",
                    "/cluster/v2/*",
                    CLUSTERCONTROLLER_BUNDLE);
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog,
+        addComponent(new AccessLogComponent(containerCluster().orElse(null), AccessLogComponent.AccessLogType.jsonAccessLog,
                 AccessLogComponent.CompressionType.GZIP,
                 "controller",
                 deployState.isHosted()));
