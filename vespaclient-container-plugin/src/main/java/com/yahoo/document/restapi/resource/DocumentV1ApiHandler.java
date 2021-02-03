@@ -154,7 +154,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String BUCKET_SPACE = "bucketSpace";
     private static final String TIMEOUT = "timeout";
     private static final String TRACELEVEL = "tracelevel";
-    private static final String DESTINATION = "destination";
 
     private final Clock clock;
     private final Metric metric;
@@ -360,7 +359,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private ContentChannel postDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
             VisitorParameters parameters = parseParameters(request, path);
-            parameters.setRemoteDataHandler(getProperty(request, DESTINATION).orElseThrow(() -> new IllegalArgumentException("Missing required property '"  + DESTINATION + "'")));
+            parameters.setRemoteDataHandler(getProperty(request, ROUTE).orElseThrow(() -> new IllegalArgumentException("Missing required property '"  + ROUTE + "'")));
             return () -> {
                 visitWithRemote(request, parameters, handler);
                 return true; // VisitorSession has its own throttle handling.
@@ -382,7 +381,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 DocumentUpdate update = parser.parseUpdate(in, dummyId.toString());
                 update.setCondition(new TestAndSetCondition(parameters.getDocumentSelection()));
                 return () -> {
-                    visitAndUpdate(request, parameters, handler, update, getProperty(request, DESTINATION));
+                    visitAndUpdate(request, parameters, handler, update, getProperty(request, ROUTE));
                     return true; // VisitorSession has its own throttle handling.
                 };
             });
@@ -398,7 +397,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             parameters.setFieldSet(DocIdOnly.NAME);
             TestAndSetCondition condition = new TestAndSetCondition(parameters.getDocumentSelection());
             return () -> {
-                visitAndDelete(request, parameters, handler, condition, getProperty(request, DESTINATION));
+                visitAndDelete(request, parameters, handler, condition, getProperty(request, ROUTE));
                 return true; // VisitorSession has its own throttle handling.
             };
         });
