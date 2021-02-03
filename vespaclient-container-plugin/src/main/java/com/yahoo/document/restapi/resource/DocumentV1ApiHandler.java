@@ -390,10 +390,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel deleteDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
-        enqueueAndDispatch(request, handler, () -> {
-            if (getProperty(request, SELECTION).isEmpty())
-                throw new IllegalArgumentException("Missing required property '" + SELECTION + "'");
+        if (getProperty(request, SELECTION).isEmpty())
+            throw new IllegalArgumentException("Missing required property '" + SELECTION + "'");
 
+        enqueueAndDispatch(request, handler, () -> {
             VisitorParameters parameters = parseParameters(request, path);
             parameters.setFieldSet(DocIdOnly.NAME);
             TestAndSetCondition condition = new TestAndSetCondition(parameters.getDocumentSelection());
