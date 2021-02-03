@@ -74,7 +74,7 @@ public class Flags {
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
-            List.of("baldersheim"), "2020-12-02", "2021-02-01",
+            List.of("baldersheim"), "2020-12-02", "2022-01-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -109,7 +109,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
-            List.of("vekterli"), "2020-12-02", "2021-02-01",
+            List.of("vekterli"), "2020-12-02", "2021-03-01",
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
