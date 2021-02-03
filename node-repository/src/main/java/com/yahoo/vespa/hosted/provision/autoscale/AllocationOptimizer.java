@@ -16,7 +16,8 @@ import java.util.Optional;
 public class AllocationOptimizer {
 
     // The min and max nodes to consider when not using application supplied limits
-    private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
+    private static final int minimumStatelessNodes = 2; // Since this number includes redundancy it cannot be lower than 2
+    private static final int minimumStatefulNodes = 3; // Leader election requires 3 nodes to have redundancy
     private static final int maximumNodes = 150;
 
     // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
@@ -40,9 +41,13 @@ public class AllocationOptimizer {
     public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
                                                                     AllocatableClusterResources current,
                                                                     Limits limits) {
+        int minimumNodes = current.clusterSpec().isStateful() ? minimumStatefulNodes : minimumStatelessNodes;
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
+        else
+            limits = atLeast(minimumNodes,  limits);
+
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         NodeList hosts = nodeRepository.list().hosts();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
@@ -57,7 +62,9 @@ public class AllocationOptimizer {
 
                 ClusterResources next = new ClusterResources(nodes,
                                                              groups,
-                                                             nodeResourcesWith(nodesAdjustedForRedundancy, groupsAdjustedForRedundancy, limits, current, target));
+                                                             nodeResourcesWith(nodesAdjustedForRedundancy,
+                                                                               groupsAdjustedForRedundancy,
+                                                                               limits, current, target));
 
                 var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits, hosts, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
@@ -73,7 +80,11 @@ public class AllocationOptimizer {
      * For the observed load this instance is initialized with, returns the resources needed per node to be at
      * ideal load given a target node count
      */
-    private NodeResources nodeResourcesWith(int nodes, int groups, Limits limits, AllocatableClusterResources current, ResourceTarget target) {
+    private NodeResources nodeResourcesWith(int nodes,
+                                            int groups,
+                                            Limits limits,
+                                            AllocatableClusterResources current,
+                                            ResourceTarget target) {
         // Cpu: Scales with cluster size (TODO: Only reads, writes scales with group size)
         // Memory and disk: Scales with group size
         double cpu, memory, disk;
@@ -101,6 +112,11 @@ public class AllocationOptimizer {
                                   ? current.advertisedResources().nodeResources()
                                   : limits.min().nodeResources(); // min=max for non-scaled
         return nonScaled.withVcpu(cpu).withMemoryGb(memory).withDiskGb(disk);
+    }
+
+    /** Returns a copy of the given limits where the minimum nodes are at least the given value */
+    private Limits atLeast(int nodes, Limits limits) {
+        return limits.withMin(limits.min().withNodes(Math.max(nodes, limits.min().nodes())));
     }
 
 }

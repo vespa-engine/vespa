@@ -279,7 +279,7 @@ public class DockerProvisioningTest {
         tester.makeReadyHosts(2, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.applicationId("app1");
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         var resources = new NodeResources(1, 8, 10, 1);
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, resources),

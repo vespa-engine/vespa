@@ -38,6 +38,14 @@ public class Limits {
         return max;
     }
 
+    public Limits withMin(ClusterResources min) {
+        return new Limits(min, max);
+    }
+
+    public Limits withMax(ClusterResources max) {
+        return new Limits(min, max);
+    }
+
     /** Caps the given resources at the limits of this. If it is empty the node resources are returned as-is */
     public NodeResources cap(NodeResources resources) {
         if (isEmpty()) return resources;
