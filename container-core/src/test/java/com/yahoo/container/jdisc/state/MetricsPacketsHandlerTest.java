@@ -34,8 +34,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     public void setupHandler() {
         metricsPacketsHandlerConfig = new MetricsPacketsHandlerConfig(new MetricsPacketsHandlerConfig.Builder()
                                                                               .application(APPLICATION_NAME));
-        metricsPacketsHandler = new MetricsPacketsHandler(monitor, timer, snapshotProviderRegistry,
-                                                          metricsPresentationConfig, metricsPacketsHandlerConfig);
+        metricsPacketsHandler = new MetricsPacketsHandler(monitor, timer, snapshotProviderRegistry, metricsPacketsHandlerConfig);
         testDriver = new RequestHandlerTestDriver(metricsPacketsHandler);
     }
 

@@ -31,7 +31,6 @@ public class StateHandlerTestBase {
 
     static HealthMonitorConfig healthMonitorConfig;
     static ApplicationMetadataConfig applicationMetadataConfig;
-    static MetricsPresentationConfig metricsPresentationConfig;
     static MetricsPacketsHandlerConfig metricsPacketsHandlerConfig;
 
     final AtomicLong currentTimeMillis = new AtomicLong(0);
@@ -42,7 +41,6 @@ public class StateHandlerTestBase {
 
     @BeforeClass
     public static void setupClass() {
-        metricsPresentationConfig = new MetricsPresentationConfig(new MetricsPresentationConfig.Builder());
         healthMonitorConfig = new HealthMonitorConfig(new HealthMonitorConfig.Builder()
                                                               .initialStatus("up"));
         applicationMetadataConfig = new ApplicationMetadataConfig(new ApplicationMetadataConfig.Builder()
