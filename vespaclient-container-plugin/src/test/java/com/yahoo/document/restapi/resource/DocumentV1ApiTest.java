@@ -252,24 +252,24 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // POST with namespace and document type is a restricted visit with a required remote data handler ("destination")
+        // POST with namespace and document type is a restricted visit with a required remote data handler ("route")
         access.expect(parameters -> {
             fail("Not supposed to run");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid", POST);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"," +
-                       "  \"message\": \"Missing required property 'destination'\"" +
+                       "  \"message\": \"Missing required property 'route'\"" +
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // POST with namespace and document type is a restricted visit with a require remote data handler ("destination")
+        // POST with namespace and document type is a restricted visit with a require remote data handler ("route")
         access.expect(parameters -> {
             assertEquals("zero", parameters.getRemoteDataHandler());
             assertEquals("music:[document]", parameters.fieldSet());
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destination=zero", POST);
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?route=zero", POST);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"" +
                        "}", response.readAll());
@@ -292,7 +292,7 @@ public class DocumentV1ApiTest {
             assertEquals(parameters().withRoute("zero"), parameters);
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&destination=zero", PUT,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&route=zero", PUT,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
@@ -330,7 +330,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new DocumentIdResponse(0, doc2.getId(), "boom", Response.Outcome.ERROR));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=false&destination=zero", DELETE);
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=false&route=zero", DELETE);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"," +
                        "  \"message\": \"boom\"" +
