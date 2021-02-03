@@ -4,8 +4,9 @@
 
 #include "lid_space_compaction_job_base.h"
 #include <vespa/document/bucket/bucketspace.h>
+#include <atomic>
 
-namespace storage::spi { struct BucketExecutor;}
+namespace storage::spi { struct BucketExecutor; }
 namespace searchcorespi::index { struct IThreadService; }
 namespace vespalib { class IDestructorCallback; }
 namespace proton {
@@ -28,11 +29,14 @@ private:
     IThreadService          & _master;
     BucketExecutor          &_bucketExecutor;
     document::BucketSpace    _bucketSpace;
+    std::atomic<bool>        _stopped;
+    std::atomic<size_t>      _startedCount;
+    std::atomic<size_t>      _executedCount;
 
     bool scanDocuments(const search::LidUsageStats &stats) override;
     void moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> onDone);
     void onStop() override;
-    void sync();
+    bool inSync() const override;
 public:
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler,

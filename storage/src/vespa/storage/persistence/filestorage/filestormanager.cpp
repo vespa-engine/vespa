@@ -49,10 +49,6 @@ public:
         return _executor.execute(bucket, std::move(task));
     }
 
-    void sync() override {
-        _executor.sync();
-    }
-
 private:
     spi::BucketExecutor & _executor;
 };
@@ -988,10 +984,6 @@ FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketT
         }
     }
     return task;
-}
-
-void
-FileStorManager::sync() {
 }
 
 } // storage
