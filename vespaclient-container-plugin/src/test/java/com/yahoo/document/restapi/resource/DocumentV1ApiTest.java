@@ -263,7 +263,18 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // POST with namespace and document type is a restricted visit with a require remote data handler ("route")
+        // POST at root is a restricted visit with a required remote data handler ("route") and field set ("fieldSet")
+        access.expect(parameters -> {
+            fail("Not supposed to run");
+        });
+        response = driver.sendRequest("http://localhost/document/v1/?route=root&cluster=content", POST);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/\"," +
+                       "  \"message\": \"Must specify 'fieldSet' when visiting at /document/v1 root\"" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
+        // POST with namespace and document type is a restricted visit with a required remote data handler ("route")
         access.expect(parameters -> {
             assertEquals("zero", parameters.getRemoteDataHandler());
             assertEquals("music:[document]", parameters.fieldSet());

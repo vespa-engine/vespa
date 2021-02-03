@@ -348,6 +348,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private ContentChannel getDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
             VisitorParameters parameters = parseParameters(request, path);
+            parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
             return () -> {
                 visitAndWrite(request, parameters, handler);
                 return true; // VisitorSession has its own throttle handling.
@@ -360,6 +361,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         enqueueAndDispatch(request, handler, () -> {
             VisitorParameters parameters = parseParameters(request, path);
             parameters.setRemoteDataHandler(getProperty(request, ROUTE).orElseThrow(() -> new IllegalArgumentException("Missing required property '"  + ROUTE + "'")));
+            parameters.setFieldSet(getProperty(request, FIELD_SET).orElseGet(() -> path.documentType().orElseThrow(() -> new IllegalArgumentException("Must specify '" + FIELD_SET + "' when visiting at /document/v1 root")) + ":[document]"));
             return () -> {
                 visitWithRemote(request, parameters, handler);
                 return true; // VisitorSession has its own throttle handling.
@@ -940,7 +942,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                                    .toString());
 
         getProperty(request, CONTINUATION).map(ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
-        parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(concurrency));
         parameters.setSessionTimeoutMs(Math.max(1, request.getTimeout(TimeUnit.MILLISECONDS) - 5000));
