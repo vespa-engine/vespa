@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/instruction/dense_matmul_function.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stash.h>
@@ -19,12 +19,12 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add_matrix("a", 2, "d", 3)  // inner/inner
-        .add_matrix("a", 2, "b", 5)  // inner/outer
-        .add_matrix("b", 5, "c", 2)  // outer/outer
-        .add_matrix("a", 2, "c", 3)  // not matching
+        .add_variants("a2d3", GenSpec().idx("a", 2).idx("d", 3))  // inner/inner
+        .add_variants("a2b5", GenSpec().idx("a", 2).idx("b", 5))  // inner/outer
+        .add_variants("b5c2", GenSpec().idx("b", 5).idx("c", 2))  // outer/outer
+        .add_variants("a2c3", GenSpec().idx("a", 2).idx("c", 3))  // not matching
         //------------------------------------------
-        .add_matrix("b", 5, "d", 3); // fixed param
+        .add_variants("b5d3", GenSpec().idx("b", 5).idx("d", 3)); // fixed param
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -87,7 +87,7 @@ TEST("require that xw product can be debug dumped") {
 vespalib::string make_expr(const vespalib::string &a, const vespalib::string &b, const vespalib::string &common,
                            bool float_a, bool float_b)
 {
-    return make_string("reduce(%s%s*%s%s,sum,%s)", a.c_str(), float_a ? "f" : "", b.c_str(), float_b ? "f" : "", common.c_str());
+    return make_string("reduce(%s%s*%s%s,sum,%s)", a.c_str(), float_a ? "_f" : "", b.c_str(), float_b ? "_f" : "", common.c_str());
 }
 
 void verify_optimized_multi(const vespalib::string &a, const vespalib::string &b, const vespalib::string &common,
