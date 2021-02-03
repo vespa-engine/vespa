@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/function.h>
-#include <vespa/eval/eval/node_types.h>
-#include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/cell_type.h>
+#include <cassert>
+#include <vector>
 
 namespace vespalib::eval::test {
 
@@ -26,20 +24,12 @@ struct N : Sequence {
     double operator[](size_t i) const override { return (1.0 + i); }
 };
 
-// Sequence of another sequence divided by 10
-struct Div10 : Sequence {
-    const Sequence &seq;
-    Div10(const Sequence &seq_in) : seq(seq_in) {}
-    double operator[](size_t i) const override { return (seq[i] / 10.0); }
-};
-
 // Sequence of another sequence divided by 16
 struct Div16 : Sequence {
     const Sequence &seq;
     Div16(const Sequence &seq_in) : seq(seq_in) {}
     double operator[](size_t i) const override { return (seq[i] / 16.0); }
 };
-
 
 // Sequence of another sequence minus 2
 struct Sub2 : Sequence {
@@ -56,13 +46,6 @@ struct OpSeq : Sequence {
     double operator[](size_t i) const override { return op(seq[i]); }
 };
 
-// Sequence of applying sigmoid to another sequence
-struct Sigmoid : Sequence {
-    const Sequence &seq;
-    Sigmoid(const Sequence &seq_in) : seq(seq_in) {}
-    double operator[](size_t i) const override { return operation::Sigmoid::f(seq[i]); }
-};
-
 // Sequence of applying sigmoid to another sequence, plus rounding to nearest float
 struct SigmoidF : Sequence {
     const Sequence &seq;
@@ -70,60 +53,16 @@ struct SigmoidF : Sequence {
     double operator[](size_t i) const override { return (float)operation::Sigmoid::f(seq[i]); }
 };
 
-// pre-defined sequence of numbers
+// pre-defined repeating sequence of numbers
 struct Seq : Sequence {
     std::vector<double> seq;
     Seq() : seq() {}
-    Seq(const std::vector<double> &seq_in) : seq(seq_in) {}
+    Seq(const std::vector<double> &seq_in)
+        : seq(seq_in) { assert(!seq_in.empty()); }
     ~Seq() override;
     double operator[](size_t i) const override {
-        ASSERT_LESS(i, seq.size());
-        return seq[i];
+        return seq[i % seq.size()];
     }
-};
-
-// Random access bit mask
-struct Mask {
-    virtual bool operator[](size_t i) const = 0;
-    virtual ~Mask() {}
-};
-
-// Mask with all bits set
-struct All : Mask {
-    bool operator[](size_t) const override { return true; }
-};
-
-// Mask with no bits set
-struct None : Mask {
-    bool operator[](size_t) const override { return false; }
-};
-
-// Mask with false for each Nth index
-struct SkipNth : Mask {
-    size_t n;
-    SkipNth(size_t n_in) : n(n_in) {}
-    bool operator[](size_t i) const override { return (i % n) != 0; }
-};
-
-// pre-defined mask
-struct Bits : Mask {
-    std::vector<bool> bits;
-    Bits(const std::vector<bool> &bits_in) : bits(bits_in) {}
-    ~Bits() { }
-    bool operator[](size_t i) const override {
-        ASSERT_LESS(i, bits.size());
-        return bits[i];
-    }
-};
-
-// A mask converted to a sequence of two unique values (mapped from true and false)
-struct Mask2Seq : Sequence {
-    const Mask &mask;
-    double true_value;
-    double false_value;
-    Mask2Seq(const Mask &mask_in, double true_value_in = 1.0, double false_value_in = 0.0)
-        : mask(mask_in), true_value(true_value_in), false_value(false_value_in) {}
-    double operator[](size_t i) const override { return mask[i] ? true_value : false_value; }
 };
 
 // custom op1
@@ -192,67 +131,9 @@ Domain z(const std::vector<vespalib::string> &keys);
 // Infer the tensor type spanned by the given spaces
 vespalib::string infer_type(const Layout &layout);
 
-// Wrapper for the things needed to generate a tensor
-struct Source {
-    using Address = TensorSpec::Address;
-
-    const Layout   &layout;
-    const Sequence &seq;
-    const Mask     &mask;
-    Source(const Layout &layout_in, const Sequence &seq_in, const Mask &mask_in)
-        : layout(layout_in), seq(seq_in), mask(mask_in) {}
-};
-
-// Mix layout with a number sequence to make a tensor spec
-class TensorSpecBuilder
-{
-private:
-    using Label = TensorSpec::Label;
-    using Address = TensorSpec::Address;
-
-    Source     _source;
-    TensorSpec _spec;
-    Address    _addr;
-    size_t     _idx;
-
-    void generate(size_t layout_idx) {
-        if (layout_idx == _source.layout.size()) {
-            if (_source.mask[_idx]) {
-                _spec.add(_addr, _source.seq[_idx]);
-            }
-            ++_idx;
-        } else {
-            const Domain &domain = _source.layout[layout_idx];
-            if (domain.size > 0) { // indexed
-                for (size_t i = 0; i < domain.size; ++i) {
-                    _addr.emplace(domain.dimension, Label(i)).first->second = Label(i);
-                    generate(layout_idx + 1);
-                }
-            } else { // mapped
-                for (const vespalib::string &key: domain.keys) {
-                    _addr.emplace(domain.dimension, Label(key)).first->second = Label(key);
-                    generate(layout_idx + 1);
-                }
-            }
-        }
-    }
-
-public:
-    TensorSpecBuilder(const Layout &layout, const Sequence &seq, const Mask &mask)
-        : _source(layout, seq, mask), _spec(infer_type(layout)), _addr(), _idx(0) {}
-    TensorSpec build() {
-        generate(0);
-        return _spec;
-    }
-};
-TensorSpec spec(const Layout &layout, const Sequence &seq, const Mask &mask);
 TensorSpec spec(const Layout &layout, const Sequence &seq);
-TensorSpec spec(const Layout &layout);
-TensorSpec spec(const Domain &domain, const Sequence &seq, const Mask &mask);
 TensorSpec spec(const Domain &domain, const Sequence &seq);
-TensorSpec spec(const Domain &domain);
 TensorSpec spec(double value);
-TensorSpec spec();
 TensorSpec spec(const vespalib::string &type,
                 const std::vector<std::pair<TensorSpec::Address, TensorSpec::Value>> &cells);
 TensorSpec spec(const vespalib::string &value_expr);

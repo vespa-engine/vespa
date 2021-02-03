@@ -12,7 +12,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
-#include "tensor_model.hpp"
+#include "tensor_model.h"
 #include "test_io.h"
 #include "reference_evaluation.h"
 
@@ -195,7 +195,7 @@ struct TestContext {
 
     void test_tensor_map() {
         TEST_DO(test_map_op("-a", operation::Neg::f, Sub2(Div16(N()))));
-        TEST_DO(test_map_op("!a", operation::Not::f, Mask2Seq(SkipNth(3))));
+        TEST_DO(test_map_op("!a", operation::Not::f, Seq({0.0, 1.0, 1.0})));
         TEST_DO(test_map_op("cos(a)", operation::Cos::f, Div16(N())));
         TEST_DO(test_map_op("sin(a)", operation::Sin::f, Div16(N())));
         TEST_DO(test_map_op("tan(a)", operation::Tan::f, Div16(N())));
@@ -212,7 +212,7 @@ struct TestContext {
         TEST_DO(test_map_op("ceil(a)", operation::Ceil::f, Div16(N())));
         TEST_DO(test_map_op("fabs(a)", operation::Fabs::f, Div16(N())));
         TEST_DO(test_map_op("floor(a)", operation::Floor::f, Div16(N())));
-        TEST_DO(test_map_op("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan)));
+        TEST_DO(test_map_op("isNan(a)", operation::IsNan::f, Seq({my_nan, 1.0, 1.0})));
         TEST_DO(test_map_op("relu(a)", operation::Relu::f, Sub2(Div16(N()))));
         TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid::f, Sub2(Div16(N()))));
         TEST_DO(test_map_op("elu(a)", operation::Elu::f, Sub2(Div16(N()))));
@@ -483,8 +483,8 @@ struct TestContext {
         TEST_DO(test_apply_op("a<=b", operation::LessEqual::f, Div16(N())));
         TEST_DO(test_apply_op("a>b", operation::Greater::f, Div16(N())));
         TEST_DO(test_apply_op("a>=b", operation::GreaterEqual::f, Div16(N())));
-        TEST_DO(test_apply_op("a&&b", operation::And::f, Mask2Seq(SkipNth(3))));
-        TEST_DO(test_apply_op("a||b", operation::Or::f, Mask2Seq(SkipNth(3))));
+        TEST_DO(test_apply_op("a&&b", operation::And::f, Seq({0.0, 1.0, 1.0})));
+        TEST_DO(test_apply_op("a||b", operation::Or::f, Seq({0.0, 1.0, 1.0})));
         TEST_DO(test_apply_op("atan2(a,b)", operation::Atan2::f, Div16(N())));
         TEST_DO(test_apply_op("ldexp(a,b)", operation::Ldexp::f, Div16(N())));
         TEST_DO(test_apply_op("fmod(a,b)", operation::Mod::f, Div16(N())));

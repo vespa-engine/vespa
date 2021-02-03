@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generate.h"
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/eval/eval/test/tensor_model.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/aggr.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -81,7 +82,7 @@ void generate_op1_map(const vespalib::string &op1_expr, map_fun_t ref_op, const 
 
 void generate_tensor_map(TestBuilder &dst) {
     generate_op1_map("-a", operation::Neg::f, Sub2(Div16(N())), dst);
-    generate_op1_map("!a", operation::Not::f, Mask2Seq(SkipNth(3)), dst);
+    generate_op1_map("!a", operation::Not::f, Seq({0.0, 1.0, 1.0}), dst);
     generate_op1_map("cos(a)", operation::Cos::f, Div16(N()), dst);
     generate_op1_map("sin(a)", operation::Sin::f, Div16(N()), dst);
     generate_op1_map("tan(a)", operation::Tan::f, Div16(N()), dst);
@@ -98,7 +99,7 @@ void generate_tensor_map(TestBuilder &dst) {
     generate_op1_map("ceil(a)", operation::Ceil::f, Div16(N()), dst);
     generate_op1_map("fabs(a)", operation::Fabs::f, Div16(N()), dst);
     generate_op1_map("floor(a)", operation::Floor::f, Div16(N()), dst);
-    generate_op1_map("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan), dst);
+    generate_op1_map("isNan(a)", operation::IsNan::f, Seq({my_nan, 1.0, 1.0}), dst);
     generate_op1_map("relu(a)", operation::Relu::f, Sub2(Div16(N())), dst);
     generate_op1_map("sigmoid(a)", operation::Sigmoid::f, Sub2(Div16(N())), dst);
     generate_op1_map("elu(a)", operation::Elu::f, Sub2(Div16(N())), dst);
@@ -168,8 +169,8 @@ void generate_tensor_join(TestBuilder &dst) {
     generate_op2_join("a<=b", Div16(N()), dst);
     generate_op2_join("a>b", Div16(N()), dst);
     generate_op2_join("a>=b", Div16(N()), dst);
-    generate_op2_join("a&&b", Mask2Seq(SkipNth(3)), dst);
-    generate_op2_join("a||b", Mask2Seq(SkipNth(3)), dst);
+    generate_op2_join("a&&b", Seq({0.0, 1.0, 1.0}), dst);
+    generate_op2_join("a||b", Seq({0.0, 1.0, 1.0}), dst);
     generate_op2_join("atan2(a,b)", Div16(N()), dst);
     generate_op2_join("ldexp(a,b)", Div16(N()), dst);
     generate_op2_join("fmod(a,b)", Div16(N()), dst);
