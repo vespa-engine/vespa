@@ -50,7 +50,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new ApplicationOwnershipConfirmer(controller, intervals.applicationOwnershipConfirmer, controller.serviceRegistry().ownershipIssues()));
         maintainers.add(new SystemUpgrader(controller, intervals.systemUpgrader));
         maintainers.add(new JobRunner(controller, intervals.jobRunner));
-        maintainers.add(new OsVersionStatusUpdater(controller, intervals.defaultInterval));
+        maintainers.add(new OsVersionStatusUpdater(controller, intervals.osVersionStatusUpdater));
         maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer));
         maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
@@ -98,6 +98,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration applicationOwnershipConfirmer;
         private final Duration systemUpgrader;
         private final Duration jobRunner;
+        private final Duration osVersionStatusUpdater;
         private final Duration osUpgrader;
         private final Duration contactInformationMaintainer;
         private final Duration nameServiceDispatcher;
@@ -120,13 +121,14 @@ public class ControllerMaintenance extends AbstractComponent {
             this.readyJobsTrigger = duration(1, MINUTES);
             this.deploymentMetricsMaintainer = duration(10, MINUTES);
             this.applicationOwnershipConfirmer = duration(12, HOURS);
-            this.systemUpgrader = duration(90, SECONDS);
+            this.systemUpgrader = duration(2, MINUTES);
             this.jobRunner = duration(90, SECONDS);
+            this.osVersionStatusUpdater = duration(2, MINUTES);
             this.osUpgrader = duration(1, MINUTES);
             this.contactInformationMaintainer = duration(12, HOURS);
-            this.nameServiceDispatcher = duration(30, SECONDS);
+            this.nameServiceDispatcher = duration(1, MINUTES);
             this.costReportMaintainer = duration(2, HOURS);
-            this.resourceMeterMaintainer = duration(1, MINUTES);
+            this.resourceMeterMaintainer = duration(3, MINUTES);
             this.cloudEventReporter = duration(30, MINUTES);
             this.resourceTagMaintainer = duration(30, MINUTES);
             this.systemRoutingPolicyMaintainer = duration(10, MINUTES);
