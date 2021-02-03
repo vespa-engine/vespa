@@ -47,7 +47,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("Hourly spend for maximum specified resources ($-.--) exceeds budget from quota ($-.--)!",
+            assertEquals("Please free up some quota! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
                     ValidationTester.censorNumbers(e.getMessage()));
         }
     }
@@ -59,7 +59,20 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: Hourly spend for maximum specified resources ($-.--) exceeds budget from quota ($-.--)!",
+            assertEquals("publiccd: Please free up some quota! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
+                    ValidationTester.censorNumbers(e.getMessage()));
+        }
+    }
+
+    @Test
+    public void test_deploy_with_negative_budget() {
+        var quota = Quota.unlimited().withBudget(BigDecimal.valueOf(-1));
+        var tester = new ValidationTester(10, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
+        try {
+            tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
+            fail();
+        } catch (RuntimeException e) {
+            assertEquals("Please free up some quota! This deployment's quota use is ($-.--) and reserved quota is below zero! ($--.--)",
                     ValidationTester.censorNumbers(e.getMessage()));
         }
     }
