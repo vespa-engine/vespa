@@ -17,7 +17,6 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
-import com.yahoo.metrics.MetricsPresentationConfig;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +28,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
-import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotPreprocessor;
+import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotProviderOrThrow;
 
 /**
  * This handler outputs metrics in a json-like format, consisting of a series of metrics packets.
@@ -60,17 +59,17 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
     private final StateMonitor monitor;
     private final Timer timer;
-    private final SnapshotProvider snapshotPreprocessor;
+    private final SnapshotProvider snapshotProvider;
     private final String applicationName;
 
     @Inject
     public MetricsPacketsHandler(StateMonitor monitor,
                                  Timer timer,
-                                 ComponentRegistry<SnapshotProvider> preprocessors,
+                                 ComponentRegistry<SnapshotProvider> snapshotProviders,
                                  MetricsPacketsHandlerConfig config) {
         this.monitor = monitor;
         this.timer = timer;
-        snapshotPreprocessor = getSnapshotPreprocessor(preprocessors);
+        snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
         applicationName = config.application();
     }
 
@@ -147,11 +146,11 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     }
 
     private MetricSnapshot getSnapshot() {
-        if (snapshotPreprocessor == null) {
+        if (snapshotProvider == null) {
             // TODO: throw exception in ctor instead
             return new MetricSnapshot(0L, 0L, TimeUnit.MILLISECONDS);
         } else {
-            return snapshotPreprocessor.latestSnapshot();
+            return snapshotProvider.latestSnapshot();
         }
     }
 

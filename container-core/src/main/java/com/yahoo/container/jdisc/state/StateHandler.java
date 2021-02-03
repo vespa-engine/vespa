@@ -19,7 +19,6 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
-import com.yahoo.metrics.MetricsPresentationConfig;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -54,20 +53,24 @@ public class StateHandler extends AbstractRequestHandler {
     private final StateMonitor monitor;
     private final Timer timer;
     private final byte[] config;
-    private final SnapshotProvider snapshotPreprocessor;
+    private final SnapshotProvider snapshotProvider;
 
     @Inject
     public StateHandler(StateMonitor monitor, Timer timer, ApplicationMetadataConfig config,
-                        ComponentRegistry<SnapshotProvider> preprocessors) {
+                        ComponentRegistry<SnapshotProvider> snapshotProviders) {
         this.monitor = monitor;
         this.timer = timer;
         this.config = buildConfigOutput(config);
-        snapshotPreprocessor = getSnapshotPreprocessor(preprocessors);
+        snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
     }
 
-    static SnapshotProvider getSnapshotPreprocessor(ComponentRegistry<SnapshotProvider> preprocessors) {
+    static SnapshotProvider getSnapshotProviderOrThrow(ComponentRegistry<SnapshotProvider> preprocessors) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();
-        return (allPreprocessors.size() > 0) ? allPreprocessors.get(0) : null;
+        if (allPreprocessors.size() > 0) {
+            return allPreprocessors.get(0);
+        } else {
+            throw new IllegalArgumentException("At least one snapshot provider is required.");
+        }
     }
 
     @Override
@@ -188,8 +191,8 @@ public class StateHandler extends AbstractRequestHandler {
 
     private byte[] buildHistogramsOutput() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        if (snapshotPreprocessor != null) {
-            snapshotPreprocessor.histogram(new PrintStream(baos));
+        if (snapshotProvider != null) {
+            snapshotProvider.histogram(new PrintStream(baos));
         }
         return baos.toByteArray();
     }
@@ -203,11 +206,11 @@ public class StateHandler extends AbstractRequestHandler {
     }
 
     private MetricSnapshot getSnapshot() {
-        if (snapshotPreprocessor == null) {
+        if (snapshotProvider == null) {
             // TODO: throw exception in ctor instead
             return new MetricSnapshot(0L, 0L, TimeUnit.MILLISECONDS);
         } else {
-            return snapshotPreprocessor.latestSnapshot();
+            return snapshotProvider.latestSnapshot();
         }
     }
 
