@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.exhaustion;
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForBucketSpace;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventForBucketSpace.nodeEventForBaseline;
@@ -491,6 +493,61 @@ public class EventDiffCalculatorTest {
 
         final List<Event> events = fixture.computeEventDiff();
         assertThat(events.size(), equalTo(0));
+    }
+
+    @Test
+    public void feed_block_engage_edge_with_node_exhaustion_info_emits_cluster_and_node_events() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(null)
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're closed", setOf(exhaustion(1, "oil"))));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(2));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventWithDescription("Added resource exhaustion: oil on node 1 [unknown hostname] (0.800 > 0.700)"),
+                nodeEventForBaseline())));
+        assertThat(events, hasItem(
+                clusterEventWithDescription("Cluster feed blocked due to resource exhaustion: we're closed")));
+    }
+
+    @Test
+    public void added_exhaustion_in_feed_block_resource_set_emits_node_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're closed", setOf(exhaustion(1, "oil"))))
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're still closed", setOf(exhaustion(1, "oil"), exhaustion(1, "cpu_brake_fluid"))));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(1)),
+                nodeEventWithDescription("Added resource exhaustion: cpu_brake_fluid on node 1 [unknown hostname] (0.800 > 0.700)"),
+                nodeEventForBaseline())));
+    }
+
+    @Test
+    public void removed_exhaustion_in_feed_block_resource_set_emits_node_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3")
+                .feedBlockBefore(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're closed", setOf(exhaustion(1, "oil"), exhaustion(2, "cpu_brake_fluid"))))
+                .clusterStateAfter("distributor:3 storage:3")
+                .feedBlockAfter(ClusterStateBundle.FeedBlock.blockedWith(
+                        "we're still closed", setOf(exhaustion(1, "oil"))));
+
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(2)),
+                nodeEventWithDescription("Removed resource exhaustion: cpu_brake_fluid on node 2 [unknown hostname] (<= 0.700)"),
+                nodeEventForBaseline())));
     }
 
 }

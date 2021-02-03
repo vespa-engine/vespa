@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.jrt.Spec;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.ResourceUsage;
 
@@ -43,4 +44,32 @@ public class NodeResourceExhaustion {
     public int hashCode() {
         return Objects.hash(node, resourceType, resourceUsage, limit, rpcAddress);
     }
+
+    public String toExhaustionAddedDescription() {
+        return String.format("%s (%.3g > %.3g)", makeDescriptionPrefix(), resourceUsage.getUsage(), limit);
+    }
+
+    public String toExhaustionRemovedDescription() {
+        return String.format("%s (<= %.3g)", makeDescriptionPrefix(), limit);
+    }
+
+    private String makeDescriptionPrefix() {
+        return String.format("%s%s on node %d [%s]",
+                resourceType,
+                (resourceUsage.getName() != null ? ":" + resourceUsage.getName() : ""),
+                node.getIndex(),
+                inferHostnameFromRpcAddress(rpcAddress));
+    }
+
+    private static String inferHostnameFromRpcAddress(String rpcAddress) {
+        if (rpcAddress == null) {
+            return "unknown hostname";
+        }
+        var spec = new Spec(rpcAddress);
+        if (spec.malformed()) {
+            return "unknown hostname";
+        }
+        return spec.host();
+    }
+
 }

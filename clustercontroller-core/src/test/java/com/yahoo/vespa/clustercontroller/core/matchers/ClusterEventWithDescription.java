@@ -28,6 +28,9 @@ public class ClusterEventWithDescription extends BaseMatcher<ClusterEvent> {
 
     @Override
     public void describeMismatch(Object item, Description description) {
+        if (!(item instanceof ClusterEvent)) {
+            return;
+        }
         ClusterEvent other = (ClusterEvent)item;
         description.appendText(String.format("got description '%s'", other.getDescription()));
     }

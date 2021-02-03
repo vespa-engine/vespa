@@ -163,7 +163,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700)", bundle.getFeedBlock().get().getDescription());
 
         // 80% -> 90%, should not trigger new state.
-        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.9), usage("wine", 0.4)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.9), usage("wine", 0.3)));
         bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
         assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700)", bundle.getFeedBlock().get().getDescription());

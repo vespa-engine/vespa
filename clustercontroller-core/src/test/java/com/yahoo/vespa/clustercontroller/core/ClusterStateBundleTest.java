@@ -6,15 +6,13 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.hostinfo.ResourceUsage;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.exhaustion;
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -120,21 +118,11 @@ public class ClusterStateBundleTest {
         assertTrue(blockingBundle.similarTo(blockingBundleWithOtherDesc));
     }
 
-    static NodeResourceExhaustion createDummyExhaustion(String type) {
-        return new NodeResourceExhaustion(new Node(NodeType.STORAGE, 1), type, new ResourceUsage(0.8, null), 0.7, "foo");
-    }
-
-    static Set<NodeResourceExhaustion> exhaustionsOf(String... types) {
-        return Arrays.stream(types)
-                .map(t -> createDummyExhaustion(t))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
     @Test
     public void similarity_test_considers_cluster_feed_block_concrete_exhaustion_set() {
-        var blockingBundleNoSet = createTestBundleWithFeedBlock("foo");
-        var blockingBundleWithSet = createTestBundleWithFeedBlock("bar", exhaustionsOf("beer", "wine"));
-        var blockingBundleWithOtherSet = createTestBundleWithFeedBlock("bar", exhaustionsOf("beer", "soda"));
+        var blockingBundleNoSet        = createTestBundleWithFeedBlock("foo");
+        var blockingBundleWithSet      = createTestBundleWithFeedBlock("bar", setOf(exhaustion(1, "beer"), exhaustion(1, "wine")));
+        var blockingBundleWithOtherSet = createTestBundleWithFeedBlock("bar", setOf(exhaustion(1, "beer"), exhaustion(1, "soda")));
 
         assertTrue(blockingBundleNoSet.similarTo(blockingBundleNoSet));
         assertTrue(blockingBundleWithSet.similarTo(blockingBundleWithSet));
