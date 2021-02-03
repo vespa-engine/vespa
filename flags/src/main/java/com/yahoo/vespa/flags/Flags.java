@@ -261,7 +261,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag MAX_DEAD_BYTES_RATIO = defineDoubleFlag(
             "max-dead-bytes-ratio", 0.2,
-            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2022-02-03",
+            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-04-01",
             "max ratio of dead to used memory bytes in large data structures before compaction is attempted",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
