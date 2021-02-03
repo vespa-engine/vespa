@@ -35,6 +35,8 @@ import java.util.function.BiConsumer;
  * done of a lightweight version of the hits, which is cheaper if a significant
  * number of hits are filtered out.</p>
  *
+ * <p>Do not cache this as it holds references to objects that should be garbage collected.</p>
+ *
  * @author bratseth
  */
 public class Hit extends ListenableFreezableClass implements Data, Comparable<Hit>, Cloneable {
@@ -45,8 +47,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private static final String DOCUMENT_ID = "documentid";
 
     /** A collection of string keyed object properties. */
-    private Map<String,Object> fields = null;
-    private Map<String,Object> unmodifiableFieldMap = null;
+    private Map<String, Object> fields = null;
+    private Map<String, Object> unmodifiableFieldMap = null;
 
     /** Meta data describing how a given searcher should treat this hit. */
     // TODO: The case for this is to allow multiple levels of federation searcher routing.
