@@ -114,13 +114,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag TCP_ABORT_ON_OVERFLOW = defineFeatureFlag(
-            "tcp-abort-on-overflow", false,
-            List.of("andreer"), "2020-12-02", "2021-02-01",
-            "Whether to set /proc/sys/net/ipv4/tcp_abort_on_overflow to 0 (false) or 1 (true)",
-            "Takes effect on next host-admin tick.",
-            HOSTNAME);
-
     public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
             "tls-for-zookeeper-client-server-communication", "OFF",
             List.of("hmusum"), "2020-12-02", "2021-04-01",
