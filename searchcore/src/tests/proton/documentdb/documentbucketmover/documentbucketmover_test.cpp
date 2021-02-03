@@ -112,7 +112,7 @@ struct ControllerFixtureBase : public ::testing::Test
     const MoveOperationVector &docsMoved() const {
         return _moveHandler._moves;
     }
-    const BucketId::List &bucketsModified() const {
+    const std::vector<BucketId> &bucketsModified() const {
         return _modifiedHandler._modified;
     }
     const BucketId::List &calcAsked() const {

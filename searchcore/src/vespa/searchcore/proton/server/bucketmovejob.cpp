@@ -64,8 +64,7 @@ BucketMoveJob::checkBucket(const BucketId &bucket,
     const MaintenanceDocumentSubDB &target(wantReady ? _ready : _notReady);
     LOG(debug, "checkBucket(): mover.setupForBucket(%s, source:%u, target:%u)",
         bucket.toString().c_str(), source.sub_db_id(), target.sub_db_id());
-    mover.setupForBucket(bucket, &source, target.sub_db_id(),
-                         _moveHandler, _ready.meta_store()->getBucketDB());
+    mover.setupForBucket(bucket, &source, target.sub_db_id(), _moveHandler);
 }
 
 BucketMoveJob::ScanResult
@@ -151,7 +150,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _modifiedHandler(modifiedHandler),
       _ready(ready),
       _notReady(notReady),
-      _mover(getLimiter()),
+      _mover(getLimiter(), _ready.meta_store()->getBucketDB()),
       _doneScan(false),
       _scanPos(),
       _scanPass(ScanPass::FIRST),
@@ -161,7 +160,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _delayedBucketsFrozen(),
       _frozenBuckets(frozenBuckets),
       _bucketCreateNotifier(bucketCreateNotifier),
-      _delayedMover(getLimiter()),
+      _delayedMover(getLimiter(), _ready.meta_store()->getBucketDB()),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
       _diskMemUsageNotifier(diskMemUsageNotifier)
