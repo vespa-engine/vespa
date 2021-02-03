@@ -66,13 +66,13 @@ public class QuotaValidator extends Validator {
 
     private void throwIfBudgetNegative(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < 0) {
-            throwBudgetException("Please free up some quota! This deployment's quota use is ($%.2f) and reserved quota is below zero! ($%.2f)", spend, budget, systemName);
+            throwBudgetException("Please free up some capacity! This deployment's quota use is ($%.2f) and reserved quota is below zero! ($%.2f)", spend, budget, systemName);
         }
     }
 
     private void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < spend) {
-            throwBudgetException("Please free up some quota! This deployment's quota use ($%.2f) exceeds reserved quota ($%.2f)!", spend, budget, systemName);
+            throwBudgetException("Please free up some capacity! This deployment's quota use ($%.2f) exceeds reserved quota ($%.2f)!", spend, budget, systemName);
         }
     }
 
