@@ -114,13 +114,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_FAST_VALUE_TENSOR_IMPLEMENTATION = defineFeatureFlag(
-            "use-fast-value-tensor-implementation", false,
-            List.of("geirst"), "2020-12-02", "2021-02-01",
-            "Whether to use FastValueBuilderFactory as the tensor implementation on all content nodes.",
-            "Takes effect at restart of content node process",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag TCP_ABORT_ON_OVERFLOW = defineFeatureFlag(
             "tcp-abort-on-overflow", false,
             List.of("andreer"), "2020-12-02", "2021-02-01",
