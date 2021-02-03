@@ -21,6 +21,8 @@ import java.util.Iterator;
  * result items, as well as further HitGroups, making up a <i>composite</i> structure. This allows the hits of a result
  * to be hierarchically organized. A Hit is polymorphic and may contain any kind of information deemed
  * an approriate partial answer to the Query.
+ * <p>
+ * Do not cache this as it holds references to objects that should be garbage collected.
  *
  * @author bratseth
  */
