@@ -169,14 +169,6 @@ public class Flags {
             ZONE_ID
     );
 
-    public static final UnboundIntFlag TENANT_NODE_QUOTA = defineIntFlag(
-            "tenant-node-quota", 5,
-            List.of("andreer"), "2020-12-02", "2021-02-01",
-            "The number of nodes a tenant is allowed to request per cluster",
-            "Only takes effect on next deployment, if set to a value other than the default for flag!",
-            APPLICATION_ID
-    );
-
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
             "enable-public-only", false,
             List.of("ogronnesby"), "2020-12-02", "2021-02-01",
