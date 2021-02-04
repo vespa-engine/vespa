@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/instruction/dense_single_reduce_function.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
@@ -19,15 +19,15 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add_dense({{"a", 2}, {"b", 3}, {"c", 4}, {"d", 5}})
-        .add_dense({{"a", 9}, {"b", 9}, {"c", 9}, {"d", 9}})
-        .add_cube("a", 2, "b", 1, "c", 1)
-        .add_cube("a", 1, "b", 2, "c", 1)
-        .add_cube("a", 1, "b", 1, "c", 2)
-        .add_cube("a", 1, "b", 1, "c", 1)
-        .add_vector("a", 10)
-        .add("xy_mapped", spec({x({"a", "b"}),y({"x", "y"})}, N()))
-        .add("xyz_mixed", spec({x({"a", "b"}),y({"x", "y"}),z(3)}, N()));
+        .add_variants("a2b3c4d5", GenSpec().idx("a", 2).idx("b", 3).idx("c", 4).idx("d", 5))
+        .add_variants("a9b9c9d9", GenSpec().idx("a", 9).idx("b", 9).idx("c", 9).idx("d", 9))
+        .add_variants("a2b1c1", GenSpec().idx("a", 2).idx("b", 1).idx("c", 1))
+        .add_variants("a1b2c1", GenSpec().idx("a", 1).idx("b", 2).idx("c", 1))
+        .add_variants("a1b1c2", GenSpec().idx("a", 1).idx("b", 1).idx("c", 2))
+        .add_variants("a1b1c1", GenSpec().idx("a", 1).idx("b", 1).idx("c", 1))
+        .add_variants("a10", GenSpec().idx("a", 10))
+        .add("xy_mapped", GenSpec().map("x", {"a", "b"}).map("y", {"x", "y"}).gen())
+        .add("xyz_mixed", GenSpec().map("x", {"a", "b"}).map("y", {"x", "y"}).idx("z", 3).gen());
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -124,7 +124,7 @@ TEST("require that non-simple aggregators cannot be decomposed into multiple red
 }
 
 vespalib::string make_expr(const vespalib::string &arg, const vespalib::string &dim, bool float_cells, Aggr aggr) {
-    return make_string("reduce(%s%s,%s,%s)", arg.c_str(), float_cells ? "f" : "", AggrNames::name_of(aggr)->c_str(), dim.c_str());
+    return make_string("reduce(%s%s,%s,%s)", arg.c_str(), float_cells ? "_f" : "", AggrNames::name_of(aggr)->c_str(), dim.c_str());
 }
 
 void verify_optimized_multi(const vespalib::string &arg, const vespalib::string &dim, size_t outer_size, size_t reduce_size, size_t inner_size) {

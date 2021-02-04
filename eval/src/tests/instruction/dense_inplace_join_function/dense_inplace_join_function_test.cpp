@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
@@ -15,35 +15,29 @@ using namespace vespalib::eval::tensor_function;
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
-double seq_value = 0.0;
-
-struct GlobalSequence : public Sequence {
-    GlobalSequence() {}
-    double operator[](size_t) const override {
-        seq_value += 1.0;
-        return seq_value;
-    }
-    ~GlobalSequence() {}
+GenSpec::seq_t glb = [] (size_t) {
+    static double seq_value = 0.0;
+    seq_value += 1.0;
+    return seq_value;
 };
-GlobalSequence seq;
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("con_x5_A", spec({x(5)}, seq))
-        .add("con_x5_B", spec({x(5)}, seq))
-        .add("con_x5_C", spec({x(5)}, seq))
-        .add("con_x5y3_A", spec({x(5),y(3)}, seq))
-        .add("con_x5y3_B", spec({x(5),y(3)}, seq))
-        .add_mutable("mut_dbl_A", spec(1.5))
-        .add_mutable("mut_dbl_B", spec(2.5))
-        .add_mutable("mut_x5_A", spec({x(5)}, seq))
-        .add_mutable("mut_x5_B", spec({x(5)}, seq))
-        .add_mutable("mut_x5_C", spec({x(5)}, seq))
-        .add_mutable("mut_x5f_D", spec(float_cells({x(5)}), seq))
-        .add_mutable("mut_x5f_E", spec(float_cells({x(5)}), seq))
-        .add_mutable("mut_x5y3_A", spec({x(5),y(3)}, seq))
-        .add_mutable("mut_x5y3_B", spec({x(5),y(3)}, seq))
-        .add_mutable("mut_x_sparse", spec({x({"a", "b", "c"})}, seq));
+        .add("con_x5_A", GenSpec().idx("x", 5).seq(glb).gen())
+        .add("con_x5_B", GenSpec().idx("x", 5).seq(glb).gen())
+        .add("con_x5_C", GenSpec().idx("x", 5).seq(glb).gen())
+        .add("con_x5y3_A", GenSpec().idx("x", 5).idx("y", 3).seq(glb).gen())
+        .add("con_x5y3_B", GenSpec().idx("x", 5).idx("y", 3).seq(glb).gen())
+        .add_mutable("mut_dbl_A", GenSpec().seq_bias(1.5).gen())
+        .add_mutable("mut_dbl_B", GenSpec().seq_bias(2.5).gen())
+        .add_mutable("mut_x5_A", GenSpec().idx("x", 5).seq(glb).gen())
+        .add_mutable("mut_x5_B", GenSpec().idx("x", 5).seq(glb).gen())
+        .add_mutable("mut_x5_C", GenSpec().idx("x", 5).seq(glb).gen())
+        .add_mutable("mut_x5f_D", GenSpec().cells_float().idx("x", 5).seq(glb).gen())
+        .add_mutable("mut_x5f_E", GenSpec().cells_float().idx("x", 5).seq(glb).gen())
+        .add_mutable("mut_x5y3_A", GenSpec().idx("x", 5).idx("y", 3).seq(glb).gen())
+        .add_mutable("mut_x5y3_B", GenSpec().idx("x", 5).idx("y", 3).seq(glb).gen())
+        .add_mutable("mut_x_sparse", GenSpec().map("x", {"a", "b", "c"}).seq(glb).gen());
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

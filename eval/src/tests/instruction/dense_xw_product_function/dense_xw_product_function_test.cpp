@@ -5,7 +5,7 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
@@ -24,26 +24,21 @@ struct First {
     operator bool() const { return value; }
 };
 
-struct MyVecSeq : Sequence {
-    double operator[](size_t i) const override { return (3.0 + i) * 7.0; }
-};
-
-struct MyMatSeq : Sequence {
-    double operator[](size_t i) const override { return (5.0 + i) * 43.0; }
-};
+GenSpec::seq_t my_vec_seq = [] (size_t i) { return (3.0 + i) * 7.0; };
+GenSpec::seq_t my_mat_seq = [] (size_t i) { return (5.0 + i) * 43.0; };
 
 void add_vector(EvalFixture::ParamRepo &repo, const char *d1, size_t s1) {
     auto name = make_string("%s%zu", d1, s1);
-    auto layout = Layout({{d1, s1}});
-    repo.add(name, spec(layout, MyVecSeq()));
-    repo.add(name + "f", spec(float_cells(layout), MyVecSeq()));
+    auto layout = GenSpec().idx(d1, s1).seq(my_vec_seq);
+    repo.add(name, layout.gen());
+    repo.add(name + "f", layout.cells_float().gen());
 }
 
 void add_matrix(EvalFixture::ParamRepo &repo, const char *d1, size_t s1, const char *d2, size_t s2) {
     auto name = make_string("%s%zu%s%zu", d1, s1, d2, s2);
-    auto layout = Layout({{d1, s1}, {d2, s2}});
-    repo.add(name, spec(layout, MyMatSeq()));
-    repo.add(name + "f", spec(float_cells(layout), MyMatSeq()));
+    auto layout = GenSpec().idx(d1, s1).idx(d2, s2).seq(my_mat_seq);
+    repo.add(name, layout.gen());
+    repo.add(name + "f", layout.cells_float().gen());
 }
 
 EvalFixture::ParamRepo make_params() {

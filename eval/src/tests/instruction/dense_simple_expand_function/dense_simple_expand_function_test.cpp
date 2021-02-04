@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
@@ -18,17 +18,17 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", spec(1.5))
-        .add("sparse", spec({x({"a"})}, N()))
-        .add("mixed", spec({y({"a"}),z(5)}, N()))
-        .add_vector("a", 5)
-        .add_vector("b", 3)
-        .add_cube("A", 1, "a", 5, "c", 1)
-        .add_cube("B", 1, "b", 3, "c", 1)
-        .add_matrix("a", 5, "c", 3)
-        .add_matrix("x", 3, "y", 2)
-        .add_cube("a", 1, "b", 1, "c", 1)
-        .add_cube("x", 1, "y", 1, "z", 1);
+        .add("a", GenSpec().seq_bias(1.5).gen())
+        .add("sparse", GenSpec().map("x", {"a"}).gen())
+        .add("mixed", GenSpec().map("y", {"a"}).idx("z", 5).gen())
+        .add_variants("a5", GenSpec().idx("a", 5))
+        .add_variants("b3", GenSpec().idx("b", 3))
+        .add_variants("A1a5c1", GenSpec().idx("A", 1).idx("a", 5).idx("c", 1))
+        .add_variants("B1b3c1", GenSpec().idx("B", 1).idx("b", 3).idx("c", 1))
+        .add_variants("a5c3", GenSpec().idx("a", 5).idx("c", 3))
+        .add_variants("x3y2", GenSpec().idx("x", 3).idx("y", 2))
+        .add_variants("a1b1c1", GenSpec().idx("a", 1).idx("b", 1).idx("c", 1))
+        .add_variants("x1y1z1", GenSpec().idx("x", 1).idx("y", 1).idx("z", 1));
 }
 
 EvalFixture::ParamRepo param_repo = make_params();
@@ -81,12 +81,12 @@ TEST(ExpandTest, simple_expand_handles_asymmetric_operations_correctly) {
 }
 
 TEST(ExpandTest, simple_expand_can_have_various_cell_types) {
-    verify_optimized("join(a5,b3f,f(x,y)(x*y))", Inner::RHS);
-    verify_optimized("join(a5f,b3,f(x,y)(x*y))", Inner::RHS);
-    verify_optimized("join(a5f,b3f,f(x,y)(x*y))", Inner::RHS);
-    verify_optimized("join(b3,a5f,f(x,y)(x*y))", Inner::LHS);
-    verify_optimized("join(b3f,a5,f(x,y)(x*y))", Inner::LHS);
-    verify_optimized("join(b3f,a5f,f(x,y)(x*y))", Inner::LHS);
+    verify_optimized("join(a5,b3_f,f(x,y)(x*y))", Inner::RHS);
+    verify_optimized("join(a5_f,b3,f(x,y)(x*y))", Inner::RHS);
+    verify_optimized("join(a5_f,b3_f,f(x,y)(x*y))", Inner::RHS);
+    verify_optimized("join(b3,a5_f,f(x,y)(x*y))", Inner::LHS);
+    verify_optimized("join(b3_f,a5,f(x,y)(x*y))", Inner::LHS);
+    verify_optimized("join(b3_f,a5_f,f(x,y)(x*y))", Inner::LHS);
 }
 
 TEST(ExpandTest, simple_expand_is_never_inplace) {

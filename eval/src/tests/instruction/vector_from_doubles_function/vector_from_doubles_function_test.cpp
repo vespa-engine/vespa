@@ -3,7 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/vector_from_doubles_function.h>
-#include <vespa/eval/eval/test/tensor_model.hpp>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 
 #include <vespa/vespalib/util/stringfmt.h>
@@ -18,11 +18,11 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", spec(1.0))
-        .add("b", spec(2.0))
-        .add("c", spec(3.0))
-        .add("d", spec(4.0))
-        .add("x5", spec({x(5)}, N()));
+        .add("a", GenSpec().seq_bias(1.0).gen())
+        .add("b", GenSpec().seq_bias(2.0).gen())
+        .add("c", GenSpec().seq_bias(3.0).gen())
+        .add("d", GenSpec().seq_bias(4.0).gen())
+        .add("x5", GenSpec().idx("x", 5).gen());
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
