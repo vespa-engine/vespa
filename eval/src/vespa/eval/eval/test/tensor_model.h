@@ -29,18 +29,7 @@ struct MyIn {
     }
 };
 
-// A collection of labels for a single dimension
-struct Domain {
-    vespalib::string dimension;
-    size_t size; // indexed
-    std::vector<vespalib::string> keys; // mapped
-    Domain(const Domain &);
-    Domain(const vespalib::string &dimension_in, size_t size_in)
-        : dimension(dimension_in), size(size_in), keys() {}
-    Domain(const vespalib::string &dimension_in, const std::vector<vespalib::string> &keys_in)
-        : dimension(dimension_in), size(0), keys(keys_in) {}
-    ~Domain();
-};
+using Domain = DimSpec;
 
 struct Layout {
     CellType cell_type;
@@ -69,7 +58,7 @@ Domain z();
 Domain z(size_t size);
 Domain z(const std::vector<vespalib::string> &keys);
 
-// Infer the tensor type spanned by the given spaces
+// Infer the tensor type implied by the given layout
 vespalib::string infer_type(const Layout &layout);
 
 TensorSpec spec(const Layout &layout, const Sequence &seq);

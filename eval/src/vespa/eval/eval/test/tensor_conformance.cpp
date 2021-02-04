@@ -142,9 +142,9 @@ struct TestContext {
             TensorSpec input = spec(layout, seq);
             for (const Domain &domain: layout) {
                 TEST_STATE(fmt("shape: %s, reduce dimension: %s",
-                               infer_type(layout).c_str(), domain.dimension.c_str()).c_str());
+                               infer_type(layout).c_str(), domain.name().c_str()).c_str());
                 vespalib::string expr = fmt("reduce(a,%s,%s)",
-                                            AggrNames::name_of(aggr)->c_str(), domain.dimension.c_str());
+                                            AggrNames::name_of(aggr)->c_str(), domain.name().c_str());
                 TEST_DO(verify_result(factory, expr, {input}));
             }
             {

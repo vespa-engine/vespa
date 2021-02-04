@@ -94,6 +94,9 @@ private:
 
 public:
     GenSpec() : _dims(), _cells(CellType::DOUBLE), _seq(N()) {}
+    GenSpec(double bias) : _dims(), _cells(CellType::DOUBLE), _seq(N(bias)) {}
+    GenSpec(const std::vector<DimSpec> &dims_in) : _dims(dims_in), _cells(CellType::DOUBLE), _seq(N()) {}
+
     GenSpec(GenSpec &&other);
     GenSpec(const GenSpec &other);
     GenSpec &operator=(GenSpec &&other);
@@ -125,6 +128,7 @@ public:
         _seq = seq_in;
         return *this;
     }
+    // TODO: stop using and remove
     GenSpec &seq_bias(double bias) { return seq(N(bias)); }
     ValueType type() const;
     TensorSpec gen() const;

@@ -32,7 +32,7 @@ void generate_reduce(Aggr aggr, const Sequence &seq, TestBuilder &dst) {
         TensorSpec input = spec(layout, seq);
         for (const Domain &domain: layout) {
             vespalib::string expr = vespalib::make_string("reduce(a,%s,%s)",
-                    AggrNames::name_of(aggr)->c_str(), domain.dimension.c_str());
+                    AggrNames::name_of(aggr)->c_str(), domain.name().c_str());
             dst.add(expr, {{"a", input}});
         }
         {
