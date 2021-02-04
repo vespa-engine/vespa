@@ -520,7 +520,7 @@ public class DocumentV1ApiTest {
         access.session.expect((remove, parameters) -> {
             DocumentRemove expectedRemove = new DocumentRemove(doc2.getId());
             expectedRemove.setCondition(new TestAndSetCondition("false"));
-            assertEquals(new DocumentRemove(doc2.getId()), remove);
+            assertEquals(expectedRemove, remove);
             assertEquals(parameters().withRoute("route"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentIdResponse(0, doc2.getId()));
             return new Result(Result.ResultType.SUCCESS, null);
