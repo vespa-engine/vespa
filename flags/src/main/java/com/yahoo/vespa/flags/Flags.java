@@ -124,12 +124,6 @@ public class Flags {
             "Takes effect on restart of process",
             NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag VALIDATE_ENDPOINT_CERTIFICATES = defineFeatureFlag(
-            "validate-endpoint-certificates", false,
-            List.of("andreer"), "2020-12-02", "2021-02-01",
-            "Whether endpoint certificates should be validated before use",
-            "Takes effect on the next deployment of the application");
-
     public static final UnboundStringFlag YUM_DIST_HOST = defineStringFlag(
             "yum-dist-host", "",
             List.of("aressem"), "2020-12-02", "2021-03-01",
