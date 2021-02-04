@@ -8,6 +8,39 @@ using vespalib::make_string_short::fmt;
 
 namespace vespalib::eval::test {
 
+//-----------------------------------------------------------------------------
+
+Sequence N(double bias) {
+    return [bias](size_t i) { return (i + bias); };
+}
+
+Sequence AX_B(double a, double b) {
+    return [a,b](size_t i) { return (a * i) + b; };
+}
+
+Sequence Div16(const Sequence &seq) {
+    return [seq](size_t i) { return (seq(i) / 16.0); };
+}
+
+Sequence Sub2(const Sequence &seq) {
+    return [seq](size_t i) { return (seq(i) - 2.0); };
+}
+
+Sequence OpSeq(const Sequence &seq, map_fun_t op) {
+    return [seq,op](size_t i) { return op(seq(i)); };
+}
+
+Sequence SigmoidF(const Sequence &seq) {
+    return [seq](size_t i) { return (float)operation::Sigmoid::f(seq(i)); };
+}
+
+Sequence Seq(const std::vector<double> &seq) {
+    assert(!seq.empty());
+    return [seq](size_t i) { return seq[i % seq.size()]; };
+}
+
+//-----------------------------------------------------------------------------
+
 DimSpec::~DimSpec() = default;
 
 std::vector<vespalib::string>

@@ -5,8 +5,6 @@
 
 namespace vespalib::eval::test {
 
-Seq::~Seq() = default;
-
 Domain::Domain(const Domain &) = default;
 Domain::~Domain() = default;
 
@@ -63,7 +61,7 @@ private:
 
     void generate(size_t layout_idx) {
         if (layout_idx == _source.layout.size()) {
-            _spec.add(_addr, _source.seq[_idx++]);
+            _spec.add(_addr, _source.seq(_idx++));
         } else {
             const Domain &domain = _source.layout[layout_idx];
             if (domain.size > 0) { // indexed

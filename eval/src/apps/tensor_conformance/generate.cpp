@@ -183,8 +183,8 @@ void generate_tensor_join(TestBuilder &dst) {
 
 void generate_dot_product(TestBuilder &dst,
                           double expect,
-                          const Layout &lhs, const Seq &lhs_seq,
-                          const Layout &rhs, const Seq &rhs_seq)
+                          const Layout &lhs, const Sequence &lhs_seq,
+                          const Layout &rhs, const Sequence &rhs_seq)
 {
     dst.add("reduce(a*b,sum)",
             { {"a", spec(lhs, lhs_seq)},{"b", spec(rhs, rhs_seq)} },
@@ -194,8 +194,8 @@ void generate_dot_product(TestBuilder &dst,
 void generate_dot_product(TestBuilder &dst,
                           double expect,
                           const Layout &layout,
-                          const Seq &lhs_seq,
-                          const Seq &rhs_seq)
+                          const Sequence &lhs_seq,
+                          const Sequence &rhs_seq)
 {
     auto fl_lay = float_cells(layout);
     generate_dot_product(dst, expect, layout, lhs_seq, layout, rhs_seq);

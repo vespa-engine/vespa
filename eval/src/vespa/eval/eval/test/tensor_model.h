@@ -2,68 +2,9 @@
 
 #pragma once
 
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/cell_type.h>
-#include <cassert>
-#include <vector>
+#include "gen_spec.h"
 
 namespace vespalib::eval::test {
-
-using map_fun_t = vespalib::eval::operation::op1_t;
-using join_fun_t = vespalib::eval::operation::op2_t;
-
-// Random access sequence of numbers
-struct Sequence {
-    virtual double operator[](size_t i) const = 0;
-    virtual ~Sequence() {}
-};
-
-// Sequence of natural numbers (starting at 1)
-struct N : Sequence {
-    double operator[](size_t i) const override { return (1.0 + i); }
-};
-
-// Sequence of another sequence divided by 16
-struct Div16 : Sequence {
-    const Sequence &seq;
-    Div16(const Sequence &seq_in) : seq(seq_in) {}
-    double operator[](size_t i) const override { return (seq[i] / 16.0); }
-};
-
-// Sequence of another sequence minus 2
-struct Sub2 : Sequence {
-    const Sequence &seq;
-    Sub2(const Sequence &seq_in) : seq(seq_in) {}
-    double operator[](size_t i) const override { return (seq[i] - 2.0); }
-};
-
-// Sequence of a unary operator applied to a sequence
-struct OpSeq : Sequence {
-    const Sequence &seq;
-    map_fun_t op;
-    OpSeq(const Sequence &seq_in, map_fun_t op_in) : seq(seq_in), op(op_in) {}
-    double operator[](size_t i) const override { return op(seq[i]); }
-};
-
-// Sequence of applying sigmoid to another sequence, plus rounding to nearest float
-struct SigmoidF : Sequence {
-    const Sequence &seq;
-    SigmoidF(const Sequence &seq_in) : seq(seq_in) {}
-    double operator[](size_t i) const override { return (float)operation::Sigmoid::f(seq[i]); }
-};
-
-// pre-defined repeating sequence of numbers
-struct Seq : Sequence {
-    std::vector<double> seq;
-    Seq() : seq() {}
-    Seq(const std::vector<double> &seq_in)
-        : seq(seq_in) { assert(!seq_in.empty()); }
-    ~Seq() override;
-    double operator[](size_t i) const override {
-        return seq[i % seq.size()];
-    }
-};
 
 // custom op1
 struct MyOp {

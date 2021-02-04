@@ -503,8 +503,8 @@ struct TestContext {
     }
 
     void test_dot_product(double expect,
-                          const Layout &lhs, const Seq &lhs_seq,
-                          const Layout &rhs, const Seq &rhs_seq)
+                          const Layout &lhs, const Sequence &lhs_seq,
+                          const Layout &rhs, const Sequence &rhs_seq)
     {
         TEST_DO(test_dot_product(expect, spec(lhs, lhs_seq), spec(rhs, rhs_seq)));
         TEST_DO(test_dot_product(expect, spec(float_cells(lhs), lhs_seq), spec(rhs, rhs_seq)));
