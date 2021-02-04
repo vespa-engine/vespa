@@ -252,24 +252,24 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // POST with namespace and document type is a restricted visit with a required remote data handler ("route")
+        // POST with namespace and document type is a restricted visit with a required destination cluster ("destinationCluster")
         access.expect(parameters -> {
             fail("Not supposed to run");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid", POST);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"," +
-                       "  \"message\": \"Missing required property 'route'\"" +
+                       "  \"message\": \"Must specify 'destinationCluster' at '/document/v1/space/music/docid'\"" +
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // POST with namespace and document type is a restricted visit with a require remote data handler ("route")
+        // POST with namespace and document type is a restricted visit with a required destination cluster ("destinationCluster")
         access.expect(parameters -> {
-            assertEquals("zero", parameters.getRemoteDataHandler());
-            assertEquals("music:[document]", parameters.fieldSet());
+            assertEquals("[Content:cluster=content]", parameters.getRemoteDataHandler());
+            assertEquals("[all]", parameters.fieldSet());
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?route=zero", POST);
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destinationCluster=content&selection=true&cluster=content", POST);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"" +
                        "}", response.readAll());
@@ -280,19 +280,20 @@ public class DocumentV1ApiTest {
         access.expect(parameters -> {
             assertEquals("(true) and (music) and (id.namespace=='space')", parameters.getDocumentSelection());
             assertEquals("[id]", parameters.fieldSet());
+            assertEquals(10_000, parameters.getSessionTimeoutMs());
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "Huzzah!");
         });
         access.session.expect((update, parameters) -> {
             DocumentUpdate expectedUpdate = new DocumentUpdate(doc3.getDataType(), doc3.getId());
             expectedUpdate.addFieldUpdate(FieldUpdate.createAssign(doc3.getField("artist"), new StringFieldValue("Lisa Ekdahl")));
-            expectedUpdate.setCondition(new TestAndSetCondition("(true) and (music) and (id.namespace=='space')"));
+            expectedUpdate.setCondition(new TestAndSetCondition("true"));
             assertEquals(expectedUpdate, update);
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
-            assertEquals(parameters().withRoute("zero"), parameters);
+            assertEquals(parameters().withRoute("content"), parameters);
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&route=zero", PUT,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&cluster=content&timeChunk=10", PUT,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }" +
@@ -303,14 +304,25 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
+        // PUT with namespace, document type and group is also a restricted visit which requires a cluster.
+        access.expect(parameters -> {
+            fail("Not supposed to run");
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/troupe?selection=false", PUT);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/group/troupe\"," +
+                       "  \"message\": \"Must specify 'cluster' at '/document/v1/space/music/group/troupe'\"" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
         // PUT with namespace, document type and group is also a restricted visit which requires a selection.
         access.expect(parameters -> {
             fail("Not supposed to run");
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/group/troupe", PUT);
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/troupe?cluster=content", PUT);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/group/troupe\"," +
-                       "  \"message\": \"Missing required property 'selection'\"" +
+                       "  \"message\": \"Must specify 'selection' at '/document/v1/space/music/group/troupe'\"" +
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
@@ -319,32 +331,44 @@ public class DocumentV1ApiTest {
         access.expect(parameters -> {
             assertEquals("(false) and (music) and (id.namespace=='space')", parameters.getDocumentSelection());
             assertEquals("[id]", parameters.fieldSet());
+            assertEquals(60_000, parameters.getSessionTimeoutMs());
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(0));
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "Huzzah?");
         });
         access.session.expect((remove, parameters) -> {
             DocumentRemove expectedRemove = new DocumentRemove(doc2.getId());
-            expectedRemove.setCondition(new TestAndSetCondition("(false) and (music) and (id.namespace=='space')"));
-            assertEquals(new DocumentRemove(doc2.getId()), remove);
-            assertEquals(parameters().withRoute("zero"), parameters);
+            expectedRemove.setCondition(new TestAndSetCondition("false"));
+            assertEquals(expectedRemove, remove);
+            assertEquals(parameters().withRoute("content"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentIdResponse(0, doc2.getId(), "boom", Response.Outcome.ERROR));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=false&route=zero", DELETE);
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=false&cluster=content", DELETE);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"," +
                        "  \"message\": \"boom\"" +
                        "}", response.readAll());
         assertEquals(500, response.getStatus());
 
-        // DELETE at the root is also a deletion visit. These require a selection.
+        // DELETE at the root is also a deletion visit. These also require a selection.
         access.expect(parameters -> {
             fail("Not supposed to run");
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid", DELETE);
+        response = driver.sendRequest("http://localhost/document/v1/", DELETE);
         assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
-                       "  \"message\": \"Missing required property 'selection'\"" +
+                       "  \"pathId\": \"/document/v1/\"," +
+                       "  \"message\": \"Must specify 'selection' at '/document/v1/'\"" +
+                       "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
+        // DELETE at the root is also a deletion visit. These also require a cluster.
+        access.expect(parameters -> {
+            fail("Not supposed to run");
+        });
+        response = driver.sendRequest("http://localhost/document/v1/?selection=true", DELETE);
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/\"," +
+                       "  \"message\": \"Must specify 'cluster' at '/document/v1/'\"" +
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
