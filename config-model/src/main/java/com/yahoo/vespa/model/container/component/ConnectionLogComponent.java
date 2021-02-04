@@ -11,15 +11,17 @@ import java.util.OptionalInt;
 
 public class ConnectionLogComponent extends SimpleComponent implements ConnectionLogConfig.Producer {
 
+    private final String logDirectoryName;
     private final String clusterName;
     private final int queueSize;
 
-    public ConnectionLogComponent(ContainerCluster<?> cluster, Class<? extends ConnectionLog> cls) {
-        this(cluster, cls, cluster.getName());
+    public ConnectionLogComponent(ContainerCluster<?> cluster, Class<? extends ConnectionLog> cls, String logDirectoryName) {
+        this(cluster, cls, logDirectoryName, cluster.getName());
     }
 
-    public ConnectionLogComponent(ContainerCluster<?> cluster, Class<? extends ConnectionLog> cls, String clusterName) {
+    public ConnectionLogComponent(ContainerCluster<?> cluster, Class<? extends ConnectionLog> cls, String logDirectoryName, String clusterName) {
         super(new ComponentModel(cls.getName(), null, "jdisc_http_service", null));
+        this.logDirectoryName = logDirectoryName;
         this.clusterName = clusterName;
         this.queueSize = queueSize(cluster).orElse(-1);
     }
@@ -34,6 +36,7 @@ public class ConnectionLogComponent extends SimpleComponent implements Connectio
     @Override
     public void getConfig(ConnectionLogConfig.Builder builder) {
         builder.cluster(clusterName);
+        builder.logDirectoryName(logDirectoryName);
         if (queueSize >= 0) {
             builder.queueSize(queueSize);
         }
