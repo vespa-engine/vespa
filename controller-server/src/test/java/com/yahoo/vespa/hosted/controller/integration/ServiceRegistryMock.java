@@ -24,6 +24,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueH
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopTenantSecretService;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummySystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
@@ -64,6 +66,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final RoleService roleService = new NoopRoleService();
     private final BillingController billingController = new MockBillingController();
     private final ContainerRegistryMock containerRegistry = new ContainerRegistryMock();
+    private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -203,6 +206,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ContainerRegistryMock containerRegistry() {
         return containerRegistry;
+    }
+
+    @Override
+    public TenantSecretService tenantSecretService() {
+        return tenantSecretService;
     }
 
     public ConfigServerMock configServerMock() {

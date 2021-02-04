@@ -29,6 +29,7 @@ import java.net.http.HttpRequest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -73,7 +74,8 @@ public class SignatureFilterTest {
                                                      LastLoginInfo.EMPTY,
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(),
-                                                     TenantInfo.EMPTY));
+                                                     TenantInfo.EMPTY,
+                                                     List.of()));
         tester.curator().writeApplication(new Application(appId, tester.clock().instant()));
     }
 
@@ -117,7 +119,8 @@ public class SignatureFilterTest {
                                                      LastLoginInfo.EMPTY,
                                                      Optional.empty(),
                                                      ImmutableBiMap.of(publicKey, () -> "user"),
-                                                     TenantInfo.EMPTY));
+                                                     TenantInfo.EMPTY,
+                                                     List.of()));
         verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
                               new SecurityContext(new SimplePrincipal("user"),
                                                   Set.of(Role.reader(id.tenant()),
