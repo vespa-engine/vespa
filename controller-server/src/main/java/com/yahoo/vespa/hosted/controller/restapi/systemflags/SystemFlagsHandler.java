@@ -33,7 +33,7 @@ public class SystemFlagsHandler extends LoggingRequestHandler {
                               ServiceIdentityProvider identityProvider,
                               Executor executor) {
         super(executor);
-        this.deployer = new SystemFlagsDeployer(identityProvider, zoneRegistry.system(), FlagsTarget.getAllTargetsInSystem(zoneRegistry));
+        this.deployer = new SystemFlagsDeployer(identityProvider, zoneRegistry.system(), FlagsTarget.getAllTargetsInSystem(zoneRegistry, true));
     }
 
     @Override
