@@ -11,9 +11,7 @@ import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -53,13 +51,11 @@ public class LoadBalancerProvisioner {
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
     private final LoadBalancerService service;
-    private final BooleanFlag provisionControllerLoadBalancer;
 
     public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
-        this.provisionControllerLoadBalancer = Flags.CONTROLLER_PROVISION_LB.bindTo(flagSource);
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         for (var id : db.readLoadBalancerIds()) {
             try (var lock = db.lock(id.application())) {
@@ -80,7 +76,7 @@ public class LoadBalancerProvisioner {
      * Calling this for irrelevant node or cluster types is a no-op.
      */
     public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
-        if (!canForwardTo(requestedNodes.type(), cluster)) return; // Nothing to provision for this node and cluster type
+        if (!service.canForwardTo(requestedNodes.type(), cluster.type())) return; // Nothing to provision for this node and cluster type
         if (application.instance().isTester()) return; // Do not provision for tester instances
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
@@ -144,15 +140,6 @@ public class LoadBalancerProvisioner {
                                                     .map(lb -> lb.with(LoadBalancer.State.inactive, now))
                                                     .collect(Collectors.toList());
         db.writeLoadBalancers(deactivatedLoadBalancers, transaction);
-    }
-
-    // TODO(mpolden): Inline when feature flag is removed
-    private boolean canForwardTo(NodeType type, ClusterSpec cluster) {
-        boolean canForwardTo = service.canForwardTo(type, cluster.type());
-        if (canForwardTo) {
-            if (type == NodeType.controller) return provisionControllerLoadBalancer.value();
-        }
-        return canForwardTo;
     }
 
     /** Find all load balancer IDs owned by given tenant and application */

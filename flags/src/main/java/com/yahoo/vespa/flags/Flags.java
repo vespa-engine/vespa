@@ -143,14 +143,6 @@ public class Flags {
             "Takes effect immediately"
     );
 
-    public static final UnboundBooleanFlag CONTROLLER_PROVISION_LB = defineFeatureFlag(
-            "controller-provision-lb", false,
-            List.of("mpolden"), "2020-12-02", "2021-02-01",
-            "Provision load balancer for controller cluster",
-            "Takes effect when controller application is redeployed",
-            ZONE_ID
-    );
-
     public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
             "enable-public-only", false,
             List.of("ogronnesby"), "2020-12-02", "2021-02-01",

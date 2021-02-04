@@ -10,7 +10,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -18,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -222,9 +222,9 @@ public class LoadBalancerProvisionerTest {
         assertEquals(cluster, lbs.get().get(0).id().cluster());
     }
 
+    @Ignore // TODO: Re-enable when controller support is implemented
     @Test
     public void provision_load_balancer_controller_cluster() {
-        flagSource.withBooleanFlag(Flags.CONTROLLER_PROVISION_LB.id(), true);
         ApplicationId controllerApp = ApplicationId.from("hosted-vespa", "controller", "default");
         Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers(controllerApp).asList();
         var cluster = ClusterSpec.Id.from("zone-config-servers");
