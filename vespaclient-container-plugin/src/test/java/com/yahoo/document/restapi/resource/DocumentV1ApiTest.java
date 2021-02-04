@@ -284,7 +284,7 @@ public class DocumentV1ApiTest {
             assertEquals("[id]", parameters.fieldSet());
             assertEquals(10_000, parameters.getSessionTimeoutMs());
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
-            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "Huzzah!");
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "Won't care");
         });
         access.session.expect((update, parameters) -> {
             DocumentUpdate expectedUpdate = new DocumentUpdate(doc3.getDataType(), doc3.getId());
