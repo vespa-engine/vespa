@@ -43,7 +43,7 @@ public interface DataList<DATATYPE extends Data> extends Data {
     /**
      * Returns the buffer of incoming/future data to this list.
      * This can be used to provide data to this list from other threads, after its creation,
-     * and to consume, wait for or be notified upon the arrival of such data.
+     * and to consume, wait for, or be notified upon the arrival of such data.
      * <p>
      * Some list instances do not support late incoming data,
      * such lists responds to <i>read</i> calls to IncomingData as expected and without

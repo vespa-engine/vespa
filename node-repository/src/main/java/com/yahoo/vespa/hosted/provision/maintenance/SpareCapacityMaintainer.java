@@ -85,7 +85,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             int spareHostCapacity = failurePath.get().hostsCausingFailure.size() - 1;
             if (spareHostCapacity == 0) {
                 List<Move> mitigation = findMitigation(failurePath.get());
-                if (execute(mitigation)) {
+                if (execute(mitigation, failurePath.get())) {
                     // We succeeded or are in the process of taking a step to mitigate.
                     // Report with the assumption this will eventually succeed to avoid alerting before we're stuck
                     spareHostCapacity++;
@@ -99,9 +99,9 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         return success;
     }
 
-    private boolean execute(List<Move> mitigation) {
+    private boolean execute(List<Move> mitigation, CapacityChecker.HostFailurePath failurePath) {
         if (mitigation.isEmpty()) {
-            log.warning("Out of spare capacity. No mitigation could be found");
+            log.warning("Out of spare capacity and no mitigation possible: " + failurePath);
             return false;
         }
         Move firstMove = mitigation.get(0);
