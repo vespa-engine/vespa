@@ -65,11 +65,11 @@ public class ResponseTestCase {
         list13.incoming().add(new ProcessorLibrary.StringData(request,"list13async1"));
         list13.incoming().addLast(new ProcessorLibrary.StringData(request,"list13async2"));
 
-        assertEqualsIgnoreObjectNumbers("Uncompleted tree, incoming complete",uncompletedTreeCompletedIncoming, Responses.recursiveToString(list1));
+        assertEqualsIgnoreObjectNumbers("Uncompleted tree, incoming complete", uncompletedTreeCompletedIncoming, Responses.recursiveToString(list1));
 
         // complete all
         Response.recursiveComplete(list1).get();
-        assertEqualsIgnoreObjectNumbers("Completed tree",completedTree,Responses.recursiveToString(list1));
+        assertEqualsIgnoreObjectNumbers("Completed tree", completedTree, Responses.recursiveToString(list1));
     }
 
     private void assertEqualsIgnoreObjectNumbers(String explanation,String expected,String actual) {

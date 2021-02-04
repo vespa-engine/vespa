@@ -14,9 +14,7 @@ import com.yahoo.processing.Request;
 // TODO: Have DataList implement this instead, probably (should be a safe change in practise)
 public interface Data extends ListenableFreezable {
 
-    /**
-     * Returns the request that created this data
-     */
+    /** Returns the request that created this data */
     Request request();
 
 }
