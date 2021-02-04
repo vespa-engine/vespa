@@ -17,15 +17,15 @@ const ValueBuilderFactory &test_factory = SimpleValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("scalar1", GenSpec().gen())
-        .add("scalar2", GenSpec().seq_bias(2.0).gen())
-        .add_variants("v1_x", GenSpec().map("x", 32, 1).seq_bias(3.0))
-        .add_variants("v2_x", GenSpec().map("x", 16, 2).seq_bias(7.0))
-        .add_variants("v3_xz", GenSpec().map("x", 16, 2).idx("z", 1).seq_bias(7.0))
-        .add("dense",  GenSpec().idx("x", 10).gen())
-        .add("m1_xy",  GenSpec().map("x", 32, 1).map("y", 16, 2).seq_bias(3.0).gen())
-        .add("m2_xy",  GenSpec().map("x", 16, 2).map("y", 32, 1).seq_bias(7.0).gen())
-        .add("mixed", GenSpec().map("x", 8, 1).idx("y", 5).gen());
+        .add("scalar1", GenSpec(1.0).gen())
+        .add("scalar2", GenSpec(2.0).gen())
+        .add_variants("v1_x", GenSpec(3.0).map("x", 32, 1))
+        .add_variants("v2_x", GenSpec(4.0).map("x", 16, 2))
+        .add_variants("v3_xz", GenSpec(5.0).map("x", 16, 2).idx("z", 1))
+        .add("dense",  GenSpec(6.0).idx("x", 10).gen())
+        .add("m1_xy",  GenSpec(7.0).map("x", 32, 1).map("y", 16, 2).gen())
+        .add("m2_xy",  GenSpec(8.0).map("x", 16, 2).map("y", 32, 1).gen())
+        .add("mixed", GenSpec(9.0).map("x", 8, 1).idx("y", 5).gen());
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
