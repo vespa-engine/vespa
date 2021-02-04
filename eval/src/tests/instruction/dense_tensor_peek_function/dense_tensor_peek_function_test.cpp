@@ -18,15 +18,15 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", GenSpec().seq_bias(1.0).gen())
-        .add("b", GenSpec().seq_bias(2.0).gen())
-        .add("c", GenSpec().seq_bias(3.0).gen())
-        .add("x3", GenSpec().idx("x", 3).gen())
-        .add("x3f", GenSpec().cells_float().idx("x", 3).gen())
-        .add("x3y2", GenSpec().idx("x", 3).idx("y", 2).gen())
-        .add("x3y2f", GenSpec().cells_float().idx("x", 3).idx("y", 2).gen())
-        .add("xm", GenSpec().map("x", {"1","2","3","-1","-2","-3"}).gen())
-        .add("xmy2", GenSpec().map("x", {"1","2","3"}).idx("y", 2).gen());
+        .add("a", GenSpec(1.0))
+        .add("b", GenSpec(2.0))
+        .add("c", GenSpec(3.0))
+        .add("x3", GenSpec().idx("x", 3))
+        .add("x3f", GenSpec().cells_float().idx("x", 3))
+        .add("x3y2", GenSpec().idx("x", 3).idx("y", 2))
+        .add("x3y2f", GenSpec().cells_float().idx("x", 3).idx("y", 2))
+        .add("xm", GenSpec().map("x", {"1","2","3","-1","-2","-3"}))
+        .add("xmy2", GenSpec().map("x", {"1","2","3"}).idx("y", 2));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

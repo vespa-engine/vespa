@@ -50,11 +50,11 @@ void test_generic_merge_with(const ValueBuilderFactory &factory) {
     for (size_t i = 0; i < merge_layouts.size(); i += 2) {
         const auto l = merge_layouts[i];
         const auto r = merge_layouts[i+1].cpy().seq(N_16ths);
-        for (TensorSpec lhs : { l.cpy().cells_float().gen(),
-                                l.cpy().cells_double().gen() })
+        for (TensorSpec lhs : { l.cpy().cells_float(),
+                                l.cpy().cells_double() })
         {
-            for (TensorSpec rhs : { r.cpy().cells_float().gen(),
-                                    r.cpy().cells_double().gen() })
+            for (TensorSpec rhs : { r.cpy().cells_float(),
+                                    r.cpy().cells_double() })
             {
                 SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
                 for (auto fun: {operation::Add::f, operation::Mul::f, operation::Sub::f, operation::Max::f}) {
