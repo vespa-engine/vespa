@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -45,7 +46,7 @@ public class AutoscalingIntegrationTest {
 
         for (int i = 0; i < 1000; i++) {
             tester.clock().advance(Duration.ofSeconds(10));
-            tester.nodeMetricsDb().add(fetcher.fetchMetrics(application1));
+            fetcher.fetchMetrics(application1).whenComplete((r, e) -> tester.nodeMetricsDb().add(r.metrics()));
             tester.clock().advance(Duration.ofSeconds(10));
             tester.nodeMetricsDb().gc();
         }
@@ -63,7 +64,7 @@ public class AutoscalingIntegrationTest {
         assertTrue(scaledResources.isPresent());
     }
 
-    private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {
+    private static class MockHttpClient implements MetricsV2MetricsFetcher.AsyncHttpClient {
 
         private final ManualClock clock;
 
@@ -116,7 +117,9 @@ public class AutoscalingIntegrationTest {
                 "}\n";
 
         @Override
-        public String get(String url) { return cannedResponse.replace("[now]", String.valueOf(clock.millis())); }
+        public CompletableFuture<String> get(String url) {
+            return CompletableFuture.completedFuture(cannedResponse.replace("[now]",
+                                                                            String.valueOf(clock.millis()))); }
 
         @Override
         public void close() { }

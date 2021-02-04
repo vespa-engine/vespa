@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -23,7 +24,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author bratseth
  */
 public class NodeMetricsDbMaintainerTest {
 
@@ -56,7 +56,7 @@ public class NodeMetricsDbMaintainerTest {
         assertTrue(allSnapshots.stream().anyMatch(snapshot -> ! snapshot.inService()));
     }
 
-    private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {
+    private static class MockHttpClient implements MetricsV2MetricsFetcher.AsyncHttpClient {
 
         final String cannedResponse =
                 "{\n" +
@@ -107,14 +107,13 @@ public class NodeMetricsDbMaintainerTest {
                 "}\n";
 
         @Override
-        public String get(String url) {
-            return cannedResponse;
+        public CompletableFuture<String> get(String url) {
+            return CompletableFuture.completedFuture(cannedResponse);
         }
 
         @Override
         public void close() { }
 
     }
-
 
 }
