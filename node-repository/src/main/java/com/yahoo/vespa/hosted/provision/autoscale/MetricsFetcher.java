@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface to retrieve metrics on (tenant) nodes.
@@ -15,11 +16,10 @@ import java.util.Collection;
 public interface MetricsFetcher {
 
     /**
-     * Fetches metrics for all hosts of an application. This call may be expensive.
+     * Fetches metrics asynchronously for all hosts of an application. This call may be expensive.
      *
      * @param application the application to fetch metrics from
-     * @return a metric snapshot for each hostname of this application
      */
-    Collection<Pair<String, MetricSnapshot>> fetchMetrics(ApplicationId application);
+    CompletableFuture<MetricsResponse> fetchMetrics(ApplicationId application);
 
 }
