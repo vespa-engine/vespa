@@ -46,14 +46,6 @@ public class Flags {
             "Takes effect on next (re)deployment.",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag RETIRE_WITH_PERMANENTLY_DOWN = defineFeatureFlag(
-            "retire-with-permanently-down", true,
-            List.of("hakonhall"), "2020-12-02", "2021-02-01",
-            "If enabled, retirement will end with setting the host status to PERMANENTLY_DOWN, " +
-            "instead of ALLOWED_TO_BE_DOWN (old behavior).",
-            "Takes effect on the next run of RetiredExpirer.",
-            HOSTNAME);
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
