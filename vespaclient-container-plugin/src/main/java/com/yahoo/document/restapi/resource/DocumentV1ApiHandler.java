@@ -478,7 +478,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                                                                 .orElse(parameters());
         for (String name : names) switch (name) {
             case CLUSTER:
-                parameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).route())
+                parameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).name())
                                                           .map(parameters::withRoute)
                                                           .orElse(parameters);
                 break;
@@ -948,7 +948,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
         StorageCluster storageCluster = resolveCluster(cluster, clusters);
-        parameters.setRoute(storageCluster.route());
+        parameters.setRoute(storageCluster.name());
         parameters.setBucketSpace(resolveBucket(storageCluster,
                                                 path.documentType(),
                                                 List.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace()),
@@ -1177,7 +1177,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         String name() { return name; }
-        String route() { return "[Content:cluster=" + name() + "]"; }
         Optional<String> bucketOf(String documentType) { return Optional.ofNullable(documentBuckets.get(documentType)); }
 
     }
