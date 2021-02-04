@@ -13,14 +13,6 @@ vespa_add_executable(searchcore_documentbucketmover_test_app TEST
     searchcore_test
     searchcore_server
     searchcore_feedoperation
-    #searchcore_persistenceengine
-    #searchcore_matching
-    #searchcore_attribute
-    #searchcore_documentmetastore
-    #searchcore_bucketdb
-    #searchcore_pcommon
-    #searchcore_grouping
-    #searchcore_fconfig
 )
 vespa_add_test(NAME searchcore_documentbucketmover_test_app COMMAND searchcore_documentbucketmover_test_app)
 
@@ -34,3 +26,14 @@ vespa_add_executable(searchcore_scaniterator_test_app TEST
     searchcore_feedoperation
 )
 vespa_add_test(NAME searchcore_scaniterator_test_app COMMAND searchcore_scaniterator_test_app)
+
+vespa_add_executable(searchcore_documentmover_test_app TEST
+    SOURCES
+    documentmover_test.cpp
+    DEPENDS
+    searchcore_bucketmover_test
+    searchcore_server
+    searchcore_test
+    searchcore_feedoperation
+)
+vespa_add_test(NAME searchcore_documentmover_test_app COMMAND searchcore_documentmover_test_app)
