@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/data/output_writer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
@@ -133,6 +134,18 @@ std::vector<vespalib::string> extract_fields(const Inspector &object) {
     object.traverse(extractor);
     return std::move(extractor.result);
 };
+
+//-----------------------------------------------------------------------------
+
+void print_test(const Inspector &test, OutputWriter &dst) {
+    dst.printf("expression: '%s'\n", test["expression"].asString().make_string().c_str());
+    for (const auto &input: extract_fields(test["inputs"])) {
+        auto value = extract_value(test["inputs"][input]);
+        dst.printf("input '%s': %s\n", input.c_str(), value.to_string().c_str());
+    }
+    auto result = extract_value(test["result"]["expect"]);
+    dst.printf("expected result: %s\n", result.to_string().c_str());
+}
 
 //-----------------------------------------------------------------------------
 
@@ -306,6 +319,24 @@ void compare(Input &expect, Input &actual) {
 
 //-----------------------------------------------------------------------------
 
+void display(Input &in, Output &out) {
+    size_t test_cnt = 0;
+    auto handle_test = [&out,&test_cnt](Slime &slime)
+                       {
+                           OutputWriter dst(out, 4096);
+                           dst.printf("\n------- TEST #%zu -------\n\n", test_cnt++);
+                           print_test(slime.get(), dst);
+                       };
+    auto handle_summary = [&out,&test_cnt](Slime &)
+                          {
+                              OutputWriter dst(out, 1024);
+                              dst.printf("%zu tests displayed\n", test_cnt);
+                          };
+    for_each_test(in, handle_test, handle_summary);
+}
+
+//-----------------------------------------------------------------------------
+
 int usage(const char *self) {
     fprintf(stderr, "usage: %s <mode>\n", self);
     fprintf(stderr, "usage: %s compare <expect> <actual>\n", self);
@@ -316,6 +347,8 @@ int usage(const char *self) {
     fprintf(stderr, "                them to stdout\n");
     fprintf(stderr, "    'verify': read annotated test cases from stdin and verify\n");
     fprintf(stderr, "              that all results are as expected\n");
+    fprintf(stderr, "    'display': read tests from stdin and print them to stdout\n");
+    fprintf(stderr, "               in human-readable form\n");
     fprintf(stderr, "    'compare': read test cases from two separate files and\n");
     fprintf(stderr, "               compare them to verify equivalence\n");
     return 1;
@@ -335,6 +368,8 @@ int main(int argc, char **argv) {
         evaluate(std_in, std_out);
     } else if (mode == "verify") {
         verify(std_in, std_out);
+    } else if (mode == "display") {
+        display(std_in, std_out);
     } else if (mode == "compare") {
         if (argc == 4) {
             MappedFileInput expect(argv[2]);
