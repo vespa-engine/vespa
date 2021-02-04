@@ -62,14 +62,14 @@
     },
     {
       "bcpStatus": {
-        "rotationStatus": "IN"
+        "rotationStatus": "UNKNOWN"
       },
       "endpointStatus": [
         {
           "endpointId": "default",
           "rotationId": "rotation-id-1",
           "clusterId": "foo",
-          "status": "IN",
+          "status": "UNKNOWN",
           "lastUpdated": "(ignore)"
         }
       ],

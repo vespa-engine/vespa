@@ -59,7 +59,6 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -75,7 +74,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.net.URI;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -954,7 +952,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
                                       .properties(Map.of("endpointId", "default"))
                                       .userIdentity(USER_ID),
-                              "{\"bcpStatus\":{\"rotationStatus\":\"IN\"}}",
+                              "{\"bcpStatus\":{\"rotationStatus\":\"UNKNOWN\"}}",
                               200);
 
         // GET global rotation status for us-west-1 in eu endpoint
@@ -968,7 +966,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/eu-west-1/global-rotation", GET)
                                       .properties(Map.of("endpointId", "eu"))
                                       .userIdentity(USER_ID),
-                              "{\"bcpStatus\":{\"rotationStatus\":\"IN\"}}",
+                              "{\"bcpStatus\":{\"rotationStatus\":\"UNKNOWN\"}}",
                               200);
     }
 
@@ -1655,7 +1653,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void setZoneInRotation(String rotationName, ZoneId zone) {
         tester.serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
-        new RotationStatusUpdater(tester.controller(), Duration.ofDays(1)).run();
+        //new RotationStatusUpdater(tester.controller(), Duration.ofDays(1)).run();
     }
 
     private void updateContactInformation() {
