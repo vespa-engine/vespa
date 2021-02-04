@@ -190,6 +190,7 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
     bool liveUpdate = ! _threads.empty();
 
     _use_async_message_handling_on_schedule = config->useAsyncMessageHandlingOnSchedule;
+    _host_info_reporter.set_noise_level(config->resourceUsageReporterNoiseLevel);
 
     if (!liveUpdate) {
         _config = std::move(config);
