@@ -9,16 +9,10 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.security.SubjectAlternativeName;
-import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -26,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.Charset;
-import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,7 +36,7 @@ import java.util.stream.Collectors;
 /**
  * Looks up stored endpoint certificate metadata, provisions new certificates if none is found,
  * re-provisions if zone is not covered, and uses refreshed certificates if a newer version is available.
- *
+ * <p>
  * See also EndpointCertificateMaintainer, which handles refreshes, deletions and triggers deployments
  *
  * @author andreer
@@ -54,22 +47,20 @@ public class EndpointCertificateManager {
 
     private final ZoneRegistry zoneRegistry;
     private final CuratorDb curator;
-    private final SecretStore secretStore;
     private final EndpointCertificateProvider endpointCertificateProvider;
     private final Clock clock;
-    private final BooleanFlag validateEndpointCertificates;
+    private final EndpointCertificateValidator endpointCertificateValidator;
 
     public EndpointCertificateManager(ZoneRegistry zoneRegistry,
                                       CuratorDb curator,
-                                      SecretStore secretStore,
                                       EndpointCertificateProvider endpointCertificateProvider,
-                                      Clock clock, FlagSource flagSource) {
+                                      EndpointCertificateValidator endpointCertificateValidator,
+                                      Clock clock) {
         this.zoneRegistry = zoneRegistry;
         this.curator = curator;
-        this.secretStore = secretStore;
         this.endpointCertificateProvider = endpointCertificateProvider;
         this.clock = clock;
-        this.validateEndpointCertificates = Flags.VALIDATE_ENDPOINT_CERTIFICATES.bindTo(flagSource);
+        this.endpointCertificateValidator = endpointCertificateValidator;
     }
 
     public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
@@ -101,11 +92,11 @@ public class EndpointCertificateManager {
             var reprovisionedCertificateMetadata = provisionEndpointCertificate(instance, currentCertificateMetadata, zone, instanceSpec);
             curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
             // Verification is unlikely to succeed in this case, as certificate must be available first - controller will retry
-            validateEndpointCertificate(reprovisionedCertificateMetadata, instance, zone);
+            endpointCertificateValidator.validate(reprovisionedCertificateMetadata, instance.id().serializedForm(), zone, requiredSansForZone);
             return Optional.of(reprovisionedCertificateMetadata);
         }
 
-        validateEndpointCertificate(currentCertificateMetadata.get(), instance, zone);
+        endpointCertificateValidator.validate(currentCertificateMetadata.get(), instance.id().serializedForm(), zone, requiredSansForZone);
         return currentCertificateMetadata;
     }
 
@@ -145,53 +136,6 @@ public class EndpointCertificateManager {
         return endpointCertificateProvider.requestCaSignedCertificate(instance.id(), List.copyOf(requiredNames), currentMetadata);
     }
 
-    private void validateEndpointCertificate(EndpointCertificateMetadata endpointCertificateMetadata, Instance instance, ZoneId zone) {
-        if (validateEndpointCertificates.value())
-            try {
-                var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
-
-                if (pemEncodedEndpointCertificate == null)
-                    throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Secret store returned null for certificate");
-
-                List<X509Certificate> x509CertificateList = X509CertificateUtils.certificateListFromPem(pemEncodedEndpointCertificate);
-
-                if (x509CertificateList.isEmpty())
-                    throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Empty certificate list");
-                if (x509CertificateList.size() < 2)
-                    throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Only a single certificate found in chain - intermediate certificates likely missing");
-
-                Instant now = clock.instant();
-                Instant firstExpiry = Instant.MAX;
-                for (X509Certificate x509Certificate : x509CertificateList) {
-                    Instant notBefore = x509Certificate.getNotBefore().toInstant();
-                    Instant notAfter = x509Certificate.getNotAfter().toInstant();
-                    if (now.isBefore(notBefore))
-                        throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate is not yet valid");
-                    if (now.isAfter(notAfter))
-                        throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate has expired");
-                    if (notAfter.isBefore(firstExpiry)) firstExpiry = notAfter;
-                }
-
-                X509Certificate endEntityCertificate = x509CertificateList.get(0);
-                Set<String> subjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(endEntityCertificate).stream()
-                        .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
-                        .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
-
-                var dnsNamesOfZone = dnsNamesOf(instance.id(), zone);
-                if (!subjectAlternativeNames.containsAll(dnsNamesOfZone))
-                    throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate is missing required SANs for zone " + zone.value());
-
-            } catch (SecretNotFoundException s) {
-                // Normally because the cert is in the process of being provisioned - this will cause a retry in InternalStepRunner
-                throw new EndpointCertificateException(EndpointCertificateException.Type.CERT_NOT_AVAILABLE, "Certificate not found in secret store");
-            } catch (EndpointCertificateException e) {
-                log.log(Level.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
-                throw e;
-            } catch (Exception e) {
-                log.log(Level.WARNING, "Certificate validation failure for " + instance.id().serializedForm(), e);
-                throw new EndpointCertificateException(EndpointCertificateException.Type.VERIFICATION_FAILURE, "Certificate validation failure for app " + instance.id().serializedForm(), e);
-            }
-    }
 
     private List<String> dnsNamesOf(ApplicationId applicationId, ZoneId zone) {
         List<String> endpointDnsNames = new ArrayList<>();
