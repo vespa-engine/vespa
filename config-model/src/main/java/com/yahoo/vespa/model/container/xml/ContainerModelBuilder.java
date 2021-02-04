@@ -350,9 +350,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
-            cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class));
+            cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "qrs"));
         } else {
-            cluster.addComponent(new ConnectionLogComponent(cluster, VoidConnectionLog.class));
+            cluster.addComponent(new ConnectionLogComponent(cluster, VoidConnectionLog.class, "qrs"));
         }
     }
 
