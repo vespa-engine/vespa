@@ -645,6 +645,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             json.writeStringField("message", message);
         }
 
+        synchronized void writeDocumentCount(long count) throws IOException {
+            json.writeNumberField("documentCount", count);
+        }
+
         synchronized void writeDocId(DocumentId id) throws IOException {
             json.writeStringField("id", id.toString());
         }
@@ -1083,11 +1087,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                     if (getProgress() != null && ! getProgress().isFinished())
                                         response.writeContinuation(getProgress().serializeToString());
 
+                                    if (getVisitorStatistics() != null)
+                                        response.writeDocumentCount(getVisitorStatistics().getDocumentsReturned());
+
                                     response.respond(Response.Status.OK);
                                     break;
                                 }
                             default:
                                 response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed");
+                                if (getVisitorStatistics() != null)
+                                    response.writeDocumentCount(getVisitorStatistics().getDocumentsReturned());
+
                                 response.respond(Response.Status.INTERNAL_SERVER_ERROR);
                         }
                         visitDispatcher.execute(() -> {

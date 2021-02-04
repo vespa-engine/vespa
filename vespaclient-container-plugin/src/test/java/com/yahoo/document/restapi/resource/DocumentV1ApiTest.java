@@ -211,6 +211,7 @@ public class DocumentV1ApiTest {
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
             VisitorStatistics statistics = new VisitorStatistics();
             statistics.setBucketsVisited(1);
+            statistics.setDocumentsReturned(3);
             parameters.getControlHandler().onVisitorStatistics(statistics);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
@@ -235,7 +236,8 @@ public class DocumentV1ApiTest {
                        "     \"id\": \"id:space:music:g=a:three\"," +
                        "     \"fields\": {}" +
                        "    }" +
-                       "  ]" +
+                       "  ]," +
+                       "  \"documentCount\": 3" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
