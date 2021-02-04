@@ -4,10 +4,38 @@
 
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/operation.h>
 #include <functional>
 #include <cassert>
 
 namespace vespalib::eval::test {
+
+using map_fun_t = vespalib::eval::operation::op1_t;
+using join_fun_t = vespalib::eval::operation::op2_t;
+using Sequence = std::function<double(size_t)>;
+
+// Sequence counting up from 1 (default)
+// bias (starting point) can be adjusted
+// bias = 1.5 -> 1.5, 2.5, 3.5 ... 
+Sequence N(double bias = 1.0);
+
+// Sequence of numbers ax + b (where x is the index)
+Sequence AX_B(double a, double b);
+
+// Sequence of another sequence divided by 16
+Sequence Div16(const Sequence &seq);
+
+// Sequence of another sequence minus 2
+Sequence Sub2(const Sequence &seq);
+
+// Sequence of a unary operator applied to a sequence
+Sequence OpSeq(const Sequence &seq, map_fun_t op);
+
+// Sequence of applying sigmoid to another sequence, plus rounding to nearest float
+Sequence SigmoidF(const Sequence &seq);
+
+// pre-defined repeating sequence of numbers
+Sequence Seq(const std::vector<double> &seq);
 
 /**
  * Type and labels for a single dimension of a TensorSpec to be
@@ -57,15 +85,18 @@ public:
 class GenSpec
 {
 public:
-    using seq_t = std::function<double(size_t)>;
+    using seq_t = Sequence;
+
 private:
     std::vector<DimSpec> _dims;
     CellType _cells;
     seq_t _seq;
 
-    static double default_seq(size_t idx) { return (idx + 1.0); }
 public:
-    GenSpec() : _dims(), _cells(CellType::DOUBLE), _seq(default_seq) {}
+    GenSpec() : _dims(), _cells(CellType::DOUBLE), _seq(N()) {}
+    GenSpec(double bias) : _dims(), _cells(CellType::DOUBLE), _seq(N(bias)) {}
+    GenSpec(const std::vector<DimSpec> &dims_in) : _dims(dims_in), _cells(CellType::DOUBLE), _seq(N()) {}
+
     GenSpec(GenSpec &&other);
     GenSpec(const GenSpec &other);
     GenSpec &operator=(GenSpec &&other);
@@ -73,7 +104,7 @@ public:
     ~GenSpec();
     std::vector<DimSpec> dims() const { return _dims; }
     CellType cells() const { return _cells; }
-    seq_t seq() const { return _seq; }
+    const seq_t &seq() const { return _seq; }
     GenSpec cpy() const { return *this; }
     GenSpec &idx(const vespalib::string &name, size_t size) {
         _dims.emplace_back(name, size);
@@ -93,15 +124,12 @@ public:
     }
     GenSpec &cells_double() { return cells(CellType::DOUBLE); }
     GenSpec &cells_float() { return cells(CellType::FLOAT); }
-    GenSpec &seq(seq_t seq_in) {
+    GenSpec &seq(const seq_t &seq_in) {
         _seq = seq_in;
         return *this;
     }
-    GenSpec &seq_n() { return seq(default_seq); }
-    GenSpec &seq_bias(double bias) {
-        seq_t fun = [bias](size_t idx) noexcept { return (idx + bias); };
-        return seq(fun);
-    }
+    // TODO: stop using and remove
+    GenSpec &seq_bias(double bias) { return seq(N(bias)); }
     ValueType type() const;
     TensorSpec gen() const;
 };

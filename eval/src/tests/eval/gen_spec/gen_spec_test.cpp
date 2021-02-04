@@ -8,7 +8,7 @@ using namespace vespalib::eval::test;
 
 //-----------------------------------------------------------------------------
 
-TEST(DimSpec, indexed_dimension) {
+TEST(DimSpecTest, indexed_dimension) {
     ValueType::Dimension ref("foo", 10);
     DimSpec idx("foo", 10);
     EXPECT_EQ(idx.type(), ref);
@@ -18,7 +18,7 @@ TEST(DimSpec, indexed_dimension) {
     EXPECT_EQ(idx.label(3), TensorSpec::Label(size_t(3)));
 }
 
-TEST(DimSpec, mapped_dimension) {
+TEST(DimSpecTest, mapped_dimension) {
     ValueType::Dimension ref("foo");
     DimSpec map("foo", {"a", "b", "c", "d"});
     EXPECT_EQ(map.type(), ref);
@@ -28,19 +28,19 @@ TEST(DimSpec, mapped_dimension) {
     EXPECT_EQ(map.label(2), TensorSpec::Label("c"));
 }
 
-TEST(DimSpec, simple_dictionary_creation) {
+TEST(DimSpecTest, simple_dictionary_creation) {
     auto dict = DimSpec::make_dict(5, 1, "");
     std::vector<vespalib::string> expect = {"0", "1", "2", "3", "4"};
 }
 
-TEST(DimSpec, advanced_dictionary_creation) {
+TEST(DimSpecTest, advanced_dictionary_creation) {
     auto dict = DimSpec::make_dict(5, 3, "str_");
     std::vector<vespalib::string> expect = {"str_0", "str_3", "str_6", "str_9", "str_12"};
 }
 
 //-----------------------------------------------------------------------------
 
-TEST(GenSpec, default_spec) {
+TEST(GenSpecTest, default_spec) {
     GenSpec spec;
     EXPECT_TRUE(spec.dims().empty());
     EXPECT_EQ(spec.cells(), CellType::DOUBLE);
@@ -55,29 +55,66 @@ TEST(GenSpec, default_spec) {
 TensorSpec scalar_1 = TensorSpec("double").add({}, 1.0);
 TensorSpec scalar_5 = TensorSpec("double").add({}, 5.0);
 
-TEST(GenSpec, scalar_double) {
+TEST(GenSpecTest, scalar_double) {
     EXPECT_EQ(GenSpec().gen(), scalar_1);
     EXPECT_EQ(GenSpec().seq_bias(5.0).gen(), scalar_5);
 }
 
-TEST(GenSpec, not_scalar_float_just_yet) {
+TEST(GenSpecTest, not_scalar_float_just_yet) {
     EXPECT_EQ(GenSpec().cells_float().gen(), scalar_1);
     EXPECT_EQ(GenSpec().cells_float().seq_bias(5.0).gen(), scalar_5);
 }
 
 //-----------------------------------------------------------------------------
 
-TEST(Seq, seq_n) {
-    GenSpec::seq_t seq = GenSpec().seq_n().seq();
+TEST(SequenceTest, n) {
+    GenSpec::seq_t seq = GenSpec().seq(N()).seq();
     for (size_t i = 0; i < 4096; ++i) {
         EXPECT_EQ(seq(i), (i + 1.0));        
     }
 }
 
-TEST(Seq, seq_bias) {
-    GenSpec::seq_t seq = GenSpec().seq_bias(13.0).seq();
+TEST(SequenceTest, bias) {
+    GenSpec::seq_t seq = GenSpec().seq(N(13.5)).seq();
     for (size_t i = 0; i < 4096; ++i) {
-        EXPECT_EQ(seq(i), (i + 13.0));
+        EXPECT_EQ(seq(i), (i + 13.5));
+    }
+}
+
+TEST(SequenceTest, ax_b) {
+    GenSpec::seq_t seq = GenSpec().seq(AX_B(3.5, 2.5)).seq();
+    for (size_t i = 0; i < 4096; ++i) {
+        EXPECT_EQ(seq(i), (i * 3.5) + 2.5);
+    }
+}
+
+TEST(SequenceTest, seq) {
+    std::vector<double> values({1.5, 3.5, 2.5, 10.0});
+    GenSpec::seq_t seq = GenSpec().seq(Seq(values)).seq();
+    for (size_t i = 0; i < 4096; ++i) {
+        EXPECT_EQ(seq(i), values[i % values.size()]);
+    }
+}
+
+TEST(SequenceTest, n_div16_sub2) {
+    GenSpec::seq_t seq = GenSpec().seq(Sub2(Div16(N()))).seq();
+    for (size_t i = 0; i < 4096; ++i) {
+        EXPECT_EQ(seq(i), ((i + 1.0) / 16.0) - 2.0);
+    }
+}
+
+TEST(SequenceTest, n_op_sqrt) {
+    GenSpec::seq_t seq = GenSpec().seq(OpSeq(N(), operation::Sqrt::f)).seq();
+    for (size_t i = 0; i < 4096; ++i) {
+        EXPECT_EQ(seq(i), operation::Sqrt::f(i + 1.0));
+    }
+}
+
+TEST(SequenceTest, n_sigmoidf) {
+    GenSpec::seq_t seq = GenSpec().seq(SigmoidF(N())).seq();
+    for (size_t i = 0; i < 4096; ++i) {
+        EXPECT_EQ(seq(i), double((float)operation::Sigmoid::f(i + 1.0)));
+        EXPECT_TRUE(seq(i) == double((float)operation::Sigmoid::f(i + 1.0)));
     }
 }
 
@@ -86,7 +123,7 @@ TEST(Seq, seq_bias) {
 GenSpec flt() { return GenSpec().cells_float(); }
 GenSpec dbl() { return GenSpec().cells_double(); }
 
-TEST(GenSpec, value_type) {
+TEST(GenSpecTest, value_type) {
     EXPECT_EQ(dbl().type().to_spec(), "double");
     EXPECT_EQ(flt().type().to_spec(), "double"); // NB
     EXPECT_EQ(dbl().idx("x", 10).type().to_spec(), "tensor(x[10])");
@@ -122,15 +159,15 @@ TensorSpec custom_vector = TensorSpec("tensor(a[5])")
     .add({{"a", 3}}, 2.0)
     .add({{"a", 4}}, 1.0);
 
-TEST(GenSpec, generating_basic_vector) {
+TEST(GenSpecTest, generating_basic_vector) {
     EXPECT_EQ(GenSpec().idx("a", 5).gen(), basic_vector);
 }
 
-TEST(GenSpec, generating_float_vector) {
+TEST(GenSpecTest, generating_float_vector) {
     EXPECT_EQ(GenSpec().idx("a", 5).cells_float().gen(), float_vector);
 }
 
-TEST(GenSpec, generating_custom_vector) {
+TEST(GenSpecTest, generating_custom_vector) {
     GenSpec::seq_t my_seq = [](size_t idx) noexcept { return (5.0 - idx); };
     EXPECT_EQ(GenSpec().idx("a", 5).seq(my_seq).gen(), custom_vector);
 }
@@ -147,14 +184,14 @@ TensorSpec custom_map = TensorSpec("tensor(a{})")
     .add({{"a", "s5"}}, 2.0)
     .add({{"a", "s10"}}, 3.0);
 
-TEST(GenSpec, generating_basic_map) {
+TEST(GenSpecTest, generating_basic_map) {
     EXPECT_EQ(GenSpec().map("a", 3).gen(), basic_map);
     EXPECT_EQ(GenSpec().map("a", 3, 1).gen(), basic_map);
     EXPECT_EQ(GenSpec().map("a", 3, 1, "").gen(), basic_map);
     EXPECT_EQ(GenSpec().map("a", {"0", "1", "2"}).gen(), basic_map);
 }
 
-TEST(GenSpec, generating_custom_map) {
+TEST(GenSpecTest, generating_custom_map) {
     EXPECT_EQ(GenSpec().map("a", 3, 5, "s").gen(), custom_map);
     EXPECT_EQ(GenSpec().map("a", {"s0", "s5", "s10"}).gen(), custom_map);
 }
@@ -183,11 +220,11 @@ TensorSpec inverted_mixed = TensorSpec("tensor(a{},b[1],c{},d[3])")
     .add({{"a", "1"},{"b", 0},{"c", "0"},{"d", 2}}, 8.0)
     .add({{"a", "2"},{"b", 0},{"c", "0"},{"d", 2}}, 9.0);
 
-TEST(GenSpec, generating_basic_mixed) {
+TEST(GenSpecTest, generating_basic_mixed) {
     EXPECT_EQ(GenSpec().map("a", 3).idx("b", 1).map("c", 1).idx("d", 3).gen(), basic_mixed);
 }
 
-TEST(GenSpec, generating_inverted_mixed) {
+TEST(GenSpecTest, generating_inverted_mixed) {
     EXPECT_EQ(GenSpec().idx("d", 3).map("c", 1).idx("b", 1).map("a", 3).gen(), inverted_mixed);
 }
 
