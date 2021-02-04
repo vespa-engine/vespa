@@ -240,8 +240,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/production-us-east-3/", POST)
                                       .data(entity)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"message\":\"Deployment started in run 1 of production-us-east-3 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1," +
-                                      "\"endpoints\":[{\"cluster\":\"default\",\"tls\":true,\"url\":\"https://instance1--application1--tenant1.us-east-3.vespa.oath.cloud:4443/\",\"scope\":\"zone\",\"routingMethod\":\"shared\"}]}");
+                              "{\"message\":\"Deployment started in run 1 of production-us-east-3 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
         app1.runJob(JobType.productionUsEast3);
         tester.controller().applications().deactivate(app1.instanceId(), ZoneId.from("prod", "us-east-3"));
 
@@ -249,8 +248,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1/", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1," +
-                                      "\"endpoints\":[{\"cluster\":\"default\",\"tls\":true,\"url\":\"https://instance1--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/\",\"scope\":\"zone\",\"routingMethod\":\"shared\"}]}");
+                              "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
         app1.runJob(JobType.devUsEast1);
 
         // GET dev application package
@@ -1426,8 +1424,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/new-user/deploy/dev-us-east-1", POST)
                                       .data(entity)
                                       .userIdentity(userId),
-                              "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.new-user. This may take about 15 minutes the first time.\",\"run\":1," +
-                                      "\"endpoints\":[{\"cluster\":\"default\",\"tls\":true,\"url\":\"https://new-user--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/\",\"scope\":\"zone\",\"routingMethod\":\"shared\"}]}");
+                              "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.new-user. This may take about 15 minutes the first time.\",\"run\":1}");
     }
 
     @Test
@@ -1472,8 +1469,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
                         .data(entity)
                         .userIdentity(developer),
-                "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":1," +
-                        "\"endpoints\":[{\"cluster\":\"default\",\"tls\":true,\"url\":\"https://myapp--sandbox.us-east-1.dev.vespa.oath.cloud:4443/\",\"scope\":\"zone\",\"routingMethod\":\"shared\"}]}",
+                "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":1}",
                 200);
 
         // To add temporary support allowing tenant admins to launch services
@@ -1484,8 +1480,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
                         .data(entity)
                         .userIdentity(developer2),
-                "{\"message\":\"Deployment started in run 2 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":2," +
-                        "\"endpoints\":[{\"cluster\":\"default\",\"tls\":true,\"url\":\"https://myapp--sandbox.us-east-1.dev.vespa.oath.cloud:4443/\",\"scope\":\"zone\",\"routingMethod\":\"shared\"}]}",
+                "{\"message\":\"Deployment started in run 2 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":2}",
                 200);
 
 
@@ -1494,8 +1489,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(applicationPackageInstance1.zippedContent())
                                       .contentType("application/zip")
                                       .userIdentity(developer2),
-                              "{\"message\":\"Deployment started in run 3 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":3," +
-                                      "\"endpoints\":[{\"cluster\":\"default\",\"tls\":true,\"url\":\"https://myapp--sandbox.us-east-1.dev.vespa.oath.cloud:4443/\",\"scope\":\"zone\",\"routingMethod\":\"shared\"}]}");
+                              "{\"message\":\"Deployment started in run 3 of dev-us-east-1 for sandbox.myapp. This may take about 15 minutes the first time.\",\"run\":3}");
 
         // POST (deploy) an application package not as content type application/zip — not multipart — is disallowed
         tester.assertResponse(request("/application/v4/tenant/sandbox/application/myapp/instance/default/deploy/dev-us-east-1", POST)
