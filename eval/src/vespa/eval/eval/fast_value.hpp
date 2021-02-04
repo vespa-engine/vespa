@@ -155,12 +155,6 @@ struct FastValueIndex final : Value::Index {
                 const std::vector<JoinAddrSource> &addr_sources,
                 ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash);
 
-    template <typename LCT, typename RCT, typename OCT, typename Fun>
-        static const Value &sparse_only_merge(const ValueType &res_type, const Fun &fun,
-                const FastValueIndex &lhs, const FastValueIndex &rhs,
-                ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells,
-                Stash &stash) __attribute((noinline));
-
     size_t size() const override { return map.size(); }
     std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
 };
@@ -428,33 +422,5 @@ FastValueIndex::sparse_no_overlap_join(const ValueType &res_type, const Fun &fun
 }
 
 //-----------------------------------------------------------------------------
-
-template <typename LCT, typename RCT, typename OCT, typename Fun>
-const Value &
-FastValueIndex::sparse_only_merge(const ValueType &res_type, const Fun &fun,
-                             const FastValueIndex &lhs, const FastValueIndex &rhs,
-                             ConstArrayRef<LCT> lhs_cells, ConstArrayRef<RCT> rhs_cells, Stash &stash)
-{
-    size_t guess_size = lhs.map.size() + rhs.map.size();
-    auto &result = stash.create<FastValue<OCT,true>>(res_type, lhs.map.addr_size(), 1, guess_size);
-    lhs.map.each_map_entry([&](auto lhs_subspace, auto hash)
-                           {
-                               result.add_mapping(lhs.map.get_addr(lhs_subspace), hash);
-                               result.my_cells.push_back_fast(lhs_cells[lhs_subspace]);
-                           });
-    rhs.map.each_map_entry([&](auto rhs_subspace, auto hash)
-                           {
-                               auto rhs_addr = rhs.map.get_addr(rhs_subspace);
-                               auto result_subspace = result.my_index.map.lookup(rhs_addr, hash);
-                               if (result_subspace == FastAddrMap::npos()) {
-                                   result.add_mapping(rhs_addr, hash);
-                                   result.my_cells.push_back_fast(rhs_cells[rhs_subspace]);
-                               } else {
-                                   OCT &out_cell = *result.my_cells.get(result_subspace);
-                                   out_cell = fun(out_cell, rhs_cells[rhs_subspace]);
-                               }
-                           });
-    return result;
-}
 
 }
