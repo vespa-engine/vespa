@@ -80,6 +80,11 @@ public class InMemoryProvisioner implements HostProvisioner {
         this(Map.of(defaultResources, toHostInstances(hosts)), failOnOutOfCapacity, false, sharedHosts, 0);
     }
 
+    /** Creates this with a set of host names of the flavor 'default' */
+    public InMemoryProvisioner(boolean failOnOutOfCapacity, boolean sharedHosts, List<String> hosts) {
+        this(Map.of(defaultResources, toHostInstances(hosts.toArray(new String[0]))), failOnOutOfCapacity, false, sharedHosts, 0);
+    }
+
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, boolean sharedHosts, String ... retiredHostNames) {
         this(Map.of(defaultResources, hosts.asCollection()), failOnOutOfCapacity, false, sharedHosts, 0, retiredHostNames);
