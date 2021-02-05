@@ -135,8 +135,6 @@ const Value& my_fast_sparse_merge(const FastAddrMap &a_map, const FastAddrMap &b
         });
     }
     return result;
-
-
 }
 
 template <typename CT, bool single_dim, typename Fun>
@@ -178,7 +176,6 @@ SparseMergeFunction::SparseMergeFunction(const tensor_function::Merge &original)
 InterpretedFunction::Instruction
 SparseMergeFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    assert(result_type() == ValueType::join(lhs().result_type(), rhs().result_type()));
     const auto &param = stash.create<SparseMergeParam>(result_type(), function(), factory);
     size_t num_dims = result_type().count_mapped_dimensions();
     auto op = typify_invoke<3,MyTypify,SelectSparseMergeOp>(result_type().cell_type(),
@@ -194,13 +191,8 @@ SparseMergeFunction::compatible_types(const ValueType &res, const ValueType &lhs
         && (lhs.count_mapped_dimensions() > 0)
         && (lhs.dense_subspace_size() == 1))
     {
-        assert(rhs.dense_subspace_size() == lhs.dense_subspace_size());
-        assert(rhs.count_mapped_dimensions() == lhs.count_mapped_dimensions());
-
-        assert(res.cell_type() == lhs.cell_type());
-        assert(res.dense_subspace_size() == lhs.dense_subspace_size());
-        assert(res.count_mapped_dimensions() == lhs.count_mapped_dimensions());
-
+        assert(res == lhs);
+        assert(res == rhs);
         return true;
     }
     return false;
