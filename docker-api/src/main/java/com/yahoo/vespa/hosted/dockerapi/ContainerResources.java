@@ -63,7 +63,8 @@ public class ContainerResources {
         return cpus;
     }
 
-    /** Returns the CFS CPU quota per {@link #cpuPeriod()}, or -1 if disabled. */
+    // Although docker allows to update cpu quota to 0, this is not a legal value, must be set -1 for unlimited
+    // See: https://github.com/docker/for-linux/issues/558
     public int cpuQuota() {
         return cpus > 0 ? (int) (cpus * CPU_PERIOD_US) : -1;
     }
