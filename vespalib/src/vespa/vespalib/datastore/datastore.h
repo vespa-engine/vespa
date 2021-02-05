@@ -54,7 +54,10 @@ public:
     /**
      * Hold element(s).
      */
-    void holdElem(EntryRef ref, size_t numElems, size_t extraBytes = 0);
+    void holdElem(EntryRef ref, size_t numElems) {
+        holdElem(ref, numElems, 0);
+    }
+    void holdElem(EntryRef ref, size_t numElems, size_t extraBytes);
 
     /**
      * Trim elem hold list, freeing elements that no longer needs to be held.

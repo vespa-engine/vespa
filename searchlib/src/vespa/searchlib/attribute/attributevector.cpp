@@ -47,13 +47,6 @@ const vespalib::string docIdLimitTag = "docIdLimit";
 
 constexpr size_t DIRECTIO_ALIGNMENT(4096);
 
-template <typename T>
-struct FuncMax : public std::binary_function<T, T, T> {
-    T operator() (const T & x, const T & y) const {
-        return std::max(x, y);
-    }
-};
-
 }
 
 namespace search {
