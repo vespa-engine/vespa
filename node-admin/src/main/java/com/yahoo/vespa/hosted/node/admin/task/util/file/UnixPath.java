@@ -208,6 +208,11 @@ public class UnixPath {
         return this;
     }
 
+    public UnixPath createDirectories() {
+        uncheck(() -> Files.createDirectories(path));
+        return this;
+    }
+
     /**
      * Returns whether this path is a directory. Symlinks are followed, so this returns true for symlinks pointing to a
      * directory.

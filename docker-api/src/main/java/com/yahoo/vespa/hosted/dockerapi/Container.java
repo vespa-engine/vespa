@@ -10,6 +10,7 @@ import java.util.Objects;
  */
 // TODO: Move this to node-admin when docker-api module can be removed
 public class Container {
+    private final ContainerId id;
     public final String hostname;
     public final DockerImage image;
     public final ContainerResources resources;
@@ -18,12 +19,14 @@ public class Container {
     public final int pid;
 
     public Container(
+            final ContainerId id,
             final String hostname,
             final DockerImage image,
             final ContainerResources resources,
             final ContainerName containerName,
             final State state,
             final int pid) {
+        this.id = id;
         this.hostname = hostname;
         this.image = image;
         this.resources = resources;
@@ -32,13 +35,18 @@ public class Container {
         this.pid = pid;
     }
 
+    public ContainerId id() {
+        return id;
+    }
+
     @Override
     public boolean equals(final Object obj) {
         if (!(obj instanceof Container)) {
             return false;
         }
         final Container other = (Container) obj;
-        return Objects.equals(hostname, other.hostname)
+        return Objects.equals(id, other.id)
+                && Objects.equals(hostname, other.hostname)
                 && Objects.equals(image, other.image)
                 && Objects.equals(resources, other.resources)
                 && Objects.equals(name, other.name)
@@ -53,6 +61,7 @@ public class Container {
     @Override
     public String toString() {
         return "Container {"
+                + " id=" + id
                 + " hostname=" + hostname
                 + " image=" + image
                 + " resources=" + resources
