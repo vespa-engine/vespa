@@ -225,7 +225,7 @@ public class MetricsReporterTest {
         ApplicationId application = ApplicationId.from("t1", "a1", "default");
         Map<String, String> dimensions = Map.of("applicationId", application.toFullString());
         NodeResources resources = new NodeResources(2, 8, 100, 1);
-        List<Node> activeNodes = tester.deploy(application, Capacity.from(new ClusterResources(4, 1, resources)));
+        List<Node> activeNodes = tester.deploy(application, ProvisioningTester.contentClusterSpec(), Capacity.from(new ClusterResources(4, 1, resources)));
         metricsReporter.maintain();
         assertEquals(0D, getMetric("nodes.nonActiveFraction", metric, dimensions));
         assertEquals(4, getMetric("nodes.active", metric, dimensions));

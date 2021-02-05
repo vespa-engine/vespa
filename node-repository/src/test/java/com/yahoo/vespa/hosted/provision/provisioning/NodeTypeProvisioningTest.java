@@ -153,7 +153,7 @@ public class NodeTypeProvisioningTest {
             assertEquals(10, nodes.size());
 
             // Verify that the node is now inactive
-            assertEquals(Node.State.inactive, tester.nodeRepository().getNode(nodeToRetire.hostname())
+            assertEquals(Node.State.dirty, tester.nodeRepository().getNode(nodeToRetire.hostname())
                     .orElseThrow(RuntimeException::new).state());
         }
     }
@@ -232,7 +232,7 @@ public class NodeTypeProvisioningTest {
             assertEquals(10, nodes.size());
 
             // Verify the node we previously set to retire has finished retiring
-            assertEquals(Node.State.inactive, tester.nodeRepository().getNode(currentyRetiringHostname)
+            assertEquals(Node.State.dirty, tester.nodeRepository().getNode(currentyRetiringHostname)
                     .orElseThrow(RuntimeException::new).state());
 
             // Verify that a node is currently retiring
@@ -263,9 +263,9 @@ public class NodeTypeProvisioningTest {
                 .count();
         assertEquals(11 - numNodesToRetire, numRetiredActiveProxyNodes);
 
-        // All the nodes that were marked with wantToRetire earlier are now inactive
+        // All the nodes that were marked with wantToRetire earlier are now dirty
         assertEquals(nodesToRetire.stream().map(Node::hostname).collect(Collectors.toSet()),
-                tester.nodeRepository().getNodes(Node.State.inactive).stream().map(Node::hostname).collect(Collectors.toSet()));
+                tester.nodeRepository().getNodes(Node.State.dirty).stream().map(Node::hostname).collect(Collectors.toSet()));
     }
 
     private List<HostSpec> deployProxies(ApplicationId application, ProvisioningTester tester) {

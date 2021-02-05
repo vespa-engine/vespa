@@ -518,8 +518,8 @@ public class NodeRepository extends AbstractComponent {
         var stateless = NodeList.copyOf(nodes).stateless();
         var stateful  = NodeList.copyOf(nodes).stateful();
         List<Node> written = new ArrayList<>();
-        // written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
-        written.addAll(db.writeTo(State.inactive,  nodes, Agent.application, Optional.empty(), transaction.nested()));
+        written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
+        written.addAll(db.writeTo(State.inactive, stateful.asList(), Agent.application, Optional.empty(), transaction.nested()));
         return written;
 
     }

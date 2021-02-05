@@ -60,12 +60,6 @@ public class LoadBalancerExpirerTest {
 
         // Expirer defers removal while nodes are still allocated to application
         expirer.maintain();
-        assertEquals(3, tester.loadBalancerService().instances().size());
-        assertEquals(2, tester.loadBalancerService().instances().get(lb1).reals().size());
-        dirtyNodesOf(app1, cluster1);
-
-        // Expirer prunes reals before expiration time of load balancer itself
-        expirer.maintain();
         assertEquals(Set.of(), tester.loadBalancerService().instances().get(lb1).reals());
         assertEquals(Set.of(), loadBalancers.get().get(lb1).instance().reals());
 
