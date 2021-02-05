@@ -15,6 +15,7 @@ class ConnectionLogHandler {
                 "0 60 ...",
                 String.format("ConnectionLog.%s", clusterName),
                 queueSize,
+                "connection-logger",
                 logWriter);
     }
 
