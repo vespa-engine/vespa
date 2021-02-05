@@ -34,7 +34,7 @@ public abstract class ControllerMaintainer extends Maintainer {
 
     public ControllerMaintainer(Controller controller, Duration interval, String name, Set<SystemName> activeSystems) {
         super(name, interval, controller.clock().instant(), controller.jobControl(),
-              jobMetrics(controller.metric()), controller.curator().cluster());
+              jobMetrics(controller.metric()), controller.curator().cluster(), true);
         this.controller = controller;
         this.activeSystems = Set.copyOf(Objects.requireNonNull(activeSystems));
     }

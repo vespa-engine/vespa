@@ -15,7 +15,7 @@ class TestMaintainer extends Maintainer {
     private RuntimeException exceptionToThrow = null;
 
     public TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics) {
-        super(name, Duration.ofDays(1), Instant.now(), jobControl, jobMetrics, List.of());
+        super(name, Duration.ofDays(1), Instant.now(), jobControl, jobMetrics, List.of(), false);
     }
 
     public int totalRuns() {
