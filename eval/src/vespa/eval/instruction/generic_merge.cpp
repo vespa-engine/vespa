@@ -17,37 +17,6 @@ namespace vespalib::eval::instruction {
 using State = InterpretedFunction::State;
 using Instruction = InterpretedFunction::Instruction;
 
-namespace {
-
-//-----------------------------------------------------------------------------
-
-struct MergeParam {
-    const ValueType res_type;
-    const join_fun_t function;
-    const size_t num_mapped_dimensions;
-    const size_t dense_subspace_size;
-    std::vector<size_t> all_view_dims;
-    const ValueBuilderFactory &factory;
-    MergeParam(const ValueType &lhs_type, const ValueType &rhs_type,
-               join_fun_t function_in, const ValueBuilderFactory &factory_in)
-        : res_type(ValueType::join(lhs_type, rhs_type)),
-          function(function_in),
-          num_mapped_dimensions(lhs_type.count_mapped_dimensions()),
-          dense_subspace_size(lhs_type.dense_subspace_size()),
-          all_view_dims(num_mapped_dimensions),
-          factory(factory_in)
-    {
-        assert(!res_type.is_error());
-        assert(num_mapped_dimensions == rhs_type.count_mapped_dimensions());
-        assert(num_mapped_dimensions == res_type.count_mapped_dimensions());
-        assert(dense_subspace_size == rhs_type.dense_subspace_size());
-        assert(dense_subspace_size == res_type.dense_subspace_size());
-        for (size_t i = 0; i < num_mapped_dimensions; ++i) {
-            all_view_dims[i] = i;
-        }
-    }
-    ~MergeParam();
-};
 MergeParam::~MergeParam() = default;
 
 //-----------------------------------------------------------------------------
@@ -108,6 +77,9 @@ generic_mixed_merge(const Value &a, const Value &b,
     return builder->build(std::move(builder));
 }
 
+
+namespace {
+
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 void my_mixed_merge_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<MergeParam>(param_in);
@@ -119,39 +91,8 @@ void my_mixed_merge_op(State &state, uint64_t param_in) {
     state.pop_pop_push(result_ref);
 };
 
-template <typename LCT, typename RCT, typename OCT, typename Fun>
-void my_sparse_merge_op(State &state, uint64_t param_in) {
-    const auto &param = unwrap_param<MergeParam>(param_in);
-    const Value &lhs = state.peek(1);
-    const Value &rhs = state.peek(0);
-    if (auto indexes = detect_type<FastValueIndex>(lhs.index(), rhs.index())) {
-        auto lhs_cells = lhs.cells().typify<LCT>();
-        auto rhs_cells = rhs.cells().typify<RCT>();
-        if (lhs_cells.size() < rhs_cells.size()) {
-            return state.pop_pop_push(
-                FastValueIndex::sparse_only_merge<RCT,LCT,OCT,Fun>(
-                    param.res_type, Fun(param.function),
-                    indexes.get<1>(), indexes.get<0>(),
-                    rhs_cells, lhs_cells, state.stash));
-        } else {
-            return state.pop_pop_push(
-                FastValueIndex::sparse_only_merge<LCT,RCT,OCT,Fun>(
-                    param.res_type, Fun(param.function),
-                    indexes.get<0>(), indexes.get<1>(),
-                    lhs_cells, rhs_cells, state.stash));
-        }
-    }
-    auto up = generic_mixed_merge<LCT, RCT, OCT, Fun>(lhs, rhs, param);
-    auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
-    const Value &result_ref = *(result.get());
-    state.pop_pop_push(result_ref);
-};
-
 struct SelectGenericMergeOp {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke(const MergeParam &param) {
-        if (param.dense_subspace_size == 1) {
-            return my_sparse_merge_op<LCT,RCT,OCT,Fun>;
-        }
+    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke() {
         return my_mixed_merge_op<LCT,RCT,OCT,Fun>;
     }
 };
@@ -167,7 +108,7 @@ GenericMerge::make_instruction(const ValueType &lhs_type, const ValueType &rhs_t
                                const ValueBuilderFactory &factory, Stash &stash)
 {
     const auto &param = stash.create<MergeParam>(lhs_type, rhs_type, function, factory);
-    auto fun = typify_invoke<4,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function, param);
+    auto fun = typify_invoke<4,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
     return Instruction(fun, wrap_param<MergeParam>(param));
 }
 

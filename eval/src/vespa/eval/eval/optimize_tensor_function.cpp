@@ -6,6 +6,7 @@
 
 #include <vespa/eval/instruction/dense_dot_product_function.h>
 #include <vespa/eval/instruction/sparse_dot_product_function.h>
+#include <vespa/eval/instruction/sparse_merge_function.h>
 #include <vespa/eval/instruction/mixed_inner_product_function.h>
 #include <vespa/eval/instruction/sum_max_dot_product_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
@@ -72,6 +73,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
             child.set(MixedSimpleJoinFunction::optimize(child.get(), stash));
             child.set(JoinWithNumberFunction::optimize(child.get(), stash));
             child.set(DenseSingleReduceFunction::optimize(child.get(), stash));
+            child.set(SparseMergeFunction::optimize(child.get(), stash));
             nodes.pop_back();
         }
     }
