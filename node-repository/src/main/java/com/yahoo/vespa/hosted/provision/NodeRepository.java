@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -410,7 +411,7 @@ public class NodeRepository extends AbstractComponent {
         for (Node node : nodes) {
             if ( ! node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))
                 illegal("Cannot add " + node + ": This is not a docker node");
-            if ( ! node.allocation().isPresent())
+            if (node.allocation().isEmpty())
                 illegal("Cannot add " + node + ": Docker containers needs to be allocated");
             Optional<Node> existing = getNode(node.hostname());
             if (existing.isPresent())
@@ -514,7 +515,13 @@ public class NodeRepository extends AbstractComponent {
      * transaction commits.
      */
     public List<Node> deactivate(List<Node> nodes, ApplicationTransaction transaction) {
-        return db.writeTo(State.inactive, nodes, Agent.application, Optional.empty(), transaction.nested());
+        var stateless = NodeList.copyOf(nodes).stateless();
+        var stateful  = NodeList.copyOf(nodes).stateful();
+        List<Node> written = new ArrayList<>();
+        written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
+        written.addAll(db.writeTo(State.inactive, stateful.asList(), Agent.application, Optional.empty(), transaction.nested()));
+        return written;
+
     }
 
     /** Removes this application: Active nodes are deactivated while all non-active nodes are set dirty. */
@@ -531,22 +538,11 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Move nodes to the dirty state */
-    public List<Node> setDirty(List<Node> nodes, Agent agent, String reason) {
-        return performOn(NodeListFilter.from(nodes), (node, lock) -> setDirty(node, agent, reason));
+    public List<Node> deallocate(List<Node> nodes, Agent agent, String reason) {
+        return performOn(NodeListFilter.from(nodes), (node, lock) -> deallocate(node, agent, reason));
     }
 
-    /**
-     * Set a node dirty, allowed if it is in the provisioned, inactive, failed or parked state.
-     * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
-     *
-     * @throws IllegalArgumentException if the node has hardware failure
-     */
-    public Node setDirty(Node node, Agent agent, String reason) {
-        return db.writeTo(State.dirty, node, agent, Optional.of(reason));
-    }
-
-
-    public List<Node> dirtyRecursively(String hostname, Agent agent, String reason) {
+    public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
         Node nodeToDirty = getNode(hostname).orElseThrow(() ->
                 new IllegalArgumentException("Could not deallocate " + hostname + ": Node not found"));
 
@@ -568,7 +564,37 @@ public class NodeRepository extends AbstractComponent {
             illegal("Could not deallocate " + nodeToDirty + ": " +
                     hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
 
-        return nodesToDirty.stream().map(node -> setDirty(node, agent, reason)).collect(Collectors.toList());
+        return nodesToDirty.stream().map(node -> deallocate(node, agent, reason)).collect(Collectors.toList());
+    }
+
+    /**
+     * Set a node dirty  or parked, allowed if it is in the provisioned, inactive, failed or parked state.
+     * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
+     */
+    public Node deallocate(Node node, Agent agent, String reason) {
+        NestedTransaction transaction = new NestedTransaction();
+        Node deallocated = deallocate(node, agent, reason, transaction);
+        transaction.commit();
+        return deallocated;
+    }
+
+    public List<Node> deallocate(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
+        return nodes.stream().map(node -> deallocate(node, agent, reason, transaction)).collect(Collectors.toList());
+    }
+
+    public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
+        if (node.state() != State.parked && agent != Agent.operator
+            && (node.status().wantToDeprovision() || retiredByOperator(node)))
+            return park(node.hostname(), false, agent, reason, transaction);
+        else
+            return db.writeTo(State.dirty, List.of(node), agent, Optional.of(reason), transaction).get(0);
+    }
+
+    private static boolean retiredByOperator(Node node) {
+        return node.status().wantToRetire() && node.history().event(History.Event.Type.wantToRetire)
+                                                   .map(History.Event::agent)
+                                                   .map(agent -> agent == Agent.operator)
+                                                   .orElse(false);
     }
 
     /**
@@ -597,7 +623,14 @@ public class NodeRepository extends AbstractComponent {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node park(String hostname, boolean keepAllocation, Agent agent, String reason) {
-        return move(hostname, keepAllocation, State.parked, agent, Optional.of(reason));
+        NestedTransaction transaction = new NestedTransaction();
+        Node parked = park(hostname, keepAllocation, agent, reason, transaction);
+        transaction.commit();
+        return parked;
+    }
+
+    public Node park(String hostname, boolean keepAllocation, Agent agent, String reason, NestedTransaction transaction) {
+        return move(hostname, keepAllocation, State.parked, agent, Optional.of(reason), transaction);
     }
 
     /**
@@ -644,6 +677,14 @@ public class NodeRepository extends AbstractComponent {
     }
 
     private Node move(String hostname, boolean keepAllocation, State toState, Agent agent, Optional<String> reason) {
+        NestedTransaction transaction = new NestedTransaction();
+        Node moved = move(hostname, keepAllocation, toState, agent, reason, transaction);
+        transaction.commit();
+        return moved;
+    }
+
+    private Node move(String hostname, boolean keepAllocation, State toState, Agent agent, Optional<String> reason,
+                      NestedTransaction transaction) {
         Node node = getNode(hostname).orElseThrow(() ->
                 new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
 
@@ -651,10 +692,17 @@ public class NodeRepository extends AbstractComponent {
             node = node.withoutAllocation();
         }
 
-        return move(node, toState, agent, reason);
+        return move(node, toState, agent, reason, transaction);
     }
 
     private Node move(Node node, State toState, Agent agent, Optional<String> reason) {
+        NestedTransaction transaction = new NestedTransaction();
+        Node moved = move(node, toState, agent, reason, transaction);
+        transaction.commit();
+        return moved;
+    }
+
+    private Node move(Node node, State toState, Agent agent, Optional<String> reason, NestedTransaction transaction) {
         if (toState == Node.State.active && node.allocation().isEmpty())
             illegal("Could not set " + node + " active. It has no allocation.");
 
@@ -667,7 +715,7 @@ public class NodeRepository extends AbstractComponent {
                         illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
                 }
             }
-            return db.writeTo(toState, node, agent, reason);
+            return db.writeTo(toState, List.of(node), agent, reason, transaction).get(0);
         }
     }
 
@@ -981,4 +1029,5 @@ public class NodeRepository extends AbstractComponent {
     private void illegal(String message) {
         throw new IllegalArgumentException(message);
     }
+
 }

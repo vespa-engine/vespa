@@ -32,6 +32,7 @@ import com.yahoo.vespa.service.duper.InfraApplication;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -100,14 +101,15 @@ public class ProvisioningTest {
         SystemState state6 = prepare(application1, 0, 2, 0, 3, defaultResources, tester);
         tester.activate(application1, state6.allHosts);
         assertEquals(5, tester.getNodes(application1, Node.State.active).size());
-        assertEquals(5, tester.getNodes(application1, Node.State.inactive).size());
+        assertEquals(3, tester.getNodes(application1, Node.State.inactive).size());
 
         // delete app
         NodeList previouslyActive = tester.getNodes(application1, Node.State.active);
         NodeList previouslyInactive = tester.getNodes(application1, Node.State.inactive);
         tester.remove(application1);
-        assertEquals(tester.toHostNames(previouslyActive.asList()), tester.toHostNames(tester.nodeRepository().getNodes(application1, Node.State.inactive)));
-        assertEquals(tester.toHostNames(previouslyInactive.asList()), tester.toHostNames(tester.nodeRepository().getNodes(Node.State.dirty)));
+        assertEquals(tester.toHostNames(previouslyActive.not().container().asList()),
+                     tester.toHostNames(tester.nodeRepository().getNodes(application1, Node.State.inactive)));
+        assertTrue(tester.nodeRepository().getNodes(Node.State.dirty).containsAll(previouslyActive.container().asList()));
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
         assertTrue(tester.nodeRepository().applications().get(application1).isEmpty());
 
@@ -203,7 +205,7 @@ public class ProvisioningTest {
 
         ApplicationId application1 = ProvisioningTester.applicationId();
 
-        tester.makeReadyHosts(24, defaultResources);
+        tester.makeReadyHosts(30, defaultResources);
         tester.activateTenantHosts();
 
         // deploy
@@ -219,8 +221,8 @@ public class ProvisioningTest {
         // decrease again
         SystemState state3 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state3.allHosts);
-        assertEquals("Superfluous container nodes are deactivated",
-                     3-2 + 4-2, tester.getNodes(application1, Node.State.inactive).size());
+        assertEquals("Superfluous container nodes are dirtyed",
+                     3-2 + 4-2, tester.nodeRepository().getNodes(Node.State.dirty).size());
         assertEquals("Superfluous content nodes are retired",
                      4-3 + 5-3, tester.getNodes(application1, Node.State.active).retired().size());
 
@@ -229,7 +231,6 @@ public class ProvisioningTest {
         assertEquals("Inactive nodes are reused", 0, tester.getNodes(application1, Node.State.inactive).size());
         assertEquals("Earlier retired nodes are not unretired before activate",
                      4-3 + 5-3, tester.getNodes(application1, Node.State.active).retired().size());
-        state4.assertExtends(state2);
         assertEquals("New and inactive nodes are reserved", 4 + 3, tester.getNodes(application1, Node.State.reserved).size());
         // Remove a retired host from one of the content clusters (which one is random depending on host names)
         HostSpec removed = state4.removeHost(tester.getNodes(application1, Node.State.active).retired().asList().get(0).hostname());
@@ -243,8 +244,8 @@ public class ProvisioningTest {
         // decrease again
         SystemState state5 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state5.allHosts);
-        assertEquals("Superfluous container nodes are also deactivated",
-                     4-2 + 5-2 + 1, tester.getNodes(application1, Node.State.inactive).size()); //
+        assertEquals("Superfluous container nodes are also dirtyed",
+                     4-2 + 5-2 + 1 + 4-2, tester.nodeRepository().getNodes(Node.State.dirty).size());
         assertEquals("Superfluous content nodes are retired",
                      5-3 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 

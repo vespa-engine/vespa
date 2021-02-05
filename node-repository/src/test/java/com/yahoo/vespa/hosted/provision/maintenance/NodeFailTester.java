@@ -259,7 +259,7 @@ public class NodeFailTester {
         }
 
         nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
@@ -267,7 +267,7 @@ public class NodeFailTester {
         List<Node> nodes = tester.makeProvisionedNodes(count, (index) -> "parent" + index,
                                                        hostFlavors.getFlavorOrThrow("default"),
                                                        Optional.empty(), NodeType.host, 10, false);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
         tester.activateTenantHosts();
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -14,11 +15,14 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -356,10 +360,14 @@ public class DockerProvisioningTest {
         tester.makeReadyHosts(5, r).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.applicationId("app1");
-        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(5, 1, r)));
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
+
+        var tx = new ApplicationTransaction(new ProvisionLock(app1, tester.nodeRepository().lock(app1)), new NestedTransaction());
+        tester.nodeRepository().deactivate(tester.nodeRepository().list(app1, Node.State.active).retired().asList(), tx);
+        tx.nested().commit();
 
         assertEquals(2, tester.getNodes(app1, Node.State.active).size());
         assertEquals(3, tester.getNodes(app1, Node.State.inactive).size());
@@ -372,16 +380,16 @@ public class DockerProvisioningTest {
     }
 
     @Test
-    public void inactive_container_nodes_are_reused() {
-        assertInactiveReuse(ClusterSpec.Type.container);
+    public void inactive_container_nodes_are_not_reused() {
+        assertInactiveReuse(ClusterSpec.Type.container, false);
     }
 
     @Test
     public void inactive_content_nodes_are_reused() {
-        assertInactiveReuse(ClusterSpec.Type.content);
+        assertInactiveReuse(ClusterSpec.Type.content, true);
     }
 
-    private void assertInactiveReuse(ClusterSpec.Type clusterType) {
+    private void assertInactiveReuse(ClusterSpec.Type clusterType, boolean expectedReuse) {
         NodeResources r = new NodeResources(20, 40, 100, 4);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(new Flavor(r)))
@@ -398,9 +406,18 @@ public class DockerProvisioningTest {
         tester.nodeRepository().setRemovable(app1, tester.getNodes(app1).retired().asList());
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
-        assertEquals(2, tester.getNodes(app1, Node.State.inactive).size());
-        tester.activate(app1, cluster1, Capacity.from(new ClusterResources(4, 1, r)));
-        assertEquals(0, tester.getNodes(app1, Node.State.inactive).size());
+        if (expectedReuse) {
+            assertEquals(2, tester.getNodes(app1, Node.State.inactive).size());
+            tester.activate(app1, cluster1, Capacity.from(new ClusterResources(4, 1, r)));
+            assertEquals(0, tester.getNodes(app1, Node.State.inactive).size());
+        }
+        else {
+            assertEquals(0, tester.getNodes(app1, Node.State.inactive).size());
+            assertEquals(2, tester.nodeRepository().getNodes(Node.State.dirty).size());
+            tester.nodeRepository().setReady(tester.nodeRepository().getNodes(Node.State.dirty), Agent.system, "test");
+            tester.activate(app1, cluster1, Capacity.from(new ClusterResources(4, 1, r)));
+        }
+
     }
 
 

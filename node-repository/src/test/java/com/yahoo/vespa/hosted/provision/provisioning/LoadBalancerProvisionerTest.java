@@ -263,7 +263,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private void dirtyNodesOf(ApplicationId application) {
-        tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
+        tester.nodeRepository().deallocate(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {

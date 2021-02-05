@@ -14,14 +14,9 @@ import java.util.List;
 /**
  * Maintenance job which moves inactive nodes to dirty or parked after timeout.
  *
- * The timeout is in place for two reasons:
- *
- * - To ensure that the new application configuration has time to
- *   propagate before the node is used for something else.
- *
- * - To provide a grace period in which nodes can be brought back to active
- *   if they were deactivated in error. As inactive nodes retain their state
- *   they can be brought back to active and correct state faster than a new node.
+ * The timeout is in place to provide a grace period in which nodes can be brought back to active
+ * if they were deactivated in error. As inactive nodes retain their state
+ * they can be brought back to active and correct state faster than a new node.
  *
  * Nodes with following flags set are not reusable and will be moved to parked
  * instead of dirty:
@@ -44,11 +39,7 @@ public class InactiveExpirer extends Expirer {
     @Override
     protected void expire(List<Node> expired) {
         expired.forEach(node -> {
-            if (node.status().wantToDeprovision() || retiredByOperator(node)) {
-                nodeRepository.park(node.hostname(), false, Agent.InactiveExpirer, "Expired by InactiveExpirer");
-            } else {
-                nodeRepository.setDirty(node, Agent.InactiveExpirer, "Expired by InactiveExpirer");
-            }
+            nodeRepository.deallocate(node, Agent.InactiveExpirer, "Expired by InactiveExpirer");
         });
     }
 
@@ -56,13 +47,6 @@ public class InactiveExpirer extends Expirer {
     protected boolean isExpired(Node node) {
         return    super.isExpired(node)
                || node.allocation().get().owner().instance().isTester();
-    }
-
-    private static boolean retiredByOperator(Node node) {
-        return node.status().wantToRetire() && node.history().event(History.Event.Type.wantToRetire)
-                                                   .map(History.Event::agent)
-                                                   .map(agent -> agent == Agent.operator)
-                                                   .orElse(false);
     }
 
 }
