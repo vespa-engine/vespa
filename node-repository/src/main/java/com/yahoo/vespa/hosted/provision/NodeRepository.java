@@ -570,8 +570,6 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Set a node dirty  or parked, allowed if it is in the provisioned, inactive, failed or parked state.
      * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
-     *
-     * @throws IllegalArgumentException if the node has hardware failure
      */
     public Node deallocate(Node node, Agent agent, String reason) {
         NestedTransaction transaction = new NestedTransaction();
