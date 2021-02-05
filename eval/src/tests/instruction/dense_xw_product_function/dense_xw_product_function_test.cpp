@@ -24,8 +24,8 @@ struct First {
     operator bool() const { return value; }
 };
 
-GenSpec::seq_t my_vec_seq = [] (size_t i) { return (3.0 + i) * 7.0; };
-GenSpec::seq_t my_mat_seq = [] (size_t i) { return (5.0 + i) * 43.0; };
+GenSpec::seq_t my_vec_seq = [] (size_t i) noexcept { return (3.0 + i) * 7.0; };
+GenSpec::seq_t my_mat_seq = [] (size_t i) noexcept { return (5.0 + i) * 43.0; };
 
 void add_vector(EvalFixture::ParamRepo &repo, const char *d1, size_t s1) {
     auto name = make_string("%s%zu", d1, s1);

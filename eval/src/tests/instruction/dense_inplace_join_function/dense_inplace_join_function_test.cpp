@@ -15,7 +15,7 @@ using namespace vespalib::eval::tensor_function;
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
-GenSpec::seq_t glb = [] (size_t) {
+GenSpec::seq_t glb = [] (size_t) noexcept {
     static double seq_value = 0.0;
     seq_value += 1.0;
     return seq_value;
