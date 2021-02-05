@@ -54,7 +54,7 @@ private:
         using ParentType::_emptyEntry;
         using CleanContext = typename ParentType::CleanContext;
     public:
-        TensorBufferType();
+        TensorBufferType() noexcept;
         void cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx) override;
     };
     TensorStoreType _concrete_store;

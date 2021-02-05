@@ -156,7 +156,7 @@ StreamedValueStore::TensorEntryImpl<CT>::~TensorEntryImpl() = default;
 
 constexpr size_t MIN_BUFFER_ARRAYS = 8192;
 
-StreamedValueStore::TensorBufferType::TensorBufferType()
+StreamedValueStore::TensorBufferType::TensorBufferType() noexcept
     : ParentType(1, MIN_BUFFER_ARRAYS, TensorStoreType::RefType::offsetSize())
 {
 }

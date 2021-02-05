@@ -96,7 +96,7 @@ public:
     BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays) noexcept;
     BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
                uint32_t numArraysForNewBuffer, float allocGrowFactor) noexcept;
-    ~BufferType();
+    ~BufferType() override;
     void destroyElements(void *buffer, ElemCount numElems) override;
     void fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems) override;
     void initializeReservedElements(void *buffer, ElemCount reservedElements) override;
