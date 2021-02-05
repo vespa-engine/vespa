@@ -211,7 +211,7 @@ public class DocumentV1ApiTest {
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
             VisitorStatistics statistics = new VisitorStatistics();
             statistics.setBucketsVisited(1);
-            statistics.setDocumentsReturned(3);
+            statistics.setDocumentsVisited(3);
             parameters.getControlHandler().onVisitorStatistics(statistics);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });

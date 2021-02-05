@@ -1089,7 +1089,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                         response.writeContinuation(progress.serializeToString());
 
                                     if (getVisitorStatistics() != null)
-                                        response.writeDocumentCount(getVisitorStatistics().getDocumentsReturned());
+                                        response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
 
                                     response.respond(Response.Status.OK);
                                     break;
