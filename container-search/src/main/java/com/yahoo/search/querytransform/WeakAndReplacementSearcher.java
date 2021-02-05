@@ -44,14 +44,18 @@ public class WeakAndReplacementSearcher extends Searcher {
             return item;
         }
         CompositeItem compositeItem = (CompositeItem) item;
-        if (item instanceof OrItem) {
+        if (compositeItem instanceof OrItem) {
             WeakAndItem newItem = new WeakAndItem(hits);
-            newItem.setWeight(item.getWeight());
+            newItem.setWeight(compositeItem.getWeight());
             compositeItem.items().forEach(newItem::addItem);
             compositeItem = newItem;
         }
         for (int i = 0; i < compositeItem.getItemCount(); i++) {
-            compositeItem.setItem(i, replaceOrItems(compositeItem.getItem(i), hits));
+            Item subItem = compositeItem.getItem(i);
+            Item replacedItem = replaceOrItems(subItem, hits);
+            if (replacedItem != subItem) {
+                compositeItem.setItem(i, replacedItem);
+            }
         }
         return compositeItem;
     }
