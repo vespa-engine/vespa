@@ -49,14 +49,12 @@ public interface NodeAgentContext extends TaskContext {
     };
 
     /**
-     * The vcpu value in NodeSpec is the number of vcpus required by the node on a fixed historical
-     * baseline machine.  However the current host has a faster per-vcpu performance by a scale factor
-     * (see flavors.def cpuSpeedup), and therefore do not need to set aside the full number of vcpus
-     * to run the node.  This method returns that reduced number of vcpus.
+     * The vcpu value in NodeSpec is multiplied by the speedup factor per cpu core compared to a historical baseline
+     * for a particular cpu generation of the host (see flavors.def cpuSpeedup).
      *
-     * @return the vcpus required by the node on this host.
+     * @return node vcpu without the cpu speedup factor.
      */
-    double vcpuOnThisHost();
+    double unscaledVcpu();
 
     /** The file system used by the NodeAgentContext. All paths must have the same provider. */
     FileSystem fileSystem();

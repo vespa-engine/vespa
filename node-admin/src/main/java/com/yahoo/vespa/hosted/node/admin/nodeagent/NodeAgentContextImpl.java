@@ -118,7 +118,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public double vcpuOnThisHost() {
+    public double unscaledVcpu() {
         return node.vcpu() / cpuSpeedup;
     }
 

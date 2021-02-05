@@ -286,7 +286,6 @@ public class DockerEngine implements ContainerEngine {
     private Stream<Container> asContainer(String container) {
         return inspectContainerCmd(container)
                 .map(response -> new Container(
-                        new ContainerId(response.getId()),
                         response.getConfig().getHostName(),
                         DockerImage.fromString(response.getConfig().getImage()),
                         containerResourcesFromHostConfig(response.getHostConfig()),

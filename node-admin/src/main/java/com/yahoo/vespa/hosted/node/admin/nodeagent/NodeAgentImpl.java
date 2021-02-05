@@ -372,7 +372,7 @@ public class NodeAgentImpl implements NodeAgent {
                 wantedContainerResources.toStringCpu(), existingContainer.resources.toStringCpu());
 
         // Only update CPU resources
-        containerOperations.updateContainer(context, existingContainer.id(), wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
+        containerOperations.updateContainer(context, wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
         return containerOperations.getContainer(context).orElseThrow(() ->
                 new ConvergenceException("Did not find container that was just updated"));
     }
@@ -384,9 +384,9 @@ public class NodeAgentImpl implements NodeAgent {
                         .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
                         .orElse(containerCpuCap)
                         .with(FetchVector.Dimension.HOSTNAME, context.node().hostname())
-                        .value() * context.vcpuOnThisHost();
+                        .value() * context.unscaledVcpu();
 
-        return ContainerResources.from(cpuCap, context.vcpuOnThisHost(), context.node().memoryGb());
+        return ContainerResources.from(cpuCap, context.unscaledVcpu(), context.node().memoryGb());
     }
 
     private boolean noCpuCap(ZoneApi zone) {

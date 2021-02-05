@@ -5,7 +5,6 @@ import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
-import com.yahoo.vespa.hosted.dockerapi.ContainerId;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
@@ -86,8 +85,8 @@ public class ContainerOperationsImplTest {
     }
 
     private Container makeContainer(String name, Container.State state, int pid) {
-        final Container container = new Container(new ContainerId(name + "-id"), name + ".fqdn",
-                DockerImage.fromString("registry.example.com/mock"), null, new ContainerName(name), state, pid);
+        final Container container = new Container(name + ".fqdn", DockerImage.fromString("registry.example.com/mock"), null,
+                new ContainerName(name), state, pid);
         when(containerEngine.getContainer(eq(container.name))).thenReturn(Optional.of(container));
         return container;
     }
