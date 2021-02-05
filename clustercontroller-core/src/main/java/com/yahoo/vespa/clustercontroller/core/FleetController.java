@@ -383,7 +383,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         verifyInControllerThread();
         ClusterState baselineState = stateBundle.getBaselineClusterState();
         newStates.add(stateBundle);
-        metricUpdater.updateClusterStateMetrics(cluster, baselineState);
+        metricUpdater.updateClusterStateMetrics(cluster, baselineState,
+                ResourceUsageStats.calculateFrom(cluster.getNodeInfo(), options.clusterFeedBlockLimit, stateBundle.getFeedBlock()));
         lastMetricUpdateCycleCount = cycleCount;
         systemStateBroadcaster.handleNewClusterStates(stateBundle);
         // Iff master, always store new version in ZooKeeper _before_ publishing to any
@@ -399,7 +400,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if (cycleCount > 300 + lastMetricUpdateCycleCount) {
             ClusterStateBundle stateBundle = stateVersionTracker.getVersionedClusterStateBundle();
             ClusterState baselineState = stateBundle.getBaselineClusterState();
-            metricUpdater.updateClusterStateMetrics(cluster, baselineState);
+            metricUpdater.updateClusterStateMetrics(cluster, baselineState,
+                    ResourceUsageStats.calculateFrom(cluster.getNodeInfo(), options.clusterFeedBlockLimit, stateBundle.getFeedBlock()));
             lastMetricUpdateCycleCount = cycleCount;
             return true;
         } else {

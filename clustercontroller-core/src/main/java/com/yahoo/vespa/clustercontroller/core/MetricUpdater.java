@@ -32,7 +32,7 @@ public class MetricUpdater {
                 + nodeCounts.getOrDefault(State.MAINTENANCE, 0);
     }
 
-    public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state) {
+    public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state, ResourceUsageStats resourceUsage) {
         Map<String, String> dimensions = new HashMap<>();
         dimensions.put("cluster", cluster.getName());
         for (NodeType type : NodeType.getTypes()) {
@@ -59,6 +59,10 @@ public class MetricUpdater {
         dimensions.remove("node-type");
         MetricReporter.Context context = createContext(dimensions);
         metricReporter.add("cluster-state-change", 1, context);
+
+        metricReporter.set("resource_usage.max_disk_utilization", resourceUsage.getMaxDiskUtilization(), context);
+        metricReporter.set("resource_usage.max_memory_utilization", resourceUsage.getMaxMemoryUtilization(), context);
+        metricReporter.set("resource_usage.nodes_above_limit", resourceUsage.getNodesAboveLimit(), context);
     }
 
     public void updateMasterElectionMetrics(Map<Integer, Integer> data) {
