@@ -77,10 +77,8 @@ public final class ClusterSpec {
      */
     public boolean isExclusive() { return exclusive; }
 
-    /** Whether this cluster has state */
-    public boolean isStateful() {
-        return stateful;
-    }
+    /** Returns whether this cluster has state */
+    public boolean isStateful() { return stateful; }
 
     public ClusterSpec with(Optional<Group> newGroup) {
         return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId, dockerImageRepo, stateful);

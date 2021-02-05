@@ -163,7 +163,7 @@ public class MetricsReporterTest {
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
                                       nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
         nodeRepository.addNodes(List.of(dockerHost), Agent.system);
-        nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
+        nodeRepository.deallocateRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
         Node container1 = Node.createDockerNode(Set.of("::2"), "container1",

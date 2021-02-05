@@ -142,11 +142,11 @@ public class MockNodeRepository extends NodeRepository {
         nodes = addNodes(nodes, Agent.system);
         nodes.remove(node7);
         nodes.remove(node55);
-        nodes = setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodes = deallocate(nodes, Agent.system, getClass().getSimpleName());
         setReady(nodes, Agent.system, getClass().getSimpleName());
 
         fail(node5.hostname(), Agent.system, getClass().getSimpleName());
-        dirtyRecursively(node55.hostname(), Agent.system, getClass().getSimpleName());
+        deallocateRecursively(node55.hostname(), Agent.system, getClass().getSimpleName());
 
         fail("dockerhost6.yahoo.com", Agent.operator, getClass().getSimpleName());
         removeRecursively("dockerhost6.yahoo.com");

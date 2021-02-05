@@ -186,7 +186,7 @@ class MaintenanceDeployment implements Closeable {
 
                     // Immediately clean up if we reserved the node but could not activate or reserved a node on the wrong host
                     expectedNewNode.flatMap(node -> nodeRepository.getNode(node.hostname(), Node.State.reserved))
-                                   .ifPresent(node -> nodeRepository.setDirty(node, agent, "Expired by " + agent));
+                                   .ifPresent(node -> nodeRepository.deallocate(node, agent, "Expired by " + agent));
                 }
             }
         }

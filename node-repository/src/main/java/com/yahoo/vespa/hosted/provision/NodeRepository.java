@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -410,7 +411,7 @@ public class NodeRepository extends AbstractComponent {
         for (Node node : nodes) {
             if ( ! node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))
                 illegal("Cannot add " + node + ": This is not a docker node");
-            if ( ! node.allocation().isPresent())
+            if (node.allocation().isEmpty())
                 illegal("Cannot add " + node + ": Docker containers needs to be allocated");
             Optional<Node> existing = getNode(node.hostname());
             if (existing.isPresent())
@@ -531,22 +532,11 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /** Move nodes to the dirty state */
-    public List<Node> setDirty(List<Node> nodes, Agent agent, String reason) {
-        return performOn(NodeListFilter.from(nodes), (node, lock) -> setDirty(node, agent, reason));
+    public List<Node> deallocate(List<Node> nodes, Agent agent, String reason) {
+        return performOn(NodeListFilter.from(nodes), (node, lock) -> deallocate(node, agent, reason));
     }
 
-    /**
-     * Set a node dirty, allowed if it is in the provisioned, inactive, failed or parked state.
-     * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
-     *
-     * @throws IllegalArgumentException if the node has hardware failure
-     */
-    public Node setDirty(Node node, Agent agent, String reason) {
-        return db.writeTo(State.dirty, node, agent, Optional.of(reason));
-    }
-
-
-    public List<Node> dirtyRecursively(String hostname, Agent agent, String reason) {
+    public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
         Node nodeToDirty = getNode(hostname).orElseThrow(() ->
                 new IllegalArgumentException("Could not deallocate " + hostname + ": Node not found"));
 
@@ -568,7 +558,28 @@ public class NodeRepository extends AbstractComponent {
             illegal("Could not deallocate " + nodeToDirty + ": " +
                     hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
 
-        return nodesToDirty.stream().map(node -> setDirty(node, agent, reason)).collect(Collectors.toList());
+        return nodesToDirty.stream().map(node -> deallocate(node, agent, reason)).collect(Collectors.toList());
+    }
+
+    /**
+     * Set a node dirty  or parked, allowed if it is in the provisioned, inactive, failed or parked state.
+     * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
+     *
+     * @throws IllegalArgumentException if the node has hardware failure
+     */
+    public Node deallocate(Node node, Agent agent, String reason) {
+        if (node.state() != State.parked && agent != Agent.operator
+            && (node.status().wantToDeprovision() || retiredByOperator(node)))
+            return park(node.hostname(), false, agent, reason);
+        else
+            return db.writeTo(State.dirty, node, agent, Optional.of(reason));
+    }
+
+    private static boolean retiredByOperator(Node node) {
+        return node.status().wantToRetire() && node.history().event(History.Event.Type.wantToRetire)
+                                                   .map(History.Event::agent)
+                                                   .map(agent -> agent == Agent.operator)
+                                                   .orElse(false);
     }
 
     /**
@@ -981,4 +992,5 @@ public class NodeRepository extends AbstractComponent {
     private void illegal(String message) {
         throw new IllegalArgumentException(message);
     }
+
 }

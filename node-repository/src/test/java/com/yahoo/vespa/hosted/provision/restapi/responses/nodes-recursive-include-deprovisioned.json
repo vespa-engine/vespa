@@ -17,8 +17,8 @@
     @include(node2.json),
     @include(docker-node1.json),
     @include(node1.json),
-    @include(node55.json),
     @include(node5.json),
+    @include(node55.json),
     @include(dockerhost6.json)
   ]
 }

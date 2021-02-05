@@ -138,11 +138,11 @@ public class LoadBalancerExpirerTest {
     }
 
     private void dirtyNodesOf(ApplicationId application, ClusterSpec.Id cluster) {
-        tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application).stream()
-                                               .filter(node -> node.allocation().isPresent())
-                                               .filter(node -> node.allocation().get().membership().cluster().id().equals(cluster))
-                                               .collect(Collectors.toList()),
-                                         Agent.system, this.getClass().getSimpleName());
+        tester.nodeRepository().deallocate(tester.nodeRepository().getNodes(application).stream()
+                                                 .filter(node -> node.allocation().isPresent())
+                                                 .filter(node -> node.allocation().get().membership().cluster().id().equals(cluster))
+                                                 .collect(Collectors.toList()),
+                                           Agent.system, this.getClass().getSimpleName());
     }
 
     private void deployApplication(ApplicationId application, ClusterSpec.Id... clusters) {
