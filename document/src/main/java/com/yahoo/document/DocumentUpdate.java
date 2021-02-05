@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -362,9 +363,10 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
 
         if (docId != null ? !docId.equals(that.docId) : that.docId != null) return false;
         if (documentType != null ? !documentType.equals(that.documentType) : that.documentType != null) return false;
-        if (!fieldPathUpdates.equals(that.fieldPathUpdates)) return false;
-        if (!id2FieldUpdates.equals(that.id2FieldUpdates)) return false;
-        if (this.getCreateIfNonExistent() != ((DocumentUpdate) o).getCreateIfNonExistent()) return false;
+        if ( ! fieldPathUpdates.equals(that.fieldPathUpdates)) return false;
+        if ( ! id2FieldUpdates.equals(that.id2FieldUpdates)) return false;
+        if (this.getCreateIfNonExistent() != that.getCreateIfNonExistent()) return false;
+        if ( ! Objects.equals(getCondition(), that.getCondition())) return false;
 
         return true;
     }

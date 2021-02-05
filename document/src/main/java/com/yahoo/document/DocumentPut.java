@@ -54,7 +54,7 @@ public class DocumentPut extends DocumentOperation {
         if (o == null || getClass() != o.getClass()) return false;
         DocumentPut that = (DocumentPut) o;
         return document.equals(that.document) &&
-               getCondition().equals(that.getCondition());
+               Objects.equals(getCondition(), that.getCondition());
     }
 
     @Override
