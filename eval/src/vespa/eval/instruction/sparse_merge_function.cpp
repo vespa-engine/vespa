@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sparse_merge_function.h"
-#include "generic_join.h"
+#include "generic_merge.h"
 #include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/vespalib/util/typify.h>
 
@@ -13,82 +13,10 @@ using namespace instruction;
 
 namespace {
 
-struct SparseMergeParam {
-    const ValueType res_type;
-    const join_fun_t function;
-    const size_t num_mapped_dimensions;
-    std::vector<size_t> all_view_dims;
-    const ValueBuilderFactory &factory;
-
-    SparseMergeParam(const ValueType &res_type_in, join_fun_t function_in, const ValueBuilderFactory &factory_in)
-      : res_type(res_type_in),
-        function(function_in),
-        num_mapped_dimensions(res_type.count_mapped_dimensions()),
-        all_view_dims(num_mapped_dimensions),
-        factory(factory_in)
-    {
-        assert(!res_type.is_error());
-        for (size_t i = 0; i < num_mapped_dimensions; ++i) {
-            all_view_dims[i] = i;
-        }
-    }
-    ~SparseMergeParam();
-};
-SparseMergeParam::~SparseMergeParam() = default;
-
-template <typename CT, typename Fun>
-std::unique_ptr<Value> my_sparse_merge_fallback(const Value::Index &a_idx, const Value::Index &b_idx,
-                                                ConstArrayRef<CT> a_cells, ConstArrayRef<CT> b_cells,
-                                                const SparseMergeParam &param) __attribute__((noinline));
-template <typename CT, typename Fun>
-std::unique_ptr<Value> my_sparse_merge_fallback(const Value::Index &a_idx, const Value::Index &b_idx,
-                                                ConstArrayRef<CT> a_cells, ConstArrayRef<CT> b_cells,
-                                                const SparseMergeParam &params)
-{
-    Fun fun(params.function);
-    const size_t num_mapped = params.num_mapped_dimensions;
-    const size_t subspace_size = 1u;
-    size_t guess_subspaces = std::max(a_idx.size(), b_idx.size());
-    auto builder = params.factory.create_transient_value_builder<CT>(params.res_type, num_mapped, subspace_size, guess_subspaces);
-    std::vector<string_id> address(num_mapped);
-    std::vector<const string_id *> addr_cref;
-    std::vector<string_id *> addr_ref;
-    for (auto & ref : address) {
-        addr_cref.push_back(&ref);
-        addr_ref.push_back(&ref);
-    }
-    size_t a_subspace;
-    size_t b_subspace;
-    auto inner = b_idx.create_view(params.all_view_dims);
-    auto outer = a_idx.create_view({});
-    outer->lookup({});
-    while (outer->next_result(addr_ref, a_subspace)) {
-        ArrayRef<CT> dst = builder->add_subspace(address);
-        inner->lookup(addr_cref);
-        if (inner->next_result({}, b_subspace)) {
-            dst[0] = fun(a_cells[a_subspace], b_cells[b_subspace]);
-        } else {
-            dst[0] = a_cells[a_subspace];
-        }
-    }
-    inner = a_idx.create_view(params.all_view_dims);
-    outer = b_idx.create_view({});
-    outer->lookup({});
-    while (outer->next_result(addr_ref, b_subspace)) {
-        inner->lookup(addr_cref);
-        if (! inner->next_result({}, a_subspace)) {
-            ArrayRef<CT> dst = builder->add_subspace(address);
-            dst[0] = b_cells[b_subspace];
-        }
-    }
-    return builder->build(std::move(builder));
-}
-
-
 template <typename CT, bool single_dim, typename Fun>
 const Value& my_fast_sparse_merge(const FastAddrMap &a_map, const FastAddrMap &b_map,
                                   const CT *a_cells, const CT *b_cells,
-                                  const SparseMergeParam &params,
+                                  const MergeParam &params,
                                   Stash &stash)
 {
     Fun fun(params.function);
@@ -139,18 +67,21 @@ const Value& my_fast_sparse_merge(const FastAddrMap &a_map, const FastAddrMap &b
 
 template <typename CT, bool single_dim, typename Fun>
 void my_sparse_merge_op(InterpretedFunction::State &state, uint64_t param_in) {
-    const auto &param = unwrap_param<SparseMergeParam>(param_in);
-    const auto &a_idx = state.peek(1).index();
-    const auto &b_idx = state.peek(0).index();
-    auto a_cells = state.peek(1).cells().typify<CT>();
-    auto b_cells = state.peek(0).cells().typify<CT>();
-    //assert(a_idx.size() == a_cells.size());
-    //assert(b_idx.size() == b_cells.size());
+    const auto &param = unwrap_param<MergeParam>(param_in);
+    assert(param.dense_subspace_size == 1u);
+    const Value &a = state.peek(1);
+    const Value &b = state.peek(0);
+    const auto &a_idx = a.index();
+    const auto &b_idx = b.index();
     if (__builtin_expect(are_fast(a_idx, b_idx), true)) {
-        const Value &v = my_fast_sparse_merge<CT,single_dim,Fun>(as_fast(a_idx).map, as_fast(b_idx).map, a_cells.cbegin(), b_cells.cbegin(), param, state.stash);
+        auto a_cells = a.cells().typify<CT>();
+        auto b_cells = b.cells().typify<CT>();
+        const Value &v = my_fast_sparse_merge<CT,single_dim,Fun>(as_fast(a_idx).map, as_fast(b_idx).map,
+                                                                 a_cells.cbegin(), b_cells.cbegin(),
+                                                                 param, state.stash);
         state.pop_pop_push(v);
     } else {
-        auto up = my_sparse_merge_fallback<CT,Fun>(a_idx, b_idx, a_cells, b_cells, param);
+        auto up = generic_mixed_merge<CT,CT,CT,Fun>(a, b, param);
         state.pop_pop_push(*state.stash.create<std::unique_ptr<Value>>(std::move(up)));
     }
 }
@@ -176,12 +107,13 @@ SparseMergeFunction::SparseMergeFunction(const tensor_function::Merge &original)
 InterpretedFunction::Instruction
 SparseMergeFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    const auto &param = stash.create<SparseMergeParam>(result_type(), function(), factory);
+    const auto &param = stash.create<MergeParam>(lhs().result_type(), rhs().result_type(),
+                                                 function(), factory);
     size_t num_dims = result_type().count_mapped_dimensions();
     auto op = typify_invoke<3,MyTypify,SelectSparseMergeOp>(result_type().cell_type(),
                                                             num_dims == 1,
                                                             function());
-    return InterpretedFunction::Instruction(op, wrap_param<SparseMergeParam>(param));
+    return InterpretedFunction::Instruction(op, wrap_param<MergeParam>(param));
 }
 
 bool
