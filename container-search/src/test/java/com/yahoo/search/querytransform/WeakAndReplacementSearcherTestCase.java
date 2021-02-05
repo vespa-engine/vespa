@@ -76,6 +76,21 @@ public class WeakAndReplacementSearcherTestCase {
         assertTrue(deepEquals(root, andItem));
     }
 
+    @Test
+    public void requireChildrenAreTheSame() {
+        Query query = new Query();
+        query.properties().set(WEAKAND_REPLACE, true);
+        OrItem preRoot = new OrItem();
+        preRoot.addItem(new WordItem("val1"));
+        preRoot.addItem(new WordItem("val2"));
+
+        query.getModel().getQueryTree().setRoot(preRoot);
+        Result result = buildExec().search(query);
+        WeakAndItem root = (WeakAndItem)TestUtils.getQueryTreeRoot(result);
+        assertEquals(preRoot.getItem(0), root.getItem(0));
+        assertEquals(preRoot.getItem(1), root.getItem(1));
+    }
+
     private boolean deepEquals(Item item1, Item item2) {
         if (item1 != item2) {
             return false;
