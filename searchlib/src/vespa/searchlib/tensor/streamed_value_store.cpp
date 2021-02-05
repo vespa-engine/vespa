@@ -174,7 +174,7 @@ StreamedValueStore::TensorBufferType::cleanHold(void* buffer, size_t offset, Ele
 
 StreamedValueStore::StreamedValueStore(const ValueType &tensor_type)
   : TensorStore(_concrete_store),
-    _concrete_store(),
+    _concrete_store(std::make_unique<TensorBufferType>()),
     _tensor_type(tensor_type)
 {
     _concrete_store.enableFreeLists();
