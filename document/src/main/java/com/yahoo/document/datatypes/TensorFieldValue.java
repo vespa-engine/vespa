@@ -176,7 +176,7 @@ public class TensorFieldValue extends FieldValue {
 
     @Override
     public Object getWrappedValue() {
-        return tensor.orElse(null);
+        return getTensor().orElse(null);
     }
 
 }
