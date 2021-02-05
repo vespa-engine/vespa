@@ -11,9 +11,7 @@ import java.util.Optional;
  */
 public interface RoleService {
 
-    Optional<ApplicationRoles> createApplicationRoles(ApplicationId applicationId);
-
-    String createTenantRole(TenantName tenant);
+    Optional<TenantRoles> createTenantRole(TenantName tenant);
 
     String createTenantPolicy(TenantName tenant, String policyName, String awsId, String role);
 
