@@ -39,7 +39,7 @@ public class NodeResourceChangeValidator implements ChangeValidator {
     }
 
     private boolean changeRequiresRestart(NodeResources currentResources, NodeResources nextResources) {
-        return !currentResources.equals(nextResources);
+        return currentResources.memoryGb() != nextResources.memoryGb();
     }
 
     private Optional<NodeResources> resourcesOf(ClusterSpec.Id clusterId, VespaModel model) {
