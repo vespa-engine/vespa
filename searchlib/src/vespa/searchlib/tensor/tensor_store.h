@@ -8,9 +8,7 @@
 
 namespace vespalib::eval { struct Value; }
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 /**
  * Class for storing serialized tensors in memory, used by TensorAttribute.
@@ -34,36 +32,26 @@ public:
 
     virtual ~TensorStore();
 
+    virtual void holdTensor(EntryRef ref) = 0;
+    virtual EntryRef move(EntryRef ref) = 0;
+
     // Inherit doc from DataStoreBase
-    void
-    trimHoldLists(generation_t usedGen)
-    {
+    void trimHoldLists(generation_t usedGen) {
         _store.trimHoldLists(usedGen);
     }
 
     // Inherit doc from DataStoreBase
-    void
-    transferHoldLists(generation_t generation)
-    {
+    void transferHoldLists(generation_t generation) {
         _store.transferHoldLists(generation);
     }
 
-    void
-    clearHoldLists()
-    {
+    void clearHoldLists() {
         _store.clearHoldLists();
     }
 
-    vespalib::MemoryUsage
-    getMemoryUsage() const
-    {
+    vespalib::MemoryUsage getMemoryUsage() const {
         return _store.getMemoryUsage();
     }
-
-
-    virtual void holdTensor(EntryRef ref) = 0;
-
-    virtual EntryRef move(EntryRef ref) = 0;
 
     uint32_t startCompactWorstBuffer() {
         return _store.startCompactWorstBuffer(_typeId);
@@ -74,7 +62,4 @@ public:
     }
 };
 
-
-}  // namespace search::tensor
-
-}  // namespace search
+}
