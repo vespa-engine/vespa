@@ -26,8 +26,8 @@ EvalFixture::ParamRepo make_params() {
         .add_variants("a1b1c2", GenSpec().idx("a", 1).idx("b", 1).idx("c", 2))
         .add_variants("a1b1c1", GenSpec().idx("a", 1).idx("b", 1).idx("c", 1))
         .add_variants("a10", GenSpec().idx("a", 10))
-        .add("xy_mapped", GenSpec().map("x", {"a", "b"}).map("y", {"x", "y"}).gen())
-        .add("xyz_mixed", GenSpec().map("x", {"a", "b"}).map("y", {"x", "y"}).idx("z", 3).gen());
+        .add("xy_mapped", GenSpec().map("x", {"a", "b"}).map("y", {"x", "y"}))
+        .add("xyz_mixed", GenSpec().map("x", {"a", "b"}).map("y", {"x", "y"}).idx("z", 3));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

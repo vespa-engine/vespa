@@ -17,13 +17,13 @@ const ValueBuilderFactory &test_factory = SimpleValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add_variants("v1_x", GenSpec().map("x", 32, 1).seq_bias(3.0))
-        .add_variants("v2_x", GenSpec().map("x", 16, 2).seq_bias(7.0))
-        .add("v3_y",   GenSpec().map("y", 10, 1).gen())
-        .add("v4_xd",  GenSpec().idx("x", 10).gen())
-        .add("m1_xy",  GenSpec().map("x", 32, 1).map("y", 16, 2).seq_bias(3.0).gen())
-        .add("m2_xy",  GenSpec().map("x", 16, 2).map("y", 32, 1).seq_bias(7.0).gen())
-        .add("m3_xym", GenSpec().map("x", 8, 1).idx("y", 5).gen());
+        .add_variants("v1_x", GenSpec(3.0).map("x", 32, 1))
+        .add_variants("v2_x", GenSpec(7.0).map("x", 16, 2))
+        .add("v3_y",   GenSpec().map("y", 10, 1))
+        .add("v4_xd",  GenSpec().idx("x", 10))
+        .add("m1_xy",  GenSpec(3.0).map("x", 32, 1).map("y", 16, 2))
+        .add("m2_xy",  GenSpec(7.0).map("x", 16, 2).map("y", 32, 1))
+        .add("m3_xym", GenSpec().map("x", 8, 1).idx("y", 5));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

@@ -23,21 +23,21 @@ GenSpec::seq_t glb = [] (size_t) noexcept {
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("con_x5_A", GenSpec().idx("x", 5).seq(glb).gen())
-        .add("con_x5_B", GenSpec().idx("x", 5).seq(glb).gen())
-        .add("con_x5_C", GenSpec().idx("x", 5).seq(glb).gen())
-        .add("con_x5y3_A", GenSpec().idx("x", 5).idx("y", 3).seq(glb).gen())
-        .add("con_x5y3_B", GenSpec().idx("x", 5).idx("y", 3).seq(glb).gen())
-        .add_mutable("mut_dbl_A", GenSpec().seq_bias(1.5).gen())
-        .add_mutable("mut_dbl_B", GenSpec().seq_bias(2.5).gen())
-        .add_mutable("mut_x5_A", GenSpec().idx("x", 5).seq(glb).gen())
-        .add_mutable("mut_x5_B", GenSpec().idx("x", 5).seq(glb).gen())
-        .add_mutable("mut_x5_C", GenSpec().idx("x", 5).seq(glb).gen())
-        .add_mutable("mut_x5f_D", GenSpec().cells_float().idx("x", 5).seq(glb).gen())
-        .add_mutable("mut_x5f_E", GenSpec().cells_float().idx("x", 5).seq(glb).gen())
-        .add_mutable("mut_x5y3_A", GenSpec().idx("x", 5).idx("y", 3).seq(glb).gen())
-        .add_mutable("mut_x5y3_B", GenSpec().idx("x", 5).idx("y", 3).seq(glb).gen())
-        .add_mutable("mut_x_sparse", GenSpec().map("x", {"a", "b", "c"}).seq(glb).gen());
+        .add("con_x5_A", GenSpec().idx("x", 5).seq(glb))
+        .add("con_x5_B", GenSpec().idx("x", 5).seq(glb))
+        .add("con_x5_C", GenSpec().idx("x", 5).seq(glb))
+        .add("con_x5y3_A", GenSpec().idx("x", 5).idx("y", 3).seq(glb))
+        .add("con_x5y3_B", GenSpec().idx("x", 5).idx("y", 3).seq(glb))
+        .add_mutable("mut_dbl_A", GenSpec(1.5))
+        .add_mutable("mut_dbl_B", GenSpec(2.5))
+        .add_mutable("mut_x5_A", GenSpec().idx("x", 5).seq(glb))
+        .add_mutable("mut_x5_B", GenSpec().idx("x", 5).seq(glb))
+        .add_mutable("mut_x5_C", GenSpec().idx("x", 5).seq(glb))
+        .add_mutable("mut_x5f_D", GenSpec().cells_float().idx("x", 5).seq(glb))
+        .add_mutable("mut_x5f_E", GenSpec().cells_float().idx("x", 5).seq(glb))
+        .add_mutable("mut_x5y3_A", GenSpec().idx("x", 5).idx("y", 3).seq(glb))
+        .add_mutable("mut_x5y3_B", GenSpec().idx("x", 5).idx("y", 3).seq(glb))
+        .add_mutable("mut_x_sparse", GenSpec().map("x", {"a", "b", "c"}).seq(glb));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

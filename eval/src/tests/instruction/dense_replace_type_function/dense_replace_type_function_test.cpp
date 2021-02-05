@@ -33,7 +33,7 @@ struct Fixture {
     std::vector<TensorFunction::Child::CREF> children;
     InterpretedFunction::State               state;
     Fixture()
-        : my_value(value_from_spec(GenSpec().idx("x", 10).gen(), prod_factory)),
+        : my_value(value_from_spec(GenSpec().idx("x", 10), prod_factory)),
           new_type(ValueType::from_spec("tensor(x[5],y[2])")),
           mock_child(my_value->type()),
           my_fun(new_type, mock_child),

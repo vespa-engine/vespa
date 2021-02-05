@@ -105,82 +105,21 @@ std::vector<Value::CREF> get_refs(const std::vector<Value::UP> &values) {
     return result;
 }
 
-void add_cell_values(TensorSpec &spec, TensorSpec::Address &addr,
-                     const std::vector<std::pair<vespalib::string, size_t> > &dims,
-                     size_t idx, size_t &seq, std::function<double(size_t)> gen)
-{
-    if (idx < dims.size()) {
-        for (size_t i = 0; i < dims[idx].second; ++i) {
-            addr.emplace(dims[idx].first, TensorSpec::Label(i)).first->second = TensorSpec::Label(i);
-            add_cell_values(spec, addr, dims, idx + 1, seq, gen);
-        }
-    } else {
-        spec.add(addr, gen(seq++));
-    }
-}
-
-TensorSpec make_dense(const vespalib::string &type,
-                      const std::vector<std::pair<vespalib::string, size_t> > &dims,
-                      std::function<double(size_t)> gen)
-{
-    TensorSpec spec(type);
-    TensorSpec::Address addr;
-    size_t seq = 0;
-    add_cell_values(spec, addr, dims, 0, seq, gen);
-    return spec;
-}
-
 } // namespace vespalib::eval::test
 
 ParamRepo &
-ParamRepo::add(const vespalib::string &name, TensorSpec value_in, bool is_mutable_in) {
+EvalFixture::ParamRepo::add(const vespalib::string &name, TensorSpec value)
+{
     ASSERT_TRUE(map.find(name) == map.end());
-    map.insert_or_assign(name, Param(std::move(value_in), is_mutable_in));
+    map.insert_or_assign(name, Param(std::move(value), false));
     return *this;
 }
 
 ParamRepo &
-EvalFixture::ParamRepo::add_vector(const char *d1, size_t s1, gen_fun_t gen)
+EvalFixture::ParamRepo::add_mutable(const vespalib::string &name, TensorSpec value)
 {
-    return add_dense({{d1, s1}}, gen);
-}
-
-ParamRepo &
-EvalFixture::ParamRepo::add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, gen_fun_t gen)
-{
-    return add_dense({{d1, s1}, {d2, s2}}, gen);
-}
-
-ParamRepo &
-EvalFixture::ParamRepo::add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, gen_fun_t gen)
-{
-    return add_dense({{d1, s1}, {d2, s2}, {d3, s3}}, gen);
-}
-
-ParamRepo &
-EvalFixture::ParamRepo::add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, gen_fun_t gen)
-{
-    vespalib::string prev;
-    vespalib::string name;
-    vespalib::string type;
-    for (const auto &dim: dims) {
-        if (!prev.empty()) {
-            ASSERT_LESS(prev, dim.first);
-            type += ",";
-        }
-        name += fmt("%s%zu", dim.first.c_str(), dim.second);
-        type += fmt("%s[%zu]", dim.first.c_str(), dim.second);
-        prev = dim.first;
-    }
-    int cpy = 1;
-    vespalib::string suffix = "";
-    while (map.find(name + suffix) != map.end()) {
-        suffix = fmt("$%d", ++cpy);
-    }
-    add(name + suffix, make_dense(fmt("tensor(%s)", type.c_str()), dims, gen));
-    add(name + "f" + suffix, make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, gen));
-    add_mutable("@" + name + suffix, make_dense(fmt("tensor(%s)", type.c_str()), dims, gen));
-    add_mutable("@" + name + "f" + suffix, make_dense(fmt("tensor<float>(%s)", type.c_str()), dims, gen));
+    ASSERT_TRUE(map.find(name) == map.end());
+    map.insert_or_assign(name, Param(std::move(value), true));
     return *this;
 }
 
@@ -192,12 +131,12 @@ EvalFixture::ParamRepo::add_variants(const vespalib::string &name_base,
     auto name_f = name_base + "_f";
     auto name_m = "@" + name_base;
     auto name_m_f = "@" + name_base + "_f";
-    auto dbl_ts = spec.cpy().cells_double().gen();
-    auto flt_ts = spec.cpy().cells_float().gen();
-    add(name_base, dbl_ts);
-    add(name_f, flt_ts);
-    add_mutable(name_m, dbl_ts);
-    add_mutable(name_m_f, flt_ts);
+    auto dbl_gs = spec.cpy().cells_double();
+    auto flt_gs = spec.cpy().cells_float();
+    add(name_base, dbl_gs);
+    add(name_f, flt_gs);
+    add_mutable(name_m, dbl_gs);
+    add_mutable(name_m_f, flt_gs);
     return *this;
 }
 
