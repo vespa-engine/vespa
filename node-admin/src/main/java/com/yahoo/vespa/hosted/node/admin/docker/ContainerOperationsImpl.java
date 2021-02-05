@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
+import com.yahoo.vespa.hosted.dockerapi.ContainerId;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -203,7 +204,7 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public void updateContainer(NodeAgentContext context, ContainerResources containerResources) {
+    public void updateContainer(NodeAgentContext context, ContainerId containerId, ContainerResources containerResources) {
         containerEngine.updateContainer(context.containerName(), containerResources);
     }
 
