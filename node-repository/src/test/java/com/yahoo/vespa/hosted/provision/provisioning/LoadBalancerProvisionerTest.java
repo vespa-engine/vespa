@@ -92,7 +92,7 @@ public class LoadBalancerProvisionerTest {
         assertEquals(containers.get().get(1).hostname(), get(loadBalancer.instance().reals(), 1).hostname().value());
         assertSame("State is unchanged", LoadBalancer.State.active, loadBalancer.state());
 
-        // Add another container cluster
+        // Add another container cluster to first app
         ClusterSpec.Id containerCluster2 = ClusterSpec.Id.from("qrs2");
         tester.activate(app1, prepare(app1,
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1),
@@ -133,7 +133,7 @@ public class LoadBalancerProvisionerTest {
                            .findFirst()
                            .get());
 
-        // Application is removed, nodes and load balancer are deactivated
+        // Entire application is removed: Nodes and load balancer are deactivated
         tester.remove(app1);
         dirtyNodesOf(app1);
         assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().getNodes(app1, Node.State.reserved, Node.State.active).isEmpty());
@@ -146,11 +146,17 @@ public class LoadBalancerProvisionerTest {
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
         assertSame("Re-activated load balancer for " + containerCluster1, LoadBalancer.State.active,
-                    lbApp1.get().stream()
-                                 .filter(lb -> lb.id().cluster().equals(containerCluster1))
-                                 .map(LoadBalancer::state)
-                                 .findFirst()
-                                 .orElseThrow());
+                   lbApp1.get().stream()
+                         .filter(lb -> lb.id().cluster().equals(containerCluster1))
+                         .map(LoadBalancer::state)
+                         .findFirst()
+                         .orElseThrow());
+
+        // Next redeploy does not create a new load balancer instance
+        tester.loadBalancerService().throwOnCreate(true);
+        tester.activate(app1, prepare(app1,
+                                      clusterRequest(ClusterSpec.Type.container, containerCluster1),
+                                      clusterRequest(ClusterSpec.Type.content, contentCluster)));
     }
 
     @Test
