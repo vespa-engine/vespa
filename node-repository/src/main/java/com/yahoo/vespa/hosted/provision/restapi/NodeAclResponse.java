@@ -42,7 +42,7 @@ public class NodeAclResponse extends HttpResponse {
         Node node = nodeRepository.getNode(hostname)
                 .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
 
-        List<NodeAcl> acls = nodeRepository.getNodeAcls(node, aclsForChildren);
+        List<NodeAcl> acls = nodeRepository.loadBalancers().getNodeAcls(node, aclsForChildren);
 
         Cursor trustedNodesArray = object.setArray("trustedNodes");
         acls.forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));
