@@ -177,7 +177,7 @@ public class AclProvisioningTest {
         assertEquals(2, activeNodes.size());
 
         // Load balancer is allocated to application
-        var loadBalancers = tester.nodeRepository().loadBalancers(application);
+        var loadBalancers = tester.nodeRepository().loadBalancers().list(application);
         assertEquals(1, loadBalancers.asList().size());
         var lbNetworks = loadBalancers.asList().get(0).instance().networks();
         assertEquals(2, lbNetworks.size());

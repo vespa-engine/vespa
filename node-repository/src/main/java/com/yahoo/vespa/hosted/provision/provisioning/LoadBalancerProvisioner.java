@@ -115,12 +115,12 @@ public class LoadBalancerProvisioner {
      * load balancer(s).
      */
     public void deactivate(ApplicationTransaction transaction) {
-        deactivate(nodeRepository.loadBalancers(transaction.application()).asList(), transaction.nested());
+        deactivate(nodeRepository.loadBalancers().list(transaction.application()).asList(), transaction.nested());
     }
 
     /** Returns load balancers of given application that are no longer referenced by given clusters */
     private List<LoadBalancer> surplusLoadBalancersOf(ApplicationId application, Set<ClusterSpec.Id> activeClusters) {
-        var activeLoadBalancersByCluster = nodeRepository.loadBalancers(application)
+        var activeLoadBalancersByCluster = nodeRepository.loadBalancers().list(application)
                                                          .in(LoadBalancer.State.active)
                                                          .asList()
                                                          .stream()

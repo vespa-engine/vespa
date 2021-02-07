@@ -21,9 +21,8 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
@@ -111,6 +110,7 @@ public class NodeRepository extends AbstractComponent {
     private final ContainerImages containerImages;
     private final JobControl jobControl;
     private final Applications applications;
+    private final LoadBalancers loadBalancers;
     private final int spareCount;
 
     /**
@@ -171,6 +171,7 @@ public class NodeRepository extends AbstractComponent {
         this.containerImages = new ContainerImages(db, containerImage);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
+        this.loadBalancers = new LoadBalancers(db);
         this.spareCount = spareCount;
         rewriteNodes();
     }
@@ -212,6 +213,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns this node repo's view of the applications deployed to it */
     public Applications applications() { return applications; }
+
+    /** Returns the load balancers available in this node repo */
+    public LoadBalancers loadBalancers() { return loadBalancers; }
 
     public NodeFlavors flavors() {
         return flavors;
@@ -274,20 +278,6 @@ public class NodeRepository extends AbstractComponent {
         return new LockedNodeList(getNodes(), lock);
     }
 
-    /** Returns a filterable list of all load balancers in this repository */
-    public LoadBalancerList loadBalancers() {
-        return loadBalancers((ignored) -> true);
-    }
-
-    /** Returns a filterable list of load balancers belonging to given application */
-    public LoadBalancerList loadBalancers(ApplicationId application) {
-        return loadBalancers((id) -> id.application().equals(application));
-    }
-
-    private LoadBalancerList loadBalancers(Predicate<LoadBalancerId> predicate) {
-        return LoadBalancerList.copyOf(db.readLoadBalancers(predicate).values());
-    }
-
     public List<Node> getNodes(ApplicationId id, State ... inState) { return db.readNodes(id, inState); }
     public List<Node> getInactive() { return db.readNodes(State.inactive); }
     public List<Node> getFailed() { return db.readNodes(State.failed); }
@@ -312,7 +302,7 @@ public class NodeRepository extends AbstractComponent {
         candidates.parentOf(node).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
-            loadBalancers(allocation.owner()).asList().stream()
+            loadBalancers.list(allocation.owner()).asList().stream()
                                              .map(LoadBalancer::instance)
                                              .map(LoadBalancerInstance::networks)
                                              .forEach(trustedNetworks::addAll);
