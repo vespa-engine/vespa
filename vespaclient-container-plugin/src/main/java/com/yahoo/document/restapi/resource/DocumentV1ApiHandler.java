@@ -948,7 +948,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         requireProperty(request, SELECTION);
         VisitorParameters parameters = parseCommonParameters(request, path, Optional.of(requireProperty(request, CLUSTER)));
         parameters.setThrottlePolicy(new DynamicThrottlePolicy().setMinWindowSize(1).setWindowSizeIncrement(1));
-        parameters.setSessionTimeoutMs(Math.max(1, getProperty(request, TIME_CHUNK, timeoutMillisParser).orElse(60_000L)));
+        long timeChunk = getProperty(request, TIME_CHUNK, timeoutMillisParser).orElse(60_000L);
+        parameters.setSessionTimeoutMs(Math.max(1, Math.min(timeChunk, request.getTimeout(TimeUnit.MILLISECONDS) - 5000L)));
         return parameters;
     }
 
