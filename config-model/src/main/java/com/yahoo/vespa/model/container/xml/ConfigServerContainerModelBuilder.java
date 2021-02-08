@@ -58,9 +58,7 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     @Override
     protected void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
         super.addHttp(deployState, spec, cluster, context);
-        if (isHosted()) {
-            cluster.getHttp().getHttpServer().get().enableConnectionLog(true);
-        }
+        cluster.getHttp().getHttpServer().get().setHostedVespa(isHosted());
     }
 
     /** Note: using {@link CloudConfigOptions} as {@link DeployState#isHosted()} returns <em>false</em> for hosted configserver/controller */
