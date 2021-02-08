@@ -63,15 +63,22 @@ public class ResourceUsageStats {
                 maxMemoryUsage = Double.max(maxMemoryUsage, resourceUsageOf(memoryResource, node));
             }
         }
-        int nodesAboveLimit = (feedBlock.isPresent() ? feedBlock.get().getConcreteExhaustions().size() : 0);
         return new ResourceUsageStats(maxDiskUsage / limitOf(diskResource, feedBlockLimits),
                 maxMemoryUsage / limitOf(memoryResource, feedBlockLimits),
-                nodesAboveLimit);
+                calculateNodesAboveLimit(feedBlock));
     }
 
     private static double resourceUsageOf(String type, ContentNode node) {
         var result = node.resourceUsageOf(type);
         return result.isPresent() ? result.get().getUsage() : 0.0;
+    }
+
+    private static int calculateNodesAboveLimit(Optional<ClusterStateBundle.FeedBlock> feedBlock) {
+        if (!feedBlock.isPresent()) {
+            return 0;
+        }
+        var exhaustions = feedBlock.get().getConcreteExhaustions();
+        return (int) exhaustions.stream().map(resource -> resource.node).distinct().count();
     }
 
     private static double limitOf(String type, Map<String, Double> limits) {

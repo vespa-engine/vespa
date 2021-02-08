@@ -54,6 +54,13 @@ public class ResourceUsageStatsTest {
         assertEquals(2, stats.getNodesAboveLimit());
     }
 
+    @Test
+    public void nodes_above_limit_counts_each_node_only_once() {
+        var stats = ResourceUsageStats.calculateFrom(Collections.emptyList(), Collections.emptyMap(),
+                createFeedBlock(exhaustion(1, "disk"), exhaustion(1, "memory")));
+        assertEquals(1, stats.getNodesAboveLimit());
+    }
+
     private static Collection<NodeInfo> createNodeInfo(FeedBlockUtil.NodeAndUsages... nodeAndUsages) {
         return createFixtureWithReportedUsages(nodeAndUsages).cluster().getNodeInfo();
     }
