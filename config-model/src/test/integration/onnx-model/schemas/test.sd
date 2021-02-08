@@ -101,7 +101,7 @@ search test {
 
     rank-profile test_dynamic_model_with_transformer_tokens {
         function my_function() {
-            expression: tokenTypeIds(10, attribute(document_field), attribute(document_field))
+            expression: tokenTypeIds(2, attribute(document_field))
         }
         first-phase {
             expression: onnx(dynamic_model){d0:0,d1:1}
