@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Renders web page with cluster status.
@@ -205,6 +206,35 @@ public class VdsClusterHtmlRenderer {
                 addRpcAddress(nodeInfo, row);
 
                 table.addRow(row);
+                if (nodeType.equals(NodeType.STORAGE)) {
+                    addFeedBlockedRowIfNodeIsBlocking(stateBundle, nodeInfo, row);
+                }
+            }
+        }
+
+        private void addFeedBlockedRowIfNodeIsBlocking(ClusterStateBundle stateBundle, NodeInfo nodeInfo, HtmlTable.Row nodeRow) {
+            // We only show a feed block row if the node is actually blocking feed in the cluster, not
+            // just if limits have been exceeded (as feed block may be config disabled).
+            // O(n) but n expected to be 0-(very small number) in all realistic cases.
+            if (stateBundle.clusterFeedIsBlocked()) {
+                var exhaustions = stateBundle.getFeedBlockOrNull().getConcreteExhaustions().stream()
+                        .filter(ex -> ex.node.getIndex() == nodeInfo.getNodeIndex())
+                        .collect(Collectors.toList());
+                if (!exhaustions.isEmpty()) {
+                    var exhaustionsDesc = exhaustions.stream()
+                            .map(NodeResourceExhaustion::toShorthandDescription)
+                            .collect(Collectors.joining(", "));
+
+                    HtmlTable.Row feedBlockRow = new HtmlTable.Row();
+                    var contents = String.format("<strong>Node is blocking feed: %s</strong>", HtmlTable.escape(exhaustionsDesc));
+                    var cell = new HtmlTable.Cell(contents).addProperties(ERROR_PROPERTY);
+                    cell.addProperties(new HtmlTable.CellProperties().setColSpan(18));
+                    feedBlockRow.addCell(cell);
+                    table.addRow(feedBlockRow);
+                    // Retroactively make the node index cell span 2 rows so it's obvious (hopefully)
+                    // what node the feed block state is related to.
+                    nodeRow.cells.get(0).addProperties(new HtmlTable.CellProperties().setRowSpan(2));
+                }
             }
         }
 
