@@ -31,7 +31,7 @@ public class NodeAclResponse extends HttpResponse {
         super(200);
         this.nodeRepository = nodeRepository;
         this.slime = new Slime();
-        this.aclsForChildren = request.getBooleanProperty(CHILDREN_REQUEST_PROPERTY);
+        this.aclsForChildren = request.getBooleanProperty(CHILDREN_REQUEST_PROPERTY); // This is always true?
 
         Cursor root = slime.setObject();
         String hostname = baseName(request.getUri().getPath());
@@ -42,7 +42,8 @@ public class NodeAclResponse extends HttpResponse {
         Node node = nodeRepository.getNode(hostname)
                 .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
 
-        List<NodeAcl> acls = nodeRepository.getNodeAcls(node, aclsForChildren);
+        List<NodeAcl> acls = aclsForChildren ? nodeRepository.getChildAcls(node) :
+                                               List.of(node.acl(nodeRepository.list(), nodeRepository.loadBalancers()));
 
         Cursor trustedNodesArray = object.setArray("trustedNodes");
         acls.forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));
