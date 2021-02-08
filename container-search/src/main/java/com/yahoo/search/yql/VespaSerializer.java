@@ -950,12 +950,13 @@ public class VespaSerializer {
 
     }
 
+    @SuppressWarnings("deprecation")
     private static class WeakAndSerializer extends Serializer<WeakAndItem> {
 
         @Override
         void onExit(StringBuilder destination, WeakAndItem item) {
             destination.append(')');
-            if (needsAnnotationBlock((WeakAndItem) item)) {
+            if (needsAnnotationBlock(item)) {
                 destination.append(')');
             }
         }
