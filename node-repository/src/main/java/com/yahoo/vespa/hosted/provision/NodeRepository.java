@@ -165,7 +165,7 @@ public class NodeRepository extends AbstractComponent {
         this.containerImages = new ContainerImages(db, containerImage);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
-        this.loadBalancers = new LoadBalancers(db, this);
+        this.loadBalancers = new LoadBalancers(db);
         this.spareCount = spareCount;
         rewriteNodes();
     }
@@ -217,6 +217,20 @@ public class NodeRepository extends AbstractComponent {
 
     /** The number of nodes we should ensure has free capacity for node failures whenever possible */
     public int spareCount() { return spareCount; }
+
+    /**
+     * Returns ACLs for the children of the given host.
+     *
+     * @param host node for which to generate ACLs
+     * @return the list of node ACLs
+     */
+    public List<NodeAcl> getChildAcls(Node host) {
+        if ( host.type() != NodeType.host) throw new IllegalArgumentException("Only hosts have children");
+        NodeList allNodes = list();
+        return list().childrenOf(host).asList().stream()
+                             .map(childNode -> childNode.acl(allNodes, loadBalancers))
+                             .collect(Collectors.toUnmodifiableList());
+    }
 
     // ---------------- Query API ----------------------------------------------------------------
 
