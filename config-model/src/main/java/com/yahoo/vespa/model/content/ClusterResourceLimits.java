@@ -99,7 +99,7 @@ public class ClusterResourceLimits {
             if (!clusterControllerLimit.isPresent()) {
                 contentNodeLimit.ifPresent(limit ->
                         // TODO: emit warning when feed block in distributor is default enabled.
-                        setter.accept(limit));
+                        setter.accept(Double.max(0.0, (limit - 0.01))));
             }
         }
 

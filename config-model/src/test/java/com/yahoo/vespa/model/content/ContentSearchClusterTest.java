@@ -137,7 +137,7 @@ public class ContentSearchClusterTest {
     public void resource_limits_are_derived_from_the_other_if_not_specified() throws Exception {
         var cluster = createCluster(new ContentClusterBuilder().clusterControllerDiskLimit(0.5).protonMemoryLimit(0.95).getXml());
         assertProtonResourceLimits(0.75, 0.95, cluster);
-        assertClusterControllerResourceLimits(0.5, 0.95, cluster);
+        assertClusterControllerResourceLimits(0.5, 0.94, cluster);
     }
 
     @Test

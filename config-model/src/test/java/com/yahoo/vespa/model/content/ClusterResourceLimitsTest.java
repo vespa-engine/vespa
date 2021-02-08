@@ -86,20 +86,25 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    public void cluster_controller_limits_are_equal_to_content_node_limits_if_not_set() {
-        assertLimits(0.9, 0.95, 0.9, 0.95,
+    public void cluster_controller_limits_are_equal_to_content_node_limits_minus_one_percent_if_not_set() {
+        assertLimits(0.89, 0.94, 0.9, 0.95,
                 new Fixture().nodeDisk(0.9).nodeMemory(0.95));
-        assertLimits(0.9, null, 0.9, null,
+        assertLimits(0.89, null, 0.9, null,
                 new Fixture().nodeDisk(0.9));
-        assertLimits(null, 0.95, null, 0.95,
+        assertLimits(null, 0.94, null, 0.95,
                 new Fixture().nodeMemory(0.95));
+        assertLimits(null, 0.0, null, 0.005,
+                new Fixture().nodeMemory(0.005));
+
+        assertLimits(0.89, 0.94, 0.9, 0.95,
+                new Fixture(true).nodeDisk(0.9).nodeMemory(0.95));
     }
 
     @Test
     public void limits_are_derived_from_the_other_if_not_set() {
-        assertLimits(0.6, 0.95, 0.8, 0.95,
+        assertLimits(0.6, 0.94, 0.8, 0.95,
                 new Fixture().ctrlDisk(0.6).nodeMemory(0.95));
-        assertLimits(0.9, 0.7, 0.9, 0.85,
+        assertLimits(0.89, 0.7, 0.9, 0.85,
                 new Fixture().ctrlMemory(0.7).nodeDisk(0.9));
     }
 
