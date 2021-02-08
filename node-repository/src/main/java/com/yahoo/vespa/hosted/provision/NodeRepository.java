@@ -225,7 +225,7 @@ public class NodeRepository extends AbstractComponent {
      * @return the list of node ACLs
      */
     public List<NodeAcl> getChildAcls(Node host) {
-        if ( host.type().isHost()) throw new IllegalArgumentException("Only hosts have children");
+        if ( ! host.type().isHost()) throw new IllegalArgumentException("Only hosts have children");
         NodeList allNodes = list();
         return list().childrenOf(host).asList().stream()
                              .map(childNode -> childNode.acl(allNodes, loadBalancers))
