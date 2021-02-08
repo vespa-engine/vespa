@@ -31,7 +31,7 @@ public class NodeAclResponse extends HttpResponse {
         super(200);
         this.nodeRepository = nodeRepository;
         this.slime = new Slime();
-        this.aclsForChildren = request.getBooleanProperty(CHILDREN_REQUEST_PROPERTY);
+        this.aclsForChildren = request.getBooleanProperty(CHILDREN_REQUEST_PROPERTY); // This is always true?
 
         Cursor root = slime.setObject();
         String hostname = baseName(request.getUri().getPath());
