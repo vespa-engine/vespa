@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * The load balancers of this node repo and the information (such asd ACL's) which need load balancer information.
+ * The load balancers of this node repo.
  *
  * @author bratseth
  * @author mpolden
