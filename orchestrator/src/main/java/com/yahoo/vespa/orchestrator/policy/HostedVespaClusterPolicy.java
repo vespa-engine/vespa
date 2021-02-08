@@ -56,8 +56,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
     }
 
     @Override
-    public void verifyGroupGoingDownPermanentlyIsFine(ClusterApi clusterApi)
-            throws HostStateChangeDeniedException {
+    public void verifyGroupGoingDownPermanentlyIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
         // This policy is similar to verifyGroupGoingDownIsFine, except that services being down in the group
         // is no excuse to allow suspension (like it is for verifyGroupGoingDownIsFine), since if we grant
         // suspension in this case they will permanently be down/removed.
@@ -123,8 +122,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             //   I  proxy host
 
             if (clusterApi.serviceType().equals(ServiceType.CLUSTER_CONTROLLER)) {
-                // All nodes have all state and we need to be able to remove the half that are retired on cluster migration
-                return ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT;
+                return ConcurrentSuspensionLimitForCluster.ONE_NODE;
             }
 
             if (Set.of(ServiceType.STORAGE, ServiceType.SEARCH, ServiceType.DISTRIBUTOR, ServiceType.TRANSACTION_LOG_SERVER)
@@ -164,7 +162,6 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             }
 
             if (ServiceType.CLUSTER_CONTROLLER.equals(clusterApi.serviceType())) {
-                // All nodes have all state and we need to be able to remove the half that are retired on cluster migration
                 return ConcurrentSuspensionLimitForCluster.ONE_NODE;
             }
 
