@@ -72,8 +72,7 @@ public class ReindexingMaintainer extends AbstractComponent {
                                                                                               access.getDocumentTypeManager()),
                                                                         access,
                                                                         metric,
-                                                                        clock,
-                                                                        reindexingConfig.windowSizeIncrement()))
+                                                                        clock))
                                           .collect(toUnmodifiableList());
         this.executor = new ScheduledThreadPoolExecutor(reindexingConfig.clusters().size(), new DaemonThreadFactory("reindexer-"));
         if (reindexingConfig.enabled())
