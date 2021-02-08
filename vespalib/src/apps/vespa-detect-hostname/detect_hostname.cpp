@@ -49,6 +49,10 @@ int main(int, char **) {
     if (check(my_hostname, my_ip_set, my_hostname_error)) {
         fprintf(stdout, "%s\n", my_hostname.c_str());
     } else if (check(localhost, my_ip_set, localhost_error)) {
+        fprintf(stderr, "INFO: hostname detection failed, falling back to local hostname: %s", localhost.c_str());
+        fprintf(stderr, "  INFO: canonical hostname (from gethostname/getaddrinfo): %s\n", my_hostname.c_str());
+        fprintf(stderr, "  INFO: %s\n", my_hostname_error.c_str());
+
         fprintf(stdout, "%s\n", localhost.c_str());
     } else {
         fprintf(stderr, "FATAL: hostname detection failed\n");
