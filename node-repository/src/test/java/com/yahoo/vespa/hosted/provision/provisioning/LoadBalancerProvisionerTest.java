@@ -76,7 +76,7 @@ public class LoadBalancerProvisionerTest {
         // A container is failed
         Supplier<List<Node>> containers = () -> tester.getNodes(app1).container().asList();
         Node toFail = containers.get().get(0);
-        tester.nodeRepository().fail(toFail.hostname(), Agent.system, this.getClass().getSimpleName());
+        tester.nodeRepository().nodes().fail(toFail.hostname(), Agent.system, this.getClass().getSimpleName());
 
         // Redeploying replaces failed node and removes it from load balancer
         tester.activate(app1, prepare(app1,
@@ -136,7 +136,7 @@ public class LoadBalancerProvisionerTest {
         // Application is removed, nodes and load balancer are deactivated
         tester.remove(app1);
         dirtyNodesOf(app1);
-        assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().getNodes(app1, Node.State.reserved, Node.State.active).isEmpty());
+        assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().nodes().getNodes(app1, Node.State.reserved, Node.State.active).isEmpty());
         assertEquals(2, lbApp1.get().size());
         assertTrue("Deactivated load balancers", lbApp1.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.inactive));
         assertTrue("Load balancers for " + app2 + " remain active", lbApp2.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.active));
@@ -161,20 +161,20 @@ public class LoadBalancerProvisionerTest {
         var nodes = tester.prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")), 2 , 1, resources);
         Supplier<LoadBalancer> lb = () -> tester.nodeRepository().loadBalancers().list(app1).asList().get(0);
         assertTrue("Load balancer provisioned with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
-        assignIps(tester.nodeRepository().getNodes(app1));
+        assignIps(tester.nodeRepository().nodes().getNodes(app1));
         tester.activate(app1, nodes);
         assertFalse("Load balancer is reconfigured with reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
 
         // Application is removed, nodes are deleted and load balancer is deactivated
         tester.remove(app1);
-        tester.nodeRepository().database().removeNodes(tester.nodeRepository().getNodes(NodeType.tenant));
-        assertTrue("Nodes are deleted", tester.nodeRepository().getNodes(NodeType.tenant).isEmpty());
+        tester.nodeRepository().database().removeNodes(tester.nodeRepository().nodes().getNodes(NodeType.tenant));
+        assertTrue("Nodes are deleted", tester.nodeRepository().nodes().getNodes(NodeType.tenant).isEmpty());
         assertSame("Load balancer is deactivated", LoadBalancer.State.inactive, lb.get().state());
 
         // Application is redeployed
         nodes = tester.prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")), 2 , 1, resources);
         assertTrue("Load balancer is reconfigured with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
-        assignIps(tester.nodeRepository().getNodes(app1));
+        assignIps(tester.nodeRepository().nodes().getNodes(app1));
         tester.activate(app1, nodes);
         assertFalse("Load balancer is reconfigured with reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
     }
@@ -263,7 +263,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private void dirtyNodesOf(ApplicationId application) {
-        tester.nodeRepository().deallocate(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
+        tester.nodeRepository().nodes().deallocate(tester.nodeRepository().nodes().getNodes(application), Agent.system, this.getClass().getSimpleName());
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {
@@ -280,9 +280,9 @@ public class LoadBalancerProvisionerTest {
     }
 
     private void assignIps(List<Node> nodes) {
-        try (var lock = tester.nodeRepository().lockUnallocated()) {
+        try (var lock = tester.nodeRepository().nodes().lockUnallocated()) {
             for (int i = 0; i < nodes.size(); i++) {
-                tester.nodeRepository().write(nodes.get(i).with(IP.Config.EMPTY.withPrimary(Set.of("127.0.0." + i))), lock);
+                tester.nodeRepository().nodes().write(nodes.get(i).with(IP.Config.EMPTY.withPrimary(Set.of("127.0.0." + i))), lock);
             }
         }
     }

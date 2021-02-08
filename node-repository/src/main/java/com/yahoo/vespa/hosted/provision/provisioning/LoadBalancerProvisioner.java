@@ -212,7 +212,7 @@ public class LoadBalancerProvisioner {
 
     /** Returns the load balanced clusters of given application and their nodes */
     private Map<ClusterSpec.Id, List<Node>> loadBalancedClustersOf(ApplicationId application) {
-        NodeList nodes = NodeList.copyOf(nodeRepository.getNodes(Node.State.reserved, Node.State.active))
+        NodeList nodes = NodeList.copyOf(nodeRepository.nodes().getNodes(Node.State.reserved, Node.State.active))
                                  .owner(application);
         if (nodes.stream().anyMatch(node -> node.type() == NodeType.config)) {
             nodes = nodes.nodeType(NodeType.config).type(ClusterSpec.Type.admin);

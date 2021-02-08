@@ -28,7 +28,7 @@ public class HostCapacityResponse extends HttpResponse {
 
     public HostCapacityResponse(NodeRepository nodeRepository, HttpRequest request) {
         super(200);
-        capacityChecker = new CapacityChecker(nodeRepository.list());
+        capacityChecker = new CapacityChecker(nodeRepository.nodes().list());
 
         json = request.getBooleanProperty("json");
         String hostsJson = request.getProperty("hosts");
