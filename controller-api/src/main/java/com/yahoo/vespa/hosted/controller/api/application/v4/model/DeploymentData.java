@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.ApplicationRoles;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -30,7 +30,7 @@ public class DeploymentData {
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
     private final Optional<DockerImage> dockerImageRepo;
     private final Optional<AthenzDomain> athenzDomain;
-    private final Optional<ApplicationRoles> applicationRoles;
+    private final Optional<TenantRoles> tenantRoles;
     private final Quota quota;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
@@ -38,7 +38,7 @@ public class DeploymentData {
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepo,
                           Optional<AthenzDomain> athenzDomain,
-                          Optional<ApplicationRoles> applicationRoles,
+                          Optional<TenantRoles> tenantRoles,
                           Quota quota) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
@@ -48,7 +48,7 @@ public class DeploymentData {
         this.endpointCertificateMetadata = requireNonNull(endpointCertificateMetadata);
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
-        this.applicationRoles = applicationRoles;
+        this.tenantRoles = tenantRoles;
         this.quota = quota;
     }
 
@@ -84,8 +84,8 @@ public class DeploymentData {
         return athenzDomain;
     }
 
-    public Optional<ApplicationRoles> applicationRoles() {
-        return applicationRoles;
+    public Optional<TenantRoles> tenantRoles() {
+        return tenantRoles;
     }
 
     public Quota quota() {
