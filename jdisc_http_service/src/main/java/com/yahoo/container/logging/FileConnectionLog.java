@@ -5,19 +5,16 @@ package com.yahoo.container.logging;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 
-import java.util.logging.Logger;
-
 /**
  * @author mortent
  */
 public class FileConnectionLog extends AbstractComponent implements ConnectionLog {
 
-    private static final Logger logger = Logger.getLogger(FileConnectionLog.class.getName());
     private final ConnectionLogHandler logHandler;
 
     @Inject
     public FileConnectionLog(ConnectionLogConfig config) {
-        logHandler = new ConnectionLogHandler(config.cluster(), config.logDirectoryName(), config.queueSize(), new JsonConnectionLogWriter());
+        logHandler = new ConnectionLogHandler(config.logDirectoryName(), config.cluster(), config.queueSize(), new JsonConnectionLogWriter());
     }
 
     @Override
