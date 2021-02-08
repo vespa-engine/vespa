@@ -179,13 +179,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundDoubleFlag REINDEXER_WINDOW_SIZE_INCREMENT = defineDoubleFlag(
-            "reindexer-window-size-increment", 0.2,
-            List.of("jonmv"), "2020-12-09", "2021-02-07",
-            "Window size increment for dynamic throttle policy used by reindexer visitor session — more means more aggressive reindexing",
-            "Takes effect on (re)deployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
             "use-bucket-executor-for-lid-space-compact", false,
             List.of("baldersheim"), "2021-01-24", "2021-03-01",
