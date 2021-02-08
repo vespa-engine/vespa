@@ -158,7 +158,7 @@ public class AclProvisioningTest {
         // Controllers and hosts all trust each other
         NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().list(), tester.nodeRepository().loadBalancers());
         assertAcls(List.of(controllers), List.of(controllerAcl));
-        assertEquals(Set.of(22, 80, 4443, 443), controllerAcl.trustedPorts());
+        assertEquals(Set.of(22, 4443, 443), controllerAcl.trustedPorts());
     }
 
     @Test

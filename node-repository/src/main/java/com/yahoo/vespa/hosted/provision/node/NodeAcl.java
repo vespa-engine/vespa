@@ -11,11 +11,9 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 
 import java.util.Comparator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * A node ACL. The ACL contains the node which the ACL is valid for,
@@ -121,10 +119,8 @@ public class NodeAcl {
                 // Controllers:
                 // - port 4443 (HTTPS + Athenz) from the world
                 // - port 443 (HTTPS + Okta) from the world
-                // - port 80 (HTTP) from the world - for redirect to HTTPS/443 only
                 trustedPorts.add(4443);
                 trustedPorts.add(443);
-                trustedPorts.add(80);
                 break;
 
             default:
