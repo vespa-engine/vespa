@@ -165,7 +165,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
 
             if (ServiceType.CLUSTER_CONTROLLER.equals(clusterApi.serviceType())) {
                 // All nodes have all state and we need to be able to remove the half that are retired on cluster migration
-                return ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT;
+                return ConcurrentSuspensionLimitForCluster.ONE_NODE;
             }
 
             if (ServiceType.METRICS_PROXY.equals(clusterApi.serviceType())) {
