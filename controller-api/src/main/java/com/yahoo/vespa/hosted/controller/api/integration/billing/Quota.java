@@ -76,7 +76,8 @@ public class Quota {
         if (o == null || getClass() != o.getClass()) return false;
         Quota quota = (Quota) o;
         return maxClusterSize.equals(quota.maxClusterSize) &&
-                budget.equals(quota.budget);
+                this.budget.map(BigDecimal::stripTrailingZeros).equals(
+                        quota.budget.map(BigDecimal::stripTrailingZeros));
     }
 
     @Override
