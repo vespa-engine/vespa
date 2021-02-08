@@ -138,7 +138,7 @@ public class MasterElectionTest extends FleetControllerTest {
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 2");
         fleetControllers.get(2).shutdown();
 
-            // Too few for there to be a master at this point
+        // Too few for there to be a master at this point
         for (int i=0; i<fleetControllers.size(); ++i) {
             if (fleetControllers.get(i).isRunning()) waitForCompleteCycle(i);
             assertFalse("Fleet controller " + i, fleetControllers.get(i).isMaster());

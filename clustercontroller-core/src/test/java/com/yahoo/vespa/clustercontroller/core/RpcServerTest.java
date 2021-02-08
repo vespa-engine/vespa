@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.ErrorCode;
@@ -10,7 +10,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
@@ -21,15 +20,15 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
-import com.yahoo.vespa.config.content.StorDistributionConfig;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -100,7 +99,7 @@ public class RpcServerTest extends FleetControllerTest {
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
 
-        assertEquals(true, nodes.get(0).isDistributor());
+        assertTrue(nodes.get(0).isDistributor());
         log.log(Level.INFO, "Disconnecting distributor 0. Waiting for state to reflect change.");
         nodes.get(0).disconnect();
         nodes.get(19).disconnect();
@@ -470,28 +469,13 @@ public class RpcServerTest extends FleetControllerTest {
         }
     }
 
-    private StorDistributionConfig getDistConfig(Set<Integer> nodes) {
-        List<StorDistributionConfig.Group.Nodes.Builder> nodeList = new LinkedList<>();
-        for (int i : nodes) {
-            StorDistributionConfig.Group.Nodes.Builder nodeConfig = new StorDistributionConfig.Group.Nodes.Builder();
-            nodeConfig.index(i);
-            nodeList.add(nodeConfig);
-        }
-        StorDistributionConfig.Group.Builder groupConfig = new StorDistributionConfig.Group.Builder();
-        groupConfig.nodes(nodeList);
-        groupConfig.index("0");
-        groupConfig.name("foo");
-        StorDistributionConfig.Builder distConfig = new StorDistributionConfig.Builder();
-        distConfig.group(groupConfig);
-        return new StorDistributionConfig(distConfig);
-    }
-
     @Test
     public void testSetNodeState() throws Exception {
         startingTest("RpcServerTest::testSetNodeState");
-        FleetControllerOptions options = defaultOptions("mycluster");
         Set<Integer> nodeIndexes = new TreeSet<>(List.of(4, 6, 9, 10, 14, 16, 21, 22, 23, 25));
-        options.setStorageDistribution(new Distribution(getDistConfig(nodeIndexes)));
+        Set<ConfiguredNode> configuredNodes = nodeIndexes.stream().map(i -> new ConfiguredNode(i, false)).collect(Collectors.toSet());
+        FleetControllerOptions options = defaultOptions("mycluster", configuredNodes);
+        //options.setStorageDistribution(new Distribution(getDistConfig(nodeIndexes)));
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodeIndexes);
         waitForState("version:\\d+ distributor:26 .0.s:d .1.s:d .2.s:d .3.s:d .5.s:d .7.s:d .8.s:d .11.s:d .12.s:d .13.s:d .15.s:d .17.s:d .18.s:d .19.s:d .20.s:d .24.s:d storage:26 .0.s:d .1.s:d .2.s:d .3.s:d .5.s:d .7.s:d .8.s:d .11.s:d .12.s:d .13.s:d .15.s:d .17.s:d .18.s:d .19.s:d .20.s:d .24.s:d");

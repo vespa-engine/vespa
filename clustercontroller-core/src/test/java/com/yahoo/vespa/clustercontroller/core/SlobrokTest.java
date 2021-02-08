@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.slobrok.server.Slobrok;
@@ -11,24 +11,7 @@ import java.util.logging.Logger;
 
 public class SlobrokTest extends FleetControllerTest {
 
-    private static Logger log = Logger.getLogger(SlobrokTest.class.getName());
-
-    private boolean clusterAvailable() {
-        boolean ok = true;
-        ContentCluster cluster = fleetController.getCluster();
-        for (NodeInfo info : cluster.getNodeInfo()) {
-            if (info.getConnectionAttemptCount() > 0) ok = false;
-            if (info.getLatestNodeStateRequestTime() == null) ok = false;
-        }
-        return ok;
-    }
-    private void assertClusterAvailable() {
-        ContentCluster cluster = fleetController.getCluster();
-        for (NodeInfo info : cluster.getNodeInfo()) {
-            assertEquals("Node " + info + " connection attempts.", 0, info.getConnectionAttemptCount());
-            assertTrue("Node " + info + " has no last request time.", info.getLatestNodeStateRequestTime() != 0);
-        }
-    }
+    private static final Logger log = Logger.getLogger(SlobrokTest.class.getName());
 
     @Test
     public void testSingleSlobrokRestart() throws Exception {
@@ -113,4 +96,20 @@ public class SlobrokTest extends FleetControllerTest {
         waitForState("version:\\d+ distributor:10 .0.s:d storage:10");
     }
 
+    private boolean clusterAvailable() {
+        boolean ok = true;
+        ContentCluster cluster = fleetController.getCluster();
+        for (NodeInfo info : cluster.getNodeInfo()) {
+            if (info.getConnectionAttemptCount() > 0) ok = false;
+            if (info.getLatestNodeStateRequestTime() == null) ok = false;
+        }
+        return ok;
+    }
+    private void assertClusterAvailable() {
+        ContentCluster cluster = fleetController.getCluster();
+        for (NodeInfo info : cluster.getNodeInfo()) {
+            assertEquals("Node " + info + " connection attempts.", 0, info.getConnectionAttemptCount());
+            assertTrue("Node " + info + " has no last request time.", info.getLatestNodeStateRequestTime() != 0);
+        }
+    }
 }
