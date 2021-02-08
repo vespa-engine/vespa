@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
 /**
@@ -8,7 +8,7 @@ package com.yahoo.vespa.clustercontroller.core.database;
  * we last read it, and that the information we hold may be stale.
  *
  * Upon receiving such an exception, the caller should no longer assume it holds
- * up-to-date information and should drop and roles that build on top of such an
+ * up-to-date information and should drop any roles that build on top of such an
  * assumption (such as leadership sessions).
  */
 public class CasWriteFailed extends RuntimeException {

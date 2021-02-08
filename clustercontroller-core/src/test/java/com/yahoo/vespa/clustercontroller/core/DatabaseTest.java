@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DatabaseTest extends FleetControllerTest {
 
-    private static Logger log = Logger.getLogger(DatabaseTest.class.getName());
+    private static final Logger log = Logger.getLogger(DatabaseTest.class.getName());
 
     // Note: different semantics than FleetControllerTest.setWantedState
     private void setWantedState(Node n, NodeState ns, Map<Node, NodeState> wantedStates) {

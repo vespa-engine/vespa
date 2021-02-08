@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
 import com.yahoo.vdslib.state.Node;
@@ -8,20 +8,15 @@ import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import java.util.Map;
 
 /**
- * This is an abstract class defining the functions needed by a database back end for the fleetcontroller.
+ * Abstract class defining the functions needed by a database back end for the fleetcontroller.
  */
 public abstract class Database {
 
     /** Interface used for database to send events of stuff happening during requests. */
     public interface DatabaseListener {
-        public void handleZooKeeperSessionDown();
-        public void handleMasterData(Map<Integer, Integer> data);
+        void handleZooKeeperSessionDown();
+        void handleMasterData(Map<Integer, Integer> data);
     }
-
-    /**
-     * Used when initiating shutdown to avoid zookeeper layer reporting errors afterwards.
-     */
-    public abstract void stopErrorReporting();
 
     /**
      * Close this session, and release all resources it has used.

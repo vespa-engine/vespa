@@ -1,34 +1,32 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 import java.util.*;
-import java.nio.charset.Charset;
 
 import java.util.logging.Level;
 
 public class MasterDataGatherer {
 
-    private static Logger log = Logger.getLogger(MasterDataGatherer.class.getName());
-    private static Charset utf8 = Charset.forName("UTF8");
+    private static final Logger log = Logger.getLogger(MasterDataGatherer.class.getName());
 
     /** Utility function for getting node index from path name of the ephemeral nodes. */
     private static int getIndex(String nodeName) {
         assert(nodeName != null);
         int lastSlash = nodeName.lastIndexOf('/');
         if (lastSlash <= 1) {
-            System.err.println("Unexpected path to nodename: '" + nodeName + "'.");
-            assert(lastSlash > 1);
+            throw new IllegalArgumentException("Unexpected path to nodename: '" + nodeName + "'.");
         }
         return Integer.parseInt(nodeName.substring(lastSlash + 1));
     }
 
     private final String zooKeeperRoot; // The root path in zookeeper, typically /vespa/fleetcontroller/<clustername>/
-    private Map<Integer, Integer> masterData = new TreeMap<Integer, Integer>(); // The master state last reported to the fleetcontroller
-    private final Map<Integer, Integer> nextMasterData = new TreeMap<Integer, Integer>(); // Temporary master state while gathering new info from zookeeper
+    private Map<Integer, Integer> masterData = new TreeMap<>(); // The master state last reported to the fleetcontroller
+    private final Map<Integer, Integer> nextMasterData = new TreeMap<>(); // Temporary master state while gathering new info from zookeeper
     private final AsyncCallback.ChildrenCallback childListener = new DirCallback(); // Dir change listener
     private final NodeDataCallback nodeListener = new NodeDataCallback(); // Ephemeral node data change listener
 
@@ -36,11 +34,7 @@ public class MasterDataGatherer {
     private final ZooKeeper session;
     private final int nodeIndex;
 
-    /*
-    private boolean seenDirChangeDuringRun = false; // Set to true if we got a dir event while a refetch is happening
-    private final Set<Integer> seenDataChangeDuringRun = new TreeSet<Integer>(); // Sets the indexes that got a data change event while fetching is already running
-    */
-    private Watcher changeWatcher = new ChangeWatcher();
+    private final Watcher changeWatcher = new ChangeWatcher();
 
     /**
      * This class is used to handle node children changed and node data changed events from the zookeeper server.
@@ -83,7 +77,7 @@ public class MasterDataGatherer {
      */
     private class DirCallback implements AsyncCallback.ChildrenCallback {
         public void processResult(int version, String path, Object context, List<String> nodes) {
-            if (nodes == null) nodes = new LinkedList<String>();
+            if (nodes == null) nodes = new LinkedList<>();
             log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Got node list response from " + path + " version " + version + " with " + nodes.size() + " nodes");
             synchronized (nextMasterData) {
                 nextMasterData.clear();
@@ -103,8 +97,8 @@ public class MasterDataGatherer {
     /** The node data callback class is responsible for fetching new votes from fleetcontrollers that have altered their vote. */
     private class NodeDataCallback implements AsyncCallback.DataCallback {
 
-        public void processResult(int code, String path, Object context, byte[] rawdata, Stat stat) {
-            String data = rawdata == null ? null : new String(rawdata, utf8);
+        public void processResult(int code, String path, Object context, byte[] rawData, Stat stat) {
+            String data = rawData == null ? null : new String(rawData, StandardCharsets.UTF_8);
             log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Got vote data from path " + path +
                     " with code " + code + " and data " + data);
 
@@ -165,7 +159,7 @@ public class MasterDataGatherer {
     /** Calling restart, ignores what we currently know and starts another cycle. Typically called after reconnecting to ZooKeeperServer. */
     public void restart() {
         synchronized (nextMasterData) {
-            masterData = new TreeMap<Integer, Integer>();
+            masterData = new TreeMap<>();
             nextMasterData.clear();
             session.getChildren(zooKeeperRoot + "indexes", changeWatcher, childListener, null);
         }
@@ -180,7 +174,7 @@ public class MasterDataGatherer {
                 // for(Integer i : nextMasterData.keySet()) { System.err.println(i + " -> " + nextMasterData.get(i)); }
                 return;
             }
-            masterData = new TreeMap<Integer, Integer>(nextMasterData);
+            masterData = new TreeMap<>(nextMasterData);
             copy = masterData;
         }
         log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Got new master data, sending it on");
