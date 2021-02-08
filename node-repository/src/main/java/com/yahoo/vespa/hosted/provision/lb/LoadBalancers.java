@@ -18,7 +18,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
+ * The load balancers of this node repo and the information (such asd ACL's) which need load balancer information.
+ *
  * @author bratseth
+ * @author mpolden
  */
 public class LoadBalancers {
 

@@ -211,9 +211,7 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the load balancers available in this node repo */
     public LoadBalancers loadBalancers() { return loadBalancers; }
 
-    public NodeFlavors flavors() {
-        return flavors;
-    }
+    public NodeFlavors flavors() { return flavors; }
 
     public HostResourcesCalculator resourcesCalculator() { return resourcesCalculator; }
 
