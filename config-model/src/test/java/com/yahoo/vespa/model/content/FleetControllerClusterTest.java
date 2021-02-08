@@ -23,7 +23,7 @@ public class FleetControllerClusterTest {
         var clusterElement = new ModelElement(doc.getDocumentElement());
         return new ClusterControllerConfig.Builder("storage",
                 clusterElement,
-                new ClusterResourceLimits.Builder().build(clusterElement).getClusterControllerLimits()).
+                new ClusterResourceLimits.Builder(enableFeedBlockInDistributor).build(clusterElement).getClusterControllerLimits()).
                 build(root.getDeployState(), root, clusterElement.getXml());
     }
 
@@ -101,14 +101,14 @@ public class FleetControllerClusterTest {
 
     @Test
     public void default_cluster_feed_block_limits_are_set() {
-        assertLimits(0.79, 0.79, getConfigForBasicCluster());
+        assertLimits(0.8, 0.8, getConfigForBasicCluster());
     }
 
     @Test
     public void resource_limits_can_be_set_in_tuning() {
         assertLimits(0.6, 0.7, getConfigForResourceLimitsTuning(0.6, 0.7));
-        assertLimits(0.6, 0.79, getConfigForResourceLimitsTuning(0.6, null));
-        assertLimits(0.79, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
+        assertLimits(0.6, 0.8, getConfigForResourceLimitsTuning(0.6, null));
+        assertLimits(0.8, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
     }
 
     private static double DELTA = 0.00001;

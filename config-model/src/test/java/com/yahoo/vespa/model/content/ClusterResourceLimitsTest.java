@@ -14,8 +14,17 @@ import static org.junit.Assert.assertFalse;
 public class ClusterResourceLimitsTest {
 
     private static class Fixture {
-        ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
-        ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
+        private final boolean enableFeedBlockInDistributor;
+        private final ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
+        private final ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
+
+        public Fixture() {
+            this.enableFeedBlockInDistributor = false;
+        }
+
+        public Fixture(boolean enableFeedBlockInDistributor) {
+            this.enableFeedBlockInDistributor = enableFeedBlockInDistributor;
+        }
 
         public Fixture ctrlDisk(double limit) {
             ctrlBuilder.setDiskLimit(limit);
@@ -34,7 +43,7 @@ public class ClusterResourceLimitsTest {
             return this;
         }
         public ClusterResourceLimits build() {
-            var builder = new ClusterResourceLimits.Builder();
+            var builder = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor);
             builder.setClusterControllerBuilder(ctrlBuilder);
             builder.setContentNodeBuilder(nodeBuilder);
             return builder.build();
@@ -43,22 +52,37 @@ public class ClusterResourceLimitsTest {
 
     @Test
     public void content_node_limits_are_derived_from_cluster_controller_limits_if_not_set() {
-        assertLimits(0.6, 0.7, 0.8, 0.85,
-                new Fixture().ctrlDisk(0.6).ctrlMemory(0.7));
-        assertLimits(0.6, null, 0.8, null,
-                new Fixture().ctrlDisk(0.6));
+        assertLimits(0.4, 0.7, 0.7, 0.85,
+                new Fixture().ctrlDisk(0.4).ctrlMemory(0.7));
+        assertLimits(0.4, null, 0.7, null,
+                new Fixture().ctrlDisk(0.4));
         assertLimits(null, 0.7, null, 0.85,
                 new Fixture().ctrlMemory(0.7));
+
+
+        assertLimits(0.4, 0.7, 0.7, 0.85,
+                new Fixture(true).ctrlDisk(0.4).ctrlMemory(0.7));
+        assertLimits(0.4, 0.8, 0.7, 0.9,
+                new Fixture(true).ctrlDisk(0.4));
+        assertLimits(0.8, 0.7, 0.9, 0.85,
+                new Fixture(true).ctrlMemory(0.7));
     }
 
     @Test
     public void content_node_limits_can_be_set_explicit() {
-        assertLimits(0.6, 0.7, 0.9, 0.95,
-                new Fixture().ctrlDisk(0.6).ctrlMemory(0.7).nodeDisk(0.9).nodeMemory(0.95));
-        assertLimits(0.6, null, 0.9, null,
-                new Fixture().ctrlDisk(0.6).nodeDisk(0.9));
+        assertLimits(0.4, 0.7, 0.9, 0.95,
+                new Fixture().ctrlDisk(0.4).ctrlMemory(0.7).nodeDisk(0.9).nodeMemory(0.95));
+        assertLimits(0.4, null, 0.95, null,
+                new Fixture().ctrlDisk(0.4).nodeDisk(0.95));
         assertLimits(null, 0.7, null, 0.95,
                 new Fixture().ctrlMemory(0.7).nodeMemory(0.95));
+
+        assertLimits(0.4, 0.7, 0.9, 0.95,
+                new Fixture(true).ctrlDisk(0.4).ctrlMemory(0.7).nodeDisk(0.9).nodeMemory(0.95));
+        assertLimits(0.4, 0.8, 0.95, 0.9,
+                new Fixture(true).ctrlDisk(0.4).nodeDisk(0.95));
+        assertLimits(0.8, 0.7, 0.9, 0.95,
+                new Fixture(true).ctrlMemory(0.7).nodeMemory(0.95));
     }
 
     @Test
@@ -77,6 +101,12 @@ public class ClusterResourceLimitsTest {
                 new Fixture().ctrlDisk(0.6).nodeMemory(0.95));
         assertLimits(0.9, 0.7, 0.9, 0.85,
                 new Fixture().ctrlMemory(0.7).nodeDisk(0.9));
+    }
+
+    @Test
+    public void default_resource_limits_when_feed_block_is_enabled_in_distributor() {
+        assertLimits(0.8, 0.8, 0.9, 0.9,
+                new Fixture(true));
     }
 
     private void assertLimits(Double expCtrlDisk, Double expCtrlMemory, Double expNodeDisk, Double expNodeMemory, Fixture f) {

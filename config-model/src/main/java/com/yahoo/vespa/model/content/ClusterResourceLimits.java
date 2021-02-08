@@ -34,11 +34,15 @@ public class ClusterResourceLimits {
 
     public static class Builder {
 
+        private final boolean enableFeedBlockInDistributor;
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
         private ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
 
-        public ClusterResourceLimits build(ModelElement clusterElem) {
+        public Builder(boolean enableFeedBlockInDistributor) {
+            this.enableFeedBlockInDistributor = enableFeedBlockInDistributor;
+        }
 
+        public ClusterResourceLimits build(ModelElement clusterElem) {
             ModelElement tuningElem = clusterElem.childByPath("tuning");
             if (tuningElem != null) {
                 ctrlBuilder = DomResourceLimitsBuilder.createBuilder(tuningElem);
@@ -67,6 +71,12 @@ public class ClusterResourceLimits {
         }
 
         private void deriveLimits() {
+            if (enableFeedBlockInDistributor) {
+                // This also ensures that content nodes limits are derived according to the formula in calcContentNodeLimit().
+                considerSettingDefaultClusterControllerLimit(ctrlBuilder.getDiskLimit(), nodeBuilder.getDiskLimit(), ctrlBuilder::setDiskLimit);
+                considerSettingDefaultClusterControllerLimit(ctrlBuilder.getMemoryLimit(), nodeBuilder.getMemoryLimit(), ctrlBuilder::setMemoryLimit);
+            }
+
             deriveClusterControllerLimit(ctrlBuilder.getDiskLimit(), nodeBuilder.getDiskLimit(), ctrlBuilder::setDiskLimit);
             deriveClusterControllerLimit(ctrlBuilder.getMemoryLimit(), nodeBuilder.getMemoryLimit(), ctrlBuilder::setMemoryLimit);
 
@@ -74,12 +84,21 @@ public class ClusterResourceLimits {
             deriveContentNodeLimit(nodeBuilder.getMemoryLimit(), ctrlBuilder.getMemoryLimit(), nodeBuilder::setMemoryLimit);
         }
 
+        private void considerSettingDefaultClusterControllerLimit(Optional<Double> clusterControllerLimit,
+                                                                  Optional<Double> contentNodeLimit,
+                                                                  Consumer<Double> setter) {
+            // TODO: remove this when feed block in distributor is default enabled.
+            if (!clusterControllerLimit.isPresent() && !contentNodeLimit.isPresent()) {
+                setter.accept(0.8);
+            }
+        }
+
         private void deriveClusterControllerLimit(Optional<Double> clusterControllerLimit,
                                                   Optional<Double> contentNodeLimit,
                                                   Consumer<Double> setter) {
             if (!clusterControllerLimit.isPresent()) {
                 contentNodeLimit.ifPresent(limit ->
-                        // TODO: emit warning when using cluster controller resource limits are default enabled.
+                        // TODO: emit warning when feed block in distributor is default enabled.
                         setter.accept(limit));
             }
         }

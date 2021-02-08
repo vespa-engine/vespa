@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.core.BucketspacesConfig;
@@ -74,6 +76,12 @@ public class ContentSearchClusterTest {
         return new ProtonConfig(builder);
     }
 
+    private static ContentCluster createClusterWithFeatureFlag(String clusterXml, boolean enableFeedBlockInDistributor) throws Exception {
+        var deployStateBuilder = new DeployState.Builder().properties(
+                new TestProperties().enableFeedBlockInDistributor(enableFeedBlockInDistributor));
+        return createCluster(clusterXml, deployStateBuilder);
+    }
+
     private static void assertProtonResourceLimits(double expDiskLimit, double expMemoryLimit, String clusterXml) throws Exception {
         assertProtonResourceLimits(expDiskLimit, expMemoryLimit, createCluster(clusterXml));
     }
@@ -130,6 +138,20 @@ public class ContentSearchClusterTest {
         var cluster = createCluster(new ContentClusterBuilder().clusterControllerDiskLimit(0.5).protonMemoryLimit(0.95).getXml());
         assertProtonResourceLimits(0.75, 0.95, cluster);
         assertClusterControllerResourceLimits(0.5, 0.95, cluster);
+    }
+
+    @Test
+    public void default_resource_limits_when_feed_block_is_disabled_in_distributor() throws Exception {
+        var cluster = createClusterWithFeatureFlag(new ContentClusterBuilder().getXml(), false);
+        assertProtonResourceLimits(0.8, 0.8, cluster);
+        assertClusterControllerResourceLimits(0.8, 0.8, cluster);
+    }
+
+    @Test
+    public void default_resource_limits_when_feed_block_is_enabled_in_distributor() throws Exception {
+        var cluster = createClusterWithFeatureFlag(new ContentClusterBuilder().getXml(), true);
+        assertProtonResourceLimits(0.9, 0.9, cluster);
+        assertClusterControllerResourceLimits(0.8, 0.8, cluster);
     }
 
     @Test
